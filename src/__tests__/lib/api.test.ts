@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { fetchMe, pollSession, startLnurlAuth } from '@/lib/api';
+import {
+  fetchMe,
+  pollSession,
+  setLightningAddress,
+  startLnurlAuth,
+  unlinkLightningAddress,
+} from '@/lib/api';
 
 const API = 'https://api.test';
 
@@ -8,6 +14,8 @@ const account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
   role: 'basis' as const,
+  lightningAddress: null,
+  lightningAddressVerified: false,
   createdAt: 1_700_000_000,
 };
 
@@ -109,5 +117,63 @@ describe('fetchMe', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(fetchMe('sess')).rejects.toThrow();
+  });
+});
+
+describe('setLightningAddress', () => {
+  it('posts the address and returns the validated account', async () => {
+    const linked = { ...account, lightningAddress: 'me@walletofsatoshi.com' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: linked });
+
+    await expect(setLightningAddress('sess', 'me@walletofsatoshi.com')).resolves.toEqual(linked);
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address: 'me@walletofsatoshi.com' }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Invalid Lightning Address' } });
+    await expect(setLightningAddress('sess', 'nope')).rejects.toThrow('Invalid Lightning Address');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
+      'Failed to set Lightning Address: 500',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(setLightningAddress('sess', 'x')).rejects.toThrow();
+  });
+});
+
+describe('unlinkLightningAddress', () => {
+  it('deletes the address and returns the validated account', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
+
+    await expect(unlinkLightningAddress('sess')).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address`, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(unlinkLightningAddress('sess')).rejects.toThrow(
+      'Failed to unlink Lightning Address: 500',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(unlinkLightningAddress('sess')).rejects.toThrow();
   });
 });

@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Clock, Loader2, LogOut, Zap } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
+import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { QrCode } from '@/components/QrCode';
 import { useLnurlLogin } from '@/hooks/useLnurlLogin';
 import { fetchMe } from '@/lib/api';
@@ -98,6 +99,7 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
       <p className="font-mono text-sm text-neutral-500" title={account.linkingKey}>
         {shortenKey(account.linkingKey)}
       </p>
+      <LightningAddressForm />
       <button
         type="button"
         onClick={onLogout}
