@@ -1,6 +1,13 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Home from '@/app/page';
+
+vi.mock('next/link', () => ({
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
 
 afterEach(cleanup);
 
@@ -18,5 +25,11 @@ describe('Home', () => {
   it('notes that the product is coming soon', () => {
     render(<Home />);
     expect(screen.getByText('Coming soon')).toBeTruthy();
+  });
+
+  it('links to the login page', () => {
+    render(<Home />);
+    const link = screen.getByRole('link', { name: 'Log in' });
+    expect(link.getAttribute('href')).toBe('/login');
   });
 });
