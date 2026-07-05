@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import './globals.css';
 
+/**
+ * Document-level metadata the App Router applies to every route's `<head>`.
+ */
 export const metadata: Metadata = {
   title: '21.gifts',
   description:

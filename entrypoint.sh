@@ -28,8 +28,21 @@ for path in $SEARCH_PATHS; do
   fi
 done
 
+# Scan the build output for placeholders. Keep grep out of the sort pipeline so
+# its exit status stays observable — inside `grep | sort` the pipeline reports
+# sort's status (0) and grep's is lost. grep exits 1 when there are simply no
+# matches (a valid no-op in the current skeleton) and >1 on a genuine scan
+# error; only the latter is fatal, per the fail-loud contract above.
+set +e
 # shellcheck disable=SC2086 # SEARCH_PATHS is a deliberate word-split list
-placeholders=$(grep -rhoE '__NEXT_PUBLIC_[A-Z0-9_]+__' $SEARCH_PATHS | sort -u) || placeholders=''
+matches=$(grep -rhoE '__NEXT_PUBLIC_[A-Z0-9_]+__' $SEARCH_PATHS)
+grep_status=$?
+set -e
+if [ "$grep_status" -gt 1 ]; then
+  echo "entrypoint.sh: scanning build output for placeholders failed (grep exit ${grep_status}). Refusing to start." >&2
+  exit 1
+fi
+placeholders=$(printf '%s' "$matches" | sort -u)
 
 for placeholder in $placeholders; do
   var_name=${placeholder#__}

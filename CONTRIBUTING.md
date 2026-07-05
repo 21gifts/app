@@ -132,9 +132,9 @@ update stuff
 
 ### TSDoc
 
-Exported functions in `src/lib` carry a TSDoc block with a one-line summary
-plus `@param` / `@returns` / `@throws` where applicable. `eslint-plugin-tsdoc`
-flags malformed comments.
+Every exported symbol carries a TSDoc block with a one-line summary plus
+`@param` / `@returns` / `@throws` where applicable. `eslint-plugin-tsdoc`
+flags malformed comments across `src/`.
 
 ### Tests
 

@@ -25,7 +25,9 @@ const config = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     files: ['src/**/*.{ts,tsx}'],
+    plugins: { tsdoc },
     rules: {
+      'tsdoc/syntax': 'warn',
       'no-console': ['error', { allow: ['warn', 'error'] }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': [
@@ -34,13 +36,6 @@ const config = [
       ],
       '@typescript-eslint/no-explicit-any': 'error',
       eqeqeq: ['error', 'always'],
-    },
-  },
-  {
-    files: ['src/lib/**/*.ts'],
-    plugins: { tsdoc },
-    rules: {
-      'tsdoc/syntax': 'warn',
     },
   },
   {

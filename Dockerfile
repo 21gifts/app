@@ -45,11 +45,19 @@ COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
 COPY --chmod=0755 entrypoint.sh /app/entrypoint.sh
 
+# Own the working dir itself, not just its contents. entrypoint.sh rewrites
+# placeholders in place with `sed -i`, which writes a temp file into the
+# target's directory and renames it over the file — that needs write on the
+# /app directory, not merely on the file. WORKDIR created /app as root:root and
+# the COPY --chown lines above only touched the copied content, so without this
+# the `app` user cannot rewrite files sitting directly in /app (e.g. server.js).
+RUN chown app:app /app
+
 USER app
-EXPOSE 3000
+EXPOSE ${PORT}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q -O /dev/null http://127.0.0.1:3000/healthz || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1:${PORT}/healthz || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "server.js"]
