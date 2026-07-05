@@ -1,0 +1,13 @@
+# Mirror of .gitignore plus .git: keeps local `docker build` context identical
+# to a clean CI checkout — no host node_modules, local .env* values or stale
+# build artifacts can leak into the image (see Dockerfile `COPY . .`).
+.git
+node_modules
+.next
+out
+coverage
+playwright-report
+test-results
+.env*
+**/*.tsbuildinfo
+**/.DS_Store
