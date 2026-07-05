@@ -1,4 +1,5 @@
 import { Gift } from 'lucide-react';
+import Link from 'next/link';
 import type { ReactElement } from 'react';
 
 /**
@@ -13,6 +14,12 @@ export default function Home(): ReactElement {
         Direct human-to-human giving over Bitcoin Lightning.
       </p>
       <p className="mt-16 text-sm uppercase tracking-widest text-neutral-400">Coming soon</p>
+      <Link
+        href="/login"
+        className="mt-8 text-sm font-medium text-neutral-600 underline underline-offset-4 transition hover:text-neutral-900"
+      >
+        Log in
+      </Link>
     </main>
   );
 }
