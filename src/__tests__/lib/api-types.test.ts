@@ -6,16 +6,31 @@ const account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
   role: 'basis' as const,
+  lightningAddress: null,
+  lightningAddressVerified: false,
   createdAt: 1_700_000_000,
 };
 
 describe('accountSchema', () => {
-  it('accepts a well-formed account', () => {
+  it('accepts a well-formed account without a linked address', () => {
     expect(accountSchema.parse(account)).toEqual(account);
+  });
+
+  it('accepts a linked, verified account', () => {
+    const linked = {
+      ...account,
+      lightningAddress: 'me@walletofsatoshi.com',
+      lightningAddressVerified: true,
+    };
+    expect(accountSchema.parse(linked)).toEqual(linked);
   });
 
   it('rejects an unknown role', () => {
     expect(() => accountSchema.parse({ ...account, role: 'admin' })).toThrow();
+  });
+
+  it('rejects a non-boolean verification flag', () => {
+    expect(() => accountSchema.parse({ ...account, lightningAddressVerified: 'yes' })).toThrow();
   });
 });
 
