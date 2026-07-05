@@ -16,6 +16,14 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   plugins: [react()],
+  // Unit tests render components without Tailwind processing. Override PostCSS
+  // with an empty inline config so Vite does not auto-load the project
+  // `postcss.config.mjs`, whose Next.js plugin shorthand Vite cannot parse.
+  css: {
+    postcss: {
+      plugins: [],
+    },
+  },
   test: {
     environment: 'jsdom',
     include: ['src/__tests__/**/*.test.{ts,tsx}'],

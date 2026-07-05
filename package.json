@@ -12,6 +12,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:standalone": "rm -rf .next/standalone/.next/static .next/standalone/public && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && node .next/standalone/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "next lint && prettier --check .",
     "lint:fix": "next lint --fix && prettier --write .",
