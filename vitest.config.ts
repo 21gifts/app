@@ -1,0 +1,54 @@
+import react from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
+import { defineConfig } from 'vitest/config';
+
+/**
+ * Vitest configuration with a hard 100% coverage gate.
+ *
+ * Any code under `src` that is reachable in a happy-path environment must be
+ * covered by tests. Genuinely-unreachable defensive code (e.g. SSR guards,
+ * `process.exit()` paths) can be exempted with a `v8 ignore` annotation
+ * accompanied by a one-line reason — never to silence the gate.
+ *
+ * The thresholds are enforced by CI, so a PR cannot merge while coverage
+ * sits below 100% on the activated surface. Playwright e2e specs live in
+ * `e2e/` and are outside the vitest scope.
+ */
+export default defineConfig({
+  plugins: [react()],
+  // Unit tests render components without Tailwind processing. Override PostCSS
+  // with an empty inline config so Vite does not auto-load the project
+  // `postcss.config.mjs`, whose Next.js plugin shorthand Vite cannot parse.
+  css: {
+    postcss: {
+      plugins: [],
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
+    include: ['src/__tests__/**/*.test.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'text-summary', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/__tests__/**',
+        'src/types/**', // type-only modules contribute no executable code
+      ],
+      thresholds: {
+        lines: 100,
+        branches: 100,
+        functions: 100,
+        statements: 100,
+      },
+      all: true,
+    },
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
+});

@@ -1,0 +1,57 @@
+{
+  "name": "@21gifts/app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web frontend client for 21.gifts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/21gifts/app.git"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "start:standalone": "rm -rf .next/standalone/.next/static .next/standalone/public && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && node .next/standalone/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint && prettier --check .",
+    "lint:fix": "next lint --fix && prettier --write .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "lucide-react": "^0.469.0",
+    "next": "^15.3.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.23.8",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@playwright/test": "^1.49.1",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.3.0",
+    "eslint-plugin-tsdoc": "^0.4.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.2",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
