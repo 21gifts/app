@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
   accountSchema,
   sessionResultSchema,
@@ -7,6 +8,9 @@ import {
   type StartChallenge,
 } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
+
+/** Runtime shape of the api's error envelope, carrying a human-readable message. */
+const apiErrorSchema = z.object({ error: z.string() });
 
 /**
  * Starts a new LNURL-auth challenge.
@@ -59,6 +63,53 @@ export async function fetchMe(sessionToken: string): Promise<Account | null> {
   }
   if (!response.ok) {
     throw new Error(`Failed to fetch account: ${response.status}`);
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Links or replaces the account's receiving Lightning Address.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param address - The `name@domain.tld` Lightning Address to store.
+ * @returns The updated {@link Account}.
+ * @throws Error when the api rejects the address (400) — the thrown message is
+ * the api's own error text, so the form can show why it was rejected — on any
+ * other non-2xx status, or when the body fails {@link accountSchema} validation.
+ */
+export async function setLightningAddress(sessionToken: string, address: string): Promise<Account> {
+  const response = await fetch(`${getApiUrl()}/me/lightning-address`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ address }),
+  });
+  if (response.status === 400) {
+    throw new Error(apiErrorSchema.parse(await response.json()).error);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to set Lightning Address: ${response.status}`);
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Unlinks the account's Lightning Address, clearing it.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link Account}, with `lightningAddress` set to `null`.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function unlinkLightningAddress(sessionToken: string): Promise<Account> {
+  const response = await fetch(`${getApiUrl()}/me/lightning-address`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to unlink Lightning Address: ${response.status}`);
   }
   return accountSchema.parse(await response.json());
 }

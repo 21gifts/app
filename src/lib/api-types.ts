@@ -10,6 +10,8 @@ export const accountSchema = z.object({
   id: z.string(),
   linkingKey: z.string(),
   role: z.enum(['basis', 'moderator']),
+  lightningAddress: z.string().nullable(),
+  lightningAddressVerified: z.boolean(),
   createdAt: z.number(),
 });
 
@@ -18,6 +20,9 @@ export const accountSchema = z.object({
  *
  * `role` gates capabilities (`basis` for ordinary givers, `moderator` for
  * elevated review actions); `linkingKey` is the wallet's LNURL-auth public key.
+ * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
+ * none is linked; `lightningAddressVerified` reports whether ownership has been
+ * proven (always `false` in v1).
  */
 export type Account = z.infer<typeof accountSchema>;
 

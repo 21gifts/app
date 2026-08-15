@@ -16,12 +16,16 @@ vi.mock('@/lib/api', () => ({
   fetchMe: vi.fn(),
   startLnurlAuth: vi.fn(),
   pollSession: vi.fn(),
+  setLightningAddress: vi.fn(),
+  unlinkLightningAddress: vi.fn(),
 }));
 
 const account = {
   id: 'acc_1',
   linkingKey: `02${'a'.repeat(60)}`,
   role: 'basis' as const,
+  lightningAddress: null,
+  lightningAddressVerified: false,
   createdAt: 1_700_000_000,
 };
 
@@ -93,6 +97,8 @@ describe('LoginCard', () => {
 
     expect(screen.getByText('basis')).toBeTruthy();
     expect(screen.getByTitle(account.linkingKey)).toBeTruthy();
+    // The Lightning Address section is wired into the signed-in view.
+    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /log out/i }));
     expect(clearSession).toHaveBeenCalledTimes(1);
