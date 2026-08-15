@@ -8,6 +8,8 @@ const QR_SIZE = 232;
 export interface QrCodeProps {
   /** The string to encode — typically an uppercased LNURL. */
   value: string;
+  /** Accessible name. Default: `'Lightning login QR code'`. */
+  label?: string;
 }
 
 /**
@@ -19,11 +21,11 @@ export interface QrCodeProps {
  * @param props - See {@link QrCodeProps}.
  * @returns The QR image element.
  */
-export function QrCode({ value }: QrCodeProps): ReactElement {
+export function QrCode({ value, label }: QrCodeProps): ReactElement {
   return (
     <div
       role="img"
-      aria-label="Lightning login QR code"
+      aria-label={label ?? 'Lightning login QR code'}
       className="rounded-2xl border border-neutral-200 bg-white p-4"
     >
       <QRCodeSVG value={value} size={QR_SIZE} />

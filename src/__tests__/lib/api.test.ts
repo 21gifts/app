@@ -6,6 +6,7 @@ import {
   pollSession,
   setLightningAddress,
   startLightningAddressVerification,
+  resolveLightningAddress,
   startLnurlAuth,
   unlinkLightningAddress,
 } from '@/lib/api';
@@ -274,5 +275,56 @@ describe('confirmLightningAddressVerification', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(confirmLightningAddressVerification('sess', 'n')).rejects.toThrow();
+  });
+});
+
+describe('resolveLightningAddress', () => {
+  const resolved = {
+    address: 'me@walletofsatoshi.com',
+    callback: 'https://walletofsatoshi.com/lnurlp/callback',
+    minSendable: 1000,
+    maxSendable: 100_000_000,
+  };
+
+  it('returns the validated metadata and encodes the address', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: resolved });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).resolves.toEqual(resolved);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${API}/lightning-address?address=${encodeURIComponent('me@walletofsatoshi.com')}`,
+    );
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'Not a valid Lightning Address (expected name@domain)' },
+    });
+    await expect(resolveLightningAddress('nope')).rejects.toThrow(
+      'Not a valid Lightning Address (expected name@domain)',
+    );
+  });
+
+  it('throws the api error message on a 502', async () => {
+    stubFetch({
+      ok: false,
+      status: 502,
+      body: { error: 'Lightning Address could not be resolved' },
+    });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
+      'Lightning Address could not be resolved',
+    );
+  });
+
+  it('throws on a non-api-message non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
+      'Failed to resolve Lightning Address: 500',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { address: 'x' } });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow();
   });
 });

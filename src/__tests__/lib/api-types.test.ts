@@ -4,6 +4,7 @@ import {
   accountSchema,
   sessionResultSchema,
   startChallengeSchema,
+  lnAddressResolvedSchema,
   verificationSentSchema,
 } from '@/lib/api-types';
 
@@ -97,5 +98,27 @@ describe('verificationSentSchema', () => {
     expect(() =>
       verificationSentSchema.parse({ status: 'sent', expiresInSeconds: 120, sats: '1' }),
     ).toThrow();
+  });
+});
+
+describe('lnAddressResolvedSchema', () => {
+  const resolved = {
+    address: 'me@walletofsatoshi.com',
+    callback: 'https://walletofsatoshi.com/lnurlp/callback',
+    minSendable: 1000,
+    maxSendable: 100_000_000,
+  };
+
+  it('accepts metadata without commentAllowed', () => {
+    expect(lnAddressResolvedSchema.parse(resolved)).toEqual(resolved);
+  });
+
+  it('accepts metadata with commentAllowed', () => {
+    const withComment = { ...resolved, commentAllowed: 255 };
+    expect(lnAddressResolvedSchema.parse(withComment)).toEqual(withComment);
+  });
+
+  it('rejects a non-url callback', () => {
+    expect(() => lnAddressResolvedSchema.parse({ ...resolved, callback: 'not-a-url' })).toThrow();
   });
 });

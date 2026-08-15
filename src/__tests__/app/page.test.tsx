@@ -32,4 +32,10 @@ describe('Home', () => {
     const link = screen.getByRole('link', { name: 'Log in' });
     expect(link.getAttribute('href')).toBe('/login');
   });
+
+  it('links to the donate page', () => {
+    render(<Home />);
+    const link = screen.getByRole('link', { name: 'Donate' });
+    expect(link.getAttribute('href')).toBe('/donate');
+  });
 });

@@ -45,11 +45,16 @@ app/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: <html lang="en">, metadata, globals.css
 │   │   ├── page.tsx             # Landing page
+│   │   ├── donate/
+│   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
+│   ├── components/
+│   │   └── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
 │   ├── lib/
-│   │   └── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   └── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file
@@ -59,7 +64,8 @@ app/
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
 ├── e2e/
-│   └── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
+│   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
+│   └── donate.spec.ts           # /donate form heading + submit button
 ├── public/                      # Static assets served from /
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
