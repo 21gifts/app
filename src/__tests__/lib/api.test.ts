@@ -1,9 +1,11 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  confirmLightningAddressVerification,
   fetchMe,
   pollSession,
   setLightningAddress,
+  startLightningAddressVerification,
   startLnurlAuth,
   unlinkLightningAddress,
 } from '@/lib/api';
@@ -175,5 +177,102 @@ describe('unlinkLightningAddress', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(unlinkLightningAddress('sess')).rejects.toThrow();
+  });
+});
+
+describe('startLightningAddressVerification', () => {
+  const sent = { status: 'sent' as const, expiresInSeconds: 120, sats: 1 };
+
+  it('posts and returns the validated sent payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: sent });
+
+    await expect(startLightningAddressVerification('sess')).resolves.toEqual(sent);
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address/verification`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws the api error message on a 503', async () => {
+    stubFetch({
+      ok: false,
+      status: 503,
+      body: { error: 'Verification payments are not configured' },
+    });
+    await expect(startLightningAddressVerification('sess')).rejects.toThrow(
+      'Verification payments are not configured',
+    );
+  });
+
+  it('throws the api error message on a 502', async () => {
+    stubFetch({ ok: false, status: 502, body: { error: 'Wallet unreachable' } });
+    await expect(startLightningAddressVerification('sess')).rejects.toThrow('Wallet unreachable');
+  });
+
+  it('throws the api error message on a 409', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Verification already in flight' } });
+    await expect(startLightningAddressVerification('sess')).rejects.toThrow(
+      'Verification already in flight',
+    );
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'No Lightning Address linked' } });
+    await expect(startLightningAddressVerification('sess')).rejects.toThrow(
+      'No Lightning Address linked',
+    );
+  });
+
+  it('throws on a non-api-message non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(startLightningAddressVerification('sess')).rejects.toThrow(
+      'Failed to start Lightning Address verification: 500',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { status: 'sent' } });
+    await expect(startLightningAddressVerification('sess')).rejects.toThrow();
+  });
+});
+
+describe('confirmLightningAddressVerification', () => {
+  const verified = {
+    ...account,
+    lightningAddress: 'me@walletofsatoshi.com',
+    lightningAddressVerified: true,
+  };
+
+  it('posts the nonce with the bearer header and returns the verified account', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: verified });
+
+    await expect(confirmLightningAddressVerification('sess', 'nonce-1')).resolves.toEqual(verified);
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address/verification/confirm`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ nonce: 'nonce-1' }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Incorrect verification code' } });
+    await expect(confirmLightningAddressVerification('sess', 'bad')).rejects.toThrow(
+      'Incorrect verification code',
+    );
+  });
+
+  it('throws on a non-api-message non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(confirmLightningAddressVerification('sess', 'n')).rejects.toThrow(
+      'Failed to confirm Lightning Address verification: 500',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(confirmLightningAddressVerification('sess', 'n')).rejects.toThrow();
   });
 });
