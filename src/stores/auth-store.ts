@@ -17,6 +17,16 @@ interface AuthState {
    * @param account - The account it belongs to.
    */
   setAuth(session: string, account: Account): void;
+  /**
+   * Replaces the account while keeping the current session token.
+   *
+   * Used after a profile change (e.g. linking a Lightning Address) where the api
+   * returns the updated account but the session is unchanged — the persisted
+   * token is deliberately left untouched.
+   *
+   * @param account - The updated account.
+   */
+  setAccount(account: Account): void;
   /** Clears the session from state and from storage. */
   clearAuth(): void;
 }
@@ -34,6 +44,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (session, account) => {
     saveSession(session);
     set({ session, account });
+  },
+  setAccount: (account) => {
+    set({ account });
   },
   clearAuth: () => {
     clearSession();
