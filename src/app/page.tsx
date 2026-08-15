@@ -14,12 +14,20 @@ export default function Home(): ReactElement {
         Direct human-to-human giving over Bitcoin Lightning.
       </p>
       <p className="mt-16 text-sm uppercase tracking-widest text-neutral-400">Coming soon</p>
-      <Link
-        href="/login"
-        className="mt-8 text-sm font-medium text-neutral-600 underline underline-offset-4 transition hover:text-neutral-900"
-      >
-        Log in
-      </Link>
+      <div className="mt-8 flex items-center gap-6">
+        <Link
+          href="/donate"
+          className="text-sm font-medium text-neutral-600 underline underline-offset-4 transition hover:text-neutral-900"
+        >
+          Donate
+        </Link>
+        <Link
+          href="/login"
+          className="text-sm font-medium text-neutral-600 underline underline-offset-4 transition hover:text-neutral-900"
+        >
+          Log in
+        </Link>
+      </div>
     </main>
   );
 }

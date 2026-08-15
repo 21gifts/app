@@ -14,4 +14,9 @@ describe('QrCode', () => {
     const { container } = render(<QrCode value="LNURL1TEST" />);
     expect(container.querySelector('svg')).not.toBeNull();
   });
+
+  it('uses a custom accessible name when given', () => {
+    render(<QrCode value="lnbc1" label="Lightning invoice QR code" />);
+    expect(screen.getByRole('img', { name: 'Lightning invoice QR code' })).toBeTruthy();
+  });
 });

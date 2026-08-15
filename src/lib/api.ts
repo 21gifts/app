@@ -3,8 +3,10 @@ import {
   accountSchema,
   sessionResultSchema,
   startChallengeSchema,
+  lnAddressResolvedSchema,
   verificationSentSchema,
   type Account,
+  type LnAddressResolved,
   type SessionResult,
   type StartChallenge,
   type VerificationSent,
@@ -186,4 +188,24 @@ export async function confirmLightningAddressVerification(
     throw new Error(`Failed to confirm Lightning Address verification: ${response.status}`);
   }
   return accountSchema.parse(await response.json());
+}
+
+/**
+ * Resolves a Lightning Address to LNURL-pay metadata via the api cache.
+ *
+ * @param address - The `name@domain` address to look up.
+ * @returns The {@link LnAddressResolved} payload (callback and amount bounds).
+ * @throws Error when the api rejects the address (400, 502) — the thrown
+ * message is the api's own error text — on any other non-2xx status, or when
+ * the body fails {@link lnAddressResolvedSchema} validation.
+ */
+export async function resolveLightningAddress(address: string): Promise<LnAddressResolved> {
+  const response = await fetch(
+    `${getApiUrl()}/lightning-address?address=${encodeURIComponent(address)}`,
+  );
+  await throwIfApiMessage(response);
+  if (!response.ok) {
+    throw new Error(`Failed to resolve Lightning Address: ${response.status}`);
+  }
+  return lnAddressResolvedSchema.parse(await response.json());
 }
