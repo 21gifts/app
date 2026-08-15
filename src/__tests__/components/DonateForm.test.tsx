@@ -42,7 +42,7 @@ function fillForm(address = 'me@walletofsatoshi.com', amount = '21'): void {
 describe('DonateForm', () => {
   it('renders the idle form', () => {
     render(<DonateForm />);
-    expect(screen.getByRole('heading', { name: 'Send a gift' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Pay with Lightning' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
   });
 
@@ -65,6 +65,15 @@ describe('DonateForm', () => {
   it('rejects a non-integer amount', () => {
     render(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '1.5');
+    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter a whole number of sats greater than zero',
+    );
+  });
+
+  it('rejects an amount that is not a safe integer', () => {
+    render(<DonateForm />);
+    fillForm('me@walletofsatoshi.com', '9007199254740993');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(screen.getByRole('alert').textContent).toBe(
       'Enter a whole number of sats greater than zero',
@@ -182,6 +191,29 @@ describe('DonateForm', () => {
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+  });
+
+  it('ignores a second submit while a request is in flight', async () => {
+    let finish!: (value: LnAddressResolved) => void;
+    const resolveMock = vi.fn(
+      () =>
+        new Promise<LnAddressResolved>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    vi.mocked(resolveLightningAddress).mockImplementation(resolveMock);
+    vi.mocked(requestDonateInvoice).mockResolvedValue('lnbc21u1ptest');
+    render(<DonateForm />);
+    fillForm();
+    const form = screen.getByRole('button', { name: 'Create invoice' }).closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form as HTMLFormElement);
+    fireEvent.submit(form as HTMLFormElement);
+    expect(resolveMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finish(resolved);
+    });
+    expect(await screen.findByRole('img', { name: 'Lightning invoice QR code' })).toBeTruthy();
   });
 
   it('drops a late result after cancel during resolve', async () => {

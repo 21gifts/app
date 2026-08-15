@@ -21,9 +21,13 @@ export function DonateForm(): ReactElement {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const generationRef = useRef(0);
+  const busyRef = useRef(false);
 
   const onSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
+    if (busyRef.current) {
+      return;
+    }
     const address = addressDraft.trim();
     if (address === '') {
       setError('Enter a Lightning Address');
@@ -35,13 +39,14 @@ export function DonateForm(): ReactElement {
       return;
     }
     const sats = Number.parseInt(rawAmount, 10);
-    if (sats <= 0) {
+    if (sats <= 0 || !Number.isSafeInteger(sats)) {
       setError('Enter a whole number of sats greater than zero');
       return;
     }
     const amountMsat = satsToMsat(sats);
 
     const started = generationRef.current;
+    busyRef.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -70,6 +75,7 @@ export function DonateForm(): ReactElement {
       setError(caught instanceof Error ? caught.message : String(caught));
     } finally {
       if (started === generationRef.current) {
+        busyRef.current = false;
         setBusy(false);
       }
     }
@@ -77,6 +83,7 @@ export function DonateForm(): ReactElement {
 
   const onCancel = (): void => {
     generationRef.current += 1;
+    busyRef.current = false;
     setInvoice(null);
     setError(null);
     setBusy(false);
@@ -110,7 +117,7 @@ export function DonateForm(): ReactElement {
   return (
     <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
       <Gift aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <h2 className="text-center text-lg font-medium text-neutral-900">Send a gift</h2>
+      <h2 className="text-center text-lg font-medium text-neutral-900">Pay with Lightning</h2>
       <p className="text-center text-sm text-neutral-500">
         Pay a Lightning Address from your wallet. No account needed.
       </p>
@@ -118,8 +125,11 @@ export function DonateForm(): ReactElement {
         <label className="flex flex-col gap-1 text-left text-sm text-neutral-700">
           Lightning Address
           <input
-            type="text"
+            type="email"
             autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="you@walletofsatoshi.com"
             value={addressDraft}
             disabled={busy}
@@ -135,6 +145,8 @@ export function DonateForm(): ReactElement {
             type="text"
             inputMode="numeric"
             autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="21"
             value={amountDraft}
             disabled={busy}
