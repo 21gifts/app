@@ -65,8 +65,36 @@ describe('LoginCard', () => {
 
     expect(screen.getByRole('img', { name: 'Lightning login QR code' })).toBeTruthy();
     const link = screen.getByRole('link', { name: /open in wallet/i });
-    expect(link.getAttribute('href')).toBe('lightning:lnurl1abc');
-    expect(screen.getByText(/tap to open your wallet/i)).toBeTruthy();
+    expect(link.getAttribute('href')).toBe('lightning:LNURL1ABC');
+    expect(screen.getByText(/Wallet of Satoshi: open Scan in the app/i)).toBeTruthy();
+  });
+
+  it('copies the LNURL for same-phone Wallet of Satoshi login', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    mockHook('waiting', 'lnurl1abc');
+    render(<LoginCard />);
+
+    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith('lnurl1abc');
+    });
+    expect(screen.getByRole('button', { name: /copied/i })).toBeTruthy();
+  });
+
+  it('logs when copying the login code fails', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.assign(navigator, { clipboard: { writeText } });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockHook('waiting', 'lnurl1abc');
+    render(<LoginCard />);
+
+    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalled();
+    });
+    expect(screen.getByRole('button', { name: /copy login code/i })).toBeTruthy();
+    errorSpy.mockRestore();
   });
 
   it('falls back to the start view when waiting without an lnurl', () => {

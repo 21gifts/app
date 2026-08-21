@@ -1,7 +1,7 @@
 'use client';
 
-import { AlertTriangle, Clock, Loader2, LogOut, Zap } from 'lucide-react';
-import { useEffect, type ReactElement } from 'react';
+import { AlertTriangle, Clock, Copy, Loader2, LogOut, Zap } from 'lucide-react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { QrCode } from '@/components/QrCode';
 import { useLnurlLogin } from '@/hooks/useLnurlLogin';
@@ -164,26 +164,51 @@ interface QrViewProps {
 /**
  * The waiting state: a scannable QR plus a wallet deep-link.
  *
- * The QR encodes the uppercased LNURL (denser QR); the deep-link keeps the
- * canonical casing so mobile wallets open on tap.
+ * The QR encodes the uppercased LNURL (LUD-01, denser). The `lightning:`
+ * deep-link uses the same uppercase form so Wallet of Satoshi (and other
+ * LUD-04 wallets) treat it as LNURL-auth rather than an invoice. Copy is
+ * for same-phone login, where the user cannot scan their own screen.
  *
  * @param props - See {@link QrViewProps}.
  * @returns The QR view.
  */
 function QrView({ lnurl }: QrViewProps): ReactElement {
+  const [copied, setCopied] = useState(false);
+  const lightningHref = `lightning:${lnurl.toUpperCase()}`;
+
+  async function copyLnurl(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(lnurl);
+      setCopied(true);
+    } catch (error: unknown) {
+      console.error('Copy login code failed', error);
+    }
+  }
+
   return (
     <>
       <h2 className="text-center text-lg font-medium text-neutral-900">Scan to log in</h2>
       <QrCode value={lnurl.toUpperCase()} />
       <a
-        href={`lightning:${lnurl}`}
+        href={lightningHref}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Zap aria-hidden="true" className="h-4 w-4" />
         Open in wallet
       </a>
+      <button
+        type="button"
+        onClick={() => {
+          void copyLnurl();
+        }}
+        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+      >
+        <Copy aria-hidden="true" className="h-4 w-4" />
+        {copied ? 'Copied' : 'Copy login code'}
+      </button>
       <p className="text-center text-sm text-neutral-500">
-        Scan with Wallet of Satoshi or tap to open your wallet
+        Wallet of Satoshi: open Scan in the app, or tap Open in wallet. Other
+        wallets: scan this QR from another device.
       </p>
     </>
   );
