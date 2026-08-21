@@ -8,6 +8,7 @@ import { useLnurlLogin } from '@/hooks/useLnurlLogin';
 import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { clearSession, loadSession } from '@/lib/session-storage';
+import { isAndroidUserAgent, walletOfSatoshiIntentHref } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -164,17 +165,19 @@ interface QrViewProps {
 /**
  * The waiting state: a scannable QR plus a wallet deep-link.
  *
- * The QR encodes the uppercased LNURL (LUD-01, denser). The `lightning:`
- * deep-link uses the same uppercase form so Wallet of Satoshi (and other
- * LUD-04 wallets) treat it as LNURL-auth rather than an invoice. Copy is
- * for same-phone login, where the user cannot scan their own screen.
+ * The QR encodes the uppercased LNURL (LUD-01, denser). Generic `lightning:`
+ * opens whichever app owns that scheme (often Taro). Wallet of Satoshi on
+ * Android is pinned via an Intent package. Copy is for iPhone / same-phone
+ * login, where the user cannot scan their own screen.
  *
  * @param props - See {@link QrViewProps}.
  * @returns The QR view.
  */
 function QrView({ lnurl }: QrViewProps): ReactElement {
   const [copied, setCopied] = useState(false);
+  const android = isAndroidUserAgent(navigator.userAgent);
   const lightningHref = `lightning:${lnurl.toUpperCase()}`;
+  const wosHref = walletOfSatoshiIntentHref(lnurl);
 
   async function copyLnurl(): Promise<void> {
     try {
@@ -185,30 +188,50 @@ function QrView({ lnurl }: QrViewProps): ReactElement {
     }
   }
 
+  function handleCopy(): void {
+    void copyLnurl();
+  }
+
   return (
     <>
       <h2 className="text-center text-lg font-medium text-neutral-900">Scan to log in</h2>
       <QrCode value={lnurl.toUpperCase()} />
+      {android ? (
+        <a
+          href={wosHref}
+          className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+        >
+          <Zap aria-hidden="true" className="h-4 w-4" />
+          Open Wallet of Satoshi
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+        >
+          <Copy aria-hidden="true" className="h-4 w-4" />
+          {copied ? 'Copied — paste in Wallet of Satoshi Scan' : 'Copy for Wallet of Satoshi'}
+        </button>
+      )}
       <a
         href={lightningHref}
-        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
       >
-        <Zap aria-hidden="true" className="h-4 w-4" />
-        Open in wallet
+        Open default Lightning wallet
       </a>
       <button
         type="button"
-        onClick={() => {
-          void copyLnurl();
-        }}
+        onClick={handleCopy}
         className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
       >
         <Copy aria-hidden="true" className="h-4 w-4" />
         {copied ? 'Copied' : 'Copy login code'}
       </button>
       <p className="text-center text-sm text-neutral-500">
-        Wallet of Satoshi: open Scan in the app, or tap Open in wallet. Other wallets: scan this QR
-        from another device.
+        {android
+          ? 'Open Wallet of Satoshi pins that app. Default Lightning wallet is whatever owns lightning: (e.g. Taro).'
+          : 'On iPhone, copy the login code and paste it in Wallet of Satoshi Scan. Default Lightning wallet is whatever owns lightning: (e.g. Taro).'}
       </p>
     </>
   );
