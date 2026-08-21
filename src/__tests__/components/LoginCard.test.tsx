@@ -98,11 +98,13 @@ describe('LoginCard', () => {
     mockHook('waiting', 'lnurl1abc');
     render(<LoginCard />);
 
-    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
+    fireEvent.click(screen.getByRole('button', { name: /copy for wallet of satoshi/i }));
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('lnurl1abc');
     });
-    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /copied — paste in wallet of satoshi scan/i }),
+    ).toBeTruthy();
   });
 
   it('logs when copying the login code fails', async () => {
