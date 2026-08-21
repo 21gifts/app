@@ -65,7 +65,8 @@ app/
 │       └── lib/config.test.ts
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
-│   └── donate.spec.ts           # /donate form heading + submit button
+│   ├── donate.spec.ts           # /donate form heading + submit button
+│   └── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
 ├── public/                      # Static assets served from /
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
