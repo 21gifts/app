@@ -72,7 +72,7 @@ describe('LoginCard', () => {
 
     expect(screen.getByRole('img', { name: 'Lightning login QR code' })).toBeTruthy();
     const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
-    expect(wos.getAttribute('href')).toBe('walletofsatoshi:LNURL1ABC');
+    expect(wos.getAttribute('href')).toBe('walletofsatoshi:lightning:LNURL1ABC');
     const link = screen.getByRole('link', { name: /open default lightning wallet/i });
     expect(link.getAttribute('href')).toBe('lightning:LNURL1ABC');
     expect(screen.queryByRole('button', { name: /copy for wallet of satoshi/i })).toBeNull();
@@ -91,7 +91,7 @@ describe('LoginCard', () => {
 
     const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
     expect(wos.getAttribute('href')).toBe(
-      'intent:LNURL1ABC#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
+      'intent:lightning:LNURL1ABC#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
     );
     expect(screen.getByRole('link', { name: /open default lightning wallet/i })).toBeTruthy();
   });

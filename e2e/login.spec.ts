@@ -44,7 +44,7 @@ test('Wallet of Satoshi login opens via custom scheme; copy is secondary', async
   await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
-    `walletofsatoshi:${LNURL.toUpperCase()}`,
+    `walletofsatoshi:lightning:${LNURL.toUpperCase()}`,
   );
   await expect(page.getByRole('link', { name: 'Open default Lightning wallet' })).toHaveAttribute(
     'href',
@@ -69,7 +69,7 @@ test('Android login pins Wallet of Satoshi via intent package', async ({ page })
   await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
-    `intent:${LNURL.toUpperCase()}#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end`,
+    `intent:lightning:${LNURL.toUpperCase()}#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end`,
   );
 });
 

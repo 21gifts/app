@@ -27,8 +27,8 @@ describe('uppercaseLnurl', () => {
 
 describe('walletOfSatoshiHref', () => {
   it('builds the custom-scheme deep link with uppercase LNURL', () => {
-    expect(walletOfSatoshiHref('lnurl1abc')).toBe('walletofsatoshi:LNURL1ABC');
-    expect(walletOfSatoshiHref('lnurl1abc')).toBe(`${WOS_URL_SCHEME}:LNURL1ABC`);
+    expect(walletOfSatoshiHref('lnurl1abc')).toBe('walletofsatoshi:lightning:LNURL1ABC');
+    expect(walletOfSatoshiHref('lnurl1abc')).toBe(`${WOS_URL_SCHEME}:lightning:LNURL1ABC`);
   });
 });
 
@@ -36,7 +36,7 @@ describe('walletOfSatoshiIntentHref', () => {
   it('pins walletofsatoshi: to the Wallet of Satoshi package with Play Store fallback', () => {
     const href = walletOfSatoshiIntentHref('lnurl1abc');
     expect(href).toBe(
-      'intent:LNURL1ABC#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
+      'intent:lightning:LNURL1ABC#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
     );
     expect(href).toContain(`scheme=${WOS_URL_SCHEME}`);
     expect(href).toContain(`package=${WOS_ANDROID_PACKAGE}`);

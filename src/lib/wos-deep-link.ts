@@ -40,24 +40,25 @@ export function uppercaseLnurl(lnurl: string): string {
 
 /**
  * Custom-scheme deep link that only Wallet of Satoshi registers.
- * `walletofsatoshi:` + uppercase LNURL, no `//`, no `lightning:` prefix.
+ * `walletofsatoshi:lightning:` + uppercase LNURL, no `//`.
  *
  * @param lnurl - Bech32 `lnurl1…` from `/auth/lnurl` (any casing).
- * @returns e.g. `walletofsatoshi:LNURL1ABC`.
+ * @returns e.g. `walletofsatoshi:lightning:LNURL1ABC`.
  */
 export function walletOfSatoshiHref(lnurl: string): string {
-  return `${WOS_URL_SCHEME}:${uppercaseLnurl(lnurl)}`;
+  return `${WOS_URL_SCHEME}:lightning:${uppercaseLnurl(lnurl)}`;
 }
 
 /**
  * Android Intent URL: pin the WoS package AND the custom scheme
- * (not `scheme=lightning`). Includes a Play Store fallback.
+ * (not `scheme=lightning`). Body is `lightning:` + uppercase LNURL.
+ * Includes a Play Store fallback.
  *
  * @param lnurl - Bech32 `lnurl1…` from `/auth/lnurl` (any casing).
- * @returns An opaque `intent:LNURL…#Intent;scheme=walletofsatoshi;package=…;S.browser_fallback_url=…;end` URL.
+ * @returns An opaque `intent:lightning:LNURL…#Intent;scheme=walletofsatoshi;package=…;S.browser_fallback_url=…;end` URL.
  */
 export function walletOfSatoshiIntentHref(lnurl: string): string {
-  const body = uppercaseLnurl(lnurl);
+  const body = `lightning:${uppercaseLnurl(lnurl)}`;
   const fallback = encodeURIComponent(WOS_PLAY_STORE_URL);
   return `intent:${body}#Intent;scheme=${WOS_URL_SCHEME};package=${WOS_ANDROID_PACKAGE};S.browser_fallback_url=${fallback};end`;
 }
