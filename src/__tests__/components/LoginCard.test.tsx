@@ -87,7 +87,7 @@ describe('LoginCard', () => {
 
     const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
     expect(wos.getAttribute('href')).toBe(
-      'intent://LNURL1ABC#Intent;scheme=lightning;package=com.livingroomofsatoshi.wallet;end',
+      'intent:LNURL1ABC#Intent;scheme=lightning;package=com.livingroomofsatoshi.wallet;end',
     );
     expect(screen.getByRole('link', { name: /open default lightning wallet/i })).toBeTruthy();
   });

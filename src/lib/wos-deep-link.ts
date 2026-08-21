@@ -25,9 +25,9 @@ export function isAndroidUserAgent(userAgent: string): boolean {
  * rather than the default `lightning:` handler.
  *
  * @param lnurl - Bech32 `lnurl1…` from `/auth/lnurl` (any casing).
- * @returns An `intent://…#Intent;scheme=lightning;package=…;end` URL.
+ * @returns An opaque `intent:LNURL…#Intent;scheme=lightning;package=…;end` URL.
  */
 export function walletOfSatoshiIntentHref(lnurl: string): string {
   const body = lnurl.toUpperCase();
-  return `intent://${body}#Intent;scheme=lightning;package=${WOS_ANDROID_PACKAGE};end`;
+  return `intent:${body}#Intent;scheme=lightning;package=${WOS_ANDROID_PACKAGE};end`;
 }

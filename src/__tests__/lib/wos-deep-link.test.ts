@@ -20,7 +20,7 @@ describe('walletOfSatoshiIntentHref', () => {
   it('pins lightning: to the Wallet of Satoshi package with uppercase LNURL', () => {
     const href = walletOfSatoshiIntentHref('lnurl1abc');
     expect(href).toBe(
-      `intent://LNURL1ABC#Intent;scheme=lightning;package=${WOS_ANDROID_PACKAGE};end`,
+      `intent:LNURL1ABC#Intent;scheme=lightning;package=${WOS_ANDROID_PACKAGE};end`,
     );
   });
 });
