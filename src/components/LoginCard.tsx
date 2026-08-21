@@ -207,8 +207,8 @@ function QrView({ lnurl }: QrViewProps): ReactElement {
         {copied ? 'Copied' : 'Copy login code'}
       </button>
       <p className="text-center text-sm text-neutral-500">
-        Wallet of Satoshi: open Scan in the app, or tap Open in wallet. Other
-        wallets: scan this QR from another device.
+        Wallet of Satoshi: open Scan in the app, or tap Open in wallet. Other wallets: scan this QR
+        from another device.
       </p>
     </>
   );
