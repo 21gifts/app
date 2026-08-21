@@ -8,7 +8,12 @@ import { useLnurlLogin } from '@/hooks/useLnurlLogin';
 import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { clearSession, loadSession } from '@/lib/session-storage';
-import { isAndroidUserAgent, walletOfSatoshiIntentHref } from '@/lib/wos-deep-link';
+import {
+  isAndroidUserAgent,
+  uppercaseLnurl,
+  walletOfSatoshiHref,
+  walletOfSatoshiIntentHref,
+} from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -163,12 +168,13 @@ interface QrViewProps {
 }
 
 /**
- * The waiting state: a scannable QR plus a wallet deep-link.
+ * The waiting state: a scannable QR plus wallet deep-links.
  *
- * The QR encodes the uppercased LNURL (LUD-01, denser). Generic `lightning:`
- * opens whichever app owns that scheme (often Taro). Wallet of Satoshi on
- * Android is pinned via an Intent package. Copy is for iPhone / same-phone
- * login, where the user cannot scan their own screen.
+ * The QR encodes the uppercased LNURL (LUD-01, denser). The primary CTA is
+ * always an Open Wallet of Satoshi link: custom-scheme `walletofsatoshi:` on
+ * iOS/desktop, or an Android Intent that pins both that scheme and the WoS
+ * package. Generic `lightning:` remains a secondary default-wallet open.
+ * Copy login code is only a secondary fallback.
  *
  * @param props - See {@link QrViewProps}.
  * @returns The QR view.
@@ -176,8 +182,9 @@ interface QrViewProps {
 function QrView({ lnurl }: QrViewProps): ReactElement {
   const [copied, setCopied] = useState(false);
   const android = isAndroidUserAgent(navigator.userAgent);
-  const lightningHref = `lightning:${lnurl.toUpperCase()}`;
-  const wosHref = walletOfSatoshiIntentHref(lnurl);
+  const upper = uppercaseLnurl(lnurl);
+  const lightningHref = `lightning:${upper}`;
+  const wosHref = android ? walletOfSatoshiIntentHref(lnurl) : walletOfSatoshiHref(lnurl);
 
   async function copyLnurl(): Promise<void> {
     try {
@@ -195,25 +202,14 @@ function QrView({ lnurl }: QrViewProps): ReactElement {
   return (
     <>
       <h2 className="text-center text-lg font-medium text-neutral-900">Scan to log in</h2>
-      <QrCode value={lnurl.toUpperCase()} />
-      {android ? (
-        <a
-          href={wosHref}
-          className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
-        >
-          <Zap aria-hidden="true" className="h-4 w-4" />
-          Open Wallet of Satoshi
-        </a>
-      ) : (
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
-        >
-          <Copy aria-hidden="true" className="h-4 w-4" />
-          {copied ? 'Copied — paste in Wallet of Satoshi Scan' : 'Copy for Wallet of Satoshi'}
-        </button>
-      )}
+      <QrCode value={upper} />
+      <a
+        href={wosHref}
+        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+      >
+        <Zap aria-hidden="true" className="h-4 w-4" />
+        Open Wallet of Satoshi
+      </a>
       <a
         href={lightningHref}
         className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
@@ -230,8 +226,8 @@ function QrView({ lnurl }: QrViewProps): ReactElement {
       </button>
       <p className="text-center text-sm text-neutral-500">
         {android
-          ? 'Open Wallet of Satoshi pins that app. Default Lightning wallet is whatever owns lightning: (e.g. Taro).'
-          : 'On iPhone, copy the login code and paste it in Wallet of Satoshi Scan. Default Lightning wallet is whatever owns lightning: (e.g. Taro).'}
+          ? 'Opens Wallet of Satoshi. Default Lightning wallet is whatever owns lightning:.'
+          : 'Opens Wallet of Satoshi. If nothing opens, install it first. Default Lightning wallet is whatever owns lightning:.'}
       </p>
     </>
   );

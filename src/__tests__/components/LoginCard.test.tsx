@@ -71,10 +71,14 @@ describe('LoginCard', () => {
     render(<LoginCard />);
 
     expect(screen.getByRole('img', { name: 'Lightning login QR code' })).toBeTruthy();
+    const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
+    expect(wos.getAttribute('href')).toBe('walletofsatoshi:LNURL1ABC');
     const link = screen.getByRole('link', { name: /open default lightning wallet/i });
     expect(link.getAttribute('href')).toBe('lightning:LNURL1ABC');
-    expect(screen.getByRole('button', { name: /copy for wallet of satoshi/i })).toBeTruthy();
-    expect(screen.getByText(/Default Lightning wallet is whatever owns lightning:/i)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /copy for wallet of satoshi/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /copy login code/i })).toBeTruthy();
+    expect(screen.getByText(/Opens Wallet of Satoshi/i)).toBeTruthy();
+    expect(screen.getByText(/If nothing opens, install it first/i)).toBeTruthy();
   });
 
   it('pins Wallet of Satoshi via Android intent, not the default lightning handler', () => {
@@ -87,24 +91,22 @@ describe('LoginCard', () => {
 
     const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
     expect(wos.getAttribute('href')).toBe(
-      'intent:LNURL1ABC#Intent;scheme=lightning;package=com.livingroomofsatoshi.wallet;end',
+      'intent:LNURL1ABC#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
     );
     expect(screen.getByRole('link', { name: /open default lightning wallet/i })).toBeTruthy();
   });
 
-  it('copies the LNURL for same-phone Wallet of Satoshi login', async () => {
+  it('copies the LNURL via the secondary Copy login code button', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     mockHook('waiting', 'lnurl1abc');
     render(<LoginCard />);
 
-    fireEvent.click(screen.getByRole('button', { name: /copy for wallet of satoshi/i }));
+    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('lnurl1abc');
     });
-    expect(
-      screen.getByRole('button', { name: /copied — paste in wallet of satoshi scan/i }),
-    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^copied$/i })).toBeTruthy();
   });
 
   it('logs when copying the login code fails', async () => {
