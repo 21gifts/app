@@ -42,15 +42,31 @@ test('Wallet of Satoshi login shows uppercase lightning URI and copies the LNURL
   await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
 
   await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Open in wallet' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Open default Lightning wallet' })).toHaveAttribute(
     'href',
     `lightning:${LNURL.toUpperCase()}`,
   );
-  await expect(page.getByText(/Wallet of Satoshi: open Scan in the app/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: /copy for wallet of satoshi/i })).toBeVisible();
 
   await page.getByRole('button', { name: 'Copy login code' }).click();
   await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
   await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe(LNURL);
+});
+
+test('Android login pins Wallet of Satoshi via intent package', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
+      configurable: true,
+    });
+  });
+  await mockPendingAuth(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
+    'href',
+    `intent://${LNURL.toUpperCase()}#Intent;scheme=lightning;package=com.livingroomofsatoshi.wallet;end`,
+  );
 });
 
 test('login shows an error when the LNURL challenge cannot start', async ({ page }) => {
