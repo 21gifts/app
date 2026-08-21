@@ -32,7 +32,7 @@ test('login page renders the wallet sign-in action', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('Wallet of Satoshi login shows uppercase lightning URI and copies the LNURL', async ({
+test('Wallet of Satoshi login opens via custom scheme; copy is secondary', async ({
   page,
   context,
 }) => {
@@ -42,16 +42,18 @@ test('Wallet of Satoshi login shows uppercase lightning URI and copies the LNURL
   await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
 
   await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
+    'href',
+    `walletofsatoshi:${LNURL.toUpperCase()}`,
+  );
   await expect(page.getByRole('link', { name: 'Open default Lightning wallet' })).toHaveAttribute(
     'href',
     `lightning:${LNURL.toUpperCase()}`,
   );
-  await expect(page.getByRole('button', { name: /copy for wallet of satoshi/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /copy for wallet of satoshi/i })).toHaveCount(0);
 
-  await page.getByRole('button', { name: /copy for wallet of satoshi/i }).click();
-  await expect(
-    page.getByRole('button', { name: /copied — paste in wallet of satoshi scan/i }),
-  ).toBeVisible();
+  await page.getByRole('button', { name: 'Copy login code' }).click();
+  await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
   await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe(LNURL);
 });
 
@@ -67,7 +69,7 @@ test('Android login pins Wallet of Satoshi via intent package', async ({ page })
   await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
-    `intent:${LNURL.toUpperCase()}#Intent;scheme=lightning;package=com.livingroomofsatoshi.wallet;end`,
+    `intent:${LNURL.toUpperCase()}#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end`,
   );
 });
 
