@@ -27,5 +27,11 @@ export default defineConfig({
     url: 'http://localhost:3000/healthz',
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,
+    env: {
+      ...process.env,
+      // Deterministic API host so login e2e can intercept LUD-04 without
+      // calling the live api. Playwright routes fulfill `/auth/lnurl`.
+      NEXT_PUBLIC_API_URL: 'https://api.21gifts.test',
+    },
   },
 });
