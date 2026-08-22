@@ -87,15 +87,16 @@ function extractFunctions(srcRoot) {
 }
 
 function publicAppRoute(rel) {
-  const parts =
-    rel === '' || rel === '.'
-      ? []
-      : rel.split('/').filter(
-          (seg) =>
-            !(seg.startsWith('(') && seg.endsWith(')')) &&
-            !seg.startsWith('@') &&
-            !seg.startsWith('_'),
-        );
+  if (rel === '' || rel === '.') {
+    return '/';
+  }
+  const segs = rel.split('/');
+  if (segs.some((seg) => seg.startsWith('_'))) {
+    return null;
+  }
+  const parts = segs.filter(
+    (seg) => !(seg.startsWith('(') && seg.endsWith(')')) && !seg.startsWith('@'),
+  );
   return parts.length === 0 ? '/' : `/${parts.join('/')}`;
 }
 
@@ -109,7 +110,10 @@ function extractScreens() {
     );
     for (const p of pages) {
       const rel = path.relative(appDir, path.dirname(p)).replace(/\\/g, '/');
-      screens.add(publicAppRoute(rel));
+      const route = publicAppRoute(rel);
+      if (route !== null) {
+        screens.add(route);
+      }
     }
   }
   for (const name of fs.existsSync(ROOT) ? fs.readdirSync(ROOT) : []) {
@@ -137,6 +141,9 @@ function extractEndpoints() {
     for (const file of routeFiles) {
       const rel = path.relative(appDir, path.dirname(file)).replace(/\\/g, '/');
       const url = publicAppRoute(rel);
+      if (url === null) {
+        continue;
+      }
       const t = fs.readFileSync(file, 'utf8');
       for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
         const reFn = new RegExp(`export\\s+(async\\s+)?function\\s+${method}\\b`);
