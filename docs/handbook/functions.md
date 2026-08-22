@@ -16,7 +16,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export async function GET`; same-origin api proxies re-export unique functions as `GET`.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET`.
 - **Inputs:** Incoming `Request` on proxy routes; none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response.
 - **Used by:** Container probes, browser/wallet same-origin calls.
