@@ -157,8 +157,9 @@ flags malformed comments across `src/`.
 
 ### Handbook (hard requirement)
 
-The handbook under `docs/handbook/` **must exist**. Every UI screen and every
-exported function/class in `src/` **must** have a complete section:
+The handbook under `docs/handbook/` **must exist**. Every UI screen, every
+exported function/class in `src/`, and every HTTP endpoint **must** have a
+complete section:
 
 - Screens: `## Screen: /path` (one per `src/app/**/page.tsx`)
 - Functions: `## Function: name` (one per `export function` / `export default function` / exported callable const / `export class`)
