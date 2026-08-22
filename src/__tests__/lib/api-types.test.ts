@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { accountSchema, sessionResultSchema, startChallengeSchema } from '@/lib/api-types';
+import {
+  accountSchema,
+  sessionResultSchema,
+  startChallengeSchema,
+  lnAddressResolvedSchema,
+  verificationSentSchema,
+} from '@/lib/api-types';
 
 const account = {
   id: 'acc_1',
@@ -70,5 +76,49 @@ describe('sessionResultSchema', () => {
 
   it('rejects an unknown status', () => {
     expect(() => sessionResultSchema.parse({ status: 'nope' })).toThrow();
+  });
+});
+
+describe('verificationSentSchema', () => {
+  it('accepts an integer sats amount', () => {
+    const sent = { status: 'sent' as const, expiresInSeconds: 120, sats: 1 };
+    expect(verificationSentSchema.parse(sent)).toEqual(sent);
+  });
+
+  it('accepts a fractional sats amount', () => {
+    const sent = { status: 'sent' as const, expiresInSeconds: 90, sats: 1.5 };
+    expect(verificationSentSchema.parse(sent)).toEqual(sent);
+  });
+
+  it('rejects a payload missing status', () => {
+    expect(() => verificationSentSchema.parse({ expiresInSeconds: 120, sats: 1 })).toThrow();
+  });
+
+  it('rejects a non-number sats amount', () => {
+    expect(() =>
+      verificationSentSchema.parse({ status: 'sent', expiresInSeconds: 120, sats: '1' }),
+    ).toThrow();
+  });
+});
+
+describe('lnAddressResolvedSchema', () => {
+  const resolved = {
+    address: 'me@walletofsatoshi.com',
+    callback: 'https://walletofsatoshi.com/lnurlp/callback',
+    minSendable: 1000,
+    maxSendable: 100_000_000,
+  };
+
+  it('accepts metadata without commentAllowed', () => {
+    expect(lnAddressResolvedSchema.parse(resolved)).toEqual(resolved);
+  });
+
+  it('accepts metadata with commentAllowed', () => {
+    const withComment = { ...resolved, commentAllowed: 255 };
+    expect(lnAddressResolvedSchema.parse(withComment)).toEqual(withComment);
+  });
+
+  it('rejects a non-url callback', () => {
+    expect(() => lnAddressResolvedSchema.parse({ ...resolved, callback: 'not-a-url' })).toThrow();
   });
 });

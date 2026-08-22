@@ -21,8 +21,8 @@ export const accountSchema = z.object({
  * `role` gates capabilities (`basis` for ordinary givers, `moderator` for
  * elevated review actions); `linkingKey` is the wallet's LNURL-auth public key.
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
- * none is linked; `lightningAddressVerified` reports whether ownership has been
- * proven (always `false` in v1).
+ * none is linked; `lightningAddressVerified` is `true` after the user confirms
+ * the micro-payment nonce that proves they control the address.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -64,3 +64,43 @@ export const sessionResultSchema = z.discriminatedUnion('status', [
  * The current state of an LNURL-auth challenge as seen by the poller.
  */
 export type SessionResult = z.infer<typeof sessionResultSchema>;
+
+/**
+ * Runtime schema for the payload of `POST /me/lightning-address/verification`.
+ *
+ * `status` is always `'sent'` on success; `expiresInSeconds` is how long the
+ * nonce remains valid; `sats` is the amount of the micro-payment that carried
+ * the nonce in its comment (integer or fractional). The nonce itself is never
+ * returned — the user reads it from the wallet payment comment.
+ */
+export const verificationSentSchema = z.object({
+  status: z.literal('sent'),
+  expiresInSeconds: z.number(),
+  sats: z.number(),
+});
+
+/**
+ * Confirmation that a verification micro-payment was dispatched.
+ */
+export type VerificationSent = z.infer<typeof verificationSentSchema>;
+
+/**
+ * Runtime schema for the payload of `GET /lightning-address`.
+ *
+ * `callback` is the LNURL-pay URL the browser uses to fetch an invoice.
+ * `minSendable` / `maxSendable` are millisatoshis. `commentAllowed` is
+ * omitted when the provider does not accept a LUD-12 comment.
+ */
+export const lnAddressResolvedSchema = z.object({
+  address: z.string(),
+  callback: z.string().url(),
+  minSendable: z.number().int().nonnegative(),
+  maxSendable: z.number().int().nonnegative(),
+  commentAllowed: z.number().int().optional(),
+});
+
+/**
+ * Cached LUD-16 metadata from the api, used to fetch a gift invoice in the
+ * browser.
+ */
+export type LnAddressResolved = z.infer<typeof lnAddressResolvedSchema>;

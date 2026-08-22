@@ -30,6 +30,7 @@ const account = {
 };
 
 const startSpy = vi.fn();
+const ORIGINAL_UA = window.navigator.userAgent;
 
 /** Points the mocked hook at a fixed state for the next render. */
 function mockHook(status: LoginStatus, lnurl: string | null): void {
@@ -43,7 +44,13 @@ beforeEach(() => {
   mockHook('idle', null);
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(window.navigator, 'userAgent', {
+    value: ORIGINAL_UA,
+    configurable: true,
+  });
+});
 
 describe('LoginCard', () => {
   it('shows the login call-to-action when logged out and idle', () => {
@@ -59,14 +66,62 @@ describe('LoginCard', () => {
     expect(screen.getByText('Preparing your login…')).toBeTruthy();
   });
 
-  it('shows the QR and wallet deep-link while waiting', () => {
+  it('shows the QR and default lightning link while waiting on desktop', () => {
     mockHook('waiting', 'lnurl1abc');
     render(<LoginCard />);
 
     expect(screen.getByRole('img', { name: 'Lightning login QR code' })).toBeTruthy();
-    const link = screen.getByRole('link', { name: /open in wallet/i });
-    expect(link.getAttribute('href')).toBe('lightning:lnurl1abc');
-    expect(screen.getByText(/tap to open your wallet/i)).toBeTruthy();
+    const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
+    expect(wos.getAttribute('href')).toBe('walletofsatoshi:lightning:LNURL1ABC');
+    const link = screen.getByRole('link', { name: /open default lightning wallet/i });
+    expect(link.getAttribute('href')).toBe('lightning:LNURL1ABC');
+    expect(screen.queryByRole('button', { name: /copy for wallet of satoshi/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /copy login code/i })).toBeTruthy();
+    expect(screen.getByText(/Opens Wallet of Satoshi/i)).toBeTruthy();
+    expect(screen.getByText(/If nothing opens, install it first/i)).toBeTruthy();
+  });
+
+  it('pins Wallet of Satoshi via Android intent, not the default lightning handler', () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8)',
+      configurable: true,
+    });
+    mockHook('waiting', 'lnurl1abc');
+    render(<LoginCard />);
+
+    const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
+    expect(wos.getAttribute('href')).toBe(
+      'intent:lightning:LNURL1ABC#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
+    );
+    expect(screen.getByRole('link', { name: /open default lightning wallet/i })).toBeTruthy();
+  });
+
+  it('copies the LNURL via the secondary Copy login code button', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    mockHook('waiting', 'lnurl1abc');
+    render(<LoginCard />);
+
+    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith('lnurl1abc');
+    });
+    expect(screen.getByRole('button', { name: /^copied$/i })).toBeTruthy();
+  });
+
+  it('logs when copying the login code fails', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.assign(navigator, { clipboard: { writeText } });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockHook('waiting', 'lnurl1abc');
+    render(<LoginCard />);
+
+    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalled();
+    });
+    expect(screen.getByRole('button', { name: /copy login code/i })).toBeTruthy();
+    errorSpy.mockRestore();
   });
 
   it('falls back to the start view when waiting without an lnurl', () => {

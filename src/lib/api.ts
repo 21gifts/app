@@ -3,14 +3,35 @@ import {
   accountSchema,
   sessionResultSchema,
   startChallengeSchema,
+  lnAddressResolvedSchema,
+  verificationSentSchema,
   type Account,
+  type LnAddressResolved,
   type SessionResult,
   type StartChallenge,
+  type VerificationSent,
 } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
 
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
+
+/** Statuses whose bodies carry a human-readable `{ error }` from the api. */
+const API_MESSAGE_STATUSES = new Set([400, 409, 502, 503]);
+
+/**
+ * Throws the api's own error text when the response is a known client or
+ * upstream failure, so the form can surface the reason as-is.
+ *
+ * @param response - The raw fetch response.
+ * @throws Error with the api's `error` string when the status is 400, 409,
+ * 502, or 503.
+ */
+async function throwIfApiMessage(response: Response): Promise<void> {
+  if (API_MESSAGE_STATUSES.has(response.status)) {
+    throw new Error(apiErrorSchema.parse(await response.json()).error);
+  }
+}
 
 /**
  * Starts a new LNURL-auth challenge.
@@ -112,4 +133,79 @@ export async function unlinkLightningAddress(sessionToken: string): Promise<Acco
     throw new Error(`Failed to unlink Lightning Address: ${response.status}`);
   }
   return accountSchema.parse(await response.json());
+}
+
+/**
+ * Starts Lightning Address verification by sending a micro-payment whose
+ * comment carries a nonce the user must confirm.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The {@link VerificationSent} payload (`sats`, expiry). The nonce
+ * is never included — the user reads it from their wallet.
+ * @throws Error when the api rejects the request (400, 409, 502, 503) — the
+ * thrown message is the api's own error text — on any other non-2xx status,
+ * or when the body fails {@link verificationSentSchema} validation.
+ */
+export async function startLightningAddressVerification(
+  sessionToken: string,
+): Promise<VerificationSent> {
+  const response = await fetch(`${getApiUrl()}/me/lightning-address/verification`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  await throwIfApiMessage(response);
+  if (!response.ok) {
+    throw new Error(`Failed to start Lightning Address verification: ${response.status}`);
+  }
+  return verificationSentSchema.parse(await response.json());
+}
+
+/**
+ * Confirms Lightning Address verification with the nonce from the
+ * micro-payment comment.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param nonce - The code the user read from the wallet payment comment.
+ * @returns The updated {@link Account}, with `lightningAddressVerified` true.
+ * @throws Error when the api rejects the nonce or the challenge (400, 409,
+ * 502, 503) — the thrown message is the api's own error text — on any other
+ * non-2xx status, or when the body fails {@link accountSchema} validation.
+ */
+export async function confirmLightningAddressVerification(
+  sessionToken: string,
+  nonce: string,
+): Promise<Account> {
+  const response = await fetch(`${getApiUrl()}/me/lightning-address/verification/confirm`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ nonce }),
+  });
+  await throwIfApiMessage(response);
+  if (!response.ok) {
+    throw new Error(`Failed to confirm Lightning Address verification: ${response.status}`);
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Resolves a Lightning Address to LNURL-pay metadata via the api cache.
+ *
+ * @param address - The `name@domain` address to look up.
+ * @returns The {@link LnAddressResolved} payload (callback and amount bounds).
+ * @throws Error when the api rejects the address (400, 502) — the thrown
+ * message is the api's own error text — on any other non-2xx status, or when
+ * the body fails {@link lnAddressResolvedSchema} validation.
+ */
+export async function resolveLightningAddress(address: string): Promise<LnAddressResolved> {
+  const response = await fetch(
+    `${getApiUrl()}/lightning-address?address=${encodeURIComponent(address)}`,
+  );
+  await throwIfApiMessage(response);
+  if (!response.ok) {
+    throw new Error(`Failed to resolve Lightning Address: ${response.status}`);
+  }
+  return lnAddressResolvedSchema.parse(await response.json());
 }

@@ -23,19 +23,21 @@ npm run dev    # → http://localhost:3000
 
 ## Scripts
 
-| Script                  | Purpose                                             |
-| ----------------------- | --------------------------------------------------- |
-| `npm run dev`           | Dev server with hot reload on :3000                 |
-| `npm run build`         | Production build (standalone output)                |
-| `npm run start`         | Serve the production build on :3000                 |
-| `npm run typecheck`     | `tsc --noEmit`                                      |
-| `npm run lint`          | `next lint` + Prettier check                        |
-| `npm run lint:fix`      | Auto-fix lint findings + Prettier write             |
-| `npm run format`        | Prettier write                                      |
-| `npm test`              | Vitest unit tests, single run                       |
-| `npm run test:watch`    | Vitest in watch mode                                |
-| `npm run test:coverage` | Vitest with the 100% coverage gate                  |
-| `npm run e2e`           | Playwright smoke tests against the production build |
+| Script                   | Purpose                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `npm run dev`            | Dev server with hot reload on :3000                                      |
+| `npm run build`          | Production build (standalone output)                                     |
+| `npm run start`          | Serve the production build on :3000                                      |
+| `npm run typecheck`      | `tsc --noEmit`                                                           |
+| `npm run lint`           | `next lint` + Prettier check                                             |
+| `npm run lint:fix`       | Auto-fix lint findings + Prettier write                                  |
+| `npm run format`         | Prettier write                                                           |
+| `npm test`               | Vitest unit tests, single run                                            |
+| `npm run test:watch`     | Vitest in watch mode                                                     |
+| `npm run test:coverage`  | Vitest with the 100% coverage gate                                       |
+| `npm run e2e`            | Playwright tests against the production build                            |
+| `npm run e2e:check`      | Fail if a screen lacks `page.goto` or an endpoint lacks `request.<verb>` |
+| `npm run handbook:check` | Fail if any screen, export, or HTTP endpoint lacks a handbook section    |
 
 ## Project structure
 
@@ -45,11 +47,18 @@ app/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: <html lang="en">, metadata, globals.css
 │   │   ├── page.tsx             # Landing page
+│   │   ├── donate/
+│   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
+│   │   ├── login/
+│   │   │   └── page.tsx         # GET /login — LNURL-auth + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
+│   ├── components/
+│   │   └── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
 │   ├── lib/
-│   │   └── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   └── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file
@@ -58,8 +67,18 @@ app/
 │       │   ├── page.test.tsx
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
+├── docs/handbook/               # Mandatory: every screen + exported function + endpoint
+│   ├── README.md
+│   ├── screens.md
+│   ├── functions.md
+│   └── endpoints.md
+├── scripts/
+│   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
+│   └── check-e2e.mjs            # CI gate: missing screen page.goto or endpoint request → exit 1
 ├── e2e/
-│   └── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
+│   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
+│   ├── donate.spec.ts           # /donate form heading + submit button
+│   └── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
 ├── public/                      # Static assets served from /
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
@@ -136,6 +155,24 @@ Every exported symbol carries a TSDoc block with a one-line summary plus
 `@param` / `@returns` / `@throws` where applicable. `eslint-plugin-tsdoc`
 flags malformed comments across `src/`.
 
+### Handbook (hard requirement)
+
+The handbook under `docs/handbook/` **must exist**. Every UI screen, every
+exported function/class in `src/`, and every HTTP endpoint **must** have a
+complete section:
+
+- Screens: `## Screen: /path` (one per `src/app/**/page.tsx`)
+- Functions: `## Function: name` (one per `export function`,
+  `export default function`, exported callable const, or `export class`)
+- Endpoints: `## Endpoint: METHOD /path` (one per `src/app/**/route.ts` HTTP export)
+
+A section is complete only if it has at least three `- **…**` bullets (Purpose,
+Inputs, Returns or Actions, Used by) and enough prose to describe the behaviour.
+`npm run handbook:check` (and CI) **fails the PR** when a heading is missing
+(including an Endpoint heading), or a section is a stub. Adding a screen,
+export, or HTTP endpoint without updating the handbook in the **same PR** is an
+undeclared deviation and is rejected.
+
 ### Tests
 
 - One `*.test.ts(x)` per source file, under `src/__tests__/` mirroring the source tree
@@ -143,14 +180,27 @@ flags malformed comments across `src/`.
 - Coverage gate: 100% lines, branches, functions, statements on the activated surface
   (see `vitest.config.ts`). Unreachable defensive code can be exempted with a
   `v8 ignore` annotation that names a concrete reason — never to silence the gate.
-- Playwright smoke tests live in `e2e/` and run against the production build
+- Playwright tests live in `e2e/` and run against the production build
   (`npm run e2e` builds and starts the server itself).
+
+### E2E (hard requirement)
+
+Every UI screen **must** have at least one Playwright test that `page.goto`s that
+path and asserts a user-visible outcome. Every HTTP endpoint discovered from
+`src/app/**/route.ts` **must** have at least one Playwright
+`request.get|post|put|patch|delete` of that path. `npm run e2e:check` **fails
+the PR** if a screen has no matching `goto` or an endpoint has no matching
+`request.<verb>` call. Adding a `page.tsx` or `route.ts` without an e2e spec in
+the **same PR** is an undeclared deviation and is rejected. CI runs `e2e:check`
+then `e2e`.
 
 ### Before every push (the same checks CI runs)
 
 ```bash
 npm run typecheck
 npm run lint
+npm run handbook:check
+npm run e2e:check
 npm run test:coverage
 npm run build
 npm run e2e
@@ -179,14 +229,27 @@ variable is unset or empty.
 
 ## CI / CD
 
-| Workflow               | Trigger           | Action                                                |
-| ---------------------- | ----------------- | ----------------------------------------------------- |
-| `ci.yaml`              | PR                | Typecheck + lint + test (100% coverage) + build + e2e |
-| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta`                |
-| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest`              |
-| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)             |
+| Workflow               | Trigger           | Action                                                                       |
+| ---------------------- | ----------------- | ---------------------------------------------------------------------------- |
+| `ci.yaml`              | PR                | Typecheck + lint + handbook + e2e-check + test (100% coverage) + build + e2e |
+| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure               |
+| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure             |
+| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                                    |
 
 Images target `linux/arm64`.
+
+Deploy workflows require these GitHub Actions secrets:
+
+| Secret            | Purpose                                             |
+| ----------------- | --------------------------------------------------- |
+| `DOCKER_USERNAME` | Docker Hub username for image push                  |
+| `DOCKER_PASSWORD` | Docker Hub token for image push                     |
+| `DISPATCH_TOKEN`  | PAT used to fire `repository_dispatch` after push   |
+| `DISPATCH_REPO`   | Target `owner/repo` that receives `image-published` |
+
+If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, notify warns and exits 0 —
+the image is already on Hub; DFXServer `probe-published-images.yml` dispatches
+`image-published` when the tag moves. Set the secrets for an immediate pull.
 
 ## Related repos
 
