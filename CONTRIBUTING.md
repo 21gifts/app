@@ -35,7 +35,8 @@ npm run dev    # → http://localhost:3000
 | `npm test`               | Vitest unit tests, single run                         |
 | `npm run test:watch`     | Vitest in watch mode                                  |
 | `npm run test:coverage`  | Vitest with the 100% coverage gate                    |
-| `npm run e2e`            | Playwright smoke tests against the production build   |
+| `npm run e2e`            | Playwright tests against the production build         |
+| `npm run e2e:check`      | Fail if any screen lacks a matching `page.goto`       |
 | `npm run handbook:check` | Fail if any screen or export lacks a handbook section |
 
 ## Project structure

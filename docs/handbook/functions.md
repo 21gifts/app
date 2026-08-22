@@ -2,9 +2,9 @@
 
 ## Function: DonateForm
 
-- **Purpose:** Renders the guest donate form (address, amount, comment) and, after success, the invoice QR.
-- **Inputs:** None (reads form state).
-- **Returns / side effects:** React element. Side effects: HTTP to the api and the payee LNURL-pay callback.
+- **Purpose:** Renders the guest donate form (Lightning Address and sat amount only; no comment) and, after success, the invoice QR.
+- **Inputs:** Form state: address and whole-sat amount.
+- **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
 - **Used by:** Screen `/donate`.
 
 ## Function: DonatePage
@@ -65,7 +65,7 @@
 
 ## Function: clearSession
 
-- **Purpose:** Removes the bearer token from `sessionStorage`.
+- **Purpose:** Removes the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
 - **Used by:** `useAuthStore.clearAuth`.
@@ -107,7 +107,7 @@
 
 ## Function: loadSession
 
-- **Purpose:** Reads the bearer token from `sessionStorage`.
+- **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
 - **Used by:** `LoginCard` on mount.
@@ -121,9 +121,9 @@
 
 ## Function: requestDonateInvoice
 
-- **Purpose:** LUD-16 → LNURL-pay callback → bolt11 for the gift amount.
-- **Inputs:** `address`, `sats`, optional `comment`, optional `fetchImpl`.
-- **Returns / side effects:** `{ pr, satAmount }` or throws.
+- **Purpose:** GET an LNURL-pay callback with `amount` millisatoshis and return the bolt11 string.
+- **Inputs:** `{ callback, amountMsat, fetchImpl? }`. Address resolve happens first via `resolveLightningAddress`.
+- **Returns / side effects:** bolt11 `string`, or throws.
 - **Used by:** `DonateForm`.
 
 ## Function: resolveLightningAddress
@@ -142,7 +142,7 @@
 
 ## Function: saveSession
 
-- **Purpose:** Writes the bearer token to `sessionStorage`.
+- **Purpose:** Writes the bearer token to `localStorage`.
 - **Inputs:** `token` string.
 - **Returns / side effects:** void. SSR no-op.
 - **Used by:** `useAuthStore.setAuth`.
@@ -156,9 +156,9 @@
 
 ## Function: startLightningAddressVerification
 
-- **Purpose:** POST `/me/lightning-address/verification` — api pays ~1 sat to the address and returns a nonce.
+- **Purpose:** POST `/me/lightning-address/verification` — api pays ~1 sat to the linked address. The nonce is **not** in the JSON; the user reads it from the wallet payment comment.
 - **Inputs:** `sessionToken`.
-- **Returns / side effects:** `VerificationSent` (nonce + amount).
+- **Returns / side effects:** `{ status: 'sent', expiresInSeconds, sats }`.
 - **Used by:** `LightningAddressForm`.
 
 ## Function: startLnurlAuth
@@ -187,7 +187,7 @@
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
 - **Returns / side effects:** Auth state object.
-- **Used by:** Login, home, Lightning Address form.
+- **Used by:** `LoginCard`, `useLnurlLogin`, `LightningAddressForm` on `/login` (not `/`).
 
 ## Function: useLnurlLogin
 
