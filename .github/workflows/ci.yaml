@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   check:
-    name: Typecheck, Lint, Handbook, Test (100% coverage), Build, E2E
+    name: Typecheck, Lint, Handbook, E2E-check, Test (100% coverage), Build, E2E
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -38,6 +38,9 @@ jobs:
 
       - name: Handbook completeness
         run: npm run handbook:check
+
+      - name: E2E completeness
+        run: npm run e2e:check
 
       - name: Test with 100% coverage gate
         run: npm run test:coverage

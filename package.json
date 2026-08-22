@@ -21,7 +21,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
-    "handbook:check": "node scripts/check-handbook.mjs"
+    "handbook:check": "node scripts/check-handbook.mjs",
+    "e2e:check": "node scripts/check-e2e.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",

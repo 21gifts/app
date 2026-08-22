@@ -71,7 +71,8 @@ app/
 │   ├── screens.md
 │   └── functions.md
 ├── scripts/
-│   └── check-handbook.mjs       # CI gate: missing heading → exit 1
+│   ├── check-handbook.mjs       # CI gate: missing heading → exit 1
+│   └── check-e2e.mjs            # CI gate: missing screen e2e → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
@@ -173,8 +174,16 @@ the **same PR** is an undeclared deviation and is rejected.
 - Coverage gate: 100% lines, branches, functions, statements on the activated surface
   (see `vitest.config.ts`). Unreachable defensive code can be exempted with a
   `v8 ignore` annotation that names a concrete reason — never to silence the gate.
-- Playwright smoke tests live in `e2e/` and run against the production build
+- Playwright tests live in `e2e/` and run against the production build
   (`npm run e2e` builds and starts the server itself).
+
+### E2E (hard requirement)
+
+Every UI screen **must** have at least one Playwright test that `page.goto`s that
+path and asserts a user-visible outcome. `npm run e2e:check` **fails the PR** if
+a screen has no matching `goto`. Adding a `page.tsx` without an e2e spec in the
+**same PR** is an undeclared deviation and is rejected. CI runs `e2e:check` then
+`e2e`.
 
 ### Before every push (the same checks CI runs)
 
@@ -182,6 +191,7 @@ the **same PR** is an undeclared deviation and is rejected.
 npm run typecheck
 npm run lint
 npm run handbook:check
+npm run e2e:check
 npm run test:coverage
 npm run build
 npm run e2e
@@ -210,12 +220,12 @@ variable is unset or empty.
 
 ## CI / CD
 
-| Workflow               | Trigger           | Action                                                           |
-| ---------------------- | ----------------- | ---------------------------------------------------------------- |
-| `ci.yaml`              | PR                | Typecheck + lint + handbook + test (100% coverage) + build + e2e |
-| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure   |
-| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure |
-| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                        |
+| Workflow               | Trigger           | Action                                                                       |
+| ---------------------- | ----------------- | ---------------------------------------------------------------------------- |
+| `ci.yaml`              | PR                | Typecheck + lint + handbook + e2e-check + test (100% coverage) + build + e2e |
+| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure               |
+| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure             |
+| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                                    |
 
 Images target `linux/arm64`.
 
