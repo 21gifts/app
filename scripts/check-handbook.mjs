@@ -86,6 +86,19 @@ function extractFunctions(srcRoot) {
   return names;
 }
 
+function publicAppRoute(rel) {
+  const parts =
+    rel === '' || rel === '.'
+      ? []
+      : rel.split('/').filter(
+          (seg) =>
+            !(seg.startsWith('(') && seg.endsWith(')')) &&
+            !seg.startsWith('@') &&
+            !seg.startsWith('_'),
+        );
+  return parts.length === 0 ? '/' : `/${parts.join('/')}`;
+}
+
 function extractScreens() {
   const screens = new Set();
   const appDir = path.join(ROOT, 'src', 'app');
@@ -96,17 +109,7 @@ function extractScreens() {
     );
     for (const p of pages) {
       const rel = path.relative(appDir, path.dirname(p)).replace(/\\/g, '/');
-      const parts =
-        rel === '' || rel === '.'
-          ? []
-          : rel.split('/').filter(
-              (seg) =>
-                !(seg.startsWith('(') && seg.endsWith(')')) &&
-                !seg.startsWith('@') &&
-                !seg.startsWith('_'),
-            );
-      const route = parts.length === 0 ? '/' : `/${parts.join('/')}`;
-      screens.add(route);
+      screens.add(publicAppRoute(rel));
     }
   }
   for (const name of fs.existsSync(ROOT) ? fs.readdirSync(ROOT) : []) {
@@ -133,7 +136,7 @@ function extractEndpoints() {
     const routeFiles = walk(appDir, (p) => p.endsWith(`${path.sep}route.ts`));
     for (const file of routeFiles) {
       const rel = path.relative(appDir, path.dirname(file)).replace(/\\/g, '/');
-      const url = rel === '' || rel === '.' ? '/' : `/${rel}`;
+      const url = publicAppRoute(rel);
       const t = fs.readFileSync(file, 'utf8');
       for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
         const reFn = new RegExp(`export\\s+(async\\s+)?function\\s+${method}\\b`);
