@@ -2,17 +2,17 @@
 
 ## Screen: /
 
-- **URL:** `/` — landing after login; unauthenticated visitors are sent to `/login`.
-- **What the user sees:** Wordmark `21.gifts`, a short gift pitch, and (when logged in) the Lightning Address form to claim `name@21.gifts`.
-- **Actions:** Log in (if needed), link or unlink a Lightning Address, start and confirm the 1-sat verification payment.
-- **Calls:** `LoginCard` is not on this route; `LightningAddressForm` uses `fetchMe`, `setLightningAddress`, `unlinkLightningAddress`, `startLightningAddressVerification`, `confirmLightningAddressVerification`, `useAuthStore`.
+- **URL:** `/` — public landing placeholder (no auth gate).
+- **What the user sees:** Gift icon, wordmark `21.gifts`, one-line pitch, “Coming soon”, links **Donate** (`/donate`) and **Log in** (`/login`).
+- **Actions:** Navigate to donate or login. There is no Lightning Address form on this route.
+- **Calls:** `Home` only (`src/app/page.tsx`). Auth UI lives on `/login`.
 
 ## Screen: /login
 
 - **URL:** `/login` — LNURL-auth challenge.
 - **What the user sees:** QR of the uppercase LNURL, primary **Open Wallet of Satoshi**, secondary **Open default Lightning wallet**, **Copy login code**, and expiry/error states.
-- **Actions:** Scan the QR, tap WoS (`walletofsatoshi:lightning:LNURL1…` / Android Intent), tap generic `lightning:`, or copy the LNURL. The page polls `/auth/session` until authenticated then stores the session and routes home.
-- **Calls:** `LoginCard`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
+- **Actions:** Scan the QR, tap WoS (`walletofsatoshi:lightning:LNURL1…` / Android Intent), tap generic `lightning:`, or copy the LNURL. The page polls `/auth/session` until authenticated, then stays on `/login` and shows the signed-in card (role, linking key, Lightning Address form, log out). There is no client redirect to `/`.
+- **Calls:** `LoginCard` (includes `LightningAddressForm` when signed in), `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
 
 ## Screen: /donate
 

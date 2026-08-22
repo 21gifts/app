@@ -48,6 +48,8 @@ app/
 │   │   ├── page.tsx             # Landing page
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
+│   │   ├── login/
+│   │   │   └── page.tsx         # GET /login — LNURL-auth + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -210,7 +212,7 @@ variable is unset or empty.
 
 | Workflow               | Trigger           | Action                                                           |
 | ---------------------- | ----------------- | ---------------------------------------------------------------- |
-| `ci.yaml`              | PR                | Typecheck + lint + test (100% coverage) + build + e2e            |
+| `ci.yaml`              | PR                | Typecheck + lint + handbook + test (100% coverage) + build + e2e |
 | `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure   |
 | `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure |
 | `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                        |

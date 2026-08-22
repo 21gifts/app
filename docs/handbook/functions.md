@@ -23,9 +23,9 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Shows the wordmark and the Lightning Address form when a session exists.
+- **Purpose:** Next.js page for `/`. Placeholder landing: wordmark, pitch, Coming soon, Donate and Log in links. No session UI.
 - **Inputs:** None.
-- **Returns / side effects:** The home screen.
+- **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
 
 ## Function: LightningAddressForm
@@ -33,13 +33,13 @@
 - **Purpose:** Logged-in form to claim, verify, or unlink `name@21.gifts`.
 - **Inputs:** Reads `useAuthStore`. User input: address string, verification confirm.
 - **Returns / side effects:** React element or `null` when logged out.
-- **Used by:** Screen `/`.
+- **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
 ## Function: LoginCard
 
-- **Purpose:** LNURL-auth UI: start challenge, QR, WoS deep link, copy, poll, expiry.
-- **Inputs:** Uses `useLnurlLogin` and `useAuthStore`.
-- **Returns / side effects:** React element covering idle/waiting/expired/error.
+- **Purpose:** LNURL-auth UI: hydrate session, start challenge, QR, WoS deep link, copy, poll, expiry, then signed-in view with `LightningAddressForm`.
+- **Inputs:** Uses `useLnurlLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
+- **Returns / side effects:** React element covering idle/waiting/expired/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
 
 ## Function: LoginPage
