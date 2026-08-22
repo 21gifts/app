@@ -96,7 +96,16 @@ function extractScreens() {
     );
     for (const p of pages) {
       const rel = path.relative(appDir, path.dirname(p)).replace(/\\/g, '/');
-      const route = rel === '' || rel === '.' ? '/' : `/${rel}`;
+      const parts =
+        rel === '' || rel === '.'
+          ? []
+          : rel.split('/').filter(
+              (seg) =>
+                !(seg.startsWith('(') && seg.endsWith(')')) &&
+                !seg.startsWith('@') &&
+                !seg.startsWith('_'),
+            );
+      const route = parts.length === 0 ? '/' : `/${parts.join('/')}`;
       screens.add(route);
     }
   }
