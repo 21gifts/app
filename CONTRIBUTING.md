@@ -23,21 +23,21 @@ npm run dev    # → http://localhost:3000
 
 ## Scripts
 
-| Script                   | Purpose                                               |
-| ------------------------ | ----------------------------------------------------- |
-| `npm run dev`            | Dev server with hot reload on :3000                   |
-| `npm run build`          | Production build (standalone output)                  |
-| `npm run start`          | Serve the production build on :3000                   |
-| `npm run typecheck`      | `tsc --noEmit`                                        |
-| `npm run lint`           | `next lint` + Prettier check                          |
-| `npm run lint:fix`       | Auto-fix lint findings + Prettier write               |
-| `npm run format`         | Prettier write                                        |
-| `npm test`               | Vitest unit tests, single run                         |
-| `npm run test:watch`     | Vitest in watch mode                                  |
-| `npm run test:coverage`  | Vitest with the 100% coverage gate                    |
-| `npm run e2e`            | Playwright tests against the production build         |
+| Script                   | Purpose                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `npm run dev`            | Dev server with hot reload on :3000                                      |
+| `npm run build`          | Production build (standalone output)                                     |
+| `npm run start`          | Serve the production build on :3000                                      |
+| `npm run typecheck`      | `tsc --noEmit`                                                           |
+| `npm run lint`           | `next lint` + Prettier check                                             |
+| `npm run lint:fix`       | Auto-fix lint findings + Prettier write                                  |
+| `npm run format`         | Prettier write                                                           |
+| `npm test`               | Vitest unit tests, single run                                            |
+| `npm run test:watch`     | Vitest in watch mode                                                     |
+| `npm run test:coverage`  | Vitest with the 100% coverage gate                                       |
+| `npm run e2e`            | Playwright tests against the production build                            |
 | `npm run e2e:check`      | Fail if a screen lacks `page.goto` or an endpoint lacks `request.<verb>` |
-| `npm run handbook:check` | Fail if any screen, export, or HTTP endpoint lacks a handbook section |
+| `npm run handbook:check` | Fail if any screen, export, or HTTP endpoint lacks a handbook section    |
 
 ## Project structure
 

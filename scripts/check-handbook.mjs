@@ -258,9 +258,7 @@ if (isMain) {
   }
 
   if (fns.size === 0 && screens.size === 0 && endpoints.size === 0) {
-    console.error(
-      'HANDBOOK: no functions, screens, or endpoints discovered — refusing to pass',
-    );
+    console.error('HANDBOOK: no functions, screens, or endpoints discovered — refusing to pass');
     process.exit(1);
   }
 
