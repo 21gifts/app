@@ -34,11 +34,10 @@ const missing = [];
 
 const screens = extractScreens();
 for (const route of [...screens].sort()) {
-  const html = route === '/' ? '/' : `${route}.html`;
   const escaped = route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const gotoRe = new RegExp(`goto\\((['"\`])(${escaped}|${html.replace('.', '\\.')})\\1`);
+  const gotoRe = new RegExp(`page\\.goto\\((['"\`])${escaped}\\1`);
   if (!gotoRe.test(text)) {
-    missing.push(`Screen ${route} has no e2e page.goto('${route}') (or .html)`);
+    missing.push(`Screen ${route} has no e2e page.goto('${route}')`);
   }
 }
 
@@ -47,7 +46,7 @@ for (const spec of [...endpoints].sort()) {
   const [method, pathName] = spec.split(' ');
   const verb = method.toLowerCase();
   const escaped = pathName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`\\.${verb}\\((['"\`])${escaped}\\1`);
+  const re = new RegExp(`request\\.${verb}\\((['"\`])${escaped}\\1`);
   if (!re.test(text)) {
     missing.push(`Endpoint ${spec} has no e2e request.${verb}('${pathName}')`);
   }

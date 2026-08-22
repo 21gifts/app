@@ -30,7 +30,7 @@
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to claim, verify, or unlink `name@21.gifts`.
+- **Purpose:** Logged-in form to claim, verify, or unlink a LUD-16 Lightning Address.
 - **Inputs:** Reads `useAuthStore`. User input: address string, verification confirm.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
@@ -58,7 +58,7 @@
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: `lang=en`, fonts, global CSS, metadata (title, icons, Open Graph, Twitter).
+- **Purpose:** Root HTML shell: `lang=en`, global CSS, metadata (title, icons, Open Graph, Twitter).
 - **Inputs:** `children` React nodes.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
@@ -122,7 +122,7 @@
 ## Function: requestDonateInvoice
 
 - **Purpose:** GET an LNURL-pay callback with `amount` millisatoshis and return the bolt11 string.
-- **Inputs:** `{ callback, amountMsat, fetchImpl? }`. Address resolve happens first via `resolveLightningAddress`.
+- **Inputs:** `{ callback, amountMsat, fetchImpl? }`. Does not resolve a Lightning Address.
 - **Returns / side effects:** bolt11 `string`, or throws.
 - **Used by:** `DonateForm`.
 
