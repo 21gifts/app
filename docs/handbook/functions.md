@@ -82,14 +82,14 @@
 - **Purpose:** GET `/me` with the bearer session.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `Account` or `null` on 401.
-- **Used by:** Login hydration and the address form.
+- **Used by:** `LoginCard` session hydration.
 
 ## Function: formatMsatAsSats
 
 - **Purpose:** Formats millisatoshis as a sat string for the donate UI.
 - **Inputs:** `msat` number.
 - **Returns / side effects:** Decimal string in sats.
-- **Used by:** `DonateForm` after invoice creation.
+- **Used by:** `DonateForm` amount-range error (`minSendable`–`maxSendable`).
 
 ## Function: getApiUrl
 
@@ -138,7 +138,7 @@
 - **Purpose:** Converts whole sats to millisatoshis.
 - **Inputs:** `sats` number.
 - **Returns / side effects:** `sats * 1000`.
-- **Used by:** `requestDonateInvoice`.
+- **Used by:** `DonateForm` (converts sats before calling `requestDonateInvoice`).
 
 ## Function: saveSession
 
