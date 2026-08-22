@@ -36,7 +36,7 @@ npm run dev    # → http://localhost:3000
 | `npm run test:watch`     | Vitest in watch mode                                  |
 | `npm run test:coverage`  | Vitest with the 100% coverage gate                    |
 | `npm run e2e`            | Playwright tests against the production build         |
-| `npm run e2e:check`      | Fail if any screen lacks a matching `page.goto` or any HTTP endpoint lacks a matching `request.<verb>` |
+| `npm run e2e:check`      | Fail if a screen lacks `page.goto` or an endpoint lacks `request.<verb>` |
 | `npm run handbook:check` | Fail if any screen, export, or HTTP endpoint lacks a handbook section |
 
 ## Project structure
@@ -162,7 +162,8 @@ exported function/class in `src/`, and every HTTP endpoint **must** have a
 complete section:
 
 - Screens: `## Screen: /path` (one per `src/app/**/page.tsx`)
-- Functions: `## Function: name` (one per `export function` / `export default function` / exported callable const / `export class`)
+- Functions: `## Function: name` (one per `export function`,
+  `export default function`, exported callable const, or `export class`)
 - Endpoints: `## Endpoint: METHOD /path` (one per `src/app/**/route.ts` HTTP export)
 
 A section is complete only if it has at least three `- **…**` bullets (Purpose,

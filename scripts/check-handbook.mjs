@@ -273,6 +273,7 @@ if (isMain) {
   }
 
   console.log(
-    `Handbook complete: ${fns.size} functions, ${screens.size} screens, ${endpoints.size} endpoints.`,
+    'Handbook complete: ' +
+      `${fns.size} functions, ${screens.size} screens, ${endpoints.size} endpoints.`,
   );
 }
