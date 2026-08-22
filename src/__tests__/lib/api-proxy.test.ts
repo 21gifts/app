@@ -60,6 +60,13 @@ describe('proxyApiRequest', () => {
     expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
   });
 
+  it('returns 502 JSON when the api URL is missing', async () => {
+    delete process.env.NEXT_PUBLIC_API_URL;
+    const res = await proxyApiRequest(new Request('http://localhost/me'), '/me');
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: 'Upstream api unreachable' });
+  });
+
   it('returns 502 JSON when fetch throws', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
 

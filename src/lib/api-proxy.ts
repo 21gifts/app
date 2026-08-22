@@ -15,30 +15,30 @@ const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  * @param request - Incoming request (query string and body are forwarded).
  * @param apiPath - Path on the api beginning with `/` (e.g. `/auth/lnurl`).
  * @returns The upstream response (status, content-type, body), or 502 JSON
- * when the api cannot be reached.
+ * when the api URL is missing, the body cannot be read, or fetch fails.
  */
 export async function proxyApiRequest(request: Request, apiPath: string): Promise<Response> {
-  const incoming = new URL(request.url);
-  const destination = new URL(apiPath, `${getApiUrl()}/`);
-  destination.search = incoming.search;
-
-  const headers = new Headers();
-  for (const name of FORWARDED_HEADERS) {
-    const value = request.headers.get(name);
-    if (value !== null) {
-      headers.set(name, value);
-    }
-  }
-
-  const init: RequestInit = {
-    method: request.method,
-    headers,
-  };
-  if (BODY_METHODS.has(request.method)) {
-    init.body = await request.arrayBuffer();
-  }
-
   try {
+    const incoming = new URL(request.url);
+    const destination = new URL(apiPath, `${getApiUrl()}/`);
+    destination.search = incoming.search;
+
+    const headers = new Headers();
+    for (const name of FORWARDED_HEADERS) {
+      const value = request.headers.get(name);
+      if (value !== null) {
+        headers.set(name, value);
+      }
+    }
+
+    const init: RequestInit = {
+      method: request.method,
+      headers,
+    };
+    if (BODY_METHODS.has(request.method)) {
+      init.body = await request.arrayBuffer();
+    }
+
     const upstream = await fetch(destination, init);
     const responseHeaders = new Headers();
     const contentType = upstream.headers.get('content-type');

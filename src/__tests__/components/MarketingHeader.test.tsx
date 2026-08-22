@@ -4,8 +4,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MarketingHeader } from '@/components/MarketingHeader';
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    href,
+    children,
+    onClick,
+  }: {
+    href: string;
+    children: ReactNode;
+    onClick?: () => void;
+  }) => (
+    <a href={href} onClick={onClick}>
+      {children}
+    </a>
   ),
 }));
 
@@ -26,5 +36,14 @@ describe('MarketingHeader', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('closes the mobile menu when a nav link is used', () => {
+    render(<MarketingHeader />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'How it works' }));
+    expect(screen.getByRole('button', { name: 'Menu' }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
   });
 });

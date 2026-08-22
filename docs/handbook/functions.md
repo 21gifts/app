@@ -96,7 +96,7 @@
 - **Purpose:** Reads `NEXT_PUBLIC_API_URL` via the typed config accessor.
 - **Inputs:** None.
 - **Returns / side effects:** Origin string. Throws if unset/empty (entrypoint must substitute).
-- **Used by:** Every `src/lib/api.ts` call.
+- **Used by:** `proxyApiRequest` (server-side upstream origin).
 
 ## Function: isAndroidUserAgent
 
