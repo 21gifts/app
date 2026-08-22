@@ -22,6 +22,7 @@ export function MarketingHeader(): ReactElement {
         21.gifts
       </Link>
       <nav
+        aria-label="Primary"
         className={`items-center gap-6 text-sm text-white/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-white/10 bg-[#0a090c] px-5 py-4' : 'hidden md:flex'}`}
       >
         <Link href="/#how" onClick={closeMenu}>

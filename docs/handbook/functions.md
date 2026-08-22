@@ -261,7 +261,7 @@
 
 ## Function: proxyApiRequest
 
-- **Purpose:** Forwards an App Router request to `getApiUrl()` + path, copying query, body, and auth headers.
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path, copying query, body, and authorization / content-type / poll-token / user-agent headers.
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response`, or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.

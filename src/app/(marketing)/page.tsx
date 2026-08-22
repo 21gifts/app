@@ -48,7 +48,7 @@ export default function Home(): ReactElement {
         </p>
         <div className="mt-12 grid gap-10 sm:grid-cols-3">
           <div>
-            <span className="text-sm text-white/40">01</span>
+            <span className="text-sm text-white/60">01</span>
             <h3 className="mt-2 text-xl font-semibold">Sign in with your wallet</h3>
             <p className="mt-2 text-white/60">
               Scan a QR or open Wallet of Satoshi. Your wallet signs a one-time challenge. That
@@ -56,7 +56,7 @@ export default function Home(): ReactElement {
             </p>
           </div>
           <div>
-            <span className="text-sm text-white/40">02</span>
+            <span className="text-sm text-white/60">02</span>
             <h3 className="mt-2 text-xl font-semibold">Add a Lightning Address</h3>
             <p className="mt-2 text-white/60">
               Link where gifts should land, in the usual <code>name@domain</code> form. Anyone can
@@ -64,7 +64,7 @@ export default function Home(): ReactElement {
             </p>
           </div>
           <div>
-            <span className="text-sm text-white/40">03</span>
+            <span className="text-sm text-white/60">03</span>
             <h3 className="mt-2 text-xl font-semibold">Gifts arrive directly</h3>
             <p className="mt-2 text-white/60">
               Donors pay your Lightning Address. Satoshis land in your wallet, not ours. The

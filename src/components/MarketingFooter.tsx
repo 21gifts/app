@@ -11,7 +11,7 @@ export function MarketingFooter(): ReactElement {
     <footer className="border-t border-white/10 px-5 py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
         <span className="font-bold">21.gifts</span>
-        <nav className="flex flex-wrap gap-4 text-sm text-white/70">
+        <nav aria-label="Footer" className="flex flex-wrap gap-4 text-sm text-white/70">
           <Link href="/#how">How it works</Link>
           <Link href="/#why">Why</Link>
           <Link href="/#faq">FAQ</Link>

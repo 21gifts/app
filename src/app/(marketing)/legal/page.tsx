@@ -26,7 +26,10 @@ export default function LegalPage(): ReactElement {
           Switzerland
         </p>
         <p>
-          Email: <a href="mailto:info@21.gifts">info@21.gifts</a>
+          Email:{' '}
+          <a className="text-[#f7931a] underline underline-offset-2" href="mailto:info@21.gifts">
+            info@21.gifts
+          </a>
         </p>
         <p>Legal form: non-profit project (entity in formation).</p>
       </section>
@@ -49,6 +52,7 @@ export default function LegalPage(): ReactElement {
           Traffic is terminated at Cloudflare. Cloudflare may record technical data such as IP
           addresses in standard server logs as part of its infrastructure. For details, see{' '}
           <a
+            className="text-[#f7931a] underline underline-offset-2"
             href="https://www.cloudflare.com/privacypolicy/"
             target="_blank"
             rel="noopener noreferrer"
@@ -72,7 +76,10 @@ export default function LegalPage(): ReactElement {
         <p className="text-white/70">
           Under the Swiss Federal Act on Data Protection (FADP) you have the right to access,
           rectify, or delete any personal data we hold about you. Write to{' '}
-          <a href="mailto:info@21.gifts">info@21.gifts</a>.
+          <a className="text-[#f7931a] underline underline-offset-2" href="mailto:info@21.gifts">
+            info@21.gifts
+          </a>
+          .
         </p>
       </section>
     </main>

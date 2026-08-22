@@ -26,7 +26,12 @@ describe('proxyApiRequest', () => {
       new Response('{"ok":true}', { status: 200, headers: { 'content-type': 'application/json' } }),
     );
     const request = new Request('http://localhost/auth/lnurl?k1=ab', {
-      headers: { authorization: 'Bearer tok', 'x-poll-token': 'pt', 'x-ignored': 'no' },
+      headers: {
+        authorization: 'Bearer tok',
+        'x-poll-token': 'pt',
+        'user-agent': 'Copay',
+        'x-ignored': 'no',
+      },
     });
 
     const res = await proxyApiRequest(request, '/auth/lnurl');
@@ -40,6 +45,7 @@ describe('proxyApiRequest', () => {
     const headers = init.headers as Headers;
     expect(headers.get('authorization')).toBe('Bearer tok');
     expect(headers.get('x-poll-token')).toBe('pt');
+    expect(headers.get('user-agent')).toBe('Copay');
     expect(headers.get('x-ignored')).toBeNull();
   });
 
