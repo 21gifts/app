@@ -16,7 +16,7 @@
 
 ## Endpoint: GET /auth/lnurl/callback
 
-- **Purpose:** Same-origin proxy of the wallet-facing LUD-04 callback. Pins `linkingKey` to this host when `PUBLIC_BASE_URL` is the apex.
+- **Purpose:** Same-origin proxy of the wallet-facing LUD-04 callback: forwards query string to the upstream api. The wallet `linkingKey` domain is whatever host the encoded callback uses (set on the api as `PUBLIC_BASE_URL`).
 - **Errors:** Upstream LUD-04 JSON, or 502 if the api is unreachable.
 - **Used by:** Lightning wallets after scanning the login QR.
 - **Auth:** Public (wallet signature in query).

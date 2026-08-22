@@ -43,33 +43,32 @@ export default function Home(): ReactElement {
           Three steps, no accounts in the traditional sense
         </p>
         <p className="mt-4 max-w-3xl text-white/60">
-          21.gifts uses a Passkey on your device as your identity. There are no usernames, no
-          passwords, and no email sign-ups. Behind the scenes the Passkey derives a NOSTR key — but
-          you never have to think about it.
+          21.gifts uses LNURL-auth: you sign in with the Lightning wallet you already have. There
+          are no usernames, no passwords, and no email sign-ups.
         </p>
         <div className="mt-12 grid gap-10 sm:grid-cols-3">
           <div>
             <span className="text-sm text-white/40">01</span>
-            <h3 className="mt-2 text-xl font-semibold">Post a request</h3>
+            <h3 className="mt-2 text-xl font-semibold">Sign in with your wallet</h3>
             <p className="mt-2 text-white/60">
-              Sign in with a Passkey. Describe what you need in a short message and add your
-              Lightning Address. That&apos;s the entire setup.
+              Scan a QR or open Wallet of Satoshi. Your wallet signs a one-time challenge. That
+              signature is your account — nothing else to remember.
             </p>
           </div>
           <div>
             <span className="text-sm text-white/40">02</span>
-            <h3 className="mt-2 text-xl font-semibold">Your story spreads</h3>
+            <h3 className="mt-2 text-xl font-semibold">Add a Lightning Address</h3>
             <p className="mt-2 text-white/60">
-              Your message is published as a NOSTR event. It appears on 21.gifts, and on every NOSTR
-              client that follows the same relay — Damus, Amethyst, and others.
+              Link where gifts should land, in the usual <code>name@domain</code> form. Anyone can
+              then send to you from their own wallet.
             </p>
           </div>
           <div>
             <span className="text-sm text-white/40">03</span>
             <h3 className="mt-2 text-xl font-semibold">Gifts arrive directly</h3>
             <p className="mt-2 text-white/60">
-              Donors pay your Lightning Address from their own wallet. Satoshis land in your wallet,
-              not ours. The platform never sees the money.
+              Donors pay your Lightning Address. Satoshis land in your wallet, not ours. The
+              platform never sees the money.
             </p>
           </div>
         </div>
@@ -90,19 +89,17 @@ export default function Home(): ReactElement {
             </p>
           </div>
           <div>
-            <h3 className="text-xl font-semibold">Self-sovereign keys</h3>
+            <h3 className="text-xl font-semibold">Your wallet is the login</h3>
             <p className="mt-2 text-white/60">
-              Your NOSTR key is derived from a Passkey on your own device, using the WebAuthn PRF
-              extension. The server never sees the private key, and cannot impersonate you or read
-              your future messages.
+              Identity is the key your Lightning wallet already holds for this site. 21.gifts never
+              sees that key — only a signed challenge. No password database to leak.
             </p>
           </div>
           <div>
-            <h3 className="text-xl font-semibold">Open protocol</h3>
+            <h3 className="text-xl font-semibold">Open Lightning rails</h3>
             <p className="mt-2 text-white/60">
-              Every message is a standard NOSTR event. If 21.gifts disappears tomorrow, your
-              identity and your posts continue to exist on the relay and in every NOSTR client that
-              has them.
+              Gifts use Lightning Addresses and invoices that any compatible wallet can pay. If
+              21.gifts disappeared tomorrow, those addresses would still work.
             </p>
           </div>
           <div>
@@ -120,10 +117,11 @@ export default function Home(): ReactElement {
         <p className="mt-3 text-2xl font-semibold">Common questions, answered briefly</p>
         <div className="mt-10 space-y-3">
           <details className="border-b border-white/10 py-4">
-            <summary className="cursor-pointer font-medium">Who can post a request?</summary>
+            <summary className="cursor-pointer font-medium">Who can use this?</summary>
             <p className="mt-3 text-white/60">
-              Anyone with a device that supports Passkeys and a Lightning Address from any custodial
-              or self-custodial wallet. No application, no review process.
+              Anyone with a Lightning wallet that supports LNURL-auth (Wallet of Satoshi, Phoenix,
+              Alby, Zeus, and others) and a Lightning Address to receive. No application, no review
+              process.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
@@ -138,10 +136,9 @@ export default function Home(): ReactElement {
           <details className="border-b border-white/10 py-4">
             <summary className="cursor-pointer font-medium">What happens to my keys?</summary>
             <p className="mt-3 text-white/60">
-              Your Passkey lives in your device&apos;s secure enclave (or in iCloud Keychain /
-              Google Password Manager / Bitwarden / a hardware authenticator, depending on your
-              setup). 21.gifts derives a NOSTR key from it inside your browser. The server only ever
-              sees signed events, never the private key itself.
+              They stay in your Lightning wallet. 21.gifts only sees a signed login challenge and,
+              if you choose, the Lightning Address you publish. There is no password and no seed
+              stored on our servers.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
@@ -149,20 +146,15 @@ export default function Home(): ReactElement {
               Can I lose access to my account?
             </summary>
             <p className="mt-3 text-white/60">
-              If your Passkey syncs through iCloud, Google, 1Password, or Bitwarden, restoring a
-              device also restores access. On sign-up you can also choose to write down a 12-word
-              backup phrase (NIP-06) — it recovers the same identity in 21.gifts and in any NOSTR
-              client.
+              Yes. If you lose the wallet (or it issues a new LNURL-auth key), the account cannot be
+              recovered in v1. Keep a backup of the wallet you sign in with.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
-            <summary className="cursor-pointer font-medium">
-              What is NOSTR doing in the background?
-            </summary>
+            <summary className="cursor-pointer font-medium">How do I send a gift?</summary>
             <p className="mt-3 text-white/60">
-              NOSTR is the message transport. Every request you post, and every comment under it, is
-              a signed NOSTR event published to a public relay. You never have to know this — but it
-              means the content lives on an open protocol, not inside a private database.
+              Open Send help, enter the recipient&apos;s Lightning Address and an amount in sats,
+              then pay the invoice from any Lightning wallet. You do not need to log in to give.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">

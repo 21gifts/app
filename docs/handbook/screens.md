@@ -3,7 +3,7 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Lightning gifts, How it works / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
+- **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Lightning gifts, How it works (LNURL-auth + Lightning Address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
 - **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
 
