@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 
+/**
+ * Title and description for `/legal` (overrides the root layout metadata).
+ */
 export const metadata: Metadata = {
   title: 'Legal Notice & Privacy — 21.gifts',
   description: 'Legal notice and privacy policy of 21.gifts.',
