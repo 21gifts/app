@@ -7,16 +7,12 @@
 - **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
 
-![21.gifts home](images/home.png)
-
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
 - **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no cookies/analytics, session in localStorage, Cloudflare TLS, LNURL-auth on this origin).
 - **Actions:** Read-only. Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage`.
-
-![21.gifts legal notice](images/legal.png)
 
 ## Screen: /login
 
