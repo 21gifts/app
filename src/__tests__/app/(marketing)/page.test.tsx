@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import Home from '@/app/page';
+import Home from '@/app/(marketing)/page';
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -12,30 +12,32 @@ vi.mock('next/link', () => ({
 afterEach(cleanup);
 
 describe('Home', () => {
-  it('renders the wordmark as the page heading', () => {
+  it('renders the product headline', () => {
     render(<Home />);
-    expect(screen.getByRole('heading', { name: '21.gifts' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeTruthy();
   });
 
   it('states what the product is', () => {
     render(<Home />);
-    expect(screen.getByText('Direct human-to-human giving over Bitcoin Lightning.')).toBeTruthy();
+    expect(
+      screen.getByText(/Ask for help, or send help, without an organization in the middle/i),
+    ).toBeTruthy();
   });
 
-  it('notes that the product is coming soon', () => {
+  it('does not say the product is coming soon', () => {
     render(<Home />);
-    expect(screen.getByText('Coming soon')).toBeTruthy();
+    expect(screen.queryByText('Coming soon')).toBeNull();
   });
 
-  it('links to the login page', () => {
+  it('links Ask for help to login', () => {
     render(<Home />);
-    const link = screen.getByRole('link', { name: 'Log in' });
+    const link = screen.getByRole('link', { name: 'Ask for help' });
     expect(link.getAttribute('href')).toBe('/login');
   });
 
-  it('links to the donate page', () => {
+  it('links Send help to donate', () => {
     render(<Home />);
-    const link = screen.getByRole('link', { name: 'Donate' });
+    const link = screen.getByRole('link', { name: 'Send help' });
     expect(link.getAttribute('href')).toBe('/donate');
   });
 });

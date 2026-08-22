@@ -2,10 +2,17 @@
 
 ## Screen: /
 
-- **URL:** `/` — public landing placeholder (no auth gate).
-- **What the user sees:** Gift icon, wordmark `21.gifts`, one-line pitch, “Coming soon”, links **Donate** (`/donate`) and **Log in** (`/login`).
-- **Actions:** Navigate to donate or login. There is no Lightning Address form on this route.
-- **Calls:** `Home` only (`src/app/page.tsx`). Auth UI lives on `/login`.
+- **URL:** `/` — public marketing landing (no auth gate).
+- **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Lightning gifts, How it works (LNURL-auth + Lightning Address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
+- **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
+
+## Screen: /legal
+
+- **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
+- **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no cookies/analytics, session in localStorage, Cloudflare TLS, LNURL-auth on this origin).
+- **Actions:** Read-only. Header **Log in** goes to `/login`.
+- **Calls:** `LegalPage`.
 
 ## Screen: /login
 

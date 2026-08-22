@@ -10,7 +10,7 @@ const description =
  * including icons and the social-preview image.
  */
 export const metadata: Metadata = {
-  metadataBase: new URL('https://app.21.gifts'),
+  metadataBase: new URL('https://21.gifts'),
   title: '21.gifts',
   description,
   icons: {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    url: 'https://app.21.gifts',
+    url: 'https://21.gifts',
     siteName: '21.gifts',
     title: '21.gifts',
     description,
