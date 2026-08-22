@@ -36,8 +36,8 @@ npm run dev    # → http://localhost:3000
 | `npm run test:watch`     | Vitest in watch mode                                  |
 | `npm run test:coverage`  | Vitest with the 100% coverage gate                    |
 | `npm run e2e`            | Playwright tests against the production build         |
-| `npm run e2e:check`      | Fail if any screen lacks a matching `page.goto`       |
-| `npm run handbook:check` | Fail if any screen or export lacks a handbook section |
+| `npm run e2e:check`      | Fail if any screen lacks a matching `page.goto` or any HTTP endpoint lacks a matching `request.<verb>` |
+| `npm run handbook:check` | Fail if any screen, export, or HTTP endpoint lacks a handbook section |
 
 ## Project structure
 
@@ -67,13 +67,14 @@ app/
 │       │   ├── page.test.tsx
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
-├── docs/handbook/               # Mandatory: every screen + exported function
+├── docs/handbook/               # Mandatory: every screen + exported function + endpoint
 │   ├── README.md
 │   ├── screens.md
-│   └── functions.md
+│   ├── functions.md
+│   └── endpoints.md
 ├── scripts/
-│   ├── check-handbook.mjs       # CI gate: missing heading → exit 1
-│   └── check-e2e.mjs            # CI gate: missing screen e2e → exit 1
+│   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
+│   └── check-e2e.mjs            # CI gate: missing screen page.goto or endpoint request → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
@@ -161,12 +162,14 @@ exported function/class in `src/` **must** have a complete section:
 
 - Screens: `## Screen: /path` (one per `src/app/**/page.tsx`)
 - Functions: `## Function: name` (one per `export function` / `export default function` / exported callable const / `export class`)
+- Endpoints: `## Endpoint: METHOD /path` (one per `src/app/**/route.ts` HTTP export)
 
 A section is complete only if it has at least three `- **…**` bullets (Purpose,
 Inputs, Returns or Actions, Used by) and enough prose to describe the behaviour.
-`npm run handbook:check` (and CI) **fails the PR** when a heading is missing or
-a section is a stub. Adding a screen or export without updating the handbook in
-the **same PR** is an undeclared deviation and is rejected.
+`npm run handbook:check` (and CI) **fails the PR** when a heading is missing
+(including an Endpoint heading), or a section is a stub. Adding a screen,
+export, or HTTP endpoint without updating the handbook in the **same PR** is an
+undeclared deviation and is rejected.
 
 ### Tests
 
@@ -181,10 +184,13 @@ the **same PR** is an undeclared deviation and is rejected.
 ### E2E (hard requirement)
 
 Every UI screen **must** have at least one Playwright test that `page.goto`s that
-path and asserts a user-visible outcome. `npm run e2e:check` **fails the PR** if
-a screen has no matching `goto`. Adding a `page.tsx` without an e2e spec in the
-**same PR** is an undeclared deviation and is rejected. CI runs `e2e:check` then
-`e2e`.
+path and asserts a user-visible outcome. Every HTTP endpoint discovered from
+`src/app/**/route.ts` **must** have at least one Playwright
+`request.get|post|put|patch|delete` of that path. `npm run e2e:check` **fails
+the PR** if a screen has no matching `goto` or an endpoint has no matching
+`request.<verb>` call. Adding a `page.tsx` or `route.ts` without an e2e spec in
+the **same PR** is an undeclared deviation and is rejected. CI runs `e2e:check`
+then `e2e`.
 
 ### Before every push (the same checks CI runs)
 

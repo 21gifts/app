@@ -16,7 +16,7 @@
 
 ## Function: GET
 
-- **Purpose:** App-router handler for `GET /healthz` (liveness).
+- **Purpose:** App-router handler for `GET /healthz` (liveness). Documented here as the only `export function GET` in this repo.
 - **Inputs:** None.
 - **Returns / side effects:** `Response` JSON `{ status: 'ok' }` with HTTP 200.
 - **Used by:** Container probes, e2e smoke.
@@ -68,7 +68,7 @@
 - **Purpose:** Removes the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
-- **Used by:** `useAuthStore.clearAuth`.
+- **Used by:** `useAuthStore.clearAuth` and `LoginCard` when session hydration gets 401.
 
 ## Function: confirmLightningAddressVerification
 
@@ -191,7 +191,7 @@
 
 ## Function: useLnurlLogin
 
-- **Purpose:** Hook: start LNURL-auth, poll until authenticated or expired, expose status/error/lnurl/start.
+- **Purpose:** Hook: start LNURL-auth, poll until authenticated or expired. Returns `{ status, lnurl, start }` — there is no separate `error` field (errors are a `status` of `'error'`).
 - **Inputs:** None.
 - **Returns / side effects:** `UseLnurlLogin` status machine.
 - **Used by:** `LoginCard`.

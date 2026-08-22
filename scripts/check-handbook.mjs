@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Fail if docs/handbook does not document every exported function/class and
- * every UI screen. Run from the repo root. No extra packages.
+ * Fail if docs/handbook does not document every exported function/class,
+ * every UI screen, and every HTTP endpoint. Run from the repo root. No extra
+ * packages.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -118,6 +119,22 @@ function extractEndpoints() {
   const endpoints = new Set();
   const server = path.join(ROOT, 'src', 'server.ts');
   const routeDir = path.join(ROOT, 'src', 'routes');
+  const appDir = path.join(ROOT, 'src', 'app');
+  if (fs.existsSync(appDir)) {
+    const routeFiles = walk(appDir, (p) => p.endsWith(`${path.sep}route.ts`));
+    for (const file of routeFiles) {
+      const rel = path.relative(appDir, path.dirname(file)).replace(/\\/g, '/');
+      const url = rel === '' || rel === '.' ? '/' : `/${rel}`;
+      const t = fs.readFileSync(file, 'utf8');
+      for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+        const reFn = new RegExp(`export\\s+(async\\s+)?function\\s+${method}\\b`);
+        const reConst = new RegExp(`export\\s+const\\s+${method}\\s*=`);
+        if (reFn.test(t) || reConst.test(t)) {
+          endpoints.add(`${method} ${url}`);
+        }
+      }
+    }
+  }
   if (!fs.existsSync(server)) {
     return endpoints;
   }
@@ -219,6 +236,13 @@ if (isMain) {
     } else if (!sectionComplete(sectionBody(text, 'Endpoint', n))) {
       missing.push(`Endpoint: ${n} (incomplete)`);
     }
+  }
+
+  if (fns.size === 0 && screens.size === 0 && endpoints.size === 0) {
+    console.error(
+      'HANDBOOK: no functions, screens, or endpoints discovered — refusing to pass',
+    );
+    process.exit(1);
   }
 
   if (missing.length) {
