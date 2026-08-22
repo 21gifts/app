@@ -46,7 +46,7 @@ app/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: <html lang="en">, metadata, globals.css
-│   │   ├── page.tsx             # Landing page
+│   │   ├── (marketing)/         # Dark landing `/` and `/legal`
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
 │   │   ├── login/
@@ -226,6 +226,9 @@ variable is unset or empty.
 | Variable              | DEV                        | PRD                    |
 | --------------------- | -------------------------- | ---------------------- |
 | `NEXT_PUBLIC_API_URL` | `https://dev-api.21.gifts` | `https://api.21.gifts` |
+
+`NEXT_PUBLIC_API_URL` is the **upstream api**. The browser calls same-origin
+paths (`/auth/lnurl`, `/me`, …) which the App Router proxies to that URL.
 
 ## CI / CD
 

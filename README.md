@@ -1,7 +1,7 @@
 # 21.gifts — app
 
-Web frontend client for [21.gifts](https://21.gifts) — peer-to-peer Bitcoin
-Lightning gifts.
+Web frontend for [21.gifts](https://21.gifts) — marketing landing, legal page,
+and the Lightning gift app on the public apex.
 
 This repository carries only frontend-specific code and docs. The canonical
 project documentation (concept, protocol, decisions) lives in

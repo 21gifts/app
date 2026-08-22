@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('landing page renders the wordmark', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
 test('healthz returns ok', async ({ request }) => {

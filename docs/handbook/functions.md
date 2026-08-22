@@ -16,14 +16,14 @@
 
 ## Function: GET
 
-- **Purpose:** App-router handler for `GET /healthz` (liveness). Documented here as the only `export function GET` in this repo.
-- **Inputs:** None.
-- **Returns / side effects:** `Response` JSON `{ status: 'ok' }` with HTTP 200.
-- **Used by:** Container probes, e2e smoke.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export async function GET`; same-origin api proxies re-export unique functions as `GET`.
+- **Inputs:** Incoming `Request` on proxy routes; none on healthz.
+- **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response.
+- **Used by:** Container probes, browser/wallet same-origin calls.
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Placeholder landing: wordmark, pitch, Coming soon, Donate and Log in links. No session UI.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`.
 - **Inputs:** None.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
@@ -209,3 +209,122 @@
 - **Inputs:** `lnurl`.
 - **Returns / side effects:** `intent:lightning:LNURL…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
 - **Used by:** `LoginCard` primary CTA on Android.
+
+## Function: DELETE
+
+- **Purpose:** App Router DELETE export on `/me/lightning-address` (re-export of `proxyMeLightningAddressDelete`).
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream api `Response`.
+- **Used by:** Same-origin `unlinkLightningAddress`.
+
+## Function: LegalPage
+
+- **Purpose:** Next.js page for `/legal` (imprint and privacy).
+- **Inputs:** None.
+- **Returns / side effects:** The legal screen.
+- **Used by:** Route `/legal`.
+
+## Function: MarketingFooter
+
+- **Purpose:** Footer for marketing pages: wordmark, section links, legal, GitHub.
+- **Inputs:** None.
+- **Returns / side effects:** Footer element.
+- **Used by:** `MarketingLayout`, `NotFound`.
+
+## Function: MarketingHeader
+
+- **Purpose:** Sticky marketing header with wordmark, section nav, login CTA, mobile menu.
+- **Inputs:** None (internal open state).
+- **Returns / side effects:** Header element; toggles nav on small screens.
+- **Used by:** `MarketingLayout`, `NotFound`.
+
+## Function: MarketingLayout
+
+- **Purpose:** Dark full-page shell for `/` and `/legal`.
+- **Inputs:** `children`.
+- **Returns / side effects:** Wrapper div with header, page, footer.
+- **Used by:** Marketing route group.
+
+## Function: NotFound
+
+- **Purpose:** App-wide 404 screen with marketing chrome and a link home.
+- **Inputs:** None.
+- **Returns / side effects:** 404 element.
+- **Used by:** Next.js `not-found.tsx`.
+
+## Function: POST
+
+- **Purpose:** App Router POST export on lightning-address write/verify routes (re-exports of the proxy*Post functions).
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream api `Response`.
+- **Used by:** Same-origin address link and verification.
+
+## Function: proxyApiRequest
+
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path, copying query, body, and auth headers.
+- **Inputs:** `request`, `apiPath` beginning with `/`.
+- **Returns / side effects:** Upstream `Response`, or 502 JSON if fetch throws.
+- **Used by:** All same-origin api proxy route handlers.
+
+## Function: proxyAuthLnurlCallbackGet
+
+- **Purpose:** Proxies GET `/auth/lnurl/callback` (wallet LUD-04).
+- **Inputs:** `Request` with k1/sig/key query.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/auth/lnurl/callback`.
+
+## Function: proxyAuthLnurlGet
+
+- **Purpose:** Proxies GET `/auth/lnurl`.
+- **Inputs:** `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/auth/lnurl`.
+
+## Function: proxyAuthSessionGet
+
+- **Purpose:** Proxies GET `/auth/session`.
+- **Inputs:** `Request` with `X-Poll-Token`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/auth/session`.
+
+## Function: proxyLightningAddressGet
+
+- **Purpose:** Proxies GET `/lightning-address`.
+- **Inputs:** `Request` with `address` query.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/lightning-address`.
+
+## Function: proxyMeGet
+
+- **Purpose:** Proxies GET `/me`.
+- **Inputs:** `Request` with Bearer token.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/me`.
+
+## Function: proxyMeLightningAddressDelete
+
+- **Purpose:** Proxies DELETE `/me/lightning-address`.
+- **Inputs:** `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route DELETE `/me/lightning-address`.
+
+## Function: proxyMeLightningAddressPost
+
+- **Purpose:** Proxies POST `/me/lightning-address`.
+- **Inputs:** `Request` with JSON body.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/lightning-address`.
+
+## Function: proxyMeLightningAddressVerificationConfirmPost
+
+- **Purpose:** Proxies POST `/me/lightning-address/verification/confirm`.
+- **Inputs:** `Request` with nonce JSON.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/lightning-address/verification/confirm`.
+
+## Function: proxyMeLightningAddressVerificationPost
+
+- **Purpose:** Proxies POST `/me/lightning-address/verification`.
+- **Inputs:** `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/lightning-address/verification`.
