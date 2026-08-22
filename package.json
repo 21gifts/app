@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "handbook:check": "node scripts/check-handbook.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",

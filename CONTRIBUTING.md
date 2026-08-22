@@ -23,19 +23,20 @@ npm run dev    # → http://localhost:3000
 
 ## Scripts
 
-| Script                  | Purpose                                             |
-| ----------------------- | --------------------------------------------------- |
-| `npm run dev`           | Dev server with hot reload on :3000                 |
-| `npm run build`         | Production build (standalone output)                |
-| `npm run start`         | Serve the production build on :3000                 |
-| `npm run typecheck`     | `tsc --noEmit`                                      |
-| `npm run lint`          | `next lint` + Prettier check                        |
-| `npm run lint:fix`      | Auto-fix lint findings + Prettier write             |
-| `npm run format`        | Prettier write                                      |
-| `npm test`              | Vitest unit tests, single run                       |
-| `npm run test:watch`    | Vitest in watch mode                                |
-| `npm run test:coverage` | Vitest with the 100% coverage gate                  |
-| `npm run e2e`           | Playwright smoke tests against the production build |
+| Script                   | Purpose                                               |
+| ------------------------ | ----------------------------------------------------- |
+| `npm run dev`            | Dev server with hot reload on :3000                   |
+| `npm run build`          | Production build (standalone output)                  |
+| `npm run start`          | Serve the production build on :3000                   |
+| `npm run typecheck`      | `tsc --noEmit`                                        |
+| `npm run lint`           | `next lint` + Prettier check                          |
+| `npm run lint:fix`       | Auto-fix lint findings + Prettier write               |
+| `npm run format`         | Prettier write                                        |
+| `npm test`               | Vitest unit tests, single run                         |
+| `npm run test:watch`     | Vitest in watch mode                                  |
+| `npm run test:coverage`  | Vitest with the 100% coverage gate                    |
+| `npm run e2e`            | Playwright smoke tests against the production build   |
+| `npm run handbook:check` | Fail if any screen or export lacks a handbook section |
 
 ## Project structure
 
@@ -63,6 +64,12 @@ app/
 │       │   ├── page.test.tsx
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
+├── docs/handbook/               # Mandatory: every screen + exported function
+│   ├── README.md
+│   ├── screens.md
+│   └── functions.md
+├── scripts/
+│   └── check-handbook.mjs       # CI gate: missing heading → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
@@ -143,6 +150,20 @@ Every exported symbol carries a TSDoc block with a one-line summary plus
 `@param` / `@returns` / `@throws` where applicable. `eslint-plugin-tsdoc`
 flags malformed comments across `src/`.
 
+### Handbook (hard requirement)
+
+The handbook under `docs/handbook/` **must exist**. Every UI screen and every
+exported function/class in `src/` **must** have a complete section:
+
+- Screens: `## Screen: /path` (one per `src/app/**/page.tsx`)
+- Functions: `## Function: name` (one per `export function` / `export default function` / exported callable const / `export class`)
+
+A section is complete only if it has at least three `- **…**` bullets (Purpose,
+Inputs, Returns or Actions, Used by) and enough prose to describe the behaviour.
+`npm run handbook:check` (and CI) **fails the PR** when a heading is missing or
+a section is a stub. Adding a screen or export without updating the handbook in
+the **same PR** is an undeclared deviation and is rejected.
+
 ### Tests
 
 - One `*.test.ts(x)` per source file, under `src/__tests__/` mirroring the source tree
@@ -158,6 +179,7 @@ flags malformed comments across `src/`.
 ```bash
 npm run typecheck
 npm run lint
+npm run handbook:check
 npm run test:coverage
 npm run build
 npm run e2e
