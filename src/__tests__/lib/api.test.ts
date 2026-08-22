@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   confirmLightningAddressVerification,
   fetchMe,
@@ -10,8 +10,6 @@ import {
   startLnurlAuth,
   unlinkLightningAddress,
 } from '@/lib/api';
-
-const API = 'https://api.test';
 
 const account = {
   id: 'acc_1',
@@ -42,13 +40,8 @@ function stubFetch(response: FakeResponse): Mock {
   return fetchMock;
 }
 
-beforeEach(() => {
-  process.env.NEXT_PUBLIC_API_URL = API;
-});
-
 afterEach(() => {
   vi.unstubAllGlobals();
-  delete process.env.NEXT_PUBLIC_API_URL;
 });
 
 describe('startLnurlAuth', () => {
@@ -56,7 +49,7 @@ describe('startLnurlAuth', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: challenge });
 
     await expect(startLnurlAuth()).resolves.toEqual(challenge);
-    expect(fetchMock).toHaveBeenCalledWith(`${API}/auth/lnurl`);
+    expect(fetchMock).toHaveBeenCalledWith(`/auth/lnurl`);
   });
 
   it('throws on a non-ok response', async () => {
@@ -75,7 +68,7 @@ describe('pollSession', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: { status: 'pending' } });
 
     await expect(pollSession('ptok')).resolves.toEqual({ status: 'pending' });
-    expect(fetchMock).toHaveBeenCalledWith(`${API}/auth/session`, {
+    expect(fetchMock).toHaveBeenCalledWith(`/auth/session`, {
       headers: { 'X-Poll-Token': 'ptok' },
     });
   });
@@ -102,7 +95,7 @@ describe('fetchMe', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: account });
 
     await expect(fetchMe('sess')).resolves.toEqual(account);
-    expect(fetchMock).toHaveBeenCalledWith(`${API}/me`, {
+    expect(fetchMock).toHaveBeenCalledWith(`/me`, {
       headers: { Authorization: 'Bearer sess' },
     });
   });
@@ -129,7 +122,7 @@ describe('setLightningAddress', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: linked });
 
     await expect(setLightningAddress('sess', 'me@walletofsatoshi.com')).resolves.toEqual(linked);
-    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address`, {
+    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address`, {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -162,7 +155,7 @@ describe('unlinkLightningAddress', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: account });
 
     await expect(unlinkLightningAddress('sess')).resolves.toEqual(account);
-    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address`, {
+    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address`, {
       method: 'DELETE',
       headers: { Authorization: 'Bearer sess' },
     });
@@ -188,7 +181,7 @@ describe('startLightningAddressVerification', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: sent });
 
     await expect(startLightningAddressVerification('sess')).resolves.toEqual(sent);
-    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address/verification`, {
+    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address/verification`, {
       method: 'POST',
       headers: { Authorization: 'Bearer sess' },
     });
@@ -248,7 +241,7 @@ describe('confirmLightningAddressVerification', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: verified });
 
     await expect(confirmLightningAddressVerification('sess', 'nonce-1')).resolves.toEqual(verified);
-    expect(fetchMock).toHaveBeenCalledWith(`${API}/me/lightning-address/verification/confirm`, {
+    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address/verification/confirm`, {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -290,7 +283,7 @@ describe('resolveLightningAddress', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: resolved });
     await expect(resolveLightningAddress('me@walletofsatoshi.com')).resolves.toEqual(resolved);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${API}/lightning-address?address=${encodeURIComponent('me@walletofsatoshi.com')}`,
+      `/lightning-address?address=${encodeURIComponent('me@walletofsatoshi.com')}`,
     );
   });
 

@@ -8,9 +8,10 @@
  */
 
 /**
- * Returns the base URL of the 21.gifts api.
+ * Returns the upstream base URL of the 21.gifts api (server-side proxy).
  *
  * DEV: `https://dev-api.21.gifts` — PRD: `https://api.21.gifts`.
+ * The browser does not call this host; it uses same-origin `/auth`, `/me`.
  *
  * @returns The configured api base URL.
  * @throws Error when `NEXT_PUBLIC_API_URL` is unset or empty — a silent

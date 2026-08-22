@@ -11,7 +11,6 @@ import {
   type StartChallenge,
   type VerificationSent,
 } from '@/lib/api-types';
-import { getApiUrl } from '@/lib/config';
 
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
@@ -42,7 +41,7 @@ async function throwIfApiMessage(response: Response): Promise<void> {
  * proceed, so we fail loudly rather than guess.
  */
 export async function startLnurlAuth(): Promise<StartChallenge> {
-  const response = await fetch(`${getApiUrl()}/auth/lnurl`);
+  const response = await fetch('/auth/lnurl');
   if (!response.ok) {
     throw new Error(`Failed to start LNURL auth: ${response.status}`);
   }
@@ -58,7 +57,7 @@ export async function startLnurlAuth(): Promise<StartChallenge> {
  * @throws Error on a non-2xx status or a body that fails validation.
  */
 export async function pollSession(pollToken: string): Promise<SessionResult> {
-  const response = await fetch(`${getApiUrl()}/auth/session`, {
+  const response = await fetch('/auth/session', {
     headers: { 'X-Poll-Token': pollToken },
   });
   if (!response.ok) {
@@ -76,7 +75,7 @@ export async function pollSession(pollToken: string): Promise<SessionResult> {
  * @throws Error on any other non-2xx status or a body that fails validation.
  */
 export async function fetchMe(sessionToken: string): Promise<Account | null> {
-  const response = await fetch(`${getApiUrl()}/me`, {
+  const response = await fetch('/me', {
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
   if (response.status === 401) {
@@ -99,7 +98,7 @@ export async function fetchMe(sessionToken: string): Promise<Account | null> {
  * other non-2xx status, or when the body fails {@link accountSchema} validation.
  */
 export async function setLightningAddress(sessionToken: string, address: string): Promise<Account> {
-  const response = await fetch(`${getApiUrl()}/me/lightning-address`, {
+  const response = await fetch('/me/lightning-address', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
@@ -125,7 +124,7 @@ export async function setLightningAddress(sessionToken: string, address: string)
  * validation.
  */
 export async function unlinkLightningAddress(sessionToken: string): Promise<Account> {
-  const response = await fetch(`${getApiUrl()}/me/lightning-address`, {
+  const response = await fetch('/me/lightning-address', {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
@@ -149,7 +148,7 @@ export async function unlinkLightningAddress(sessionToken: string): Promise<Acco
 export async function startLightningAddressVerification(
   sessionToken: string,
 ): Promise<VerificationSent> {
-  const response = await fetch(`${getApiUrl()}/me/lightning-address/verification`, {
+  const response = await fetch('/me/lightning-address/verification', {
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
@@ -175,7 +174,7 @@ export async function confirmLightningAddressVerification(
   sessionToken: string,
   nonce: string,
 ): Promise<Account> {
-  const response = await fetch(`${getApiUrl()}/me/lightning-address/verification/confirm`, {
+  const response = await fetch('/me/lightning-address/verification/confirm', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
@@ -200,9 +199,7 @@ export async function confirmLightningAddressVerification(
  * the body fails {@link lnAddressResolvedSchema} validation.
  */
 export async function resolveLightningAddress(address: string): Promise<LnAddressResolved> {
-  const response = await fetch(
-    `${getApiUrl()}/lightning-address?address=${encodeURIComponent(address)}`,
-  );
+  const response = await fetch(`/lightning-address?address=${encodeURIComponent(address)}`);
   await throwIfApiMessage(response);
   if (!response.ok) {
     throw new Error(`Failed to resolve Lightning Address: ${response.status}`);

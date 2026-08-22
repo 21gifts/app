@@ -14,7 +14,7 @@
 # values at container start — the same image runs DEV and PRD without rebuild.
 #
 # Current NEXT_PUBLIC_* variables:
-#   NEXT_PUBLIC_API_URL — base URL of the 21.gifts api
+#   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
 
 FROM node:22-alpine AS deps

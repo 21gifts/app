@@ -10,7 +10,7 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       /**
-       * Base URL of the 21.gifts api.
+       * Upstream base URL of the 21.gifts api (server-side proxy).
        * DEV: `https://dev-api.21.gifts` — PRD: `https://api.21.gifts`.
        * Read exclusively through `getApiUrl()` in `src/lib/config.ts`.
        * Not `readonly`: unit tests assign it to exercise both branches.

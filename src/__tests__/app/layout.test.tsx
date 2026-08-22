@@ -16,7 +16,7 @@ describe('metadata', () => {
 
   it('pins metadataBase to the production origin', () => {
     expect(metadata.metadataBase).toBeInstanceOf(URL);
-    expect(metadata.metadataBase?.href).toBe('https://app.21.gifts/');
+    expect(metadata.metadataBase?.href).toBe('https://21.gifts/');
   });
 
   it('declares favicon and apple-touch icons', () => {
@@ -39,7 +39,7 @@ describe('metadata', () => {
     };
 
     expect(openGraph.type).toBe('website');
-    expect(openGraph.url).toBe('https://app.21.gifts');
+    expect(openGraph.url).toBe('https://21.gifts');
     expect(openGraph.images[0]?.url).toBe('/og.png');
     expect(openGraph.images[0]?.width).toBe(1200);
     expect(openGraph.images[0]?.height).toBe(630);
