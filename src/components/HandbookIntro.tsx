@@ -4,9 +4,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 
 /**
- * Localized title, intro, and section nav for `/handbook`. Kept as a client
- * island so the page can stay `force-static` and read markdown from disk at
- * build time (standalone runtime has no `docs/` tree).
+ * Localized title, intro, and section nav for `/handbook`.
  *
  * @param props - Section-nav links as `children`.
  * @returns The heading, intro paragraph, and localized section nav.
@@ -15,7 +13,9 @@ export function HandbookIntro(props: { children: ReactNode }): ReactElement {
   const { t } = useTranslations();
   return (
     <>
-      <h1 className="text-3xl font-semibold">{t('handbook.title')}</h1>
+      <h1 id="handbook" className="scroll-mt-24 text-3xl font-semibold">
+        {t('handbook.title')}
+      </h1>
       <p className="mt-4 text-white/60">
         {t('handbook.introBefore')}{' '}
         <a
