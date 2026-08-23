@@ -29,11 +29,10 @@ export default function HandbookPage(): ReactElement {
   const documents = loadHandbookDocuments();
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
-      <HandbookIntro />
       <div className="mt-2">
         <HandbookCopyLink targetId="handbook" label="Handbook" />
       </div>
-      <nav aria-label="Handbook sections" className="mt-8 flex flex-wrap gap-4 text-sm">
+      <HandbookIntro>
         {documents.map((doc) => (
           <span key={doc.id} className="inline-flex items-baseline gap-1">
             <a href={`#${doc.id}`} className="text-[#f7931a] underline underline-offset-2">
@@ -42,7 +41,7 @@ export default function HandbookPage(): ReactElement {
             <HandbookCopyLink targetId={doc.id} label={`${doc.title} chapter`} />
           </span>
         ))}
-      </nav>
+      </HandbookIntro>
       {documents.map((doc) => (
         <section key={doc.id} id={doc.id} className="mt-12">
           <HandbookMarkdown markdown={doc.markdown} idPrefix={doc.id} />
