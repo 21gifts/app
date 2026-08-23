@@ -2,9 +2,10 @@
 
 import { Gift, Loader2 } from 'lucide-react';
 import { useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { resolveLightningAddress } from '@/lib/api';
-import { formatMsatAsSats, requestDonateInvoice, satsToMsat } from '@/lib/lnurl-pay';
+import { requestDonateInvoice, satsToMsat } from '@/lib/lnurl-pay';
 import {
   isAndroidUserAgent,
   walletOfSatoshiHref,
@@ -13,11 +14,12 @@ import {
 
 /**
  * Guest donate surface: resolve a Lightning Address, fetch a LNURL-pay
- * invoice in the browser, and show a QR plus a wallet deep-link.
+ * invoice in the browser, and show a QR plus a Wallet of Satoshi deep-link.
  *
  * @returns The donate card.
  */
 export function DonateForm(): ReactElement {
+  const { t } = useTranslations();
   const [addressDraft, setAddressDraft] = useState('');
   const [amountDraft, setAmountDraft] = useState('');
   const [invoice, setInvoice] = useState<{ pr: string; address: string; sats: number } | null>(
@@ -28,6 +30,33 @@ export function DonateForm(): ReactElement {
   const generationRef = useRef(0);
   const busyRef = useRef(false);
 
+  /**
+   * Formats millisatoshis as a localized sat label for range errors and pay lines.
+   *
+   * @param msat - Amount in millisatoshis.
+   * @returns Localized `1 sat` / `{n} sats` string.
+   */
+  const formatSatsFromMsat = (msat: number): string => {
+    const n = msat / 1000;
+    if (n === 1) {
+      return t('donate.satOne');
+    }
+    return t('donate.sats', { n });
+  };
+
+  /**
+   * Formats a whole-sat amount for the pay confirmation line.
+   *
+   * @param sats - Whole satoshis.
+   * @returns Localized sat label.
+   */
+  const formatSats = (sats: number): string => {
+    if (sats === 1) {
+      return t('donate.satOne');
+    }
+    return t('donate.sats', { n: sats });
+  };
+
   const onSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
     if (busyRef.current) {
@@ -35,17 +64,17 @@ export function DonateForm(): ReactElement {
     }
     const address = addressDraft.trim();
     if (address === '') {
-      setError('Enter a Wallet of Satoshi address');
+      setError(t('donate.errorAddress'));
       return;
     }
     const rawAmount = amountDraft.trim();
     if (rawAmount === '' || !/^\d+$/.test(rawAmount)) {
-      setError('Enter a whole number of sats greater than zero');
+      setError(t('donate.errorAmount'));
       return;
     }
     const sats = Number.parseInt(rawAmount, 10);
     if (sats <= 0 || !Number.isSafeInteger(sats)) {
-      setError('Enter a whole number of sats greater than zero');
+      setError(t('donate.errorAmount'));
       return;
     }
     const amountMsat = satsToMsat(sats);
@@ -61,7 +90,10 @@ export function DonateForm(): ReactElement {
       }
       if (amountMsat < resolved.minSendable || amountMsat > resolved.maxSendable) {
         setError(
-          `This address accepts ${formatMsatAsSats(resolved.minSendable)} – ${formatMsatAsSats(resolved.maxSendable)}.`,
+          t('donate.range', {
+            min: formatSatsFromMsat(resolved.minSendable),
+            max: formatSatsFromMsat(resolved.maxSendable),
+          }),
         );
         return;
       }
@@ -95,7 +127,6 @@ export function DonateForm(): ReactElement {
   };
 
   if (invoice !== null) {
-    const satLabel = invoice.sats === 1 ? '1 sat' : `${invoice.sats} sats`;
     const android = isAndroidUserAgent(navigator.userAgent);
     const wosHref = android
       ? walletOfSatoshiIntentHref(invoice.pr)
@@ -103,21 +134,21 @@ export function DonateForm(): ReactElement {
     return (
       <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
         <p className="text-center text-sm text-neutral-600">
-          Pay {satLabel} to {invoice.address}
+          {t('donate.pay', { amount: formatSats(invoice.sats), address: invoice.address })}
         </p>
-        <QrCode value={invoice.pr} label="Bitcoin payment QR code" />
+        <QrCode value={invoice.pr} label={t('donate.invoiceQr')} />
         <a
           href={wosHref}
           className="text-sm font-medium text-neutral-600 underline underline-offset-4 transition hover:text-neutral-900"
         >
-          Open Wallet of Satoshi
+          {t('donate.openWallet')}
         </a>
         <button
           type="button"
           onClick={onCancel}
           className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
         >
-          Cancel
+          {t('donate.cancel')}
         </button>
       </section>
     );
@@ -126,13 +157,11 @@ export function DonateForm(): ReactElement {
   return (
     <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
       <Gift aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <h2 className="text-center text-lg font-medium text-neutral-900">Send Bitcoin</h2>
-      <p className="text-center text-sm text-neutral-500">
-        Send Bitcoin to a Wallet of Satoshi address. No account needed.
-      </p>
+      <h2 className="text-center text-lg font-medium text-neutral-900">{t('donate.heading')}</h2>
+      <p className="text-center text-sm text-neutral-500">{t('donate.lead')}</p>
       <form className="flex w-full flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
         <label className="flex flex-col gap-1 text-left text-sm text-neutral-700">
-          Wallet of Satoshi address
+          {t('donate.addressLabel')}
           <input
             type="email"
             autoComplete="off"
@@ -149,7 +178,7 @@ export function DonateForm(): ReactElement {
           />
         </label>
         <label className="flex flex-col gap-1 text-left text-sm text-neutral-700">
-          Amount (sats)
+          {t('donate.amountLabel')}
           <input
             type="text"
             inputMode="numeric"
@@ -176,7 +205,7 @@ export function DonateForm(): ReactElement {
           className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-60"
         >
           {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-          Continue
+          {t('donate.create')}
         </button>
         {busy ? (
           <button
@@ -184,7 +213,7 @@ export function DonateForm(): ReactElement {
             onClick={onCancel}
             className="inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
           >
-            Cancel
+            {t('donate.cancel')}
           </button>
         ) : null}
       </form>
