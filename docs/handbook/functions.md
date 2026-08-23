@@ -55,11 +55,11 @@
 - **Purpose:** Renders gift KPIs and three SVG diagrams (cumulative spend, by person, by month), plus loading/error/empty states.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. No network.
-- **Used by:** `StatsPage`.
+- **Used by:** `StatsLoader`.
 
 ## Function: StatsPage
 
-- **Purpose:** Next.js page for `/stats`. Fetches gift totals on mount and renders `StatsDashboard`.
+- **Purpose:** Next.js page for `/stats`. Renders `StatsLoader`.
 - **Inputs:** None.
 - **Returns / side effects:** The statistics screen inside `MarketingLayout`. Renders `StatsLoader`.
 - **Used by:** Route `/stats`.
@@ -125,7 +125,7 @@
 - **Purpose:** GET `/gifts/stats` and parse the public gift totals payload.
 - **Inputs:** None.
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsPage`.
+- **Used by:** `StatsLoader`.
 
 ## Function: fetchMe
 
@@ -304,7 +304,7 @@
 
 ## Function: MarketingLayout
 
-- **Purpose:** Dark full-page shell for `/`, `/legal`, and `/handbook`.
+- **Purpose:** Dark full-page shell for `/`, `/legal`, `/handbook`, and `/stats`.
 - **Inputs:** `children`.
 - **Returns / side effects:** Wrapper div with header, page, footer.
 - **Used by:** Marketing route group.
