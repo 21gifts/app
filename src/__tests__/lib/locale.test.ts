@@ -34,6 +34,7 @@ describe('parseAcceptLanguage', () => {
 
   it('honours q-order so de beats a lower-q tl', () => {
     expect(parseAcceptLanguage('tl;q=0.2,de;q=0.8')).toBe('de');
+    expect(parseAcceptLanguage('de;q=0.5,de;q=0.9')).toBe('de');
   });
 
   it('skips empty tags and empty primary subtags', () => {
@@ -59,5 +60,18 @@ describe('parseAcceptLanguage', () => {
     expect(parseAcceptLanguage('de;q=foo,en;q=0.5')).toBe('en');
     expect(parseAcceptLanguage('de;q=0.5oops,en;q=0.4')).toBe('en');
     expect(parseAcceptLanguage('de;q=,en;q=0.4')).toBe('en');
+  });
+
+  it('honours wildcard * with q=0 exclusion and LOCALES order', () => {
+    expect(parseAcceptLanguage('en;q=0,*;q=1')).toBe('de');
+    expect(parseAcceptLanguage('*;q=1,de;q=0.5')).toBe('en');
+    expect(parseAcceptLanguage('*')).toBe('en');
+    expect(parseAcceptLanguage('*;q=0')).toBe('en');
+    expect(parseAcceptLanguage('*;q=0.5,*;q=1')).toBe('en');
+  });
+
+  it('rejects invalid Basic Language Ranges', () => {
+    expect(parseAcceptLanguage('de-@@@,en;q=0.5')).toBe('en');
+    expect(parseAcceptLanguage('de-ä,en;q=0.5')).toBe('en');
   });
 });
