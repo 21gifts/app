@@ -346,6 +346,11 @@ describe('fetchGiftStats', () => {
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
   });
 
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');

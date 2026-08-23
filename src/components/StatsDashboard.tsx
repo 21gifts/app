@@ -85,9 +85,16 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
   const n = series.length;
   const xAt = (i: number): number => padL + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
   const yAt = (v: number): number => padT + innerH - (v / maxY) * innerH;
-  const points = series.map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.cumulativeSats).toFixed(1)}`);
-  const line = points.join(' ');
-  const area = `${padL},${(padT + innerH).toFixed(1)} ${line} ${(padL + innerW).toFixed(1)},${(padT + innerH).toFixed(1)}`;
+  const bottom = (padT + innerH).toFixed(1);
+  const firstY = yAt((series[0] as (typeof series)[number]).cumulativeSats).toFixed(1);
+  const line =
+    n === 1
+      ? `${padL},${firstY} ${(padL + innerW).toFixed(1)},${firstY}`
+      : series.map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.cumulativeSats).toFixed(1)}`).join(' ');
+  const area =
+    n === 1
+      ? `${padL},${bottom} ${padL},${firstY} ${(padL + innerW).toFixed(1)},${firstY} ${(padL + innerW).toFixed(1)},${bottom}`
+      : `${padL},${bottom} ${line} ${(padL + innerW).toFixed(1)},${bottom}`;
   const yTicks = [...new Set([0, 0.5, 1].map((t) => Math.round(maxY * t)))];
   const xIdx = [...new Set(n <= 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1])];
 

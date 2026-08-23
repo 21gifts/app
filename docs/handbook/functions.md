@@ -356,7 +356,7 @@
 - **Purpose:** Same-origin proxy helper for api `GET /gifts/stats`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
-- **Used by:** `src/app/gifts/stats/route.ts`.
+- **Used by:** Route GET `/gifts/stats`.
 
 ## Function: proxyLightningAddressGet
 

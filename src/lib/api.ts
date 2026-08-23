@@ -242,11 +242,11 @@ export async function resolveLightningAddress(address: string): Promise<LnAddres
  * body fails {@link giftStatsSchema}.
  */
 export async function fetchGiftStats(): Promise<GiftStats> {
-  const response = await fetch('/gifts/stats');
-  if (!response.ok) {
-    throw new Error('Could not load gift stats. Please try again.');
-  }
   try {
+    const response = await fetch('/gifts/stats');
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
     return giftStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
