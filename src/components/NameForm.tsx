@@ -9,10 +9,10 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Lets a signed-in giver set or edit the display name shown on their account.
  *
- * Reads the current account and session token from the auth store and writes the
- * api's updated account straight back into it, so the surrounding signed-in view
- * re-renders in place. Renders nothing when no account — or, defensively, no
- * session token — is present, since it is only mounted inside the logged-in view.
+ * Reads the current account and session token from the auth store and merges
+ * the saved `name` into that account so a concurrent address write is not
+ * overwritten. Renders nothing when no account — or, defensively, no session
+ * token — is present, since it is only mounted inside the logged-in view.
  *
  * @returns The name section, or `null` when there is nothing to show.
  */

@@ -10,10 +10,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
  * receives their gifts.
  *
- * Reads the current account and session token from the auth store and writes the
- * api's updated account straight back into it, so the surrounding signed-in view
- * re-renders in place. Renders nothing when no account — or, defensively, no
- * session token — is present, since it is only mounted inside the logged-in view.
+ * Reads the current account and session token from the auth store and merges
+ * the saved Lightning Address fields into that account so a concurrent name
+ * write is not overwritten. Renders nothing when no account — or, defensively,
+ * no session token — is present, since it is only mounted inside the logged-in view.
  *
  * @returns The Lightning Address section, or `null` when there is nothing to show.
  */

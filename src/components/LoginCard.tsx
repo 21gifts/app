@@ -53,6 +53,12 @@ export function LoginCard(): ReactElement {
         if (maybeAccount === null) {
           clearSession();
         } else {
+          const current = useAuthStore.getState();
+          // A poll or an in-page save may already have this token; do not
+          // overwrite a newer profile with a stale GET /me.
+          if (current.session === token && current.account !== null) {
+            return;
+          }
           setAuth(token, maybeAccount);
         }
       })

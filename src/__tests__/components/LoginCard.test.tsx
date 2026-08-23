@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginCard } from '@/components/LoginCard';
 import { useLnurlLogin, type LoginStatus } from '@/hooks/useLnurlLogin';
@@ -130,6 +130,26 @@ describe('LoginCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /log out/i }));
     expect(clearSession).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('does not clobber a profile already stored for the same token', async () => {
+    let resolve!: (value: typeof account | null) => void;
+    const pending = new Promise<typeof account | null>((r) => {
+      resolve = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    render(<LoginCard />);
+    act(() => {
+      useAuthStore.getState().setAuth('tok', { ...account, name: 'Ada' });
+    });
+
+    await act(async () => {
+      resolve(account);
+    });
+
+    expect(useAuthStore.getState().account?.name).toBe('Ada');
   });
 
   it('hydrates a valid persisted token into the signed-in view', async () => {
