@@ -43,6 +43,27 @@
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
+## Function: StatsLoader
+
+- **Purpose:** Client loader for `/stats`. Fetches gift totals on mount and retry, ignores stale responses after unmount, and renders `StatsDashboard`.
+- **Inputs:** None.
+- **Returns / side effects:** React element. Calls `fetchGiftStats`.
+- **Used by:** `StatsPage`.
+
+## Function: StatsDashboard
+
+- **Purpose:** Renders gift KPIs and three SVG diagrams (cumulative spend, by person, by month), plus loading/error/empty states.
+- **Inputs:** `stats`, `error`, `loading`, `onRetry`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `StatsLoader`.
+
+## Function: StatsPage
+
+- **Purpose:** Next.js page for `/stats`. Renders `StatsLoader`.
+- **Inputs:** None.
+- **Returns / side effects:** The statistics screen inside `MarketingLayout`. Renders `StatsLoader`.
+- **Used by:** Route `/stats`.
+
 ## Function: Home
 
 - **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`.
@@ -98,6 +119,13 @@
 - **Inputs:** None.
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
 - **Used by:** `useAuthStore.clearAuth` and `LoginCard` when session hydration gets 401.
+
+## Function: fetchGiftStats
+
+- **Purpose:** GET `/gifts/stats` and parse the public gift totals payload.
+- **Inputs:** None.
+- **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
+- **Used by:** `StatsLoader`.
 
 ## Function: fetchMe
 
@@ -276,7 +304,7 @@
 
 ## Function: MarketingLayout
 
-- **Purpose:** Dark full-page shell for `/`, `/legal`, and `/handbook`.
+- **Purpose:** Dark full-page shell for `/`, `/legal`, `/handbook`, and `/stats`.
 - **Inputs:** `children`.
 - **Returns / side effects:** Wrapper div with header, page, footer.
 - **Used by:** Marketing route group.
@@ -322,6 +350,13 @@
 - **Inputs:** `Request` with `X-Poll-Token`.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route GET `/auth/session`.
+
+## Function: proxyGiftsStatsGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /gifts/stats`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/gifts/stats`.
 
 ## Function: proxyLightningAddressGet
 

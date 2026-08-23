@@ -4,12 +4,12 @@
 
 - **URL:** `/` — public marketing landing (no auth gate).
 - **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Bitcoin gifts, How it works (Wallet of Satoshi login and address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
-- **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy, open the Handbook.
+- **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
 
 ### Variant: default
 
-Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, Handbook, Log in). No hamburger.
+Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, Stats, Handbook, Log in). No hamburger.
 
 ![21.gifts home](images/root.png)
 
@@ -31,6 +31,37 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 The only state: imprint plus privacy, marketing chrome.
 
 ![21.gifts legal](images/legal.png)
+
+## Screen: /stats
+
+- **URL:** `/stats` — public gift totals (no auth gate).
+- **What the user sees:** Dark 21.gifts header, heading **Gifts**, four KPI cards (total spent, gifts, people, period), then diagrams: **Total spend over time** (hero cumulative chart), **By person**, **By month**. Empty database copy: **No gifts recorded yet.**
+- **Actions:** Read the charts. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`).
+
+### Variant: default
+
+Loaded stats with the cumulative spend chart visible.
+
+![21.gifts stats](images/stats.png)
+
+### Variant: empty
+
+Zero gifts. KPI zeros and **No gifts recorded yet.**
+
+![21.gifts stats empty](images/stats-empty.png)
+
+### Variant: loading
+
+Waiting on `GET /gifts/stats`. Copy **Loading…**
+
+![21.gifts stats loading](images/stats-loading.png)
+
+### Variant: error
+
+Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try again**.
+
+![21.gifts stats error](images/stats-error.png)
 
 ## Screen: /login
 

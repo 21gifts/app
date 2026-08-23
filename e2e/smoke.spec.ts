@@ -6,6 +6,13 @@ test('unknown path shows the 404 screen', async ({ page }) => {
   await expect(page.getByText('This page does not exist.')).toBeVisible();
 });
 
+test('stats nav is on the landing page', async ({ page }) => {
+  await page.goto('/');
+  await expect(
+    page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Stats' }),
+  ).toBeVisible();
+});
+
 test('landing page renders the wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();

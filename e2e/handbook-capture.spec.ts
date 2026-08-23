@@ -299,6 +299,76 @@ test('donate invoice-android', async ({ page }) => {
   await writePng(page, 'donate-invoice-android.png');
 });
 
+test('stats default', async ({ page }) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 1500,
+        giftCount: 3,
+        recipientCount: 2,
+        firstPaidAt: '2026-06-01T00:00:00.000Z',
+        lastPaidAt: '2026-07-01T00:00:00.000Z',
+        spendOverTime: [
+          { day: '2026-06-01', sats: 500, cumulativeSats: 500 },
+          { day: '2026-06-02', sats: 0, cumulativeSats: 500 },
+          { day: '2026-07-01', sats: 1000, cumulativeSats: 1500 },
+        ],
+        byRecipient: [
+          { recipient: 'alice', giftCount: 2, sats: 1000 },
+          { recipient: 'bob', giftCount: 1, sats: 500 },
+        ],
+        byMonth: [
+          { month: '2026-06', giftCount: 2, sats: 500 },
+          { month: '2026-07', giftCount: 1, sats: 1000 },
+        ],
+      }),
+    });
+  });
+  await page.goto('/stats');
+  await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
+  await writePng(page, 'stats.png');
+});
+
+test('stats empty', async ({ page }) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 0,
+        giftCount: 0,
+        recipientCount: 0,
+        firstPaidAt: null,
+        lastPaidAt: null,
+        spendOverTime: [],
+        byRecipient: [],
+        byMonth: [],
+      }),
+    });
+  });
+  await page.goto('/stats');
+  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await writePng(page, 'stats-empty.png');
+});
+
+test('stats loading', async ({ page }) => {
+  await page.route('**/gifts/stats', () => new Promise(() => undefined));
+  await page.goto('/stats');
+  await expect(page.getByText('Loading…')).toBeVisible();
+  await writePng(page, 'stats-loading.png');
+});
+
+test('stats error', async ({ page }) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/stats');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await writePng(page, 'stats-error.png');
+});
+
 test('handbook default', async ({ page }) => {
   await page.goto('/handbook');
   await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();

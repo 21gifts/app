@@ -5,6 +5,7 @@ import {
   proxyAuthLnurlGet,
   proxyAuthSessionGet,
   proxyLightningAddressGet,
+  proxyGiftsStatsGet,
   proxyMeGet,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
@@ -79,5 +80,11 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/lightning-address?address=a@b.com'),
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lightning-address');
+  });
+
+  it('proxyGiftsStatsGet hits /gifts/stats', async () => {
+    const fetchMock = stubApi();
+    await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/gifts/stats');
   });
 });
