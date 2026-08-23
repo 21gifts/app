@@ -83,7 +83,7 @@ Session present, no name and no Wallet of Satoshi address yet. **Signed in**, ro
 
 ### Variant: signed-in-linked
 
-Signed in with an address on the account. Shows the address plus **Edit** / **Unlink** (no verification UI).
+Signed in with an address on the account. Name form (set or **Edit**) plus the address with **Edit** / **Unlink** (no verification UI).
 
 ![21.gifts login signed in linked](images/login-signed-in-linked.png)
 
