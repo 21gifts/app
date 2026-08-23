@@ -24,7 +24,7 @@
 ## Function: HandbookCopyLink
 
 - **Purpose:** Client button beside a handbook heading or chapter. Copies `origin + pathname + #id` to the clipboard, sets `location.hash`, and flashes a check icon for 1.2s (textarea `execCommand` fallback).
-- **Inputs:** `targetId` (DOM id without `#`) and `label` (aria-label from `handbook.copyLink` with `{ label }`).
+- **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`).
 - **Visible UI:** Idle `Link2` icon; copied `Check` icon. No visible "Copy link" or "Copied" text (`title` and `aria-label` keep the accessible name).
 - **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
 - **Used by:** `HandbookPage` (page title and chapter nav) and `HandbookMarkdown` (every heading).
@@ -45,7 +45,7 @@
 
 ## Function: HandbookPage
 
-- **Purpose:** Async Next.js page for `/handbook`. Resolves locale via `getRequestLocale`, loads the four app handbook files from disk, and renders them with a link to the api handbook. Copy-link label from `handbook.title`; intro chrome via already-translated props on `HandbookIntro`; copy-link on the page title and each chapter nav item; markdown bodies stay English.
+- **Purpose:** Async Next.js page for `/handbook`. Resolves locale via `getRequestLocale`, loads the four app handbook files from disk, and renders them with a link to the api handbook. Title copy-link uses `handbook.title`; chapter copy-links use `handbook.chapterLabel` with `{ title }`; intro chrome via already-translated props on `HandbookIntro`; markdown bodies stay English.
 - **Inputs:** None (calls `getRequestLocale()`; reads `docs/handbook/` from disk at request time; the standalone image copies that tree).
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
