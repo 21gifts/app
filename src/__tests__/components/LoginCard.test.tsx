@@ -58,7 +58,7 @@ afterEach(() => {
 describe('LoginCard', () => {
   it('shows the login call-to-action when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
-    const button = screen.getByRole('button', { name: /log in with your lightning wallet/i });
+    const button = screen.getByRole('button', { name: /log in with wallet of satoshi/i });
     fireEvent.click(button);
     expect(startSpy).toHaveBeenCalledTimes(1);
   });
@@ -98,7 +98,7 @@ describe('LoginCard', () => {
   it('falls back to the start view when waiting without an lnurl', () => {
     mockHook('waiting', null);
     renderWithLocale(<LoginCard />);
-    expect(screen.getByRole('button', { name: /log in with your lightning wallet/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /log in with wallet of satoshi/i })).toBeTruthy();
   });
 
   it('shows the expired state with a working retry', () => {
