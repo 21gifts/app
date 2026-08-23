@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
 
+test('unknown path shows the 404 screen', async ({ page }) => {
+  await page.goto('/404');
+  await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
+  await expect(page.getByText('This page does not exist.')).toBeVisible();
+});
+
 test('landing page renders the wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();

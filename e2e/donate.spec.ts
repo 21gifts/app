@@ -6,6 +6,13 @@ test('donate page renders the gift form', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
 });
 
+test('donate form shows Enter a Lightning Address when the field is blank', async ({ page }) => {
+  await page.goto('/donate');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Create invoice' }).click();
+  await expect(page.getByText('Enter a Lightning Address')).toBeVisible();
+});
+
 test('donate form creates an invoice QR from a Lightning Address', async ({ page }) => {
   await page.route(/\/lightning-address\?/, async (route) => {
     await route.fulfill({

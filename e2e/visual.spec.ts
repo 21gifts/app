@@ -79,6 +79,12 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-donate', 'donate.png');
   });
 
+  test('screen /404', async ({ page }) => {
+    await page.goto('/404');
+    await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
+    await shotScreen(page, 'screen-404', 'not-found.png');
+  });
+
   test('screen /handbook', async ({ page }) => {
     await page.goto('/handbook');
     await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
