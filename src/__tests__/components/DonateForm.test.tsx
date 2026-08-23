@@ -125,7 +125,7 @@ describe('DonateForm', () => {
     });
     vi.mocked(resolveLightningAddress).mockResolvedValue(resolved);
     vi.mocked(requestDonateInvoice).mockResolvedValue('lnbc21u1ptest');
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     const link = await screen.findByRole('link', { name: 'Open Wallet of Satoshi' });

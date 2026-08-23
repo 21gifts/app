@@ -55,7 +55,8 @@ export default async function Home(): Promise<ReactElement> {
             <span className="text-sm text-white/60">02</span>
             <h3 className="mt-2 text-xl font-semibold">{t('home.step2Title')}</h3>
             <p className="mt-2 text-white/60">
-              {t('home.step2BodyBefore')} <code>name@domain</code> {t('home.step2BodyAfter')}
+              {t('home.step2BodyBefore')} <code>you@walletofsatoshi.com</code>
+              {t('home.step2BodyAfter')}
             </p>
           </div>
           <div>
