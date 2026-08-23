@@ -28,9 +28,9 @@ export function isAndroidUserAgent(userAgent: string): boolean {
 }
 
 /**
- * Uppercased bech32 LNURL (LUD-01).
+ * Uppercases a bech32 payload (LNURL or BOLT11).
  *
- * @param lnurl - Bech32 `lnurl1…` from `/auth/lnurl` (any casing).
+ * @param lnurl - Bech32 LNURL or BOLT11 payment request (any casing).
  * @returns The same string in uppercase.
  */
 export function uppercaseLnurl(lnurl: string): string {

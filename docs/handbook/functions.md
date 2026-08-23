@@ -117,7 +117,7 @@
 - **Purpose:** Detects Android so the WoS CTA can use an Intent URL.
 - **Inputs:** `userAgent` string.
 - **Returns / side effects:** `true` iff `/Android/i` matches.
-- **Used by:** `LoginCard` QrView.
+- **Used by:** `LoginCard` QrView and `DonateForm`.
 
 ## Function: loadHandbookDocuments
 
@@ -198,10 +198,10 @@
 
 ## Function: uppercaseLnurl
 
-- **Purpose:** Uppercases a bech32 LNURL (LUD-01).
+- **Purpose:** Uppercases a bech32 LNURL or BOLT11 payment request.
 - **Inputs:** `lnurl` string.
 - **Returns / side effects:** Uppercase string.
-- **Used by:** QR value and Wallet of Satoshi hrefs.
+- **Used by:** QR value and Wallet of Satoshi hrefs (`LoginCard`, `DonateForm`).
 
 ## Function: useAuthStore
 
