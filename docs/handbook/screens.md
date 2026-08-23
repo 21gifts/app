@@ -37,7 +37,7 @@ The only state: imprint plus privacy, marketing chrome.
 - **URL:** `/stats` — public gift totals (no auth gate).
 - **What the user sees:** Dark 21.gifts header, heading **Gifts**, four KPI cards (total spent, gifts, people, period), then diagrams: **Total spend over time** (hero cumulative chart), **By person**, **By month**. Empty database copy: **No gifts recorded yet.**
 - **Actions:** Read the charts. Header **Stats** stays on this page; **Log in** goes to `/login`.
-- **Calls:** `StatsPage`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`).
+- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`).
 
 ### Variant: default
 

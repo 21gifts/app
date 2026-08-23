@@ -140,6 +140,19 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Total spend over time').textContent).toMatch(/4k/);
   });
 
+  it('does not duplicate the 1-sat y tick', () => {
+    const one: GiftStats = {
+      ...SAMPLE,
+      totalSats: 1,
+      spendOverTime: [{ day: '2026-01-01', sats: 1, cumulativeSats: 1 }],
+      byMonth: [{ month: '2026-01', giftCount: 1, sats: 1 }],
+    };
+    render(<StatsDashboard stats={one} error={null} loading={false} onRetry={() => undefined} />);
+    const svg = screen.getByLabelText('Total spend over time');
+    const ones = [...svg.querySelectorAll('text')].filter((el) => el.textContent === '1');
+    expect(ones).toHaveLength(1);
+  });
+
   it('keeps small totals as plain numbers on the axis', () => {
     const small: GiftStats = {
       ...SAMPLE,

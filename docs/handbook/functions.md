@@ -43,6 +43,13 @@
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
+## Function: StatsLoader
+
+- **Purpose:** Client loader for `/stats`. Fetches gift totals on mount and retry, ignores stale responses after unmount, and renders `StatsDashboard`.
+- **Inputs:** None.
+- **Returns / side effects:** React element. Calls `fetchGiftStats`.
+- **Used by:** `StatsPage`.
+
 ## Function: StatsDashboard
 
 - **Purpose:** Renders gift KPIs and three SVG diagrams (cumulative spend, by person, by month), plus loading/error/empty states.
@@ -54,7 +61,7 @@
 
 - **Purpose:** Next.js page for `/stats`. Fetches gift totals on mount and renders `StatsDashboard`.
 - **Inputs:** None.
-- **Returns / side effects:** The statistics screen inside `MarketingLayout`. Calls `fetchGiftStats`.
+- **Returns / side effects:** The statistics screen inside `MarketingLayout`. Renders `StatsLoader`.
 - **Used by:** Route `/stats`.
 
 ## Function: Home
