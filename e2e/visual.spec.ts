@@ -119,7 +119,43 @@ test.describe('function baselines', () => {
 
     for (const section of sections) {
       const heading = page.locator(`#${section.id}`);
-      await expect(heading).toHaveScreenshot(`function-${section.name}.png`, { ...SHOT });
+      await heading.scrollIntoViewIfNeeded();
+      const clip = await page.evaluate((id: string) => {
+        const el = document.getElementById(id);
+        if (el === null) {
+          return null;
+        }
+        const wrap = el.parentElement;
+        if (wrap === null) {
+          return null;
+        }
+        const nodes: Element[] = [wrap];
+        let next = wrap.nextElementSibling;
+        while (next !== null) {
+          if (next.querySelector('h2[id^="functions-function-"]') !== null) {
+            break;
+          }
+          nodes.push(next);
+          next = next.nextElementSibling;
+        }
+        const rects = nodes.map((node) => node.getBoundingClientRect());
+        const left = Math.min(...rects.map((r) => r.left));
+        const top = Math.min(...rects.map((r) => r.top));
+        const right = Math.max(...rects.map((r) => r.right));
+        const bottom = Math.max(...rects.map((r) => r.bottom));
+        return {
+          x: left + window.scrollX,
+          y: top + window.scrollY,
+          width: right - left,
+          height: bottom - top,
+        };
+      }, section.id);
+      expect(clip).not.toBeNull();
+      await expect(page).toHaveScreenshot(`function-${section.name}.png`, {
+        clip: clip as { x: number; y: number; width: number; height: number },
+        fullPage: true,
+        ...SHOT,
+      });
     }
   });
 
