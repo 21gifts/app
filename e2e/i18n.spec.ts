@@ -22,7 +22,7 @@ test.describe('Accept-Language es', () => {
 
   test('donate button is Spanish', async ({ page }) => {
     await page.goto('/donate');
-    await expect(page.getByRole('button', { name: 'Crear factura' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible();
   });
 });
 
