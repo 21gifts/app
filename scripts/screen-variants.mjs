@@ -101,7 +101,7 @@ export const SCREEN_VARIANTS = [
     route: '/donate',
     id: 'invoice-android',
     image: 'donate-invoice.png',
-    needle: 'package=com.livingroomofsatoshi.wallet',
+    needle: 'intent:lightning:LNBC21N1EXAMPLEINVOICE',
   },
   {
     route: '/handbook',
