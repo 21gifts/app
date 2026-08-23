@@ -35,7 +35,7 @@ npm run dev    # → http://localhost:3000
 | `npm test`                     | Vitest unit tests, single run                                                                                                                 |
 | `npm run test:watch`           | Vitest in watch mode                                                                                                                          |
 | `npm run test:coverage`        | Vitest with the 100% coverage gate                                                                                                            |
-| `npm run e2e`                  | Playwright tests against the production build                                                                                                 |
+| `npm run e2e`                  | Playwright against the mock api (:3001) plus the production standalone server (:3000)                                                         |
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Capture handbook PNGs for every screen variant (`UPDATE_HANDBOOK_IMAGES=1`)                                                                   |
@@ -205,8 +205,8 @@ undeclared deviation and is rejected.
 - Coverage gate: 100% lines, branches, functions, statements on the activated surface
   (see `vitest.config.ts`). Unreachable defensive code can be exempted with a
   `v8 ignore` annotation that names a concrete reason — never to silence the gate.
-- Playwright tests live in `e2e/` and run against the production build
-  (`npm run e2e` builds and starts the server itself).
+- Playwright tests live in `e2e/` and run against the mock api on :3001 plus
+  the production standalone server on :3000 (`npm run e2e` builds and starts both).
 
 ### E2E (hard requirement)
 

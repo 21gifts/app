@@ -126,6 +126,16 @@ test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({
   expect(((await res.json()) as { name: string }).name).toBe('Ada');
   const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
   expect(((await me.json()) as { name: string }).name).toBe('Ada');
+  const maxOk = await request.post('/me/name', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { name: 'A'.repeat(80) },
+  });
+  expect(maxOk.status()).toBe(200);
+  const tooLong = await request.post('/me/name', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { name: 'A'.repeat(81) },
+  });
+  expect(tooLong.status()).toBe(400);
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
