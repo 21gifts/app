@@ -160,7 +160,7 @@
 - **Purpose:** Formats millisatoshis as an English sat string (`1 sat` / `{n} sats`).
 - **Inputs:** `msat` number.
 - **Returns / side effects:** Decimal string in sats.
-- **Used by:** Unit tests and shared LNURL-pay helpers. The donate UI formats amounts via catalog keys `donate.satOne` / `donate.sats` instead.
+- **Used by:** Unit tests (`lnurl-pay.test.ts`). The donate UI formats amounts via catalog keys `donate.satOne` / `donate.sats` instead.
 
 ## Function: getApiUrl
 
