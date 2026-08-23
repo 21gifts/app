@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractFunctions, extractScreens, sectionBody } from './check-handbook.mjs';
+import { SCREEN_VARIANTS } from './screen-variants.mjs';
 
 const ROOT = process.cwd();
 const SNAP_DIR = path.join(ROOT, 'e2e', 'visual.spec.ts-snapshots');
@@ -69,7 +70,8 @@ for (const route of [...screens].sort()) {
       `Screen ${route} has no shotScreen/toHaveScreenshot('${arg}') in e2e/visual.spec.ts`,
     );
   }
-  const mdName = `${arg.replace(/^screen-/, '')}.png`;
+  const defaultVariant = SCREEN_VARIANTS.find((v) => v.route === route);
+  const mdName = defaultVariant?.image ?? `${arg.replace(/^screen-/, '')}.png`;
   const imageRef = new RegExp(
     `!\\[[^\\]]*\\]\\(images/${mdName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`,
   );
@@ -90,6 +92,30 @@ for (const route of [...screens].sort()) {
     const publicBuf = fs.readFileSync(publicFile);
     if (!docsBuf.equals(publicBuf)) {
       missing.push(`${mdName} differs between docs/handbook/images and public/handbook-images`);
+    }
+  }
+}
+
+for (const variant of SCREEN_VARIANTS) {
+  if (!handbookPngs.includes(variant.image)) {
+    missing.push(
+      `docs/handbook/images/${variant.image} is missing (variant ${variant.route} ${variant.id})`,
+    );
+  }
+  if (!publicPngs.includes(variant.image)) {
+    missing.push(
+      `public/handbook-images/${variant.image} is missing (variant ${variant.route} ${variant.id})`,
+    );
+  }
+  const docsFile = path.join(HANDBOOK_IMAGES, variant.image);
+  const publicFile = path.join(PUBLIC_IMAGES, variant.image);
+  if (fs.existsSync(docsFile) && fs.existsSync(publicFile)) {
+    const docsBuf = fs.readFileSync(docsFile);
+    const publicBuf = fs.readFileSync(publicFile);
+    if (!docsBuf.equals(publicBuf)) {
+      missing.push(
+        `${variant.image} differs between docs/handbook/images and public/handbook-images`,
+      );
     }
   }
 }
@@ -116,5 +142,5 @@ if (missing.length) {
 }
 
 console.log(
-  `Screenshots complete: ${screens.size} screens, ${fns.size} functions, ${snapFiles.length} PNG baselines.`,
+  `Screenshots complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants, ${fns.size} functions, ${snapFiles.length} PNG baselines.`,
 );

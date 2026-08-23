@@ -73,6 +73,47 @@ test('Android login pins Wallet of Satoshi via intent package', async ({ page })
   );
 });
 
+test('login shows Preparing your login while the challenge request hangs', async ({ page }) => {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/auth\/lnurl$/, async (route) => {
+    await held;
+    await route.abort();
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await expect(page.getByText('Preparing your login…')).toBeVisible();
+  release();
+});
+
+test('login shows Login expired when the session poll expires', async ({ page }) => {
+  await page.route(/\/auth\/lnurl$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        lnurl: LNURL,
+        k1: 'ab'.repeat(32),
+        pollToken: 'cd'.repeat(32),
+        expiresInSeconds: 90,
+      }),
+    });
+  });
+  await page.route(/\/auth\/session$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'expired' }),
+    });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await expect(page.getByText('Login expired')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});
+
 test('login shows an error when the LNURL challenge cannot start', async ({ page }) => {
   await page.route(/\/auth\/lnurl$/, async (route) => {
     await route.fulfill({ status: 503, body: 'unavailable' });

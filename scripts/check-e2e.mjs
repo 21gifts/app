@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractEndpoints, extractScreens, walk } from './check-handbook.mjs';
+import { SCREEN_VARIANTS } from './screen-variants.mjs';
 
 const ROOT = process.cwd();
 const E2E_DIR = path.join(ROOT, 'e2e');
@@ -16,7 +17,10 @@ function e2eText() {
     console.error('E2E MISSING: e2e/ directory does not exist');
     process.exit(1);
   }
-  const files = walk(E2E_DIR, (p) => /\.(ts|js|mjs)$/.test(p));
+  const files = walk(
+    E2E_DIR,
+    (p) => /\.(ts|js|mjs)$/.test(p) && !p.endsWith(`${path.sep}handbook-capture.spec.ts`),
+  );
   if (files.length === 0) {
     console.error('E2E MISSING: e2e/ has no spec files');
     process.exit(1);
@@ -52,6 +56,14 @@ for (const spec of [...endpoints].sort()) {
   }
 }
 
+for (const variant of SCREEN_VARIANTS) {
+  if (!text.includes(variant.needle)) {
+    missing.push(
+      `Screen ${variant.route} variant ${variant.id} has no e2e needle ${JSON.stringify(variant.needle)}`,
+    );
+  }
+}
+
 if (screens.size === 0 && endpoints.size === 0) {
   console.error('E2E: no screens or endpoints discovered — refusing to pass');
   process.exit(1);
@@ -65,4 +77,6 @@ if (missing.length) {
   process.exit(1);
 }
 
-console.log(`E2E complete: ${screens.size} screens, ${endpoints.size} endpoints.`);
+console.log(
+  `E2E complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants, ${endpoints.size} endpoints.`,
+);

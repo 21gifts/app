@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { SCREEN_VARIANTS } from './screen-variants.mjs';
 
 const ROOT = process.cwd();
 const HANDBOOK_DIR = path.join(ROOT, 'docs', 'handbook');
@@ -127,6 +128,9 @@ function extractScreens() {
       }
     }
   }
+  if (fs.existsSync(path.join(appDir, 'not-found.tsx'))) {
+    screens.add('/404');
+  }
   for (const name of fs.existsSync(ROOT) ? fs.readdirSync(ROOT) : []) {
     if (!name.endsWith('.html')) {
       continue;
@@ -228,6 +232,18 @@ function sectionBody(text, kind, name) {
   return '';
 }
 
+function variantSection(screenBody, id) {
+  const esc = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const startRe = new RegExp(`^### Variant: ${esc}\\s*$`, 'm');
+  const start = screenBody.search(startRe);
+  if (start < 0) {
+    return '';
+  }
+  const rest = screenBody.slice(start);
+  const next = rest.search(/\n### /);
+  return next < 0 ? rest : rest.slice(0, next);
+}
+
 function sectionComplete(body) {
   const bullets = (body.match(/^- \*\*/gm) || []).length;
   return bullets >= 3 && body.trim().length >= 80;
@@ -256,6 +272,36 @@ if (isMain) {
       missing.push(`Screen: ${n} (missing ## Screen: ${n})`);
     } else if (!sectionComplete(sectionBody(text, 'Screen', n))) {
       missing.push(`Screen: ${n} (incomplete)`);
+    }
+  }
+
+  for (const route of [...screens].sort()) {
+    if (!SCREEN_VARIANTS.some((variant) => variant.route === route)) {
+      missing.push(`Screen ${route} has no entries in scripts/screen-variants.mjs`);
+    }
+  }
+
+  const screensMd = path.join(HANDBOOK_DIR, 'screens.md');
+  const screensText = fs.existsSync(screensMd) ? fs.readFileSync(screensMd, 'utf8') : '';
+  for (const variant of SCREEN_VARIANTS) {
+    const body = sectionBody(screensText, 'Screen', variant.route);
+    const headingReVar = new RegExp(
+      `^### Variant: ${variant.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
+      'm',
+    );
+    if (!headingReVar.test(body)) {
+      missing.push(
+        `Screen ${variant.route} missing ### Variant: ${variant.id} (every UI state must be a handbook variant)`,
+      );
+      continue;
+    }
+    const escapedImage = variant.image.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const variantSlice = variantSection(body, variant.id);
+    const imageRe = new RegExp(`!\\[[^\\]]*\\]\\(images/${escapedImage}\\)`);
+    if (!imageRe.test(variantSlice)) {
+      missing.push(
+        `Screen ${variant.route} variant ${variant.id} has no ![…](images/${variant.image})`,
+      );
     }
   }
 
