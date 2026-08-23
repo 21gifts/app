@@ -8,7 +8,7 @@ import { z } from 'zod';
  */
 export const accountSchema = z.object({
   id: z.string(),
-  linkingKey: z.string(),
+  linkingKey: z.string().nullable(),
   role: z.enum(['basis', 'moderator']),
   name: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
@@ -20,7 +20,8 @@ export const accountSchema = z.object({
  * An authenticated 21.gifts account.
  *
  * `role` gates capabilities (`basis` for ordinary givers, `moderator` for
- * elevated review actions); `linkingKey` is the wallet's LNURL-auth public key.
+ * elevated review actions); `linkingKey` is the wallet's LNURL-auth public key,
+ * or `null` for passkey-created accounts that have not bound a wallet.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
@@ -134,3 +135,31 @@ export const giftStatsSchema = z.object({
  * Aggregated outbound gift statistics from the api.
  */
 export type GiftStats = z.infer<typeof giftStatsSchema>;
+
+/**
+ * Runtime schema for passkey begin (`register` or `authenticate`).
+ *
+ * `options` is the WebAuthn JSON options object (challenge, rp, user, …).
+ */
+export const passkeyBeginSchema = z.object({
+  challengeId: z.string(),
+  options: z.record(z.unknown()),
+});
+
+/**
+ * A freshly minted passkey ceremony (register or authenticate).
+ */
+export type PasskeyBegin = z.infer<typeof passkeyBeginSchema>;
+
+/**
+ * Runtime schema for passkey finish: session token plus account.
+ */
+export const passkeySessionSchema = z.object({
+  token: z.string(),
+  account: accountSchema,
+});
+
+/**
+ * A session issued immediately after a successful passkey ceremony.
+ */
+export type PasskeySession = z.infer<typeof passkeySessionSchema>;

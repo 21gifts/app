@@ -21,6 +21,34 @@
 - **Used by:** Wallet of Satoshi after scanning the login QR.
 - **Auth:** Public (wallet signature in query).
 
+## Endpoint: POST /auth/passkey/authenticate/begin
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/begin`.
+- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Used by:** `startPasskeyAuthentication`.
+- **Auth:** Public.
+
+## Endpoint: POST /auth/passkey/authenticate/finish
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/finish`.
+- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Used by:** `finishPasskeyAuthentication`.
+- **Auth:** Public.
+
+## Endpoint: POST /auth/passkey/register/begin
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`.
+- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Used by:** `startPasskeyRegistration`.
+- **Auth:** Public.
+
+## Endpoint: POST /auth/passkey/register/finish
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/finish`.
+- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Used by:** `finishPasskeyRegistration`.
+- **Auth:** Public.
+
 ## Endpoint: GET /auth/session
 
 - **Purpose:** Same-origin proxy of api session poll.

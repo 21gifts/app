@@ -10,4 +10,8 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.delete('/me/lightning-address')).status()).toBe(502);
   expect((await request.get('/lightning-address')).status()).toBe(502);
   expect((await request.get('/gifts/stats')).status()).toBe(502);
+  expect((await request.post('/auth/passkey/register/begin')).status()).toBe(502);
+  expect((await request.post('/auth/passkey/register/finish')).status()).toBe(502);
+  expect((await request.post('/auth/passkey/authenticate/begin')).status()).toBe(502);
+  expect((await request.post('/auth/passkey/authenticate/finish')).status()).toBe(502);
 });

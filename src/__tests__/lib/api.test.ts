@@ -3,11 +3,15 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   fetchGiftStats,
   fetchMe,
+  finishPasskeyAuthentication,
+  finishPasskeyRegistration,
   pollSession,
   setLightningAddress,
   setName,
   resolveLightningAddress,
   startLnurlAuth,
+  startPasskeyAuthentication,
+  startPasskeyRegistration,
   unlinkLightningAddress,
 } from '@/lib/api';
 
@@ -354,5 +358,74 @@ describe('fetchGiftStats', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+});
+
+const passkeyAccount = { ...account, linkingKey: null };
+const passkeyBegin = { challengeId: 'ch'.repeat(16), options: { challenge: 'aa' } };
+const passkeySession = { token: 'tok', account: passkeyAccount };
+
+describe('startPasskeyRegistration', () => {
+  it('returns the validated begin payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration()).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(startPasskeyRegistration()).rejects.toThrow(
+      'Failed to start passkey registration: 500',
+    );
+  });
+});
+
+describe('finishPasskeyRegistration', () => {
+  it('posts the credential and returns a session', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeySession });
+    await expect(finishPasskeyRegistration('ch', { id: 'cred' })).resolves.toEqual(passkeySession);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
+      'Failed to finish passkey registration: 400',
+    );
+  });
+});
+
+describe('startPasskeyAuthentication', () => {
+  it('returns the validated begin payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyAuthentication()).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/begin', { method: 'POST' });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(startPasskeyAuthentication()).rejects.toThrow(
+      'Failed to start passkey authentication: 500',
+    );
+  });
+});
+
+describe('finishPasskeyAuthentication', () => {
+  it('posts the credential and returns a session', async () => {
+    stubFetch({ ok: true, status: 200, body: passkeySession });
+    await expect(finishPasskeyAuthentication('ch', { id: 'cred' })).resolves.toEqual(
+      passkeySession,
+    );
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
+      'Failed to finish passkey authentication: 400',
+    );
   });
 });

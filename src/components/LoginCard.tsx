@@ -1,11 +1,12 @@
 'use client';
 
-import { AlertTriangle, Clock, Loader2, LogOut, Zap } from 'lucide-react';
+import { AlertTriangle, Clock, Fingerprint, Loader2, LogOut, Zap } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { NameForm } from '@/components/NameForm';
 import { QrCode } from '@/components/QrCode';
 import { useLnurlLogin } from '@/hooks/useLnurlLogin';
+import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { clearSession, loadSession } from '@/lib/session-storage';
@@ -28,10 +29,10 @@ function shortenKey(key: string): string {
 }
 
 /**
- * The LNURL-auth login surface.
+ * The login surface: passkey first, LNURL-auth (Wallet of Satoshi) second.
  *
  * Shows the signed-in account when one is present, otherwise walks the visitor
- * through the login state machine (button → QR → success/expired/error). On
+ * through passkey create/continue or the wallet QR flow. On
  * mount it rehydrates from a persisted token: a valid token logs the visitor
  * straight in, a rejected (401) token is cleared.
  *
@@ -42,6 +43,7 @@ export function LoginCard(): ReactElement {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { status, lnurl, start } = useLnurlLogin();
+  const passkey = usePasskeyLogin();
 
   useEffect(() => {
     const token = loadSession();
@@ -77,10 +79,18 @@ export function LoginCard(): ReactElement {
     body = <ExpiredView onRetry={start} />;
   } else if (status === 'error') {
     body = <ErrorView onRetry={start} />;
-  } else if (status === 'starting') {
+  } else if (status === 'starting' || passkey.status === 'starting') {
     body = <StartingView />;
+  } else if (passkey.status === 'error') {
+    body = <ErrorView onRetry={passkey.register} />;
   } else {
-    body = <StartView onStart={start} />;
+    body = (
+      <StartView
+        onCreatePasskey={passkey.register}
+        onContinuePasskey={passkey.authenticate}
+        onWalletStart={start}
+      />
+    );
   }
 
   return (
@@ -110,9 +120,11 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
     <>
       <p className="text-xs uppercase tracking-widest text-neutral-400">Signed in</p>
       <p className="text-lg font-medium capitalize text-neutral-900">{account.role}</p>
-      <p className="font-mono text-sm text-neutral-500" title={account.linkingKey}>
-        {shortenKey(account.linkingKey)}
-      </p>
+      {account.linkingKey !== null ? (
+        <p className="font-mono text-sm text-neutral-500" title={account.linkingKey}>
+          {shortenKey(account.linkingKey)}
+        </p>
+      ) : null}
       <NameForm />
       <LightningAddressForm />
       <button
@@ -129,25 +141,48 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
 
 /** Props for {@link StartView}. */
 interface StartViewProps {
-  /** Called to begin the login flow. */
-  onStart: () => void;
+  /** Called to create a new discoverable passkey. */
+  onCreatePasskey: () => void;
+  /** Called to sign in with an existing passkey. */
+  onContinuePasskey: () => void;
+  /** Called to begin the Wallet of Satoshi LNURL-auth flow. */
+  onWalletStart: () => void;
 }
 
 /**
- * The initial logged-out state: a single call-to-action.
+ * The initial logged-out state: passkey first, wallet as a second method.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({ onStart }: StartViewProps): ReactElement {
+function StartView({
+  onCreatePasskey,
+  onContinuePasskey,
+  onWalletStart,
+}: StartViewProps): ReactElement {
   return (
     <>
-      <Zap aria-hidden="true" className="h-8 w-8 text-neutral-400" />
+      <Fingerprint aria-hidden="true" className="h-8 w-8 text-neutral-400" />
       <h2 className="text-center text-lg font-medium text-neutral-900">Sign in to 21.gifts</h2>
       <button
         type="button"
-        onClick={onStart}
+        onClick={onCreatePasskey}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+      >
+        <Fingerprint aria-hidden="true" className="h-4 w-4" />
+        Create a passkey
+      </button>
+      <button
+        type="button"
+        onClick={onContinuePasskey}
+        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+      >
+        Continue with passkey
+      </button>
+      <button
+        type="button"
+        onClick={onWalletStart}
+        className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-neutral-500 transition hover:text-neutral-800"
       >
         <Zap aria-hidden="true" className="h-4 w-4" />
         Log in with Wallet of Satoshi
