@@ -1,7 +1,13 @@
 import { getApiUrl } from '@/lib/config';
 
 /** Incoming headers that the api accepts and that the browser/wallet send. */
-const FORWARDED_HEADERS = ['authorization', 'content-type', 'x-poll-token', 'user-agent'] as const;
+const FORWARDED_HEADERS = [
+  'authorization',
+  'content-type',
+  'origin',
+  'x-poll-token',
+  'user-agent',
+] as const;
 
 /** HTTP methods that carry a body to the api. */
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);

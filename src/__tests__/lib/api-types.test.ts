@@ -6,6 +6,8 @@ import {
   startChallengeSchema,
   lnAddressResolvedSchema,
   giftStatsSchema,
+  passkeyBeginSchema,
+  passkeySessionSchema,
 } from '@/lib/api-types';
 
 const account = {
@@ -51,6 +53,30 @@ describe('accountSchema', () => {
 
   it('rejects a non-boolean verification flag', () => {
     expect(() => accountSchema.parse({ ...account, lightningAddressVerified: 'yes' })).toThrow();
+  });
+
+  it('accepts a null linkingKey for passkey accounts', () => {
+    expect(accountSchema.parse({ ...account, linkingKey: null }).linkingKey).toBeNull();
+  });
+});
+
+describe('passkeyBeginSchema', () => {
+  it('accepts challengeId and a JSON options object', () => {
+    expect(passkeyBeginSchema.parse({ challengeId: 'ch', options: { challenge: 'aa' } })).toEqual({
+      challengeId: 'ch',
+      options: { challenge: 'aa' },
+    });
+  });
+});
+
+describe('passkeySessionSchema', () => {
+  it('accepts a token plus account', () => {
+    expect(
+      passkeySessionSchema.parse({ token: 'tok', account: { ...account, linkingKey: null } }),
+    ).toEqual({
+      token: 'tok',
+      account: { ...account, linkingKey: null },
+    });
   });
 });
 
