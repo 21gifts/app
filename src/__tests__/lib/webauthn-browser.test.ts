@@ -65,6 +65,48 @@ describe('creationOptionsFromJSON', () => {
     expect(options.attestation).toBeUndefined();
   });
 
+  it('maps excludeCredentials from base64url ids', () => {
+    const options = creationOptionsFromJSON({
+      challenge: bytesToBase64Url(new Uint8Array([9, 8, 7])),
+      rp: { id: 'localhost', name: '21.gifts' },
+      user: {
+        id: bytesToBase64Url(new Uint8Array([1, 2])),
+        name: 'n',
+        displayName: 'd',
+      },
+      excludeCredentials: [
+        {
+          type: 'public-key',
+          id: bytesToBase64Url(new Uint8Array([9])),
+          transports: ['internal', 1],
+        },
+        { type: 'public-key' },
+        { type: 'public-key', id: 1 },
+        null,
+      ],
+    });
+    expect(options.excludeCredentials).toHaveLength(1);
+    expect(new Uint8Array(options.excludeCredentials?.[0]?.id as ArrayBuffer)).toEqual(
+      new Uint8Array([9]),
+    );
+    expect(options.excludeCredentials?.[0]?.transports).toEqual(['internal']);
+  });
+
+  it('throws when excludeCredentials is non-empty but every item is invalid', () => {
+    expect(() =>
+      creationOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([9, 8, 7])),
+        rp: { id: 'localhost', name: '21.gifts' },
+        user: {
+          id: bytesToBase64Url(new Uint8Array([1, 2])),
+          name: 'n',
+          displayName: 'd',
+        },
+        excludeCredentials: [{ type: 'public-key', id: 1 }],
+      }),
+    ).toThrow(TypeError);
+  });
+
   it('uses native parseCreationOptionsFromJSON when present', () => {
     const parsed = { challenge: new Uint8Array([1]).buffer } as PublicKeyCredentialCreationOptions;
     const parse = vi.fn().mockReturnValue(parsed);
@@ -88,6 +130,26 @@ describe('requestOptionsFromJSON', () => {
     expect(options.rpId).toBe('localhost');
     expect(options.userVerification).toBe('required');
     expect(options.allowCredentials).toEqual([]);
+  });
+
+  it('maps allowCredentials from base64url ids', () => {
+    const options = requestOptionsFromJSON({
+      challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+      allowCredentials: [{ type: 'public-key', id: bytesToBase64Url(new Uint8Array([7, 8])) }],
+    });
+    expect(options.allowCredentials).toHaveLength(1);
+    expect(new Uint8Array(options.allowCredentials?.[0]?.id as ArrayBuffer)).toEqual(
+      new Uint8Array([7, 8]),
+    );
+  });
+
+  it('throws when allowCredentials is non-empty but every item is invalid', () => {
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+        allowCredentials: [{ type: 'public-key', id: 1 }],
+      }),
+    ).toThrow(TypeError);
   });
 
   it('omits optional request fields when absent', () => {

@@ -27,10 +27,15 @@ export interface UsePasskeyLogin {
   authenticate: () => void;
   /** Repeat the last register or authenticate attempt after an error. */
   retry: () => void;
+  /** Aborts an in-flight WebAuthn prompt so another login method can start. */
+  cancel: () => void;
 }
 
 /**
- * Whether the user cancelled the WebAuthn prompt (not an app error).
+ * Whether the user dismissed the WebAuthn prompt (not an app error).
+ *
+ * Picker dismiss is `NotAllowedError`; `AbortController.abort()` is
+ * `AbortError`. Both return the visitor to idle rather than the error card.
  *
  * @param error - Unknown rejection.
  * @returns True when the ceremony was dismissed.
@@ -45,16 +50,27 @@ function isUserCancel(error: unknown): boolean {
 /**
  * Drives passkey register / authenticate. A run id ignores superseded clicks.
  *
- * @returns Status plus the two start actions.
+ * @returns Status plus register, authenticate, retry, and cancel.
  */
 export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const runIdRef = useRef(0);
   const lastKindRef = useRef<'register' | 'authenticate'>('register');
+  const abortRef = useRef<AbortController | null>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
+
+  const cancel = useCallback((): void => {
+    runIdRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setStatus('idle');
+  }, []);
 
   const register = useCallback((): void => {
     lastKindRef.current = 'register';
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const runId = ++runIdRef.current;
     setStatus('starting');
     void (async () => {
@@ -65,6 +81,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         }
         const credential = await navigator.credentials.create({
           publicKey: creationOptionsFromJSON(begin.options),
+          signal: controller.signal,
         });
         if (runId !== runIdRef.current) {
           return;
@@ -92,6 +109,9 @@ export function usePasskeyLogin(): UsePasskeyLogin {
 
   const authenticate = useCallback((): void => {
     lastKindRef.current = 'authenticate';
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const runId = ++runIdRef.current;
     setStatus('starting');
     void (async () => {
@@ -102,6 +122,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         }
         const credential = await navigator.credentials.get({
           publicKey: requestOptionsFromJSON(begin.options),
+          signal: controller.signal,
         });
         if (runId !== runIdRef.current) {
           return;
@@ -135,5 +156,5 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     register();
   }, [authenticate, register]);
 
-  return { status, register, authenticate, retry };
+  return { status, register, authenticate, retry, cancel };
 }

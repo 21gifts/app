@@ -360,14 +360,14 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save and address link.
+- **Used by:** Same-origin name save, address link, and passkey begin/finish.
 
 ## Function: proxyApiRequest
 
-- **Purpose:** Forwards an App Router request to `getApiUrl()` + path, copying query, body, and authorization / content-type / user-agent headers.
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path, copying query, body, and authorization / content-type / user-agent / origin headers.
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response`, or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.
@@ -430,9 +430,9 @@
 
 ## Function: creationOptionsFromJSON
 
-- **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input.
+- **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present.
 - **Inputs:** Record from `POST /auth/passkey/register/begin`.
-- **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present.
+- **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is non-empty but has no valid entries.
 - **Used by:** `usePasskeyLogin.register`.
 
 ## Function: credentialToJSON
@@ -486,9 +486,9 @@
 
 ## Function: requestOptionsFromJSON
 
-- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input.
+- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Maps `allowCredentials` when present; otherwise discoverable `[]`.
 - **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
-- **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present.
+- **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is non-empty but has no valid entries.
 - **Used by:** `usePasskeyLogin.authenticate`.
 
 ## Function: startPasskeyAuthentication
@@ -507,7 +507,7 @@
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey create and continue; stores the session on success.
+- **Purpose:** Client hook for passkey create and continue; stores the session on success. `cancel` aborts an in-flight WebAuthn prompt.
 - **Inputs:** None (reads `useAuthStore`).
-- **Returns / side effects:** `{ status, register, authenticate, retry }`. Calls WebAuthn and the api.
+- **Returns / side effects:** `{ status, register, authenticate, retry, cancel }`. Calls WebAuthn and the api.
 - **Used by:** `LoginCard`.

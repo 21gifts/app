@@ -41,6 +41,7 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
  *
  * @param options - `PublicKeyCredentialCreationOptionsJSON` from the api.
  * @returns Options for `navigator.credentials.create`.
+ * @throws TypeError when a non-empty `excludeCredentials` list has no valid entries.
  */
 export function creationOptionsFromJSON(
   options: Record<string, unknown>,
@@ -66,6 +67,7 @@ export function creationOptionsFromJSON(
     AuthenticatorSelectionCriteria | undefined;
   const timeout = options['timeout'];
   const attestation = options['attestation'];
+  const excludeCredentials = credentialDescriptorsFromJSON(options['excludeCredentials']);
   const created: PublicKeyCredentialCreationOptions = {
     challenge: Uint8Array.from(base64UrlToBytes(typeof challenge === 'string' ? challenge : '')),
     rp,
@@ -85,6 +87,9 @@ export function creationOptionsFromJSON(
   if (typeof attestation === 'string') {
     created.attestation = attestation as AttestationConveyancePreference;
   }
+  if (excludeCredentials !== undefined) {
+    created.excludeCredentials = excludeCredentials;
+  }
   return created;
 }
 
@@ -93,6 +98,7 @@ export function creationOptionsFromJSON(
  *
  * @param options - `PublicKeyCredentialRequestOptionsJSON` from the api.
  * @returns Options for `navigator.credentials.get`.
+ * @throws TypeError when a non-empty `allowCredentials` list has no valid entries.
  */
 export function requestOptionsFromJSON(
   options: Record<string, unknown>,
@@ -113,9 +119,10 @@ export function requestOptionsFromJSON(
   const rpId = options['rpId'];
   const timeout = options['timeout'];
   const userVerification = options['userVerification'];
+  const allowCredentials = credentialDescriptorsFromJSON(options['allowCredentials']);
   const requested: PublicKeyCredentialRequestOptions = {
     challenge: Uint8Array.from(base64UrlToBytes(typeof challenge === 'string' ? challenge : '')),
-    allowCredentials: [],
+    allowCredentials: allowCredentials ?? [],
   };
   if (typeof rpId === 'string') {
     requested.rpId = rpId;
@@ -127,6 +134,45 @@ export function requestOptionsFromJSON(
     requested.userVerification = userVerification as UserVerificationRequirement;
   }
   return requested;
+}
+
+/**
+ * Decode a WebAuthn JSON descriptor list (`id` as base64url) to bytes.
+ *
+ * @param raw - `allowCredentials` / `excludeCredentials` JSON, or absent.
+ * @returns Descriptors, or `undefined` when the field is missing.
+ * @throws TypeError when the list is non-empty but no item is a valid descriptor.
+ */
+function credentialDescriptorsFromJSON(raw: unknown): PublicKeyCredentialDescriptor[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  const descriptors: PublicKeyCredentialDescriptor[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item === null || !('id' in item) || !('type' in item)) {
+      continue;
+    }
+    const id = (item as { id: unknown }).id;
+    const type = (item as { type: unknown }).type;
+    if (typeof id !== 'string' || typeof type !== 'string') {
+      continue;
+    }
+    const descriptor: PublicKeyCredentialDescriptor = {
+      type: type as PublicKeyCredentialType,
+      id: Uint8Array.from(base64UrlToBytes(id)),
+    };
+    const transports = (item as { transports?: unknown }).transports;
+    if (Array.isArray(transports)) {
+      descriptor.transports = transports.filter(
+        (transport): transport is AuthenticatorTransport => typeof transport === 'string',
+      );
+    }
+    descriptors.push(descriptor);
+  }
+  if (raw.length > 0 && descriptors.length === 0) {
+    throw new TypeError('WebAuthn credential descriptor list had no valid entries');
+  }
+  return descriptors;
 }
 
 /**
