@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { SCREEN_VARIANTS } from './screen-variants.mjs';
 
 const ROOT = process.cwd();
 const HANDBOOK_DIR = path.join(ROOT, 'docs', 'handbook');
@@ -44,6 +45,12 @@ function handbookText() {
   return files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
 }
 
+/**
+ * Collect exported function/class names under src (handbook + screenshot gates).
+ *
+ * @param srcRoot - Absolute path to `src/`.
+ * @returns Unique export names.
+ */
 function extractFunctions(srcRoot) {
   const names = new Set();
   if (!fs.existsSync(srcRoot)) {
@@ -62,6 +69,7 @@ function extractFunctions(srcRoot) {
   const reDefault = /^export\s+default\s+(async\s+)?function\s+([A-Za-z0-9_]+)/gm;
   const reConstFn =
     /^export\s+const\s+([A-Za-z0-9_]+)\s*=\s*(async\s*)?(\(|function|create[<(\s]|new\s)/gm;
+  const reConstAlias = /^export\s+const\s+([A-Za-z0-9_]+)\s*=\s*[A-Za-z_][A-Za-z0-9_]*\s*;/gm;
   const reClass = /^export\s+class\s+([A-Za-z0-9_]+)/gm;
   for (const f of files) {
     const t = fs.readFileSync(f, 'utf8');
@@ -76,6 +84,10 @@ function extractFunctions(srcRoot) {
     }
     reConstFn.lastIndex = 0;
     while ((m = reConstFn.exec(t))) {
+      names.add(m[1]);
+    }
+    reConstAlias.lastIndex = 0;
+    while ((m = reConstAlias.exec(t))) {
       names.add(m[1]);
     }
     reClass.lastIndex = 0;
@@ -115,6 +127,9 @@ function extractScreens() {
         screens.add(route);
       }
     }
+  }
+  if (fs.existsSync(path.join(appDir, 'not-found.tsx'))) {
+    screens.add('/404');
   }
   for (const name of fs.existsSync(ROOT) ? fs.readdirSync(ROOT) : []) {
     if (!name.endsWith('.html')) {
@@ -217,12 +232,24 @@ function sectionBody(text, kind, name) {
   return '';
 }
 
+function variantSection(screenBody, id) {
+  const esc = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const startRe = new RegExp(`^### Variant: ${esc}\\s*$`, 'm');
+  const start = screenBody.search(startRe);
+  if (start < 0) {
+    return '';
+  }
+  const rest = screenBody.slice(start);
+  const next = rest.search(/\n### /);
+  return next < 0 ? rest : rest.slice(0, next);
+}
+
 function sectionComplete(body) {
   const bullets = (body.match(/^- \*\*/gm) || []).length;
   return bullets >= 3 && body.trim().length >= 80;
 }
 
-export { extractScreens, extractEndpoints, walk };
+export { extractScreens, extractEndpoints, extractFunctions, sectionBody, walk };
 
 const isMain = import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 
@@ -245,6 +272,36 @@ if (isMain) {
       missing.push(`Screen: ${n} (missing ## Screen: ${n})`);
     } else if (!sectionComplete(sectionBody(text, 'Screen', n))) {
       missing.push(`Screen: ${n} (incomplete)`);
+    }
+  }
+
+  for (const route of [...screens].sort()) {
+    if (!SCREEN_VARIANTS.some((variant) => variant.route === route)) {
+      missing.push(`Screen ${route} has no entries in scripts/screen-variants.mjs`);
+    }
+  }
+
+  const screensMd = path.join(HANDBOOK_DIR, 'screens.md');
+  const screensText = fs.existsSync(screensMd) ? fs.readFileSync(screensMd, 'utf8') : '';
+  for (const variant of SCREEN_VARIANTS) {
+    const body = sectionBody(screensText, 'Screen', variant.route);
+    const headingReVar = new RegExp(
+      `^### Variant: ${variant.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
+      'm',
+    );
+    if (!headingReVar.test(body)) {
+      missing.push(
+        `Screen ${variant.route} missing ### Variant: ${variant.id} (every UI state must be a handbook variant)`,
+      );
+      continue;
+    }
+    const escapedImage = variant.image.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const variantSlice = variantSection(body, variant.id);
+    const imageRe = new RegExp(`!\\[[^\\]]*\\]\\(images/${escapedImage}\\)`);
+    if (!imageRe.test(variantSlice)) {
+      missing.push(
+        `Screen ${variant.route} variant ${variant.id} has no ![…](images/${variant.image})`,
+      );
     }
   }
 
