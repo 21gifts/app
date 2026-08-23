@@ -3,13 +3,13 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Lightning gifts, How it works (LNURL-auth + Lightning Address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
-- **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy, open the Handbook.
-- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
+- **What the user sees:** Dark 21.gifts header with an always-visible language switcher, headline about peer-to-peer Lightning gifts, How it works (LNURL-auth + Lightning Address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). Copy follows `Accept-Language` or a `locale` cookie after the visitor picks a language.
+- **Actions:** Read the pitch, change language, open login or donate, jump to in-page sections, open Legal & Privacy, open the Handbook.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`; chrome uses `LanguageSwitcher`.
 
 ### Variant: default
 
-Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, Handbook, Log in). No hamburger.
+Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, Handbook, Log in) plus the language select. No hamburger.
 
 ![21.gifts home](images/root.png)
 
@@ -22,8 +22,8 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no cookies/analytics, session in localStorage, Cloudflare TLS, LNURL-auth on this origin).
-- **Actions:** Read-only. Header **Log in** goes to `/login`.
+- **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; `locale` cookie only after a language choice; session in localStorage; Cloudflare TLS; LNURL-auth on this origin). Body stays English; marketing chrome follows locale.
+- **Actions:** Read-only. Header **Log in** goes to `/login`. Language switcher in the header.
 - **Calls:** `LegalPage`.
 
 ### Variant: default
@@ -35,9 +35,9 @@ The only state: imprint plus privacy, marketing chrome.
 ## Screen: /login
 
 - **URL:** `/login` — LNURL-auth challenge.
-- **What the user sees:** Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic `lightning:` link and no copy-LNURL control.
-- **Actions:** Scan the QR or tap WoS (`walletofsatoshi:lightning:LNURL1…` / Android Intent). When signed in, link/unlink a Lightning Address and log out. No client redirect to `/`.
-- **Calls:** `LoginCard`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
+- **What the user sees:** Top-right language switcher (`tone="light"`), idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic `lightning:` link and no copy-LNURL control.
+- **Actions:** Change language, scan the QR or tap WoS (`walletofsatoshi:lightning:LNURL1…` / Android Intent). When signed in, link/unlink a Lightning Address and log out. No client redirect to `/`.
+- **Calls:** `LoginCard`, `LightningAddressForm`, `LanguageSwitcher`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
 
 ### Variant: idle
 
@@ -90,9 +90,9 @@ Signed in with an address on the account. Shows the address plus **Edit** / **Un
 ## Screen: /donate
 
 - **URL:** `/donate` — guest LNURL-pay gift. No login required.
-- **What the user sees:** Heading **Send a gift**, Lightning Address field, sat amount (no comment), **Create invoice**, then a QR and `lightning:` invoice link — or a validation/range error on the form.
-- **Actions:** Enter a LUD-16 address and amount, create an invoice, pay from any Lightning wallet.
-- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `formatMsatAsSats`, `QrCode`.
+- **What the user sees:** Top-right language switcher (`tone="light"`), heading **Send a gift**, Lightning Address field, sat amount (no comment), **Create invoice**, then a QR and `lightning:` invoice link — or a validation/range error on the form.
+- **Actions:** Change language, enter a LUD-16 address and amount, create an invoice, pay from any Lightning wallet.
+- **Calls:** `DonateForm`, `LanguageSwitcher`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `QrCode`.
 
 ### Variant: form
 
@@ -121,8 +121,8 @@ Successful create: **Pay N sats to address**, invoice QR, **Open in wallet** (`l
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).
-- **What the user sees:** Heading **Handbook**, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints), then the four `docs/handbook/` markdown files rendered as HTML.
-- **Actions:** Read the docs, jump via the section nav, follow the api handbook link, follow in-page markdown links.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints), then the four `docs/handbook/` markdown files rendered as HTML (English bodies).
+- **Actions:** Change language, read the docs, jump via the section nav, follow the api handbook link, follow in-page markdown links.
 - **Calls:** `HandbookPage`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
 
 ### Variant: default
@@ -134,8 +134,8 @@ The only state: aggregated markdown plus screenshots.
 ## Screen: /404
 
 - **URL:** any unknown path (App Router `not-found.tsx`). There is no `page.tsx` for `/404`; Playwright uses `page.goto('/404')` which hits this screen.
-- **What the user sees:** Marketing chrome, heading **404**, **This page does not exist.**, **Back home**.
-- **Actions:** Go home, or use header/footer links.
+- **What the user sees:** Marketing chrome (including language switcher), heading **404**, localized “does not exist” copy, and **Back home**.
+- **Actions:** Change language, go home, or use header/footer links.
 - **Calls:** `NotFound`, `MarketingHeader`, `MarketingFooter`.
 
 ### Variant: default

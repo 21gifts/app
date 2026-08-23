@@ -1,7 +1,16 @@
 import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import type { ReactElement, ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RootLayout, { metadata } from '@/app/layout';
+import { LocaleProvider } from '@/components/LocaleProvider';
+
+vi.mock('@/lib/request-locale', () => ({
+  getRequestLocale: vi.fn(async () => 'en' as const),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('metadata', () => {
   it('exposes the product title', () => {
@@ -60,20 +69,27 @@ describe('metadata', () => {
 describe('RootLayout', () => {
   // Rendering a nested <html> element inside the jsdom document triggers DOM
   // nesting warnings, so the layout is asserted on its returned element tree.
-  it('renders an English <html> document', () => {
-    const tree = RootLayout({ children: 'content' });
+  it('renders an English <html> document', async () => {
+    const tree = await RootLayout({ children: 'content' });
     const props = tree.props as { lang: string; children: ReactNode };
 
     expect(tree.type).toBe('html');
     expect(props.lang).toBe('en');
   });
 
-  it('wraps the children in the <body>', () => {
-    const tree = RootLayout({ children: 'content' });
-    const htmlProps = tree.props as { children: { type: string; props: { children: ReactNode } } };
+  it('wraps the children in LocaleProvider inside the <body>', async () => {
+    const tree = await RootLayout({ children: 'content' });
+    const htmlProps = tree.props as {
+      children: {
+        type: string;
+        props: { children: ReactElement };
+      };
+    };
     const body = htmlProps.children;
+    const provider = body.props.children as ReactElement<{ children: ReactNode }>;
 
     expect(body.type).toBe('body');
-    expect(body.props.children).toBe('content');
+    expect(provider.type).toBe(LocaleProvider);
+    expect(provider.props.children).toBe('content');
   });
 });

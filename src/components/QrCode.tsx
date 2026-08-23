@@ -8,7 +8,10 @@ const QR_SIZE = 232;
 export interface QrCodeProps {
   /** The string to encode — typically an uppercased LNURL. */
   value: string;
-  /** Accessible name. Default: `'Lightning login QR code'`. */
+  /**
+   * Accessible name. Code default is the English login QR label; callers that
+   * show a QR must pass a translated label.
+   */
   label?: string;
 }
 

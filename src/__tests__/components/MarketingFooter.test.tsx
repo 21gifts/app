@@ -1,7 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MarketingFooter } from '@/components/MarketingFooter';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -13,19 +14,19 @@ afterEach(cleanup);
 
 describe('MarketingFooter', () => {
   it('links Handbook to /handbook', () => {
-    render(<MarketingFooter />);
+    renderWithLocale(<MarketingFooter />);
     expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe('/handbook');
   });
 
   it('links Legal & Privacy to /legal', () => {
-    render(<MarketingFooter />);
+    renderWithLocale(<MarketingFooter />);
     expect(screen.getByRole('link', { name: 'Legal & Privacy' }).getAttribute('href')).toBe(
       '/legal',
     );
   });
 
   it('links GitHub to the org', () => {
-    render(<MarketingFooter />);
+    renderWithLocale(<MarketingFooter />);
     expect(screen.getByRole('link', { name: 'GitHub' }).getAttribute('href')).toBe(
       'https://github.com/21gifts',
     );

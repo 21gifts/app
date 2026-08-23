@@ -1,9 +1,10 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DonateForm } from '@/components/DonateForm';
 import { resolveLightningAddress } from '@/lib/api';
 import { requestDonateInvoice } from '@/lib/lnurl-pay';
 import type { LnAddressResolved } from '@/lib/api-types';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
   resolveLightningAddress: vi.fn(),
@@ -41,20 +42,20 @@ function fillForm(address = 'me@walletofsatoshi.com', amount = '21'): void {
 
 describe('DonateForm', () => {
   it('renders the idle form', () => {
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     expect(screen.getByRole('heading', { name: 'Pay with Lightning' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
   });
 
   it('asks for an address when the field is empty', () => {
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('   ', '21');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a Lightning Address');
   });
 
   it('asks for an amount when the field is empty', () => {
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(screen.getByRole('alert').textContent).toBe(
@@ -63,7 +64,7 @@ describe('DonateForm', () => {
   });
 
   it('rejects a non-integer amount', () => {
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '1.5');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(screen.getByRole('alert').textContent).toBe(
@@ -72,7 +73,7 @@ describe('DonateForm', () => {
   });
 
   it('rejects an amount that is not a safe integer', () => {
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '9007199254740993');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(screen.getByRole('alert').textContent).toBe(
@@ -81,7 +82,7 @@ describe('DonateForm', () => {
   });
 
   it('rejects a zero amount', () => {
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '0');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(screen.getByRole('alert').textContent).toBe(
@@ -92,7 +93,7 @@ describe('DonateForm', () => {
   it('shows the invoice QR after a successful resolve and invoice fetch', async () => {
     vi.mocked(resolveLightningAddress).mockResolvedValue(resolved);
     vi.mocked(requestDonateInvoice).mockResolvedValue('lnbc21u1ptest');
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
 
@@ -110,7 +111,7 @@ describe('DonateForm', () => {
   it('uses the singular sat label for a one-sat gift', async () => {
     vi.mocked(resolveLightningAddress).mockResolvedValue(resolved);
     vi.mocked(requestDonateInvoice).mockResolvedValue('lnbc10n1ptest');
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByText(/Pay 1 sat to me@walletofsatoshi.com/)).toBeTruthy();
@@ -122,7 +123,7 @@ describe('DonateForm', () => {
       minSendable: 5000,
       maxSendable: 10_000,
     });
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
@@ -138,7 +139,7 @@ describe('DonateForm', () => {
       minSendable: 1000,
       maxSendable: 2000,
     });
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '21');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
@@ -152,7 +153,7 @@ describe('DonateForm', () => {
     vi.mocked(requestDonateInvoice).mockRejectedValue(
       new Error('Could not fetch the invoice from the Lightning Address'),
     );
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
@@ -165,7 +166,7 @@ describe('DonateForm', () => {
     vi.mocked(resolveLightningAddress).mockRejectedValue(
       new Error('Not a valid Lightning Address'),
     );
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
@@ -176,7 +177,7 @@ describe('DonateForm', () => {
 
   it('surfaces a non-Error throw as a string', async () => {
     vi.mocked(resolveLightningAddress).mockRejectedValue('boom');
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'boom');
@@ -185,7 +186,7 @@ describe('DonateForm', () => {
   it('returns to the form from the paying view', async () => {
     vi.mocked(resolveLightningAddress).mockResolvedValue(resolved);
     vi.mocked(requestDonateInvoice).mockResolvedValue('lnbc21u1ptest');
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -203,7 +204,7 @@ describe('DonateForm', () => {
     );
     vi.mocked(resolveLightningAddress).mockImplementation(resolveMock);
     vi.mocked(requestDonateInvoice).mockResolvedValue('lnbc21u1ptest');
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     const form = screen.getByRole('button', { name: 'Create invoice' }).closest('form');
     expect(form).not.toBeNull();
@@ -224,7 +225,7 @@ describe('DonateForm', () => {
           finish = resolve;
         }),
     );
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -247,7 +248,7 @@ describe('DonateForm', () => {
           finish = resolve;
         }),
     );
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -268,7 +269,7 @@ describe('DonateForm', () => {
           fail = reject;
         }),
     );
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -289,7 +290,7 @@ describe('DonateForm', () => {
           finish = resolve;
         }),
     );
-    render(<DonateForm />);
+    renderWithLocale(<DonateForm />);
     fillForm('me@walletofsatoshi.com', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
+import { HandbookIntro } from '@/components/HandbookIntro';
 import { loadHandbookDocuments } from '@/lib/handbook';
 import { HandbookMarkdown } from '@/lib/handbook-markdown';
 
@@ -17,24 +18,16 @@ export const metadata: Metadata = {
 /**
  * App handbook at `/handbook`: screens, functions, and HTTP endpoints.
  *
+ * Title/intro chrome is a client island so this page can stay `force-static`
+ * (standalone has no `docs/` tree at runtime). Markdown bodies stay English.
+ *
  * @returns The handbook screen.
  */
 export default function HandbookPage(): ReactElement {
   const documents = loadHandbookDocuments();
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
-      <h1 className="text-3xl font-semibold">Handbook</h1>
-      <p className="mt-4 text-white/60">
-        This is the 21.gifts app handbook: screens, functions, and HTTP endpoints. The api handbook
-        lives in{' '}
-        <a
-          className="text-[#f7931a] underline underline-offset-2"
-          href="https://github.com/21gifts/api/tree/develop/docs/handbook"
-        >
-          21gifts/api
-        </a>
-        .
-      </p>
+      <HandbookIntro />
       <nav aria-label="Handbook sections" className="mt-8 flex flex-wrap gap-4 text-sm">
         {documents.map((doc) => (
           <a

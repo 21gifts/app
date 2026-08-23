@@ -43,9 +43,10 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Data on this website</h3>
         <p className="text-white/70">
-          This origin does not set cookies and does not load analytics scripts. The application
-          stores a session token in <code>localStorage</code> after LNURL-auth so a returning
-          visitor stays signed in.
+          This origin does not load analytics scripts. It sets no cookies unless you choose a
+          language; then a <code>locale</code> cookie stores that choice so the next visit can
+          honour it. The application stores a session token in <code>localStorage</code> after
+          LNURL-auth so a returning visitor stays signed in.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
         <p className="text-white/70">

@@ -19,4 +19,9 @@ describe('LegalPage', () => {
     render(<LegalPage />);
     expect(screen.queryByText(/Cloudflare Pages/i)).toBeNull();
   });
+
+  it('documents the optional locale cookie', () => {
+    render(<LegalPage />);
+    expect(screen.getByText(/sets no cookies unless you choose a language/i)).toBeTruthy();
+  });
 });
