@@ -73,14 +73,18 @@ app/
 │   ├── README.md
 │   ├── screens.md
 │   ├── functions.md
-│   └── endpoints.md
+│   ├── endpoints.md
+│   └── images/                  # Screen PNGs (copied to public/handbook-images/)
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
-│   └── check-e2e.mjs            # CI gate: missing screen page.goto or endpoint request → exit 1
+│   ├── check-e2e.mjs            # CI gate: missing screen page.goto or endpoint request → exit 1
+│   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
-│   └── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
+│   ├── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
+│   ├── visual.spec.ts           # Linux Chromium screenshot baselines
+│   └── visual.spec.ts-snapshots/
 ├── public/                      # Static assets served from /
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
@@ -258,12 +262,12 @@ paths (`/auth/lnurl`, `/me`, …) which the App Router proxies to that URL.
 
 ## CI / CD
 
-| Workflow               | Trigger           | Action                                                                       |
-| ---------------------- | ----------------- | ---------------------------------------------------------------------------- |
-| `ci.yaml`              | PR                | Typecheck + lint + handbook + e2e-check + test (100% coverage) + build + e2e |
-| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure               |
-| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure             |
-| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                                    |
+| Workflow               | Trigger           | Action                                                                                     |
+| ---------------------- | ----------------- | ------------------------------------------------------------------------------------------ |
+| `ci.yaml`              | PR                | Typecheck + lint + handbook + e2e-check + screenshots + test (100% coverage) + build + e2e |
+| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure                             |
+| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure                           |
+| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                                                  |
 
 Images target `linux/arm64`.
 

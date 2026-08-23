@@ -8,7 +8,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { extractFunctions, extractScreens, walk } from './check-handbook.mjs';
+import { extractFunctions, extractScreens, sectionBody } from './check-handbook.mjs';
 
 const ROOT = process.cwd();
 const SNAP_DIR = path.join(ROOT, 'e2e', 'visual.spec.ts-snapshots');
@@ -38,7 +38,7 @@ function listPngs(dir) {
 }
 
 function hasSnapshot(files, prefix) {
-  return files.some((n) => n.startsWith(`${prefix}-`) || n.startsWith(`${prefix}.`));
+  return files.some((n) => n.startsWith(`${prefix}-`) && n.endsWith('-linux.png'));
 }
 
 const missing = [];
@@ -55,26 +55,42 @@ if (snapFiles.length === 0) {
 
 const screens = extractScreens();
 const screensMd = fs.existsSync(SCREENS_MD) ? fs.readFileSync(SCREENS_MD, 'utf8') : '';
+const visualSrc = fs.readFileSync(E2E_VISUAL, 'utf8');
 const handbookPngs = listPngs(HANDBOOK_IMAGES);
 const publicPngs = listPngs(PUBLIC_IMAGES);
 
 for (const route of [...screens].sort()) {
   const arg = screenArg(route);
   if (!hasSnapshot(snapFiles, arg)) {
-    missing.push(`Screen ${route} has no Playwright baseline ${arg}-*.png`);
+    missing.push(`Screen ${route} has no Playwright Linux baseline ${arg}-*-linux.png`);
+  }
+  if (!visualSrc.includes(`'${arg}'`) && !visualSrc.includes(`"${arg}"`)) {
+    missing.push(
+      `Screen ${route} has no shotScreen/toHaveScreenshot('${arg}') in e2e/visual.spec.ts`,
+    );
   }
   const mdName = `${arg.replace(/^screen-/, '')}.png`;
   const imageRef = new RegExp(
     `!\\[[^\\]]*\\]\\(images/${mdName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`,
   );
-  if (!imageRef.test(screensMd)) {
+  const body = sectionBody(screensMd, 'Screen', route);
+  if (!imageRef.test(body)) {
     missing.push(`Screen ${route} handbook section has no ![…](images/${mdName})`);
   }
+  const docsFile = path.join(HANDBOOK_IMAGES, mdName);
+  const publicFile = path.join(PUBLIC_IMAGES, mdName);
   if (!handbookPngs.includes(mdName)) {
     missing.push(`docs/handbook/images/${mdName} is missing`);
   }
   if (!publicPngs.includes(mdName)) {
     missing.push(`public/handbook-images/${mdName} is missing`);
+  }
+  if (fs.existsSync(docsFile) && fs.existsSync(publicFile)) {
+    const docsBuf = fs.readFileSync(docsFile);
+    const publicBuf = fs.readFileSync(publicFile);
+    if (!docsBuf.equals(publicBuf)) {
+      missing.push(`${mdName} differs between docs/handbook/images and public/handbook-images`);
+    }
   }
 }
 
@@ -82,7 +98,7 @@ const fns = extractFunctions(path.join(ROOT, 'src'));
 for (const name of [...fns].sort()) {
   const arg = `function-${name}`;
   if (!hasSnapshot(snapFiles, arg)) {
-    missing.push(`Function ${name} has no Playwright baseline ${arg}-*.png`);
+    missing.push(`Function ${name} has no Playwright Linux baseline ${arg}-*-linux.png`);
   }
 }
 
