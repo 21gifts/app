@@ -15,6 +15,7 @@ import { translate } from '@/lib/translate';
 export default async function NotFound(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
+  const footer = await MarketingFooter();
 
   return (
     <div className="min-h-screen bg-[#0a090c] text-white">
@@ -29,7 +30,7 @@ export default async function NotFound(): Promise<ReactElement> {
           {translate(messages, 'notFound.back')}
         </Link>
       </main>
-      <MarketingFooter />
+      {footer}
     </div>
   );
 }
