@@ -1,7 +1,7 @@
 import { cleanup, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import HandbookPage from '@/app/(marketing)/handbook/page';
+import HandbookPage, * as handbookRoute from '@/app/(marketing)/handbook/page';
 import { getRequestLocale } from '@/lib/request-locale';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -26,6 +26,10 @@ describe('HandbookPage', () => {
     expect(screen.getByRole('button', { name: 'Copy link to Screens chapter' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Functions chapter' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Endpoints chapter' })).toBeTruthy();
+  });
+
+  it('does not force-static the handbook route', () => {
+    expect((handbookRoute as { dynamic?: string }).dynamic).not.toBe('force-static');
   });
 
   it('localizes chapter copy-link labels', async () => {

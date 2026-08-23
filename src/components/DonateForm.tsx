@@ -17,7 +17,7 @@ type DonateError =
   | { type: 'address' }
   | { type: 'amount' }
   | { type: 'range'; minMsat: number; maxMsat: number }
-  | { type: 'raw'; message: string };
+  | { type: 'request' };
 
 /**
  * Guest donate surface: resolve a Lightning Address, fetch a LNURL-pay
@@ -111,14 +111,11 @@ export function DonateForm(): ReactElement {
         return;
       }
       setInvoice({ pr, address: resolved.address, sats });
-    } catch (caught) {
+    } catch {
       if (started !== generationRef.current) {
         return;
       }
-      setError({
-        type: 'raw',
-        message: caught instanceof Error ? caught.message : String(caught),
-      });
+      setError({ type: 'request' });
     } finally {
       if (started === generationRef.current) {
         busyRef.current = false;
@@ -214,7 +211,7 @@ export function DonateForm(): ReactElement {
                       min: formatSatsFromMsat(error.minMsat),
                       max: formatSatsFromMsat(error.maxMsat),
                     })
-                  : error.message}
+                  : t('donate.errorRequest')}
           </p>
         ) : null}
         <button

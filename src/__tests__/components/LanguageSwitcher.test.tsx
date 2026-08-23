@@ -39,6 +39,29 @@ describe('LanguageSwitcher', () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
+  it('adds Secure to the cookie on https', () => {
+    const cookieSet = vi.fn();
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => '',
+      set: cookieSet,
+    });
+    vi.stubGlobal('location', { protocol: 'https:' });
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'es' } });
+      expect(cookieSet).toHaveBeenCalledWith(
+        `${LOCALE_COOKIE}=es; Path=/; Max-Age=31536000; SameSite=Lax; Secure`,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
+
   it('ignores an unsupported option value', () => {
     renderWithLocale(<LanguageSwitcher tone="dark" />);
     fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'xx' } });
