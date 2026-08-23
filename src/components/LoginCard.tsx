@@ -1,7 +1,7 @@
 'use client';
 
-import { AlertTriangle, Clock, Copy, Loader2, LogOut, Zap } from 'lucide-react';
-import { useEffect, useState, type ReactElement } from 'react';
+import { AlertTriangle, Clock, Loader2, LogOut, Zap } from 'lucide-react';
+import { useEffect, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { QrCode } from '@/components/QrCode';
 import { useLnurlLogin } from '@/hooks/useLnurlLogin';
@@ -168,36 +168,19 @@ interface QrViewProps {
 }
 
 /**
- * The waiting state: a scannable QR plus wallet deep-links.
+ * The waiting state: a scannable QR and a Wallet of Satoshi deep-link.
  *
- * The QR encodes the uppercased LNURL (LUD-01, denser). The primary CTA is
- * always an Open Wallet of Satoshi link: custom-scheme `walletofsatoshi:` on
- * iOS/desktop, or an Android Intent that pins both that scheme and the WoS
- * package. Generic `lightning:` remains a secondary default-wallet open.
- * Copy login code is only a secondary fallback.
+ * The QR encodes the uppercased LNURL (LUD-01, denser). The only CTA is Open
+ * Wallet of Satoshi: custom-scheme `walletofsatoshi:` on iOS/desktop, or an
+ * Android Intent that pins both that scheme and the WoS package.
  *
  * @param props - See {@link QrViewProps}.
  * @returns The QR view.
  */
 function QrView({ lnurl }: QrViewProps): ReactElement {
-  const [copied, setCopied] = useState(false);
   const android = isAndroidUserAgent(navigator.userAgent);
   const upper = uppercaseLnurl(lnurl);
-  const lightningHref = `lightning:${upper}`;
   const wosHref = android ? walletOfSatoshiIntentHref(lnurl) : walletOfSatoshiHref(lnurl);
-
-  async function copyLnurl(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(lnurl);
-      setCopied(true);
-    } catch (error: unknown) {
-      console.error('Copy login code failed', error);
-    }
-  }
-
-  function handleCopy(): void {
-    void copyLnurl();
-  }
 
   return (
     <>
@@ -210,25 +193,6 @@ function QrView({ lnurl }: QrViewProps): ReactElement {
         <Zap aria-hidden="true" className="h-4 w-4" />
         Open Wallet of Satoshi
       </a>
-      <a
-        href={lightningHref}
-        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-      >
-        Open default Lightning wallet
-      </a>
-      <button
-        type="button"
-        onClick={handleCopy}
-        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-      >
-        <Copy aria-hidden="true" className="h-4 w-4" />
-        {copied ? 'Copied' : 'Copy login code'}
-      </button>
-      <p className="text-center text-sm text-neutral-500">
-        {android
-          ? 'Opens Wallet of Satoshi. Default Lightning wallet is whatever owns lightning:.'
-          : 'Opens Wallet of Satoshi. If nothing opens, install it first. Default Lightning wallet is whatever owns lightning:.'}
-      </p>
     </>
   );
 }

@@ -102,17 +102,6 @@ test('login qr', async ({ page }) => {
   await writePng(page, 'login-qr.png');
 });
 
-test('login copied', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await mockPendingAuth(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
-  await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
-  await page.getByRole('button', { name: 'Copy login code' }).click();
-  await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
-  await writePng(page, 'login-copied.png');
-});
-
 test('login qr-android', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgent', {
