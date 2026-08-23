@@ -19,17 +19,28 @@ const PRIMARY_TO_LOCALE: Record<string, Locale> = {
   tl: 'fil',
 };
 
+/** RFC 4647 Basic Language Range (excludes the wildcard `*`). */
+const BASIC_LANGUAGE_RANGE = /^[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8})*$/;
+
+type Assignment = { q: number; index: number; star: boolean };
+
 /**
  * Negotiate a supported locale from an RFC 7231 Accept-Language header.
  *
- * Splits on commas, reads `q=` (default 1), sorts by q descending then header
- * order. A `q=` value must be an HTTP qvalue
- * (`^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$`); otherwise the entire
- * language-range is discarded. `q <= 0` is skipped as not acceptable.
- * Language-tags with any empty subtag after trim (e.g. `de--CH`, `-`) are
- * discarded before the primary is taken. Each tag's primary subtag is
- * lowercased. Map: en→en, de→de, es→es, fil→fil, tl→fil. First mapped tag
- * wins. Empty, missing, or unmatched → `en`.
+ * Parses comma-separated language-ranges with optional `q=` (default 1). A
+ * `q=` value must be an HTTP qvalue (`^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$`);
+ * otherwise the entire language-range is discarded. Valid tags are either
+ * the wildcard `*` or an RFC 4647 Basic Language Range matching
+ * `/^[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8})*$/`. Primary subtags are lowercased
+ * and mapped: en→en, de→de, es→es, fil→fil, tl→fil.
+ *
+ * Scoring: each supported locale gets at most one assignment `{ q, index, star }`.
+ * `*` assigns every locale that has no specific assignment yet (or only a
+ * prior `*`), competing by higher q then smaller index. Specific ranges
+ * always overwrite `*`; among specifics, higher q wins, then smaller index.
+ * `q=0` excludes a locale. Among assignments with `q > 0`, pick highest q,
+ * then smallest index, then `LOCALES` order. No positive assignment →
+ * `DEFAULT_LOCALE` (`en`).
  *
  * @param header - Raw Accept-Language or empty string.
  * @returns A supported locale.
@@ -40,7 +51,7 @@ export function parseAcceptLanguage(header: string): Locale {
   }
 
   const parts = header.split(',');
-  const entries: Array<{ primary: string; q: number; index: number }> = [];
+  const assignments = new Map<Locale, Assignment>();
 
   for (let index = 0; index < parts.length; index += 1) {
     const part = parts[index];
@@ -77,35 +88,55 @@ export function parseAcceptLanguage(header: string): Locale {
     if (invalidQ) {
       continue;
     }
-    if (q <= 0) {
+
+    if (tag === '*') {
+      for (const locale of LOCALES) {
+        const assigned = assignments.get(locale);
+        // Header order: equal q keeps the earlier (smaller) index.
+        if (assigned === undefined || (assigned.star && q > assigned.q)) {
+          assignments.set(locale, { q, index, star: true });
+        }
+      }
       continue;
     }
+
+    if (!BASIC_LANGUAGE_RANGE.test(tag)) {
+      continue;
+    }
+
     const segments = tag.split('-');
-    if (segments.some((segment) => segment === '')) {
-      continue;
-    }
     const first = segments[0];
-    /* v8 ignore next 3 — non-empty tag without empty segments has a first segment */
+    /* v8 ignore next 3 — Basic Range regex guarantees a non-empty first subtag */
     if (first === undefined) {
       continue;
     }
     const primary = first.toLowerCase();
-    entries.push({ primary, q, index });
-  }
-
-  entries.sort((a, b) => {
-    if (b.q !== a.q) {
-      return b.q - a.q;
+    const mapped = PRIMARY_TO_LOCALE[primary];
+    if (mapped === undefined) {
+      continue;
     }
-    return a.index - b.index;
-  });
 
-  for (const entry of entries) {
-    const mapped = PRIMARY_TO_LOCALE[entry.primary];
-    if (mapped !== undefined) {
-      return mapped;
+    const assigned = assignments.get(mapped);
+    // Specific always overwrites *; equal q keeps earlier (smaller) index.
+    if (assigned === undefined || assigned.star || q > assigned.q) {
+      assignments.set(mapped, { q, index, star: false });
     }
   }
 
-  return DEFAULT_LOCALE;
+  let best: Locale | undefined;
+  let bestQ = -1;
+  let bestIndex = Number.POSITIVE_INFINITY;
+  for (const locale of LOCALES) {
+    const assigned = assignments.get(locale);
+    if (assigned === undefined || assigned.q <= 0) {
+      continue;
+    }
+    if (assigned.q > bestQ || (assigned.q === bestQ && assigned.index < bestIndex)) {
+      best = locale;
+      bestQ = assigned.q;
+      bestIndex = assigned.index;
+    }
+  }
+
+  return best ?? DEFAULT_LOCALE;
 }
