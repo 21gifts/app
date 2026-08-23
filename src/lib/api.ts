@@ -17,16 +17,67 @@ const apiErrorSchema = z.object({ error: z.string() });
 const API_MESSAGE_STATUSES = new Set([400, 502]);
 
 /**
- * Throws the api's own error text when the response is a known client or
- * upstream failure, so the form can surface the reason as-is.
+ * Rewrites api error text so the visitor never sees Lightning / LNURL jargon.
+ *
+ * @param raw - The api's `error` string.
+ * @returns Copy that speaks only of Bitcoin and Wallet of Satoshi.
+ */
+function toUserFacingError(raw: string): string {
+  if (/^Invalid Lightning Address$/i.test(raw)) {
+    return 'That Wallet of Satoshi address is not valid';
+  }
+  if (/^Not a valid Lightning Address/i.test(raw)) {
+    return 'Enter an address like you@walletofsatoshi.com';
+  }
+  if (/Lightning Address could not be resolved/i.test(raw)) {
+    return 'That Wallet of Satoshi address could not be found';
+  }
+  if (/upstream api unreachable/i.test(raw)) {
+    return 'Something went wrong. Please try again.';
+  }
+  return raw
+    .replace(/Lightning Address/gi, 'Wallet of Satoshi address')
+    .replace(/LNURL-auth/gi, 'login')
+    .replace(/LNURL auth/gi, 'login')
+    .replace(/\bLNURL\b/gi, 'login')
+    .replace(/\binvoice\b/gi, 'payment')
+    .replace(/\bLightning\b/gi, 'Bitcoin');
+}
+
+/**
+ * Reads `{ error }` from an api error body, or `null` when the body is not that
+ * envelope (HTML, invalid JSON, missing `error`).
  *
  * @param response - The raw fetch response.
- * @throws Error with the api's `error` string when the status is 400 or 502.
+ * @returns The api's `error` string, or `null`.
+ */
+async function readApiError(response: Response): Promise<string | null> {
+  try {
+    const parsed = apiErrorSchema.safeParse(await response.json());
+    return parsed.success ? parsed.data.error : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Throws rewritten api error text when the response is a known client or
+ * upstream failure, so the form can surface the reason without jargon.
+ * Malformed bodies are left for the caller fallback.
+ *
+ * @param response - The raw fetch response.
+ * @throws Error with user-facing copy when the status is 400 or 502 and the
+ * body carries a usable `error` string.
  */
 async function throwIfApiMessage(response: Response): Promise<void> {
-  if (API_MESSAGE_STATUSES.has(response.status)) {
-    throw new Error(apiErrorSchema.parse(await response.json()).error);
+  if (!API_MESSAGE_STATUSES.has(response.status)) {
+    return;
   }
+  const raw = await readApiError(response);
+  if (raw === null) {
+    return;
+  }
+  throw new Error(toUserFacingError(raw));
 }
 
 /**
@@ -90,9 +141,9 @@ export async function fetchMe(sessionToken: string): Promise<Account | null> {
  * @param sessionToken - A bearer token from a completed challenge.
  * @param address - The `name@domain.tld` Lightning Address to store.
  * @returns The updated {@link Account}.
- * @throws Error when the api rejects the address (400) — the thrown message is
- * the api's own error text, so the form can show why it was rejected — on any
- * other non-2xx status, or when the body fails {@link accountSchema} validation.
+ * @throws Error when the api rejects the address (400) — rewritten to
+ * visitor-facing copy — on any other non-2xx status, or when the body fails
+ * {@link accountSchema} validation.
  */
 export async function setLightningAddress(sessionToken: string, address: string): Promise<Account> {
   const response = await fetch('/me/lightning-address', {
@@ -104,10 +155,13 @@ export async function setLightningAddress(sessionToken: string, address: string)
     body: JSON.stringify({ address }),
   });
   if (response.status === 400) {
-    throw new Error(apiErrorSchema.parse(await response.json()).error);
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === null ? 'Could not save your Wallet of Satoshi address' : toUserFacingError(raw),
+    );
   }
   if (!response.ok) {
-    throw new Error(`Failed to set Lightning Address: ${response.status}`);
+    throw new Error('Could not save your Wallet of Satoshi address');
   }
   return accountSchema.parse(await response.json());
 }
@@ -126,7 +180,7 @@ export async function unlinkLightningAddress(sessionToken: string): Promise<Acco
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
   if (!response.ok) {
-    throw new Error(`Failed to unlink Lightning Address: ${response.status}`);
+    throw new Error('Could not remove your Wallet of Satoshi address');
   }
   return accountSchema.parse(await response.json());
 }
@@ -136,15 +190,15 @@ export async function unlinkLightningAddress(sessionToken: string): Promise<Acco
  *
  * @param address - The `name@domain` address to look up.
  * @returns The {@link LnAddressResolved} payload (callback and amount bounds).
- * @throws Error when the api rejects the address (400, 502) — the thrown
- * message is the api's own error text — on any other non-2xx status, or when
- * the body fails {@link lnAddressResolvedSchema} validation.
+ * @throws Error when the api rejects the address (400, 502) — rewritten to
+ * visitor-facing copy — on any other non-2xx status, or when the body fails
+ * {@link lnAddressResolvedSchema} validation.
  */
 export async function resolveLightningAddress(address: string): Promise<LnAddressResolved> {
   const response = await fetch(`/lightning-address?address=${encodeURIComponent(address)}`);
   await throwIfApiMessage(response);
   if (!response.ok) {
-    throw new Error(`Failed to resolve Lightning Address: ${response.status}`);
+    throw new Error('Could not find that Wallet of Satoshi address');
   }
   return lnAddressResolvedSchema.parse(await response.json());
 }

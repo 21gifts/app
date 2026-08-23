@@ -28,9 +28,9 @@ export function isAndroidUserAgent(userAgent: string): boolean {
 }
 
 /**
- * Uppercased bech32 LNURL (LUD-01).
+ * Uppercases a bech32 payload (LNURL or BOLT11).
  *
- * @param lnurl - Bech32 `lnurl1…` from `/auth/lnurl` (any casing).
+ * @param lnurl - Bech32 LNURL or BOLT11 payment request (any casing).
  * @returns The same string in uppercase.
  */
 export function uppercaseLnurl(lnurl: string): string {
@@ -39,9 +39,9 @@ export function uppercaseLnurl(lnurl: string): string {
 
 /**
  * Custom-scheme deep link that only Wallet of Satoshi registers.
- * `walletofsatoshi:lightning:` + uppercase LNURL, no `//`.
+ * `walletofsatoshi:lightning:` + uppercase payload, no `//`.
  *
- * @param lnurl - Bech32 `lnurl1…` from `/auth/lnurl` (any casing).
+ * @param lnurl - Bech32 LNURL or BOLT11 payment request (any casing).
  * @returns e.g. `walletofsatoshi:lightning:LNURL1ABC`.
  */
 export function walletOfSatoshiHref(lnurl: string): string {
@@ -50,11 +50,11 @@ export function walletOfSatoshiHref(lnurl: string): string {
 
 /**
  * Android Intent URL: pin the WoS package AND the custom scheme
- * (not `scheme=lightning`). Body is `lightning:` + uppercase LNURL.
+ * (not `scheme=lightning`). Body is `lightning:` + uppercase payload.
  * Includes a Play Store fallback.
  *
- * @param lnurl - Bech32 `lnurl1…` from `/auth/lnurl` (any casing).
- * @returns An opaque `intent:lightning:LNURL…#Intent;scheme=walletofsatoshi;package=…;S.browser_fallback_url=…;end` URL.
+ * @param lnurl - Bech32 LNURL or BOLT11 payment request (any casing).
+ * @returns An opaque `intent:lightning:…#Intent;scheme=walletofsatoshi;package=…;S.browser_fallback_url=…;end` URL.
  */
 export function walletOfSatoshiIntentHref(lnurl: string): string {
   const body = `lightning:${uppercaseLnurl(lnurl)}`;

@@ -63,25 +63,25 @@ describe('requestDonateInvoice', () => {
         amountMsat: 1000,
         fetchImpl,
       }),
-    ).rejects.toThrow('Invoice callback must be https');
+    ).rejects.toThrow('Could not start the Bitcoin payment');
   });
 
   it('rejects an unparseable callback', async () => {
     await expect(requestDonateInvoice({ callback: 'not a url', amountMsat: 1000 })).rejects.toThrow(
-      'Invoice callback must be https',
+      'Could not start the Bitcoin payment',
     );
   });
 
   it('rejects a non-positive integer amount', async () => {
     await expect(requestDonateInvoice({ callback: CALLBACK, amountMsat: 0 })).rejects.toThrow(
-      'Amount must be a positive whole number of millisatoshis',
+      'Enter a whole number of sats greater than zero',
     );
     await expect(requestDonateInvoice({ callback: CALLBACK, amountMsat: 1.5 })).rejects.toThrow(
-      'Amount must be a positive whole number of millisatoshis',
+      'Enter a whole number of sats greater than zero',
     );
     await expect(
       requestDonateInvoice({ callback: CALLBACK, amountMsat: Number.NaN }),
-    ).rejects.toThrow('Amount must be a positive whole number of millisatoshis');
+    ).rejects.toThrow('Enter a whole number of sats greater than zero');
   });
 
   it('collapses a thrown fetch to the unreachable message', async () => {
@@ -90,14 +90,14 @@ describe('requestDonateInvoice', () => {
     };
     await expect(
       requestDonateInvoice({ callback: CALLBACK, amountMsat: 1000, fetchImpl }),
-    ).rejects.toThrow('Could not fetch the invoice from the Lightning Address');
+    ).rejects.toThrow('Could not start the Bitcoin payment');
   });
 
   it('collapses a non-ok response', async () => {
     const fetchImpl: FetchFn = async () => jsonResponse({}, 502);
     await expect(
       requestDonateInvoice({ callback: CALLBACK, amountMsat: 1000, fetchImpl }),
-    ).rejects.toThrow('Could not fetch the invoice from the Lightning Address');
+    ).rejects.toThrow('Could not start the Bitcoin payment');
   });
 
   it('collapses bad JSON', async () => {
@@ -105,14 +105,14 @@ describe('requestDonateInvoice', () => {
       new Response('nope', { status: 200, headers: { 'content-type': 'text/plain' } });
     await expect(
       requestDonateInvoice({ callback: CALLBACK, amountMsat: 1000, fetchImpl }),
-    ).rejects.toThrow('Could not fetch the invoice from the Lightning Address');
+    ).rejects.toThrow('Could not start the Bitcoin payment');
   });
 
   it('collapses a payload missing pr', async () => {
     const fetchImpl: FetchFn = async () => jsonResponse({});
     await expect(
       requestDonateInvoice({ callback: CALLBACK, amountMsat: 1000, fetchImpl }),
-    ).rejects.toThrow('Could not fetch the invoice from the Lightning Address');
+    ).rejects.toThrow('Could not start the Bitcoin payment');
   });
 
   it('uses globalThis.fetch when no fetchImpl is given', async () => {

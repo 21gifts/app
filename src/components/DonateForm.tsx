@@ -5,6 +5,11 @@ import { useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { QrCode } from '@/components/QrCode';
 import { resolveLightningAddress } from '@/lib/api';
 import { formatMsatAsSats, requestDonateInvoice, satsToMsat } from '@/lib/lnurl-pay';
+import {
+  isAndroidUserAgent,
+  walletOfSatoshiHref,
+  walletOfSatoshiIntentHref,
+} from '@/lib/wos-deep-link';
 
 /**
  * Guest donate surface: resolve a Lightning Address, fetch a LNURL-pay
@@ -30,7 +35,7 @@ export function DonateForm(): ReactElement {
     }
     const address = addressDraft.trim();
     if (address === '') {
-      setError('Enter a Lightning Address');
+      setError('Enter a Wallet of Satoshi address');
       return;
     }
     const rawAmount = amountDraft.trim();
@@ -91,17 +96,21 @@ export function DonateForm(): ReactElement {
 
   if (invoice !== null) {
     const satLabel = invoice.sats === 1 ? '1 sat' : `${invoice.sats} sats`;
+    const android = isAndroidUserAgent(navigator.userAgent);
+    const wosHref = android
+      ? walletOfSatoshiIntentHref(invoice.pr)
+      : walletOfSatoshiHref(invoice.pr);
     return (
       <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
         <p className="text-center text-sm text-neutral-600">
           Pay {satLabel} to {invoice.address}
         </p>
-        <QrCode value={invoice.pr} label="Lightning invoice QR code" />
+        <QrCode value={invoice.pr} label="Bitcoin payment QR code" />
         <a
-          href={`lightning:${invoice.pr}`}
+          href={wosHref}
           className="text-sm font-medium text-neutral-600 underline underline-offset-4 transition hover:text-neutral-900"
         >
-          Open in wallet
+          Open Wallet of Satoshi
         </a>
         <button
           type="button"
@@ -117,13 +126,13 @@ export function DonateForm(): ReactElement {
   return (
     <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
       <Gift aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <h2 className="text-center text-lg font-medium text-neutral-900">Pay with Lightning</h2>
+      <h2 className="text-center text-lg font-medium text-neutral-900">Send Bitcoin</h2>
       <p className="text-center text-sm text-neutral-500">
-        Pay a Lightning Address from your wallet. No account needed.
+        Send Bitcoin to a Wallet of Satoshi address. No account needed.
       </p>
       <form className="flex w-full flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
         <label className="flex flex-col gap-1 text-left text-sm text-neutral-700">
-          Lightning Address
+          Wallet of Satoshi address
           <input
             type="email"
             autoComplete="off"
@@ -167,7 +176,7 @@ export function DonateForm(): ReactElement {
           className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-60"
         >
           {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-          Create invoice
+          Continue
         </button>
         {busy ? (
           <button

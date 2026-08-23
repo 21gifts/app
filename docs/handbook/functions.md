@@ -2,7 +2,7 @@
 
 ## Function: DonateForm
 
-- **Purpose:** Renders the guest donate form (Lightning Address and sat amount only; no comment) and, after success, the invoice QR.
+- **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR.
 - **Inputs:** Form state: address and whole-sat amount.
 - **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
 - **Used by:** Screen `/donate`.
@@ -51,14 +51,14 @@
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a LUD-16 Lightning Address.
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
 - **Inputs:** Reads `useAuthStore`. User input: address string.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
 ## Function: LoginCard
 
-- **Purpose:** LNURL-auth UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `LightningAddressForm`.
+- **Purpose:** Wallet of Satoshi login UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `LightningAddressForm`.
 - **Inputs:** Uses `useLnurlLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
 - **Returns / side effects:** React element covering idle/waiting/expired/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
@@ -117,7 +117,7 @@
 - **Purpose:** Detects Android so the WoS CTA can use an Intent URL.
 - **Inputs:** `userAgent` string.
 - **Returns / side effects:** `true` iff `/Android/i` matches.
-- **Used by:** `LoginCard` QrView.
+- **Used by:** `LoginCard` QrView and `DonateForm`.
 
 ## Function: loadHandbookDocuments
 
@@ -198,10 +198,10 @@
 
 ## Function: uppercaseLnurl
 
-- **Purpose:** Uppercases a bech32 LNURL (LUD-01).
+- **Purpose:** Uppercases a bech32 LNURL or BOLT11 payment request.
 - **Inputs:** `lnurl` string.
 - **Returns / side effects:** Uppercase string.
-- **Used by:** QR value and Wallet of Satoshi hrefs.
+- **Used by:** QR value and Wallet of Satoshi hrefs (`LoginCard`, `DonateForm`).
 
 ## Function: useAuthStore
 
@@ -220,16 +220,16 @@
 ## Function: walletOfSatoshiHref
 
 - **Purpose:** iOS/desktop WoS deep link.
-- **Inputs:** `lnurl`.
-- **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase LNURL.
-- **Used by:** `LoginCard` primary CTA when not Android.
+- **Inputs:** Bech32 LNURL or BOLT11 payment request.
+- **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase payload.
+- **Used by:** `LoginCard` and `DonateForm` when not Android.
 
 ## Function: walletOfSatoshiIntentHref
 
 - **Purpose:** Android Chrome Intent pinning the WoS package.
-- **Inputs:** `lnurl`.
-- **Returns / side effects:** `intent:lightning:LNURL…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
-- **Used by:** `LoginCard` primary CTA on Android.
+- **Inputs:** Bech32 LNURL or BOLT11 payment request.
+- **Returns / side effects:** `intent:lightning:…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
+- **Used by:** `LoginCard` and `DonateForm` on Android.
 
 ## Function: DELETE
 

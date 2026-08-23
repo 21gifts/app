@@ -19,4 +19,10 @@ describe('LegalPage', () => {
     render(<LegalPage />);
     expect(screen.queryByText(/Cloudflare Pages/i)).toBeNull();
   });
+
+  it('does not use Lightning or LNURL jargon', () => {
+    render(<LegalPage />);
+    expect(document.body.textContent).not.toMatch(/Lightning/i);
+    expect(document.body.textContent).not.toMatch(/LNURL/i);
+  });
 });

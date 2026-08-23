@@ -27,17 +27,15 @@ async function mockPendingAuth(page: Page): Promise<void> {
 
 test('login page renders the wallet sign-in action', async ({ page }) => {
   await page.goto('/login');
-  await expect(
-    page.getByRole('button', { name: 'Log in with your Lightning wallet' }),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
 });
 
 test('Wallet of Satoshi login opens via custom scheme', async ({ page }) => {
   await mockPendingAuth(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
 
-  await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
     `walletofsatoshi:lightning:${LNURL.toUpperCase()}`,
@@ -55,7 +53,7 @@ test('Android login pins Wallet of Satoshi via intent package', async ({ page })
   });
   await mockPendingAuth(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
     `intent:lightning:${LNURL.toUpperCase()}#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end`,
@@ -72,7 +70,7 @@ test('login shows Preparing your login while the challenge request hangs', async
     await route.abort();
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   release();
 });
@@ -98,7 +96,7 @@ test('login shows Login expired when the session poll expires', async ({ page })
     });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Login expired')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
@@ -108,7 +106,7 @@ test('login shows an error when the LNURL challenge cannot start', async ({ page
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
 });
 
@@ -157,14 +155,18 @@ test('login poll completes into the signed-in view', async ({ page }) => {
   });
 
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText('basis')).toBeVisible();
-  await expect(page.getByText(/Link a Lightning Address so gifts can reach you/i)).toBeVisible();
+  await expect(
+    page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
 
-test('signed-in session hydrates, then links and unlinks a Lightning Address', async ({ page }) => {
+test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi address', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -202,9 +204,11 @@ test('signed-in session hydrates, then links and unlinks a Lightning Address', a
 
   await page.goto('/login');
   await expect(page.getByText('Signed in')).toBeVisible();
-  await expect(page.getByText(/Link a Lightning Address so gifts can reach you/i)).toBeVisible();
+  await expect(
+    page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
+  ).toBeVisible();
 
-  await page.getByLabel('Lightning Address').fill('alice@walletofsatoshi.com');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
 
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
@@ -218,7 +222,5 @@ test('signed-in session hydrates, then links and unlinks a Lightning Address', a
   await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Log in with your Lightning wallet' }),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
 });

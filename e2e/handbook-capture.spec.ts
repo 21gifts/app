@@ -72,9 +72,7 @@ test('legal default', async ({ page }) => {
 
 test('login idle', async ({ page }) => {
   await page.goto('/login');
-  await expect(
-    page.getByRole('button', { name: 'Log in with your Lightning wallet' }),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
   await writePng(page, 'login.png');
 });
 
@@ -88,7 +86,7 @@ test('login starting', async ({ page }) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   await writePng(page, 'login-starting.png');
   release();
@@ -97,8 +95,8 @@ test('login starting', async ({ page }) => {
 test('login qr', async ({ page }) => {
   await mockPendingAuth(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
-  await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
   await writePng(page, 'login-qr.png');
 });
 
@@ -111,7 +109,7 @@ test('login qr-android', async ({ page }) => {
   });
   await mockPendingAuth(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
   await writePng(page, 'login-qr-android.png');
 });
@@ -137,7 +135,7 @@ test('login expired', async ({ page }) => {
     });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Login expired')).toBeVisible({ timeout: 10_000 });
   await writePng(page, 'login-expired.png');
 });
@@ -147,7 +145,7 @@ test('login error', async ({ page }) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
   await writePng(page, 'login-error.png');
 });
@@ -203,9 +201,9 @@ test('donate busy', async ({ page }) => {
     await route.abort();
   });
   await page.goto('/donate');
-  await page.getByLabel('Lightning Address').fill('alice@example.com');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
   await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Create invoice' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
   await writePng(page, 'donate-busy.png');
   release();
@@ -214,8 +212,8 @@ test('donate busy', async ({ page }) => {
 test('donate validation-error', async ({ page }) => {
   await page.goto('/donate');
   await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Create invoice' }).click();
-  await expect(page.getByText('Enter a Lightning Address')).toBeVisible();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Enter a Wallet of Satoshi address')).toBeVisible();
   await writePng(page, 'donate-validation-error.png');
 });
 
@@ -240,11 +238,48 @@ test('donate invoice', async ({ page }) => {
     });
   });
   await page.goto('/donate');
-  await page.getByLabel('Lightning Address').fill('alice@example.com');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
   await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Create invoice' }).click();
-  await expect(page.getByRole('img', { name: 'Lightning invoice QR code' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
   await writePng(page, 'donate-invoice.png');
+});
+
+test('donate invoice-android', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
+      configurable: true,
+    });
+  });
+  await page.route(/\/lightning-address\?/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        address: 'alice@example.com',
+        callback: 'https://ln.example.com/pay',
+        minSendable: 1000,
+        maxSendable: 1_000_000_000,
+      }),
+    });
+  });
+  await page.route('https://ln.example.com/pay**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc21n1exampleinvoice' }),
+    });
+  });
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
+    'href',
+    /intent:lightning:LNBC21N1EXAMPLEINVOICE/,
+  );
+  await writePng(page, 'donate-invoice-android.png');
 });
 
 test('handbook default', async ({ page }) => {

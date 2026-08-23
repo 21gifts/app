@@ -55,7 +55,8 @@ afterEach(() => {
 describe('LoginCard', () => {
   it('shows the login call-to-action when logged out and idle', () => {
     render(<LoginCard />);
-    const button = screen.getByRole('button', { name: /log in with your lightning wallet/i });
+    const button = screen.getByRole('button', { name: /log in with wallet of satoshi/i });
+    expect(document.body.textContent).not.toMatch(/Lightning/i);
     fireEvent.click(button);
     expect(startSpy).toHaveBeenCalledTimes(1);
   });
@@ -70,7 +71,7 @@ describe('LoginCard', () => {
     mockHook('waiting', 'lnurl1abc');
     render(<LoginCard />);
 
-    expect(screen.getByRole('img', { name: 'Lightning login QR code' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Login QR code' })).toBeTruthy();
     const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
     expect(wos.getAttribute('href')).toBe('walletofsatoshi:lightning:LNURL1ABC');
     expect(screen.queryByRole('link', { name: /open default lightning wallet/i })).toBeNull();
@@ -95,7 +96,7 @@ describe('LoginCard', () => {
   it('falls back to the start view when waiting without an lnurl', () => {
     mockHook('waiting', null);
     render(<LoginCard />);
-    expect(screen.getByRole('button', { name: /log in with your lightning wallet/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /log in with wallet of satoshi/i })).toBeTruthy();
   });
 
   it('shows the expired state with a working retry', () => {

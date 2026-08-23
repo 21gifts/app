@@ -3,7 +3,7 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Lightning gifts, How it works (LNURL-auth + Lightning Address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
+- **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Bitcoin gifts, How it works (Wallet of Satoshi login and address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
 - **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
 
@@ -22,7 +22,7 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no cookies/analytics, session in localStorage, Cloudflare TLS, LNURL-auth on this origin).
+- **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no cookies/analytics, session in localStorage, Cloudflare TLS, Wallet of Satoshi login on this origin).
 - **Actions:** Read-only. Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage`.
 
@@ -34,14 +34,14 @@ The only state: imprint plus privacy, marketing chrome.
 
 ## Screen: /login
 
-- **URL:** `/login` — LNURL-auth challenge.
-- **What the user sees:** Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic `lightning:` link and no copy-LNURL control.
-- **Actions:** Scan the QR or tap WoS (`walletofsatoshi:lightning:LNURL1…` / Android Intent). When signed in, link/unlink a Lightning Address and log out. No client redirect to `/`.
+- **URL:** `/login` — Wallet of Satoshi sign-in.
+- **What the user sees:** Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
+- **Actions:** Scan the QR or tap **Open Wallet of Satoshi**. When signed in, link/unlink a Wallet of Satoshi address and log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
 
 ### Variant: idle
 
-Logged out, no challenge yet. Heading **Sign in to 21.gifts**, button **Log in with your Lightning wallet**.
+Logged out, no challenge yet. Heading **Sign in to 21.gifts**, button **Log in with Wallet of Satoshi**.
 
 ![21.gifts login idle](images/login.png)
 
@@ -53,7 +53,7 @@ Transient after the start click, before `/auth/lnurl` returns: spinner and **Pre
 
 ### Variant: qr
 
-Challenge pending on desktop/iOS. QR of the uppercase LNURL and **Open Wallet of Satoshi** (`walletofsatoshi:lightning:`). No generic `lightning:` link and no copy control.
+Challenge pending on desktop/iOS. QR and **Open Wallet of Satoshi**. No generic wallet link and no copy control.
 
 ![21.gifts login QR](images/login-qr.png)
 
@@ -77,7 +77,7 @@ Challenge start or a later request failed. Copy **Something went wrong. Please t
 
 ### Variant: signed-in
 
-Session present, no Lightning Address yet. **Signed in**, role, shortened linking key, link form, **Log out**.
+Session present, no Wallet of Satoshi address yet. **Signed in**, role, shortened linking key, link form, **Log out**.
 
 ![21.gifts login signed in](images/login-signed-in.png)
 
@@ -89,10 +89,10 @@ Signed in with an address on the account. Shows the address plus **Edit** / **Un
 
 ## Screen: /donate
 
-- **URL:** `/donate` — guest LNURL-pay gift. No login required.
-- **What the user sees:** Heading **Send a gift**, Lightning Address field, sat amount (no comment), **Create invoice**, then a QR and `lightning:` invoice link — or a validation/range error on the form.
-- **Actions:** Enter a LUD-16 address and amount, create an invoice, pay from any Lightning wallet.
-- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `formatMsatAsSats`, `QrCode`.
+- **URL:** `/donate` — guest Bitcoin gift. No login required.
+- **What the user sees:** Heading **Send a gift**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
+- **Actions:** Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
+- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `formatMsatAsSats`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`.
 
 ### Variant: form
 
@@ -102,21 +102,27 @@ Empty/idle form, submit enabled.
 
 ### Variant: busy
 
-Invoice request in flight: spinner on **Create invoice**, extra **Cancel** button.
+Payment request in flight: spinner on **Continue**, extra **Cancel** button.
 
 ![21.gifts donate busy](images/donate-busy.png)
 
 ### Variant: validation-error
 
-Submit with a blank address (or invalid amount). An alert explains what to fix; no invoice yet.
+Submit with a blank address (or invalid amount). An alert explains what to fix; no payment QR yet.
 
 ![21.gifts donate validation error](images/donate-validation-error.png)
 
 ### Variant: invoice
 
-Successful create: **Pay N sats to address**, invoice QR, **Open in wallet** (`lightning:`).
+Successful create: **Pay N sats to address**, Bitcoin payment QR, **Open Wallet of Satoshi**.
 
 ![21.gifts donate invoice](images/donate-invoice.png)
+
+### Variant: invoice-android
+
+Same payment card, but **Open Wallet of Satoshi** is an Android Intent that pins package `com.livingroomofsatoshi.wallet`. The pixels match the desktop invoice variant.
+
+![21.gifts donate invoice Android](images/donate-invoice-android.png)
 
 ## Screen: /handbook
 

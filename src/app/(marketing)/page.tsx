@@ -14,7 +14,7 @@ export default function Home(): ReactElement {
           <h1 className="text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">
             Direct human-to-human gifts
             <br />
-            over Bitcoin Lightning
+            over Bitcoin
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-white/60">
             Ask for help, or send help, without an organization in the middle. Funds flow donor to
@@ -43,8 +43,8 @@ export default function Home(): ReactElement {
           Three steps, no accounts in the traditional sense
         </p>
         <p className="mt-4 max-w-3xl text-white/60">
-          21.gifts uses LNURL-auth: you sign in with the Lightning wallet you already have. There
-          are no usernames, no passwords, and no email sign-ups.
+          You sign in with Wallet of Satoshi. There are no usernames, no passwords, and no email
+          sign-ups.
         </p>
         <div className="mt-12 grid gap-10 sm:grid-cols-3">
           <div>
@@ -57,18 +57,18 @@ export default function Home(): ReactElement {
           </div>
           <div>
             <span className="text-sm text-white/60">02</span>
-            <h3 className="mt-2 text-xl font-semibold">Add a Lightning Address</h3>
+            <h3 className="mt-2 text-xl font-semibold">Add a Wallet of Satoshi address</h3>
             <p className="mt-2 text-white/60">
-              Link where gifts should land, in the usual <code>name@domain</code> form. Anyone can
-              then send to you from their own wallet.
+              Link where gifts should land, as <code>you@walletofsatoshi.com</code>. Anyone can then
+              send Bitcoin to you from Wallet of Satoshi.
             </p>
           </div>
           <div>
             <span className="text-sm text-white/60">03</span>
             <h3 className="mt-2 text-xl font-semibold">Gifts arrive directly</h3>
             <p className="mt-2 text-white/60">
-              Donors pay your Lightning Address. Satoshis land in your wallet, not ours. The
-              platform never sees the money.
+              Donors send Bitcoin to your Wallet of Satoshi address. Satoshis land in your wallet,
+              not ours. The platform never sees the money.
             </p>
           </div>
         </div>
@@ -83,23 +83,23 @@ export default function Home(): ReactElement {
           <div>
             <h3 className="text-xl font-semibold">Truly peer-to-peer</h3>
             <p className="mt-2 text-white/60">
-              Funds move from the donor&apos;s Lightning wallet to the receiver&apos;s Lightning
-              Address. 21.gifts never holds, routes, or escrows the money. There is nothing for us
-              to freeze.
+              Funds move from the donor&apos;s Wallet of Satoshi to the receiver&apos;s Wallet of
+              Satoshi address. 21.gifts never holds, routes, or escrows the money. There is nothing
+              for us to freeze.
             </p>
           </div>
           <div>
             <h3 className="text-xl font-semibold">Your wallet is the login</h3>
             <p className="mt-2 text-white/60">
-              Identity is the key your Lightning wallet already holds for this site. 21.gifts never
-              sees that key — only a signed challenge. No password database to leak.
+              Identity is the key Wallet of Satoshi already holds for this site. 21.gifts never sees
+              that key — only a signed login. No password database to leak.
             </p>
           </div>
           <div>
-            <h3 className="text-xl font-semibold">Open Lightning rails</h3>
+            <h3 className="text-xl font-semibold">Your Bitcoin, not ours</h3>
             <p className="mt-2 text-white/60">
-              Gifts use Lightning Addresses and invoices that any compatible wallet can pay. If
-              21.gifts disappeared tomorrow, those addresses would still work.
+              Gifts are Bitcoin payments to a Wallet of Satoshi address. If 21.gifts disappeared
+              tomorrow, those addresses would still work.
             </p>
           </div>
           <div>
@@ -119,9 +119,7 @@ export default function Home(): ReactElement {
           <details className="border-b border-white/10 py-4">
             <summary className="cursor-pointer font-medium">Who can use this?</summary>
             <p className="mt-3 text-white/60">
-              Anyone with a Lightning wallet that supports LNURL-auth (Wallet of Satoshi, Phoenix,
-              Alby, Zeus, and others) and a Lightning Address to receive. No application, no review
-              process.
+              Anyone with Wallet of Satoshi. No application, no review process.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
@@ -129,16 +127,17 @@ export default function Home(): ReactElement {
               Do you take a cut of the gifts?
             </summary>
             <p className="mt-3 text-white/60">
-              No. Payments go directly from the donor&apos;s wallet to the receiver&apos;s Lightning
-              Address. 21.gifts is never in the payment path and earns nothing per transaction.
+              No. Payments go directly from the donor&apos;s Wallet of Satoshi to the
+              receiver&apos;s Wallet of Satoshi address. 21.gifts is never in the payment path and
+              earns nothing per transaction.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
             <summary className="cursor-pointer font-medium">What happens to my keys?</summary>
             <p className="mt-3 text-white/60">
-              They stay in your Lightning wallet. 21.gifts only sees a signed login challenge and,
-              if you choose, the Lightning Address you publish. There is no password and no seed
-              stored on our servers.
+              They stay in Wallet of Satoshi. 21.gifts only sees a signed login and, if you choose,
+              the Wallet of Satoshi address you publish. There is no password and no seed stored on
+              our servers.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
@@ -146,23 +145,23 @@ export default function Home(): ReactElement {
               Can I lose access to my account?
             </summary>
             <p className="mt-3 text-white/60">
-              Yes. If you lose the wallet (or it issues a new LNURL-auth key), the account cannot be
-              recovered in v1. Keep a backup of the wallet you sign in with.
+              Yes. If you lose Wallet of Satoshi (or it issues a new login key), the account cannot
+              be recovered in v1. Keep a backup of the wallet you sign in with.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
             <summary className="cursor-pointer font-medium">How do I send a gift?</summary>
             <p className="mt-3 text-white/60">
-              Open Send help, enter the recipient&apos;s Lightning Address and an amount in sats,
-              then pay the invoice from any Lightning wallet. You do not need to log in to give.
+              Open Send help, enter the recipient&apos;s Wallet of Satoshi address and an amount in
+              sats, then pay with Wallet of Satoshi. You do not need to log in to give.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
-            <summary className="cursor-pointer font-medium">Why only Bitcoin Lightning?</summary>
+            <summary className="cursor-pointer font-medium">Why only Bitcoin?</summary>
             <p className="mt-3 text-white/60">
-              Lightning is the only payment rail that is fast, low-fee, censorship-resistant, and
-              works with simple addresses like email. It removes the need for any custodial layer
-              and lets anyone in the world give or receive without permission.
+              Bitcoin is fast, low-fee, and censorship-resistant. Wallet of Satoshi makes sending
+              and receiving as simple as an email address. That removes the need for any custodial
+              layer and lets anyone in the world give or receive without permission.
             </p>
           </details>
           <details className="border-b border-white/10 py-4">
