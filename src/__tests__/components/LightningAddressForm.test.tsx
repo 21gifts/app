@@ -181,6 +181,63 @@ describe('LightningAddressForm', () => {
     expect(screen.getByText('me@walletofsatoshi.com')).toBeTruthy();
   });
 
+  it('keeps a concurrently saved name when the address response is stale', async () => {
+    let resolve!: (value: Account) => void;
+    const pending = new Promise<Account>((r) => {
+      resolve = r;
+    });
+    vi.mocked(setLightningAddress).mockReturnValue(pending);
+    render(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'me@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+
+    act(() => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...baseAccount, name: 'Ada' },
+      });
+    });
+
+    await act(async () => {
+      resolve({ ...baseAccount, name: null, lightningAddress: 'me@walletofsatoshi.com' });
+    });
+
+    expect(useAuthStore.getState().account).toEqual({
+      ...baseAccount,
+      name: 'Ada',
+      lightningAddress: 'me@walletofsatoshi.com',
+      lightningAddressVerified: false,
+    });
+  });
+
+  it('drops the address result when the account was cleared mid-flight', async () => {
+    let resolve!: (value: Account) => void;
+    const pending = new Promise<Account>((r) => {
+      resolve = r;
+    });
+    vi.mocked(setLightningAddress).mockReturnValue(pending);
+    render(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'me@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: null });
+    });
+
+    await act(async () => {
+      resolve({ ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' });
+    });
+
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().session).toBe('sess');
+  });
+
   it('drops the result when the session changed mid-flight (e.g. after logout)', async () => {
     let resolve!: (value: Account) => void;
     const pending = new Promise<Account>((r) => {

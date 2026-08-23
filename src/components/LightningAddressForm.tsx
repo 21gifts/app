@@ -68,7 +68,17 @@ export function LightningAddressForm(): ReactElement | null {
    */
   const run = async (action: (token: string) => Promise<Account>): Promise<void> => {
     await runGuarded(action, (updated) => {
-      setAccount(updated);
+      const current = useAuthStore.getState().account;
+      if (current === null) {
+        return;
+      }
+      // Keep fields this form does not own so a concurrent name save is not
+      // overwritten by a stale full-account response.
+      setAccount({
+        ...current,
+        lightningAddress: updated.lightningAddress,
+        lightningAddressVerified: updated.lightningAddressVerified,
+      });
       setEditing(false);
       if (updated.lightningAddress === null) {
         setDraft('');

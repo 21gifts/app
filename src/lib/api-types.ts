@@ -10,7 +10,7 @@ export const accountSchema = z.object({
   id: z.string(),
   linkingKey: z.string(),
   role: z.enum(['basis', 'moderator']),
-  name: z.string().nullable(),
+  name: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
   createdAt: z.number(),
@@ -21,7 +21,7 @@ export const accountSchema = z.object({
  *
  * `role` gates capabilities (`basis` for ordinary givers, `moderator` for
  * elevated review actions); `linkingKey` is the wallet's LNURL-auth public key.
- * `name` is the display name, or `null` until the giver sets one.
+ * `name` is the non-empty display name, or `null` until the giver sets one.
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
  * control flag) but unused in the UI — live verification payments are not

@@ -179,6 +179,58 @@ describe('NameForm', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
   });
 
+  it('keeps a concurrently saved address when the name response is stale', async () => {
+    let resolve!: (value: Account) => void;
+    const pending = new Promise<Account>((r) => {
+      resolve = r;
+    });
+    vi.mocked(setName).mockReturnValue(pending);
+    render(<NameForm />);
+
+    fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+
+    act(() => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' },
+      });
+    });
+
+    await act(async () => {
+      resolve({ ...baseAccount, name: 'Ada', lightningAddress: null });
+    });
+
+    expect(useAuthStore.getState().account).toEqual({
+      ...baseAccount,
+      name: 'Ada',
+      lightningAddress: 'me@walletofsatoshi.com',
+    });
+  });
+
+  it('drops the name result when the account was cleared mid-flight', async () => {
+    let resolve!: (value: Account) => void;
+    const pending = new Promise<Account>((r) => {
+      resolve = r;
+    });
+    vi.mocked(setName).mockReturnValue(pending);
+    render(<NameForm />);
+
+    fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: null });
+    });
+
+    await act(async () => {
+      resolve(namedAccount);
+    });
+
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().session).toBe('sess');
+  });
+
   it('drops the result when the session changed mid-flight (e.g. after logout)', async () => {
     let resolve!: (value: Account) => void;
     const pending = new Promise<Account>((r) => {

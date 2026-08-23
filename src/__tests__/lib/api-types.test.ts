@@ -40,6 +40,10 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: 1 })).toThrow();
   });
 
+  it('rejects an empty name', () => {
+    expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
+  });
+
   it('rejects an unknown role', () => {
     expect(() => accountSchema.parse({ ...account, role: 'admin' })).toThrow();
   });

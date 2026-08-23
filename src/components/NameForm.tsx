@@ -67,7 +67,13 @@ export function NameForm(): ReactElement | null {
     void runGuarded(
       (token) => setName(token, trimmed),
       (updated) => {
-        setAccount(updated);
+        const current = useAuthStore.getState().account;
+        if (current === null) {
+          return;
+        }
+        // Keep fields this form does not own so a concurrent address save
+        // is not overwritten by a stale full-account response.
+        setAccount({ ...current, name: updated.name });
         setEditing(false);
       },
     );
