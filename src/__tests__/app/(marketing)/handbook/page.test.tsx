@@ -10,11 +10,15 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('@/lib/request-locale', () => ({
+  getRequestLocale: vi.fn(async () => 'en' as const),
+}));
+
 afterEach(cleanup);
 
 describe('HandbookPage', () => {
-  it('renders the Handbook heading', () => {
-    renderWithLocale(<HandbookPage />);
+  it('renders the Handbook heading', async () => {
+    renderWithLocale(await HandbookPage());
     expect(screen.getByRole('heading', { name: 'Handbook' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Handbook' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Overview chapter' })).toBeTruthy();
@@ -23,21 +27,21 @@ describe('HandbookPage', () => {
     expect(screen.getByRole('button', { name: 'Copy link to Endpoints chapter' })).toBeTruthy();
   });
 
-  it('links to the api handbook on GitHub', () => {
-    renderWithLocale(<HandbookPage />);
+  it('links to the api handbook on GitHub', async () => {
+    renderWithLocale(await HandbookPage());
     const link = screen.getByRole('link', { name: '21gifts/api' });
     expect(link.getAttribute('href')).toBe(
       'https://github.com/21gifts/api/tree/develop/docs/handbook',
     );
   });
 
-  it('exposes the screens section', () => {
-    renderWithLocale(<HandbookPage />);
+  it('exposes the screens section', async () => {
+    renderWithLocale(await HandbookPage());
     expect(document.getElementById('screens')).not.toBeNull();
   });
 
-  it('points the overview screens.md link at the screens section', () => {
-    renderWithLocale(<HandbookPage />);
+  it('points the overview screens.md link at the screens section', async () => {
+    renderWithLocale(await HandbookPage());
     const links = screen.getAllByRole('link', { name: 'screens.md' });
     expect(links.some((link) => link.getAttribute('href') === '#screens')).toBe(true);
   });
