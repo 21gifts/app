@@ -35,7 +35,7 @@ The only state: imprint plus privacy, marketing chrome.
 ## Screen: /login
 
 - **URL:** `/login` — Wallet of Satoshi sign-in.
-- **What the user sees:** Language switcher in the marketing header. Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
 - **Actions:** Change language. Scan the QR or tap **Open Wallet of Satoshi**. When signed in, link/unlink a Wallet of Satoshi address and log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`, `LanguageSwitcher`.
 
@@ -90,7 +90,7 @@ Signed in with an address on the account. Shows the address plus **Edit** / **Un
 ## Screen: /donate
 
 - **URL:** `/donate` — guest Bitcoin gift. No login required.
-- **What the user sees:** Language switcher in the marketing header. Heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Page heading **Send a gift**, form heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
 - **Actions:** Change language. Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
 - **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `LanguageSwitcher`.
 
