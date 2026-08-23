@@ -8,7 +8,10 @@ const QR_SIZE = 232;
 export interface QrCodeProps {
   /** The string to encode — typically an uppercased LNURL. */
   value: string;
-  /** Accessible name. Default: `'Login QR code'`. */
+  /**
+   * Accessible name. Callers that show a QR must pass a translated label.
+   * Default: `'Login QR code'`.
+   */
   label?: string;
 }
 

@@ -22,6 +22,8 @@ export default defineConfig({
   },
   use: {
     baseURL: 'http://localhost:3000',
+    locale: 'en-US',
+    extraHTTPHeaders: { 'Accept-Language': 'en' },
   },
   projects: [
     {

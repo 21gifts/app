@@ -116,6 +116,11 @@ test.describe('function baselines', () => {
     );
     expect(sections.every((s) => s.id !== '' && s.name !== '')).toBe(true);
     expect(new Set(sections.map((s) => s.name)).size).toBe(sections.length);
+
+    for (const section of sections) {
+      const heading = page.locator(`#${section.id}`);
+      await expect(heading).toHaveScreenshot(`function-${section.name}.png`, { ...SHOT });
+    }
   });
 
   test('LoginCard QR + QrCode', async ({ page }) => {

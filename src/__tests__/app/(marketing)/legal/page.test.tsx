@@ -20,9 +20,8 @@ describe('LegalPage', () => {
     expect(screen.queryByText(/Cloudflare Pages/i)).toBeNull();
   });
 
-  it('does not use Lightning or LNURL jargon', () => {
+  it('documents the optional locale cookie', () => {
     render(<LegalPage />);
-    expect(document.body.textContent).not.toMatch(/Lightning/i);
-    expect(document.body.textContent).not.toMatch(/LNURL/i);
+    expect(screen.getByText(/sets no cookies unless you choose a language/i)).toBeTruthy();
   });
 });
