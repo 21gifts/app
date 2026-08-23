@@ -228,7 +228,7 @@ const de = {
   'donate.cancel': 'Abbrechen',
   'donate.openWallet': 'Wallet of Satoshi öffnen',
   'donate.invoiceQr': 'Bitcoin-Zahlungs-QR-Code',
-  'donate.errorAddress': 'Wallet-of-Satoshi-Adresse eingeben',
+  'donate.errorAddress': 'Wallet of Satoshi address eingeben',
   'donate.errorAmount': 'Ganze Zahl von Sats grösser als null eingeben',
   'donate.range': 'Diese Adresse akzeptiert {min} – {max}.',
   'donate.pay': '{amount} an {address} zahlen',
