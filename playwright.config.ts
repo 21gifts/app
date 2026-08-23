@@ -13,6 +13,13 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   reporter: 'list',
+  expect: {
+    toHaveScreenshot: {
+      animations: 'disabled',
+      caret: 'hide',
+      maxDiffPixelRatio: 0.01,
+    },
+  },
   use: {
     baseURL: 'http://localhost:3000',
   },
@@ -26,9 +33,10 @@ export default defineConfig({
     command: 'npm run build && npm run start:standalone',
     url: 'http://localhost:3000/healthz',
     reuseExistingServer: !process.env.CI,
-    timeout: 240_000,
+    timeout: 360_000,
     env: {
       ...process.env,
+      HOSTNAME: '0.0.0.0',
       // Deterministic API host so login e2e can intercept LUD-04 without
       // calling the live api. Playwright routes fulfill `/auth/lnurl`.
       NEXT_PUBLIC_API_URL: 'https://api.21gifts.test',

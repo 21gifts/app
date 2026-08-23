@@ -12,5 +12,10 @@ is a stub.
 Do not merge a PR that adds a screen, export, or endpoint without updating this
 handbook in the same PR. Undeclared gaps are rejected, not discussed.
 
+Every screen also needs a committed screenshot under `docs/handbook/images/`
+(and `public/handbook-images/`) plus a Playwright baseline. Every exported
+function needs a Playwright baseline. `npm run screenshot:check` fails the PR
+when either is missing.
+
 See [screens.md](screens.md), [functions.md](functions.md), and
 [endpoints.md](endpoints.md).
