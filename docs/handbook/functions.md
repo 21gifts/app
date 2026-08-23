@@ -131,14 +131,14 @@
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
 - **Inputs:** `locale` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** The `Messages` object for that locale. Exhaustive switch over `Locale`.
-- **Used by:** `RootLayout`, marketing pages, `/login`, `/donate`, `NotFound`, and the `renderWithLocale` test helper.
+- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, and the `renderWithLocale` test helper.
 
 ## Function: getRequestLocale
 
 - **Purpose:** Resolve the UI locale for the current request without writing cookies.
 - **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
 - **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, marketing pages (`Home`, `HandbookPage`), `/login`, `/donate`, and `NotFound`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, and `NotFound`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: isAndroidUserAgent
 
@@ -229,7 +229,7 @@
 - **Purpose:** Look up a catalog key and replace `{name}` placeholders from `vars`.
 - **Inputs:** `catalog` (`Messages`), `key` (`MessageKey`), optional `vars` map of string/number values.
 - **Returns / side effects:** Interpolated string. Throws on a missing key or missing `{name}` — no silent English fallback.
-- **Used by:** Server pages (`Home`, `HandbookPage`, login/donate headings, `NotFound`) and the `t` helper from `LocaleProvider` / `useTranslations`.
+- **Used by:** Server pages (`Home`, login/donate headings, `NotFound`) and the `t` helper from `LocaleProvider` / `useTranslations`.
 
 ## Function: unlinkLightningAddress
 
