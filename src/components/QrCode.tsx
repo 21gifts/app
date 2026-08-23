@@ -8,11 +8,8 @@ const QR_SIZE = 232;
 export interface QrCodeProps {
   /** The string to encode — typically an uppercased LNURL. */
   value: string;
-  /**
-   * Accessible name. Callers that show a QR must pass a translated label.
-   * Default: `'Login QR code'`.
-   */
-  label?: string;
+  /** Accessible name (already translated by the caller). */
+  label: string;
 }
 
 /**
@@ -28,7 +25,7 @@ export function QrCode({ value, label }: QrCodeProps): ReactElement {
   return (
     <div
       role="img"
-      aria-label={label ?? 'Login QR code'}
+      aria-label={label}
       className="rounded-2xl border border-neutral-200 bg-white p-4"
     >
       <QRCodeSVG value={value} size={QR_SIZE} />
