@@ -48,9 +48,12 @@ export function HandbookCopyLink({
 }): ReactElement {
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(true);
 
   useEffect(() => {
+    mounted.current = true;
     return () => {
+      mounted.current = false;
       if (resetTimer.current !== null) {
         clearTimeout(resetTimer.current);
       }
@@ -75,9 +78,15 @@ export function HandbookCopyLink({
     const url = `${window.location.origin}${window.location.pathname}#${targetId}`;
     try {
       await navigator.clipboard.writeText(url);
+      if (!mounted.current) {
+        return;
+      }
       flashCopied();
       return;
     } catch {
+      if (!mounted.current) {
+        return;
+      }
       if (fallbackCopy(url)) {
         flashCopied();
         return;

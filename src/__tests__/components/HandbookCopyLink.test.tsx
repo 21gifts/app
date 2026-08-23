@@ -142,6 +142,46 @@ describe('HandbookCopyLink', () => {
     unmount();
   });
 
+  it('ignores a clipboard write that resolves after unmount', async () => {
+    let resolveWrite: (() => void) | undefined;
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveWrite = resolve;
+        }),
+    );
+    Object.assign(navigator, { clipboard: { writeText } });
+    window.location.hash = '';
+    const { unmount } = render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
+    unmount();
+    await act(async () => {
+      resolveWrite?.();
+      await Promise.resolve();
+    });
+    expect(window.location.hash).toBe('');
+  });
+
+  it('ignores a clipboard reject that settles after unmount', async () => {
+    let rejectWrite: ((error: Error) => void) | undefined;
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectWrite = reject;
+        }),
+    );
+    Object.assign(navigator, { clipboard: { writeText } });
+    window.location.hash = '';
+    const { unmount } = render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
+    unmount();
+    await act(async () => {
+      rejectWrite?.(new Error('denied'));
+      await Promise.resolve();
+    });
+    expect(window.location.hash).toBe('');
+  });
+
   it('clears a pending reset timer on unmount', async () => {
     vi.useFakeTimers();
     const writeText = vi.fn().mockResolvedValue(undefined);
