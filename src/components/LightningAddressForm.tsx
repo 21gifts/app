@@ -1,19 +1,14 @@
 'use client';
 
-import { AtSign, Check, Loader2, Pencil, ShieldCheck, Trash2 } from 'lucide-react';
+import { AtSign, Check, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
-import {
-  confirmLightningAddressVerification,
-  setLightningAddress,
-  startLightningAddressVerification,
-  unlinkLightningAddress,
-} from '@/lib/api';
+import { setLightningAddress, unlinkLightningAddress } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Lets a signed-in giver link, edit, unlink, or verify the Lightning Address
- * that receives their gifts.
+ * Lets a signed-in giver link, edit, or unlink the Lightning Address that
+ * receives their gifts.
  *
  * Reads the current account and session token from the auth store and writes the
  * api's updated account straight back into it, so the surrounding signed-in view
@@ -28,8 +23,6 @@ export function LightningAddressForm(): ReactElement | null {
   const setAccount = useAuthStore((state) => state.setAccount);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const [pendingSats, setPendingSats] = useState<number | null>(null);
-  const [nonceDraft, setNonceDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,8 +70,6 @@ export function LightningAddressForm(): ReactElement | null {
     await runGuarded(action, (updated) => {
       setAccount(updated);
       setEditing(false);
-      setPendingSats(null);
-      setNonceDraft('');
       if (updated.lightningAddress === null) {
         setDraft('');
       }
@@ -88,17 +79,6 @@ export function LightningAddressForm(): ReactElement | null {
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     void run((token) => setLightningAddress(token, draft));
-  };
-
-  const handleConfirm = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    void run((token) => confirmLightningAddressVerification(token, nonceDraft));
-  };
-
-  const leavePending = (): void => {
-    setPendingSats(null);
-    setNonceDraft('');
-    setError(null);
   };
 
   let submitIcon: ReactElement;
@@ -149,7 +129,7 @@ export function LightningAddressForm(): ReactElement | null {
                 type="button"
                 onClick={() => {
                   setEditing(false);
-                  leavePending();
+                  setError(null);
                 }}
                 disabled={busy}
                 className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
@@ -162,58 +142,13 @@ export function LightningAddressForm(): ReactElement | null {
       ) : (
         <div className="flex flex-col items-center gap-3">
           <p className="font-mono text-sm text-neutral-900">{address}</p>
-          {account.lightningAddressVerified ? (
-            <p className="text-xs text-neutral-500">Verified</p>
-          ) : (
-            <p className="text-xs text-neutral-400">Not yet verified</p>
-          )}
-          {pendingSats !== null ? (
-            <form onSubmit={handleConfirm} className="flex w-full flex-col items-stretch gap-3">
-              <p className="text-center text-sm text-neutral-500">
-                We sent {pendingSats === 1 ? '1 sat' : `${pendingSats} sats`} to your wallet. Open
-                the payment in your wallet and enter the code from the comment.
-              </p>
-              <input
-                type="text"
-                autoComplete="off"
-                spellCheck={false}
-                aria-label="Verification code"
-                value={nonceDraft}
-                onChange={(event) => setNonceDraft(event.target.value)}
-                disabled={busy}
-                className="w-full rounded-2xl border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
-              />
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
-                >
-                  {busy ? (
-                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Check aria-hidden="true" className="h-4 w-4" />
-                  )}
-                  Confirm
-                </button>
-                <button
-                  type="button"
-                  onClick={leavePending}
-                  disabled={busy}
-                  className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : null}
           <div className="flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => {
                 setDraft(address);
                 setEditing(true);
-                leavePending();
+                setError(null);
               }}
               disabled={busy}
               className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
@@ -224,7 +159,6 @@ export function LightningAddressForm(): ReactElement | null {
             <button
               type="button"
               onClick={() => {
-                leavePending();
                 void run(unlinkLightningAddress);
               }}
               disabled={busy}
@@ -233,22 +167,6 @@ export function LightningAddressForm(): ReactElement | null {
               <Trash2 aria-hidden="true" className="h-4 w-4" />
               Unlink
             </button>
-            {!account.lightningAddressVerified && pendingSats === null ? (
-              <button
-                type="button"
-                onClick={() =>
-                  void runGuarded(startLightningAddressVerification, (sent) => {
-                    setPendingSats(sent.sats);
-                    setNonceDraft('');
-                  })
-                }
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
-              >
-                <ShieldCheck aria-hidden="true" className="h-4 w-4" />
-                Verify
-              </button>
-            ) : null}
           </div>
         </div>
       )}

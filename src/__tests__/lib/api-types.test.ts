@@ -5,7 +5,6 @@ import {
   sessionResultSchema,
   startChallengeSchema,
   lnAddressResolvedSchema,
-  verificationSentSchema,
 } from '@/lib/api-types';
 
 const account = {
@@ -76,28 +75,6 @@ describe('sessionResultSchema', () => {
 
   it('rejects an unknown status', () => {
     expect(() => sessionResultSchema.parse({ status: 'nope' })).toThrow();
-  });
-});
-
-describe('verificationSentSchema', () => {
-  it('accepts an integer sats amount', () => {
-    const sent = { status: 'sent' as const, expiresInSeconds: 120, sats: 1 };
-    expect(verificationSentSchema.parse(sent)).toEqual(sent);
-  });
-
-  it('accepts a fractional sats amount', () => {
-    const sent = { status: 'sent' as const, expiresInSeconds: 90, sats: 1.5 };
-    expect(verificationSentSchema.parse(sent)).toEqual(sent);
-  });
-
-  it('rejects a payload missing status', () => {
-    expect(() => verificationSentSchema.parse({ expiresInSeconds: 120, sats: 1 })).toThrow();
-  });
-
-  it('rejects a non-number sats amount', () => {
-    expect(() =>
-      verificationSentSchema.parse({ status: 'sent', expiresInSeconds: 120, sats: '1' }),
-    ).toThrow();
   });
 });
 

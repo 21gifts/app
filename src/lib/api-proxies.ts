@@ -61,28 +61,6 @@ export async function proxyMeLightningAddressDelete(request: Request): Promise<R
 }
 
 /**
- * Proxies POST /me/lightning-address/verification to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressVerificationPost(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address/verification');
-}
-
-/**
- * Proxies POST /me/lightning-address/verification/confirm to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session + nonce JSON).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressVerificationConfirmPost(
-  request: Request,
-): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address/verification/confirm');
-}
-
-/**
  * Proxies GET /lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (`address` query param).

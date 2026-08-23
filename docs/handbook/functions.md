@@ -30,8 +30,8 @@
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to claim, verify, or unlink a LUD-16 Lightning Address.
-- **Inputs:** Reads `useAuthStore`. User input: address string, verification confirm.
+- **Purpose:** Logged-in form to link, edit, or unlink a LUD-16 Lightning Address.
+- **Inputs:** Reads `useAuthStore`. User input: address string.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
@@ -69,13 +69,6 @@
 - **Inputs:** None.
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
 - **Used by:** `useAuthStore.clearAuth` and `LoginCard` when session hydration gets 401.
-
-## Function: confirmLightningAddressVerification
-
-- **Purpose:** POST `/me/lightning-address/verification/confirm` with the nonce after the 1-sat invoice is paid.
-- **Inputs:** `sessionToken`, `nonce`.
-- **Returns / side effects:** Updated `Account`, or throws on 4xx/5xx.
-- **Used by:** `LightningAddressForm`.
 
 ## Function: fetchMe
 
@@ -152,13 +145,6 @@
 - **Purpose:** POST `/me/lightning-address`.
 - **Inputs:** `sessionToken`, `address`.
 - **Returns / side effects:** Updated `Account`.
-- **Used by:** `LightningAddressForm`.
-
-## Function: startLightningAddressVerification
-
-- **Purpose:** POST `/me/lightning-address/verification` — api pays ~1 sat to the linked address. The nonce is **not** in the JSON; the user reads it from the wallet payment comment.
-- **Inputs:** `sessionToken`.
-- **Returns / side effects:** `{ status: 'sent', expiresInSeconds, sats }`.
 - **Used by:** `LightningAddressForm`.
 
 ## Function: startLnurlAuth
@@ -254,10 +240,10 @@
 
 ## Function: POST
 
-- **Purpose:** App Router POST export on lightning-address write/verify routes (re-exports of the proxy*Post functions).
+- **Purpose:** App Router POST export on the lightning-address write route (re-export of `proxyMeLightningAddressPost`).
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin address link and verification.
+- **Used by:** Same-origin address link.
 
 ## Function: proxyApiRequest
 
@@ -314,17 +300,3 @@
 - **Inputs:** `Request` with JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/lightning-address`.
-
-## Function: proxyMeLightningAddressVerificationConfirmPost
-
-- **Purpose:** Proxies POST `/me/lightning-address/verification/confirm`.
-- **Inputs:** `Request` with nonce JSON.
-- **Returns / side effects:** Upstream `Response`.
-- **Used by:** Route POST `/me/lightning-address/verification/confirm`.
-
-## Function: proxyMeLightningAddressVerificationPost
-
-- **Purpose:** Proxies POST `/me/lightning-address/verification`.
-- **Inputs:** `Request`.
-- **Returns / side effects:** Upstream `Response`.
-- **Used by:** Route POST `/me/lightning-address/verification`.
