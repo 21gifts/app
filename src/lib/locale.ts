@@ -23,10 +23,13 @@ const PRIMARY_TO_LOCALE: Record<string, Locale> = {
  * Negotiate a supported locale from an RFC 7231 Accept-Language header.
  *
  * Splits on commas, reads `q=` (default 1), sorts by q descending then header
- * order. A `q=` value must be a finite number in `[0, 1]`; otherwise the entire
- * language-range is discarded. `q <= 0` is skipped as not acceptable. Each
- * tag's primary subtag is lowercased. Map: en→en, de→de, es→es, fil→fil,
- * tl→fil. First mapped tag wins. Empty, missing, or unmatched → `en`.
+ * order. A `q=` value must be an HTTP qvalue
+ * (`^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$`); otherwise the entire
+ * language-range is discarded. `q <= 0` is skipped as not acceptable.
+ * Language-tags with any empty subtag after trim (e.g. `de--CH`, `-`) are
+ * discarded before the primary is taken. Each tag's primary subtag is
+ * lowercased. Map: en→en, de→de, es→es, fil→fil, tl→fil. First mapped tag
+ * wins. Empty, missing, or unmatched → `en`.
  *
  * @param header - Raw Accept-Language or empty string.
  * @returns A supported locale.
@@ -50,20 +53,25 @@ export function parseAcceptLanguage(header: string): Locale {
       continue;
     }
     const [rawTag, ...params] = trimmed.split(';');
-    if (rawTag === undefined || rawTag.trim() === '') {
+    /* v8 ignore next 3 — noUncheckedIndexedAccess on a 0..length-1 index */
+    if (rawTag === undefined) {
+      continue;
+    }
+    const tag = rawTag.trim();
+    if (tag === '') {
       continue;
     }
     let q = 1;
     let invalidQ = false;
     for (const param of params) {
-      const match = /^\s*q\s*=\s*(\S+)\s*$/i.exec(param);
+      const match = /^\s*q\s*=(.*)$/i.exec(param);
       if (match !== null && match[1] !== undefined) {
-        const parsed = Number.parseFloat(match[1]);
-        if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+        const token = match[1].trim();
+        if (!/^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(token)) {
           invalidQ = true;
           break;
         }
-        q = parsed;
+        q = Number(token);
       }
     }
     if (invalidQ) {
@@ -72,12 +80,13 @@ export function parseAcceptLanguage(header: string): Locale {
     if (q <= 0) {
       continue;
     }
-    const first = rawTag.trim().split('-')[0];
-    /* v8 ignore next 3 — split always yields at least one element */
-    if (first === undefined) {
+    const segments = tag.split('-');
+    if (segments.some((segment) => segment === '')) {
       continue;
     }
-    if (first === '') {
+    const first = segments[0];
+    /* v8 ignore next 3 — non-empty tag without empty segments has a first segment */
+    if (first === undefined) {
       continue;
     }
     const primary = first.toLowerCase();
