@@ -216,6 +216,116 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('ignores a superseded register finish', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    let resolveFinish!: (v: { token: string; account: typeof account }) => void;
+    vi.mocked(finishPasskeyRegistration).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFinish = resolve;
+      }),
+    );
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    vi.mocked(startPasskeyRegistration).mockRejectedValueOnce(new Error('second'));
+    await act(async () => {
+      result.current.register();
+    });
+    await act(async () => {
+      resolveFinish({ token: 'tok', account });
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('ignores a superseded authenticate finish', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    let resolveFinish!: (v: { token: string; account: typeof account }) => void;
+    vi.mocked(finishPasskeyAuthentication).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFinish = resolve;
+      }),
+    );
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    vi.mocked(startPasskeyAuthentication).mockRejectedValueOnce(new Error('second'));
+    await act(async () => {
+      result.current.authenticate();
+    });
+    await act(async () => {
+      resolveFinish({ token: 'tok', account });
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not finish register after a newer run started during create', async () => {
+    let resolveCreate!: (v: { id: string; type: string }) => void;
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockReturnValue(
+          new Promise((resolve) => {
+            resolveCreate = resolve;
+          }),
+        ),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    vi.mocked(startPasskeyRegistration).mockRejectedValueOnce(new Error('second'));
+    await act(async () => {
+      result.current.register();
+    });
+    await act(async () => {
+      resolveCreate({ id: 'cred', type: 'public-key' });
+    });
+    expect(vi.mocked(finishPasskeyRegistration)).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not finish authenticate after a newer run started during get', async () => {
+    let resolveGet!: (v: { id: string; type: string }) => void;
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn(),
+        get: vi.fn().mockReturnValue(
+          new Promise((resolve) => {
+            resolveGet = resolve;
+          }),
+        ),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    vi.mocked(startPasskeyAuthentication).mockRejectedValueOnce(new Error('second'));
+    await act(async () => {
+      result.current.authenticate();
+    });
+    await act(async () => {
+      resolveGet({ id: 'cred', type: 'public-key' });
+    });
+    expect(vi.mocked(finishPasskeyAuthentication)).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('ignores a superseded register success and a late error', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {

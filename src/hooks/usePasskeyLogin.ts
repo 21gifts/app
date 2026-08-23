@@ -60,9 +60,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     void (async () => {
       try {
         const begin = await startPasskeyRegistration();
+        if (runId !== runIdRef.current) {
+          return;
+        }
         const credential = await navigator.credentials.create({
           publicKey: creationOptionsFromJSON(begin.options),
         });
+        if (runId !== runIdRef.current) {
+          return;
+        }
         if (credential === null || credential.type !== 'public-key') {
           throw new Error('Passkey creation returned no credential');
         }
@@ -91,9 +97,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     void (async () => {
       try {
         const begin = await startPasskeyAuthentication();
+        if (runId !== runIdRef.current) {
+          return;
+        }
         const credential = await navigator.credentials.get({
           publicKey: requestOptionsFromJSON(begin.options),
         });
+        if (runId !== runIdRef.current) {
+          return;
+        }
         if (credential === null || credential.type !== 'public-key') {
           throw new Error('Passkey assertion returned no credential');
         }
