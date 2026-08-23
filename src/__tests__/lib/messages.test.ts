@@ -22,7 +22,11 @@ describe('getCatalog', () => {
       expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
       expect(catalog['donate.addressLabel']).toBe('Wallet of Satoshi address');
       expect(catalog['la.aria']).toBe('Wallet of Satoshi address');
+      expect(catalog['donate.errorAddress']).toContain('Wallet of Satoshi');
       expect(catalog['aria.github']).toBe('GitHub');
+      for (const [key, value] of Object.entries(catalog)) {
+        expect(value, `${locale}.${key}`).not.toMatch(/Wallet-of-Satoshi/);
+      }
     }
   });
 
