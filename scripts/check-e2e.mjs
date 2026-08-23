@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Fail if e2e/ does not exercise every UI screen, HTTP endpoint, and exported
- * function. A screen needs page.goto of that path; an endpoint needs
- * request.get/post/put/patch/delete of that path; a function needs a
- * Playwright test title containing `Function: <Name>`. Run from the repo root.
+ * Fail if Playwright spec files under e2e/ (except handbook-capture) do not
+ * exercise every UI screen, HTTP endpoint, and exported function. A screen
+ * needs page.goto of that path; an endpoint needs request.get/post/put/patch/
+ * delete of that path; a function needs a test('Function: <Name> …') title.
+ * Only files named *.spec.ts are scanned. Run from the repo root.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -74,8 +75,8 @@ for (const name of [...functions].sort()) {
   }
 }
 
-if (screens.size === 0 && endpoints.size === 0) {
-  console.error('E2E: no screens or endpoints discovered — refusing to pass');
+if (screens.size === 0 && endpoints.size === 0 && functions.size === 0) {
+  console.error('E2E: no screens, endpoints, or functions discovered — refusing to pass');
   process.exit(1);
 }
 

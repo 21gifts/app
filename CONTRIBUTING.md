@@ -98,6 +98,7 @@ app/
 │   ├── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
+│   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines
 │   ├── handbook-capture.spec.ts # UPDATE_HANDBOOK_IMAGES=1 writes docs/handbook/images
@@ -105,7 +106,7 @@ app/
 ├── public/                      # Static assets served from /
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
-├── playwright.config.ts         # chromium only, boots the production build
+├── playwright.config.ts         # chromium; mock api :3001 + standalone :3000
 ├── eslint.config.mjs            # Flat config (next/core-web-vitals + next/typescript)
 ├── Dockerfile                   # Multi-stage build + entrypoint.sh env substitution
 ├── entrypoint.sh
@@ -217,10 +218,10 @@ assertion for that state). Every HTTP endpoint discovered from
 `request.get|post|put|patch|delete` of that path. Every exported function/class
 **must** have a Playwright test whose title contains `Function: <Name>` and that
 exercises that export through the running Next server (UI or `request`), not
-only a handbook screenshot. `npm run e2e:check` **fails the PR** if a screen
-has no matching `goto`, a variant has no `needle` in `e2e/`, an endpoint has
-no matching `request.<verb>` call, or a function has no `Function: <Name>`
-title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
+only a handbook screenshot. `npm run e2e:check` scans Playwright spec files under `e2e/` (except `handbook-capture.spec.ts`)
+and **fails the PR** if a screen has no matching `goto`, a variant has no
+`needle`, an endpoint has no matching `request.<verb>` call, or a function has
+no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
 is an undeclared deviation and is rejected. CI runs `e2e:check` then `e2e`.
 

@@ -3,10 +3,10 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright end-to-end configuration.
  *
- * Runs against the standalone production server (`node .next/standalone/
- * server.js`, the exact artifact the Docker image runs) so the smoke tests
- * exercise what actually ships. Locally an already-running server on :3000 is
- * reused; CI always builds and starts fresh.
+ * Starts the local api protocol stub on :3001, then the standalone production
+ * server (`node .next/standalone/server.js`, the Docker artifact) on :3000
+ * with NEXT_PUBLIC_API_URL pointing at the stub. Locally an already-running
+ * pair is reused; CI always builds and starts fresh.
  */
 export default defineConfig({
   testDir: './e2e',
