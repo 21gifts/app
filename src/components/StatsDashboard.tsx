@@ -127,14 +127,20 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
       ))}
       <polygon points={area} fill={ORANGE} fillOpacity="0.25" />
       <polyline points={line} fill="none" stroke={ORANGE} strokeWidth="2" />
-      {xIdx.map((i) => {
+      {xIdx.map((i, tickIndex) => {
         const point = series[i] as (typeof series)[number];
+        const anchor =
+          xIdx.length > 1 && tickIndex === 0
+            ? 'start'
+            : xIdx.length > 1 && tickIndex === xIdx.length - 1
+              ? 'end'
+              : 'middle';
         return (
           <text
             key={point.day}
             x={xAt(i)}
             y={height - 10}
-            textAnchor="middle"
+            textAnchor={anchor}
             fill="rgba(255,255,255,0.5)"
             fontSize="12"
           >

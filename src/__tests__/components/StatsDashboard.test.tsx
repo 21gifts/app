@@ -107,6 +107,18 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('1,500,000 sats')).toBeTruthy();
   });
 
+  it('anchors the first and last spend-over-time dates so full YYYY-MM-DD labels stay in view', () => {
+    render(
+      <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    const svg = screen.getByLabelText('Total spend over time');
+    const first = [...svg.querySelectorAll('text')].find((el) => el.textContent === '2026-06-01');
+    const last = [...svg.querySelectorAll('text')].find((el) => el.textContent === '2026-06-03');
+    expect(first?.getAttribute('text-anchor')).toBe('start');
+    expect(last?.getAttribute('text-anchor')).toBe('end');
+    expect(last?.textContent).toBe('2026-06-03');
+  });
+
   it('uses compact axis labels for thousands and millions', () => {
     const large: GiftStats = {
       ...SAMPLE,

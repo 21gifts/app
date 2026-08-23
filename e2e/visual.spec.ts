@@ -148,6 +148,55 @@ test.describe('function baselines', () => {
     );
     expect(sections.every((s) => s.id !== '' && s.name !== '')).toBe(true);
     expect(new Set(sections.map((s) => s.name)).size).toBe(sections.length);
+
+    const clipFunctions = new Set([
+      'StatsDashboard',
+      'StatsLoader',
+      'StatsPage',
+      'fetchGiftStats',
+      'proxyGiftsStatsGet',
+    ]);
+    for (const section of sections) {
+      if (!clipFunctions.has(section.name)) {
+        continue;
+      }
+      const heading = page.locator(`#${section.id}`);
+      await heading.evaluate((el) => {
+        el.scrollIntoView({ block: 'center' });
+      });
+      const clip = await heading.evaluate((el) => {
+        const wrap = el.parentElement;
+        if (wrap === null) {
+          const box = el.getBoundingClientRect();
+          return {
+            x: Math.max(0, Math.floor(box.left)),
+            y: Math.max(0, Math.floor(box.top)),
+            width: Math.ceil(box.width),
+            height: Math.ceil(box.height),
+          };
+        }
+        let last: Element = wrap;
+        let next = wrap.nextElementSibling;
+        while (next !== null && next.querySelector('h2') === null) {
+          last = next;
+          next = next.nextElementSibling;
+        }
+        const top = wrap.getBoundingClientRect();
+        const bottom = last.getBoundingClientRect();
+        const left = Math.min(top.left, bottom.left);
+        const right = Math.max(top.right, bottom.right);
+        return {
+          x: Math.max(0, Math.floor(left)),
+          y: Math.max(0, Math.floor(Math.min(top.top, bottom.top))),
+          width: Math.ceil(right - left),
+          height: Math.ceil(Math.max(top.bottom, bottom.bottom) - Math.min(top.top, bottom.top)),
+        };
+      });
+      await expect(page).toHaveScreenshot(`function-${section.name}.png`, {
+        clip,
+        ...SHOT,
+      });
+    }
   });
 
   test('LoginCard QR + QrCode', async ({ page }) => {
