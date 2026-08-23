@@ -50,6 +50,13 @@
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
 
+## Function: NameForm
+
+- **Purpose:** Logged-in form to set or edit a display name.
+- **Inputs:** Reads `useAuthStore`. User input: name string.
+- **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
+- **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
+
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
@@ -59,7 +66,7 @@
 
 ## Function: LoginCard
 
-- **Purpose:** Wallet of Satoshi login UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `LightningAddressForm`.
+- **Purpose:** Wallet of Satoshi login UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `NameForm` and `LightningAddressForm`.
 - **Inputs:** Uses `useLnurlLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
 - **Returns / side effects:** React element covering idle/waiting/expired/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
@@ -176,6 +183,13 @@
 - **Returns / side effects:** void. SSR no-op.
 - **Used by:** `useAuthStore.setAuth`.
 
+## Function: setName
+
+- **Purpose:** POST `/me/name`.
+- **Inputs:** `sessionToken`, `name`.
+- **Returns / side effects:** Updated `Account`.
+- **Used by:** `NameForm`.
+
 ## Function: setLightningAddress
 
 - **Purpose:** POST `/me/lightning-address`.
@@ -209,7 +223,7 @@
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
 - **Returns / side effects:** Auth state object.
-- **Used by:** `LoginCard`, `useLnurlLogin`, `LightningAddressForm` on `/login` (not `/`).
+- **Used by:** `LoginCard`, `useLnurlLogin`, `NameForm`, `LightningAddressForm` on `/login` (not `/`).
 
 ## Function: useLnurlLogin
 
@@ -276,10 +290,10 @@
 
 ## Function: POST
 
-- **Purpose:** App Router POST export on the lightning-address write route (re-export of `proxyMeLightningAddressPost`).
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin address link.
+- **Used by:** Same-origin name save and address link.
 
 ## Function: proxyApiRequest
 
@@ -315,6 +329,13 @@
 - **Inputs:** `Request` with `address` query.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route GET `/lightning-address`.
+
+## Function: proxyMeNamePost
+
+- **Purpose:** Proxies POST `/me/name`.
+- **Inputs:** `Request` with JSON body.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/name`.
 
 ## Function: proxyMeGet
 

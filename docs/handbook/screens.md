@@ -36,8 +36,8 @@ The only state: imprint plus privacy, marketing chrome.
 
 - **URL:** `/login` — Wallet of Satoshi sign-in.
 - **What the user sees:** Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
-- **Actions:** Scan the QR or tap **Open Wallet of Satoshi**. When signed in, link/unlink a Wallet of Satoshi address and log out. No client redirect to `/`.
-- **Calls:** `LoginCard`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
+- **Actions:** Scan the QR or tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
 
 ### Variant: idle
 
@@ -77,7 +77,7 @@ Challenge start or a later request failed. Copy **Something went wrong. Please t
 
 ### Variant: signed-in
 
-Session present, no Wallet of Satoshi address yet. **Signed in**, role, shortened linking key, link form, **Log out**.
+Session present, no name and no Wallet of Satoshi address yet. **Signed in**, role, shortened linking key, name form, address form, **Log out**.
 
 ![21.gifts login signed in](images/login-signed-in.png)
 

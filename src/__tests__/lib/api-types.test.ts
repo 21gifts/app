@@ -11,6 +11,7 @@ const account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
   role: 'basis' as const,
+  name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
@@ -28,6 +29,15 @@ describe('accountSchema', () => {
       lightningAddressVerified: true,
     };
     expect(accountSchema.parse(linked)).toEqual(linked);
+  });
+
+  it('accepts a named account', () => {
+    const named = { ...account, name: 'Ada' };
+    expect(accountSchema.parse(named)).toEqual(named);
+  });
+
+  it('rejects a non-string name', () => {
+    expect(() => accountSchema.parse({ ...account, name: 1 })).toThrow();
   });
 
   it('rejects an unknown role', () => {

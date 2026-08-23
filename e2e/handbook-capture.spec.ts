@@ -13,6 +13,7 @@ const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,
   role: 'basis' as const,
+  name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,

@@ -114,6 +114,7 @@ const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,
   role: 'basis' as const,
+  name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
@@ -158,6 +159,7 @@ test('login poll completes into the signed-in view', async ({ page }) => {
   await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText('basis')).toBeVisible();
+  await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
   await expect(
     page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
   ).toBeVisible();
@@ -171,6 +173,13 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
 
+  await page.route(/\/me\/name$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
+    });
+  });
   await page.route(/\/me\/lightning-address$/, async (route) => {
     const method = route.request().method();
     if (method === 'POST') {
@@ -179,6 +188,7 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
         contentType: 'application/json',
         body: JSON.stringify({
           ...E2E_ACCOUNT,
+          name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
         }),
       });
@@ -188,7 +198,7 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ ...E2E_ACCOUNT, lightningAddress: null }),
+        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada', lightningAddress: null }),
       });
       return;
     }
@@ -204,15 +214,20 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
 
   await page.goto('/login');
   await expect(page.getByText('Signed in')).toBeVisible();
+  await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
   await expect(
     page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
   ).toBeVisible();
+
+  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page.getByText('Ada')).toBeVisible();
 
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
 
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
   await expect(page.getByRole('button', { name: /verify/i })).toHaveCount(0);
   await expect(page.getByText(/not yet verified/i)).toHaveCount(0);

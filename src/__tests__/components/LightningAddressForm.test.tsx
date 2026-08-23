@@ -14,6 +14,7 @@ const baseAccount: Account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
   role: 'basis',
+  name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,

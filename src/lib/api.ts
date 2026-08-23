@@ -115,6 +115,35 @@ export async function pollSession(pollToken: string): Promise<SessionResult> {
 }
 
 /**
+ * Sets or replaces the account display name.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param name - The display name as typed.
+ * @returns The updated {@link Account}.
+ * @throws Error when the api rejects the name (400) — the api error string
+ * when present, otherwise a fallback — on any other non-2xx status, or when
+ * the body fails {@link accountSchema} validation.
+ */
+export async function setName(sessionToken: string, name: string): Promise<Account> {
+  const response = await fetch('/me/name', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not save your name' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not save your name');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Fetches the account behind a session token.
  *
  * @param sessionToken - A bearer token from a completed challenge.
