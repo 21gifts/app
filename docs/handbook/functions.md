@@ -38,15 +38,15 @@
 
 ## Function: HandbookIntro
 
-- **Purpose:** Client island for the `/handbook` title, intro sentence, and section-nav `aria-label`.
-- **Inputs:** Locale via `useTranslations`. `children` are the section links.
-- **Returns / side effects:** Heading, intro with the api-handbook GitHub link, and a nav whose accessible name follows the locale. No network.
+- **Purpose:** Server-presentational chrome for the `/handbook` title, intro sentence, and section-nav `aria-label` (already-translated copy).
+- **Inputs:** `title`, `introBefore`, `introAfter`, `navAria` (already-translated strings), and `children` (the section links).
+- **Returns / side effects:** Heading, intro with the api-handbook GitHub link, and a nav whose accessible name comes from `navAria`. No network.
 - **Used by:** `HandbookPage`.
 
 ## Function: HandbookPage
 
-- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files from disk and renders them with a link to the api handbook. Title and intro chrome are localized via `HandbookIntro`; copy-link on the page title and each chapter nav item; markdown bodies stay English.
-- **Inputs:** None (reads `docs/handbook/` from disk at request time; the standalone image copies that tree).
+- **Purpose:** Async Next.js page for `/handbook`. Resolves locale via `getRequestLocale`, loads the four app handbook files from disk, and renders them with a link to the api handbook. Copy-link label from `handbook.title`; intro chrome via already-translated props on `HandbookIntro`; copy-link on the page title and each chapter nav item; markdown bodies stay English.
+- **Inputs:** None (calls `getRequestLocale()`; reads `docs/handbook/` from disk at request time; the standalone image copies that tree).
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
@@ -76,7 +76,7 @@
 - **Purpose:** Client context provider that exposes the negotiated locale and a bound `t` helper to visitor-facing components.
 - **Inputs:** `locale`, `messages` for that locale, and `children`.
 - **Returns / side effects:** React provider element. No network; does not write cookies.
-- **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` by header, footer, login, donate, the language switcher, and `HandbookIntro`.
+- **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` by header, login, donate, and the language switcher.
 
 ## Function: LoginCard
 
@@ -139,14 +139,14 @@
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
 - **Inputs:** `locale` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** The `Messages` object for that locale. Exhaustive switch over `Locale`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, and the `renderWithLocale` test helper.
+- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, `HandbookPage`, and the `renderWithLocale` test helper.
 
 ## Function: getRequestLocale
 
 - **Purpose:** Resolve the UI locale for the current request without writing cookies.
 - **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
 - **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, and `NotFound`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, and `HandbookPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: isAndroidUserAgent
 
@@ -237,7 +237,7 @@
 - **Purpose:** Look up a catalog key and replace `{name}` placeholders from `vars`.
 - **Inputs:** `catalog` (`Messages`), `key` (`MessageKey`), optional `vars` map of string/number values.
 - **Returns / side effects:** Interpolated string. Throws on a missing key or missing `{name}` — no silent English fallback.
-- **Used by:** Server pages (`Home`, login/donate headings, `NotFound`) and the `t` helper from `LocaleProvider` / `useTranslations`.
+- **Used by:** Server pages (`Home`, login/donate headings, `NotFound`, `MarketingFooter`, `HandbookPage`) and the `t` helper from `LocaleProvider` / `useTranslations`.
 
 ## Function: unlinkLightningAddress
 
@@ -272,7 +272,7 @@
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `HandbookIntro`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`.
 
 ## Function: walletOfSatoshiHref
 
@@ -305,7 +305,7 @@
 ## Function: MarketingFooter
 
 - **Purpose:** Footer for marketing pages: wordmark, localized section links, legal, GitHub.
-- **Inputs:** None. Reads copy via `useTranslations`.
+- **Inputs:** None. Resolves locale via `getRequestLocale` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** Footer element.
 - **Used by:** `MarketingLayout`, `NotFound`.
 
@@ -318,16 +318,16 @@
 
 ## Function: MarketingLayout
 
-- **Purpose:** Dark full-page shell for `/`, `/legal`, and `/handbook`.
-- **Inputs:** `children`.
-- **Returns / side effects:** Wrapper div with header, page, footer.
+- **Purpose:** Async dark full-page shell for `/`, `/legal`, and `/handbook`.
+- **Inputs:** `children`. Awaits `MarketingFooter()` (does not render it as a JSX child).
+- **Returns / side effects:** Wrapper div with header, page, and awaited footer.
 - **Used by:** Marketing route group.
 
 ## Function: NotFound
 
-- **Purpose:** App-wide 404 screen with marketing chrome and a localized link home.
-- **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy.
-- **Returns / side effects:** 404 element with `MarketingHeader` / `MarketingFooter`.
+- **Purpose:** Async app-wide 404 screen with marketing chrome and a localized link home.
+- **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy; awaits `MarketingFooter()`.
+- **Returns / side effects:** 404 element with `MarketingHeader` and awaited footer (not rendered as JSX child).
 - **Used by:** Next.js `not-found.tsx`.
 
 ## Function: POST
