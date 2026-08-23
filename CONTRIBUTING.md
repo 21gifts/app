@@ -212,9 +212,13 @@ path and asserts a user-visible outcome. Every entry in
 `scripts/screen-variants.mjs` **must** have its `needle` string in `e2e/` (the
 assertion for that state). Every HTTP endpoint discovered from
 `src/app/**/route.ts` **must** have at least one Playwright
-`request.get|post|put|patch|delete` of that path. `npm run e2e:check` **fails
-the PR** if a screen has no matching `goto`, a variant has no `needle` in
-`e2e/`, or an endpoint has no matching `request.<verb>` call. Adding a `page.tsx` or `route.ts` without an e2e spec in
+`request.get|post|put|patch|delete` of that path. Every exported function/class
+**must** have a Playwright test whose title contains `Function: <Name>` and that
+exercises that export through the running Next server (UI or `request`), not
+only a handbook screenshot. `npm run e2e:check` **fails the PR** if a screen
+has no matching `goto`, a variant has no `needle` in `e2e/`, an endpoint has
+no matching `request.<verb>` call, or a function has no `Function: <Name>`
+title. Adding a `page.tsx` or `route.ts` without an e2e spec in
 the **same PR** is an undeclared deviation and is rejected. CI runs `e2e:check`
 then `e2e`.
 

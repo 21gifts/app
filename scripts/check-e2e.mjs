@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * Fail if e2e/ does not exercise every UI screen and every HTTP endpoint.
- * A screen needs page.goto of that path; an endpoint needs
- * request.get/post/put/patch/delete of that path. Run from the repo root.
+ * Fail if e2e/ does not exercise every UI screen, HTTP endpoint, and exported
+ * function. A screen needs page.goto of that path; an endpoint needs
+ * request.get/post/put/patch/delete of that path; a function needs a
+ * Playwright test title containing `Function: <Name>`. Run from the repo root.
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { extractEndpoints, extractScreens, walk } from './check-handbook.mjs';
+import { extractEndpoints, extractFunctions, extractScreens, walk } from './check-handbook.mjs';
 import { SCREEN_VARIANTS } from './screen-variants.mjs';
 
 const ROOT = process.cwd();
@@ -64,6 +65,13 @@ for (const variant of SCREEN_VARIANTS) {
   }
 }
 
+const functions = extractFunctions(path.join(ROOT, 'src'));
+for (const name of [...functions].sort()) {
+  if (!text.includes(`Function: ${name}`)) {
+    missing.push(`Function ${name} has no e2e test title Function: ${name}`);
+  }
+}
+
 if (screens.size === 0 && endpoints.size === 0) {
   console.error('E2E: no screens or endpoints discovered — refusing to pass');
   process.exit(1);
@@ -78,5 +86,5 @@ if (missing.length) {
 }
 
 console.log(
-  `E2E complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants, ${endpoints.size} endpoints.`,
+  `E2E complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants, ${endpoints.size} endpoints, ${functions.size} functions.`,
 );

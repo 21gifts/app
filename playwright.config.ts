@@ -31,17 +31,25 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: 'npm run build && npm run start:standalone',
-    url: 'http://localhost:3000/healthz',
-    reuseExistingServer: !process.env.CI,
-    timeout: 360_000,
-    env: {
-      ...process.env,
-      HOSTNAME: '0.0.0.0',
-      // Deterministic API host so login e2e can intercept LUD-04 without
-      // calling the live api. Playwright routes fulfill `/auth/lnurl`.
-      NEXT_PUBLIC_API_URL: 'https://api.21gifts.test',
+  webServer: [
+    {
+      command: 'node e2e/mock-api.mjs',
+      url: 'http://127.0.0.1:3001/healthz',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
     },
-  },
+    {
+      command: 'npm run build && npm run start:standalone',
+      url: 'http://localhost:3000/healthz',
+      reuseExistingServer: !process.env.CI,
+      timeout: 360_000,
+      env: {
+        ...process.env,
+        HOSTNAME: '0.0.0.0',
+        // Local protocol stub so same-origin proxies succeed. Browser specs
+        // may still intercept `/auth/lnurl` for isolated UI states.
+        NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
+      },
+    },
+  ],
 });
