@@ -81,3 +81,114 @@ test('login shows an error when the LNURL challenge cannot start', async ({ page
   await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
 });
+
+const E2E_ACCOUNT = {
+  id: 'acc_e2e',
+  linkingKey: `02${'a'.repeat(62)}`,
+  role: 'basis' as const,
+  lightningAddress: null as string | null,
+  lightningAddressVerified: false,
+  createdAt: 1_700_000_000,
+};
+
+test('login poll completes into the signed-in view', async ({ page }) => {
+  await page.route(/\/auth\/lnurl$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        lnurl: LNURL,
+        k1: 'ab'.repeat(32),
+        pollToken: 'cd'.repeat(32),
+        expiresInSeconds: 90,
+      }),
+    });
+  });
+  let polls = 0;
+  await page.route(/\/auth\/session$/, async (route) => {
+    polls += 1;
+    if (polls < 2) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'pending' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'authenticated',
+        token: 'sess-e2e',
+        account: E2E_ACCOUNT,
+      }),
+    });
+  });
+
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText('basis')).toBeVisible();
+  await expect(page.getByText(/Link a Lightning Address so gifts can reach you/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+});
+
+test('signed-in session hydrates, then links and unlinks a Lightning Address', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+
+  await page.route(/\/me\/lightning-address$/, async (route) => {
+    const method = route.request().method();
+    if (method === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
+      });
+      return;
+    }
+    if (method === 'DELETE') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...E2E_ACCOUNT, lightningAddress: null }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(E2E_ACCOUNT),
+    });
+  });
+
+  await page.goto('/login');
+  await expect(page.getByText('Signed in')).toBeVisible();
+  await expect(page.getByText(/Link a Lightning Address so gifts can reach you/i)).toBeVisible();
+
+  await page.getByLabel('Lightning Address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+
+  await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /verify/i })).toHaveCount(0);
+  await expect(page.getByText(/not yet verified/i)).toHaveCount(0);
+  await expect(page.getByText('Verified')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Unlink' }).click();
+  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Log in with your Lightning wallet' }),
+  ).toBeVisible();
+});
