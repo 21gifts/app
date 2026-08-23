@@ -66,7 +66,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — passkey first, Wallet of Satoshi as a second method.
-- **What the user sees:** Language switcher. Idle **Create a passkey** / **Continue with passkey** / **Log in with Wallet of Satoshi**, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Create a passkey** / **Continue with passkey** / **Log in with Wallet of Satoshi**, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
 - **Actions:** Change language. Create or continue with a passkey, or scan the QR / tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`, `LanguageSwitcher`.
 
@@ -127,7 +127,7 @@ Signed in with an address on the account. Name form (set or **Edit**) plus the a
 ## Screen: /donate
 
 - **URL:** `/donate` — guest Bitcoin gift. No login required.
-- **What the user sees:** Language switcher in the marketing header. Heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Page heading **Send a gift**, form heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
 - **Actions:** Change language. Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
 - **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `LanguageSwitcher`.
 
