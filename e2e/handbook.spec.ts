@@ -9,7 +9,7 @@ test('copy link flashes Copied on a handbook heading', async ({ page, context })
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/handbook');
   const button = page.getByRole('button', { name: 'Copy link to Handbook' });
-  await expect(button).toHaveText('Copy link');
+  await expect(button).toBeVisible();
   await button.click();
-  await expect(button).toHaveText('Copied');
+  await expect(button).toHaveAttribute('data-copied', 'true');
 });

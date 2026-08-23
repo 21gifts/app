@@ -15,6 +15,20 @@ function stubExecCommand(impl: (commandId: string) => boolean): ReturnType<typeo
   return fn;
 }
 
+function expectIdleIcon(button: HTMLElement): void {
+  expect(button.getAttribute('data-copied')).toBeNull();
+  const svg = button.querySelector('svg');
+  expect(svg).not.toBeNull();
+  expect(svg?.getAttribute('class') ?? '').toContain('lucide-link2');
+}
+
+function expectCopiedIcon(button: HTMLElement): void {
+  expect(button.getAttribute('data-copied')).toBe('true');
+  const svg = button.querySelector('svg');
+  expect(svg).not.toBeNull();
+  expect(svg?.getAttribute('class') ?? '').toContain('lucide-check');
+}
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
@@ -36,7 +50,7 @@ describe('HandbookCopyLink', () => {
     render(<HandbookCopyLink targetId="screens" label="Screens" />);
 
     const button = screen.getByRole('button', { name: 'Copy link to Screens' });
-    expect(button.textContent).toBe('Copy link');
+    expectIdleIcon(button);
     fireEvent.click(button);
     await act(async () => {
       await Promise.resolve();
@@ -45,26 +59,24 @@ describe('HandbookCopyLink', () => {
     expect(writeText).toHaveBeenCalledWith(
       `${window.location.origin}${window.location.pathname}#screens`,
     );
-    expect(button.textContent).toBe('Copied');
-    expect(button.getAttribute('data-copied')).toBe('true');
+    expectCopiedIcon(button);
     expect(window.location.hash).toBe('#screens');
 
     act(() => {
       vi.advanceTimersByTime(1200);
     });
-    expect(button.textContent).toBe('Copy link');
-    expect(button.getAttribute('data-copied')).toBeNull();
+    expectIdleIcon(button);
   });
 
-  it('keeps the aria-label while the visible text is Copied', async () => {
+  it('keeps the aria-label unchanged while data-copied is true', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Copy link to Handbook' }).textContent).toBe(
-        'Copied',
-      );
+      const button = screen.getByRole('button', { name: 'Copy link to Handbook' });
+      expectCopiedIcon(button);
+      expect(button.textContent).not.toContain('Copied');
     });
   });
 
@@ -87,9 +99,7 @@ describe('HandbookCopyLink', () => {
     render(<HandbookCopyLink targetId="functions" label="Functions" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Functions' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Copy link to Functions' }).textContent).toBe(
-        'Copied',
-      );
+      expectCopiedIcon(screen.getByRole('button', { name: 'Copy link to Functions' }));
     });
     expect(exec).toHaveBeenCalledWith('copy');
   });
@@ -100,9 +110,7 @@ describe('HandbookCopyLink', () => {
     render(<HandbookCopyLink targetId="readme" label="Overview" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Overview' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Copy link to Overview' }).textContent).toBe(
-        'Copied',
-      );
+      expectCopiedIcon(screen.getByRole('button', { name: 'Copy link to Overview' }));
     });
     expect(exec).toHaveBeenCalledWith('copy');
   });
@@ -117,9 +125,7 @@ describe('HandbookCopyLink', () => {
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalled();
     });
-    expect(screen.getByRole('button', { name: 'Copy link to Endpoints' }).textContent).toBe(
-      'Copy link',
-    );
+    expectIdleIcon(screen.getByRole('button', { name: 'Copy link to Endpoints' }));
   });
 
   it('stays idle when execCommand throws', async () => {
@@ -134,7 +140,7 @@ describe('HandbookCopyLink', () => {
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalled();
     });
-    expect(screen.getByRole('button', { name: 'Copy link to X' }).textContent).toBe('Copy link');
+    expectIdleIcon(screen.getByRole('button', { name: 'Copy link to X' }));
   });
 
   it('unmounts without a pending timer', () => {
@@ -219,10 +225,10 @@ describe('HandbookCopyLink', () => {
     act(() => {
       vi.advanceTimersByTime(800);
     });
-    expect(button.textContent).toBe('Copied');
+    expectCopiedIcon(button);
     act(() => {
       vi.advanceTimersByTime(400);
     });
-    expect(button.textContent).toBe('Copy link');
+    expectIdleIcon(button);
   });
 });

@@ -293,7 +293,7 @@ test('handbook copied', async ({ page, context }) => {
   await page.goto('/handbook');
   const button = page.getByRole('button', { name: 'Copy link to Handbook' });
   await button.click();
-  await expect(button).toHaveText('Copied');
+  await expect(button).toHaveAttribute('data-copied', 'true');
   await button.scrollIntoViewIfNeeded();
   await writePng(page, 'handbook-copied.png', false);
 });

@@ -113,7 +113,7 @@ export const SCREEN_VARIANTS = [
     route: '/handbook',
     id: 'copied',
     image: 'handbook-copied.png',
-    needle: "toHaveText('Copied')",
+    needle: "toHaveAttribute('data-copied', 'true')",
   },
   {
     route: '/404',
