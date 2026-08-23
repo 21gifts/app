@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import { getRequestLocale } from '@/lib/request-locale';
+import { getCatalog } from '@/lib/messages';
 import './globals.css';
 
 const description =
@@ -50,11 +53,23 @@ export const metadata: Metadata = {
 
 /**
  * Root layout: the `<html>`/`<body>` shell shared by every page.
+ *
+ * @param props - Layout children.
+ * @returns The document wrapper with negotiated `lang` and locale messages.
  */
-export default function RootLayout({ children }: { children: ReactNode }): ReactElement {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}): Promise<ReactElement> {
+  const locale = await getRequestLocale();
   return (
-    <html lang="en">
-      <body className="bg-white text-neutral-900 antialiased">{children}</body>
+    <html lang={locale}>
+      <body className="bg-white text-neutral-900 antialiased">
+        <LocaleProvider locale={locale} messages={getCatalog(locale)}>
+          {children}
+        </LocaleProvider>
+      </body>
     </html>
   );
 }

@@ -1,13 +1,26 @@
 import type { ReactElement } from 'react';
 import { DonateForm } from '@/components/DonateForm';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { getRequestLocale } from '@/lib/request-locale';
+import { getCatalog } from '@/lib/messages';
+import { translate } from '@/lib/translate';
 
 /**
  * `/donate` — guest LNURL-pay gift flow.
+ *
+ * @returns The donate screen.
  */
-export default function DonatePage(): ReactElement {
+export default async function DonatePage(): Promise<ReactElement> {
+  const locale = await getRequestLocale();
+  const messages = getCatalog(locale);
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-10 px-6">
-      <h1 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">Send a gift</h1>
+    <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6">
+      <div className="absolute top-4 right-5">
+        <LanguageSwitcher tone="light" />
+      </div>
+      <h1 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
+        {translate(messages, 'donate.pageTitle')}
+      </h1>
       <DonateForm />
     </main>
   );
