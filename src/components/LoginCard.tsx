@@ -173,14 +173,14 @@ function StartView({
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Fingerprint aria-hidden="true" className="h-4 w-4" />
-        Create a passkey
+        {t('login.createPasskey')}
       </button>
       <button
         type="button"
         onClick={onContinuePasskey}
         className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
       >
-        Continue with passkey
+        {t('login.continuePasskey')}
       </button>
       <button
         type="button"

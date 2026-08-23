@@ -108,8 +108,8 @@
 
 ## Function: LoginCard
 
-- **Purpose:** Wallet of Satoshi login UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
-- **Inputs:** Uses `useLnurlLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
+- **Purpose:** Login UI: passkey first, Wallet of Satoshi LNURL-auth second. Hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
+- **Inputs:** Uses `usePasskeyLogin`, `useLnurlLogin`, and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
 - **Returns / side effects:** React element covering idle/waiting/expired/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
 
