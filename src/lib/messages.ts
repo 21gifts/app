@@ -266,7 +266,7 @@ const es = {
     'Escanea un QR o abre Wallet of Satoshi. Tu wallet firma un desafío de un solo uso. Esa firma es tu cuenta — nada más que recordar.',
   'home.step2Title': 'Añade una Lightning Address',
   'home.step2BodyBefore': 'Indica dónde deben llegar los regalos, en la forma habitual',
-  'home.step2BodyAfter': '. Cualquiera podrá enviarte desde su propia wallet.',
+  'home.step2BodyAfter': 'de correo. Cualquiera podrá enviarte desde su propia wallet.',
   'home.step3Title': 'Los regalos llegan directo',
   'home.step3Body':
     'Quien da paga a tu Lightning Address. Los satoshis llegan a tu wallet, no a la nuestra. La plataforma nunca ve el dinero.',
