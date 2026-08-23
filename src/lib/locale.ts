@@ -23,8 +23,10 @@ const PRIMARY_TO_LOCALE: Record<string, Locale> = {
  * Negotiate a supported locale from an RFC 7231 Accept-Language header.
  *
  * Splits on commas, reads `q=` (default 1), sorts by q descending then header
- * order. Each tag's primary subtag is lowercased. Map: en→en, de→de, es→es,
- * fil→fil, tl→fil. First mapped tag wins. Empty, missing, or unmatched → `en`.
+ * order. A `q=` value must be a finite number in `[0, 1]`; otherwise the entire
+ * language-range is discarded. `q <= 0` is skipped as not acceptable. Each
+ * tag's primary subtag is lowercased. Map: en→en, de→de, es→es, fil→fil,
+ * tl→fil. First mapped tag wins. Empty, missing, or unmatched → `en`.
  *
  * @param header - Raw Accept-Language or empty string.
  * @returns A supported locale.
@@ -52,14 +54,20 @@ export function parseAcceptLanguage(header: string): Locale {
       continue;
     }
     let q = 1;
+    let invalidQ = false;
     for (const param of params) {
-      const match = /^\s*q\s*=\s*([0-9.]+)\s*$/i.exec(param);
+      const match = /^\s*q\s*=\s*(\S+)\s*$/i.exec(param);
       if (match !== null && match[1] !== undefined) {
         const parsed = Number.parseFloat(match[1]);
-        if (Number.isFinite(parsed)) {
-          q = parsed;
+        if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+          invalidQ = true;
+          break;
         }
+        q = parsed;
       }
+    }
+    if (invalidQ) {
+      continue;
     }
     if (q <= 0) {
       continue;

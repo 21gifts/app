@@ -33,14 +33,14 @@ export default async function HandbookPage(): Promise<ReactElement> {
   const documents = loadHandbookDocuments();
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
-      <div className="mt-2">
-        <HandbookCopyLink targetId="handbook" label={translate(messages, 'handbook.title')} />
-      </div>
       <HandbookIntro
         title={translate(messages, 'handbook.title')}
         introBefore={translate(messages, 'handbook.introBefore')}
         introAfter={translate(messages, 'handbook.introAfter')}
         navAria={translate(messages, 'aria.handbookSections')}
+        headingAction={
+          <HandbookCopyLink targetId="handbook" label={translate(messages, 'handbook.title')} />
+        }
       >
         {documents.map((doc) => (
           <span key={doc.id} className="inline-flex items-baseline gap-1">

@@ -39,7 +39,7 @@
 ## Function: HandbookIntro
 
 - **Purpose:** Server-presentational chrome for the `/handbook` title, intro sentence, and section-nav `aria-label` (already-translated copy).
-- **Inputs:** `title`, `introBefore`, `introAfter`, `navAria` (already-translated strings), and `children` (the section links).
+- **Inputs:** `title`, `introBefore`, `introAfter`, `navAria` (already-translated strings), `headingAction` (node beside the h1, e.g. copy-link), and `children` (the section links).
 - **Returns / side effects:** Heading, intro with the api-handbook GitHub link, and a nav whose accessible name comes from `navAria`. No network.
 - **Used by:** `HandbookPage`.
 

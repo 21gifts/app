@@ -19,7 +19,11 @@ afterEach(cleanup);
 
 describe('HandbookIntro', () => {
   it('renders the English heading and api handbook link', () => {
-    render(<HandbookIntro {...en}>nav</HandbookIntro>);
+    render(
+      <HandbookIntro {...en} headingAction={null}>
+        nav
+      </HandbookIntro>,
+    );
     expect(screen.getByRole('heading', { name: 'Handbook' })).toBeTruthy();
     expect(screen.getByRole('link', { name: '21gifts/api' }).getAttribute('href')).toBe(
       'https://github.com/21gifts/api/tree/develop/docs/handbook',
@@ -27,12 +31,20 @@ describe('HandbookIntro', () => {
   });
 
   it('renders the German heading when locale is de', () => {
-    render(<HandbookIntro {...de}>nav</HandbookIntro>);
+    render(
+      <HandbookIntro {...de} headingAction={null}>
+        nav
+      </HandbookIntro>,
+    );
     expect(screen.getByRole('heading', { name: 'Handbuch' })).toBeTruthy();
   });
 
   it('localizes the section nav aria-label', () => {
-    render(<HandbookIntro {...de}>nav</HandbookIntro>);
+    render(
+      <HandbookIntro {...de} headingAction={null}>
+        nav
+      </HandbookIntro>,
+    );
     expect(screen.getByRole('navigation', { name: 'Handbuchabschnitte' })).toBeTruthy();
   });
 });
