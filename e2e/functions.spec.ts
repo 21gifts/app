@@ -204,6 +204,7 @@ test('Function: resolveLightningAddress — donate form resolves then shows a pa
   await page.getByLabel('Amount (sats)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Pay 21 sats to alice@walletofsatoshi.com')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
 });
 
 test('Function: RootLayout — landing renders', async ({ page }) => {
@@ -384,6 +385,7 @@ test('Function: clearSession — log out returns to the start action', async ({ 
   await signInViaStub(page, request);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
+  expect(await page.evaluate(() => window.localStorage.getItem('21gifts.session'))).toBeNull();
 });
 
 test('Function: DonatePage — donate heading is visible', async ({ page }) => {
@@ -413,6 +415,7 @@ test('Function: satsToMsat — donate shows a Bitcoin payment QR', async ({ page
   await page.getByLabel('Amount (sats)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Pay 21 sats to alice@walletofsatoshi.com')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
 });
 
 test('Function: formatMsatAsSats — amount outside the accepted range is explained', async ({
@@ -422,5 +425,5 @@ test('Function: formatMsatAsSats — amount outside the accepted range is explai
   await page.getByLabel('Wallet of Satoshi address').fill('highmin@walletofsatoshi.com');
   await page.getByLabel('Amount (sats)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText(/This address accepts/)).toBeVisible();
+  await expect(page.getByText('This address accepts 100 sats – 1000000 sats.')).toBeVisible();
 });
