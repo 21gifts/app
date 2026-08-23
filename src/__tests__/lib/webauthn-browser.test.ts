@@ -37,6 +37,22 @@ describe('creationOptionsFromJSON', () => {
     expect(options.timeout).toBe(60_000);
     expect(options.attestation).toBe('none');
     expect(options.authenticatorSelection?.residentKey).toBe('required');
+    expect(options.pubKeyCredParams).toEqual([{ type: 'public-key', alg: -7 }]);
+  });
+
+  it('keeps an explicit pubKeyCredParams list', () => {
+    const params = [{ type: 'public-key' as const, alg: -257 }];
+    const options = creationOptionsFromJSON({
+      challenge: bytesToBase64Url(new Uint8Array([9, 8, 7])),
+      rp: { id: 'localhost', name: '21.gifts' },
+      user: {
+        id: bytesToBase64Url(new Uint8Array([1, 2])),
+        name: 'n',
+        displayName: 'd',
+      },
+      pubKeyCredParams: params,
+    });
+    expect(options.pubKeyCredParams).toEqual(params);
   });
 
   it('omits optional creation fields when absent', () => {
