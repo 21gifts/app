@@ -1,9 +1,8 @@
 'use client';
 
+import { Check, Link2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 
-const IDLE_LABEL = 'Copy link';
-const COPIED_LABEL = 'Copied';
 const RESET_MS = 1200;
 
 /**
@@ -32,7 +31,7 @@ function fallbackCopy(text: string): boolean {
 
 /**
  * Client copy-link control for a handbook heading or chapter. Copies the
- * absolute deep-link (`origin + pathname + #id`) and flashes **Copied**.
+ * absolute deep-link (`origin + pathname + #id`) and flashes a check icon.
  *
  * @param props - Target DOM id (without `#`) and human label for the aria name.
  * @returns A button next to the heading.
@@ -99,17 +98,24 @@ export function HandbookCopyLink({
     void copy();
   }
 
+  const ariaName = `Copy link to ${label}`;
+
   return (
     <button
       type="button"
       onClick={handleClick}
-      aria-label={`Copy link to ${label}`}
+      aria-label={ariaName}
+      title={ariaName}
       data-copied={copied ? 'true' : undefined}
-      className={`shrink-0 rounded px-1.5 py-0.5 text-xs leading-none transition ${
+      className={`inline-flex items-center shrink-0 rounded px-1.5 py-0.5 text-xs leading-none transition ${
         copied ? 'text-[#f7931a]' : 'text-white/40 hover:text-[#f7931a]'
       }`}
     >
-      {copied ? COPIED_LABEL : IDLE_LABEL}
+      {copied ? (
+        <Check aria-hidden="true" className="h-4 w-4" />
+      ) : (
+        <Link2 aria-hidden="true" className="h-4 w-4" />
+      )}
     </button>
   );
 }

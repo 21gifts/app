@@ -36,8 +36,8 @@ The only state: imprint plus privacy, marketing chrome.
 
 - **URL:** `/login` — Wallet of Satoshi sign-in.
 - **What the user sees:** Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
-- **Actions:** Scan the QR or tap **Open Wallet of Satoshi**. When signed in, link/unlink a Wallet of Satoshi address and log out. No client redirect to `/`.
-- **Calls:** `LoginCard`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
+- **Actions:** Scan the QR or tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
 
 ### Variant: idle
 
@@ -77,13 +77,19 @@ Challenge start or a later request failed. Copy **Something went wrong. Please t
 
 ### Variant: signed-in
 
-Session present, no Wallet of Satoshi address yet. **Signed in**, role, shortened linking key, link form, **Log out**.
+Session present, no name and no Wallet of Satoshi address yet. **Signed in**, role, shortened linking key, name form, address form, **Log out**.
 
 ![21.gifts login signed in](images/login-signed-in.png)
 
+### Variant: signed-in-named
+
+Signed in with a display name set. Shows the name plus **Edit**, and the empty address form.
+
+![21.gifts login signed in named](images/login-signed-in-named.png)
+
 ### Variant: signed-in-linked
 
-Signed in with an address on the account. Shows the address plus **Edit** / **Unlink** (no verification UI).
+Signed in with an address on the account. Name form (set or **Edit**) plus the address with **Edit** / **Unlink** (no verification UI).
 
 ![21.gifts login signed in linked](images/login-signed-in-linked.png)
 
@@ -127,19 +133,19 @@ Same payment card, but **Open Wallet of Satoshi** is an Android Intent that pins
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).
-- **What the user sees:** Heading **Handbook**, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints) each with **Copy link**, then the four `docs/handbook/` markdown files rendered as HTML. Every markdown heading has a sibling **Copy link**.
-- **Actions:** Read the docs, jump via the section nav, copy a chapter or heading URL (**Copy link** → **Copied** for 1.2s, hash updates), follow the api handbook link, follow in-page markdown links.
+- **What the user sees:** Heading **Handbook**, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints) each with a link icon, then the four `docs/handbook/` markdown files rendered as HTML. Every markdown heading has a sibling link icon.
+- **Actions:** Read the docs, jump via the section nav, copy a chapter or heading URL (click the link icon → check icon for 1.2s, hash updates), follow the api handbook link, follow in-page markdown links.
 - **Calls:** `HandbookPage`, `HandbookCopyLink`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
 
 ### Variant: default
 
-Idle copy buttons: every heading and chapter shows **Copy link**.
+Idle copy buttons: every heading and chapter shows the link icon.
 
 ![21.gifts handbook](images/handbook.png)
 
 ### Variant: copied
 
-After tapping **Copy link** on a heading or chapter, that button reads **Copied** and `location.hash` is that id. Other copy buttons stay idle.
+After tapping the link icon on a heading or chapter, that button shows the check icon and `data-copied`, and `location.hash` is that id. Other copy buttons stay idle link icons.
 
 ![21.gifts handbook copied](images/handbook-copied.png)
 

@@ -4,6 +4,7 @@ import {
   fetchMe,
   pollSession,
   setLightningAddress,
+  setName,
   resolveLightningAddress,
   startLnurlAuth,
   unlinkLightningAddress,
@@ -13,6 +14,7 @@ const account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
   role: 'basis' as const,
+  name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
@@ -111,6 +113,55 @@ describe('fetchMe', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(fetchMe('sess')).rejects.toThrow();
+  });
+});
+
+describe('setName', () => {
+  it('posts the name and returns the validated account', async () => {
+    const named = { ...account, name: 'Ada' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: named });
+
+    await expect(setName('sess', 'Ada')).resolves.toEqual(named);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/name`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'Ada' }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Name must be 1–80 characters' } });
+    await expect(setName('sess', '')).rejects.toThrow('Name must be 1–80 characters');
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setName('sess', 'x')).rejects.toThrow('Could not save your name');
+  });
+
+  it('falls back when a 400 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(setName('sess', 'x')).rejects.toThrow('Could not save your name');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setName('sess', 'x')).rejects.toThrow('Could not save your name');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(setName('sess', 'x')).rejects.toThrow();
   });
 });
 

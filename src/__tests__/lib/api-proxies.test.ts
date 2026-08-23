@@ -8,6 +8,7 @@ import {
   proxyMeGet,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
+  proxyMeNamePost,
 } from '@/lib/api-proxies';
 
 afterEach(() => {
@@ -47,6 +48,13 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMeGet(new Request('http://localhost/me'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me');
+  });
+
+  it('proxyMeNamePost hits POST /me/name', async () => {
+    const fetchMock = stubApi();
+    await proxyMeNamePost(new Request('http://localhost/me/name', { method: 'POST', body: '{}' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/name');
   });
 
   it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {

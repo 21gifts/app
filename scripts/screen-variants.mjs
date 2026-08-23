@@ -69,6 +69,12 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'signed-in-named',
+    image: 'login-signed-in-named.png',
+    needle: "getByText('Ada')",
+  },
+  {
+    route: '/login',
     id: 'signed-in-linked',
     image: 'login-signed-in-linked.png',
     needle: "getByRole('button', { name: 'Unlink' })",
@@ -113,7 +119,7 @@ export const SCREEN_VARIANTS = [
     route: '/handbook',
     id: 'copied',
     image: 'handbook-copied.png',
-    needle: "toHaveText('Copied')",
+    needle: "toHaveAttribute('data-copied', 'true')",
   },
   {
     route: '/404',
