@@ -188,7 +188,6 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
         contentType: 'application/json',
         body: JSON.stringify({
           ...E2E_ACCOUNT,
-          name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
         }),
       });
@@ -198,7 +197,7 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada', lightningAddress: null }),
+        body: JSON.stringify({ ...E2E_ACCOUNT, lightningAddress: null }),
       });
       return;
     }

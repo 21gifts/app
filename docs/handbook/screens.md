@@ -81,6 +81,12 @@ Session present, no name and no Wallet of Satoshi address yet. **Signed in**, ro
 
 ![21.gifts login signed in](images/login-signed-in.png)
 
+### Variant: signed-in-named
+
+Signed in with a display name set. Shows the name plus **Edit**, and the empty address form.
+
+![21.gifts login signed in named](images/login-signed-in-named.png)
+
 ### Variant: signed-in-linked
 
 Signed in with an address on the account. Name form (set or **Edit**) plus the address with **Edit** / **Unlink** (no verification UI).
