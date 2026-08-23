@@ -12,6 +12,7 @@ const account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
   role: 'moderator' as const,
+  name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,

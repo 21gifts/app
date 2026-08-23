@@ -13,6 +13,7 @@ const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,
   role: 'basis' as const,
+  name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
@@ -164,6 +165,22 @@ test('login signed-in', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByText('Signed in')).toBeVisible();
   await writePng(page, 'login-signed-in.png');
+});
+
+test('login signed-in-named', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByText('Ada')).toBeVisible();
+  await writePng(page, 'login-signed-in-named.png');
 });
 
 test('login signed-in-linked', async ({ page }) => {

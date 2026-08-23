@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginCard } from '@/components/LoginCard';
 import { useLnurlLogin, type LoginStatus } from '@/hooks/useLnurlLogin';
@@ -16,6 +16,7 @@ vi.mock('@/lib/api', () => ({
   fetchMe: vi.fn(),
   startLnurlAuth: vi.fn(),
   pollSession: vi.fn(),
+  setName: vi.fn(),
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
 }));
@@ -24,6 +25,7 @@ const account = {
   id: 'acc_1',
   linkingKey: `02${'a'.repeat(60)}`,
   role: 'basis' as const,
+  name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
@@ -122,11 +124,32 @@ describe('LoginCard', () => {
     expect(screen.getByText('basis')).toBeTruthy();
     expect(screen.getByTitle(account.linkingKey)).toBeTruthy();
     // The Lightning Address section is wired into the signed-in view.
+    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /log out/i }));
     expect(clearSession).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('does not clobber a profile already stored for the same token', async () => {
+    let resolve!: (value: typeof account | null) => void;
+    const pending = new Promise<typeof account | null>((r) => {
+      resolve = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    render(<LoginCard />);
+    act(() => {
+      useAuthStore.getState().setAuth('tok', { ...account, name: 'Ada' });
+    });
+
+    await act(async () => {
+      resolve(account);
+    });
+
+    expect(useAuthStore.getState().account?.name).toBe('Ada');
   });
 
   it('hydrates a valid persisted token into the signed-in view', async () => {

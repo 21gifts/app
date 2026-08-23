@@ -3,6 +3,7 @@
 import { AlertTriangle, Clock, Loader2, LogOut, Zap } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
+import { NameForm } from '@/components/NameForm';
 import { QrCode } from '@/components/QrCode';
 import { useLnurlLogin } from '@/hooks/useLnurlLogin';
 import { fetchMe } from '@/lib/api';
@@ -52,6 +53,12 @@ export function LoginCard(): ReactElement {
         if (maybeAccount === null) {
           clearSession();
         } else {
+          const current = useAuthStore.getState();
+          // A poll or an in-page save may already have this token; do not
+          // overwrite a newer profile with a stale GET /me.
+          if (current.session === token && current.account !== null) {
+            return;
+          }
           setAuth(token, maybeAccount);
         }
       })
@@ -92,7 +99,8 @@ interface LoggedInViewProps {
 }
 
 /**
- * The signed-in state: role, a shortened linking key, and a log-out button.
+ * The signed-in state: role, a shortened linking key, name form, address form,
+ * and a log-out button.
  *
  * @param props - See {@link LoggedInViewProps}.
  * @returns The signed-in view.
@@ -105,6 +113,7 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
       <p className="font-mono text-sm text-neutral-500" title={account.linkingKey}>
         {shortenKey(account.linkingKey)}
       </p>
+      <NameForm />
       <LightningAddressForm />
       <button
         type="button"

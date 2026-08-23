@@ -41,6 +41,16 @@ export async function proxyMeGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/name to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyMeNamePost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/name');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

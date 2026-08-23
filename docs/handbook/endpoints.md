@@ -35,6 +35,13 @@
 - **Used by:** `resolveLightningAddress` on `/donate`.
 - **Auth:** Public.
 
+## Endpoint: POST /me/name
+
+- **Purpose:** Same-origin proxy to set or replace the display name.
+- **Errors:** Upstream 400, or 502 if the api is unreachable.
+- **Used by:** `setName`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /me
 
 - **Purpose:** Same-origin proxy of the signed-in account.
