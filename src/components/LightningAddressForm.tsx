@@ -2,6 +2,7 @@
 
 import { AtSign, Check, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
+import { useTranslations } from '@/components/LocaleProvider';
 import { setLightningAddress, unlinkLightningAddress } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -18,6 +19,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * @returns The Lightning Address section, or `null` when there is nothing to show.
  */
 export function LightningAddressForm(): ReactElement | null {
+  const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -102,16 +104,14 @@ export function LightningAddressForm(): ReactElement | null {
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-neutral-200 pt-6">
-      <p className="text-center text-xs uppercase tracking-widest text-neutral-400">
-        Wallet of Satoshi address
+      <p className="text-center text-xs tracking-widest text-neutral-400 uppercase">
+        {t('la.heading')}
       </p>
 
       {address === null || editing ? (
         <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
           {address === null ? (
-            <p className="text-center text-sm text-neutral-500">
-              Add your Wallet of Satoshi address so gifts can reach you.
-            </p>
+            <p className="text-center text-sm text-neutral-500">{t('la.prompt')}</p>
           ) : null}
           <input
             type="email"
@@ -119,7 +119,7 @@ export function LightningAddressForm(): ReactElement | null {
             autoComplete="off"
             spellCheck={false}
             placeholder="you@walletofsatoshi.com"
-            aria-label="Wallet of Satoshi address"
+            aria-label={t('la.aria')}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             disabled={busy}
@@ -132,7 +132,7 @@ export function LightningAddressForm(): ReactElement | null {
               className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
             >
               {submitIcon}
-              {editing ? 'Save' : 'Link address'}
+              {editing ? t('la.save') : t('la.link')}
             </button>
             {editing ? (
               <button
@@ -144,7 +144,7 @@ export function LightningAddressForm(): ReactElement | null {
                 disabled={busy}
                 className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
               >
-                Cancel
+                {t('la.cancel')}
               </button>
             ) : null}
           </div>
@@ -164,7 +164,7 @@ export function LightningAddressForm(): ReactElement | null {
               className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
             >
               <Pencil aria-hidden="true" className="h-4 w-4" />
-              Edit
+              {t('la.edit')}
             </button>
             <button
               type="button"
@@ -175,7 +175,7 @@ export function LightningAddressForm(): ReactElement | null {
               className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
             >
               <Trash2 aria-hidden="true" className="h-4 w-4" />
-              Unlink
+              {t('la.unlink')}
             </button>
           </div>
         </div>

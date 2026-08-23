@@ -4,6 +4,7 @@ import { AlertTriangle, Clock, Loader2, LogOut, Zap } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { NameForm } from '@/components/NameForm';
+import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { useLnurlLogin } from '@/hooks/useLnurlLogin';
 import { fetchMe } from '@/lib/api';
@@ -106,10 +107,11 @@ interface LoggedInViewProps {
  * @returns The signed-in view.
  */
 function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
-      <p className="text-xs uppercase tracking-widest text-neutral-400">Signed in</p>
-      <p className="text-lg font-medium capitalize text-neutral-900">{account.role}</p>
+      <p className="text-xs tracking-widest text-neutral-400 uppercase">{t('login.signedIn')}</p>
+      <p className="text-lg font-medium text-neutral-900 capitalize">{account.role}</p>
       <p className="font-mono text-sm text-neutral-500" title={account.linkingKey}>
         {shortenKey(account.linkingKey)}
       </p>
@@ -121,7 +123,7 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
         className="mt-2 inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
       >
         <LogOut aria-hidden="true" className="h-4 w-4" />
-        Log out
+        {t('login.logOut')}
       </button>
     </>
   );
@@ -140,17 +142,18 @@ interface StartViewProps {
  * @returns The start view.
  */
 function StartView({ onStart }: StartViewProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
       <Zap aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <h2 className="text-center text-lg font-medium text-neutral-900">Sign in to 21.gifts</h2>
+      <h2 className="text-center text-lg font-medium text-neutral-900">{t('login.heading')}</h2>
       <button
         type="button"
         onClick={onStart}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Zap aria-hidden="true" className="h-4 w-4" />
-        Log in with Wallet of Satoshi
+        {t('login.start')}
       </button>
     </>
   );
@@ -162,10 +165,11 @@ function StartView({ onStart }: StartViewProps): ReactElement {
  * @returns The loading view.
  */
 function StartingView(): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
       <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
-      <p className="text-sm text-neutral-500">Preparing your login…</p>
+      <p className="text-sm text-neutral-500">{t('login.preparing')}</p>
     </>
   );
 }
@@ -187,20 +191,21 @@ interface QrViewProps {
  * @returns The QR view.
  */
 function QrView({ lnurl }: QrViewProps): ReactElement {
+  const { t } = useTranslations();
   const android = isAndroidUserAgent(navigator.userAgent);
   const upper = uppercaseLnurl(lnurl);
   const wosHref = android ? walletOfSatoshiIntentHref(lnurl) : walletOfSatoshiHref(lnurl);
 
   return (
     <>
-      <h2 className="text-center text-lg font-medium text-neutral-900">Scan to log in</h2>
-      <QrCode value={upper} />
+      <h2 className="text-center text-lg font-medium text-neutral-900">{t('login.scan')}</h2>
+      <QrCode value={upper} label={t('login.qrLabel')} />
       <a
         href={wosHref}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Zap aria-hidden="true" className="h-4 w-4" />
-        Open Wallet of Satoshi
+        {t('login.openWos')}
       </a>
     </>
   );
@@ -219,10 +224,11 @@ interface ExpiredViewProps {
  * @returns The expired view.
  */
 function ExpiredView({ onRetry }: ExpiredViewProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
       <Clock aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <p className="text-center text-sm text-neutral-500">Login expired</p>
+      <p className="text-center text-sm text-neutral-500">{t('login.expired')}</p>
       <RetryButton onRetry={onRetry} />
     </>
   );
@@ -241,12 +247,11 @@ interface ErrorViewProps {
  * @returns The error view.
  */
 function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <p className="text-center text-sm text-neutral-500">
-        Something went wrong. Please try again.
-      </p>
+      <p className="text-center text-sm text-neutral-500">{t('login.error')}</p>
       <RetryButton onRetry={onRetry} />
     </>
   );
@@ -265,13 +270,14 @@ interface RetryButtonProps {
  * @returns The retry button.
  */
 function RetryButton({ onRetry }: RetryButtonProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <button
       type="button"
       onClick={onRetry}
       className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
     >
-      Try again
+      {t('login.retry')}
     </button>
   );
 }
