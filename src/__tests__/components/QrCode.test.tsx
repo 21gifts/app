@@ -6,12 +6,12 @@ afterEach(cleanup);
 
 describe('QrCode', () => {
   it('renders an accessible QR image for the value', () => {
-    render(<QrCode value="LNURL1TEST" />);
+    render(<QrCode value="LNURL1TEST" label="Lightning login QR code" />);
     expect(screen.getByRole('img', { name: 'Lightning login QR code' })).toBeTruthy();
   });
 
   it('renders the QR as an SVG', () => {
-    const { container } = render(<QrCode value="LNURL1TEST" />);
+    const { container } = render(<QrCode value="LNURL1TEST" label="Lightning login QR code" />);
     expect(container.querySelector('svg')).not.toBeNull();
   });
 

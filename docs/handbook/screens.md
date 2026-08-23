@@ -123,7 +123,7 @@ Successful create: **Pay N sats to address**, invoice QR, **Open in wallet** (`l
 - **URL:** `/handbook` — public app handbook (no auth gate).
 - **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints), then the four `docs/handbook/` markdown files rendered as HTML (English bodies).
 - **Actions:** Change language, read the docs, jump via the section nav, follow the api handbook link, follow in-page markdown links.
-- **Calls:** `HandbookPage`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
+- **Calls:** `HandbookPage`, `HandbookIntro`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
 
 ### Variant: default
 
