@@ -44,8 +44,8 @@ export default function LegalPage(): ReactElement {
         <h3 className="text-lg font-semibold">Data on this website</h3>
         <p className="text-white/70">
           This origin does not set cookies and does not load analytics scripts. The application
-          stores a session token in <code>localStorage</code> after LNURL-auth so a returning
-          visitor stays signed in.
+          stores a session token in <code>localStorage</code> after you sign in with Wallet of
+          Satoshi so a returning visitor stays signed in.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
         <p className="text-white/70">
@@ -63,9 +63,9 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Data in the app</h3>
         <p className="text-white/70">
-          The application on this same origin uses LNURL-auth and Lightning Addresses. It does not
-          hold funds. Lightning payments go directly from the donor&apos;s wallet to the
-          receiver&apos;s Lightning Address.
+          The application on this same origin uses Wallet of Satoshi to sign in and to receive
+          Bitcoin. It does not hold funds. Bitcoin payments go directly from the donor&apos;s Wallet
+          of Satoshi to the receiver&apos;s Wallet of Satoshi address.
         </p>
         <h3 className="text-lg font-semibold">Contact</h3>
         <p className="text-white/70">

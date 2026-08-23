@@ -132,13 +132,43 @@ describe('setLightningAddress', () => {
 
   it('throws the api error message on a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Invalid Lightning Address' } });
-    await expect(setLightningAddress('sess', 'nope')).rejects.toThrow('Invalid Lightning Address');
+    await expect(setLightningAddress('sess', 'nope')).rejects.toThrow(
+      'That Wallet of Satoshi address is not valid',
+    );
+  });
+
+  it('rewrites remaining Lightning jargon in a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Lightning Address is taken' } });
+    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
+      'Wallet of Satoshi address is taken',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
+      'Could not save your Wallet of Satoshi address',
+    );
+  });
+
+  it('falls back when a 400 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
+      'Could not save your Wallet of Satoshi address',
+    );
   });
 
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Failed to set Lightning Address: 500',
+      'Could not save your Wallet of Satoshi address',
     );
   });
 
@@ -162,7 +192,7 @@ describe('unlinkLightningAddress', () => {
   it('throws on a non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(unlinkLightningAddress('sess')).rejects.toThrow(
-      'Failed to unlink Lightning Address: 500',
+      'Could not remove your Wallet of Satoshi address',
     );
   });
 
@@ -195,7 +225,7 @@ describe('resolveLightningAddress', () => {
       body: { error: 'Not a valid Lightning Address (expected name@domain)' },
     });
     await expect(resolveLightningAddress('nope')).rejects.toThrow(
-      'Not a valid Lightning Address (expected name@domain)',
+      'Enter an address like you@walletofsatoshi.com',
     );
   });
 
@@ -206,14 +236,32 @@ describe('resolveLightningAddress', () => {
       body: { error: 'Lightning Address could not be resolved' },
     });
     await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Lightning Address could not be resolved',
+      'That Wallet of Satoshi address could not be found',
+    );
+  });
+
+  it('rewrites an upstream-unreachable 502', async () => {
+    stubFetch({
+      ok: false,
+      status: 502,
+      body: { error: 'Upstream api unreachable' },
+    });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
+      'Something went wrong. Please try again.',
+    );
+  });
+
+  it('falls back when a 502 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 502, body: { error: 123 } });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
+      'Could not find that Wallet of Satoshi address',
     );
   });
 
   it('throws on a non-api-message non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Failed to resolve Lightning Address: 500',
+      'Could not find that Wallet of Satoshi address',
     );
   });
 

@@ -7,7 +7,7 @@ const invoiceSchema = z.object({
   pr: z.string().min(1),
 });
 
-const INVOICE_UNREACHABLE = 'Could not fetch the invoice from the Lightning Address';
+const INVOICE_UNREACHABLE = 'Could not start the Bitcoin payment';
 
 /**
  * Convert a satoshi amount the user typed into millisatoshis.
@@ -57,17 +57,17 @@ export async function requestDonateInvoice(args: {
   try {
     callbackUrl = new URL(args.callback);
   } catch {
-    throw new Error('Invoice callback must be https');
+    throw new Error(INVOICE_UNREACHABLE);
   }
   if (callbackUrl.protocol !== 'https:') {
-    throw new Error('Invoice callback must be https');
+    throw new Error(INVOICE_UNREACHABLE);
   }
   if (
     !Number.isInteger(args.amountMsat) ||
     !Number.isFinite(args.amountMsat) ||
     args.amountMsat <= 0
   ) {
-    throw new Error('Amount must be a positive whole number of millisatoshis');
+    throw new Error('Enter a whole number of sats greater than zero');
   }
 
   callbackUrl.searchParams.set('amount', String(args.amountMsat));

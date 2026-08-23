@@ -141,7 +141,7 @@ function StartView({ onStart }: StartViewProps): ReactElement {
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Zap aria-hidden="true" className="h-4 w-4" />
-        Log in with your Lightning wallet
+        Log in with Wallet of Satoshi
       </button>
     </>
   );

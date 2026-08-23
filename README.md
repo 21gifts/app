@@ -1,7 +1,7 @@
 # 21.gifts — app
 
 Web frontend for [21.gifts](https://21.gifts) — marketing landing, legal page,
-handbook at `/handbook`, and the Lightning gift app on the public apex.
+handbook at `/handbook`, and the Bitcoin gift app on the public apex.
 
 This repository carries only frontend-specific code and docs. The canonical
 project documentation (concept, protocol, decisions) lives in

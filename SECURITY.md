@@ -26,7 +26,7 @@ In scope:
 Out of scope:
 
 - Third-party NOSTR relays
-- Third-party Lightning wallets / LN-Address providers
+- Third-party wallets / address providers
 - Browser / OS / Passkey-authenticator vulnerabilities (please report to the respective vendor)
 
 ## Hall of fame
