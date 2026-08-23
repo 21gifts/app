@@ -83,7 +83,7 @@
 - **Purpose:** Client context provider that exposes the negotiated locale and a bound `t` helper to visitor-facing components.
 - **Inputs:** `locale`, `messages` for that locale, and `children`.
 - **Returns / side effects:** React provider element. No network; does not write cookies.
-- **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` by header, footer, login, donate, and the language switcher.
+- **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` by header, footer, login, donate, the language switcher, and `HandbookIntro`.
 
 ## Function: LoginCard
 
@@ -102,7 +102,7 @@
 ## Function: QrCode
 
 - **Purpose:** SVG QR for a string (LNURL or bolt11).
-- **Inputs:** `value` (required), optional `label`.
+- **Inputs:** `value` (required) and `label` (required accessible name, already translated).
 - **Returns / side effects:** React element.
 - **Used by:** `LoginCard` and `DonateForm`.
 
@@ -286,7 +286,7 @@
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`.
+- **Used by:** `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `HandbookIntro`.
 
 ## Function: walletOfSatoshiHref
 
