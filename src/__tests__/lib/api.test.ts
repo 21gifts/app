@@ -348,6 +348,6 @@ describe('fetchGiftStats', () => {
 
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
-    await expect(fetchGiftStats()).rejects.toThrow();
+    await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
   });
 });

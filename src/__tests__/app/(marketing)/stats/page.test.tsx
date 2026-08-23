@@ -58,4 +58,34 @@ describe('StatsPage', () => {
       expect(screen.getByText('Could not load gift stats. Please try again.')).toBeTruthy();
     });
   });
+
+  it('ignores a stale fetch after unmount', async () => {
+    let resolveStale: ((value: GiftStats) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStale = resolve;
+        }),
+    );
+    const view = render(<StatsPage />);
+    view.unmount();
+    resolveStale?.(EMPTY);
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it('ignores a stale rejection after unmount', async () => {
+    let rejectStale: ((reason: Error) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectStale = reject;
+        }),
+    );
+    const view = render(<StatsPage />);
+    view.unmount();
+    rejectStale?.(new Error('gone'));
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalled();
+  });
 });

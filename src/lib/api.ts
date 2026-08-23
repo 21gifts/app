@@ -246,5 +246,9 @@ export async function fetchGiftStats(): Promise<GiftStats> {
   if (!response.ok) {
     throw new Error('Could not load gift stats. Please try again.');
   }
-  return giftStatsSchema.parse(await response.json());
+  try {
+    return giftStatsSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load gift stats. Please try again.');
+  }
 }

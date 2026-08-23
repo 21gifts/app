@@ -89,7 +89,7 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
   const line = points.join(' ');
   const area = `${padL},${(padT + innerH).toFixed(1)} ${line} ${(padL + innerW).toFixed(1)},${(padT + innerH).toFixed(1)}`;
   const yTicks = [0, 0.5, 1].map((t) => Math.round(maxY * t));
-  const xIdx = n <= 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
+  const xIdx = [...new Set(n <= 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1])];
 
   return (
     <svg

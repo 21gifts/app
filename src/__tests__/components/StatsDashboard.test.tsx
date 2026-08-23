@@ -82,6 +82,19 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend by month')).toBeTruthy();
   });
 
+  it('labels two-day series without duplicate ticks', () => {
+    const two: GiftStats = {
+      ...SAMPLE,
+      spendOverTime: [
+        { day: '2026-06-01', sats: 10, cumulativeSats: 10 },
+        { day: '2026-06-02', sats: 20, cumulativeSats: 30 },
+      ],
+    };
+    render(<StatsDashboard stats={two} error={null} loading={false} onRetry={() => undefined} />);
+    expect(screen.getAllByText('2026-06-01')).toHaveLength(1);
+    expect(screen.getAllByText('2026-06-02')).toHaveLength(1);
+  });
+
   it('renders KPIs and the three diagrams', () => {
     render(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
