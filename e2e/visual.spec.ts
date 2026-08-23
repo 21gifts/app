@@ -48,7 +48,12 @@ async function shotScreen(
   handbookFile: string,
   fullPage = true,
 ): Promise<void> {
-  await expect(page).toHaveScreenshot(`${arg}.png`, { fullPage, ...SHOT });
+  await expect(page).toHaveScreenshot(`${arg}.png`, {
+    fullPage,
+    // The handbook viewport embeds other screen PNGs; variant shots shift a few percent.
+    maxDiffPixelRatio: arg === 'screen-handbook' ? 0.05 : 0,
+    ...SHOT,
+  });
   await maybeWriteHandbookPng(page, handbookFile, fullPage);
 }
 
