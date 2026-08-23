@@ -46,7 +46,7 @@ app/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: <html lang="en">, metadata, globals.css
-│   │   ├── (marketing)/         # Dark landing `/` and `/legal`
+│   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
 │   │   ├── login/

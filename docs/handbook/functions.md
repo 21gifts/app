@@ -21,6 +21,20 @@
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response.
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
+## Function: HandbookMarkdown
+
+- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images.
+- **Inputs:** `markdown` string and `idPrefix` for heading ids.
+- **Returns / side effects:** React fragment. No network.
+- **Used by:** `HandbookPage` for each handbook document.
+
+## Function: HandbookPage
+
+- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files and renders them with a link to the api handbook.
+- **Inputs:** None (reads `docs/handbook/` from disk at build time).
+- **Returns / side effects:** The handbook screen inside `MarketingLayout`.
+- **Used by:** Route `/handbook`.
+
 ## Function: Home
 
 - **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`.
@@ -105,12 +119,26 @@
 - **Returns / side effects:** `true` iff `/Android/i` matches.
 - **Used by:** `LoginCard` QrView.
 
+## Function: loadHandbookDocuments
+
+- **Purpose:** Read the four app handbook markdown files from disk (README, screens, functions, endpoints).
+- **Inputs:** Optional `rootDir`; defaults to `<cwd>/docs/handbook`.
+- **Returns / side effects:** `HandbookDocument[]` in that order. Throws when the directory or a required file is missing.
+- **Used by:** `HandbookPage`.
+
 ## Function: loadSession
 
 - **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
 - **Used by:** `LoginCard` on mount.
+
+## Function: parseHandbookMarkdown
+
+- **Purpose:** Parse handbook markdown into headings, paragraphs, and lists with inline code, strong, links, and images.
+- **Inputs:** `markdown` string and `idPrefix` for ids and in-page hashes.
+- **Returns / side effects:** `HandbookBlock[]`. Drops unsafe hrefs (`..`, unknown schemes).
+- **Used by:** `HandbookMarkdown`.
 
 ## Function: pollSession
 
@@ -240,7 +268,7 @@
 
 ## Function: MarketingLayout
 
-- **Purpose:** Dark full-page shell for `/` and `/legal`.
+- **Purpose:** Dark full-page shell for `/`, `/legal`, and `/handbook`.
 - **Inputs:** `children`.
 - **Returns / side effects:** Wrapper div with header, page, footer.
 - **Used by:** Marketing route group.

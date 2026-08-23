@@ -12,6 +12,11 @@ vi.mock('next/link', () => ({
 afterEach(cleanup);
 
 describe('MarketingFooter', () => {
+  it('links Handbook to /handbook', () => {
+    render(<MarketingFooter />);
+    expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe('/handbook');
+  });
+
   it('links Legal & Privacy to /legal', () => {
     render(<MarketingFooter />);
     expect(screen.getByRole('link', { name: 'Legal & Privacy' }).getAttribute('href')).toBe(
