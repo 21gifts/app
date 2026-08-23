@@ -20,7 +20,10 @@ function e2eText() {
   }
   const files = walk(
     E2E_DIR,
-    (p) => /\.(ts|js|mjs)$/.test(p) && !p.endsWith(`${path.sep}handbook-capture.spec.ts`),
+    (p) =>
+      /\.(ts|js|mjs)$/.test(p) &&
+      !p.endsWith(`${path.sep}handbook-capture.spec.ts`) &&
+      !p.endsWith(`${path.sep}mock-api.mjs`),
   );
   if (files.length === 0) {
     console.error('E2E MISSING: e2e/ has no spec files');
@@ -67,7 +70,9 @@ for (const variant of SCREEN_VARIANTS) {
 
 const functions = extractFunctions(path.join(ROOT, 'src'));
 for (const name of [...functions].sort()) {
-  if (!text.includes(`Function: ${name}`)) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const titleRe = new RegExp(`test\\((['"\`])Function: ${escaped}\\b`);
+  if (!titleRe.test(text)) {
     missing.push(`Function ${name} has no e2e test title Function: ${name}`);
   }
 }
