@@ -32,6 +32,9 @@ function toUserFacingError(raw: string): string {
   if (/Lightning Address could not be resolved/i.test(raw)) {
     return 'That Wallet of Satoshi address could not be found';
   }
+  if (/upstream api unreachable/i.test(raw)) {
+    return 'Something went wrong. Please try again.';
+  }
   return raw
     .replace(/Lightning Address/gi, 'Wallet of Satoshi address')
     .replace(/LNURL-auth/gi, 'login')
@@ -42,16 +45,39 @@ function toUserFacingError(raw: string): string {
 }
 
 /**
- * Throws rewritten api error text when the response is a known client or
- * upstream failure, so the form can surface the reason without jargon.
+ * Reads `{ error }` from an api error body, or `null` when the body is not that
+ * envelope (HTML, invalid JSON, missing `error`).
  *
  * @param response - The raw fetch response.
- * @throws Error with user-facing copy when the status is 400 or 502.
+ * @returns The api's `error` string, or `null`.
+ */
+async function readApiError(response: Response): Promise<string | null> {
+  try {
+    const parsed = apiErrorSchema.safeParse(await response.json());
+    return parsed.success ? parsed.data.error : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Throws rewritten api error text when the response is a known client or
+ * upstream failure, so the form can surface the reason without jargon.
+ * Malformed bodies are left for the caller fallback.
+ *
+ * @param response - The raw fetch response.
+ * @throws Error with user-facing copy when the status is 400 or 502 and the
+ * body carries a usable `error` string.
  */
 async function throwIfApiMessage(response: Response): Promise<void> {
-  if (API_MESSAGE_STATUSES.has(response.status)) {
-    throw new Error(toUserFacingError(apiErrorSchema.parse(await response.json()).error));
+  if (!API_MESSAGE_STATUSES.has(response.status)) {
+    return;
   }
+  const raw = await readApiError(response);
+  if (raw === null) {
+    return;
+  }
+  throw new Error(toUserFacingError(raw));
 }
 
 /**
@@ -115,9 +141,9 @@ export async function fetchMe(sessionToken: string): Promise<Account | null> {
  * @param sessionToken - A bearer token from a completed challenge.
  * @param address - The `name@domain.tld` Lightning Address to store.
  * @returns The updated {@link Account}.
- * @throws Error when the api rejects the address (400) — the thrown message is
- * the api's own error text, so the form can show why it was rejected — on any
- * other non-2xx status, or when the body fails {@link accountSchema} validation.
+ * @throws Error when the api rejects the address (400) — rewritten to
+ * visitor-facing copy — on any other non-2xx status, or when the body fails
+ * {@link accountSchema} validation.
  */
 export async function setLightningAddress(sessionToken: string, address: string): Promise<Account> {
   const response = await fetch('/me/lightning-address', {
@@ -129,7 +155,10 @@ export async function setLightningAddress(sessionToken: string, address: string)
     body: JSON.stringify({ address }),
   });
   if (response.status === 400) {
-    throw new Error(toUserFacingError(apiErrorSchema.parse(await response.json()).error));
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === null ? 'Could not save your Wallet of Satoshi address' : toUserFacingError(raw),
+    );
   }
   if (!response.ok) {
     throw new Error('Could not save your Wallet of Satoshi address');
@@ -161,9 +190,9 @@ export async function unlinkLightningAddress(sessionToken: string): Promise<Acco
  *
  * @param address - The `name@domain` address to look up.
  * @returns The {@link LnAddressResolved} payload (callback and amount bounds).
- * @throws Error when the api rejects the address (400, 502) — the thrown
- * message is the api's own error text — on any other non-2xx status, or when
- * the body fails {@link lnAddressResolvedSchema} validation.
+ * @throws Error when the api rejects the address (400, 502) — rewritten to
+ * visitor-facing copy — on any other non-2xx status, or when the body fails
+ * {@link lnAddressResolvedSchema} validation.
  */
 export async function resolveLightningAddress(address: string): Promise<LnAddressResolved> {
   const response = await fetch(`/lightning-address?address=${encodeURIComponent(address)}`);

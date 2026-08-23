@@ -220,16 +220,16 @@
 ## Function: walletOfSatoshiHref
 
 - **Purpose:** iOS/desktop WoS deep link.
-- **Inputs:** `lnurl`.
-- **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase LNURL.
-- **Used by:** `LoginCard` primary CTA when not Android.
+- **Inputs:** Bech32 LNURL or BOLT11 payment request.
+- **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase payload.
+- **Used by:** `LoginCard` and `DonateForm` when not Android.
 
 ## Function: walletOfSatoshiIntentHref
 
 - **Purpose:** Android Chrome Intent pinning the WoS package.
-- **Inputs:** `lnurl`.
-- **Returns / side effects:** `intent:lightning:LNURL…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
-- **Used by:** `LoginCard` primary CTA on Android.
+- **Inputs:** Bech32 LNURL or BOLT11 payment request.
+- **Returns / side effects:** `intent:lightning:…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
+- **Used by:** `LoginCard` and `DonateForm` on Android.
 
 ## Function: DELETE
 

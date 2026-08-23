@@ -92,7 +92,7 @@ Signed in with an address on the account. Shows the address plus **Edit** / **Un
 - **URL:** `/donate` — guest Bitcoin gift. No login required.
 - **What the user sees:** Heading **Send a gift**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
 - **Actions:** Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
-- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `formatMsatAsSats`, `QrCode`.
+- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `formatMsatAsSats`, `QrCode`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`.
 
 ### Variant: form
 

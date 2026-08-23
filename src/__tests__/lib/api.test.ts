@@ -144,6 +144,27 @@ describe('setLightningAddress', () => {
     );
   });
 
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
+      'Could not save your Wallet of Satoshi address',
+    );
+  });
+
+  it('falls back when a 400 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
+      'Could not save your Wallet of Satoshi address',
+    );
+  });
+
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
@@ -216,6 +237,24 @@ describe('resolveLightningAddress', () => {
     });
     await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
       'That Wallet of Satoshi address could not be found',
+    );
+  });
+
+  it('rewrites an upstream-unreachable 502', async () => {
+    stubFetch({
+      ok: false,
+      status: 502,
+      body: { error: 'Upstream api unreachable' },
+    });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
+      'Something went wrong. Please try again.',
+    );
+  });
+
+  it('falls back when a 502 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 502, body: { error: 123 } });
+    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
+      'Could not find that Wallet of Satoshi address',
     );
   });
 
