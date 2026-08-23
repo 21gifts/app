@@ -2,6 +2,7 @@ import { cleanup, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import HandbookPage from '@/app/(marketing)/handbook/page';
+import { getRequestLocale } from '@/lib/request-locale';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
@@ -25,6 +26,12 @@ describe('HandbookPage', () => {
     expect(screen.getByRole('button', { name: 'Copy link to Screens chapter' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Functions chapter' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Endpoints chapter' })).toBeTruthy();
+  });
+
+  it('localizes chapter copy-link labels', async () => {
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
+    renderWithLocale(await HandbookPage(), 'de');
+    expect(screen.getByRole('button', { name: 'Link kopieren zu Kapitel Overview' })).toBeTruthy();
   });
 
   it('links to the api handbook on GitHub', async () => {
