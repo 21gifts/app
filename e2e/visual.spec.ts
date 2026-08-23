@@ -77,6 +77,38 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-login', 'login.png');
   });
 
+  test('screen /stats', async ({ page }) => {
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalSats: 1500,
+          giftCount: 3,
+          recipientCount: 2,
+          firstPaidAt: '2026-06-01T00:00:00.000Z',
+          lastPaidAt: '2026-07-01T00:00:00.000Z',
+          spendOverTime: [
+            { day: '2026-06-01', sats: 500, cumulativeSats: 500 },
+            { day: '2026-06-02', sats: 0, cumulativeSats: 500 },
+            { day: '2026-07-01', sats: 1000, cumulativeSats: 1500 },
+          ],
+          byRecipient: [
+            { recipient: 'alice', giftCount: 2, sats: 1000 },
+            { recipient: 'bob', giftCount: 1, sats: 500 },
+          ],
+          byMonth: [
+            { month: '2026-06', giftCount: 2, sats: 500 },
+            { month: '2026-07', giftCount: 1, sats: 1000 },
+          ],
+        }),
+      });
+    });
+    await page.goto('/stats');
+    await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
+    await shotScreen(page, 'screen-stats', 'stats.png');
+  });
+
   test('screen /donate', async ({ page }) => {
     await page.goto('/donate');
     await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();
@@ -116,6 +148,55 @@ test.describe('function baselines', () => {
     );
     expect(sections.every((s) => s.id !== '' && s.name !== '')).toBe(true);
     expect(new Set(sections.map((s) => s.name)).size).toBe(sections.length);
+
+    const clipFunctions = new Set([
+      'StatsDashboard',
+      'StatsLoader',
+      'StatsPage',
+      'fetchGiftStats',
+      'proxyGiftsStatsGet',
+    ]);
+    for (const section of sections) {
+      if (!clipFunctions.has(section.name)) {
+        continue;
+      }
+      const heading = page.locator(`#${section.id}`);
+      await heading.evaluate((el) => {
+        el.scrollIntoView({ block: 'center' });
+      });
+      const clip = await heading.evaluate((el) => {
+        const wrap = el.parentElement;
+        if (wrap === null) {
+          const box = el.getBoundingClientRect();
+          return {
+            x: Math.max(0, Math.floor(box.left)),
+            y: Math.max(0, Math.floor(box.top)),
+            width: Math.ceil(box.width),
+            height: Math.ceil(box.height),
+          };
+        }
+        let last: Element = wrap;
+        let next = wrap.nextElementSibling;
+        while (next !== null && next.querySelector('h2') === null) {
+          last = next;
+          next = next.nextElementSibling;
+        }
+        const top = wrap.getBoundingClientRect();
+        const bottom = last.getBoundingClientRect();
+        const left = Math.min(top.left, bottom.left);
+        const right = Math.max(top.right, bottom.right);
+        return {
+          x: Math.max(0, Math.floor(left)),
+          y: Math.max(0, Math.floor(Math.min(top.top, bottom.top))),
+          width: Math.ceil(right - left),
+          height: Math.ceil(Math.max(top.bottom, bottom.bottom) - Math.min(top.top, bottom.top)),
+        };
+      });
+      await expect(page).toHaveScreenshot(`function-${section.name}.png`, {
+        clip,
+        ...SHOT,
+      });
+    }
   });
 
   test('LoginCard QR + QrCode', async ({ page }) => {

@@ -79,3 +79,13 @@ export async function proxyMeLightningAddressDelete(request: Request): Promise<R
 export async function proxyLightningAddressGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/lightning-address');
 }
+
+/**
+ * Proxies GET /gifts/stats to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/gifts/stats');
+}

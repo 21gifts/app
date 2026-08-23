@@ -110,6 +110,30 @@ export const SCREEN_VARIANTS = [
     needle: 'intent:lightning:LNBC21N1EXAMPLEINVOICE',
   },
   {
+    route: '/stats',
+    id: 'default',
+    image: 'stats.png',
+    needle: 'Total spend over time',
+  },
+  {
+    route: '/stats',
+    id: 'empty',
+    image: 'stats-empty.png',
+    needle: 'No gifts recorded yet.',
+  },
+  {
+    route: '/stats',
+    id: 'loading',
+    image: 'stats-loading.png',
+    needle: 'Loading…',
+  },
+  {
+    route: '/stats',
+    id: 'error',
+    image: 'stats-error.png',
+    needle: 'Try again',
+  },
+  {
     route: '/handbook',
     id: 'default',
     image: 'handbook.png',
