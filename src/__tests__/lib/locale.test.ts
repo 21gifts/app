@@ -45,4 +45,10 @@ describe('parseAcceptLanguage', () => {
   it('keeps header order when q-values are equal', () => {
     expect(parseAcceptLanguage('es;q=0.9,de;q=0.9')).toBe('es');
   });
+
+  it('skips tags with q=0 as not acceptable', () => {
+    expect(parseAcceptLanguage('en;q=0,de')).toBe('de');
+    expect(parseAcceptLanguage('en;q=0')).toBe('en');
+    expect(parseAcceptLanguage('de;q=0,fr;q=0')).toBe('en');
+  });
 });

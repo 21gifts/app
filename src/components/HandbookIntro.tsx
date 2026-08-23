@@ -1,16 +1,17 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 
 /**
- * Localized title and intro for `/handbook`. Kept as a client island so the
- * page can stay `force-static` and read markdown from disk at build time
- * (standalone runtime has no `docs/` tree).
+ * Localized title, intro, and section nav for `/handbook`. Kept as a client
+ * island so the page can stay `force-static` and read markdown from disk at
+ * build time (standalone runtime has no `docs/` tree).
  *
- * @returns The heading, intro paragraph, and section-nav aria label source.
+ * @param props - Section-nav links as `children`.
+ * @returns The heading, intro paragraph, and localized section nav.
  */
-export function HandbookIntro(): ReactElement {
+export function HandbookIntro(props: { children: ReactNode }): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -25,6 +26,9 @@ export function HandbookIntro(): ReactElement {
         </a>
         {t('handbook.introAfter')}
       </p>
+      <nav aria-label={t('aria.handbookSections')} className="mt-8 flex flex-wrap gap-4 text-sm">
+        {props.children}
+      </nav>
     </>
   );
 }

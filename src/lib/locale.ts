@@ -61,6 +61,9 @@ export function parseAcceptLanguage(header: string): Locale {
         }
       }
     }
+    if (q <= 0) {
+      continue;
+    }
     const first = rawTag.trim().split('-')[0];
     /* v8 ignore next 3 — split always yields at least one element */
     if (first === undefined) {
