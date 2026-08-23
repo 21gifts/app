@@ -1,6 +1,7 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const originalClipboard = navigator.clipboard;
 const originalExecCommand = document.execCommand;
@@ -47,7 +48,7 @@ describe('HandbookCopyLink', () => {
     vi.useFakeTimers();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<HandbookCopyLink targetId="screens" label="Screens" />);
+    renderWithLocale(<HandbookCopyLink targetId="screens" label="Screens" />);
 
     const button = screen.getByRole('button', { name: 'Copy link to Screens' });
     expectIdleIcon(button);
@@ -71,7 +72,7 @@ describe('HandbookCopyLink', () => {
   it('keeps the aria-label unchanged while data-copied is true', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    renderWithLocale(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
     await waitFor(() => {
       const button = screen.getByRole('button', { name: 'Copy link to Handbook' });
@@ -84,7 +85,7 @@ describe('HandbookCopyLink', () => {
     window.location.hash = '#screens';
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<HandbookCopyLink targetId="screens" label="Screens" />);
+    renderWithLocale(<HandbookCopyLink targetId="screens" label="Screens" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Screens' }));
     await waitFor(() => {
       expect(writeText).toHaveBeenCalled();
@@ -96,7 +97,7 @@ describe('HandbookCopyLink', () => {
     const writeText = vi.fn().mockRejectedValue(new Error('denied'));
     Object.assign(navigator, { clipboard: { writeText } });
     const exec = stubExecCommand(() => true);
-    render(<HandbookCopyLink targetId="functions" label="Functions" />);
+    renderWithLocale(<HandbookCopyLink targetId="functions" label="Functions" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Functions' }));
     await waitFor(() => {
       expectCopiedIcon(screen.getByRole('button', { name: 'Copy link to Functions' }));
@@ -107,7 +108,7 @@ describe('HandbookCopyLink', () => {
   it('falls back to execCommand when clipboard is missing', async () => {
     Object.assign(navigator, { clipboard: undefined });
     const exec = stubExecCommand(() => true);
-    render(<HandbookCopyLink targetId="readme" label="Overview" />);
+    renderWithLocale(<HandbookCopyLink targetId="readme" label="Overview" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Overview' }));
     await waitFor(() => {
       expectCopiedIcon(screen.getByRole('button', { name: 'Copy link to Overview' }));
@@ -120,7 +121,7 @@ describe('HandbookCopyLink', () => {
     Object.assign(navigator, { clipboard: { writeText } });
     stubExecCommand(() => false);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    render(<HandbookCopyLink targetId="endpoints" label="Endpoints" />);
+    renderWithLocale(<HandbookCopyLink targetId="endpoints" label="Endpoints" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Endpoints' }));
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalled();
@@ -135,7 +136,7 @@ describe('HandbookCopyLink', () => {
       throw new Error('no exec');
     });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    render(<HandbookCopyLink targetId="x" label="X" />);
+    renderWithLocale(<HandbookCopyLink targetId="x" label="X" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to X' }));
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalled();
@@ -144,7 +145,7 @@ describe('HandbookCopyLink', () => {
   });
 
   it('unmounts without a pending timer', () => {
-    const { unmount } = render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    const { unmount } = renderWithLocale(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     unmount();
   });
 
@@ -158,7 +159,7 @@ describe('HandbookCopyLink', () => {
     );
     Object.assign(navigator, { clipboard: { writeText } });
     window.location.hash = '';
-    const { unmount } = render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    const { unmount } = renderWithLocale(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
     unmount();
     await act(async () => {
@@ -179,7 +180,7 @@ describe('HandbookCopyLink', () => {
     Object.assign(navigator, { clipboard: { writeText } });
     const exec = stubExecCommand(() => true);
     window.location.hash = '';
-    const { unmount } = render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    const { unmount } = renderWithLocale(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
     unmount();
     await act(async () => {
@@ -194,7 +195,7 @@ describe('HandbookCopyLink', () => {
     vi.useFakeTimers();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    const { unmount } = render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    const { unmount } = renderWithLocale(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
     await act(async () => {
       await Promise.resolve();
@@ -209,7 +210,7 @@ describe('HandbookCopyLink', () => {
     vi.useFakeTimers();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
+    renderWithLocale(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     const button = screen.getByRole('button', { name: 'Copy link to Handbook' });
     fireEvent.click(button);
     await act(async () => {

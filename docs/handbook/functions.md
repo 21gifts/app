@@ -24,7 +24,7 @@
 ## Function: HandbookCopyLink
 
 - **Purpose:** Client button beside a handbook heading or chapter. Copies `origin + pathname + #id` to the clipboard, sets `location.hash`, and flashes a check icon for 1.2s (textarea `execCommand` fallback).
-- **Inputs:** `targetId` (DOM id without `#`) and `label` (aria-label `Copy link to ${label}`).
+- **Inputs:** `targetId` (DOM id without `#`) and `label` (aria-label from `handbook.copyLink` with `{ label }`).
 - **Visible UI:** Idle `Link2` icon; copied `Check` icon. No visible "Copy link" or "Copied" text (`title` and `aria-label` keep the accessible name).
 - **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
 - **Used by:** `HandbookPage` (page title and chapter nav) and `HandbookMarkdown` (every heading).
@@ -88,7 +88,7 @@
 ## Function: NameForm
 
 - **Purpose:** Logged-in form to set or edit a display name.
-- **Inputs:** Reads `useAuthStore`. User input: name string.
+- **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
@@ -314,7 +314,7 @@
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`.
 
 ## Function: walletOfSatoshiHref
 
