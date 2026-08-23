@@ -25,4 +25,20 @@ describe('getCatalog', () => {
       expect(catalog['aria.github']).toBe('GitHub');
     }
   });
+
+  it('contains no Lightning or LNURL jargon in any catalog value', () => {
+    const jargon = /Lightning|LNURL/i;
+    for (const locale of LOCALES) {
+      const catalog = getCatalog(locale);
+      for (const [key, value] of Object.entries(catalog)) {
+        expect(value, `${locale}.${key}`).not.toMatch(jargon);
+      }
+    }
+  });
+
+  it('prefixes home.step2BodyAfter with a period in every locale', () => {
+    for (const locale of LOCALES) {
+      expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
+    }
+  });
 });
