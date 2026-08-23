@@ -1,23 +1,10 @@
 import { cookies, headers } from 'next/headers';
-import { LOCALE_COOKIE, LOCALES, parseAcceptLanguage, type Locale } from '@/lib/locale';
-
-/**
- * Returns `value` if it is exactly one of {@link LOCALES}; otherwise `null`.
- *
- * @param value - Raw cookie value, or undefined when absent.
- * @returns A supported locale, or null when invalid/missing.
- */
-function parseLocaleValue(value: string | undefined): Locale | null {
-  if (value === undefined) {
-    return null;
-  }
-  for (const locale of LOCALES) {
-    if (locale === value) {
-      return locale;
-    }
-  }
-  return null;
-}
+import {
+  LOCALE_COOKIE,
+  parseAcceptLanguage,
+  parseSupportedLocale,
+  type Locale,
+} from '@/lib/locale';
 
 /**
  * Cookie `locale` if it is a supported locale; otherwise Accept-Language.
@@ -30,7 +17,7 @@ function parseLocaleValue(value: string | undefined): Locale | null {
  */
 export async function getRequestLocale(): Promise<Locale> {
   const cookieStore = await cookies();
-  const fromCookie = parseLocaleValue(cookieStore.get(LOCALE_COOKIE)?.value);
+  const fromCookie = parseSupportedLocale(cookieStore.get(LOCALE_COOKIE)?.value);
   if (fromCookie !== null) {
     return fromCookie;
   }

@@ -105,7 +105,7 @@ describe('NameForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
 
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Name must be 1–80 characters');
+    expect(alert.textContent).toBe('Could not save your name');
     expect(screen.getByPlaceholderText('Your name')).toBeTruthy();
   });
 
@@ -116,7 +116,7 @@ describe('NameForm', () => {
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
 
-    expect(await screen.findByText('boom')).toBeTruthy();
+    expect(await screen.findByText('Could not save your name')).toBeTruthy();
   });
 
   it('shows the name and edit control when set', () => {

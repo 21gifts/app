@@ -88,14 +88,14 @@
 ## Function: NameForm
 
 - **Purpose:** Logged-in form to set or edit a display name.
-- **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`.
+- **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
-- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`.
+- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Request failures use `la.errorRequest` so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
@@ -104,7 +104,7 @@
 - **Purpose:** Client context provider that exposes the negotiated locale and a bound `t` helper to visitor-facing components.
 - **Inputs:** `locale`, `messages` for that locale, and `children`.
 - **Returns / side effects:** React provider element. No network; does not write cookies.
-- **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` by header, login, donate, and the language switcher.
+- **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` (see that function).
 
 ## Function: LoginCard
 
@@ -207,7 +207,7 @@
 ## Function: parseAcceptLanguage
 
 - **Purpose:** Negotiate a supported UI locale from an RFC 7231 `Accept-Language` header.
-- **Inputs:** Raw header string (may be empty). Splits on commas, reads `q=` (default 1), sorts by q then header order, maps primary subtags (`en`/`de`/`es`/`fil`, and `tl`→`fil`).
+- **Inputs:** Raw header string (may be empty). Splits on commas. A missing `q` defaults to 1. A bare `q`, empty/invalid qvalue, or duplicate `q` discards that language-range. Maps primary subtags (`en`/`de`/`es`/`fil`, and `tl`→`fil`).
 - **Returns / side effects:** First mapped locale, or `en` when empty/unmatched. Pure function — no I/O.
 - **Used by:** `getRequestLocale` when no valid `locale` cookie is present.
 
@@ -217,6 +217,13 @@
 - **Inputs:** `markdown` string and `idPrefix` for ids and in-page hashes.
 - **Returns / side effects:** `HandbookBlock[]`. Drops unsafe hrefs (`..`, unknown schemes).
 - **Used by:** `HandbookMarkdown`.
+
+## Function: parseSupportedLocale
+
+- **Purpose:** Accept a string only when it is exactly one of `en` / `de` / `es` / `fil`.
+- **Inputs:** Raw cookie or `<select>` value, or `undefined`.
+- **Returns / side effects:** That locale, or `null`. Pure function — no I/O.
+- **Used by:** `getRequestLocale` (cookie) and `LanguageSwitcher` (option value).
 
 ## Function: pollSession
 
