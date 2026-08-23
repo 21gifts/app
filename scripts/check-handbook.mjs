@@ -44,6 +44,12 @@ function handbookText() {
   return files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
 }
 
+/**
+ * Collect exported function/class names under src (handbook + screenshot gates).
+ *
+ * @param srcRoot - Absolute path to `src/`.
+ * @returns Unique export names.
+ */
 function extractFunctions(srcRoot) {
   const names = new Set();
   if (!fs.existsSync(srcRoot)) {
@@ -62,6 +68,7 @@ function extractFunctions(srcRoot) {
   const reDefault = /^export\s+default\s+(async\s+)?function\s+([A-Za-z0-9_]+)/gm;
   const reConstFn =
     /^export\s+const\s+([A-Za-z0-9_]+)\s*=\s*(async\s*)?(\(|function|create[<(\s]|new\s)/gm;
+  const reConstAlias = /^export\s+const\s+([A-Za-z0-9_]+)\s*=\s*[A-Za-z_][A-Za-z0-9_]*\s*;/gm;
   const reClass = /^export\s+class\s+([A-Za-z0-9_]+)/gm;
   for (const f of files) {
     const t = fs.readFileSync(f, 'utf8');
@@ -76,6 +83,10 @@ function extractFunctions(srcRoot) {
     }
     reConstFn.lastIndex = 0;
     while ((m = reConstFn.exec(t))) {
+      names.add(m[1]);
+    }
+    reConstAlias.lastIndex = 0;
+    while ((m = reConstAlias.exec(t))) {
       names.add(m[1]);
     }
     reClass.lastIndex = 0;
@@ -222,7 +233,7 @@ function sectionComplete(body) {
   return bullets >= 3 && body.trim().length >= 80;
 }
 
-export { extractScreens, extractEndpoints, walk };
+export { extractScreens, extractEndpoints, extractFunctions, sectionBody, walk };
 
 const isMain = import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 

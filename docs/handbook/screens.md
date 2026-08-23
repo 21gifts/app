@@ -7,12 +7,16 @@
 - **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
 
+![21.gifts home](images/root.png)
+
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
 - **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no cookies/analytics, session in localStorage, Cloudflare TLS, LNURL-auth on this origin).
 - **Actions:** Read-only. Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage`.
+
+![21.gifts legal](images/legal.png)
 
 ## Screen: /login
 
@@ -35,6 +39,8 @@
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).
-- **What the user sees:** Heading **Handbook**, a short intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints), then the four `docs/handbook/` markdown files rendered as HTML. Login and donate screenshots appear where the markdown references `images/*.png`.
+- **What the user sees:** Heading **Handbook**, a short intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints), then the four `docs/handbook/` markdown files rendered as HTML. Screen screenshots appear where the markdown references `images/*.png`.
 - **Actions:** Read the docs, jump via the section nav, follow the api handbook link, follow in-page markdown links.
 - **Calls:** `HandbookPage`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
+
+![21.gifts handbook](images/handbook.png)

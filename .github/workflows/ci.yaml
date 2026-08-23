@@ -13,19 +13,17 @@ permissions:
 
 jobs:
   check:
-    name: Typecheck, Lint, Handbook, E2E-check, Test (100% coverage), Build, E2E
+    name: Typecheck, Lint, Handbook, E2E-check, Screenshots, Test (100% coverage), Build, E2E
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -42,14 +40,16 @@ jobs:
       - name: E2E completeness
         run: npm run e2e:check
 
+      - name: Screenshot baselines
+        run: npm run screenshot:check
+
       - name: Test with 100% coverage gate
         run: npm run test:coverage
 
       - name: Build
         run: npm run build
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: End-to-end tests
         run: npm run e2e
+        env:
+          HOSTNAME: 0.0.0.0

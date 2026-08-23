@@ -23,21 +23,23 @@ npm run dev    # → http://localhost:3000
 
 ## Scripts
 
-| Script                   | Purpose                                                                  |
-| ------------------------ | ------------------------------------------------------------------------ |
-| `npm run dev`            | Dev server with hot reload on :3000                                      |
-| `npm run build`          | Production build (standalone output)                                     |
-| `npm run start`          | Serve the production build on :3000                                      |
-| `npm run typecheck`      | `tsc --noEmit`                                                           |
-| `npm run lint`           | `next lint` + Prettier check                                             |
-| `npm run lint:fix`       | Auto-fix lint findings + Prettier write                                  |
-| `npm run format`         | Prettier write                                                           |
-| `npm test`               | Vitest unit tests, single run                                            |
-| `npm run test:watch`     | Vitest in watch mode                                                     |
-| `npm run test:coverage`  | Vitest with the 100% coverage gate                                       |
-| `npm run e2e`            | Playwright tests against the production build                            |
-| `npm run e2e:check`      | Fail if a screen lacks `page.goto` or an endpoint lacks `request.<verb>` |
-| `npm run handbook:check` | Fail if any screen, export, or HTTP endpoint lacks a handbook section    |
+| Script                         | Purpose                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| `npm run dev`                  | Dev server with hot reload on :3000                                      |
+| `npm run build`                | Production build (standalone output)                                     |
+| `npm run start`                | Serve the production build on :3000                                      |
+| `npm run typecheck`            | `tsc --noEmit`                                                           |
+| `npm run lint`                 | `next lint` + Prettier check                                             |
+| `npm run lint:fix`             | Auto-fix lint findings + Prettier write                                  |
+| `npm run format`               | Prettier write                                                           |
+| `npm test`                     | Vitest unit tests, single run                                            |
+| `npm run test:watch`           | Vitest in watch mode                                                     |
+| `npm run test:coverage`        | Vitest with the 100% coverage gate                                       |
+| `npm run e2e`                  | Playwright tests against the production build                            |
+| `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                  |
+| `npm run e2e:check`            | Fail if a screen lacks `page.goto` or an endpoint lacks `request.<verb>` |
+| `npm run screenshot:check`     | Fail if a screen or export lacks a Playwright PNG baseline               |
+| `npm run handbook:check`       | Fail if any screen, export, or HTTP endpoint lacks a handbook section    |
 
 ## Project structure
 
@@ -71,14 +73,18 @@ app/
 │   ├── README.md
 │   ├── screens.md
 │   ├── functions.md
-│   └── endpoints.md
+│   ├── endpoints.md
+│   └── images/                  # Screen PNGs (copied to public/handbook-images/)
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
-│   └── check-e2e.mjs            # CI gate: missing screen page.goto or endpoint request → exit 1
+│   ├── check-e2e.mjs            # CI gate: missing screen page.goto or endpoint request → exit 1
+│   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
-│   └── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
+│   ├── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
+│   ├── visual.spec.ts           # Linux Chromium screenshot baselines
+│   └── visual.spec.ts-snapshots/
 ├── public/                      # Static assets served from /
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
@@ -194,6 +200,29 @@ the PR** if a screen has no matching `goto` or an endpoint has no matching
 the **same PR** is an undeclared deviation and is rejected. CI runs `e2e:check`
 then `e2e`.
 
+### Screenshot baselines (hard requirement)
+
+Every UI screen **must** have:
+
+- a Playwright `toHaveScreenshot('screen-…png')` in `e2e/visual.spec.ts`
+- a handbook image `docs/handbook/images/<name>.png` referenced from that
+  screen's handbook section, copied to `public/handbook-images/`
+
+Every exported function **must** have a Playwright baseline
+`function-<Name>.png` (the handbook section on `/handbook`, clipped). Adding a
+screen or export without updating the baselines in the **same PR** is rejected.
+`npm run screenshot:check` (and CI) fails when a PNG is missing.
+
+Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
+`npm run e2e` still runs the behavioral specs. Regenerate on Linux:
+
+```bash
+docker run --rm -v "$PWD":/work -w /work \
+  -e UPDATE_HANDBOOK_IMAGES=1 \
+  mcr.microsoft.com/playwright:v1.61.1-noble \
+  bash -lc 'npm ci && npm run e2e:update-snapshots'
+```
+
 ### Before every push (the same checks CI runs)
 
 ```bash
@@ -201,6 +230,7 @@ npm run typecheck
 npm run lint
 npm run handbook:check
 npm run e2e:check
+npm run screenshot:check
 npm run test:coverage
 npm run build
 npm run e2e
@@ -232,12 +262,12 @@ paths (`/auth/lnurl`, `/me`, …) which the App Router proxies to that URL.
 
 ## CI / CD
 
-| Workflow               | Trigger           | Action                                                                       |
-| ---------------------- | ----------------- | ---------------------------------------------------------------------------- |
-| `ci.yaml`              | PR                | Typecheck + lint + handbook + e2e-check + test (100% coverage) + build + e2e |
-| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure               |
-| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure             |
-| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                                    |
+| Workflow               | Trigger           | Action                                                                                                                            |
+| ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR                | Typecheck + lint + handbook + e2e-check + screenshots + test (100% coverage) + build + e2e (Playwright `v1.61.1-noble` container) |
+| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                    |
+| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                  |
+| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                                                                                         |
 
 Images target `linux/arm64`.
 
