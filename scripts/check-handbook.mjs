@@ -232,6 +232,18 @@ function sectionBody(text, kind, name) {
   return '';
 }
 
+function variantSection(screenBody, id) {
+  const esc = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const startRe = new RegExp(`^### Variant: ${esc}\\s*$`, 'm');
+  const start = screenBody.search(startRe);
+  if (start < 0) {
+    return '';
+  }
+  const rest = screenBody.slice(start);
+  const next = rest.search(/\n### /);
+  return next < 0 ? rest : rest.slice(0, next);
+}
+
 function sectionComplete(body) {
   const bullets = (body.match(/^- \*\*/gm) || []).length;
   return bullets >= 3 && body.trim().length >= 80;
@@ -284,8 +296,9 @@ if (isMain) {
       continue;
     }
     const escapedImage = variant.image.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const variantSlice = variantSection(body, variant.id);
     const imageRe = new RegExp(`!\\[[^\\]]*\\]\\(images/${escapedImage}\\)`);
-    if (!imageRe.test(body)) {
+    if (!imageRe.test(variantSlice)) {
       missing.push(
         `Screen ${variant.route} variant ${variant.id} has no ![…](images/${variant.image})`,
       );

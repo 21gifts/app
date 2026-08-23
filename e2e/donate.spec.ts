@@ -6,6 +6,23 @@ test('donate page renders the gift form', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
 });
 
+test('donate shows Cancel while the invoice request hangs', async ({ page }) => {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/lightning-address\?/, async (route) => {
+    await held;
+    await route.abort();
+  });
+  await page.goto('/donate');
+  await page.getByLabel('Lightning Address').fill('alice@example.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Create invoice' }).click();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  release();
+});
+
 test('donate form shows Enter a Lightning Address when the field is blank', async ({ page }) => {
   await page.goto('/donate');
   await page.getByLabel('Amount (sats)').fill('21');

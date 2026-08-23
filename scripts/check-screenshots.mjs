@@ -70,7 +70,7 @@ for (const route of [...screens].sort()) {
       `Screen ${route} has no shotScreen/toHaveScreenshot('${arg}') in e2e/visual.spec.ts`,
     );
   }
-  const defaultVariant = SCREEN_VARIANTS.find((v) => v.route === route && v.id === 'default');
+  const defaultVariant = SCREEN_VARIANTS.find((v) => v.route === route);
   const mdName = defaultVariant?.image ?? `${arg.replace(/^screen-/, '')}.png`;
   const imageRef = new RegExp(
     `!\\[[^\\]]*\\]\\(images/${mdName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`,

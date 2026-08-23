@@ -57,6 +57,12 @@ Challenge pending on desktop/iOS. QR of the uppercase LNURL, primary **Open Wall
 
 ![21.gifts login QR](images/login-qr.png)
 
+### Variant: copied
+
+Same QR card after **Copy login code**: the button label is **Copied**.
+
+![21.gifts login copied](images/login-copied.png)
+
 ### Variant: qr-android
 
 Same QR card, but **Open Wallet of Satoshi** is an Android Intent that pins package `com.livingroomofsatoshi.wallet`.
@@ -99,6 +105,12 @@ Signed in with an address on the account. Shows the address plus **Edit** / **Un
 Empty/idle form, submit enabled.
 
 ![21.gifts donate form](images/donate.png)
+
+### Variant: busy
+
+Invoice request in flight: spinner on **Create invoice**, extra **Cancel** button.
+
+![21.gifts donate busy](images/donate-busy.png)
 
 ### Variant: validation-error
 

@@ -102,6 +102,17 @@ test('login qr', async ({ page }) => {
   await writePng(page, 'login-qr.png');
 });
 
+test('login copied', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await mockPendingAuth(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
+  await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
+  await page.getByRole('button', { name: 'Copy login code' }).click();
+  await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+  await writePng(page, 'login-copied.png');
+});
+
 test('login qr-android', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgent', {
@@ -191,6 +202,24 @@ test('donate form', async ({ page }) => {
   await page.goto('/donate');
   await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();
   await writePng(page, 'donate.png');
+});
+
+test('donate busy', async ({ page }) => {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/lightning-address\?/, async (route) => {
+    await held;
+    await route.abort();
+  });
+  await page.goto('/donate');
+  await page.getByLabel('Lightning Address').fill('alice@example.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Create invoice' }).click();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await writePng(page, 'donate-busy.png');
+  release();
 });
 
 test('donate validation-error', async ({ page }) => {

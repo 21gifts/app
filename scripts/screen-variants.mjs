@@ -45,6 +45,12 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'copied',
+    image: 'login-copied.png',
+    needle: "getByRole('button', { name: 'Copied' })",
+  },
+  {
+    route: '/login',
     id: 'qr-android',
     image: 'login-qr-android.png',
     needle: 'package=com.livingroomofsatoshi.wallet',
@@ -78,6 +84,12 @@ export const SCREEN_VARIANTS = [
     id: 'form',
     image: 'donate.png',
     needle: 'Send a gift',
+  },
+  {
+    route: '/donate',
+    id: 'busy',
+    image: 'donate-busy.png',
+    needle: "getByRole('button', { name: 'Cancel' })",
   },
   {
     route: '/donate',
