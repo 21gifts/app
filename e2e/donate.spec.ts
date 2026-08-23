@@ -67,3 +67,39 @@ test('donate form creates a Bitcoin payment QR from a Wallet of Satoshi address'
     'walletofsatoshi:lightning:LNBC21N1EXAMPLEINVOICE',
   );
 });
+
+test('Android donate pins Wallet of Satoshi via intent package', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
+      configurable: true,
+    });
+  });
+  await page.route(/\/lightning-address\?/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        address: 'alice@example.com',
+        callback: 'https://ln.example.com/pay',
+        minSendable: 1000,
+        maxSendable: 1_000_000_000,
+      }),
+    });
+  });
+  await page.route('https://ln.example.com/pay**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc21n1exampleinvoice' }),
+    });
+  });
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
+    'href',
+    'intent:lightning:LNBC21N1EXAMPLEINVOICE#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
+  );
+});
