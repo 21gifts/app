@@ -36,6 +36,20 @@ async function signInViaStub(page: Page, request: APIRequestContext): Promise<vo
 
 async function installFakeWebAuthn(page: Page): Promise<void> {
   await page.addInitScript(() => {
+    const pk = globalThis.PublicKeyCredential as unknown as {
+      parseCreationOptionsFromJSON?: unknown;
+      parseRequestOptionsFromJSON?: unknown;
+    };
+    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+      Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+    }
     const rawId = new Uint8Array([1, 2, 3, 4]).buffer;
     const attestation = {
       id: 'cred-e2e',
@@ -534,10 +548,13 @@ test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a chall
   expect(body.options.challenge.length).toBeGreaterThan(8);
 });
 
-test('Function: startPasskeyRegistration — POST begin returns a challenge', async ({ request }) => {
-  const res = await request.post('/auth/passkey/register/begin');
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { challengeId: string }).challengeId.length).toBeGreaterThan(8);
+test('Function: startPasskeyRegistration — create passkey reaches the signed-in view', async ({
+  page,
+}) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 });
 
 test('Function: proxyAuthPasskeyRegisterFinishPost — POST finish without body is 400', async ({
@@ -547,11 +564,13 @@ test('Function: proxyAuthPasskeyRegisterFinishPost — POST finish without body 
   expect(res.status()).toBe(400);
 });
 
-test('Function: finishPasskeyRegistration — POST finish without body is 400', async ({
-  request,
+test('Function: finishPasskeyRegistration — create passkey reaches the signed-in view', async ({
+  page,
 }) => {
-  const res = await request.post('/auth/passkey/register/finish');
-  expect(res.status()).toBe(400);
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 });
 
 test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a challenge', async ({
@@ -562,11 +581,13 @@ test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a c
   expect(((await res.json()) as { challengeId: string }).challengeId.length).toBeGreaterThan(8);
 });
 
-test('Function: startPasskeyAuthentication — POST begin returns a challenge', async ({
-  request,
+test('Function: startPasskeyAuthentication — continue with passkey reaches the signed-in view', async ({
+  page,
 }) => {
-  const res = await request.post('/auth/passkey/authenticate/begin');
-  expect(res.status()).toBe(200);
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Continue with passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 });
 
 test('Function: proxyAuthPasskeyAuthenticateFinishPost — POST finish without body is 400', async ({
@@ -576,11 +597,13 @@ test('Function: proxyAuthPasskeyAuthenticateFinishPost — POST finish without b
   expect(res.status()).toBe(400);
 });
 
-test('Function: finishPasskeyAuthentication — POST finish without body is 400', async ({
-  request,
+test('Function: finishPasskeyAuthentication — continue with passkey reaches the signed-in view', async ({
+  page,
 }) => {
-  const res = await request.post('/auth/passkey/authenticate/finish');
-  expect(res.status()).toBe(400);
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Continue with passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 });
 
 test('Function: usePasskeyLogin — create passkey reaches the signed-in view', async ({ page }) => {
