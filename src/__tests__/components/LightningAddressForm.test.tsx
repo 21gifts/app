@@ -76,7 +76,9 @@ describe('LightningAddressForm', () => {
   });
 
   it('shows the api error message when linking fails', async () => {
-    vi.mocked(setLightningAddress).mockRejectedValue(new Error('Invalid Lightning Address'));
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error('That Wallet of Satoshi address is not valid'),
+    );
     renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
