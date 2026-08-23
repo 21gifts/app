@@ -65,6 +65,16 @@ function utcDay(iso: string | null): string {
 function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
   const width = 800;
   const height = 280;
+  if (series.length === 0) {
+    return (
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-auto w-full"
+        role="img"
+        aria-label="Total spend over time"
+      />
+    );
+  }
   const padL = 56;
   const padR = 16;
   const padT = 16;
@@ -136,24 +146,44 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
  * @returns Bar list.
  */
 function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
+  const width = 800;
+  const rowH = 40;
+  const padL = 8;
+  const padR = 8;
+  const labelW = 160;
+  const valueW = 140;
+  const barMax = width - padL - padR - labelW - valueW;
+  const height = Math.max(rows.length, 1) * rowH;
   const max = Math.max(...rows.map((r) => r.sats), 1);
   return (
-    <ul className="space-y-3" aria-label="Spend by person">
-      {rows.map((row) => (
-        <li key={row.recipient}>
-          <div className="mb-1 flex justify-between gap-4 text-sm">
-            <span>{row.recipient}</span>
-            <span className="text-white/60">{formatSats(row.sats)} sats</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-[#f7931a]"
-              style={{ width: `${Math.max(2, (row.sats / max) * 100)}%` }}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-auto w-full"
+      role="img"
+      aria-label="Spend by person"
+    >
+      {rows.map((row, i) => {
+        const y = i * rowH;
+        const barW = Math.max(2, (row.sats / max) * barMax);
+        return (
+          <g key={row.recipient}>
+            <text x={padL} y={y + 22} fill="rgba(255,255,255,0.9)" fontSize="14">
+              {row.recipient}
+            </text>
+            <rect x={padL + labelW} y={y + 12} width={barW} height={12} rx={6} fill={ORANGE} />
+            <text
+              x={width - padR}
+              y={y + 22}
+              textAnchor="end"
+              fill="rgba(255,255,255,0.6)"
+              fontSize="14"
+            >
+              {formatSats(row.sats)} sats
+            </text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -166,6 +196,16 @@ function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
 function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
   const width = 800;
   const height = 220;
+  if (rows.length === 0) {
+    return (
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-auto w-full"
+        role="img"
+        aria-label="Spend by month"
+      />
+    );
+  }
   const padL = 56;
   const padR = 16;
   const padT = 16;

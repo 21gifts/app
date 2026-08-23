@@ -66,6 +66,22 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('— – —')).toBeTruthy();
   });
 
+  it('does not crash when giftCount is set but series are empty', () => {
+    const odd: GiftStats = {
+      ...EMPTY,
+      giftCount: 1,
+      totalSats: 10,
+      recipientCount: 1,
+      firstPaidAt: '2026-06-01T00:00:00.000Z',
+      lastPaidAt: '2026-06-01T00:00:00.000Z',
+    };
+    render(<StatsDashboard stats={odd} error={null} loading={false} onRetry={() => undefined} />);
+    expect(screen.getByRole('heading', { name: 'Total spend over time' })).toBeTruthy();
+    expect(screen.getByLabelText('Total spend over time')).toBeTruthy();
+    expect(screen.getByLabelText('Spend by person')).toBeTruthy();
+    expect(screen.getByLabelText('Spend by month')).toBeTruthy();
+  });
+
   it('renders KPIs and the three diagrams', () => {
     render(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
