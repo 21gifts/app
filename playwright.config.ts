@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Starts the local api protocol stub on :3001, then the standalone production
  * server (`node .next/standalone/server.js`, the Docker artifact) on :3000
  * with NEXT_PUBLIC_API_URL pointing at the stub. Locally an already-running
- * pair is reused; CI always builds and starts fresh.
+ * pair is reused; CI (`CI=1`) always builds and starts both processes fresh.
  */
 export default defineConfig({
   testDir: './e2e',
