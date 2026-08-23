@@ -48,7 +48,7 @@ npm run dev    # → http://localhost:3000
 app/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx           # Root layout: <html lang="en">, metadata, globals.css
+│   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
@@ -65,6 +65,10 @@ app/
 │   │   └── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
+│   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
+│   │   ├── messages.ts          # en/de/es/fil catalogs
+│   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   └── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
