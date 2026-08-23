@@ -2,16 +2,16 @@
 
 ## Function: DonateForm
 
-- **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR.
+- **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR. All visitor-facing copy goes through `useTranslations`.
 - **Inputs:** Form state: address and whole-sat amount.
 - **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
 - **Used by:** Screen `/donate`.
 
 ## Function: DonatePage
 
-- **Purpose:** Next.js page for `/donate`.
-- **Inputs:** None.
-- **Returns / side effects:** The donate screen wrapped in the root layout.
+- **Purpose:** Next.js page for `/donate` with localized heading and a light language switcher.
+- **Inputs:** None. Calls `getRequestLocale()` for the page title.
+- **Returns / side effects:** The donate screen wrapped in the root layout; switcher top-right.
 - **Used by:** Route `/donate`.
 
 ## Function: GET
@@ -36,10 +36,17 @@
 - **Returns / side effects:** React fragment. No network.
 - **Used by:** `HandbookPage` for each handbook document.
 
+## Function: HandbookIntro
+
+- **Purpose:** Client island for the `/handbook` title and intro sentence so the page can stay `force-static`.
+- **Inputs:** Locale via `useTranslations`.
+- **Returns / side effects:** Heading, intro with the api-handbook GitHub link. No network.
+- **Used by:** `HandbookPage`.
+
 ## Function: HandbookPage
 
-- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files and renders them with a link to the api handbook. Copy-link on the page title and each chapter nav item.
-- **Inputs:** None (reads `docs/handbook/` from disk at build time).
+- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files at build time (`force-static`) and renders them with a link to the api handbook. Title and intro chrome are localized via `HandbookIntro`; copy-link on the page title and each chapter nav item; markdown bodies stay English.
+- **Inputs:** None (reads `docs/handbook/` from disk at build).
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
@@ -66,10 +73,17 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`.
-- **Inputs:** None.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`, all via `translate` for the negotiated locale.
+- **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
+
+## Function: LanguageSwitcher
+
+- **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate). Reads current locale via `useTranslations`.
+- **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` then `router.refresh()`. Never set on first visit.
+- **Used by:** `MarketingHeader` (always visible), `/login`, and `/donate`.
 
 ## Function: NameForm
 
@@ -85,6 +99,13 @@
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
+## Function: LocaleProvider
+
+- **Purpose:** Client context provider that exposes the negotiated locale and a bound `t` helper to visitor-facing components.
+- **Inputs:** `locale`, `messages` for that locale, and `children`.
+- **Returns / side effects:** React provider element. No network; does not write cookies.
+- **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` by header, footer, login, donate, and the language switcher.
+
 ## Function: LoginCard
 
 - **Purpose:** Wallet of Satoshi login UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `NameForm` and `LightningAddressForm`.
@@ -94,9 +115,9 @@
 
 ## Function: LoginPage
 
-- **Purpose:** Next.js page for `/login`.
-- **Inputs:** None.
-- **Returns / side effects:** Renders `LoginCard`.
+- **Purpose:** Next.js page for `/login` with localized heading and a light language switcher.
+- **Inputs:** None. Calls `getRequestLocale()` for the page title.
+- **Returns / side effects:** Renders `LoginCard` and `LanguageSwitcher` (top-right).
 - **Used by:** Route `/login`.
 
 ## Function: QrCode
@@ -108,8 +129,8 @@
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: `lang=en`, global CSS, metadata (title, icons, Open Graph, Twitter).
-- **Inputs:** `children` React nodes.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), and `LocaleProvider` with the request catalog.
+- **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
 
@@ -136,10 +157,10 @@
 
 ## Function: formatMsatAsSats
 
-- **Purpose:** Formats millisatoshis as a sat string for the donate UI.
+- **Purpose:** Formats millisatoshis as an English sat string (`1 sat` / `{n} sats`).
 - **Inputs:** `msat` number.
 - **Returns / side effects:** Decimal string in sats.
-- **Used by:** `DonateForm` amount-range error (`minSendable`–`maxSendable`).
+- **Used by:** Unit tests and shared LNURL-pay helpers. The donate UI formats amounts via catalog keys `donate.satOne` / `donate.sats` instead.
 
 ## Function: getApiUrl
 
@@ -147,6 +168,20 @@
 - **Inputs:** None.
 - **Returns / side effects:** Origin string. Throws if unset/empty (entrypoint must substitute).
 - **Used by:** `proxyApiRequest` (server-side upstream origin).
+
+## Function: getCatalog
+
+- **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
+- **Inputs:** `locale` (`en` / `de` / `es` / `fil`).
+- **Returns / side effects:** The `Messages` object for that locale. Exhaustive switch over `Locale`.
+- **Used by:** `RootLayout`, marketing pages, `/login`, `/donate`, `NotFound`, and the `renderWithLocale` test helper.
+
+## Function: getRequestLocale
+
+- **Purpose:** Resolve the UI locale for the current request without writing cookies.
+- **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
+- **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
+- **Used by:** `RootLayout`, marketing pages (`Home`, `HandbookPage`), `/login`, `/donate`, and `NotFound`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: isAndroidUserAgent
 
@@ -168,6 +203,13 @@
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
 - **Used by:** `LoginCard` on mount.
+
+## Function: parseAcceptLanguage
+
+- **Purpose:** Negotiate a supported UI locale from an RFC 7231 `Accept-Language` header.
+- **Inputs:** Raw header string (may be empty). Splits on commas, reads `q=` (default 1), sorts by q then header order, maps primary subtags (`en`/`de`/`es`/`fil`, and `tl`→`fil`).
+- **Returns / side effects:** First mapped locale, or `en` when empty/unmatched. Pure function — no I/O.
+- **Used by:** `getRequestLocale` when no valid `locale` cookie is present.
 
 ## Function: parseHandbookMarkdown
 
@@ -232,6 +274,13 @@
 - **Returns / side effects:** `StartChallenge`.
 - **Used by:** `useLnurlLogin`.
 
+## Function: translate
+
+- **Purpose:** Look up a catalog key and replace `{name}` placeholders from `vars`.
+- **Inputs:** `catalog` (`Messages`), `key` (`MessageKey`), optional `vars` map of string/number values.
+- **Returns / side effects:** Interpolated string. Throws on a missing key or missing `{name}` — no silent English fallback.
+- **Used by:** Server pages (`Home`, `HandbookPage`, login/donate headings, `NotFound`) and the `t` helper from `LocaleProvider` / `useTranslations`.
+
 ## Function: unlinkLightningAddress
 
 - **Purpose:** DELETE `/me/lightning-address`.
@@ -259,6 +308,13 @@
 - **Inputs:** None.
 - **Returns / side effects:** `UseLnurlLogin` status machine.
 - **Used by:** `LoginCard`.
+
+## Function: useTranslations
+
+- **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
+- **Inputs:** None (React context).
+- **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
+- **Used by:** `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`.
 
 ## Function: walletOfSatoshiHref
 
@@ -290,16 +346,16 @@
 
 ## Function: MarketingFooter
 
-- **Purpose:** Footer for marketing pages: wordmark, section links, legal, GitHub.
-- **Inputs:** None.
+- **Purpose:** Footer for marketing pages: wordmark, localized section links, legal, GitHub.
+- **Inputs:** None. Reads copy via `useTranslations`.
 - **Returns / side effects:** Footer element.
 - **Used by:** `MarketingLayout`, `NotFound`.
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with wordmark, section nav, login CTA, mobile menu.
-- **Inputs:** None (internal open state).
-- **Returns / side effects:** Header element; toggles nav on small screens.
+- **Purpose:** Sticky marketing header with wordmark, section nav, always-visible `LanguageSwitcher` (`tone="dark"`), login CTA, and mobile menu.
+- **Inputs:** None (internal open state). Reads copy via `useTranslations`.
+- **Returns / side effects:** Header element; toggles nav on small screens. Language select stays visible when the hamburger is closed.
 - **Used by:** `MarketingLayout`, `NotFound`.
 
 ## Function: MarketingLayout
@@ -311,9 +367,9 @@
 
 ## Function: NotFound
 
-- **Purpose:** App-wide 404 screen with marketing chrome and a link home.
-- **Inputs:** None.
-- **Returns / side effects:** 404 element.
+- **Purpose:** App-wide 404 screen with marketing chrome and a localized link home.
+- **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy.
+- **Returns / side effects:** 404 element with `MarketingHeader` / `MarketingFooter`.
 - **Used by:** Next.js `not-found.tsx`.
 
 ## Function: POST

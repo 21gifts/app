@@ -1,9 +1,10 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { setLightningAddress, unlinkLightningAddress } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
   setLightningAddress: vi.fn(),
@@ -39,18 +40,18 @@ afterEach(cleanup);
 describe('LightningAddressForm', () => {
   it('renders nothing when there is no account', () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    const { container } = render(<LightningAddressForm />);
+    const { container } = renderWithLocale(<LightningAddressForm />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders nothing when the session token is absent', () => {
     useAuthStore.setState({ session: null, account: baseAccount });
-    const { container } = render(<LightningAddressForm />);
+    const { container } = renderWithLocale(<LightningAddressForm />);
     expect(container.firstChild).toBeNull();
   });
 
   it('shows the link prompt and an empty input when no address is set', () => {
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     const input = screen.getByPlaceholderText(PLACEHOLDER) as HTMLInputElement;
     expect(input.value).toBe('');
@@ -61,7 +62,7 @@ describe('LightningAddressForm', () => {
   it('links an address and updates the store', async () => {
     const updated: Account = { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' };
     vi.mocked(setLightningAddress).mockResolvedValue(updated);
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
@@ -75,10 +76,8 @@ describe('LightningAddressForm', () => {
   });
 
   it('shows the api error message when linking fails', async () => {
-    vi.mocked(setLightningAddress).mockRejectedValue(
-      new Error('That Wallet of Satoshi address is not valid'),
-    );
-    render(<LightningAddressForm />);
+    vi.mocked(setLightningAddress).mockRejectedValue(new Error('Invalid Lightning Address'));
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'bad@example' },
@@ -93,7 +92,7 @@ describe('LightningAddressForm', () => {
 
   it('stringifies a non-Error rejection', async () => {
     vi.mocked(setLightningAddress).mockRejectedValue('boom');
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
@@ -105,7 +104,7 @@ describe('LightningAddressForm', () => {
 
   it('shows the address and edit/unlink controls when set', () => {
     useAuthStore.setState({ session: 'sess', account: linkedAccount });
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     expect(screen.getByText('me@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByRole('button', { name: /edit/i })).toBeTruthy();
@@ -119,7 +118,7 @@ describe('LightningAddressForm', () => {
     useAuthStore.setState({ session: 'sess', account: linkedAccount });
     const updated: Account = { ...linkedAccount, lightningAddress: 'new@walletofsatoshi.com' };
     vi.mocked(setLightningAddress).mockResolvedValue(updated);
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.click(screen.getByRole('button', { name: /edit/i }));
     const input = screen.getByPlaceholderText(PLACEHOLDER) as HTMLInputElement;
@@ -134,7 +133,7 @@ describe('LightningAddressForm', () => {
 
   it('cancels an edit and returns to the display view', () => {
     useAuthStore.setState({ session: 'sess', account: linkedAccount });
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.click(screen.getByRole('button', { name: /edit/i }));
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
@@ -148,7 +147,7 @@ describe('LightningAddressForm', () => {
   it('unlinks an address and returns to the prompt', async () => {
     useAuthStore.setState({ session: 'sess', account: linkedAccount });
     vi.mocked(unlinkLightningAddress).mockResolvedValue(baseAccount);
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.click(screen.getByRole('button', { name: /unlink/i }));
 
@@ -163,7 +162,7 @@ describe('LightningAddressForm', () => {
       resolve = r;
     });
     vi.mocked(setLightningAddress).mockReturnValue(pending);
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
@@ -244,7 +243,7 @@ describe('LightningAddressForm', () => {
       resolve = r;
     });
     vi.mocked(setLightningAddress).mockReturnValue(pending);
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
