@@ -98,6 +98,12 @@ export const SCREEN_VARIANTS = [
     needle: 'Pay 21 sats',
   },
   {
+    route: '/donate',
+    id: 'invoice-android',
+    image: 'donate-invoice.png',
+    needle: 'package=com.livingroomofsatoshi.wallet',
+  },
+  {
     route: '/handbook',
     id: 'default',
     image: 'handbook.png',

@@ -118,6 +118,12 @@ Successful create: **Pay N sats to address**, Bitcoin payment QR, **Open Wallet 
 
 ![21.gifts donate invoice](images/donate-invoice.png)
 
+### Variant: invoice-android
+
+Same payment card, but **Open Wallet of Satoshi** is an Android Intent that pins package `com.livingroomofsatoshi.wallet`. The pixels match the desktop invoice variant.
+
+![21.gifts donate invoice Android](images/donate-invoice.png)
+
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).
