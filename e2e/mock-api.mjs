@@ -183,11 +183,16 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with a "name" string' });
       return;
     }
-    if (typeof parsed?.name !== 'string' || parsed.name.trim() === '') {
+    if (typeof parsed?.name !== 'string') {
+      json(res, 400, { error: 'Expected a JSON body with a "name" string' });
+      return;
+    }
+    const trimmed = parsed.name.trim();
+    if (trimmed.length < 1 || trimmed.length > 80) {
       json(res, 400, { error: 'Name must be 1–80 characters' });
       return;
     }
-    account.name = parsed.name.trim();
+    account.name = trimmed;
     json(res, 200, account);
     return;
   }

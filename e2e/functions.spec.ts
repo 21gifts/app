@@ -124,6 +124,8 @@ test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({
   });
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { name: string }).name).toBe('Ada');
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { name: string }).name).toBe('Ada');
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
