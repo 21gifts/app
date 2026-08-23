@@ -121,15 +121,21 @@ Successful create: **Pay N sats to address**, invoice QR, **Open in wallet** (`l
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).
-- **What the user sees:** Heading **Handbook**, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints), then the four `docs/handbook/` markdown files rendered as HTML.
-- **Actions:** Read the docs, jump via the section nav, follow the api handbook link, follow in-page markdown links.
-- **Calls:** `HandbookPage`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
+- **What the user sees:** Heading **Handbook**, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints) each with **Copy link**, then the four `docs/handbook/` markdown files rendered as HTML. Every markdown heading has a sibling **Copy link**.
+- **Actions:** Read the docs, jump via the section nav, copy a chapter or heading URL (**Copy link** → **Copied** for 1.2s, hash updates), follow the api handbook link, follow in-page markdown links.
+- **Calls:** `HandbookPage`, `HandbookCopyLink`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
 
 ### Variant: default
 
-The only state: aggregated markdown plus screenshots.
+Idle copy buttons: every heading and chapter shows **Copy link**.
 
 ![21.gifts handbook](images/handbook.png)
+
+### Variant: copied
+
+After tapping **Copy link** on a heading or chapter, that button reads **Copied** and `location.hash` is that id. Other copy buttons stay idle.
+
+![21.gifts handbook copied](images/handbook-copied.png)
 
 ## Screen: /404
 

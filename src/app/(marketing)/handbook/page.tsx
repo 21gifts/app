@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
+import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { loadHandbookDocuments } from '@/lib/handbook';
 import { HandbookMarkdown } from '@/lib/handbook-markdown';
 
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 
 /**
  * App handbook at `/handbook`: screens, functions, and HTTP endpoints.
+ * Every chapter and markdown heading has a copy-link button.
  *
  * @returns The handbook screen.
  */
@@ -23,7 +25,12 @@ export default function HandbookPage(): ReactElement {
   const documents = loadHandbookDocuments();
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
-      <h1 className="text-3xl font-semibold">Handbook</h1>
+      <div className="flex flex-wrap items-baseline gap-2">
+        <h1 id="handbook" className="scroll-mt-24 text-3xl font-semibold">
+          Handbook
+        </h1>
+        <HandbookCopyLink targetId="handbook" label="Handbook" />
+      </div>
       <p className="mt-4 text-white/60">
         This is the 21.gifts app handbook: screens, functions, and HTTP endpoints. The api handbook
         lives in{' '}
@@ -37,13 +44,12 @@ export default function HandbookPage(): ReactElement {
       </p>
       <nav aria-label="Handbook sections" className="mt-8 flex flex-wrap gap-4 text-sm">
         {documents.map((doc) => (
-          <a
-            key={doc.id}
-            href={`#${doc.id}`}
-            className="text-[#f7931a] underline underline-offset-2"
-          >
-            {doc.title}
-          </a>
+          <span key={doc.id} className="inline-flex items-baseline gap-1">
+            <a href={`#${doc.id}`} className="text-[#f7931a] underline underline-offset-2">
+              {doc.title}
+            </a>
+            <HandbookCopyLink targetId={doc.id} label={`${doc.title} chapter`} />
+          </span>
         ))}
       </nav>
       {documents.map((doc) => (

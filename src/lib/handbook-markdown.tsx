@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
+import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 
 /** Inline node produced by `parseHandbookMarkdown`. */
 export type HandbookInline =
@@ -15,10 +16,10 @@ export type HandbookBlock =
   | { type: 'list'; items: HandbookInline[][] };
 
 const HEADING_CLASS: Record<1 | 2 | 3 | 4, string> = {
-  1: 'mt-10 mb-3 text-3xl font-semibold first:mt-0',
-  2: 'mt-8 mb-2 text-xl font-semibold text-[#f7931a]',
-  3: 'mt-6 mb-2 text-lg font-semibold',
-  4: 'mt-4 mb-2 text-base font-semibold',
+  1: 'scroll-mt-24 mt-10 mb-3 text-3xl font-semibold first:mt-0',
+  2: 'scroll-mt-24 mt-8 mb-2 text-xl font-semibold text-[#f7931a]',
+  3: 'scroll-mt-24 mt-6 mb-2 text-lg font-semibold',
+  4: 'scroll-mt-24 mt-4 mb-2 text-base font-semibold',
 };
 
 /**
@@ -183,9 +184,22 @@ function parseInlines(s: string, idPrefix: string): HandbookInline[] {
 export function parseHandbookMarkdown(markdown: string, idPrefix: string): HandbookBlock[] {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n');
   const blocks: HandbookBlock[] = [];
+  const usedIds = new Set<string>();
   let inList = false;
   let para: string[] = [];
   let listItems: HandbookInline[][] = [];
+
+  const uniqueHeadingId = (text: string): string => {
+    const base = `${idPrefix}-${slug(text)}`;
+    let id = base;
+    let n = 2;
+    while (usedIds.has(id)) {
+      id = `${base}-${n}`;
+      n += 1;
+    }
+    usedIds.add(id);
+    return id;
+  };
 
   const flushPara = (): void => {
     if (para.length > 0) {
@@ -217,7 +231,7 @@ export function parseHandbookMarkdown(markdown: string, idPrefix: string): Handb
       blocks.push({
         type: 'heading',
         level,
-        id: `${idPrefix}-${slug(text)}`,
+        id: uniqueHeadingId(text),
         inlines: parseInlines(text, idPrefix),
       });
       continue;
@@ -281,7 +295,81 @@ function renderInline(inline: HandbookInline, key: number): ReactNode {
 }
 
 /**
- * Render parsed handbook markdown as Tailwind-styled elements.
+ * Flatten heading inlines to a label for the copy-link aria name.
+ *
+ * @param inlines - Parsed heading inlines.
+ * @returns Concatenated plain text.
+ */
+function headingPlainText(inlines: HandbookInline[]): string {
+  return inlines
+    .map((inline) => {
+      if (inline.type === 'link') {
+        return inline.children;
+      }
+      if (inline.type === 'img') {
+        return inline.alt;
+      }
+      return inline.value;
+    })
+    .join('');
+}
+
+/**
+ * Heading plus sibling copy-link button (button stays outside the heading).
+ *
+ * @param props - Level, id, class, and inlines.
+ * @returns A flex row.
+ */
+function HeadingWithCopy({
+  level,
+  id,
+  className,
+  inlines,
+}: {
+  level: 1 | 2 | 3 | 4;
+  id: string;
+  className: string;
+  inlines: HandbookInline[];
+}): ReactElement {
+  const label = headingPlainText(inlines);
+  const children = inlines.map((inline, i) => renderInline(inline, i));
+  let heading: ReactElement;
+  if (level === 1) {
+    heading = (
+      <h1 id={id} className={className}>
+        {children}
+      </h1>
+    );
+  } else if (level === 2) {
+    heading = (
+      <h2 id={id} className={className}>
+        {children}
+      </h2>
+    );
+  } else if (level === 3) {
+    heading = (
+      <h3 id={id} className={className}>
+        {children}
+      </h3>
+    );
+  } else {
+    heading = (
+      <h4 id={id} className={className}>
+        {children}
+      </h4>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-baseline gap-2">
+      {heading}
+      <HandbookCopyLink targetId={id} label={label} />
+    </div>
+  );
+}
+
+/**
+ * Render parsed handbook markdown as Tailwind-styled elements. Every heading
+ * has a sibling copy-link button that copies the absolute `#id` URL.
  *
  * @param markdown - Raw markdown.
  * @param idPrefix - Prefix for heading ids.
@@ -299,32 +387,14 @@ export function HandbookMarkdown({
     <>
       {blocks.map((block, index) => {
         if (block.type === 'heading') {
-          const className = HEADING_CLASS[block.level];
-          if (block.level === 1) {
-            return (
-              <h1 key={index} id={block.id} className={className}>
-                {block.inlines.map((inline, i) => renderInline(inline, i))}
-              </h1>
-            );
-          }
-          if (block.level === 2) {
-            return (
-              <h2 key={index} id={block.id} className={className}>
-                {block.inlines.map((inline, i) => renderInline(inline, i))}
-              </h2>
-            );
-          }
-          if (block.level === 3) {
-            return (
-              <h3 key={index} id={block.id} className={className}>
-                {block.inlines.map((inline, i) => renderInline(inline, i))}
-              </h3>
-            );
-          }
           return (
-            <h4 key={index} id={block.id} className={className}>
-              {block.inlines.map((inline, i) => renderInline(inline, i))}
-            </h4>
+            <HeadingWithCopy
+              key={index}
+              level={block.level}
+              id={block.id}
+              className={HEADING_CLASS[block.level]}
+              inlines={block.inlines}
+            />
           );
         }
         if (block.type === 'paragraph') {

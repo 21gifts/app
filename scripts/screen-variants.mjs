@@ -104,6 +104,12 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Handbook' })",
   },
   {
+    route: '/handbook',
+    id: 'copied',
+    image: 'handbook-copied.png',
+    needle: "toHaveText('Copied')",
+  },
+  {
     route: '/404',
     id: 'default',
     image: 'not-found.png',
