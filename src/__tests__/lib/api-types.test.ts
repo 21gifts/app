@@ -5,6 +5,7 @@ import {
   sessionResultSchema,
   startChallengeSchema,
   lnAddressResolvedSchema,
+  giftStatsSchema,
 } from '@/lib/api-types';
 
 const account = {
@@ -111,5 +112,41 @@ describe('lnAddressResolvedSchema', () => {
 
   it('rejects a non-url callback', () => {
     expect(() => lnAddressResolvedSchema.parse({ ...resolved, callback: 'not-a-url' })).toThrow();
+  });
+});
+
+describe('giftStatsSchema', () => {
+  const stats = {
+    totalSats: 10,
+    giftCount: 1,
+    recipientCount: 1,
+    firstPaidAt: '2026-06-01T00:00:00.000Z',
+    lastPaidAt: '2026-06-01T00:00:00.000Z',
+    spendOverTime: [{ day: '2026-06-01', sats: 10, cumulativeSats: 10 }],
+    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10 }],
+    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10 }],
+  };
+
+  it('accepts a full stats payload', () => {
+    expect(giftStatsSchema.parse(stats)).toEqual(stats);
+  });
+
+  it('accepts null date range', () => {
+    const empty = {
+      ...stats,
+      giftCount: 0,
+      totalSats: 0,
+      recipientCount: 0,
+      firstPaidAt: null,
+      lastPaidAt: null,
+      spendOverTime: [],
+      byRecipient: [],
+      byMonth: [],
+    };
+    expect(giftStatsSchema.parse(empty)).toEqual(empty);
+  });
+
+  it('rejects a negative sat count', () => {
+    expect(() => giftStatsSchema.parse({ ...stats, totalSats: -1 })).toThrow();
   });
 });

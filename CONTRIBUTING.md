@@ -49,9 +49,11 @@ app/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: <html lang="en">, metadata, globals.css
-│   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`
+│   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
+│   │   ├── gifts/stats/
+│   │   │   └── route.ts         # GET /gifts/stats same-origin proxy
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — LNURL-auth + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
@@ -59,6 +61,7 @@ app/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
 │   │   ├── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
+│   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   └── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)

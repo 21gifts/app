@@ -88,3 +88,49 @@ export const lnAddressResolvedSchema = z.object({
  * browser.
  */
 export type LnAddressResolved = z.infer<typeof lnAddressResolvedSchema>;
+
+/**
+ * One UTC day in the cumulative spend series from `GET /gifts/stats`.
+ */
+export const spendDaySchema = z.object({
+  day: z.string(),
+  sats: z.number().int().nonnegative(),
+  cumulativeSats: z.number().int().nonnegative(),
+});
+
+/**
+ * Per-recipient totals from `GET /gifts/stats`.
+ */
+export const recipientSpendSchema = z.object({
+  recipient: z.string(),
+  giftCount: z.number().int().nonnegative(),
+  sats: z.number().int().nonnegative(),
+});
+
+/**
+ * Per-month totals from `GET /gifts/stats`.
+ */
+export const monthSpendSchema = z.object({
+  month: z.string(),
+  giftCount: z.number().int().nonnegative(),
+  sats: z.number().int().nonnegative(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /gifts/stats`.
+ */
+export const giftStatsSchema = z.object({
+  totalSats: z.number().int().nonnegative(),
+  giftCount: z.number().int().nonnegative(),
+  recipientCount: z.number().int().nonnegative(),
+  firstPaidAt: z.string().nullable(),
+  lastPaidAt: z.string().nullable(),
+  spendOverTime: z.array(spendDaySchema),
+  byRecipient: z.array(recipientSpendSchema),
+  byMonth: z.array(monthSpendSchema),
+});
+
+/**
+ * Aggregated outbound gift statistics from the api.
+ */
+export type GiftStats = z.infer<typeof giftStatsSchema>;

@@ -77,6 +77,38 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-login', 'login.png');
   });
 
+  test('screen /stats', async ({ page }) => {
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalSats: 1500,
+          giftCount: 3,
+          recipientCount: 2,
+          firstPaidAt: '2026-06-01T00:00:00.000Z',
+          lastPaidAt: '2026-07-01T00:00:00.000Z',
+          spendOverTime: [
+            { day: '2026-06-01', sats: 500, cumulativeSats: 500 },
+            { day: '2026-06-02', sats: 0, cumulativeSats: 500 },
+            { day: '2026-07-01', sats: 1000, cumulativeSats: 1500 },
+          ],
+          byRecipient: [
+            { recipient: 'alice', giftCount: 2, sats: 1000 },
+            { recipient: 'bob', giftCount: 1, sats: 500 },
+          ],
+          byMonth: [
+            { month: '2026-06', giftCount: 2, sats: 500 },
+            { month: '2026-07', giftCount: 1, sats: 1000 },
+          ],
+        }),
+      });
+    });
+    await page.goto('/stats');
+    await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
+    await shotScreen(page, 'screen-stats', 'stats.png');
+  });
+
   test('screen /donate', async ({ page }) => {
     await page.goto('/donate');
     await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();

@@ -34,6 +34,9 @@ export function MarketingHeader(): ReactElement {
         <Link href="/#faq" onClick={closeMenu}>
           FAQ
         </Link>
+        <Link href="/stats" onClick={closeMenu}>
+          Stats
+        </Link>
         <Link href="/handbook" onClick={closeMenu}>
           Handbook
         </Link>

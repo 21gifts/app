@@ -4,7 +4,9 @@ import {
   sessionResultSchema,
   startChallengeSchema,
   lnAddressResolvedSchema,
+  giftStatsSchema,
   type Account,
+  type GiftStats,
   type LnAddressResolved,
   type SessionResult,
   type StartChallenge,
@@ -230,4 +232,19 @@ export async function resolveLightningAddress(address: string): Promise<LnAddres
     throw new Error('Could not find that Wallet of Satoshi address');
   }
   return lnAddressResolvedSchema.parse(await response.json());
+}
+
+/**
+ * Fetches aggregated outbound gift statistics.
+ *
+ * @returns The {@link GiftStats} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link giftStatsSchema}.
+ */
+export async function fetchGiftStats(): Promise<GiftStats> {
+  const response = await fetch('/gifts/stats');
+  if (!response.ok) {
+    throw new Error('Could not load gift stats. Please try again.');
+  }
+  return giftStatsSchema.parse(await response.json());
 }

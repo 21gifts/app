@@ -43,6 +43,20 @@
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
+## Function: StatsDashboard
+
+- **Purpose:** Renders gift KPIs and three SVG diagrams (cumulative spend, by person, by month), plus loading/error/empty states.
+- **Inputs:** `stats`, `error`, `loading`, `onRetry`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `StatsPage`.
+
+## Function: StatsPage
+
+- **Purpose:** Next.js page for `/stats`. Fetches gift totals on mount and renders `StatsDashboard`.
+- **Inputs:** None.
+- **Returns / side effects:** The statistics screen inside `MarketingLayout`. Calls `fetchGiftStats`.
+- **Used by:** Route `/stats`.
+
 ## Function: Home
 
 - **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`.
@@ -98,6 +112,13 @@
 - **Inputs:** None.
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
 - **Used by:** `useAuthStore.clearAuth` and `LoginCard` when session hydration gets 401.
+
+## Function: fetchGiftStats
+
+- **Purpose:** GET `/gifts/stats` and parse the public gift totals payload.
+- **Inputs:** None.
+- **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
+- **Used by:** `StatsPage`.
 
 ## Function: fetchMe
 
@@ -322,6 +343,13 @@
 - **Inputs:** `Request` with `X-Poll-Token`.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route GET `/auth/session`.
+
+## Function: proxyGiftsStatsGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /gifts/stats`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** `src/app/gifts/stats/route.ts`.
 
 ## Function: proxyLightningAddressGet
 

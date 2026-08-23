@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  fetchGiftStats,
   fetchMe,
   pollSession,
   setLightningAddress,
@@ -319,5 +320,34 @@ describe('resolveLightningAddress', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { address: 'x' } });
     await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow();
+  });
+});
+
+describe('fetchGiftStats', () => {
+  const stats = {
+    totalSats: 10,
+    giftCount: 1,
+    recipientCount: 1,
+    firstPaidAt: '2026-06-01T00:00:00.000Z',
+    lastPaidAt: '2026-06-01T00:00:00.000Z',
+    spendOverTime: [{ day: '2026-06-01', sats: 10, cumulativeSats: 10 }],
+    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10 }],
+    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10 }],
+  };
+
+  it('returns the validated payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats()).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Gift stats are unavailable' } });
+    await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
+    await expect(fetchGiftStats()).rejects.toThrow();
   });
 });
