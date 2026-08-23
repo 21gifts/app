@@ -57,6 +57,7 @@ function newAccount(linkingKey) {
     id: `acc_${hex(randomBytes(8))}`,
     linkingKey,
     role: 'basis',
+    name: null,
     lightningAddress: null,
     lightningAddressVerified: false,
     createdAt: Date.now(),
@@ -164,6 +165,29 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/name') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "name" string' });
+      return;
+    }
+    if (typeof parsed?.name !== 'string' || parsed.name.trim() === '') {
+      json(res, 400, { error: 'Name must be 1–80 characters' });
+      return;
+    }
+    account.name = parsed.name.trim();
     json(res, 200, account);
     return;
   }

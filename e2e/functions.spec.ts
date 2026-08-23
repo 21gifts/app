@@ -116,6 +116,31 @@ test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, 
   await expect(page.getByText('Signed in')).toBeVisible();
 });
 
+test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/name', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { name: 'Ada' },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { name: string }).name).toBe('Ada');
+});
+
+test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
+  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page.getByText('Ada')).toBeVisible();
+});
+
+test('Function: setName — signed-in form saves a display name', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page.getByText('Ada')).toBeVisible();
+});
+
 test('Function: POST — POST /me/lightning-address links an address', async ({ request }) => {
   const token = await loginHttp(request);
   const res = await request.post('/me/lightning-address', {
