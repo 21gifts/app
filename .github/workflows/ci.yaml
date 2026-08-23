@@ -16,16 +16,13 @@ jobs:
     name: Typecheck, Lint, Handbook, E2E-check, Screenshots, Test (100% coverage), Build, E2E
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -51,8 +48,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: End-to-end tests
         run: npm run e2e
+        env:
+          HOSTNAME: 0.0.0.0

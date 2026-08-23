@@ -17,9 +17,7 @@ export default defineConfig({
     toHaveScreenshot: {
       animations: 'disabled',
       caret: 'hide',
-      // GitHub ubuntu-latest vs Playwright Docker (noble) still differs in
-      // font rasterization; 0.05 covers that AA noise without hiding real UI drift.
-      maxDiffPixelRatio: 0.05,
+      maxDiffPixelRatio: 0.01,
     },
   },
   use: {
