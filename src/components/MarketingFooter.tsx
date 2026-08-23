@@ -15,6 +15,7 @@ export function MarketingFooter(): ReactElement {
           <Link href="/#how">How it works</Link>
           <Link href="/#why">Why</Link>
           <Link href="/#faq">FAQ</Link>
+          <Link href="/handbook">Handbook</Link>
           <Link href="/legal">Legal & Privacy</Link>
         </nav>
         <a href="https://github.com/21gifts" className="text-sm text-white/70" aria-label="GitHub">

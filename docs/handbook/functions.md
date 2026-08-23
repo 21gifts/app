@@ -21,6 +21,20 @@
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response.
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
+## Function: HandbookMarkdown
+
+- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images.
+- **Inputs:** `markdown` string and `idPrefix` for heading ids.
+- **Returns / side effects:** React fragment. No network.
+- **Used by:** `HandbookPage` for each handbook document.
+
+## Function: HandbookPage
+
+- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files and renders them with a link to the api handbook.
+- **Inputs:** None (reads `docs/handbook/` from disk at build time).
+- **Returns / side effects:** The handbook screen inside `MarketingLayout`.
+- **Used by:** Route `/handbook`.
+
 ## Function: Home
 
 - **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`.
@@ -30,8 +44,8 @@
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to claim, verify, or unlink a LUD-16 Lightning Address.
-- **Inputs:** Reads `useAuthStore`. User input: address string, verification confirm.
+- **Purpose:** Logged-in form to link, edit, or unlink a LUD-16 Lightning Address.
+- **Inputs:** Reads `useAuthStore`. User input: address string.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
@@ -70,13 +84,6 @@
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
 - **Used by:** `useAuthStore.clearAuth` and `LoginCard` when session hydration gets 401.
 
-## Function: confirmLightningAddressVerification
-
-- **Purpose:** POST `/me/lightning-address/verification/confirm` with the nonce after the 1-sat invoice is paid.
-- **Inputs:** `sessionToken`, `nonce`.
-- **Returns / side effects:** Updated `Account`, or throws on 4xx/5xx.
-- **Used by:** `LightningAddressForm`.
-
 ## Function: fetchMe
 
 - **Purpose:** GET `/me` with the bearer session.
@@ -105,12 +112,26 @@
 - **Returns / side effects:** `true` iff `/Android/i` matches.
 - **Used by:** `LoginCard` QrView.
 
+## Function: loadHandbookDocuments
+
+- **Purpose:** Read the four app handbook markdown files from disk (README, screens, functions, endpoints).
+- **Inputs:** Optional `rootDir`; defaults to `<cwd>/docs/handbook`.
+- **Returns / side effects:** `HandbookDocument[]` in that order. Throws when the directory or a required file is missing.
+- **Used by:** `HandbookPage`.
+
 ## Function: loadSession
 
 - **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
 - **Used by:** `LoginCard` on mount.
+
+## Function: parseHandbookMarkdown
+
+- **Purpose:** Parse handbook markdown into headings, paragraphs, and lists with inline code, strong, links, and images.
+- **Inputs:** `markdown` string and `idPrefix` for ids and in-page hashes.
+- **Returns / side effects:** `HandbookBlock[]`. Drops unsafe hrefs (`..`, unknown schemes).
+- **Used by:** `HandbookMarkdown`.
 
 ## Function: pollSession
 
@@ -152,13 +173,6 @@
 - **Purpose:** POST `/me/lightning-address`.
 - **Inputs:** `sessionToken`, `address`.
 - **Returns / side effects:** Updated `Account`.
-- **Used by:** `LightningAddressForm`.
-
-## Function: startLightningAddressVerification
-
-- **Purpose:** POST `/me/lightning-address/verification` — api pays ~1 sat to the linked address. The nonce is **not** in the JSON; the user reads it from the wallet payment comment.
-- **Inputs:** `sessionToken`.
-- **Returns / side effects:** `{ status: 'sent', expiresInSeconds, sats }`.
 - **Used by:** `LightningAddressForm`.
 
 ## Function: startLnurlAuth
@@ -240,7 +254,7 @@
 
 ## Function: MarketingLayout
 
-- **Purpose:** Dark full-page shell for `/` and `/legal`.
+- **Purpose:** Dark full-page shell for `/`, `/legal`, and `/handbook`.
 - **Inputs:** `children`.
 - **Returns / side effects:** Wrapper div with header, page, footer.
 - **Used by:** Marketing route group.
@@ -254,10 +268,10 @@
 
 ## Function: POST
 
-- **Purpose:** App Router POST export on lightning-address write/verify routes (re-exports of the proxy*Post functions).
+- **Purpose:** App Router POST export on the lightning-address write route (re-export of `proxyMeLightningAddressPost`).
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin address link and verification.
+- **Used by:** Same-origin address link.
 
 ## Function: proxyApiRequest
 
@@ -314,17 +328,3 @@
 - **Inputs:** `Request` with JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/lightning-address`.
-
-## Function: proxyMeLightningAddressVerificationConfirmPost
-
-- **Purpose:** Proxies POST `/me/lightning-address/verification/confirm`.
-- **Inputs:** `Request` with nonce JSON.
-- **Returns / side effects:** Upstream `Response`.
-- **Used by:** Route POST `/me/lightning-address/verification/confirm`.
-
-## Function: proxyMeLightningAddressVerificationPost
-
-- **Purpose:** Proxies POST `/me/lightning-address/verification`.
-- **Inputs:** `Request`.
-- **Returns / side effects:** Upstream `Response`.
-- **Used by:** Route POST `/me/lightning-address/verification`.

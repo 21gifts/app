@@ -25,6 +25,9 @@ describe('MarketingHeader', () => {
   it('links the wordmark home and Log in to /login', () => {
     render(<MarketingHeader />);
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: 'Handbook', hidden: true }).getAttribute('href')).toBe(
+      '/handbook',
+    );
     expect(screen.getByRole('link', { name: 'Log in', hidden: true }).getAttribute('href')).toBe(
       '/login',
     );

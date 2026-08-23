@@ -8,8 +8,6 @@ import {
   proxyMeGet,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
-  proxyMeLightningAddressVerificationConfirmPost,
-  proxyMeLightningAddressVerificationPost,
 } from '@/lib/api-proxies';
 
 afterEach(() => {
@@ -65,29 +63,6 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/me/lightning-address', { method: 'DELETE' }),
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
-  });
-
-  it('proxyMeLightningAddressVerificationPost hits verification', async () => {
-    const fetchMock = stubApi();
-    await proxyMeLightningAddressVerificationPost(
-      new Request('http://localhost/me/lightning-address/verification', { method: 'POST' }),
-    );
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
-      '/me/lightning-address/verification',
-    );
-  });
-
-  it('proxyMeLightningAddressVerificationConfirmPost hits confirm', async () => {
-    const fetchMock = stubApi();
-    await proxyMeLightningAddressVerificationConfirmPost(
-      new Request('http://localhost/me/lightning-address/verification/confirm', {
-        method: 'POST',
-        body: '{}',
-      }),
-    );
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
-      '/me/lightning-address/verification/confirm',
-    );
   });
 
   it('proxyLightningAddressGet hits /lightning-address', async () => {
