@@ -2,7 +2,7 @@
 
 ## Function: DonateForm
 
-- **Purpose:** Renders the guest donate form (Lightning Address and sat amount only; no comment) and, after success, the invoice QR.
+- **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR.
 - **Inputs:** Form state: address and whole-sat amount.
 - **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
 - **Used by:** Screen `/donate`.
@@ -51,14 +51,14 @@
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a LUD-16 Lightning Address.
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
 - **Inputs:** Reads `useAuthStore`. User input: address string.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
 
 ## Function: LoginCard
 
-- **Purpose:** LNURL-auth UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `LightningAddressForm`.
+- **Purpose:** Wallet of Satoshi login UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `LightningAddressForm`.
 - **Inputs:** Uses `useLnurlLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
 - **Returns / side effects:** React element covering idle/waiting/expired/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.

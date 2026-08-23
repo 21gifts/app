@@ -93,14 +93,14 @@ export function LightningAddressForm(): ReactElement | null {
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-neutral-200 pt-6">
       <p className="text-center text-xs uppercase tracking-widest text-neutral-400">
-        Lightning Address
+        Wallet of Satoshi address
       </p>
 
       {address === null || editing ? (
         <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
           {address === null ? (
             <p className="text-center text-sm text-neutral-500">
-              Link a Lightning Address so gifts can reach you.
+              Add your Wallet of Satoshi address so gifts can reach you.
             </p>
           ) : null}
           <input
@@ -109,7 +109,7 @@ export function LightningAddressForm(): ReactElement | null {
             autoComplete="off"
             spellCheck={false}
             placeholder="you@walletofsatoshi.com"
-            aria-label="Lightning Address"
+            aria-label="Wallet of Satoshi address"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             disabled={busy}

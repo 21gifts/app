@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 import './globals.css';
 
 const description =
-  'Direct human-to-human giving over Bitcoin Lightning. People helping people — no middleman, no cut.';
+  'Direct human-to-human giving over Bitcoin. People helping people — no middleman, no cut.';
 
 /**
  * Document-level metadata the App Router applies to every route's `<head>`,
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: '21.gifts — peer-to-peer Bitcoin Lightning gifts',
+        alt: '21.gifts — peer-to-peer Bitcoin gifts',
       },
     ],
   },
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     images: [
       {
         url: '/og.png',
-        alt: '21.gifts — peer-to-peer Bitcoin Lightning gifts',
+        alt: '21.gifts — peer-to-peer Bitcoin gifts',
       },
     ],
   },

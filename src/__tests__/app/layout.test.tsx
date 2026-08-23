@@ -10,7 +10,7 @@ describe('metadata', () => {
 
   it('describes the product without charity-speak', () => {
     expect(metadata.description).toBe(
-      'Direct human-to-human giving over Bitcoin Lightning. People helping people — no middleman, no cut.',
+      'Direct human-to-human giving over Bitcoin. People helping people — no middleman, no cut.',
     );
   });
 
@@ -43,7 +43,7 @@ describe('metadata', () => {
     expect(openGraph.images[0]?.url).toBe('/og.png');
     expect(openGraph.images[0]?.width).toBe(1200);
     expect(openGraph.images[0]?.height).toBe(630);
-    expect(openGraph.images[0]?.alt).toBe('21.gifts — peer-to-peer Bitcoin Lightning gifts');
+    expect(openGraph.images[0]?.alt).toBe('21.gifts — peer-to-peer Bitcoin gifts');
   });
 
   it('exposes Twitter summary_large_image preview metadata', () => {

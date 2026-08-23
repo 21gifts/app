@@ -18,7 +18,7 @@
 
 - **Purpose:** Same-origin proxy of the wallet-facing LUD-04 callback: forwards query string to the upstream api. The wallet `linkingKey` domain is whatever host the encoded callback uses (set on the api as `PUBLIC_BASE_URL`).
 - **Errors:** Upstream LUD-04 JSON, or 502 if the api is unreachable.
-- **Used by:** Lightning wallets after scanning the login QR.
+- **Used by:** Wallet of Satoshi after scanning the login QR.
 - **Auth:** Public (wallet signature in query).
 
 ## Endpoint: GET /auth/session
@@ -44,14 +44,14 @@
 
 ## Endpoint: POST /me/lightning-address
 
-- **Purpose:** Same-origin proxy to link or replace a Lightning Address.
+- **Purpose:** Same-origin proxy to link or replace a Wallet of Satoshi address.
 - **Errors:** Upstream 400, or 502 if the api is unreachable.
 - **Used by:** `setLightningAddress`.
 - **Auth:** Bearer.
 
 ## Endpoint: DELETE /me/lightning-address
 
-- **Purpose:** Same-origin proxy to unlink a Lightning Address.
+- **Purpose:** Same-origin proxy to unlink a Wallet of Satoshi address.
 - **Errors:** Upstream status, or 502 if the api is unreachable.
 - **Used by:** `unlinkLightningAddress`.
 - **Auth:** Bearer.

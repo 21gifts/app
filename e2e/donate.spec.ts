@@ -3,10 +3,10 @@ import { expect, test } from '@playwright/test';
 test('donate page renders the gift form', async ({ page }) => {
   await page.goto('/donate');
   await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
-test('donate shows Cancel while the invoice request hangs', async ({ page }) => {
+test('donate shows Cancel while the payment request hangs', async ({ page }) => {
   let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => {
     release = resolve;
@@ -16,21 +16,25 @@ test('donate shows Cancel while the invoice request hangs', async ({ page }) => 
     await route.abort();
   });
   await page.goto('/donate');
-  await page.getByLabel('Lightning Address').fill('alice@example.com');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
   await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Create invoice' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
   release();
 });
 
-test('donate form shows Enter a Lightning Address when the field is blank', async ({ page }) => {
+test('donate form shows Enter a Wallet of Satoshi address when the field is blank', async ({
+  page,
+}) => {
   await page.goto('/donate');
   await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Create invoice' }).click();
-  await expect(page.getByText('Enter a Lightning Address')).toBeVisible();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Enter a Wallet of Satoshi address')).toBeVisible();
 });
 
-test('donate form creates an invoice QR from a Lightning Address', async ({ page }) => {
+test('donate form creates a Bitcoin payment QR from a Wallet of Satoshi address', async ({
+  page,
+}) => {
   await page.route(/\/lightning-address\?/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -52,14 +56,14 @@ test('donate form creates an invoice QR from a Lightning Address', async ({ page
   });
 
   await page.goto('/donate');
-  await page.getByLabel('Lightning Address').fill('alice@example.com');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
   await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Create invoice' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page.getByText('Pay 21 sats to alice@example.com')).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Lightning invoice QR code' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Open in wallet' })).toHaveAttribute(
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
-    'lightning:lnbc21n1exampleinvoice',
+    'walletofsatoshi:lightning:LNBC21N1EXAMPLEINVOICE',
   );
 });

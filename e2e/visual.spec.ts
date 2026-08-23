@@ -72,9 +72,7 @@ test.describe('screen baselines', () => {
 
   test('screen /login', async ({ page }) => {
     await page.goto('/login');
-    await expect(
-      page.getByRole('button', { name: 'Log in with your Lightning wallet' }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'screen-login', 'login.png');
   });
 
@@ -140,8 +138,8 @@ test.describe('function baselines', () => {
       });
     });
     await page.goto('/login');
-    await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
-    await expect(page.getByRole('img', { name: 'Lightning login QR code' })).toBeVisible();
+    await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+    await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
     await expect(page).toHaveScreenshot('state-login-qr.png', { fullPage: true, ...SHOT });
   });
 
@@ -182,10 +180,10 @@ test.describe('function baselines', () => {
       });
     });
     await page.goto('/donate');
-    await page.getByLabel('Lightning Address').fill('alice@example.com');
+    await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
     await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Create invoice' }).click();
-    await expect(page.getByRole('img', { name: 'Lightning invoice QR code' })).toBeVisible();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
     await expect(page).toHaveScreenshot('state-donate-invoice.png', { fullPage: true, ...SHOT });
   });
 

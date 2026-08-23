@@ -29,7 +29,7 @@ export const SCREEN_VARIANTS = [
     route: '/login',
     id: 'idle',
     image: 'login.png',
-    needle: 'Log in with your Lightning wallet',
+    needle: 'Log in with Wallet of Satoshi',
   },
   {
     route: '/login',
@@ -41,7 +41,7 @@ export const SCREEN_VARIANTS = [
     route: '/login',
     id: 'qr',
     image: 'login-qr.png',
-    needle: 'Lightning login QR code',
+    needle: 'Login QR code',
   },
   {
     route: '/login',
@@ -89,7 +89,7 @@ export const SCREEN_VARIANTS = [
     route: '/donate',
     id: 'validation-error',
     image: 'donate-validation-error.png',
-    needle: 'Enter a Lightning Address',
+    needle: 'Enter a Wallet of Satoshi address',
   },
   {
     route: '/donate',
