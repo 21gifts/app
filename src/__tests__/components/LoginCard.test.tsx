@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginCard } from '@/components/LoginCard';
 import { useLnurlLogin, type LoginStatus } from '@/hooks/useLnurlLogin';
@@ -140,7 +140,7 @@ describe('LoginCard', () => {
     vi.mocked(loadSession).mockReturnValue('tok');
     vi.mocked(fetchMe).mockReturnValue(pending);
 
-    render(<LoginCard />);
+    renderWithLocale(<LoginCard />);
     act(() => {
       useAuthStore.getState().setAuth('tok', { ...account, name: 'Ada' });
     });

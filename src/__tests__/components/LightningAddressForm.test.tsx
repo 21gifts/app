@@ -188,7 +188,7 @@ describe('LightningAddressForm', () => {
       resolve = r;
     });
     vi.mocked(setLightningAddress).mockReturnValue(pending);
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
@@ -220,7 +220,7 @@ describe('LightningAddressForm', () => {
       resolve = r;
     });
     vi.mocked(setLightningAddress).mockReturnValue(pending);
-    render(<LightningAddressForm />);
+    renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
