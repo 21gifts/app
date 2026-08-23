@@ -3,7 +3,7 @@
 ## Function: DonateForm
 
 - **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR. All visitor-facing copy goes through `useTranslations`.
-- **Inputs:** Form state: address and whole-sat amount.
+- **Inputs:** Form state: address and whole-sat amount. Validation and request failures are typed keys (`address` / `amount` / `range` / `request`) so `useTranslations` re-renders them after a locale change.
 - **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
 - **Used by:** Screen `/donate`.
 
@@ -82,7 +82,7 @@
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate). Reads current locale via `useTranslations`.
-- **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` then `router.refresh()`. Never set on first visit.
+- **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
 - **Used by:** `MarketingHeader` (always visible), `/login`, and `/donate`.
 
 ## Function: NameForm

@@ -28,8 +28,9 @@ type Assignment = { q: number; index: number; star: boolean };
  * Negotiate a supported locale from an RFC 7231 Accept-Language header.
  *
  * Parses comma-separated language-ranges with optional `q=` (default 1). A
- * `q=` value must be an HTTP qvalue (`^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$`);
- * otherwise the entire language-range is discarded. Valid tags are either
+ * `q=` value must be a single HTTP qvalue
+ * (`^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$`); a bare `q`, an empty/invalid
+ * value, or a duplicate `q` discards the entire language-range. Valid tags are either
  * the wildcard `*` or an RFC 4647 Basic Language Range matching
  * `/^[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8})*$/`. Primary subtags are lowercased
  * and mapped: en→en, de→de, es→es, fil→fil, tl→fil.
@@ -74,16 +75,27 @@ export function parseAcceptLanguage(header: string): Locale {
     }
     let q = 1;
     let invalidQ = false;
+    let seenQ = false;
     for (const param of params) {
-      const match = /^\s*q\s*=(.*)$/i.exec(param);
-      if (match !== null && match[1] !== undefined) {
-        const token = match[1].trim();
-        if (!/^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(token)) {
-          invalidQ = true;
-          break;
-        }
-        q = Number(token);
+      const match = /^\s*q(?:\s*=(.*))?$/i.exec(param);
+      if (match === null) {
+        continue;
       }
+      if (seenQ) {
+        invalidQ = true;
+        break;
+      }
+      seenQ = true;
+      const token = match[1]?.trim();
+      if (
+        token === undefined ||
+        token === '' ||
+        !/^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(token)
+      ) {
+        invalidQ = true;
+        break;
+      }
+      q = Number(token);
     }
     if (invalidQ) {
       continue;

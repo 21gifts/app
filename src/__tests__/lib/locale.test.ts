@@ -60,6 +60,12 @@ describe('parseAcceptLanguage', () => {
     expect(parseAcceptLanguage('de;q=foo,en;q=0.5')).toBe('en');
     expect(parseAcceptLanguage('de;q=0.5oops,en;q=0.4')).toBe('en');
     expect(parseAcceptLanguage('de;q=,en;q=0.4')).toBe('en');
+    expect(parseAcceptLanguage('de;q,en;q=0.5')).toBe('en');
+    expect(parseAcceptLanguage('de;q=0.9;q=0.1,en;q=0.5')).toBe('en');
+  });
+
+  it('ignores unknown parameters and still honours q', () => {
+    expect(parseAcceptLanguage('de;foo=1,en;q=0.5')).toBe('de');
   });
 
   it('honours wildcard * with q=0 exclusion and LOCALES order', () => {

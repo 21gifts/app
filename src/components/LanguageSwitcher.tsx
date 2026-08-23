@@ -56,7 +56,8 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
     if (next === null) {
       return;
     }
-    document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
     router.refresh();
   };
 

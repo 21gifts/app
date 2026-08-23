@@ -1,9 +1,11 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DonateForm } from '@/components/DonateForm';
+import { LocaleProvider } from '@/components/LocaleProvider';
 import { resolveLightningAddress } from '@/lib/api';
-import { requestDonateInvoice } from '@/lib/lnurl-pay';
 import type { LnAddressResolved } from '@/lib/api-types';
+import { requestDonateInvoice } from '@/lib/lnurl-pay';
+import { getCatalog } from '@/lib/messages';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
@@ -197,16 +199,41 @@ describe('DonateForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
-      'Enter an address like you@walletofsatoshi.com',
+      'Could not start the Bitcoin payment',
     );
   });
 
-  it('surfaces a non-Error throw as a string', async () => {
+  it('surfaces a non-Error throw as the request error', async () => {
     vi.mocked(resolveLightningAddress).mockRejectedValue('boom');
     renderWithLocale(<DonateForm />);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'boom');
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('retranslates a request error after the locale catalog changes', async () => {
+    vi.mocked(resolveLightningAddress).mockRejectedValue(
+      new Error('Could not start the Bitcoin payment'),
+    );
+    const { rerender } = renderWithLocale(<DonateForm />);
+    fillForm();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Could not start the Bitcoin payment',
+    );
+    rerender(
+      <LocaleProvider locale="de" messages={getCatalog('de')}>
+        <DonateForm />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert')).toHaveProperty(
+      'textContent',
+      'Die Bitcoin-Zahlung konnte nicht gestartet werden',
+    );
   });
 
   it('returns to the form from the paying view', async () => {
