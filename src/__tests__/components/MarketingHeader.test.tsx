@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MarketingHeader } from '@/components/MarketingHeader';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -19,11 +20,15 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 afterEach(cleanup);
 
 describe('MarketingHeader', () => {
   it('links the wordmark home and Log in to /login', () => {
-    render(<MarketingHeader />);
+    renderWithLocale(<MarketingHeader />);
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
     expect(screen.getByRole('link', { name: 'Handbook', hidden: true }).getAttribute('href')).toBe(
       '/handbook',
@@ -33,8 +38,13 @@ describe('MarketingHeader', () => {
     );
   });
 
+  it('always shows the language switcher', () => {
+    renderWithLocale(<MarketingHeader />);
+    expect(screen.getByLabelText('Language')).toBeTruthy();
+  });
+
   it('toggles the mobile menu', () => {
-    render(<MarketingHeader />);
+    renderWithLocale(<MarketingHeader />);
     const toggle = screen.getByRole('button', { name: 'Menu' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
@@ -42,7 +52,7 @@ describe('MarketingHeader', () => {
   });
 
   it('closes the mobile menu when a nav link is used', () => {
-    render(<MarketingHeader />);
+    renderWithLocale(<MarketingHeader />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('link', { name: 'How it works' }));
     expect(screen.getByRole('button', { name: 'Menu' }).getAttribute('aria-expanded')).toBe(
