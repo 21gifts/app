@@ -38,15 +38,15 @@
 
 ## Function: HandbookIntro
 
-- **Purpose:** Client island for the `/handbook` title, intro sentence, and section-nav `aria-label` so the page can stay `force-static`.
+- **Purpose:** Client island for the `/handbook` title, intro sentence, and section-nav `aria-label`.
 - **Inputs:** Locale via `useTranslations`. `children` are the section links.
 - **Returns / side effects:** Heading, intro with the api-handbook GitHub link, and a nav whose accessible name follows the locale. No network.
 - **Used by:** `HandbookPage`.
 
 ## Function: HandbookPage
 
-- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files at build time (`force-static`) and renders them with a link to the api handbook. Title and intro chrome are localized via `HandbookIntro`; copy-link on the page title and each chapter nav item; markdown bodies stay English.
-- **Inputs:** None (reads `docs/handbook/` from disk at build).
+- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files from disk and renders them with a link to the api handbook. Title and intro chrome are localized via `HandbookIntro`; copy-link on the page title and each chapter nav item; markdown bodies stay English.
+- **Inputs:** None (reads `docs/handbook/` from disk at request time; the standalone image copies that tree).
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
