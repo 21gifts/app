@@ -100,7 +100,7 @@ export const SCREEN_VARIANTS = [
   {
     route: '/donate',
     id: 'invoice-android',
-    image: 'donate-invoice.png',
+    image: 'donate-invoice-android.png',
     needle: 'intent:lightning:LNBC21N1EXAMPLEINVOICE',
   },
   {
