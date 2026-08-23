@@ -208,7 +208,7 @@
 
 - **Purpose:** Negotiate a supported UI locale from an RFC 7231 `Accept-Language` header.
 - **Inputs:** Raw header string (may be empty). Splits on commas. A missing `q` defaults to 1. A bare `q`, empty/invalid qvalue, or duplicate `q` discards that language-range. Maps primary subtags (`en`/`de`/`es`/`fil`, and `tl`→`fil`).
-- **Returns / side effects:** First mapped locale, or `en` when empty/unmatched. Pure function — no I/O.
+- **Returns / side effects:** Among valid mapped ranges with `q > 0`, highest `q`, then earlier header position, then `LOCALES` order. No positive assignment → `en`. Pure function — no I/O.
 - **Used by:** `getRequestLocale` when no valid `locale` cookie is present.
 
 ## Function: parseHandbookMarkdown

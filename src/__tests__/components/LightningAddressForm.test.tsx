@@ -87,7 +87,7 @@ describe('LightningAddressForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /link address/i }));
 
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Could not save your Wallet of Satoshi address');
+    expect(alert.textContent).toBe('Could not update your Wallet of Satoshi address');
     // The form stays put so the visitor can correct the value.
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
   });
@@ -101,7 +101,7 @@ describe('LightningAddressForm', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /link address/i }));
 
-    expect(await screen.findByText('Could not save your Wallet of Satoshi address')).toBeTruthy();
+    expect(await screen.findByText('Could not update your Wallet of Satoshi address')).toBeTruthy();
   });
 
   it('shows the address and edit/unlink controls when set', () => {
@@ -156,6 +156,20 @@ describe('LightningAddressForm', () => {
     expect(await screen.findByRole('button', { name: /link address/i })).toBeTruthy();
     expect(unlinkLightningAddress).toHaveBeenCalledWith('sess');
     expect(useAuthStore.getState().account).toEqual(baseAccount);
+  });
+
+  it('shows the update error when unlink fails', async () => {
+    useAuthStore.setState({ session: 'sess', account: linkedAccount });
+    vi.mocked(unlinkLightningAddress).mockRejectedValue(
+      new Error('Could not remove your Wallet of Satoshi address'),
+    );
+    renderWithLocale(<LightningAddressForm />);
+    fireEvent.click(screen.getByRole('button', { name: /unlink/i }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Could not update your Wallet of Satoshi address',
+    );
+    expect(screen.getByText('me@walletofsatoshi.com')).toBeTruthy();
   });
 
   it('disables the control and shows a spinner while a request is in flight', async () => {
