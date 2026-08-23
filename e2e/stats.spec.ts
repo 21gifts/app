@@ -60,3 +60,17 @@ test('stats page empty copy', async ({ page }) => {
   await page.goto('/stats');
   await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
 });
+
+test('stats page loading copy', async ({ page }) => {
+  await page.route('**/gifts/stats', () => new Promise(() => undefined));
+  await page.goto('/stats');
+  await expect(page.getByText('Loading…')).toBeVisible();
+});
+
+test('stats page error retry', async ({ page }) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/stats');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});

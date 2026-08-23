@@ -51,6 +51,18 @@ Zero gifts. KPI zeros and **No gifts recorded yet.**
 
 ![21.gifts stats empty](images/stats-empty.png)
 
+### Variant: loading
+
+Waiting on `GET /gifts/stats`. Copy **Loading…**
+
+![21.gifts stats loading](images/stats-loading.png)
+
+### Variant: error
+
+Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try again**.
+
+![21.gifts stats error](images/stats-error.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — Wallet of Satoshi sign-in.

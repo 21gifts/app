@@ -353,6 +353,22 @@ test('stats empty', async ({ page }) => {
   await writePng(page, 'stats-empty.png');
 });
 
+test('stats loading', async ({ page }) => {
+  await page.route('**/gifts/stats', () => new Promise(() => undefined));
+  await page.goto('/stats');
+  await expect(page.getByText('Loading…')).toBeVisible();
+  await writePng(page, 'stats-loading.png');
+});
+
+test('stats error', async ({ page }) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/stats');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await writePng(page, 'stats-error.png');
+});
+
 test('handbook default', async ({ page }) => {
   await page.goto('/handbook');
   await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();

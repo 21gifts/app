@@ -122,6 +122,18 @@ export const SCREEN_VARIANTS = [
     needle: 'No gifts recorded yet.',
   },
   {
+    route: '/stats',
+    id: 'loading',
+    image: 'stats-loading.png',
+    needle: 'Loading…',
+  },
+  {
+    route: '/stats',
+    id: 'error',
+    image: 'stats-error.png',
+    needle: 'Try again',
+  },
+  {
     route: '/handbook',
     id: 'default',
     image: 'handbook.png',
