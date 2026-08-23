@@ -21,16 +21,23 @@
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response.
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
+## Function: HandbookCopyLink
+
+- **Purpose:** Client button beside a handbook heading or chapter. Copies `origin + pathname + #id` to the clipboard, sets `location.hash`, and flashes **Copied** for 1.2s (textarea `execCommand` fallback).
+- **Inputs:** `targetId` (DOM id without `#`) and `label` (aria-label `Copy link to ${label}`).
+- **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
+- **Used by:** `HandbookPage` (page title and chapter nav) and `HandbookMarkdown` (every heading).
+
 ## Function: HandbookMarkdown
 
-- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images.
+- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images. Every heading has a sibling `HandbookCopyLink`.
 - **Inputs:** `markdown` string and `idPrefix` for heading ids.
 - **Returns / side effects:** React fragment. No network.
 - **Used by:** `HandbookPage` for each handbook document.
 
 ## Function: HandbookPage
 
-- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files and renders them with a link to the api handbook.
+- **Purpose:** Next.js page for `/handbook`. Loads the four app handbook files and renders them with a link to the api handbook. Copy-link on the page title and each chapter nav item.
 - **Inputs:** None (reads `docs/handbook/` from disk at build time).
 - **Returns / side effects:** The handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.

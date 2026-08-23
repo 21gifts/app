@@ -253,6 +253,16 @@ test('handbook default', async ({ page }) => {
   await writePng(page, 'handbook.png', false);
 });
 
+test('handbook copied', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/handbook');
+  const button = page.getByRole('button', { name: 'Copy link to Handbook' });
+  await button.click();
+  await expect(button).toHaveText('Copied');
+  await button.scrollIntoViewIfNeeded();
+  await writePng(page, 'handbook-copied.png', false);
+});
+
 test('404 default', async ({ page }) => {
   await page.goto('/404');
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();

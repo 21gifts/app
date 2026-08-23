@@ -15,6 +15,11 @@ describe('HandbookPage', () => {
   it('renders the Handbook heading', () => {
     render(<HandbookPage />);
     expect(screen.getByRole('heading', { name: 'Handbook' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Handbook' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Overview chapter' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Screens chapter' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Functions chapter' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Endpoints chapter' })).toBeTruthy();
   });
 
   it('links to the api handbook on GitHub', () => {

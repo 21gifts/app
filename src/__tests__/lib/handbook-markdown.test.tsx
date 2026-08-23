@@ -16,6 +16,12 @@ describe('parseHandbookMarkdown', () => {
     expect(blocks[1]).toMatchObject({ type: 'heading', level: 2, id: 'screens-next' });
   });
 
+  it('disambiguates duplicate heading ids', () => {
+    const blocks = parseHandbookMarkdown('### Variant: default\n### Variant: default\n', 'screens');
+    expect(blocks[0]).toMatchObject({ type: 'heading', id: 'screens-variant-default' });
+    expect(blocks[1]).toMatchObject({ type: 'heading', id: 'screens-variant-default-2' });
+  });
+
   it('parses h3 and h4', () => {
     const blocks = parseHandbookMarkdown('### Three\n#### Four\n', 'x');
     expect(blocks[0]).toMatchObject({ type: 'heading', level: 3, id: 'x-three' });
@@ -128,10 +134,20 @@ describe('HandbookMarkdown', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Sub' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 3, name: 'H3' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 4, name: 'H4' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Title' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Sub' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to H3' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to H4' })).toBeTruthy();
     expect(screen.getByText('item')).toBeTruthy();
     expect(screen.getByText('x')).toBeTruthy();
     expect(screen.getByText('y')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'z' }).getAttribute('href')).toBe('/legal');
     expect(screen.getByAltText('login').getAttribute('src')).toBe('/handbook-images/login.png');
+  });
+
+  it('uses link text and image alt as the copy-link label', () => {
+    render(<HandbookMarkdown markdown={'# [Go](/legal) ![shot](images/x.png)\n'} idPrefix="x" />);
+    expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to Go shot' })).toBeTruthy();
   });
 });
