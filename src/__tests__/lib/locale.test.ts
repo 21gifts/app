@@ -40,6 +40,7 @@ describe('parseAcceptLanguage', () => {
     expect(parseAcceptLanguage(',de')).toBe('de');
     expect(parseAcceptLanguage(';q=1,de')).toBe('de');
     expect(parseAcceptLanguage('-,de')).toBe('de');
+    expect(parseAcceptLanguage('de--CH,en;q=0.5')).toBe('en');
   });
 
   it('keeps header order when q-values are equal', () => {
@@ -56,5 +57,7 @@ describe('parseAcceptLanguage', () => {
     expect(parseAcceptLanguage('de;q=-1,en;q=0.5')).toBe('en');
     expect(parseAcceptLanguage('de;q=2,en;q=0.5')).toBe('en');
     expect(parseAcceptLanguage('de;q=foo,en;q=0.5')).toBe('en');
+    expect(parseAcceptLanguage('de;q=0.5oops,en;q=0.4')).toBe('en');
+    expect(parseAcceptLanguage('de;q=,en;q=0.4')).toBe('en');
   });
 });
