@@ -9,9 +9,9 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/me/lightning-address')).status()).toBe(401);
   expect((await request.delete('/me/lightning-address')).status()).toBe(401);
   expect((await request.get('/lightning-address')).status()).toBe(400);
-  expect((await request.get('/gifts/stats')).status()).toBe(404);
-  expect((await request.post('/auth/passkey/register/begin')).status()).toBe(404);
-  expect((await request.post('/auth/passkey/register/finish')).status()).toBe(404);
-  expect((await request.post('/auth/passkey/authenticate/begin')).status()).toBe(404);
-  expect((await request.post('/auth/passkey/authenticate/finish')).status()).toBe(404);
+  expect((await request.get('/gifts/stats')).status()).toBe(200);
+  expect((await request.post('/auth/passkey/register/begin')).status()).toBe(200);
+  expect((await request.post('/auth/passkey/register/finish')).status()).toBe(400);
+  expect((await request.post('/auth/passkey/authenticate/begin')).status()).toBe(200);
+  expect((await request.post('/auth/passkey/authenticate/finish')).status()).toBe(400);
 });

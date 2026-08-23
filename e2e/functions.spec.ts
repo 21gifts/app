@@ -34,6 +34,38 @@ async function signInViaStub(page: Page, request: APIRequestContext): Promise<vo
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 }
 
+async function installFakeWebAuthn(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const rawId = new Uint8Array([1, 2, 3, 4]).buffer;
+    const attestation = {
+      id: 'cred-e2e',
+      rawId,
+      type: 'public-key',
+      getClientExtensionResults: () => ({}),
+      response: {
+        clientDataJSON: new Uint8Array([123]).buffer,
+        attestationObject: new Uint8Array([2]).buffer,
+      },
+    };
+    const assertion = {
+      ...attestation,
+      response: {
+        clientDataJSON: new Uint8Array([123]).buffer,
+        authenticatorData: new Uint8Array([3]).buffer,
+        signature: new Uint8Array([4]).buffer,
+        userHandle: null,
+      },
+    };
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => attestation,
+        get: async () => assertion,
+      },
+    });
+  });
+}
+
 async function loginHttp(request: APIRequestContext): Promise<string> {
   const startRes = await request.get('/auth/lnurl');
   expect(startRes.status()).toBe(200);
@@ -463,4 +495,137 @@ test('Function: formatMsatAsSats — amount outside the accepted range is explai
   await page.getByLabel('Amount (sats)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('This address accepts 100 sats – 1000000 sats.')).toBeVisible();
+});
+
+test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ request }) => {
+  const res = await request.get('/gifts/stats');
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { giftCount: number }).giftCount).toBe(0);
+});
+
+test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
+  await page.goto('/stats');
+  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+});
+
+test('Function: StatsPage — stats heading is visible', async ({ page }) => {
+  await page.goto('/stats');
+  await expect(page.getByRole('heading', { name: 'Gifts' })).toBeVisible();
+});
+
+test('Function: StatsLoader — stats page shows the empty copy', async ({ page }) => {
+  await page.goto('/stats');
+  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+});
+
+test('Function: StatsDashboard — empty stats hide the spend chart heading', async ({ page }) => {
+  await page.goto('/stats');
+  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Total spend over time' })).toHaveCount(0);
+});
+
+test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a challenge', async ({
+  request,
+}) => {
+  const res = await request.post('/auth/passkey/register/begin');
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { challengeId: string; options: { challenge: string } };
+  expect(body.challengeId.length).toBeGreaterThan(8);
+  expect(body.options.challenge.length).toBeGreaterThan(8);
+});
+
+test('Function: startPasskeyRegistration — POST begin returns a challenge', async ({ request }) => {
+  const res = await request.post('/auth/passkey/register/begin');
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { challengeId: string }).challengeId.length).toBeGreaterThan(8);
+});
+
+test('Function: proxyAuthPasskeyRegisterFinishPost — POST finish without body is 400', async ({
+  request,
+}) => {
+  const res = await request.post('/auth/passkey/register/finish');
+  expect(res.status()).toBe(400);
+});
+
+test('Function: finishPasskeyRegistration — POST finish without body is 400', async ({
+  request,
+}) => {
+  const res = await request.post('/auth/passkey/register/finish');
+  expect(res.status()).toBe(400);
+});
+
+test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a challenge', async ({
+  request,
+}) => {
+  const res = await request.post('/auth/passkey/authenticate/begin');
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { challengeId: string }).challengeId.length).toBeGreaterThan(8);
+});
+
+test('Function: startPasskeyAuthentication — POST begin returns a challenge', async ({
+  request,
+}) => {
+  const res = await request.post('/auth/passkey/authenticate/begin');
+  expect(res.status()).toBe(200);
+});
+
+test('Function: proxyAuthPasskeyAuthenticateFinishPost — POST finish without body is 400', async ({
+  request,
+}) => {
+  const res = await request.post('/auth/passkey/authenticate/finish');
+  expect(res.status()).toBe(400);
+});
+
+test('Function: finishPasskeyAuthentication — POST finish without body is 400', async ({
+  request,
+}) => {
+  const res = await request.post('/auth/passkey/authenticate/finish');
+  expect(res.status()).toBe(400);
+});
+
+test('Function: usePasskeyLogin — create passkey reaches the signed-in view', async ({ page }) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText('basis')).toBeVisible();
+});
+
+test('Function: creationOptionsFromJSON — create passkey reaches the signed-in view', async ({
+  page,
+}) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+});
+
+test('Function: credentialToJSON — create passkey reaches the signed-in view', async ({ page }) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+});
+
+test('Function: base64UrlToBytes — create passkey reaches the signed-in view', async ({ page }) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+});
+
+test('Function: bytesToBase64Url — create passkey reaches the signed-in view', async ({ page }) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+});
+
+test('Function: requestOptionsFromJSON — continue with passkey reaches the signed-in view', async ({
+  page,
+}) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Continue with passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 });

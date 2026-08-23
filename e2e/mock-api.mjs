@@ -19,9 +19,19 @@ const byK1 = new Map();
 const byPoll = new Map();
 /** @type {Map<string, object>} */
 const byToken = new Map();
+/** @type {Map<string, { type: 'register' | 'authenticate' }>} */
+const byPasskey = new Map();
 
 function hex(bytes) {
   return Buffer.from(bytes).toString('hex');
+}
+
+function b64url(bytes) {
+  return Buffer.from(bytes)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/u, '');
 }
 
 function json(res, status, body) {
@@ -231,6 +241,81 @@ const server = http.createServer(async (req, res) => {
     account.lightningAddress = null;
     account.lightningAddressVerified = false;
     json(res, 200, account);
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/gifts/stats') {
+    json(res, 200, {
+      totalSats: 0,
+      giftCount: 0,
+      recipientCount: 0,
+      firstPaidAt: null,
+      lastPaidAt: null,
+      spendOverTime: [],
+      byRecipient: [],
+      byMonth: [],
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/register/begin') {
+    const challengeId = hex(randomBytes(32));
+    const userId = hex(randomBytes(16));
+    byPasskey.set(challengeId, { type: 'register' });
+    json(res, 200, {
+      challengeId,
+      options: {
+        challenge: b64url(randomBytes(32)),
+        rp: { id: 'localhost', name: '21.gifts' },
+        user: { id: b64url(Buffer.from(userId, 'hex')), name: userId, displayName: '21.gifts' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+      },
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/authenticate/begin') {
+    const challengeId = hex(randomBytes(32));
+    byPasskey.set(challengeId, { type: 'authenticate' });
+    json(res, 200, {
+      challengeId,
+      options: {
+        challenge: b64url(randomBytes(32)),
+        rpId: 'localhost',
+        userVerification: 'required',
+      },
+    });
+    return;
+  }
+
+  if (
+    method === 'POST' &&
+    (pathName === '/auth/passkey/register/finish' ||
+      pathName === '/auth/passkey/authenticate/finish')
+  ) {
+    const expectedType = pathName.includes('/register/') ? 'register' : 'authenticate';
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with challengeId and credential' });
+      return;
+    }
+    if (typeof parsed?.challengeId !== 'string' || parsed.credential === undefined) {
+      json(res, 400, { error: 'Expected a JSON body with challengeId and credential' });
+      return;
+    }
+    const pending = byPasskey.get(parsed.challengeId);
+    if (!pending || pending.type !== expectedType) {
+      json(res, 400, { error: 'Unknown or expired challenge' });
+      return;
+    }
+    byPasskey.delete(parsed.challengeId);
+    const account = newAccount(null);
+    const token = hex(randomBytes(32));
+    byToken.set(token, account);
+    json(res, 200, { token, account });
     return;
   }
 
