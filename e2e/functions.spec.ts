@@ -162,10 +162,15 @@ test('Function: DELETE — DELETE /me/lightning-address clears the address', asy
 
 test('Function: proxyMeLightningAddressDelete — DELETE clears the address', async ({ request }) => {
   const token = await loginHttp(request);
+  await request.post('/me/lightning-address', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { address: 'alice@walletofsatoshi.com' },
+  });
   const res = await request.delete('/me/lightning-address', {
     headers: { authorization: `Bearer ${token}` },
   });
   expect(res.status()).toBe(200);
+  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
 });
 
 test('Function: unlinkLightningAddress — signed-in form unlinks the address', async ({
@@ -249,6 +254,7 @@ test('Function: parseHandbookMarkdown — functions chapter headings render', as
 test('Function: loadHandbookDocuments — handbook heading is visible', async ({ page }) => {
   await page.goto('/handbook');
   await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
+  await expect(page.locator('#functions h2[id^="functions-function-"]').first()).toBeVisible();
 });
 
 test('Function: HandbookCopyLink — copy link marks the button copied', async ({
@@ -350,8 +356,10 @@ test('Function: useAuthStore — live login reaches the signed-in view', async (
   await expect(page.getByText('basis')).toBeVisible();
 });
 
-test('Function: saveSession — live login reaches the signed-in view', async ({ page, request }) => {
+test('Function: saveSession — live login persists the session token', async ({ page, request }) => {
   await signInViaStub(page, request);
+  const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
+  expect(token).toBeTruthy();
 });
 
 test('Function: loadSession — reload keeps the signed-in view', async ({ page, request }) => {
