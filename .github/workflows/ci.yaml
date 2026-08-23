@@ -19,6 +19,7 @@ jobs:
     # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
     timeout-minutes: 20
     steps:
       - name: Checkout
