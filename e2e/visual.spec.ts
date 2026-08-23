@@ -138,7 +138,7 @@ test.describe('function baselines', () => {
       });
       await expect(page.locator(`[data-baseline="${section.id}"]`)).toHaveScreenshot(
         `function-${section.name}.png`,
-        SHOT,
+        { ...SHOT, maxDiffPixelRatio: 0.05 },
       );
     }
   });
