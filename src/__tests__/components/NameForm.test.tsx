@@ -1,9 +1,10 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NameForm } from '@/components/NameForm';
 import { setName } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
   setName: vi.fn(),
@@ -34,18 +35,18 @@ afterEach(cleanup);
 describe('NameForm', () => {
   it('renders nothing when there is no account', () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    const { container } = render(<NameForm />);
+    const { container } = renderWithLocale(<NameForm />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders nothing when the session token is absent', () => {
     useAuthStore.setState({ session: null, account: baseAccount });
-    const { container } = render(<NameForm />);
+    const { container } = renderWithLocale(<NameForm />);
     expect(container.firstChild).toBeNull();
   });
 
   it('shows the prompt and an empty input when no name is set', () => {
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     const input = screen.getByPlaceholderText('Your name') as HTMLInputElement;
     expect(input.value).toBe('');
@@ -54,7 +55,7 @@ describe('NameForm', () => {
   });
 
   it('does not call the api when the name is empty', () => {
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
 
@@ -63,7 +64,7 @@ describe('NameForm', () => {
   });
 
   it('does not call the api when the name is whitespace', () => {
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -74,7 +75,7 @@ describe('NameForm', () => {
 
   it('saves a name and updates the store', async () => {
     vi.mocked(setName).mockResolvedValue(namedAccount);
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -87,7 +88,7 @@ describe('NameForm', () => {
 
   it('trims the name before posting', async () => {
     vi.mocked(setName).mockResolvedValue(namedAccount);
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: '  Ada  ' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -98,7 +99,7 @@ describe('NameForm', () => {
 
   it('shows the api error message when saving fails', async () => {
     vi.mocked(setName).mockRejectedValue(new Error('Name must be 1–80 characters'));
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -110,7 +111,7 @@ describe('NameForm', () => {
 
   it('stringifies a non-Error rejection', async () => {
     vi.mocked(setName).mockRejectedValue('boom');
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -120,7 +121,7 @@ describe('NameForm', () => {
 
   it('shows the name and edit control when set', () => {
     useAuthStore.setState({ session: 'sess', account: namedAccount });
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByRole('button', { name: /edit/i })).toBeTruthy();
@@ -131,7 +132,7 @@ describe('NameForm', () => {
     useAuthStore.setState({ session: 'sess', account: namedAccount });
     const updated: Account = { ...namedAccount, name: 'Bob' };
     vi.mocked(setName).mockResolvedValue(updated);
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.click(screen.getByRole('button', { name: /edit/i }));
     const input = screen.getByPlaceholderText('Your name') as HTMLInputElement;
@@ -146,7 +147,7 @@ describe('NameForm', () => {
 
   it('cancels an edit and returns to the display view', () => {
     useAuthStore.setState({ session: 'sess', account: namedAccount });
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.click(screen.getByRole('button', { name: /edit/i }));
     expect(screen.getByPlaceholderText('Your name')).toBeTruthy();
@@ -163,7 +164,7 @@ describe('NameForm', () => {
       resolve = r;
     });
     vi.mocked(setName).mockReturnValue(pending);
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -185,7 +186,7 @@ describe('NameForm', () => {
       resolve = r;
     });
     vi.mocked(setName).mockReturnValue(pending);
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -214,7 +215,7 @@ describe('NameForm', () => {
       resolve = r;
     });
     vi.mocked(setName).mockReturnValue(pending);
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
@@ -237,7 +238,7 @@ describe('NameForm', () => {
       resolve = r;
     });
     vi.mocked(setName).mockReturnValue(pending);
-    render(<NameForm />);
+    renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: /save name/i }));
