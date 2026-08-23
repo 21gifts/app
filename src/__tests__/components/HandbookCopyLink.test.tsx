@@ -171,6 +171,7 @@ describe('HandbookCopyLink', () => {
         }),
     );
     Object.assign(navigator, { clipboard: { writeText } });
+    const exec = stubExecCommand(() => true);
     window.location.hash = '';
     const { unmount } = render(<HandbookCopyLink targetId="handbook" label="Handbook" />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to Handbook' }));
@@ -179,6 +180,7 @@ describe('HandbookCopyLink', () => {
       rejectWrite?.(new Error('denied'));
       await Promise.resolve();
     });
+    expect(exec).not.toHaveBeenCalled();
     expect(window.location.hash).toBe('');
   });
 
