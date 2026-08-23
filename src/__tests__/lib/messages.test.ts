@@ -19,9 +19,9 @@ describe('getCatalog', () => {
   it('keeps product tokens untranslated in every locale', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
-      expect(catalog['la.heading']).toBe('Lightning Address');
-      expect(catalog['donate.addressLabel']).toBe('Lightning Address');
-      expect(catalog['la.aria']).toBe('Lightning Address');
+      expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
+      expect(catalog['donate.addressLabel']).toBe('Wallet of Satoshi address');
+      expect(catalog['la.aria']).toBe('Wallet of Satoshi address');
       expect(catalog['aria.github']).toBe('GitHub');
     }
   });

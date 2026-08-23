@@ -79,7 +79,7 @@ describe('LoginCard', () => {
     expect(registerSpy).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: /continue with passkey/i }));
     expect(authenticateSpy).toHaveBeenCalledTimes(1);
-    const wallet = screen.getByRole('button', { name: /log in with your lightning wallet/i });
+    const wallet = screen.getByRole('button', { name: /log in with wallet of satoshi/i });
     fireEvent.click(wallet);
     expect(startSpy).toHaveBeenCalledTimes(1);
   });
@@ -142,7 +142,7 @@ describe('LoginCard', () => {
   it('falls back to the start view when waiting without an lnurl', () => {
     mockHook('waiting', null);
     renderWithLocale(<LoginCard />);
-    expect(screen.getByRole('button', { name: /log in with your lightning wallet/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /log in with wallet of satoshi/i })).toBeTruthy();
   });
 
   it('shows the expired state with a working retry', () => {
