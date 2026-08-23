@@ -47,7 +47,10 @@ export default async function HandbookPage(): Promise<ReactElement> {
             <a href={`#${doc.id}`} className="text-[#f7931a] underline underline-offset-2">
               {doc.title}
             </a>
-            <HandbookCopyLink targetId={doc.id} label={`${doc.title} chapter`} />
+            <HandbookCopyLink
+              targetId={doc.id}
+              label={translate(messages, 'handbook.chapterLabel', { title: doc.title })}
+            />
           </span>
         ))}
       </HandbookIntro>
