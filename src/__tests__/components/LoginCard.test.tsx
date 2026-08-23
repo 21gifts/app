@@ -36,6 +36,7 @@ const account = {
 const startSpy = vi.fn();
 const registerSpy = vi.fn();
 const authenticateSpy = vi.fn();
+const retrySpy = vi.fn();
 const ORIGINAL_UA = window.navigator.userAgent;
 
 /** Points the mocked LNURL hook at a fixed state for the next render. */
@@ -49,6 +50,7 @@ function mockPasskey(status: PasskeyStatus = 'idle'): void {
     status,
     register: registerSpy,
     authenticate: authenticateSpy,
+    retry: retrySpy,
   });
 }
 
@@ -102,7 +104,7 @@ describe('LoginCard', () => {
     mockPasskey('error');
     render(<LoginCard />);
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
-    expect(registerSpy).toHaveBeenCalledTimes(1);
+    expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('shows a loading state while starting', () => {

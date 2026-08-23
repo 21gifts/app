@@ -25,6 +25,8 @@ export interface UsePasskeyLogin {
   register: () => void;
   /** Sign in with an existing passkey. */
   authenticate: () => void;
+  /** Repeat the last register or authenticate attempt after an error. */
+  retry: () => void;
 }
 
 /**
@@ -34,7 +36,10 @@ export interface UsePasskeyLogin {
  * @returns True when the ceremony was dismissed.
  */
 function isUserCancel(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'NotAllowedError';
+  return (
+    error instanceof DOMException &&
+    (error.name === 'NotAllowedError' || error.name === 'AbortError')
+  );
 }
 
 /**
@@ -45,9 +50,11 @@ function isUserCancel(error: unknown): boolean {
 export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const runIdRef = useRef(0);
+  const lastKindRef = useRef<'register' | 'authenticate'>('register');
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const register = useCallback((): void => {
+    lastKindRef.current = 'register';
     const runId = ++runIdRef.current;
     setStatus('starting');
     void (async () => {
@@ -78,6 +85,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [setAuth]);
 
   const authenticate = useCallback((): void => {
+    lastKindRef.current = 'authenticate';
     const runId = ++runIdRef.current;
     setStatus('starting');
     void (async () => {
@@ -107,5 +115,13 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     })();
   }, [setAuth]);
 
-  return { status, register, authenticate };
+  const retry = useCallback((): void => {
+    if (lastKindRef.current === 'authenticate') {
+      authenticate();
+      return;
+    }
+    register();
+  }, [authenticate, register]);
+
+  return { status, register, authenticate, retry };
 }

@@ -488,5 +488,5 @@
 
 - **Purpose:** Client hook for passkey create and continue; stores the session on success.
 - **Inputs:** None (reads `useAuthStore`).
-- **Returns / side effects:** `{ status, register, authenticate }`. Calls WebAuthn and the api.
+- **Returns / side effects:** `{ status, register, authenticate, retry }`. Calls WebAuthn and the api.
 - **Used by:** `LoginCard`.

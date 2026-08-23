@@ -82,7 +82,7 @@ export function LoginCard(): ReactElement {
   } else if (status === 'starting' || passkey.status === 'starting') {
     body = <StartingView />;
   } else if (passkey.status === 'error') {
-    body = <ErrorView onRetry={passkey.register} />;
+    body = <ErrorView onRetry={passkey.retry} />;
   } else {
     body = (
       <StartView
