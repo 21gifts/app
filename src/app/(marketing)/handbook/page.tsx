@@ -5,9 +5,6 @@ import { HandbookIntro } from '@/components/HandbookIntro';
 import { loadHandbookDocuments } from '@/lib/handbook';
 import { HandbookMarkdown } from '@/lib/handbook-markdown';
 
-/** Pin `/handbook` to a build-time static page (markdown is read from disk at build). */
-export const dynamic = 'force-static';
-
 /**
  * Title and description for `/handbook` (overrides the root layout metadata).
  */
@@ -20,8 +17,9 @@ export const metadata: Metadata = {
  * App handbook at `/handbook`: screens, functions, and HTTP endpoints.
  * Every chapter and markdown heading has a copy-link button.
  *
- * Title/intro chrome is a client island so this page can stay `force-static`
- * (standalone has no `docs/` tree at runtime). Markdown bodies stay English.
+ * Not `force-static`: the root layout reads cookies/Accept-Language for
+ * `html lang` and the intro chrome. Markdown is loaded from `docs/handbook`
+ * at request time (copied into the standalone server).
  *
  * @returns The handbook screen.
  */
