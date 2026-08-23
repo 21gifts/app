@@ -34,6 +34,9 @@ export function MarketingHeader(): ReactElement {
         <Link href="/#faq" onClick={closeMenu}>
           FAQ
         </Link>
+        <Link href="/handbook" onClick={closeMenu}>
+          Handbook
+        </Link>
         <Link
           href="/login"
           className="rounded-full bg-[#f7931a] px-4 py-2 font-medium text-[#0a090c] no-underline"

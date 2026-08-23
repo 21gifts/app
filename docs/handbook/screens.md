@@ -4,7 +4,7 @@
 
 - **URL:** `/` — public marketing landing (no auth gate).
 - **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Lightning gifts, How it works (LNURL-auth + Lightning Address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
-- **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy.
+- **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
 
 ## Screen: /legal
@@ -31,3 +31,10 @@
 - **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `formatMsatAsSats`, `QrCode`.
 
 ![21.gifts donate](images/donate.png)
+
+## Screen: /handbook
+
+- **URL:** `/handbook` — public app handbook (no auth gate).
+- **What the user sees:** Heading **Handbook**, a short intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints), then the four `docs/handbook/` markdown files rendered as HTML. Login and donate screenshots appear where the markdown references `images/*.png`.
+- **Actions:** Read the docs, jump via the section nav, follow the api handbook link, follow in-page markdown links.
+- **Calls:** `HandbookPage`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
