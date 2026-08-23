@@ -58,8 +58,11 @@ app/
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
-│   │   ├── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
-│   │   └── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
+│   │   ├── DonateForm.tsx         # Guest donate form (QR + lightning: invoice)
+│   │   ├── HandbookCopyLink.tsx   # Copy absolute #id URL beside handbook headings
+│   │   ├── HandbookIntro.tsx      # Localized handbook title/intro/nav chrome
+│   │   ├── LanguageSwitcher.tsx   # Cookie locale override + refresh
+│   │   └── LocaleProvider.tsx     # Client catalog + useTranslations
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -90,6 +93,7 @@ app/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
 │   ├── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
+│   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines
 │   ├── handbook-capture.spec.ts # UPDATE_HANDBOOK_IMAGES=1 writes docs/handbook/images
 │   └── visual.spec.ts-snapshots/
