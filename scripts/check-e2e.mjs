@@ -20,10 +20,7 @@ function e2eText() {
   }
   const files = walk(
     E2E_DIR,
-    (p) =>
-      /\.(ts|js|mjs)$/.test(p) &&
-      !p.endsWith(`${path.sep}handbook-capture.spec.ts`) &&
-      !p.endsWith(`${path.sep}mock-api.mjs`),
+    (p) => p.endsWith('.spec.ts') && !p.endsWith(`${path.sep}handbook-capture.spec.ts`),
   );
   if (files.length === 0) {
     console.error('E2E MISSING: e2e/ has no spec files');

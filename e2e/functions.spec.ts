@@ -5,6 +5,11 @@ const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
 async function mockPayCallback(page: Page): Promise<void> {
   await page.route('https://ln.example.com/pay**', async (route) => {
+    const amount = new URL(route.request().url()).searchParams.get('amount');
+    if (amount !== '21000') {
+      await route.fulfill({ status: 400, contentType: 'application/json', body: '{}' });
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -71,11 +76,12 @@ test('Function: proxyAuthLnurlGet — GET /auth/lnurl returns a challenge', asyn
   expect(body.pollToken.length).toBeGreaterThan(8);
 });
 
-test('Function: startLnurlAuth — GET /auth/lnurl returns a challenge', async ({ request }) => {
-  const res = await request.get('/auth/lnurl');
-  expect(res.status()).toBe(200);
-  const body = (await res.json()) as { lnurl: string };
-  expect(body.lnurl.startsWith('lnurl1')).toBe(true);
+test('Function: startLnurlAuth — clicking login starts the challenge and shows the QR', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
 });
 
 test('Function: proxyAuthLnurlCallbackGet — callback without params is ERROR', async ({
@@ -93,8 +99,8 @@ test('Function: proxyAuthSessionGet — poll after callback is authenticated', a
   expect(token.length).toBeGreaterThan(8);
 });
 
-test('Function: pollSession — poll after callback is authenticated', async ({ request }) => {
-  await loginHttp(request);
+test('Function: pollSession — live login reaches the signed-in view', async ({ page, request }) => {
+  await signInViaStub(page, request);
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
@@ -104,10 +110,10 @@ test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) 
   expect(((await res.json()) as { role: string }).role).toBe('basis');
 });
 
-test('Function: fetchMe — GET /me with bearer is 200', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
-  expect(res.status()).toBe(200);
+test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await page.reload();
+  await expect(page.getByText('Signed in')).toBeVisible();
 });
 
 test('Function: POST — POST /me/lightning-address links an address', async ({ request }) => {
@@ -131,13 +137,14 @@ test('Function: proxyMeLightningAddressPost — POST links an address', async ({
   expect(res.status()).toBe(200);
 });
 
-test('Function: setLightningAddress — POST links an address', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  expect(res.status()).toBe(200);
+test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi address', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
 });
 
 test('Function: DELETE — DELETE /me/lightning-address clears the address', async ({ request }) => {
@@ -161,12 +168,16 @@ test('Function: proxyMeLightningAddressDelete — DELETE clears the address', as
   expect(res.status()).toBe(200);
 });
 
-test('Function: unlinkLightningAddress — DELETE clears the address', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.delete('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(res.status()).toBe(200);
+test('Function: unlinkLightningAddress — signed-in form unlinks the address', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
+  await page.getByRole('button', { name: 'Unlink' }).click();
+  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
 });
 
 test('Function: proxyLightningAddressGet — GET resolves a Wallet of Satoshi address', async ({
@@ -179,11 +190,15 @@ test('Function: proxyLightningAddressGet — GET resolves a Wallet of Satoshi ad
   expect(body.callback).toBe('https://ln.example.com/pay');
 });
 
-test('Function: resolveLightningAddress — GET resolves a Wallet of Satoshi address', async ({
-  request,
+test('Function: resolveLightningAddress — donate form resolves then shows a payment QR', async ({
+  page,
 }) => {
-  const res = await request.get('/lightning-address?address=alice@walletofsatoshi.com');
-  expect(res.status()).toBe(200);
+  await mockPayCallback(page);
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Pay 21 sats to alice@walletofsatoshi.com')).toBeVisible();
 });
 
 test('Function: RootLayout — landing renders', async ({ page }) => {
