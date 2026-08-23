@@ -58,7 +58,8 @@ app/
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
-│   │   └── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
+│   │   ├── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
+│   │   └── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   └── lnurl-pay.ts         # Browser LNURL-pay invoice fetch

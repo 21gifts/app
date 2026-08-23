@@ -66,22 +66,18 @@ describe('LoginCard', () => {
     expect(screen.getByText('Preparing your login…')).toBeTruthy();
   });
 
-  it('shows the QR and default lightning link while waiting on desktop', () => {
+  it('shows the QR and Wallet of Satoshi link while waiting on desktop', () => {
     mockHook('waiting', 'lnurl1abc');
     render(<LoginCard />);
 
     expect(screen.getByRole('img', { name: 'Lightning login QR code' })).toBeTruthy();
     const wos = screen.getByRole('link', { name: /open wallet of satoshi/i });
     expect(wos.getAttribute('href')).toBe('walletofsatoshi:lightning:LNURL1ABC');
-    const link = screen.getByRole('link', { name: /open default lightning wallet/i });
-    expect(link.getAttribute('href')).toBe('lightning:LNURL1ABC');
-    expect(screen.queryByRole('button', { name: /copy for wallet of satoshi/i })).toBeNull();
-    expect(screen.getByRole('button', { name: /copy login code/i })).toBeTruthy();
-    expect(screen.getByText(/Opens Wallet of Satoshi/i)).toBeTruthy();
-    expect(screen.getByText(/If nothing opens, install it first/i)).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /open default lightning wallet/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /copy login code/i })).toBeNull();
   });
 
-  it('pins Wallet of Satoshi via Android intent, not the default lightning handler', () => {
+  it('pins Wallet of Satoshi via Android intent', () => {
     Object.defineProperty(window.navigator, 'userAgent', {
       value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8)',
       configurable: true,
@@ -93,35 +89,7 @@ describe('LoginCard', () => {
     expect(wos.getAttribute('href')).toBe(
       'intent:lightning:LNURL1ABC#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.livingroomofsatoshi.wallet;end',
     );
-    expect(screen.getByRole('link', { name: /open default lightning wallet/i })).toBeTruthy();
-  });
-
-  it('copies the LNURL via the secondary Copy login code button', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
-    mockHook('waiting', 'lnurl1abc');
-    render(<LoginCard />);
-
-    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
-    await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith('lnurl1abc');
-    });
-    expect(screen.getByRole('button', { name: /^copied$/i })).toBeTruthy();
-  });
-
-  it('logs when copying the login code fails', async () => {
-    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
-    Object.assign(navigator, { clipboard: { writeText } });
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    mockHook('waiting', 'lnurl1abc');
-    render(<LoginCard />);
-
-    fireEvent.click(screen.getByRole('button', { name: /copy login code/i }));
-    await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalled();
-    });
-    expect(screen.getByRole('button', { name: /copy login code/i })).toBeTruthy();
-    errorSpy.mockRestore();
+    expect(screen.queryByRole('link', { name: /open default lightning wallet/i })).toBeNull();
   });
 
   it('falls back to the start view when waiting without an lnurl', () => {

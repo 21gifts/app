@@ -3,9 +3,8 @@
  *
  * Generic `lightning:` URIs go to whichever app owns that scheme (often Taro,
  * Phoenix, …). Wallet of Satoshi also registers the custom scheme
- * `walletofsatoshi:`; use that (or an Android Intent that pins both the
- * package and that scheme) as the primary open path. Copy stays a secondary
- * fallback only.
+ * `walletofsatoshi:`; login uses that (or an Android Intent that pins both the
+ * package and that scheme) as the only open path.
  */
 
 /** Play Store / Android application id for Wallet of Satoshi. */

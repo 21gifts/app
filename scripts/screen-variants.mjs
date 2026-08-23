@@ -45,12 +45,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
-    id: 'copied',
-    image: 'login-copied.png',
-    needle: "getByRole('button', { name: 'Copied' })",
-  },
-  {
-    route: '/login',
     id: 'qr-android',
     image: 'login-qr-android.png',
     needle: 'package=com.livingroomofsatoshi.wallet',
@@ -108,6 +102,12 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'handbook.png',
     needle: "getByRole('heading', { name: 'Handbook' })",
+  },
+  {
+    route: '/handbook',
+    id: 'copied',
+    image: 'handbook-copied.png',
+    needle: "toHaveText('Copied')",
   },
   {
     route: '/404',
