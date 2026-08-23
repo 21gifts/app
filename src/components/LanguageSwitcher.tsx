@@ -3,22 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent, ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { LOCALES, LOCALE_COOKIE, type Locale } from '@/lib/locale';
-
-/**
- * Returns `value` if it is exactly one of {@link LOCALES}; otherwise `null`.
- *
- * @param value - Raw `<select>` value.
- * @returns A supported locale, or null when invalid.
- */
-function parseLocaleOption(value: string): Locale | null {
-  for (const locale of LOCALES) {
-    if (locale === value) {
-      return locale;
-    }
-  }
-  return null;
-}
+import { LOCALES, LOCALE_COOKIE, parseSupportedLocale, type Locale } from '@/lib/locale';
 
 /**
  * Native-language label for a locale option (not routed through the catalog).
@@ -52,7 +37,7 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
   const router = useRouter();
 
   const onChange = (event: ChangeEvent<HTMLSelectElement>): void => {
-    const next = parseLocaleOption(event.target.value);
+    const next = parseSupportedLocale(event.target.value);
     if (next === null) {
       return;
     }

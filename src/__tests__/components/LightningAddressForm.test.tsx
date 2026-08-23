@@ -87,7 +87,7 @@ describe('LightningAddressForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /link address/i }));
 
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('That Wallet of Satoshi address is not valid');
+    expect(alert.textContent).toBe('Could not save your Wallet of Satoshi address');
     // The form stays put so the visitor can correct the value.
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
   });
@@ -101,7 +101,7 @@ describe('LightningAddressForm', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /link address/i }));
 
-    expect(await screen.findByText('boom')).toBeTruthy();
+    expect(await screen.findByText('Could not save your Wallet of Satoshi address')).toBeTruthy();
   });
 
   it('shows the address and edit/unlink controls when set', () => {

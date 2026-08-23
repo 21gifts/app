@@ -26,7 +26,7 @@ export function LightningAddressForm(): ReactElement | null {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<'request' | null>(null);
 
   if (account === null || session === null) {
     return null;
@@ -56,8 +56,8 @@ export function LightningAddressForm(): ReactElement | null {
         return;
       }
       onFresh(result);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+    } catch {
+      setError('request');
     } finally {
       setBusy(false);
     }
@@ -183,7 +183,7 @@ export function LightningAddressForm(): ReactElement | null {
 
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-red-600">
-          {error}
+          {t('la.errorRequest')}
         </p>
       ) : null}
     </div>

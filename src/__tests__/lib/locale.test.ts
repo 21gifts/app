@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { parseAcceptLanguage } from '@/lib/locale';
+import { parseAcceptLanguage, parseSupportedLocale } from '@/lib/locale';
+
+describe('parseSupportedLocale', () => {
+  it('accepts exact supported tags and rejects missing or unknown values', () => {
+    expect(parseSupportedLocale(undefined)).toBeNull();
+    expect(parseSupportedLocale('en')).toBe('en');
+    expect(parseSupportedLocale('fil')).toBe('fil');
+    expect(parseSupportedLocale('tl')).toBeNull();
+    expect(parseSupportedLocale('en-US')).toBeNull();
+  });
+});
 
 describe('parseAcceptLanguage', () => {
   it('defaults empty and garbage headers to en', () => {

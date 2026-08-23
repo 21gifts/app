@@ -8,7 +8,7 @@ import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the name form. */
-type NameError = { type: 'empty' } | { type: 'raw'; message: string };
+type NameError = { type: 'empty' } | { type: 'request' };
 
 /**
  * Lets a signed-in giver set or edit the display name shown on their account.
@@ -55,11 +55,8 @@ export function NameForm(): ReactElement | null {
         return;
       }
       onFresh(result);
-    } catch (caught) {
-      setError({
-        type: 'raw',
-        message: caught instanceof Error ? caught.message : String(caught),
-      });
+    } catch {
+      setError({ type: 'request' });
     } finally {
       setBusy(false);
     }
@@ -163,7 +160,7 @@ export function NameForm(): ReactElement | null {
 
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-red-600">
-          {error.type === 'empty' ? t('name.errorEmpty') : error.message}
+          {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
         </p>
       ) : null}
     </div>

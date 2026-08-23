@@ -10,6 +10,24 @@ export const DEFAULT_LOCALE: Locale = 'en';
 /** Cookie name written only when the visitor picks a language in the switcher. */
 export const LOCALE_COOKIE = 'locale';
 
+/**
+ * Returns `value` if it is exactly one of {@link LOCALES}; otherwise `null`.
+ *
+ * @param value - Raw cookie or `<select>` value, or undefined when absent.
+ * @returns A supported locale, or null when invalid/missing.
+ */
+export function parseSupportedLocale(value: string | undefined): Locale | null {
+  if (value === undefined) {
+    return null;
+  }
+  for (const locale of LOCALES) {
+    if (locale === value) {
+      return locale;
+    }
+  }
+  return null;
+}
+
 /** Primary-language subtag → supported locale (`tl` maps to Filipino). */
 const PRIMARY_TO_LOCALE: Record<string, Locale> = {
   en: 'en',
