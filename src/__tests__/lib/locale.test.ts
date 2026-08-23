@@ -51,4 +51,10 @@ describe('parseAcceptLanguage', () => {
     expect(parseAcceptLanguage('en;q=0')).toBe('en');
     expect(parseAcceptLanguage('de;q=0,fr;q=0')).toBe('en');
   });
+
+  it('discards language-ranges with invalid q values', () => {
+    expect(parseAcceptLanguage('de;q=-1,en;q=0.5')).toBe('en');
+    expect(parseAcceptLanguage('de;q=2,en;q=0.5')).toBe('en');
+    expect(parseAcceptLanguage('de;q=foo,en;q=0.5')).toBe('en');
+  });
 });
