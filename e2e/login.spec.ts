@@ -32,11 +32,7 @@ test('login page renders the wallet sign-in action', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('Wallet of Satoshi login opens via custom scheme; copy is secondary', async ({
-  page,
-  context,
-}) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+test('Wallet of Satoshi login opens via custom scheme', async ({ page }) => {
   await mockPendingAuth(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in with your Lightning wallet' }).click();
@@ -46,15 +42,8 @@ test('Wallet of Satoshi login opens via custom scheme; copy is secondary', async
     'href',
     `walletofsatoshi:lightning:${LNURL.toUpperCase()}`,
   );
-  await expect(page.getByRole('link', { name: 'Open default Lightning wallet' })).toHaveAttribute(
-    'href',
-    `lightning:${LNURL.toUpperCase()}`,
-  );
-  await expect(page.getByRole('button', { name: /copy for wallet of satoshi/i })).toHaveCount(0);
-
-  await page.getByRole('button', { name: 'Copy login code' }).click();
-  await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
-  await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe(LNURL);
+  await expect(page.getByRole('link', { name: 'Open default Lightning wallet' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /copy login code/i })).toHaveCount(0);
 });
 
 test('Android login pins Wallet of Satoshi via intent package', async ({ page }) => {

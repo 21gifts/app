@@ -51,7 +51,7 @@
 
 ## Function: LoginCard
 
-- **Purpose:** LNURL-auth UI: hydrate session, start challenge, QR, WoS deep link, copy, poll, expiry, then signed-in view with `LightningAddressForm`.
+- **Purpose:** LNURL-auth UI: hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `LightningAddressForm`.
 - **Inputs:** Uses `useLnurlLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
 - **Returns / side effects:** React element covering idle/waiting/expired/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
@@ -194,7 +194,7 @@
 - **Purpose:** Uppercases a bech32 LNURL (LUD-01).
 - **Inputs:** `lnurl` string.
 - **Returns / side effects:** Uppercase string.
-- **Used by:** QR value, `lightning:` href, WoS hrefs.
+- **Used by:** QR value and Wallet of Satoshi hrefs.
 
 ## Function: useAuthStore
 
