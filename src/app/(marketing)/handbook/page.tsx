@@ -27,8 +27,7 @@ export default function HandbookPage(): ReactElement {
   const documents = loadHandbookDocuments();
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
-      <HandbookIntro />
-      <nav aria-label="Handbook sections" className="mt-8 flex flex-wrap gap-4 text-sm">
+      <HandbookIntro>
         {documents.map((doc) => (
           <a
             key={doc.id}
@@ -38,7 +37,7 @@ export default function HandbookPage(): ReactElement {
             {doc.title}
           </a>
         ))}
-      </nav>
+      </HandbookIntro>
       {documents.map((doc) => (
         <section key={doc.id} id={doc.id} className="mt-12">
           <HandbookMarkdown markdown={doc.markdown} idPrefix={doc.id} />

@@ -7,6 +7,13 @@ import { QrCode } from '@/components/QrCode';
 import { resolveLightningAddress } from '@/lib/api';
 import { requestDonateInvoice, satsToMsat } from '@/lib/lnurl-pay';
 
+/** Validation or request failure shown on the donate form. */
+type DonateError =
+  | { type: 'address' }
+  | { type: 'amount' }
+  | { type: 'range'; minMsat: number; maxMsat: number }
+  | { type: 'raw'; message: string };
+
 /**
  * Guest donate surface: resolve a Lightning Address, fetch a LNURL-pay
  * invoice in the browser, and show a QR plus a wallet deep-link.
@@ -21,7 +28,7 @@ export function DonateForm(): ReactElement {
     null,
   );
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<DonateError | null>(null);
   const generationRef = useRef(0);
   const busyRef = useRef(false);
 
@@ -59,17 +66,17 @@ export function DonateForm(): ReactElement {
     }
     const address = addressDraft.trim();
     if (address === '') {
-      setError(t('donate.errorAddress'));
+      setError({ type: 'address' });
       return;
     }
     const rawAmount = amountDraft.trim();
     if (rawAmount === '' || !/^\d+$/.test(rawAmount)) {
-      setError(t('donate.errorAmount'));
+      setError({ type: 'amount' });
       return;
     }
     const sats = Number.parseInt(rawAmount, 10);
     if (sats <= 0 || !Number.isSafeInteger(sats)) {
-      setError(t('donate.errorAmount'));
+      setError({ type: 'amount' });
       return;
     }
     const amountMsat = satsToMsat(sats);
@@ -84,12 +91,11 @@ export function DonateForm(): ReactElement {
         return;
       }
       if (amountMsat < resolved.minSendable || amountMsat > resolved.maxSendable) {
-        setError(
-          t('donate.range', {
-            min: formatSatsFromMsat(resolved.minSendable),
-            max: formatSatsFromMsat(resolved.maxSendable),
-          }),
-        );
+        setError({
+          type: 'range',
+          minMsat: resolved.minSendable,
+          maxMsat: resolved.maxSendable,
+        });
         return;
       }
       const pr = await requestDonateInvoice({
@@ -104,7 +110,10 @@ export function DonateForm(): ReactElement {
       if (started !== generationRef.current) {
         return;
       }
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError({
+        type: 'raw',
+        message: caught instanceof Error ? caught.message : String(caught),
+      });
     } finally {
       if (started === generationRef.current) {
         busyRef.current = false;
@@ -187,7 +196,16 @@ export function DonateForm(): ReactElement {
         </label>
         {error !== null ? (
           <p role="alert" className="text-sm text-red-600">
-            {error}
+            {error.type === 'address'
+              ? t('donate.errorAddress')
+              : error.type === 'amount'
+                ? t('donate.errorAmount')
+                : error.type === 'range'
+                  ? t('donate.range', {
+                      min: formatSatsFromMsat(error.minMsat),
+                      max: formatSatsFromMsat(error.maxMsat),
+                    })
+                  : error.message}
           </p>
         ) : null}
         <button

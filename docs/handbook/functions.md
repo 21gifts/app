@@ -30,9 +30,9 @@
 
 ## Function: HandbookIntro
 
-- **Purpose:** Client island for the `/handbook` title and intro sentence so the page can stay `force-static`.
-- **Inputs:** Locale via `useTranslations`.
-- **Returns / side effects:** Heading, intro with the api-handbook GitHub link. No network.
+- **Purpose:** Client island for the `/handbook` title, intro sentence, and section-nav `aria-label` so the page can stay `force-static`.
+- **Inputs:** Locale via `useTranslations`. `children` are the section links.
+- **Returns / side effects:** Heading, intro with the api-handbook GitHub link, and a nav whose accessible name follows the locale. No network.
 - **Used by:** `HandbookPage`.
 
 ## Function: HandbookPage
