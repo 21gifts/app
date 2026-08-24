@@ -109,7 +109,7 @@ app/
 ├── entrypoint.sh
 ├── README.md
 ├── CONTRIBUTING.md
-├── Review.md                 # PR review checklist (i18n catalog completeness)
+├── Review.md                 # PR review checklist
 ├── SECURITY.md
 └── LICENSE
 ```

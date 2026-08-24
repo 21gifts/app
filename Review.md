@@ -20,7 +20,7 @@ Every visitor-facing UI string must be present in **all** locale catalogs
 
 ## Completeness gates
 
-These must be green on the PR, or the gap named as a granted deviation:
+These must be green on the PR. An undeclared missing gate is rejected:
 
 - `npm run typecheck`
 - `npm run lint`
