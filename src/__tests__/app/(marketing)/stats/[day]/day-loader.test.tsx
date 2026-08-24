@@ -67,6 +67,35 @@ describe('DayLoader', () => {
     });
   });
 
+  it('hides the previous day payload as soon as the day prop changes', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ...EMPTY,
+      giftCount: 1,
+      totalSats: 500,
+      totalBtc: '0.00000500',
+      totalUsd: '0.48',
+      gifts: [
+        {
+          paidAt: '2026-06-01T12:00:00.000Z',
+          amountSats: 500,
+          amountBtc: '0.00000500',
+          amountUsd: '0.48',
+          recipient: 'alice',
+        },
+      ],
+    });
+    fetchMock.mockResolvedValueOnce({ ...EMPTY, day: '2026-06-02' });
+    const view = render(<DayLoader day="2026-06-01" />);
+    await waitFor(() => {
+      expect(screen.getByText('alice')).toBeTruthy();
+    });
+    view.rerender(<DayLoader day="2026-06-02" />);
+    expect(screen.queryByText('alice')).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
+    });
+  });
+
   it('uses singular gift copy for one gift', async () => {
     fetchMock.mockResolvedValue({
       ...EMPTY,

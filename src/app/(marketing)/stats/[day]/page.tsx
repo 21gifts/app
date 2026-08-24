@@ -30,7 +30,7 @@ export default async function GiftDayPage({
       </p>
       <h1 className="mt-4 text-4xl font-semibold tracking-tight">{`Gifts on ${day}`}</h1>
       <p className="mt-3 max-w-2xl text-lg text-white/60">Each outbound gift that UTC day.</p>
-      <DayLoader day={day} />
+      <DayLoader key={day} day={day} />
     </main>
   );
 }

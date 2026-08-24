@@ -86,7 +86,7 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
           </button>
         </div>
       ) : null}
-      {!loading && error === null && payload !== null ? (
+      {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8">
           <p className="mb-4 text-white/60">
             {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} · {payload.totalSats} sats
