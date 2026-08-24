@@ -1,40 +1,22 @@
 'use client';
 
-import { AlertTriangle, Clock, Fingerprint, Loader2, LogOut, Zap } from 'lucide-react';
+import { AlertTriangle, Fingerprint, Loader2, LogOut } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { NameForm } from '@/components/NameForm';
-import { QrCode } from '@/components/QrCode';
-import { useLnurlLogin } from '@/hooks/useLnurlLogin';
+import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { clearSession, loadSession } from '@/lib/session-storage';
-import {
-  isAndroidUserAgent,
-  uppercaseLnurl,
-  walletOfSatoshiHref,
-  walletOfSatoshiIntentHref,
-} from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Abbreviates a long hex key to `head…tail` for compact display.
+ * The login surface: passkey create or continue.
  *
- * @param key - The full key.
- * @returns The shortened form.
- */
-function shortenKey(key: string): string {
-  return `${key.slice(0, 12)}…${key.slice(-8)}`;
-}
-
-/**
- * The login surface: passkey first, LNURL-auth (Wallet of Satoshi) second.
- *
- * Shows the signed-in account when one is present, otherwise walks the visitor
- * through passkey create/continue or the wallet QR flow. On
- * mount it rehydrates from a persisted token: a valid token logs the visitor
- * straight in, a rejected (401) token is cleared.
+ * Shows the signed-in account when one is present. On mount it rehydrates
+ * from a persisted token: a valid token logs the visitor straight in, a
+ * rejected (401) token is cleared.
  *
  * @returns The card element.
  */
@@ -42,7 +24,6 @@ export function LoginCard(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const { status, lnurl, start } = useLnurlLogin();
   const passkey = usePasskeyLogin();
 
   useEffect(() => {
@@ -52,44 +33,41 @@ export function LoginCard(): ReactElement {
     }
     fetchMe(token)
       .then((maybeAccount) => {
-        if (maybeAccount === null) {
-          clearSession();
-        } else {
-          const current = useAuthStore.getState();
-          // A poll or an in-page save may already have this token; do not
-          // overwrite a newer profile with a stale GET /me.
-          if (current.session === token && current.account !== null) {
-            return;
-          }
-          setAuth(token, maybeAccount);
+        if (loadSession() !== token) {
+          return;
         }
+        const current = useAuthStore.getState();
+        if (current.session !== null && current.session !== token) {
+          return;
+        }
+        if (maybeAccount === null) {
+          if (current.session === token) {
+            clearAuth();
+          } else {
+            clearSession();
+          }
+          return;
+        }
+        if (current.session === token && current.account !== null) {
+          return;
+        }
+        setAuth(token, maybeAccount);
       })
       .catch((error: unknown) => {
-        // Fail loud, but never nuke a possibly-valid token on a transient error.
         console.error('Session hydration failed', error);
       });
-  }, [setAuth]);
+  }, [setAuth, clearAuth]);
 
   let body: ReactElement;
   if (account !== null) {
     body = <LoggedInView account={account} onLogout={clearAuth} />;
-  } else if (status === 'waiting' && lnurl !== null) {
-    body = <QrView lnurl={lnurl} />;
-  } else if (status === 'expired') {
-    body = <ExpiredView onRetry={start} />;
-  } else if (status === 'error') {
-    body = <ErrorView onRetry={start} />;
-  } else if (status === 'starting' || passkey.status === 'starting') {
+  } else if (passkey.status === 'starting') {
     body = <StartingView />;
   } else if (passkey.status === 'error') {
     body = <ErrorView onRetry={passkey.retry} />;
   } else {
     body = (
-      <StartView
-        onCreatePasskey={passkey.register}
-        onContinuePasskey={passkey.authenticate}
-        onWalletStart={start}
-      />
+      <StartView onCreatePasskey={passkey.register} onContinuePasskey={passkey.authenticate} />
     );
   }
 
@@ -109,22 +87,17 @@ interface LoggedInViewProps {
 }
 
 /**
- * The signed-in state: role, a shortened linking key, name form, address form,
- * and a log-out button.
+ * The signed-in state: role, name form, address form, and a log-out button.
  *
  * @param props - See {@link LoggedInViewProps}.
  * @returns The signed-in view.
  */
 function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
-      <p className="text-xs uppercase tracking-widest text-neutral-400">Signed in</p>
-      <p className="text-lg font-medium capitalize text-neutral-900">{account.role}</p>
-      {account.linkingKey !== null ? (
-        <p className="font-mono text-sm text-neutral-500" title={account.linkingKey}>
-          {shortenKey(account.linkingKey)}
-        </p>
-      ) : null}
+      <p className="text-xs tracking-widest text-neutral-400 uppercase">{t('login.signedIn')}</p>
+      <p className="text-lg font-medium text-neutral-900 capitalize">{account.role}</p>
       <NameForm />
       <LightningAddressForm />
       <button
@@ -133,7 +106,7 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
         className="mt-2 inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
       >
         <LogOut aria-hidden="true" className="h-4 w-4" />
-        Log out
+        {t('login.logOut')}
       </button>
     </>
   );
@@ -145,120 +118,50 @@ interface StartViewProps {
   onCreatePasskey: () => void;
   /** Called to sign in with an existing passkey. */
   onContinuePasskey: () => void;
-  /** Called to begin the Wallet of Satoshi LNURL-auth flow. */
-  onWalletStart: () => void;
 }
 
 /**
- * The initial logged-out state: passkey first, wallet as a second method.
+ * The initial logged-out state: create a passkey or continue with one.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({
-  onCreatePasskey,
-  onContinuePasskey,
-  onWalletStart,
-}: StartViewProps): ReactElement {
+function StartView({ onCreatePasskey, onContinuePasskey }: StartViewProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <h2 className="text-center text-lg font-medium text-neutral-900">Sign in to 21.gifts</h2>
+      <h2 className="text-center text-lg font-medium text-neutral-900">{t('login.heading')}</h2>
       <button
         type="button"
         onClick={onCreatePasskey}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Fingerprint aria-hidden="true" className="h-4 w-4" />
-        Create a passkey
+        {t('login.createPasskey')}
       </button>
       <button
         type="button"
         onClick={onContinuePasskey}
         className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
       >
-        Continue with passkey
-      </button>
-      <button
-        type="button"
-        onClick={onWalletStart}
-        className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-neutral-500 transition hover:text-neutral-800"
-      >
-        <Zap aria-hidden="true" className="h-4 w-4" />
-        Log in with Wallet of Satoshi
+        {t('login.continuePasskey')}
       </button>
     </>
   );
 }
 
 /**
- * The transient state between requesting and receiving a challenge.
+ * The transient state while a passkey ceremony is in flight.
  *
  * @returns The loading view.
  */
 function StartingView(): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
       <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
-      <p className="text-sm text-neutral-500">Preparing your login…</p>
-    </>
-  );
-}
-
-/** Props for {@link QrView}. */
-interface QrViewProps {
-  /** The LNURL to render and deep-link to. */
-  lnurl: string;
-}
-
-/**
- * The waiting state: a scannable QR and a Wallet of Satoshi deep-link.
- *
- * The QR encodes the uppercased LNURL (LUD-01, denser). The only CTA is Open
- * Wallet of Satoshi: custom-scheme `walletofsatoshi:` on iOS/desktop, or an
- * Android Intent that pins both that scheme and the WoS package.
- *
- * @param props - See {@link QrViewProps}.
- * @returns The QR view.
- */
-function QrView({ lnurl }: QrViewProps): ReactElement {
-  const android = isAndroidUserAgent(navigator.userAgent);
-  const upper = uppercaseLnurl(lnurl);
-  const wosHref = android ? walletOfSatoshiIntentHref(lnurl) : walletOfSatoshiHref(lnurl);
-
-  return (
-    <>
-      <h2 className="text-center text-lg font-medium text-neutral-900">Scan to log in</h2>
-      <QrCode value={upper} />
-      <a
-        href={wosHref}
-        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
-      >
-        <Zap aria-hidden="true" className="h-4 w-4" />
-        Open Wallet of Satoshi
-      </a>
-    </>
-  );
-}
-
-/** Props for {@link ExpiredView}. */
-interface ExpiredViewProps {
-  /** Called to restart the login flow. */
-  onRetry: () => void;
-}
-
-/**
- * The expired state: the challenge lapsed (or was already used).
- *
- * @param props - See {@link ExpiredViewProps}.
- * @returns The expired view.
- */
-function ExpiredView({ onRetry }: ExpiredViewProps): ReactElement {
-  return (
-    <>
-      <Clock aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <p className="text-center text-sm text-neutral-500">Login expired</p>
-      <RetryButton onRetry={onRetry} />
+      <p className="text-sm text-neutral-500">{t('login.preparing')}</p>
     </>
   );
 }
@@ -276,37 +179,18 @@ interface ErrorViewProps {
  * @returns The error view.
  */
 function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
+  const { t } = useTranslations();
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <p className="text-center text-sm text-neutral-500">
-        Something went wrong. Please try again.
-      </p>
-      <RetryButton onRetry={onRetry} />
+      <p className="text-center text-sm text-neutral-500">{t('login.error')}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+      >
+        {t('login.retry')}
+      </button>
     </>
-  );
-}
-
-/** Props for {@link RetryButton}. */
-interface RetryButtonProps {
-  /** Called on click. */
-  onRetry: () => void;
-}
-
-/**
- * A shared "Try again" button used by the expired and error states.
- *
- * @param props - See {@link RetryButtonProps}.
- * @returns The retry button.
- */
-function RetryButton({ onRetry }: RetryButtonProps): ReactElement {
-  return (
-    <button
-      type="button"
-      onClick={onRetry}
-      className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
-    >
-      Try again
-    </button>
   );
 }

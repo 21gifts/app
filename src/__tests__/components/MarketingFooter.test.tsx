@@ -9,23 +9,27 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('@/lib/request-locale', () => ({
+  getRequestLocale: vi.fn(async () => 'en' as const),
+}));
+
 afterEach(cleanup);
 
 describe('MarketingFooter', () => {
-  it('links Handbook to /handbook', () => {
-    render(<MarketingFooter />);
+  it('links Handbook to /handbook', async () => {
+    render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe('/handbook');
   });
 
-  it('links Legal & Privacy to /legal', () => {
-    render(<MarketingFooter />);
+  it('links Legal & Privacy to /legal', async () => {
+    render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'Legal & Privacy' }).getAttribute('href')).toBe(
       '/legal',
     );
   });
 
-  it('links GitHub to the org', () => {
-    render(<MarketingFooter />);
+  it('links GitHub to the org', async () => {
+    render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'GitHub' }).getAttribute('href')).toBe(
       'https://github.com/21gifts',
     );

@@ -1,13 +1,7 @@
 import { getApiUrl } from '@/lib/config';
 
-/** Incoming headers that the api accepts and that the browser/wallet send. */
-const FORWARDED_HEADERS = [
-  'authorization',
-  'content-type',
-  'origin',
-  'x-poll-token',
-  'user-agent',
-] as const;
+/** Incoming headers that the api accepts and that the browser sends. */
+const FORWARDED_HEADERS = ['authorization', 'content-type', 'origin', 'user-agent'] as const;
 
 /** HTTP methods that carry a body to the api. */
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -15,11 +9,11 @@ const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 /**
  * Forwards an App Router request to the 21.gifts api.
  *
- * Used so the browser and LNURL-auth wallets talk to the public apex
- * (`21.gifts`) while the api process still listens at `api.21.gifts`.
+ * Used so the browser talks to the public apex (`21.gifts`) while the api
+ * process still listens at `api.21.gifts`.
  *
  * @param request - Incoming request (query string and body are forwarded).
- * @param apiPath - Path on the api beginning with `/` (e.g. `/auth/lnurl`).
+ * @param apiPath - Path on the api beginning with `/` (e.g. `/me`).
  * @returns The upstream response (status, content-type, body), or 502 JSON
  * when the api URL is missing, the body cannot be read, or fetch fails.
  */

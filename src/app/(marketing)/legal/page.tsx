@@ -43,9 +43,10 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Data on this website</h3>
         <p className="text-white/70">
-          This origin does not set cookies and does not load analytics scripts. The application
-          stores a session token in <code>localStorage</code> after you sign in with Wallet of
-          Satoshi so a returning visitor stays signed in.
+          This origin does not load analytics scripts. It sets no cookies unless you choose a
+          language; then a <code>locale</code> cookie stores that choice so the next visit can
+          honour it. The application stores a session token in <code>localStorage</code> after you
+          sign in with a passkey so a returning visitor stays signed in.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
         <p className="text-white/70">
@@ -63,9 +64,9 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Data in the app</h3>
         <p className="text-white/70">
-          The application on this same origin uses Wallet of Satoshi to sign in and to receive
-          Bitcoin. It does not hold funds. Bitcoin payments go directly from the donor&apos;s Wallet
-          of Satoshi to the receiver&apos;s Wallet of Satoshi address.
+          The application on this same origin uses a passkey to sign in and Wallet of Satoshi to
+          receive Bitcoin. It does not hold funds. Bitcoin payments go directly from the
+          donor&apos;s Wallet of Satoshi to the receiver&apos;s Wallet of Satoshi address.
         </p>
         <h3 className="text-lg font-semibold">Contact</h3>
         <p className="text-white/70">

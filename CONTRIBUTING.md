@@ -23,24 +23,24 @@ npm run dev    # → http://localhost:3000
 
 ## Scripts
 
-| Script                         | Purpose                                                                                                   |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                  | Dev server with hot reload on :3000                                                                       |
-| `npm run build`                | Production build (standalone output)                                                                      |
-| `npm run start`                | Serve the production build on :3000                                                                       |
-| `npm run typecheck`            | `tsc --noEmit`                                                                                            |
-| `npm run lint`                 | `next lint` + Prettier check                                                                              |
-| `npm run lint:fix`             | Auto-fix lint findings + Prettier write                                                                   |
-| `npm run format`               | Prettier write                                                                                            |
-| `npm test`                     | Vitest unit tests, single run                                                                             |
-| `npm run test:watch`           | Vitest in watch mode                                                                                      |
-| `npm run test:coverage`        | Vitest with the 100% coverage gate                                                                        |
-| `npm run e2e`                  | Playwright tests against the production build                                                             |
-| `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                   |
-| `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, or an endpoint lacks `request.<verb>` |
-| `npm run handbook:images`      | Capture handbook PNGs for every screen variant (`UPDATE_HANDBOOK_IMAGES=1`)                               |
-| `npm run screenshot:check`     | Fail if a screen or export lacks a Playwright PNG baseline                                                |
-| `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                            |
+| Script                         | Purpose                                                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                  | Dev server with hot reload on :3000                                                                                                           |
+| `npm run build`                | Production build (standalone output)                                                                                                          |
+| `npm run start`                | Serve the production build on :3000                                                                                                           |
+| `npm run typecheck`            | `tsc --noEmit`                                                                                                                                |
+| `npm run lint`                 | `next lint` + Prettier check                                                                                                                  |
+| `npm run lint:fix`             | Auto-fix lint findings + Prettier write                                                                                                       |
+| `npm run format`               | Prettier write                                                                                                                                |
+| `npm test`                     | Vitest unit tests, single run                                                                                                                 |
+| `npm run test:watch`           | Vitest in watch mode                                                                                                                          |
+| `npm run test:coverage`        | Vitest with the 100% coverage gate                                                                                                            |
+| `npm run e2e`                  | Playwright against the mock api (:3001) plus the production standalone server (:3000)                                                         |
+| `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
+| `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
+| `npm run handbook:images`      | Capture handbook PNGs for every screen variant (`UPDATE_HANDBOOK_IMAGES=1`)                                                                   |
+| `npm run screenshot:check`     | Fail if a screen or export lacks a Playwright PNG baseline                                                                                    |
+| `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
 ## Project structure
 
@@ -48,23 +48,30 @@ npm run dev    # → http://localhost:3000
 app/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx           # Root layout: <html lang="en">, metadata, globals.css
+│   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
 │   │   ├── gifts/stats/
 │   │   │   └── route.ts         # GET /gifts/stats same-origin proxy
 │   │   ├── login/
-│   │   │   └── page.tsx         # GET /login — LNURL-auth + signed-in form
+│   │   │   └── page.tsx         # GET /login — passkey + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
 │   │   ├── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
-│   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
-│   │   └── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
+│   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
+│   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
+│   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
+│   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
+│   │   └── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
+│   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
+│   │   ├── messages.ts          # en/de/es/fil catalogs
+│   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   └── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
@@ -83,24 +90,29 @@ app/
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
 │   ├── screen-variants.mjs      # Every UI state of every screen (handbook + e2e needles)
-│   ├── check-e2e.mjs            # CI gate: missing screen page.goto or endpoint request → exit 1
+│   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
 │   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
-│   ├── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
+│   ├── login.spec.ts            # /login passkey create/continue + signed-in forms
+│   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
+│   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
+│   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
+│   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines
 │   ├── handbook-capture.spec.ts # UPDATE_HANDBOOK_IMAGES=1 writes docs/handbook/images
 │   └── visual.spec.ts-snapshots/
 ├── public/                      # Static assets served from /
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
-├── playwright.config.ts         # chromium only, boots the production build
+├── playwright.config.ts         # chromium; mock api :3001 + standalone :3000
 ├── eslint.config.mjs            # Flat config (next/core-web-vitals + next/typescript)
 ├── Dockerfile                   # Multi-stage build + entrypoint.sh env substitution
 ├── entrypoint.sh
 ├── README.md
 ├── CONTRIBUTING.md
+├── Review.md                 # PR review checklist
 ├── SECURITY.md
 └── LICENSE
 ```
@@ -168,6 +180,33 @@ Every exported symbol carries a TSDoc block with a one-line summary plus
 `@param` / `@returns` / `@throws` where applicable. `eslint-plugin-tsdoc`
 flags malformed comments across `src/`.
 
+### i18n catalogs (hard requirement)
+
+Visitor-facing UI copy lives in `src/lib/messages.ts` as four catalogs:
+English (`en`), German (`de`), Spanish (`es`), and Filipino (`fil`). **Every
+catalog key must exist in all four locales** with a string that is non-empty
+after trim. Adding
+or renaming a key in one catalog without the others is rejected.
+
+`MessageKey` is derived from the English catalog; `de` / `es` / `fil` use
+`satisfies Messages`, so `npm run typecheck` fails on a missing key.
+`src/__tests__/lib/messages.test.ts` asserts the key sets are identical and
+every value is non-empty after trim; `npm test` / `npm run test:coverage`
+(and CI) fail the PR when they diverge or a value is empty/whitespace.
+`translate` (and `t` from `useTranslations`) throws if a key is absent at
+runtime — no silent English fallback.
+
+New or changed visitor-facing copy goes through a catalog key in the **same
+PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
+catalogize): legal body copy (English), handbook markdown bodies and handbook
+chapter-navigation labels (English), product tokens such as
+`Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
+`Deutsch` / `Español` / `Filipino`), stats body copy (English), and
+document/social metadata (`title`, `description`, Open Graph alt text —
+English).
+
+Reviewers follow `Review.md`.
+
 ### Handbook (hard requirement)
 
 The handbook under `docs/handbook/` **must exist**. Every UI screen, every
@@ -194,8 +233,8 @@ undeclared deviation and is rejected.
 - Coverage gate: 100% lines, branches, functions, statements on the activated surface
   (see `vitest.config.ts`). Unreachable defensive code can be exempted with a
   `v8 ignore` annotation that names a concrete reason — never to silence the gate.
-- Playwright tests live in `e2e/` and run against the production build
-  (`npm run e2e` builds and starts the server itself).
+- Playwright tests live in `e2e/` and run against the mock api on :3001 plus
+  the production standalone server on :3000 (`npm run e2e` builds and starts both).
 
 ### E2E (hard requirement)
 
@@ -204,11 +243,15 @@ path and asserts a user-visible outcome. Every entry in
 `scripts/screen-variants.mjs` **must** have its `needle` string in `e2e/` (the
 assertion for that state). Every HTTP endpoint discovered from
 `src/app/**/route.ts` **must** have at least one Playwright
-`request.get|post|put|patch|delete` of that path. `npm run e2e:check` **fails
-the PR** if a screen has no matching `goto`, a variant has no `needle` in
-`e2e/`, or an endpoint has no matching `request.<verb>` call. Adding a `page.tsx` or `route.ts` without an e2e spec in
-the **same PR** is an undeclared deviation and is rejected. CI runs `e2e:check`
-then `e2e`.
+`request.get|post|put|patch|delete` of that path. Every exported function/class
+**must** have a Playwright test whose title contains `Function: <Name>` and that
+exercises that export through the running Next server (UI or `request`), not
+only a handbook screenshot. `npm run e2e:check` scans Playwright spec files under `e2e/` (except `handbook-capture.spec.ts`)
+and **fails the PR** if a screen has no matching `goto`, a variant has no
+`needle`, an endpoint has no matching `request.<verb>` call, or a function has
+no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
+spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
+is an undeclared deviation and is rejected. CI runs `e2e:check` then `e2e`.
 
 ### Screenshot baselines (hard requirement)
 
@@ -273,7 +316,7 @@ variable is unset or empty.
 | `NEXT_PUBLIC_API_URL` | `https://dev-api.21.gifts` | `https://api.21.gifts` |
 
 `NEXT_PUBLIC_API_URL` is the **upstream api**. The browser calls same-origin
-paths (`/auth/lnurl`, `/me`, …) which the App Router proxies to that URL.
+paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL.
 
 ## CI / CD
 

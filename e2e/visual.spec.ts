@@ -10,8 +10,6 @@ test.skip(process.platform !== 'linux', 'visual baselines are linux/chromium');
 
 test.describe.configure({ mode: 'serial' });
 
-const LNURL = 'lnurl1dp68gurn8ghj7example';
-
 const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,
@@ -73,7 +71,7 @@ test.describe('screen baselines', () => {
 
   test('screen /login', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
     await shotScreen(page, 'screen-login', 'login.png');
   });
 
@@ -84,23 +82,54 @@ test.describe('screen baselines', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           totalSats: 1500,
+          totalBtc: '0.00001500',
+          totalUsd: '1.43',
           giftCount: 3,
           recipientCount: 2,
           firstPaidAt: '2026-06-01T00:00:00.000Z',
           lastPaidAt: '2026-07-01T00:00:00.000Z',
           spendOverTime: [
-            { day: '2026-06-01', sats: 500, cumulativeSats: 500 },
-            { day: '2026-06-02', sats: 0, cumulativeSats: 500 },
-            { day: '2026-07-01', sats: 1000, cumulativeSats: 1500 },
+            {
+              day: '2026-06-01',
+              sats: 500,
+              cumulativeSats: 500,
+              btc: '0.00000500',
+              cumulativeBtc: '0.00000500',
+              usd: '0.48',
+              cumulativeUsd: '0.48',
+            },
+            {
+              day: '2026-06-02',
+              sats: 0,
+              cumulativeSats: 500,
+              btc: '0.00000000',
+              cumulativeBtc: '0.00000500',
+              usd: '0.00',
+              cumulativeUsd: '0.48',
+            },
+            {
+              day: '2026-07-01',
+              sats: 1000,
+              cumulativeSats: 1500,
+              btc: '0.00001000',
+              cumulativeBtc: '0.00001500',
+              usd: '0.95',
+              cumulativeUsd: '1.43',
+            },
           ],
           byRecipient: [
-            { recipient: 'alice', giftCount: 2, sats: 1000 },
-            { recipient: 'bob', giftCount: 1, sats: 500 },
+            { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
+            { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
           ],
           byMonth: [
-            { month: '2026-06', giftCount: 2, sats: 500 },
-            { month: '2026-07', giftCount: 1, sats: 1000 },
+            { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
+            { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
           ],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+          },
         }),
       });
     });
@@ -149,80 +178,46 @@ test.describe('function baselines', () => {
     expect(sections.every((s) => s.id !== '' && s.name !== '')).toBe(true);
     expect(new Set(sections.map((s) => s.name)).size).toBe(sections.length);
 
-    const clipFunctions = new Set([
-      'StatsDashboard',
-      'StatsLoader',
-      'StatsPage',
-      'fetchGiftStats',
-      'proxyGiftsStatsGet',
-    ]);
     for (const section of sections) {
-      if (!clipFunctions.has(section.name)) {
-        continue;
-      }
       const heading = page.locator(`#${section.id}`);
-      await heading.evaluate((el) => {
-        el.scrollIntoView({ block: 'center' });
-      });
-      const clip = await heading.evaluate((el) => {
+      await heading.scrollIntoViewIfNeeded();
+      const clip = await page.evaluate((id: string) => {
+        const el = document.getElementById(id);
+        if (el === null) {
+          return null;
+        }
         const wrap = el.parentElement;
         if (wrap === null) {
-          const box = el.getBoundingClientRect();
-          return {
-            x: Math.max(0, Math.floor(box.left)),
-            y: Math.max(0, Math.floor(box.top)),
-            width: Math.ceil(box.width),
-            height: Math.ceil(box.height),
-          };
+          return null;
         }
-        let last: Element = wrap;
+        const nodes: Element[] = [wrap];
         let next = wrap.nextElementSibling;
-        while (next !== null && next.querySelector('h2') === null) {
-          last = next;
+        while (next !== null) {
+          if (next.querySelector('h2[id^="functions-function-"]') !== null) {
+            break;
+          }
+          nodes.push(next);
           next = next.nextElementSibling;
         }
-        const top = wrap.getBoundingClientRect();
-        const bottom = last.getBoundingClientRect();
-        const left = Math.min(top.left, bottom.left);
-        const right = Math.max(top.right, bottom.right);
+        const rects = nodes.map((node) => node.getBoundingClientRect());
+        const left = Math.min(...rects.map((r) => r.left));
+        const top = Math.min(...rects.map((r) => r.top));
+        const right = Math.max(...rects.map((r) => r.right));
+        const bottom = Math.max(...rects.map((r) => r.bottom));
         return {
-          x: Math.max(0, Math.floor(left)),
-          y: Math.max(0, Math.floor(Math.min(top.top, bottom.top))),
-          width: Math.ceil(right - left),
-          height: Math.ceil(Math.max(top.bottom, bottom.bottom) - Math.min(top.top, bottom.top)),
+          x: left + window.scrollX,
+          y: top + window.scrollY,
+          width: right - left,
+          height: bottom - top,
         };
-      });
+      }, section.id);
+      expect(clip).not.toBeNull();
       await expect(page).toHaveScreenshot(`function-${section.name}.png`, {
-        clip,
+        clip: clip as { x: number; y: number; width: number; height: number },
+        fullPage: true,
         ...SHOT,
       });
     }
-  });
-
-  test('LoginCard QR + QrCode', async ({ page }) => {
-    await page.route(/\/auth\/lnurl$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          lnurl: LNURL,
-          k1: 'ab'.repeat(32),
-          pollToken: 'cd'.repeat(32),
-          expiresInSeconds: 90,
-        }),
-      });
-    });
-    await page.route(/\/auth\/session$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ status: 'pending' }),
-      });
-    });
-    await page.goto('/login');
-    await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-    await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
-    await expect(page).toHaveScreenshot('state-login-qr.png', { fullPage: true, ...SHOT });
   });
 
   test('LightningAddressForm signed-in', async ({ page }) => {

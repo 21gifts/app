@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { GiftStats } from '@/lib/api-types';
+import { formatBtcTick, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
 /** Props for {@link StatsDashboard}. */
 export interface StatsDashboardProps {
@@ -26,24 +27,6 @@ function formatSats(sats: number): string {
 }
 
 /**
- * Compact axis label for large sat counts.
- *
- * @param sats - Whole satoshis.
- * @returns Compact label such as `1.2M` or `4k`.
- */
-function compactSats(sats: number): string {
-  if (sats >= 1_000_000) {
-    const m = sats / 1_000_000;
-    return `${m >= 10 ? m.toFixed(0) : m.toFixed(1).replace(/\.0$/, '')}M`;
-  }
-  if (sats >= 1_000) {
-    const k = sats / 1_000;
-    return `${k >= 10 ? k.toFixed(0) : k.toFixed(1).replace(/\.0$/, '')}k`;
-  }
-  return String(sats);
-}
-
-/**
  * UTC calendar day from an ISO timestamp, or an em dash when missing.
  *
  * @param iso - ISO-8601 timestamp or `null`.
@@ -57,12 +40,20 @@ function utcDay(iso: string | null): string {
 }
 
 /**
- * Cumulative spend-over-time area chart.
+ * Cumulative spend-over-time area chart for one money series.
  *
  * @param series - Daily cumulative points.
+ * @param valueAt - Extract the numeric cumulative value used for scale only.
+ * @param formatTick - Axis tick label formatter.
+ * @param ariaLabel - Accessible chart title.
  * @returns SVG figure.
  */
-function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
+function CumulativeOverTimeChart(
+  series: GiftStats['spendOverTime'],
+  valueAt: (point: GiftStats['spendOverTime'][number]) => number,
+  formatTick: (value: number) => string,
+  ariaLabel: string,
+): ReactElement {
   const width = 800;
   const height = 280;
   if (series.length === 0) {
@@ -71,7 +62,7 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full"
         role="img"
-        aria-label="Total spend over time"
+        aria-label={ariaLabel}
       />
     );
   }
@@ -81,21 +72,35 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
   const padB = 36;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
-  const maxY = Math.max(...series.map((p) => p.cumulativeSats), 1);
+  const values = series.map(valueAt);
+  const dataMax = Math.max(...values, 0);
+  const maxY = dataMax === 0 ? 1 : dataMax;
   const n = series.length;
   const xAt = (i: number): number => padL + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
   const yAt = (v: number): number => padT + innerH - (v / maxY) * innerH;
   const bottom = (padT + innerH).toFixed(1);
-  const firstY = yAt((series[0] as (typeof series)[number]).cumulativeSats).toFixed(1);
+  const firstY = yAt(values[0] as number).toFixed(1);
   const line =
     n === 1
       ? `${padL},${firstY} ${(padL + innerW).toFixed(1)},${firstY}`
-      : series.map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.cumulativeSats).toFixed(1)}`).join(' ');
+      : series
+          .map((_, i) => `${xAt(i).toFixed(1)},${yAt(values[i] as number).toFixed(1)}`)
+          .join(' ');
   const area =
     n === 1
       ? `${padL},${bottom} ${padL},${firstY} ${(padL + innerW).toFixed(1)},${firstY} ${(padL + innerW).toFixed(1)},${bottom}`
       : `${padL},${bottom} ${line} ${(padL + innerW).toFixed(1)},${bottom}`;
-  const yTicks = [...new Set([0, 0.5, 1].map((t) => Math.round(maxY * t)))];
+  const yTicks: number[] = [];
+  const yTickLabels = new Set<string>();
+  for (const t of dataMax === 0 ? [0] : [0, 1, 0.5]) {
+    const tick = maxY * t;
+    const label = formatTick(tick);
+    if (yTickLabels.has(label)) {
+      continue;
+    }
+    yTickLabels.add(label);
+    yTicks.push(tick);
+  }
   const xIdx = [...new Set(n <= 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1])];
 
   return (
@@ -103,10 +108,10 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
       role="img"
-      aria-label="Total spend over time"
+      aria-label={ariaLabel}
     >
       {yTicks.map((tick) => (
-        <g key={tick}>
+        <g key={formatTick(tick)}>
           <line
             x1={padL}
             x2={padL + innerW}
@@ -121,7 +126,7 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
             fill="rgba(255,255,255,0.5)"
             fontSize="12"
           >
-            {compactSats(tick)}
+            {formatTick(tick)}
           </text>
         </g>
       ))}
@@ -137,7 +142,7 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
               : 'middle';
         return (
           <text
-            key={point.day}
+            key={`${ariaLabel}-${point.day}`}
             x={xAt(i)}
             y={height - 10}
             textAnchor={anchor}
@@ -155,6 +160,8 @@ function SpendOverTimeChart(series: GiftStats['spendOverTime']): ReactElement {
 /**
  * Horizontal bar chart of spend by recipient.
  *
+ * Bars are sized by sats (stable integer scale). Labels show BTC and USD.
+ *
  * @param rows - Recipient totals.
  * @returns Bar list.
  */
@@ -164,7 +171,7 @@ function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
   const padL = 8;
   const padR = 8;
   const labelW = 160;
-  const valueW = 140;
+  const valueW = 220;
   const barMax = width - padL - padR - labelW - valueW;
   const height = Math.max(rows.length, 1) * rowH;
   const max = Math.max(...rows.map((r) => r.sats), 1);
@@ -191,7 +198,7 @@ function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
               fill="rgba(255,255,255,0.6)"
               fontSize="14"
             >
-              {formatSats(row.sats)} sats
+              {row.btc} ₿ · ${row.usd}
             </text>
           </g>
         );
@@ -261,7 +268,7 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
 }
 
 /**
- * Gift statistics dashboard: KPI cards and three diagrams.
+ * Gift statistics dashboard: KPI cards and diagrams (BTC + USD).
  *
  * @param props - Stats payload plus loading/error/retry.
  * @returns The dashboard element.
@@ -302,7 +309,11 @@ export function StatsDashboard({
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-white/10 p-5">
           <dt className="text-sm text-white/60">Total spent</dt>
-          <dd className="mt-2 text-2xl font-semibold">{formatSats(stats.totalSats)} sats</dd>
+          <dd className="mt-2">
+            <div className="text-2xl font-semibold">₿ {stats.totalBtc}</div>
+            <div className="text-2xl font-semibold">{formatUsdDisplay(stats.totalUsd)}</div>
+            <div className="mt-1 text-sm text-white/60">{formatSats(stats.totalSats)} sats</div>
+          </dd>
         </div>
         <div className="rounded-2xl border border-white/10 p-5">
           <dt className="text-sm text-white/60">Gifts</dt>
@@ -324,12 +335,31 @@ export function StatsDashboard({
         <p className="text-white/60">No gifts recorded yet.</p>
       ) : (
         <>
+          <p className="text-sm text-white/60">
+            {"USD is the BTC-USD daily close (UTC) on each gift's day."}
+          </p>
           <section>
             <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">
               Total spend over time
             </h2>
-            <p className="mt-2 text-white/60">Cumulative sats given, day by day.</p>
-            <div className="mt-6">{SpendOverTimeChart(stats.spendOverTime)}</div>
+            <h3 className="mt-6 text-white/80">BTC over time</h3>
+            <div className="mt-4">
+              {CumulativeOverTimeChart(
+                stats.spendOverTime,
+                (p) => Number(p.cumulativeBtc),
+                formatBtcTick,
+                'BTC over time',
+              )}
+            </div>
+            <h3 className="mt-8 text-white/80">USD over time</h3>
+            <div className="mt-4">
+              {CumulativeOverTimeChart(
+                stats.spendOverTime,
+                (p) => Number(p.cumulativeUsd),
+                formatUsdTick,
+                'USD over time',
+              )}
+            </div>
           </section>
           <section>
             <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By person</h2>

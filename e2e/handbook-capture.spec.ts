@@ -8,7 +8,6 @@ import path from 'node:path';
  */
 test.skip(process.env['UPDATE_HANDBOOK_IMAGES'] !== '1', 'set UPDATE_HANDBOOK_IMAGES=1');
 
-const LNURL = 'lnurl1dp68gurn8ghj7example';
 const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,
@@ -27,28 +26,6 @@ async function writePng(page: Page, basename: string, fullPage = true): Promise<
   fs.mkdirSync(path.dirname(publicPath), { recursive: true });
   fs.writeFileSync(docsPath, buffer);
   fs.writeFileSync(publicPath, buffer);
-}
-
-async function mockPendingAuth(page: Page): Promise<void> {
-  await page.route(/\/auth\/lnurl$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        lnurl: LNURL,
-        k1: 'ab'.repeat(32),
-        pollToken: 'cd'.repeat(32),
-        expiresInSeconds: 90,
-      }),
-    });
-  });
-  await page.route(/\/auth\/session$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ status: 'pending' }),
-    });
-  });
 }
 
 test('home default', async ({ page }) => {
@@ -73,7 +50,7 @@ test('legal default', async ({ page }) => {
 
 test('login idle', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
   await writePng(page, 'login.png');
 });
 
@@ -82,71 +59,23 @@ test('login starting', async ({ page }) => {
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/auth\/lnurl$/, async (route) => {
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
     await held;
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   await writePng(page, 'login-starting.png');
   release();
 });
 
-test('login qr', async ({ page }) => {
-  await mockPendingAuth(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
-  await writePng(page, 'login-qr.png');
-});
-
-test('login qr-android', async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
-      configurable: true,
-    });
-  });
-  await mockPendingAuth(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
-  await writePng(page, 'login-qr-android.png');
-});
-
-test('login expired', async ({ page }) => {
-  await page.route(/\/auth\/lnurl$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        lnurl: LNURL,
-        k1: 'ab'.repeat(32),
-        pollToken: 'cd'.repeat(32),
-        expiresInSeconds: 90,
-      }),
-    });
-  });
-  await page.route(/\/auth\/session$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ status: 'expired' }),
-    });
-  });
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByText('Login expired')).toBeVisible({ timeout: 10_000 });
-  await writePng(page, 'login-expired.png');
-});
-
 test('login error', async ({ page }) => {
-  await page.route(/\/auth\/lnurl$/, async (route) => {
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
   await writePng(page, 'login-error.png');
 });
@@ -306,23 +235,54 @@ test('stats default', async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify({
         totalSats: 1500,
+        totalBtc: '0.00001500',
+        totalUsd: '1.43',
         giftCount: 3,
         recipientCount: 2,
         firstPaidAt: '2026-06-01T00:00:00.000Z',
         lastPaidAt: '2026-07-01T00:00:00.000Z',
         spendOverTime: [
-          { day: '2026-06-01', sats: 500, cumulativeSats: 500 },
-          { day: '2026-06-02', sats: 0, cumulativeSats: 500 },
-          { day: '2026-07-01', sats: 1000, cumulativeSats: 1500 },
+          {
+            day: '2026-06-01',
+            sats: 500,
+            cumulativeSats: 500,
+            btc: '0.00000500',
+            cumulativeBtc: '0.00000500',
+            usd: '0.48',
+            cumulativeUsd: '0.48',
+          },
+          {
+            day: '2026-06-02',
+            sats: 0,
+            cumulativeSats: 500,
+            btc: '0.00000000',
+            cumulativeBtc: '0.00000500',
+            usd: '0.00',
+            cumulativeUsd: '0.48',
+          },
+          {
+            day: '2026-07-01',
+            sats: 1000,
+            cumulativeSats: 1500,
+            btc: '0.00001000',
+            cumulativeBtc: '0.00001500',
+            usd: '0.95',
+            cumulativeUsd: '1.43',
+          },
         ],
         byRecipient: [
-          { recipient: 'alice', giftCount: 2, sats: 1000 },
-          { recipient: 'bob', giftCount: 1, sats: 500 },
+          { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
+          { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
         ],
         byMonth: [
-          { month: '2026-06', giftCount: 2, sats: 500 },
-          { month: '2026-07', giftCount: 1, sats: 1000 },
+          { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
+          { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
         ],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+        },
       }),
     });
   });
@@ -338,6 +298,8 @@ test('stats empty', async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify({
         totalSats: 0,
+        totalBtc: '0.00000000',
+        totalUsd: '0.00',
         giftCount: 0,
         recipientCount: 0,
         firstPaidAt: null,
@@ -345,6 +307,11 @@ test('stats empty', async ({ page }) => {
         spendOverTime: [],
         byRecipient: [],
         byMonth: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+        },
       }),
     });
   });

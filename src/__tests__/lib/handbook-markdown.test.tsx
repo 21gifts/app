@@ -1,5 +1,6 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { HandbookMarkdown, parseHandbookMarkdown } from '@/lib/handbook-markdown';
 
 afterEach(cleanup);
@@ -122,7 +123,7 @@ describe('parseHandbookMarkdown', () => {
 
 describe('HandbookMarkdown', () => {
   it('renders headings, a list, a link, code, strong, and an image', () => {
-    render(
+    renderWithLocale(
       <HandbookMarkdown
         markdown={
           '# Title\n\n## Sub\n\n### H3\n\n#### H4\n\n- item\n\nSee `x` and **y** and [z](/legal)\n\n![login](images/login.png)\n'
@@ -146,7 +147,9 @@ describe('HandbookMarkdown', () => {
   });
 
   it('uses link text and image alt as the copy-link label', () => {
-    render(<HandbookMarkdown markdown={'# [Go](/legal) ![shot](images/x.png)\n'} idPrefix="x" />);
+    renderWithLocale(
+      <HandbookMarkdown markdown={'# [Go](/legal) ![shot](images/x.png)\n'} idPrefix="x" />,
+    );
     expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Go shot' })).toBeTruthy();
   });

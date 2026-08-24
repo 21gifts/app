@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Fail if e2e/ does not exercise every UI screen and every HTTP endpoint.
- * A screen needs page.goto of that path; an endpoint needs
- * request.get/post/put/patch/delete of that path. Run from the repo root.
+ * Fail if Playwright spec files under e2e/ (except handbook-capture) do not
+ * exercise every UI screen, HTTP endpoint, and exported function. A screen
+ * needs page.goto of that path; an endpoint needs request.get/post/put/patch/
+ * delete of that path; a function needs a test('Function: <Name> …') title.
+ * Only files named *.spec.ts are scanned. Run from the repo root.
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { extractEndpoints, extractScreens, walk } from './check-handbook.mjs';
+import { extractEndpoints, extractFunctions, extractScreens, walk } from './check-handbook.mjs';
 import { SCREEN_VARIANTS } from './screen-variants.mjs';
 
 const ROOT = process.cwd();
@@ -19,7 +21,7 @@ function e2eText() {
   }
   const files = walk(
     E2E_DIR,
-    (p) => /\.(ts|js|mjs)$/.test(p) && !p.endsWith(`${path.sep}handbook-capture.spec.ts`),
+    (p) => p.endsWith('.spec.ts') && !p.endsWith(`${path.sep}handbook-capture.spec.ts`),
   );
   if (files.length === 0) {
     console.error('E2E MISSING: e2e/ has no spec files');
@@ -64,8 +66,19 @@ for (const variant of SCREEN_VARIANTS) {
   }
 }
 
-if (screens.size === 0 && endpoints.size === 0) {
-  console.error('E2E: no screens or endpoints discovered — refusing to pass');
+const functions = extractFunctions(path.join(ROOT, 'src'));
+for (const name of [...functions].sort()) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const titleRe = new RegExp(`test\\((['"\`])Function: ${escaped}\\b`);
+  if (!titleRe.test(text)) {
+    missing.push(`Function ${name} has no e2e test title Function: ${name}`);
+  }
+}
+
+if (screens.size === 0 || endpoints.size === 0 || functions.size === 0) {
+  console.error(
+    `E2E: discovery empty — screens=${screens.size} endpoints=${endpoints.size} functions=${functions.size}`,
+  );
   process.exit(1);
 }
 
@@ -78,5 +91,5 @@ if (missing.length) {
 }
 
 console.log(
-  `E2E complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants, ${endpoints.size} endpoints.`,
+  `E2E complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants, ${endpoints.size} endpoints, ${functions.size} functions.`,
 );

@@ -43,6 +43,7 @@ ENV HOSTNAME=0.0.0.0
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
+COPY --from=build --chown=app:app /app/docs ./docs
 COPY --chmod=0755 entrypoint.sh /app/entrypoint.sh
 
 # Own the working dir itself, not just its contents. entrypoint.sh rewrites

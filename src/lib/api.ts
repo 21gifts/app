@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import {
   accountSchema,
-  sessionResultSchema,
-  startChallengeSchema,
   lnAddressResolvedSchema,
   giftStatsSchema,
   passkeyBeginSchema,
@@ -12,8 +10,6 @@ import {
   type LnAddressResolved,
   type PasskeyBegin,
   type PasskeySession,
-  type SessionResult,
-  type StartChallenge,
 } from '@/lib/api-types';
 
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
@@ -84,40 +80,6 @@ async function throwIfApiMessage(response: Response): Promise<void> {
     return;
   }
   throw new Error(toUserFacingError(raw));
-}
-
-/**
- * Starts a new LNURL-auth challenge.
- *
- * @returns The challenge to render as a QR and poll against.
- * @throws Error when the api responds with a non-2xx status, or when the body
- * does not match {@link startChallengeSchema} — either way the flow cannot
- * proceed, so we fail loudly rather than guess.
- */
-export async function startLnurlAuth(): Promise<StartChallenge> {
-  const response = await fetch('/auth/lnurl');
-  if (!response.ok) {
-    throw new Error(`Failed to start LNURL auth: ${response.status}`);
-  }
-  return startChallengeSchema.parse(await response.json());
-}
-
-/**
- * Polls the status of an in-flight LNURL-auth challenge.
- *
- * @param pollToken - The secret returned by {@link startLnurlAuth}; sent in the
- * `X-Poll-Token` header (never the public `k1`).
- * @returns The current {@link SessionResult}.
- * @throws Error on a non-2xx status or a body that fails validation.
- */
-export async function pollSession(pollToken: string): Promise<SessionResult> {
-  const response = await fetch('/auth/session', {
-    headers: { 'X-Poll-Token': pollToken },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to poll session: ${response.status}`);
-  }
-  return sessionResultSchema.parse(await response.json());
 }
 
 /**

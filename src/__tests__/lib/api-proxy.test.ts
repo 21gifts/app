@@ -25,28 +25,26 @@ describe('proxyApiRequest', () => {
     const fetchMock = stubFetch(
       new Response('{"ok":true}', { status: 200, headers: { 'content-type': 'application/json' } }),
     );
-    const request = new Request('http://localhost/auth/lnurl?k1=ab', {
+    const request = new Request('http://localhost/me?x=1', {
       headers: {
         authorization: 'Bearer tok',
         origin: 'https://21.gifts',
-        'x-poll-token': 'pt',
         'user-agent': 'Copay',
         'x-ignored': 'no',
       },
     });
 
-    const res = await proxyApiRequest(request, '/auth/lnurl');
+    const res = await proxyApiRequest(request, '/me');
 
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('application/json');
     expect(await res.json()).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
-    expect(url.toString()).toBe(`${API}/auth/lnurl?k1=ab`);
+    expect(url.toString()).toBe(`${API}/me?x=1`);
     const headers = init.headers as Headers;
     expect(headers.get('authorization')).toBe('Bearer tok');
     expect(headers.get('origin')).toBe('https://21.gifts');
-    expect(headers.get('x-poll-token')).toBe('pt');
     expect(headers.get('user-agent')).toBe('Copay');
     expect(headers.get('x-ignored')).toBeNull();
   });
