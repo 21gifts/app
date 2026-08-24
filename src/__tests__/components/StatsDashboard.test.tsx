@@ -396,6 +396,14 @@ describe('StatsDashboard', () => {
     );
     expect(screen.getByLabelText('Spend over time in USD')).toBeTruthy();
     expect(screen.queryByLabelText('Spend over time in BTC')).toBeNull();
+    expect(screen.getByLabelText('Spend by person in BTC')).toBeTruthy();
     expect(screen.getByLabelText('Spend by month in BTC')).toBeTruthy();
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
+        name: 'BTC',
+      }),
+    );
+    expect(screen.getByLabelText('Spend over time in BTC')).toBeTruthy();
+    expect(screen.queryByLabelText('Spend over time in USD')).toBeNull();
   });
 });
