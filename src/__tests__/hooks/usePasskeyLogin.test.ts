@@ -90,6 +90,63 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('cancel returns to idle without finishing', async () => {
+    let resolveCreate: (value: unknown) => void = () => undefined;
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveCreate = resolve;
+            }),
+        ),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.register();
+    });
+    act(() => {
+      result.current.cancel();
+    });
+    await act(async () => {
+      resolveCreate({ id: 'cred', type: 'public-key' });
+      await Promise.resolve();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('ignores a late create after unmount', async () => {
+    let resolveCreate: (value: unknown) => void = () => undefined;
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveCreate = resolve;
+            }),
+        ),
+        get: vi.fn(),
+      },
+    });
+    const { result, unmount } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.register();
+    });
+    unmount();
+    await act(async () => {
+      resolveCreate({ id: 'cred', type: 'public-key' });
+      await Promise.resolve();
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
   it('goes to error when create returns null', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,

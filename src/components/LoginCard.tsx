@@ -1,22 +1,25 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2, LogOut } from 'lucide-react';
-import { useEffect, type ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { NameForm } from '@/components/NameForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
-import { clearSession, loadSession } from '@/lib/session-storage';
+import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * The login surface: passkey create or continue.
  *
  * Shows the signed-in account when one is present. On mount it rehydrates
- * from a persisted token: a valid token logs the visitor straight in, a
- * rejected (401) token is cleared.
+ * from a persisted token: a valid token logs the visitor straight in unless a
+ * newer in-page session or logout already won; a rejected token calls
+ * `clearAuth` when the in-memory session is absent or still that token.
+ * Unmount and logout invalidate in-flight hydration. Logout and successful
+ * hydration cancel an in-flight passkey ceremony.
  *
  * @returns The card element.
  */
@@ -25,42 +28,58 @@ export function LoginCard(): ReactElement {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const passkey = usePasskeyLogin();
+  const hydrateGen = useRef(0);
 
   useEffect(() => {
     const token = loadSession();
     if (token === null) {
       return;
     }
+    const gen = hydrateGen.current;
     fetchMe(token)
       .then((maybeAccount) => {
-        if (loadSession() !== token) {
+        if (gen !== hydrateGen.current) {
           return;
         }
         const current = useAuthStore.getState();
+        if (loadSession() !== token) {
+          return;
+        }
         if (current.session !== null && current.session !== token) {
           return;
         }
         if (maybeAccount === null) {
-          if (current.session === token) {
+          if (current.session === null || current.session === token) {
             clearAuth();
-          } else {
-            clearSession();
           }
           return;
         }
         if (current.session === token && current.account !== null) {
           return;
         }
+        passkey.cancel();
         setAuth(token, maybeAccount);
       })
       .catch((error: unknown) => {
         console.error('Session hydration failed', error);
       });
+    return (): void => {
+      hydrateGen.current += 1;
+    };
   }, [setAuth, clearAuth]);
 
   let body: ReactElement;
   if (account !== null) {
-    body = <LoggedInView account={account} onLogout={clearAuth} />;
+    body = (
+      <LoggedInView
+        account={account}
+        onLogout={() => {
+          hydrateGen.current += 1;
+          passkey.cancel();
+          clearAuth();
+        }}
+      />
+    );
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
   } else if (passkey.status === 'error') {

@@ -33,6 +33,7 @@ const account = {
 const registerSpy = vi.fn();
 const authenticateSpy = vi.fn();
 const retrySpy = vi.fn();
+const cancelPasskeySpy = vi.fn();
 const ORIGINAL_UA = window.navigator.userAgent;
 
 /** Points the mocked passkey hook at a fixed state for the next render. */
@@ -42,6 +43,7 @@ function mockPasskey(status: PasskeyStatus = 'idle'): void {
     register: registerSpy,
     authenticate: authenticateSpy,
     retry: retrySpy,
+    cancel: cancelPasskeySpy,
   });
 }
 
@@ -104,6 +106,7 @@ describe('LoginCard', () => {
     expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /log out/i }));
+    expect(cancelPasskeySpy).toHaveBeenCalledTimes(1);
     expect(clearSession).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().account).toBeNull();
   });
@@ -212,6 +215,45 @@ describe('LoginCard', () => {
     expect(useAuthStore.getState().account?.name).toBe('Ada');
   });
 
+  it('does not apply hydration when the persisted token has changed', async () => {
+    let resolve!: (value: typeof account | null) => void;
+    const pending = new Promise<typeof account | null>((r) => {
+      resolve = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('old-tok');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    renderWithLocale(<LoginCard />);
+    vi.mocked(loadSession).mockReturnValue('new-tok');
+
+    await act(async () => {
+      resolve(account);
+    });
+
+    expect(useAuthStore.getState().session).toBeNull();
+  });
+
+  it('does not restore a session after logout while hydration is in flight', async () => {
+    let resolve!: (value: typeof account | null) => void;
+    const pending = new Promise<typeof account | null>((r) => {
+      resolve = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('old-tok');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+    useAuthStore.setState({ session: 'sess', account });
+
+    renderWithLocale(<LoginCard />);
+    fireEvent.click(screen.getByRole('button', { name: /log out/i }));
+    expect(useAuthStore.getState().account).toBeNull();
+
+    await act(async () => {
+      resolve(account);
+    });
+
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('hydrates a valid persisted token into the signed-in view', async () => {
     vi.mocked(loadSession).mockReturnValue('tok');
     vi.mocked(fetchMe).mockResolvedValue(account);
@@ -232,6 +274,74 @@ describe('LoginCard', () => {
       expect(clearSession).toHaveBeenCalledTimes(1);
     });
     expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('clears an in-memory session when hydration 401s the same token', async () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockResolvedValue(null);
+    useAuthStore.setState({ session: 'tok', account });
+
+    renderWithLocale(<LoginCard />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBeNull();
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('does not apply hydration after unmount', async () => {
+    let resolve!: (value: typeof account | null) => void;
+    const pending = new Promise<typeof account | null>((r) => {
+      resolve = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    const { unmount } = renderWithLocale(<LoginCard />);
+    unmount();
+
+    await act(async () => {
+      resolve(account);
+    });
+
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(cancelPasskeySpy).not.toHaveBeenCalled();
+  });
+
+  it('does not let an unmounted hydration 401 wipe a remounted session', async () => {
+    let resolveFirst!: (value: typeof account | null) => void;
+    const first = new Promise<typeof account | null>((r) => {
+      resolveFirst = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValueOnce(first).mockResolvedValueOnce(account);
+
+    const { unmount } = renderWithLocale(<LoginCard />);
+    unmount();
+    renderWithLocale(<LoginCard />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBe('tok');
+    });
+
+    await act(async () => {
+      resolveFirst(null);
+    });
+
+    expect(useAuthStore.getState().session).toBe('tok');
+    expect(useAuthStore.getState().account).toEqual(account);
+  });
+
+  it('cancels an in-flight passkey when hydration succeeds', async () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockResolvedValue(account);
+
+    renderWithLocale(<LoginCard />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBe('tok');
+    });
+    expect(cancelPasskeySpy).toHaveBeenCalled();
   });
 
   it('logs but keeps the token when hydration fails', async () => {
