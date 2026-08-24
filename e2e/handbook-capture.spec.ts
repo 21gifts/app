@@ -19,6 +19,11 @@ const E2E_ACCOUNT = {
 };
 
 async function writePng(page: Page, basename: string, fullPage = true): Promise<void> {
+  if (fullPage) {
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
+  }
   const buffer = await page.screenshot({ fullPage, animations: 'disabled', caret: 'hide' });
   const docsPath = path.join('docs', 'handbook', 'images', basename);
   const publicPath = path.join('public', 'handbook-images', basename);

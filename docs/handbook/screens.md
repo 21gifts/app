@@ -47,7 +47,7 @@ Loaded stats with the cumulative BTC and USD charts visible. Bar scale defaults 
 
 ### Variant: usd-scale
 
-Same totals, bar scale switched to USD on **By person** and **By month**.
+Inverted ranking fixture (June tall in BTC / short in USD, July the reverse). Bar scale switched to USD on **By person** and **By month**.
 
 ![21.gifts stats USD scale](images/stats-usd-scale.png)
 
