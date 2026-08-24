@@ -197,7 +197,9 @@ PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
 catalogize): legal body copy (English), handbook markdown bodies and handbook
 chapter-navigation labels (English), product tokens such as
 `Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
-`Deutsch` / `Español` / `Filipino`), and stats body copy (English).
+`Deutsch` / `Español` / `Filipino`), stats body copy (English), and
+document/social metadata (`title`, `description`, Open Graph alt text —
+English).
 
 Reviewers follow `Review.md`.
 

@@ -11,7 +11,7 @@ Every visitor-facing UI string must be present in **all** locale catalogs
   strings (except the documented exceptions in `CONTRIBUTING.md`: legal body
   copy (English), handbook markdown bodies and handbook chapter-navigation
   labels (English), product tokens, switcher endonyms, stats body copy
-  (English)).
+  (English), document/social metadata (English)).
 - The four catalogs have the **same key set** and every value is non-empty
   after trim. `npm run typecheck` and `src/__tests__/lib/messages.test.ts`
   must pass.
