@@ -2,10 +2,12 @@ import { z } from 'zod';
 import {
   accountSchema,
   lnAddressResolvedSchema,
+  giftDaySchema,
   giftStatsSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
   type Account,
+  type GiftDay,
   type GiftStats,
   type LnAddressResolved,
   type PasskeyBegin,
@@ -198,6 +200,26 @@ export async function resolveLightningAddress(address: string): Promise<LnAddres
     throw new Error('Could not find that Wallet of Satoshi address');
   }
   return lnAddressResolvedSchema.parse(await response.json());
+}
+
+/**
+ * Fetches outbound gifts for one UTC calendar day.
+ *
+ * @param day - UTC `YYYY-MM-DD`.
+ * @returns The {@link GiftDay} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link giftDaySchema}.
+ */
+export async function fetchGiftDay(day: string): Promise<GiftDay> {
+  try {
+    const response = await fetch(`/gifts?day=${encodeURIComponent(day)}`);
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    return giftDaySchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load gift stats. Please try again.');
+  }
 }
 
 /**

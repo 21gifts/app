@@ -409,6 +409,34 @@ test('stats error', async ({ page }) => {
   await writePng(page, 'stats-error.png');
 });
 
+test('stats day default', async ({ page }) => {
+  await page.goto('/stats/2026-06-01');
+  await expect(page.getByText('alice')).toBeVisible();
+  await writePng(page, 'stats-day.png');
+});
+
+test('stats day empty', async ({ page }) => {
+  await page.goto('/stats/2026-06-02');
+  await expect(page.getByText('No gifts recorded on this day.')).toBeVisible();
+  await writePng(page, 'stats-day-empty.png');
+});
+
+test('stats day loading', async ({ page }) => {
+  await page.route('**/gifts?day=*', () => new Promise(() => undefined));
+  await page.goto('/stats/2026-06-01');
+  await expect(page.getByText('Loading…')).toBeVisible();
+  await writePng(page, 'stats-day-loading.png');
+});
+
+test('stats day error', async ({ page }) => {
+  await page.route('**/gifts?day=*', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/stats/2026-06-01');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await writePng(page, 'stats-day-error.png');
+});
+
 test('handbook default', async ({ page }) => {
   await page.goto('/handbook');
   await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();

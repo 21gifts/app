@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  fetchGiftDay,
   fetchGiftStats,
   fetchMe,
   finishPasskeyAuthentication,
@@ -274,6 +275,43 @@ describe('resolveLightningAddress', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { address: 'x' } });
     await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow();
+  });
+});
+
+describe('fetchGiftDay', () => {
+  const day = {
+    day: '2026-06-01',
+    giftCount: 1,
+    totalSats: 500,
+    totalBtc: '0.00000500',
+    totalUsd: '0.48',
+    gifts: [
+      {
+        paidAt: '2026-06-01T12:00:00.000Z',
+        amountSats: 500,
+        amountBtc: '0.00000500',
+        amountUsd: '0.48',
+        recipient: 'alice',
+      },
+    ],
+    fx: {
+      quote: 'BTC-USD',
+      dayBasis: 'utc',
+      source: 'coinbase-exchange-daily-close',
+    },
+  };
+
+  it('returns the validated payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: day });
+    await expect(fetchGiftDay('2026-06-01')).resolves.toEqual(day);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts?day=2026-06-01');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Gift stats are unavailable' } });
+    await expect(fetchGiftDay('2026-06-01')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
   });
 });
 

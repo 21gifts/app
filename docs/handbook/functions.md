@@ -59,7 +59,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (BTC + USD totals with a sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. Each of **Total spend over time**, **By person**, and **By month** has a BTC/USD control (default BTC). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
+- **Purpose:** Renders gift KPIs (BTC + USD totals with a sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** has a BTC/USD control (default BTC). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `StatsLoader`.
@@ -70,6 +70,48 @@
 - **Inputs:** None.
 - **Returns / side effects:** The statistics screen inside `MarketingLayout`. Renders `StatsLoader`.
 - **Used by:** Route `/stats`.
+
+## Function: GiftDayPage
+
+- **Purpose:** Next.js page for `/stats/[day]`. Invalid UTC days call `notFound()`. Valid days render `DayLoader`.
+- **Inputs:** `params` Promise `{ day }`.
+- **Returns / side effects:** The day screen inside `MarketingLayout`.
+- **Used by:** Route `/stats/[day]`.
+
+## Function: DayLoader
+
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error.
+- **Inputs:** `day` UTC `YYYY-MM-DD`.
+- **Returns / side effects:** React element. Calls `fetchGiftDay`.
+- **Used by:** `GiftDayPage`.
+
+## Function: GiftDayTable
+
+- **Purpose:** Table of individual gifts on one UTC day (time, recipient, sats, BTC, USD), or empty copy.
+- **Inputs:** `day: GiftDay`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `DayLoader`.
+
+## Function: fetchGiftDay
+
+- **Purpose:** GET `/gifts?day=` and parse the per-day gift list payload.
+- **Inputs:** UTC `day` string.
+- **Returns / side effects:** `GiftDay`. Throws visitor copy on non-OK or invalid JSON.
+- **Used by:** `DayLoader`.
+
+## Function: isUtcDay
+
+- **Purpose:** Validate a UTC calendar day string `YYYY-MM-DD`.
+- **Inputs:** Candidate `day`.
+- **Returns / side effects:** `true` only for a real calendar date. No I/O.
+- **Used by:** `GiftDayPage`, `DayLoader`.
+
+## Function: proxyGiftsGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /gifts` (forwards `day`).
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/gifts`.
 
 ## Function: Home
 

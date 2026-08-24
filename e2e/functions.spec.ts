@@ -597,6 +597,36 @@ test('Function: formatMsatAsSats — amount outside the accepted range is explai
   await expect(page.getByText('This address accepts 100 sats – 1000000 sats.')).toBeVisible();
 });
 
+test('Function: proxyGiftsGet — GET /gifts without a day is 400', async ({ request }) => {
+  const res = await request.get('/gifts');
+  expect(res.status()).toBe(400);
+});
+
+test('Function: fetchGiftDay — day page lists alice', async ({ page }) => {
+  await page.goto('/stats/2026-06-01');
+  await expect(page.getByText('alice')).toBeVisible();
+});
+
+test('Function: GiftDayTable — day page lists alice', async ({ page }) => {
+  await page.goto('/stats/2026-06-01');
+  await expect(page.getByText('alice')).toBeVisible();
+});
+
+test('Function: DayLoader — empty day copy is visible', async ({ page }) => {
+  await page.goto('/stats/2026-06-02');
+  await expect(page.getByText('No gifts recorded on this day.')).toBeVisible();
+});
+
+test('Function: GiftDayPage — invalid day is 404', async ({ page }) => {
+  await page.goto('/stats/[day]');
+  await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
+});
+
+test('Function: isUtcDay — invalid day is 404', async ({ page }) => {
+  await page.goto('/stats/2026-02-31');
+  await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
+});
+
 test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ request }) => {
   const res = await request.get('/gifts/stats');
   expect(res.status()).toBe(200);

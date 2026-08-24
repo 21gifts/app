@@ -75,6 +75,11 @@ test('GET /gifts/stats is proxied', async ({ request }) => {
   expect([200, 502, 503]).toContain(res.status());
 });
 
+test('GET /gifts is proxied', async ({ request }) => {
+  const res = await request.get('/gifts?day=2026-06-01');
+  expect([200, 400, 502, 503]).toContain(res.status());
+});
+
 test('stats page shows total spend over time', async ({ page }) => {
   await page.route('**/gifts/stats', async (route) => {
     await route.fulfill({

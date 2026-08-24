@@ -28,7 +28,7 @@ function screenArg(route) {
   if (route === '/') {
     return 'screen-root';
   }
-  return `screen-${route.replace(/^\//, '').replace(/\//g, '-')}`;
+  return `screen-${route.replace(/^\//, '').replace(/\//g, '-').replace(/\[|\]/g, '')}`;
 }
 
 function listPngs(dir) {
