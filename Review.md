@@ -9,9 +9,10 @@ Every visitor-facing UI string must be present in **all** locale catalogs
 
 - New or changed copy uses a catalog key in the same PR — no hard-coded UI
   strings (except the documented exceptions in `CONTRIBUTING.md`: legal body,
-  handbook markdown bodies, product tokens, switcher endonyms).
-- The four catalogs have the **same key set**. `npm run typecheck` and
-  `src/__tests__/lib/messages.test.ts` must pass.
+  handbook markdown bodies, product tokens, switcher endonyms, stats body
+  copy).
+- The four catalogs have the **same key set** and every value is non-empty.
+  `npm run typecheck` and `src/__tests__/lib/messages.test.ts` must pass.
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 

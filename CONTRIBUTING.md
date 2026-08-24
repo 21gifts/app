@@ -186,16 +186,18 @@ or renaming a key in one catalog without the others is rejected.
 
 `MessageKey` is derived from the English catalog; `de` / `es` / `fil` use
 `satisfies Messages`, so `npm run typecheck` fails on a missing key.
-`src/__tests__/lib/messages.test.ts` asserts the key sets are identical;
-`npm test` / `npm run test:coverage` (and CI) fail the PR when they diverge.
+`src/__tests__/lib/messages.test.ts` asserts the key sets are identical and
+every value is non-empty; `npm test` / `npm run test:coverage` (and CI) fail
+the PR when they diverge or a value is empty.
 `translate` / `useTranslations` throw if a key is absent at runtime — no
 silent English fallback.
 
 New or changed visitor-facing copy goes through a catalog key in the **same
 PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
 catalogize): legal body copy (English), handbook markdown bodies (English),
-product tokens such as `Wallet of Satoshi` / `GitHub`, and language-switcher
-endonym labels (`English` / `Deutsch` / `Español` / `Filipino`).
+product tokens such as `Wallet of Satoshi` / `GitHub`, language-switcher
+endonym labels (`English` / `Deutsch` / `Español` / `Filipino`), and stats
+body copy (English).
 
 Reviewers follow `Review.md`.
 
