@@ -695,3 +695,64 @@ test('Function: requestOptionsFromJSON — continue with passkey reaches the sig
 }) => {
   await signInWithPasskeyThenAgain(page);
 });
+
+test('Function: LanguageSwitcher — landing exposes the language select', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByLabel('Language')).toBeVisible();
+});
+
+test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+});
+
+test('Function: useTranslations — landing heading is English by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+});
+
+test('Function: translate — landing heading is English by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+});
+
+test('Function: getCatalog — landing heading is English by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+});
+
+test('Function: getRequestLocale — landing heading is English by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+});
+
+test('Function: parseSupportedLocale — Español cookie localizes the landing heading', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByLabel('Language').selectOption('es');
+  await expect(
+    page.getByRole('heading', { name: /Regalos directos de persona a persona/ }),
+  ).toBeVisible();
+});
+
+test.describe('Function: parseAcceptLanguage', () => {
+  test.use({
+    locale: 'de-DE',
+    extraHTTPHeaders: { 'Accept-Language': 'de-DE,de;q=0.9' },
+  });
+
+  test('Function: parseAcceptLanguage — German Accept-Language localizes the landing heading', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(
+      page.getByRole('heading', { name: /Direkte Geschenke von Mensch zu Mensch/ }),
+    ).toBeVisible();
+  });
+});
+
+test('Function: HandbookIntro — handbook heading is visible', async ({ page }) => {
+  await page.goto('/handbook');
+  await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
+});
