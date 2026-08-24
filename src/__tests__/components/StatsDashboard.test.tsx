@@ -157,7 +157,7 @@ describe('StatsDashboard', () => {
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     expect(screen.getByText('₿ 0.01500000')).toBeTruthy();
-    expect(screen.getByText('$1,425.00')).toBeTruthy();
+    expect(screen.getAllByText('$1,425.00')).toHaveLength(2);
     expect(screen.getByText('1,500,000 sats')).toBeTruthy();
     expect(
       screen.getByText("USD is the BTC-USD daily close (UTC) on each gift's day."),
@@ -248,5 +248,32 @@ describe('StatsDashboard', () => {
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     expect(screen.getByLabelText('Spend by month').textContent).toContain('2026-06');
+  });
+
+  it('shows BTC and USD amounts on the by-month chart', () => {
+    render(
+      <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    const svg = screen.getByLabelText('Spend by month');
+    expect(svg.textContent).toContain('0.015 ₿');
+    expect(svg.textContent).toContain('$1,425.00');
+  });
+
+  it('labels zero-sats months on the by-month chart', () => {
+    const withZero: GiftStats = {
+      ...SAMPLE,
+      byMonth: [
+        { month: '2026-02', giftCount: 0, sats: 0, btc: '0.00000000', usd: '0.00' },
+        { month: '2026-03', giftCount: 1, sats: 500_000, btc: '0.00500000', usd: '475.00' },
+      ],
+    };
+    render(
+      <StatsDashboard stats={withZero} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    const svg = screen.getByLabelText('Spend by month');
+    expect(svg.textContent).toContain('2026-02');
+    expect(svg.textContent).toContain('2026-03');
+    expect(svg.textContent).toContain('0 ₿');
+    expect(svg.textContent).toContain('$0.00');
   });
 });

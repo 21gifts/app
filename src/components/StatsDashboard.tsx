@@ -210,6 +210,8 @@ function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
 /**
  * Vertical bar chart of spend by month.
  *
+ * Bars are sized by sats. Labels above each bar show BTC and USD.
+ *
  * @param rows - Monthly totals.
  * @returns SVG figure.
  */
@@ -228,7 +230,7 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
   }
   const padL = 56;
   const padR = 16;
-  const padT = 16;
+  const padT = 44;
   const padB = 36;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
@@ -251,6 +253,24 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
         return (
           <g key={row.month}>
             <rect x={x} y={y} width={w} height={Math.max(h, 1)} fill={ORANGE} />
+            <text
+              x={x + w / 2}
+              y={y - 16}
+              textAnchor="middle"
+              fill="rgba(255,255,255,0.7)"
+              fontSize="11"
+            >
+              {formatBtcTick(Number(row.btc))} ₿
+            </text>
+            <text
+              x={x + w / 2}
+              y={y - 4}
+              textAnchor="middle"
+              fill="rgba(255,255,255,0.7)"
+              fontSize="11"
+            >
+              {formatUsdDisplay(row.usd)}
+            </text>
             <text
               x={x + w / 2}
               y={height - 10}
