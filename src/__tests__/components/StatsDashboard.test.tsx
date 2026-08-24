@@ -290,6 +290,9 @@ describe('StatsDashboard', () => {
     const svg = screen.getByLabelText('Spend by month');
     const rects = [...svg.querySelectorAll('rect')];
     expect(rects).toHaveLength(2);
-    expect(Number(rects[0]?.getAttribute('height'))).toBeGreaterThanOrEqual(1);
+    const y0 = Number(rects[0]?.getAttribute('y'));
+    const h0 = Number(rects[0]?.getAttribute('height'));
+    expect(h0).toBeGreaterThanOrEqual(1);
+    expect(y0 + h0).toBe(184);
   });
 });
