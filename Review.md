@@ -8,11 +8,12 @@ Every visitor-facing UI string must be present in **all** locale catalogs
 (`en`, `de`, `es`, `fil`) in `src/lib/messages.ts`.
 
 - New or changed copy uses a catalog key in the same PR — no hard-coded UI
-  strings (except the documented exceptions in `CONTRIBUTING.md`: legal body,
-  handbook markdown bodies, product tokens, switcher endonyms, stats body
-  copy).
-- The four catalogs have the **same key set** and every value is non-empty.
-  `npm run typecheck` and `src/__tests__/lib/messages.test.ts` must pass.
+  strings (except the documented exceptions in `CONTRIBUTING.md`: legal body
+  copy (English), handbook markdown bodies (English), product tokens, switcher
+  endonyms, stats body copy (English)).
+- The four catalogs have the **same key set** and every value is non-empty
+  after trim. `npm run typecheck` and `src/__tests__/lib/messages.test.ts`
+  must pass.
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
