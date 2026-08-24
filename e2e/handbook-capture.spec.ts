@@ -235,23 +235,54 @@ test('stats default', async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify({
         totalSats: 1500,
+        totalBtc: '0.00001500',
+        totalUsd: '1.43',
         giftCount: 3,
         recipientCount: 2,
         firstPaidAt: '2026-06-01T00:00:00.000Z',
         lastPaidAt: '2026-07-01T00:00:00.000Z',
         spendOverTime: [
-          { day: '2026-06-01', sats: 500, cumulativeSats: 500 },
-          { day: '2026-06-02', sats: 0, cumulativeSats: 500 },
-          { day: '2026-07-01', sats: 1000, cumulativeSats: 1500 },
+          {
+            day: '2026-06-01',
+            sats: 500,
+            cumulativeSats: 500,
+            btc: '0.00000500',
+            cumulativeBtc: '0.00000500',
+            usd: '0.48',
+            cumulativeUsd: '0.48',
+          },
+          {
+            day: '2026-06-02',
+            sats: 0,
+            cumulativeSats: 500,
+            btc: '0.00000000',
+            cumulativeBtc: '0.00000500',
+            usd: '0.00',
+            cumulativeUsd: '0.48',
+          },
+          {
+            day: '2026-07-01',
+            sats: 1000,
+            cumulativeSats: 1500,
+            btc: '0.00001000',
+            cumulativeBtc: '0.00001500',
+            usd: '0.95',
+            cumulativeUsd: '1.43',
+          },
         ],
         byRecipient: [
-          { recipient: 'alice', giftCount: 2, sats: 1000 },
-          { recipient: 'bob', giftCount: 1, sats: 500 },
+          { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
+          { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
         ],
         byMonth: [
-          { month: '2026-06', giftCount: 2, sats: 500 },
-          { month: '2026-07', giftCount: 1, sats: 1000 },
+          { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
+          { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
         ],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+        },
       }),
     });
   });
@@ -267,6 +298,8 @@ test('stats empty', async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify({
         totalSats: 0,
+        totalBtc: '0.00000000',
+        totalUsd: '0.00',
         giftCount: 0,
         recipientCount: 0,
         firstPaidAt: null,
@@ -274,6 +307,11 @@ test('stats empty', async ({ page }) => {
         spendOverTime: [],
         byRecipient: [],
         byMonth: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+        },
       }),
     });
   });

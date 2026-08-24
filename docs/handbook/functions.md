@@ -59,7 +59,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs and three SVG diagrams (cumulative spend, by person, by month), plus loading/error/empty states.
+- **Purpose:** Renders gift KPIs (BTC + USD totals with a sats caption) and SVG diagrams (cumulative BTC, cumulative USD, by person, by month), plus loading/error/empty states.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `StatsLoader`.
@@ -155,12 +155,33 @@
 - **Returns / side effects:** `Account` or `null` on 401.
 - **Used by:** `LoginCard` session hydration.
 
+## Function: formatBtcTick
+
+- **Purpose:** Formats a parsed BTC chart-axis value with up to 8 decimals, trailing zeros trimmed.
+- **Inputs:** `btc` number (layout scale only).
+- **Returns / side effects:** Trimmed decimal string (e.g. `0.015`).
+- **Used by:** `StatsDashboard` BTC-over-time chart.
+
 ## Function: formatMsatAsSats
 
 - **Purpose:** Formats millisatoshis as an English sat string (`1 sat` / `{n} sats`).
 - **Inputs:** `msat` number.
 - **Returns / side effects:** Decimal string in sats.
 - **Used by:** Unit tests (`lnurl-pay.test.ts`). The donate UI formats amounts via catalog keys `donate.satOne` / `donate.sats` instead.
+
+## Function: formatUsdDisplay
+
+- **Purpose:** Formats an API USD amount string (`"1425.00"`) as en-US currency for the stats hero.
+- **Inputs:** `usd` string from `GET /gifts/stats`.
+- **Returns / side effects:** Locale currency string such as `$1,425.00`.
+- **Used by:** `StatsDashboard`.
+
+## Function: formatUsdTick
+
+- **Purpose:** Formats a parsed USD chart-axis value as a grouped dollar label.
+- **Inputs:** `usd` number (layout scale only).
+- **Returns / side effects:** Label such as `$1,234`.
+- **Used by:** `StatsDashboard` USD-over-time chart.
 
 ## Function: getApiUrl
 

@@ -280,13 +280,30 @@ describe('resolveLightningAddress', () => {
 describe('fetchGiftStats', () => {
   const stats = {
     totalSats: 10,
+    totalBtc: '0.00000010',
+    totalUsd: '0.01',
     giftCount: 1,
     recipientCount: 1,
     firstPaidAt: '2026-06-01T00:00:00.000Z',
     lastPaidAt: '2026-06-01T00:00:00.000Z',
-    spendOverTime: [{ day: '2026-06-01', sats: 10, cumulativeSats: 10 }],
-    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10 }],
-    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10 }],
+    spendOverTime: [
+      {
+        day: '2026-06-01',
+        sats: 10,
+        cumulativeSats: 10,
+        btc: '0.00000010',
+        cumulativeBtc: '0.00000010',
+        usd: '0.01',
+        cumulativeUsd: '0.01',
+      },
+    ],
+    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
+    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
+    fx: {
+      quote: 'BTC-USD',
+      dayBasis: 'utc',
+      source: 'coinbase-exchange-daily-close',
+    },
   };
 
   it('returns the validated payload', async () => {

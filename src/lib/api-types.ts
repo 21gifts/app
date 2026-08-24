@@ -51,6 +51,21 @@ export const lnAddressResolvedSchema = z.object({
  */
 export type LnAddressResolved = z.infer<typeof lnAddressResolvedSchema>;
 
+/** BTC amount string from the api: whole sats as BTC with exactly 8 decimals. */
+export const btcAmountStringSchema = z.string().regex(/^\d+\.\d{8}$/);
+
+/** USD amount string from the api: exactly 2 decimals. */
+export const usdAmountStringSchema = z.string().regex(/^\d+\.\d{2}$/);
+
+/**
+ * FX metadata for historical BTC-USD conversion on `GET /gifts/stats`.
+ */
+export const giftStatsFxSchema = z.object({
+  quote: z.literal('BTC-USD'),
+  dayBasis: z.literal('utc'),
+  source: z.literal('coinbase-exchange-daily-close'),
+});
+
 /**
  * One UTC day in the cumulative spend series from `GET /gifts/stats`.
  */
@@ -58,6 +73,10 @@ export const spendDaySchema = z.object({
   day: z.string(),
   sats: z.number().int().nonnegative(),
   cumulativeSats: z.number().int().nonnegative(),
+  btc: btcAmountStringSchema,
+  cumulativeBtc: btcAmountStringSchema,
+  usd: usdAmountStringSchema,
+  cumulativeUsd: usdAmountStringSchema,
 });
 
 /**
@@ -67,6 +86,8 @@ export const recipientSpendSchema = z.object({
   recipient: z.string(),
   giftCount: z.number().int().nonnegative(),
   sats: z.number().int().nonnegative(),
+  btc: btcAmountStringSchema,
+  usd: usdAmountStringSchema,
 });
 
 /**
@@ -76,6 +97,8 @@ export const monthSpendSchema = z.object({
   month: z.string(),
   giftCount: z.number().int().nonnegative(),
   sats: z.number().int().nonnegative(),
+  btc: btcAmountStringSchema,
+  usd: usdAmountStringSchema,
 });
 
 /**
@@ -83,6 +106,8 @@ export const monthSpendSchema = z.object({
  */
 export const giftStatsSchema = z.object({
   totalSats: z.number().int().nonnegative(),
+  totalBtc: btcAmountStringSchema,
+  totalUsd: usdAmountStringSchema,
   giftCount: z.number().int().nonnegative(),
   recipientCount: z.number().int().nonnegative(),
   firstPaidAt: z.string().nullable(),
@@ -90,6 +115,7 @@ export const giftStatsSchema = z.object({
   spendOverTime: z.array(spendDaySchema),
   byRecipient: z.array(recipientSpendSchema),
   byMonth: z.array(monthSpendSchema),
+  fx: giftStatsFxSchema,
 });
 
 /**
