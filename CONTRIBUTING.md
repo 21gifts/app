@@ -112,6 +112,7 @@ app/
 ├── entrypoint.sh
 ├── README.md
 ├── CONTRIBUTING.md
+├── Review.md                 # PR review checklist
 ├── SECURITY.md
 └── LICENSE
 ```
@@ -178,6 +179,33 @@ update stuff
 Every exported symbol carries a TSDoc block with a one-line summary plus
 `@param` / `@returns` / `@throws` where applicable. `eslint-plugin-tsdoc`
 flags malformed comments across `src/`.
+
+### i18n catalogs (hard requirement)
+
+Visitor-facing UI copy lives in `src/lib/messages.ts` as four catalogs:
+English (`en`), German (`de`), Spanish (`es`), and Filipino (`fil`). **Every
+catalog key must exist in all four locales** with a string that is non-empty
+after trim. Adding
+or renaming a key in one catalog without the others is rejected.
+
+`MessageKey` is derived from the English catalog; `de` / `es` / `fil` use
+`satisfies Messages`, so `npm run typecheck` fails on a missing key.
+`src/__tests__/lib/messages.test.ts` asserts the key sets are identical and
+every value is non-empty after trim; `npm test` / `npm run test:coverage`
+(and CI) fail the PR when they diverge or a value is empty/whitespace.
+`translate` (and `t` from `useTranslations`) throws if a key is absent at
+runtime — no silent English fallback.
+
+New or changed visitor-facing copy goes through a catalog key in the **same
+PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
+catalogize): legal body copy (English), handbook markdown bodies and handbook
+chapter-navigation labels (English), product tokens such as
+`Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
+`Deutsch` / `Español` / `Filipino`), stats body copy (English), and
+document/social metadata (`title`, `description`, Open Graph alt text —
+English).
+
+Reviewers follow `Review.md`.
 
 ### Handbook (hard requirement)
 

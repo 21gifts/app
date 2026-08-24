@@ -10,6 +10,14 @@ describe('getCatalog', () => {
     }
   });
 
+  it('keeps every catalog value non-empty', () => {
+    for (const locale of LOCALES) {
+      for (const [key, value] of Object.entries(getCatalog(locale))) {
+        expect(value.trim().length, `${locale}.${key}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it('returns a catalog for every supported locale', () => {
     for (const locale of LOCALES) {
       expect(typeof getCatalog(locale)['language.label']).toBe('string');
