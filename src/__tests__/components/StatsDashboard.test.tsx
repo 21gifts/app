@@ -255,7 +255,7 @@ describe('StatsDashboard', () => {
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     const svg = screen.getByLabelText('Spend by month');
-    expect(svg.textContent).toContain('0.015 ₿');
+    expect(svg.textContent).toContain('0.01500000 ₿');
     expect(svg.textContent).toContain('$1,425.00');
   });
 
@@ -273,7 +273,8 @@ describe('StatsDashboard', () => {
     const svg = screen.getByLabelText('Spend by month');
     expect(svg.textContent).toContain('2026-02');
     expect(svg.textContent).toContain('2026-03');
-    expect(svg.textContent).toContain('0 ₿');
+    expect(svg.textContent).toContain('0.00000000 ₿');
     expect(svg.textContent).toContain('$0.00');
+    expect(svg.querySelectorAll('rect')).toHaveLength(1);
   });
 });
