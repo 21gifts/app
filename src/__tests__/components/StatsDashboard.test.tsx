@@ -157,7 +157,7 @@ describe('StatsDashboard', () => {
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     expect(screen.getByText('₿ 0.01500000')).toBeTruthy();
-    expect(screen.getAllByText('$1,425.00').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('$1,425.00')).toHaveLength(2);
     expect(screen.getByText('1,500,000 sats')).toBeTruthy();
     expect(
       screen.getByText("USD is the BTC-USD daily close (UTC) on each gift's day."),
