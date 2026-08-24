@@ -2,6 +2,76 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
+const POPULATED_STATS = {
+  totalSats: 1500,
+  totalBtc: '0.00001500',
+  totalUsd: '1.43',
+  giftCount: 3,
+  recipientCount: 2,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-07-01T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 500,
+      cumulativeSats: 500,
+      btc: '0.00000500',
+      cumulativeBtc: '0.00000500',
+      usd: '0.48',
+      cumulativeUsd: '0.48',
+    },
+    {
+      day: '2026-06-02',
+      sats: 0,
+      cumulativeSats: 500,
+      btc: '0.00000000',
+      cumulativeBtc: '0.00000500',
+      usd: '0.00',
+      cumulativeUsd: '0.48',
+    },
+    {
+      day: '2026-07-01',
+      sats: 1000,
+      cumulativeSats: 1500,
+      btc: '0.00001000',
+      cumulativeBtc: '0.00001500',
+      usd: '0.95',
+      cumulativeUsd: '1.43',
+    },
+  ],
+  byRecipient: [
+    { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
+    { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
+  ],
+  byMonth: [
+    { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
+    { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
+  ],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+const EMPTY_STATS = {
+  totalSats: 0,
+  totalBtc: '0.00000000',
+  totalUsd: '0.00',
+  giftCount: 0,
+  recipientCount: 0,
+  firstPaidAt: null,
+  lastPaidAt: null,
+  spendOverTime: [],
+  byRecipient: [],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
 async function mockPayCallback(page: Page): Promise<void> {
   await page.route('https://ln.example.com/pay**', async (route) => {
     const amount = new URL(route.request().url()).searchParams.get('amount');
@@ -13,6 +83,16 @@ async function mockPayCallback(page: Page): Promise<void> {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ pr: PAY_INVOICE }),
+    });
+  });
+}
+
+async function stubGiftStats(page: Page, body: unknown): Promise<void> {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
     });
   });
 }
@@ -524,6 +604,7 @@ test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ requ
 });
 
 test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
   await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
 });
@@ -534,14 +615,36 @@ test('Function: StatsPage — stats heading is visible', async ({ page }) => {
 });
 
 test('Function: StatsLoader — stats page shows the empty copy', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
   await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
 });
 
 test('Function: StatsDashboard — empty stats hide the spend chart heading', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
   await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toHaveCount(0);
+});
+
+test('Function: formatUsdDisplay — empty stats hero shows $0.00', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
+});
+
+test('Function: formatBtcTick — populated stats draw the BTC chart', async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.goto('/stats');
+  await expect(page.getByLabel('BTC over time')).toBeVisible();
+  await expect(page.getByLabel('BTC over time').getByText('0.000015')).toBeVisible();
+});
+
+test('Function: formatUsdTick — populated stats draw the USD chart', async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.goto('/stats');
+  await expect(page.getByLabel('USD over time')).toBeVisible();
+  await expect(page.getByLabel('USD over time').getByText('$1.43')).toBeVisible();
 });
 
 test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a challenge', async ({

@@ -174,6 +174,8 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && pathName === '/gifts/stats') {
     json(res, 200, {
       totalSats: 0,
+      totalBtc: '0.00000000',
+      totalUsd: '0.00',
       giftCount: 0,
       recipientCount: 0,
       firstPaidAt: null,
@@ -181,6 +183,7 @@ const server = http.createServer(async (req, res) => {
       spendOverTime: [],
       byRecipient: [],
       byMonth: [],
+      fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
     });
     return;
   }

@@ -41,7 +41,7 @@ The only state: imprint plus privacy, marketing chrome.
 
 ### Variant: default
 
-Loaded stats with the cumulative spend chart visible.
+Loaded stats with the cumulative BTC and USD charts visible.
 
 ![21.gifts stats](images/stats.png)
 
