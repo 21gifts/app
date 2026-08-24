@@ -41,9 +41,15 @@ The only state: imprint plus privacy, marketing chrome.
 
 ### Variant: default
 
-Loaded stats with the cumulative BTC and USD charts visible.
+Loaded stats with the cumulative BTC and USD charts visible. Bar scale defaults to BTC.
 
 ![21.gifts stats](images/stats.png)
+
+### Variant: usd-scale
+
+Same totals, bar scale switched to USD on **By person** and **By month**.
+
+![21.gifts stats USD scale](images/stats-usd-scale.png)
 
 ### Variant: empty
 
