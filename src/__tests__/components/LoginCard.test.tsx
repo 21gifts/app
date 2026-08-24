@@ -289,6 +289,49 @@ describe('LoginCard', () => {
     expect(useAuthStore.getState().account).toBeNull();
   });
 
+  it('does not apply hydration after unmount', async () => {
+    let resolve!: (value: typeof account | null) => void;
+    const pending = new Promise<typeof account | null>((r) => {
+      resolve = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    const { unmount } = renderWithLocale(<LoginCard />);
+    unmount();
+
+    await act(async () => {
+      resolve(account);
+    });
+
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(cancelPasskeySpy).not.toHaveBeenCalled();
+  });
+
+  it('does not let an unmounted hydration 401 wipe a remounted session', async () => {
+    let resolveFirst!: (value: typeof account | null) => void;
+    const first = new Promise<typeof account | null>((r) => {
+      resolveFirst = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValueOnce(first).mockResolvedValueOnce(account);
+
+    const { unmount } = renderWithLocale(<LoginCard />);
+    unmount();
+    renderWithLocale(<LoginCard />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBe('tok');
+    });
+
+    await act(async () => {
+      resolveFirst(null);
+    });
+
+    expect(useAuthStore.getState().session).toBe('tok');
+    expect(useAuthStore.getState().account).toEqual(account);
+  });
+
   it('cancels an in-flight passkey when hydration succeeds', async () => {
     vi.mocked(loadSession).mockReturnValue('tok');
     vi.mocked(fetchMe).mockResolvedValue(account);
