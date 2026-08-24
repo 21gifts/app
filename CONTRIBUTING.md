@@ -181,7 +181,8 @@ flags malformed comments across `src/`.
 
 Visitor-facing UI copy lives in `src/lib/messages.ts` as four catalogs:
 English (`en`), German (`de`), Spanish (`es`), and Filipino (`fil`). **Every
-catalog key must exist in all four locales** with a non-empty string. Adding
+catalog key must exist in all four locales** with a string that is non-empty
+after trim. Adding
 or renaming a key in one catalog without the others is rejected.
 
 `MessageKey` is derived from the English catalog; `de` / `es` / `fil` use
