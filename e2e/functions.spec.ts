@@ -50,9 +50,14 @@ async function installFakeWebAuthn(page: Page): Promise<void> {
         configurable: true,
       });
     }
-    const rawId = new Uint8Array([1, 2, 3, 4]).buffer;
+    const rawId = crypto.getRandomValues(new Uint8Array(16)).buffer;
+    const idBytes = new Uint8Array(rawId);
+    let id = '';
+    for (const byte of idBytes) {
+      id += byte.toString(16).padStart(2, '0');
+    }
     const attestation = {
-      id: 'cred-e2e',
+      id,
       rawId,
       type: 'public-key',
       getClientExtensionResults: () => ({}),
