@@ -347,6 +347,10 @@ test('stats usd-scale', async ({ page }) => {
   });
   await page.goto('/stats');
   await page
+    .getByRole('group', { name: 'Over time scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await page
     .getByRole('group', { name: 'By person bar scale' })
     .getByRole('button', { name: 'USD' })
     .click();
