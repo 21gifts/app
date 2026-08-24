@@ -27,7 +27,7 @@ export interface UsePasskeyLogin {
   authenticate: () => void;
   /** Repeat the last register or authenticate attempt after an error. */
   retry: () => void;
-  /** Aborts an in-flight WebAuthn prompt so another login method can start. */
+  /** Aborts an in-flight WebAuthn prompt. */
   cancel: () => void;
 }
 
