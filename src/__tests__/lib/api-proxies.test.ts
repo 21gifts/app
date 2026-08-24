@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   proxyAuthLnurlCallbackGet,
   proxyAuthLnurlGet,
+  proxyAuthPasskeyAuthenticateBeginPost,
+  proxyAuthPasskeyAuthenticateFinishPost,
+  proxyAuthPasskeyRegisterBeginPost,
+  proxyAuthPasskeyRegisterFinishPost,
   proxyAuthSessionGet,
   proxyLightningAddressGet,
   proxyGiftsStatsGet,
@@ -86,5 +90,45 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/gifts/stats');
+  });
+
+  it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyRegisterBeginPost(
+      new Request('http://localhost/auth/passkey/register/begin', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/register/begin');
+  });
+
+  it('proxyAuthPasskeyRegisterFinishPost hits /auth/passkey/register/finish', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyRegisterFinishPost(
+      new Request('http://localhost/auth/passkey/register/finish', {
+        method: 'POST',
+        body: '{}',
+      }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/register/finish');
+  });
+
+  it('proxyAuthPasskeyAuthenticateBeginPost hits /auth/passkey/authenticate/begin', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyAuthenticateBeginPost(
+      new Request('http://localhost/auth/passkey/authenticate/begin', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/authenticate/begin');
+  });
+
+  it('proxyAuthPasskeyAuthenticateFinishPost hits /auth/passkey/authenticate/finish', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyAuthenticateFinishPost(
+      new Request('http://localhost/auth/passkey/authenticate/finish', {
+        method: 'POST',
+        body: '{}',
+      }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
+      '/auth/passkey/authenticate/finish',
+    );
   });
 });

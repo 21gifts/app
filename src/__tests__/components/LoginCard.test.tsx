@@ -2,11 +2,13 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginCard } from '@/components/LoginCard';
 import { useLnurlLogin, type LoginStatus } from '@/hooks/useLnurlLogin';
+import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
 import { fetchMe } from '@/lib/api';
 import { clearSession, loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/hooks/useLnurlLogin', () => ({ useLnurlLogin: vi.fn() }));
+vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
@@ -32,11 +34,24 @@ const account = {
 };
 
 const startSpy = vi.fn();
+const registerSpy = vi.fn();
+const authenticateSpy = vi.fn();
+const retrySpy = vi.fn();
 const ORIGINAL_UA = window.navigator.userAgent;
 
-/** Points the mocked hook at a fixed state for the next render. */
+/** Points the mocked LNURL hook at a fixed state for the next render. */
 function mockHook(status: LoginStatus, lnurl: string | null): void {
   vi.mocked(useLnurlLogin).mockReturnValue({ status, lnurl, start: startSpy });
+}
+
+/** Points the mocked passkey hook at a fixed state for the next render. */
+function mockPasskey(status: PasskeyStatus = 'idle'): void {
+  vi.mocked(usePasskeyLogin).mockReturnValue({
+    status,
+    register: registerSpy,
+    authenticate: authenticateSpy,
+    retry: retrySpy,
+  });
 }
 
 beforeEach(() => {
@@ -44,6 +59,7 @@ beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
   vi.mocked(loadSession).mockReturnValue(null);
   mockHook('idle', null);
+  mockPasskey('idle');
 });
 
 afterEach(() => {
@@ -57,10 +73,38 @@ afterEach(() => {
 describe('LoginCard', () => {
   it('shows the login call-to-action when logged out and idle', () => {
     render(<LoginCard />);
-    const button = screen.getByRole('button', { name: /log in with wallet of satoshi/i });
+    const create = screen.getByRole('button', { name: /create a passkey/i });
+    fireEvent.click(create);
+    expect(registerSpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: /continue with passkey/i }));
+    expect(authenticateSpy).toHaveBeenCalledTimes(1);
+    const wallet = screen.getByRole('button', { name: /log in with wallet of satoshi/i });
     expect(document.body.textContent).not.toMatch(/Lightning/i);
-    fireEvent.click(button);
+    fireEvent.click(wallet);
     expect(startSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a loading state while a passkey ceremony starts', () => {
+    mockPasskey('starting');
+    render(<LoginCard />);
+    expect(screen.getByText('Preparing your login…')).toBeTruthy();
+  });
+
+  it('hides the linking key when the signed-in account has none', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, linkingKey: null },
+    });
+    render(<LoginCard />);
+    expect(screen.getByText('Signed in')).toBeTruthy();
+    expect(screen.queryByTitle(account.linkingKey)).toBeNull();
+  });
+
+  it('shows a passkey error with try again', () => {
+    mockPasskey('error');
+    render(<LoginCard />);
+    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
+    expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('shows a loading state while starting', () => {

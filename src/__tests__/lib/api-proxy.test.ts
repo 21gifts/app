@@ -28,6 +28,7 @@ describe('proxyApiRequest', () => {
     const request = new Request('http://localhost/auth/lnurl?k1=ab', {
       headers: {
         authorization: 'Bearer tok',
+        origin: 'https://21.gifts',
         'x-poll-token': 'pt',
         'user-agent': 'Copay',
         'x-ignored': 'no',
@@ -44,6 +45,7 @@ describe('proxyApiRequest', () => {
     expect(url.toString()).toBe(`${API}/auth/lnurl?k1=ab`);
     const headers = init.headers as Headers;
     expect(headers.get('authorization')).toBe('Bearer tok');
+    expect(headers.get('origin')).toBe('https://21.gifts');
     expect(headers.get('x-poll-token')).toBe('pt');
     expect(headers.get('user-agent')).toBe('Copay');
     expect(headers.get('x-ignored')).toBeNull();

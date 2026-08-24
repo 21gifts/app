@@ -65,14 +65,14 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 
 ## Screen: /login
 
-- **URL:** `/login` — Wallet of Satoshi sign-in.
-- **What the user sees:** Idle start button, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
-- **Actions:** Scan the QR or tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
-- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
+- **URL:** `/login` — passkey first, Wallet of Satoshi as a second method.
+- **What the user sees:** Idle **Create a passkey** / **Continue with passkey** / **Log in with Wallet of Satoshi**, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
+- **Actions:** Create or continue with a passkey, or scan the QR / tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
 
 ### Variant: idle
 
-Logged out, no challenge yet. Heading **Sign in to 21.gifts**, button **Log in with Wallet of Satoshi**.
+Logged out, no challenge yet. Heading **Sign in to 21.gifts**, **Create a passkey**, **Continue with passkey**, **Log in with Wallet of Satoshi**.
 
 ![21.gifts login idle](images/login.png)
 

@@ -5,9 +5,13 @@ import {
   startChallengeSchema,
   lnAddressResolvedSchema,
   giftStatsSchema,
+  passkeyBeginSchema,
+  passkeySessionSchema,
   type Account,
   type GiftStats,
   type LnAddressResolved,
+  type PasskeyBegin,
+  type PasskeySession,
   type SessionResult,
   type StartChallenge,
 } from '@/lib/api-types';
@@ -251,4 +255,78 @@ export async function fetchGiftStats(): Promise<GiftStats> {
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
   }
+}
+
+/**
+ * Starts a passkey registration ceremony.
+ *
+ * @returns Challenge id plus WebAuthn creation options JSON.
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function startPasskeyRegistration(): Promise<PasskeyBegin> {
+  const response = await fetch('/auth/passkey/register/begin', { method: 'POST' });
+  if (!response.ok) {
+    throw new Error(`Failed to start passkey registration: ${response.status}`);
+  }
+  return passkeyBeginSchema.parse(await response.json());
+}
+
+/**
+ * Completes passkey registration and issues a session.
+ *
+ * @param challengeId - Id returned by {@link startPasskeyRegistration}.
+ * @param credential - Browser attestation JSON (`PublicKeyCredential.toJSON()`).
+ * @returns Token plus account (`linkingKey` is null).
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function finishPasskeyRegistration(
+  challengeId: string,
+  credential: unknown,
+): Promise<PasskeySession> {
+  const response = await fetch('/auth/passkey/register/finish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ challengeId, credential }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to finish passkey registration: ${response.status}`);
+  }
+  return passkeySessionSchema.parse(await response.json());
+}
+
+/**
+ * Starts a passkey authentication ceremony.
+ *
+ * @returns Challenge id plus WebAuthn request options JSON.
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
+  const response = await fetch('/auth/passkey/authenticate/begin', { method: 'POST' });
+  if (!response.ok) {
+    throw new Error(`Failed to start passkey authentication: ${response.status}`);
+  }
+  return passkeyBeginSchema.parse(await response.json());
+}
+
+/**
+ * Completes passkey authentication and issues a session.
+ *
+ * @param challengeId - Id returned by {@link startPasskeyAuthentication}.
+ * @param credential - Browser assertion JSON.
+ * @returns Token plus account.
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function finishPasskeyAuthentication(
+  challengeId: string,
+  credential: unknown,
+): Promise<PasskeySession> {
+  const response = await fetch('/auth/passkey/authenticate/finish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ challengeId, credential }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to finish passkey authentication: ${response.status}`);
+  }
+  return passkeySessionSchema.parse(await response.json());
 }

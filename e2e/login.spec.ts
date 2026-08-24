@@ -27,6 +27,8 @@ async function mockPendingAuth(page: Page): Promise<void> {
 
 test('login page renders the wallet sign-in action', async ({ page }) => {
   await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue with passkey' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
 });
 

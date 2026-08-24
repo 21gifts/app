@@ -392,3 +392,101 @@
 - **Inputs:** `Request` with JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/lightning-address`.
+
+## Function: base64UrlToBytes
+
+- **Purpose:** Decode a base64url string to bytes for WebAuthn options.
+- **Inputs:** Base64url string (padding optional).
+- **Returns / side effects:** `Uint8Array`. No network.
+- **Used by:** `creationOptionsFromJSON`, `requestOptionsFromJSON`.
+
+## Function: bytesToBase64Url
+
+- **Purpose:** Encode bytes as unpadded base64url for WebAuthn JSON.
+- **Inputs:** `Uint8Array`.
+- **Returns / side effects:** Base64url string. No network.
+- **Used by:** `credentialToJSON`.
+
+## Function: creationOptionsFromJSON
+
+- **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input.
+- **Inputs:** Record from `POST /auth/passkey/register/begin`.
+- **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present.
+- **Used by:** `usePasskeyLogin.register`.
+
+## Function: credentialToJSON
+
+- **Purpose:** Serialise a `PublicKeyCredential` for the api finish body.
+- **Inputs:** Browser credential from create/get.
+- **Returns / side effects:** JSON record. Uses native `toJSON` when present.
+- **Used by:** `usePasskeyLogin`.
+
+## Function: finishPasskeyAuthentication
+
+- **Purpose:** POST `/auth/passkey/authenticate/finish` and parse the session.
+- **Inputs:** `challengeId` and credential JSON.
+- **Returns / side effects:** `{ token, account }`. Throws on non-2xx.
+- **Used by:** `usePasskeyLogin.authenticate`.
+
+## Function: finishPasskeyRegistration
+
+- **Purpose:** POST `/auth/passkey/register/finish` and parse the session.
+- **Inputs:** `challengeId` and credential JSON.
+- **Returns / side effects:** `{ token, account }` with `linkingKey` null. Throws on non-2xx.
+- **Used by:** `usePasskeyLogin.register`.
+
+## Function: proxyAuthPasskeyAuthenticateBeginPost
+
+- **Purpose:** Proxies POST `/auth/passkey/authenticate/begin`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/authenticate/begin`.
+
+## Function: proxyAuthPasskeyAuthenticateFinishPost
+
+- **Purpose:** Proxies POST `/auth/passkey/authenticate/finish`.
+- **Inputs:** Incoming `Request` with JSON body.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/authenticate/finish`.
+
+## Function: proxyAuthPasskeyRegisterBeginPost
+
+- **Purpose:** Proxies POST `/auth/passkey/register/begin`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/register/begin`.
+
+## Function: proxyAuthPasskeyRegisterFinishPost
+
+- **Purpose:** Proxies POST `/auth/passkey/register/finish`.
+- **Inputs:** Incoming `Request` with JSON body.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/register/finish`.
+
+## Function: requestOptionsFromJSON
+
+- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input.
+- **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
+- **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present.
+- **Used by:** `usePasskeyLogin.authenticate`.
+
+## Function: startPasskeyAuthentication
+
+- **Purpose:** POST `/auth/passkey/authenticate/begin` and parse options.
+- **Inputs:** None.
+- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
+- **Used by:** `usePasskeyLogin.authenticate`.
+
+## Function: startPasskeyRegistration
+
+- **Purpose:** POST `/auth/passkey/register/begin` and parse options.
+- **Inputs:** None.
+- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
+- **Used by:** `usePasskeyLogin.register`.
+
+## Function: usePasskeyLogin
+
+- **Purpose:** Client hook for passkey create and continue; stores the session on success.
+- **Inputs:** None (reads `useAuthStore`).
+- **Returns / side effects:** `{ status, register, authenticate, retry }`. Calls WebAuthn and the api.
+- **Used by:** `LoginCard`.
