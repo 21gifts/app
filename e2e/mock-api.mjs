@@ -21,6 +21,8 @@ const byPoll = new Map();
 const byToken = new Map();
 /** @type {Map<string, { type: 'register' | 'authenticate' }>} */
 const byPasskey = new Map();
+/** @type {Map<string, object>} */
+const byPasskeyCredential = new Map();
 
 function hex(bytes) {
   return Buffer.from(bytes).toString('hex');
@@ -306,13 +308,38 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with challengeId and credential' });
       return;
     }
+    const origin = req.headers.origin;
+    if (origin !== 'http://localhost:3000') {
+      json(res, 400, { error: 'Invalid origin' });
+      return;
+    }
+    const credential = parsed.credential;
+    if (typeof credential !== 'object' || credential === null) {
+      json(res, 400, { error: 'Invalid passkey' });
+      return;
+    }
+    const credId = credential.id;
+    if (typeof credId !== 'string' || credId === '' || credential.type !== 'public-key') {
+      json(res, 400, { error: 'Unknown credential' });
+      return;
+    }
     const pending = byPasskey.get(parsed.challengeId);
     if (!pending || pending.type !== expectedType) {
       json(res, 400, { error: 'Unknown or expired challenge' });
       return;
     }
     byPasskey.delete(parsed.challengeId);
-    const account = newAccount(null);
+    let account;
+    if (expectedType === 'register') {
+      account = newAccount(null);
+      byPasskeyCredential.set(credId, account);
+    } else {
+      account = byPasskeyCredential.get(credId);
+      if (!account) {
+        json(res, 400, { error: 'Unknown credential' });
+        return;
+      }
+    }
     const token = hex(randomBytes(32));
     byToken.set(token, account);
     json(res, 200, { token, account });

@@ -70,14 +70,39 @@ async function installFakeWebAuthn(page: Page): Promise<void> {
         userHandle: null,
       },
     };
+    const isBytes = (value: unknown): boolean =>
+      value instanceof ArrayBuffer || ArrayBuffer.isView(value);
     Object.defineProperty(navigator, 'credentials', {
       configurable: true,
       value: {
-        create: async () => attestation,
-        get: async () => assertion,
+        create: async (options?: CredentialCreationOptions) => {
+          const publicKey = options?.publicKey;
+          if (!publicKey || !isBytes(publicKey.challenge) || !isBytes(publicKey.user?.id)) {
+            throw new Error('invalid creation options');
+          }
+          return attestation;
+        },
+        get: async (options?: CredentialRequestOptions) => {
+          const publicKey = options?.publicKey;
+          if (!publicKey || !isBytes(publicKey.challenge)) {
+            throw new Error('invalid request options');
+          }
+          return assertion;
+        },
       },
     });
   });
+}
+
+async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(page.getByRole('button', { name: 'Continue with passkey' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue with passkey' }).click();
+  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 }
 
 async function loginHttp(request: APIRequestContext): Promise<string> {
@@ -584,10 +609,7 @@ test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a c
 test('Function: startPasskeyAuthentication — continue with passkey reaches the signed-in view', async ({
   page,
 }) => {
-  await installFakeWebAuthn(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Continue with passkey' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await signInWithPasskeyThenAgain(page);
 });
 
 test('Function: proxyAuthPasskeyAuthenticateFinishPost — POST finish without body is 400', async ({
@@ -600,18 +622,22 @@ test('Function: proxyAuthPasskeyAuthenticateFinishPost — POST finish without b
 test('Function: finishPasskeyAuthentication — continue with passkey reaches the signed-in view', async ({
   page,
 }) => {
-  await installFakeWebAuthn(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Continue with passkey' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await signInWithPasskeyThenAgain(page);
 });
 
-test('Function: usePasskeyLogin — create passkey reaches the signed-in view', async ({ page }) => {
+test('Function: usePasskeyLogin — create passkey reaches the signed-in view', async ({
+  page,
+  request,
+}) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Create a passkey' }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText('basis')).toBeVisible();
+  const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
+  expect(token).toBeTruthy();
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { linkingKey: string | null }).linkingKey).toBeNull();
 });
 
 test('Function: creationOptionsFromJSON — create passkey reaches the signed-in view', async ({
@@ -647,8 +673,5 @@ test('Function: bytesToBase64Url — create passkey reaches the signed-in view',
 test('Function: requestOptionsFromJSON — continue with passkey reaches the signed-in view', async ({
   page,
 }) => {
-  await installFakeWebAuthn(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Continue with passkey' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await signInWithPasskeyThenAgain(page);
 });
