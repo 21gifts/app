@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StatsDashboard } from '@/components/StatsDashboard';
 import type { GiftStats } from '@/lib/api-types';
@@ -119,8 +119,8 @@ describe('StatsDashboard', () => {
     expect(screen.getByRole('heading', { name: 'Total spend over time' })).toBeTruthy();
     expect(screen.getByLabelText('BTC over time')).toBeTruthy();
     expect(screen.getByLabelText('USD over time')).toBeTruthy();
-    expect(screen.getByLabelText('Spend by person')).toBeTruthy();
-    expect(screen.getByLabelText('Spend by month')).toBeTruthy();
+    expect(screen.getByLabelText('Spend by person in BTC')).toBeTruthy();
+    expect(screen.getByLabelText('Spend by month in BTC')).toBeTruthy();
   });
 
   it('labels two-day series without duplicate ticks', () => {
@@ -165,8 +165,8 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('Total spend over time')).toBeTruthy();
     expect(screen.getByLabelText('BTC over time')).toBeTruthy();
     expect(screen.getByLabelText('USD over time')).toBeTruthy();
-    expect(screen.getByLabelText('Spend by person')).toBeTruthy();
-    expect(screen.getByLabelText('Spend by month')).toBeTruthy();
+    expect(screen.getByLabelText('Spend by person in BTC')).toBeTruthy();
+    expect(screen.getByLabelText('Spend by month in BTC')).toBeTruthy();
     expect(screen.getByText('alice')).toBeTruthy();
     expect(screen.getByText('0.01000000 ₿ · $950.00')).toBeTruthy();
   });
@@ -247,14 +247,14 @@ describe('StatsDashboard', () => {
     render(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
-    expect(screen.getByLabelText('Spend by month').textContent).toContain('2026-06');
+    expect(screen.getByLabelText('Spend by month in BTC').textContent).toContain('2026-06');
   });
 
   it('shows BTC and USD amounts on the by-month chart', () => {
     render(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
-    const svg = screen.getByLabelText('Spend by month');
+    const svg = screen.getByLabelText('Spend by month in BTC');
     expect(svg.textContent).toContain('0.01500000 ₿');
     expect(svg.textContent).toContain('$1,425.00');
   });
@@ -270,7 +270,7 @@ describe('StatsDashboard', () => {
     render(
       <StatsDashboard stats={withZero} error={null} loading={false} onRetry={() => undefined} />,
     );
-    const svg = screen.getByLabelText('Spend by month');
+    const svg = screen.getByLabelText('Spend by month in BTC');
     expect(svg.textContent).toContain('2026-02');
     expect(svg.textContent).toContain('2026-03');
     expect(svg.textContent).toContain('0.00000000 ₿');
@@ -287,12 +287,87 @@ describe('StatsDashboard', () => {
       ],
     };
     render(<StatsDashboard stats={tiny} error={null} loading={false} onRetry={() => undefined} />);
-    const svg = screen.getByLabelText('Spend by month');
+    const svg = screen.getByLabelText('Spend by month in BTC');
     const rects = [...svg.querySelectorAll('rect')];
     expect(rects).toHaveLength(2);
     const y0 = Number(rects[0]?.getAttribute('y'));
     const h0 = Number(rects[0]?.getAttribute('height'));
     expect(h0).toBeGreaterThanOrEqual(1);
     expect(y0 + h0).toBe(184);
+  });
+
+  it('sizes by-month bars by USD after clicking the USD scale', () => {
+    const inverted: GiftStats = {
+      ...SAMPLE,
+      byMonth: [
+        { month: '2026-06', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
+        { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+      ],
+    };
+    render(
+      <StatsDashboard stats={inverted} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    const btcSvg = screen.getByLabelText('Spend by month in BTC');
+    const btcRects = [...btcSvg.querySelectorAll('rect')];
+    expect(Number(btcRects[0]?.getAttribute('height'))).toBeGreaterThan(
+      Number(btcRects[1]?.getAttribute('height')),
+    );
+    const group = screen.getByRole('group', { name: 'By month bar scale' });
+    fireEvent.click(within(group).getByRole('button', { name: 'USD' }));
+    expect(within(group).getByRole('button', { name: 'USD' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const usdSvg = screen.getByLabelText('Spend by month in USD');
+    const usdRects = [...usdSvg.querySelectorAll('rect')];
+    expect(Number(usdRects[1]?.getAttribute('height'))).toBeGreaterThan(
+      Number(usdRects[0]?.getAttribute('height')),
+    );
+    fireEvent.click(within(group).getByRole('button', { name: 'BTC' }));
+    expect(within(group).getByRole('button', { name: 'BTC' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByLabelText('Spend by person in BTC')).toBeTruthy();
+  });
+
+  it('sizes by-person bars by USD independently of the month scale', () => {
+    const mixed: GiftStats = {
+      ...SAMPLE,
+      byRecipient: [
+        { recipient: 'alice', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
+        { recipient: 'bob', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+        { recipient: 'carol', giftCount: 0, sats: 0, btc: '0.00000000', usd: '0.00' },
+      ],
+      byMonth: [
+        { month: '2026-06', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
+        { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+      ],
+    };
+    render(<StatsDashboard stats={mixed} error={null} loading={false} onRetry={() => undefined} />);
+    const personBtc = [...screen.getByLabelText('Spend by person in BTC').querySelectorAll('rect')];
+    expect(personBtc).toHaveLength(2);
+    expect(Number(personBtc[0]?.getAttribute('width'))).toBeGreaterThan(
+      Number(personBtc[1]?.getAttribute('width')),
+    );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
+        name: 'USD',
+      }),
+    );
+    expect(screen.getByLabelText('Spend by person in BTC')).toBeTruthy();
+    const personStillBtc = [
+      ...screen.getByLabelText('Spend by person in BTC').querySelectorAll('rect'),
+    ];
+    expect(Number(personStillBtc[0]?.getAttribute('width'))).toBeGreaterThan(
+      Number(personStillBtc[1]?.getAttribute('width')),
+    );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'By person bar scale' })).getByRole('button', {
+        name: 'USD',
+      }),
+    );
+    const personUsd = [...screen.getByLabelText('Spend by person in USD').querySelectorAll('rect')];
+    expect(Number(personUsd[1]?.getAttribute('width'))).toBeGreaterThan(
+      Number(personUsd[0]?.getAttribute('width')),
+    );
   });
 });
