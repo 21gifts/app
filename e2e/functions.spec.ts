@@ -109,7 +109,11 @@ async function loginHttp(request: APIRequestContext): Promise<string> {
     headers: { origin: 'http://localhost:3000' },
     data: {
       challengeId: started.challengeId,
-      credential: { id: `cred_${started.challengeId.slice(0, 8)}`, rawId: 'YQ', type: 'public-key' },
+      credential: {
+        id: `cred_${started.challengeId.slice(0, 8)}`,
+        rawId: 'YQ',
+        type: 'public-key',
+      },
     },
   });
   expect(finish.status()).toBe(200);
