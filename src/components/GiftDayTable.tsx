@@ -24,8 +24,14 @@ function formatSats(sats: number): string {
  * @returns Clock time in UTC.
  */
 function formatUtcTime(iso: string): string {
-  const time = iso.slice(11, 19);
-  return time.length === 8 ? `${time} UTC` : iso;
+  const instant = new Date(iso);
+  if (Number.isNaN(instant.getTime())) {
+    return iso;
+  }
+  const hours = String(instant.getUTCHours()).padStart(2, '0');
+  const minutes = String(instant.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(instant.getUTCSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds} UTC`;
 }
 
 /**
@@ -53,8 +59,11 @@ export function GiftDayTable({ day }: GiftDayTableProps): ReactElement {
           </tr>
         </thead>
         <tbody>
-          {day.gifts.map((gift) => (
-            <tr key={`${gift.paidAt}-${gift.recipient}`} className="border-b border-white/10">
+          {day.gifts.map((gift, index) => (
+            <tr
+              key={`${gift.paidAt}-${gift.recipient}-${gift.amountSats}-${index}`}
+              className="border-b border-white/10"
+            >
               <td className="py-2 pr-4 whitespace-nowrap text-white/80">
                 <time dateTime={gift.paidAt}>{formatUtcTime(gift.paidAt)}</time>
               </td>

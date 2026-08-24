@@ -51,7 +51,7 @@ describe('GiftDayTable', () => {
     expect(screen.getByText('12:00:00 UTC')).toBeTruthy();
   });
 
-  it('shows the raw paidAt when the timestamp has no UTC clock', () => {
+  it('shows UTC clock from an offset timestamp', () => {
     render(
       <GiftDayTable
         day={{
@@ -59,7 +59,7 @@ describe('GiftDayTable', () => {
           giftCount: 1,
           gifts: [
             {
-              paidAt: '2026-06-01',
+              paidAt: '2026-06-01T14:00:00+02:00',
               amountSats: 1,
               amountBtc: '0.00000001',
               amountUsd: '0.01',
@@ -69,6 +69,27 @@ describe('GiftDayTable', () => {
         }}
       />,
     );
-    expect(screen.getByText('2026-06-01')).toBeTruthy();
+    expect(screen.getByText('12:00:00 UTC')).toBeTruthy();
+  });
+
+  it('shows the raw paidAt when the timestamp is not a date', () => {
+    render(
+      <GiftDayTable
+        day={{
+          ...EMPTY,
+          giftCount: 1,
+          gifts: [
+            {
+              paidAt: 'not-a-time',
+              amountSats: 1,
+              amountBtc: '0.00000001',
+              amountUsd: '0.01',
+              recipient: 'bob',
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByText('not-a-time')).toBeTruthy();
   });
 });

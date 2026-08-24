@@ -8,7 +8,8 @@ import { isUtcDay } from '@/lib/utc-day';
  * `/stats/[day]` — public list of outbound gifts on one UTC calendar day.
  *
  * @param props - Dynamic route params.
- * @returns The day screen, or a 404 when `day` is not a real UTC date.
+ * @returns The day screen for a real UTC `day`.
+ * @throws Next.js not-found when `day` is not a real UTC date.
  */
 export default async function GiftDayPage({
   params,
