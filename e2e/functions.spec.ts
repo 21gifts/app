@@ -258,6 +258,11 @@ test('Function: proxyMeLightningAddressPost — POST links an address', async ({
     data: { address: 'alice@walletofsatoshi.com' },
   });
   expect(res.status()).toBe(200);
+  const bad = await request.post('/me/lightning-address', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { address: 'not-an-address' },
+  });
+  expect(bad.status()).toBe(400);
 });
 
 test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi address', async ({
