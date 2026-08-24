@@ -2,6 +2,7 @@
 
 import { Check, Link2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useTranslations } from '@/components/LocaleProvider';
 
 const RESET_MS = 1200;
 
@@ -42,9 +43,10 @@ export function HandbookCopyLink({
 }: {
   /** DOM id of the target (without `#`). */
   targetId: string;
-  /** Used in aria-label: `Copy link to ${label}`. */
+  /** Interpolated into `handbook.copyLink` for aria-label and title. */
   label: string;
 }): ReactElement {
+  const { t } = useTranslations();
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mounted = useRef(true);
@@ -98,7 +100,7 @@ export function HandbookCopyLink({
     void copy();
   }
 
-  const ariaName = `Copy link to ${label}`;
+  const ariaName = t('handbook.copyLink', { label });
 
   return (
     <button

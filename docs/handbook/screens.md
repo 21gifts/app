@@ -3,9 +3,9 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header, headline about peer-to-peer Bitcoin gifts, How it works (Wallet of Satoshi login and address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
-- **Actions:** Read the pitch, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
-- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (Wallet of Satoshi login and address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
+- **Actions:** Read the pitch, change language, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -22,9 +22,9 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no cookies/analytics, session in localStorage, Cloudflare TLS, Wallet of Satoshi login on this origin).
-- **Actions:** Read-only. Header **Log in** goes to `/login`.
-- **Calls:** `LegalPage`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; Wallet of Satoshi login on this origin). Legal body copy stays English.
+- **Actions:** Change language. Read the legal body. Header **Log in** goes to `/login`.
+- **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -35,9 +35,9 @@ The only state: imprint plus privacy, marketing chrome.
 ## Screen: /stats
 
 - **URL:** `/stats` — public gift totals (no auth gate).
-- **What the user sees:** Dark 21.gifts header, heading **Gifts**, four KPI cards (total spent, gifts, people, period), then diagrams: **Total spend over time** (hero cumulative chart), **By person**, **By month**. Empty database copy: **No gifts recorded yet.**
-- **Actions:** Read the charts. Header **Stats** stays on this page; **Log in** goes to `/login`.
-- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`).
+- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Gifts**, four KPI cards (total spent, gifts, people, period), then diagrams: **Total spend over time** (hero cumulative chart), **By person**, **By month**. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the charts. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -66,9 +66,9 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — passkey first, Wallet of Satoshi as a second method.
-- **What the user sees:** Idle **Create a passkey** / **Continue with passkey** / **Log in with Wallet of Satoshi**, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
-- **Actions:** Create or continue with a passkey, or scan the QR / tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
-- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Create a passkey** / **Continue with passkey** / **Log in with Wallet of Satoshi**, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
+- **Actions:** Change language. Create or continue with a passkey, or scan the QR / tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
 
@@ -127,9 +127,9 @@ Signed in with an address on the account. Name form (set or **Edit**) plus the a
 ## Screen: /donate
 
 - **URL:** `/donate` — guest Bitcoin gift. No login required.
-- **What the user sees:** Heading **Send a gift**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
-- **Actions:** Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
-- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `formatMsatAsSats`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Page heading **Send a gift**, form heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
+- **Actions:** Change language. Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
+- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `LanguageSwitcher`.
 
 ### Variant: form
 
@@ -164,9 +164,9 @@ Same payment card, but **Open Wallet of Satoshi** is an Android Intent that pins
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).
-- **What the user sees:** Heading **Handbook**, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints) each with a link icon, then the four `docs/handbook/` markdown files rendered as HTML. Every markdown heading has a sibling link icon.
-- **Actions:** Read the docs, jump via the section nav, copy a chapter or heading URL (click the link icon → check icon for 1.2s, hash updates), follow the api handbook link, follow in-page markdown links.
-- **Calls:** `HandbookPage`, `HandbookCopyLink`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`).
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints) each with a link icon, then the four `docs/handbook/` markdown files rendered as HTML (English bodies). Every markdown heading has a sibling link icon.
+- **Actions:** Change language, read the docs, jump via the section nav, copy a chapter or heading URL (click the link icon → check icon for 1.2s, hash updates), follow the api handbook link, follow in-page markdown links.
+- **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`), `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -183,9 +183,9 @@ After tapping the link icon on a heading or chapter, that button shows the check
 ## Screen: /404
 
 - **URL:** any unknown path (App Router `not-found.tsx`). There is no `page.tsx` for `/404`; Playwright uses `page.goto('/404')` which hits this screen.
-- **What the user sees:** Marketing chrome, heading **404**, **This page does not exist.**, **Back home**.
-- **Actions:** Go home, or use header/footer links.
-- **Calls:** `NotFound`, `MarketingHeader`, `MarketingFooter`.
+- **What the user sees:** Marketing chrome with a language switcher, heading **404**, **This page does not exist.**, **Back home**.
+- **Actions:** Change language, go home, or use header/footer links.
+- **Calls:** `NotFound`, `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`.
 
 ### Variant: default
 

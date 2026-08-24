@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
+import { HandbookIntro } from '@/components/HandbookIntro';
 import { loadHandbookDocuments } from '@/lib/handbook';
 import { HandbookMarkdown } from '@/lib/handbook-markdown';
-
-/** Pin `/handbook` to a build-time static page (markdown is read from disk at build). */
-export const dynamic = 'force-static';
+import { getCatalog } from '@/lib/messages';
+import { getRequestLocale } from '@/lib/request-locale';
+import { translate } from '@/lib/translate';
 
 /**
  * Title and description for `/handbook` (overrides the root layout metadata).
@@ -16,42 +17,43 @@ export const metadata: Metadata = {
 };
 
 /**
- * App handbook at `/handbook`: screens, functions, and HTTP endpoints.
- * Every chapter and markdown heading has a copy-link button.
+ * Async app handbook page at `/handbook`: screens, functions, and HTTP endpoints.
+ * Uses `getRequestLocale` for localized title/intro chrome; every chapter and
+ * markdown heading has a copy-link button.
+ *
+ * Not `force-static`: the root layout reads cookies/Accept-Language for
+ * `html lang` and the intro chrome. Markdown is loaded from `docs/handbook`
+ * at request time (copied into the standalone server).
  *
  * @returns The handbook screen.
  */
-export default function HandbookPage(): ReactElement {
+export default async function HandbookPage(): Promise<ReactElement> {
+  const locale = await getRequestLocale();
+  const messages = getCatalog(locale);
   const documents = loadHandbookDocuments();
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
-      <div className="flex flex-wrap items-baseline gap-2">
-        <h1 id="handbook" className="scroll-mt-24 text-3xl font-semibold">
-          Handbook
-        </h1>
-        <HandbookCopyLink targetId="handbook" label="Handbook" />
-      </div>
-      <p className="mt-4 text-white/60">
-        This is the 21.gifts app handbook: screens, functions, and HTTP endpoints. The api handbook
-        lives in{' '}
-        <a
-          className="text-[#f7931a] underline underline-offset-2"
-          href="https://github.com/21gifts/api/tree/develop/docs/handbook"
-        >
-          21gifts/api
-        </a>
-        .
-      </p>
-      <nav aria-label="Handbook sections" className="mt-8 flex flex-wrap gap-4 text-sm">
+      <HandbookIntro
+        title={translate(messages, 'handbook.title')}
+        introBefore={translate(messages, 'handbook.introBefore')}
+        introAfter={translate(messages, 'handbook.introAfter')}
+        navAria={translate(messages, 'aria.handbookSections')}
+        headingAction={
+          <HandbookCopyLink targetId="handbook" label={translate(messages, 'handbook.title')} />
+        }
+      >
         {documents.map((doc) => (
           <span key={doc.id} className="inline-flex items-baseline gap-1">
             <a href={`#${doc.id}`} className="text-[#f7931a] underline underline-offset-2">
               {doc.title}
             </a>
-            <HandbookCopyLink targetId={doc.id} label={`${doc.title} chapter`} />
+            <HandbookCopyLink
+              targetId={doc.id}
+              label={translate(messages, 'handbook.chapterLabel', { title: doc.title })}
+            />
           </span>
         ))}
-      </nav>
+      </HandbookIntro>
       {documents.map((doc) => (
         <section key={doc.id} id={doc.id} className="mt-12">
           <HandbookMarkdown markdown={doc.markdown} idPrefix={doc.id} />

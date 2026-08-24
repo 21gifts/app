@@ -149,51 +149,43 @@ test.describe('function baselines', () => {
     expect(sections.every((s) => s.id !== '' && s.name !== '')).toBe(true);
     expect(new Set(sections.map((s) => s.name)).size).toBe(sections.length);
 
-    const clipFunctions = new Set([
-      'StatsDashboard',
-      'StatsLoader',
-      'StatsPage',
-      'fetchGiftStats',
-      'proxyGiftsStatsGet',
-    ]);
     for (const section of sections) {
-      if (!clipFunctions.has(section.name)) {
-        continue;
-      }
       const heading = page.locator(`#${section.id}`);
-      await heading.evaluate((el) => {
-        el.scrollIntoView({ block: 'center' });
-      });
-      const clip = await heading.evaluate((el) => {
+      await heading.scrollIntoViewIfNeeded();
+      const clip = await page.evaluate((id: string) => {
+        const el = document.getElementById(id);
+        if (el === null) {
+          return null;
+        }
         const wrap = el.parentElement;
         if (wrap === null) {
-          const box = el.getBoundingClientRect();
-          return {
-            x: Math.max(0, Math.floor(box.left)),
-            y: Math.max(0, Math.floor(box.top)),
-            width: Math.ceil(box.width),
-            height: Math.ceil(box.height),
-          };
+          return null;
         }
-        let last: Element = wrap;
+        const nodes: Element[] = [wrap];
         let next = wrap.nextElementSibling;
-        while (next !== null && next.querySelector('h2') === null) {
-          last = next;
+        while (next !== null) {
+          if (next.querySelector('h2[id^="functions-function-"]') !== null) {
+            break;
+          }
+          nodes.push(next);
           next = next.nextElementSibling;
         }
-        const top = wrap.getBoundingClientRect();
-        const bottom = last.getBoundingClientRect();
-        const left = Math.min(top.left, bottom.left);
-        const right = Math.max(top.right, bottom.right);
+        const rects = nodes.map((node) => node.getBoundingClientRect());
+        const left = Math.min(...rects.map((r) => r.left));
+        const top = Math.min(...rects.map((r) => r.top));
+        const right = Math.max(...rects.map((r) => r.right));
+        const bottom = Math.max(...rects.map((r) => r.bottom));
         return {
-          x: Math.max(0, Math.floor(left)),
-          y: Math.max(0, Math.floor(Math.min(top.top, bottom.top))),
-          width: Math.ceil(right - left),
-          height: Math.ceil(Math.max(top.bottom, bottom.bottom) - Math.min(top.top, bottom.top)),
+          x: left + window.scrollX,
+          y: top + window.scrollY,
+          width: right - left,
+          height: bottom - top,
         };
-      });
+      }, section.id);
+      expect(clip).not.toBeNull();
       await expect(page).toHaveScreenshot(`function-${section.name}.png`, {
-        clip,
+        clip: clip as { x: number; y: number; width: number; height: number },
+        fullPage: true,
         ...SHOT,
       });
     }

@@ -2,9 +2,13 @@
 
 import { Check, Loader2, Pencil, User } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
+import { useTranslations } from '@/components/LocaleProvider';
 import { setName } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Validation or request failure shown on the name form. */
+type NameError = { type: 'empty' } | { type: 'request' };
 
 /**
  * Lets a signed-in giver set or edit the display name shown on their account.
@@ -17,13 +21,14 @@ import { useAuthStore } from '@/stores/auth-store';
  * @returns The name section, or `null` when there is nothing to show.
  */
 export function NameForm(): ReactElement | null {
+  const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<NameError | null>(null);
 
   if (account === null || session === null) {
     return null;
@@ -50,8 +55,8 @@ export function NameForm(): ReactElement | null {
         return;
       }
       onFresh(result);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+    } catch {
+      setError({ type: 'request' });
     } finally {
       setBusy(false);
     }
@@ -61,7 +66,7 @@ export function NameForm(): ReactElement | null {
     event.preventDefault();
     const trimmed = draft.trim();
     if (trimmed === '') {
-      setError('Enter your name');
+      setError({ type: 'empty' });
       return;
     }
     void runGuarded(
@@ -90,21 +95,21 @@ export function NameForm(): ReactElement | null {
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-neutral-200 pt-6">
-      <p className="text-center text-xs uppercase tracking-widest text-neutral-400">Name</p>
+      <p className="text-center text-xs uppercase tracking-widest text-neutral-400">
+        {t('name.heading')}
+      </p>
 
       {name === null || editing ? (
         <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
           {name === null ? (
-            <p className="text-center text-sm text-neutral-500">
-              Add your name so people know who you are.
-            </p>
+            <p className="text-center text-sm text-neutral-500">{t('name.prompt')}</p>
           ) : null}
           <input
             type="text"
             autoComplete="name"
             spellCheck={false}
-            placeholder="Your name"
-            aria-label="Name"
+            placeholder={t('name.placeholder')}
+            aria-label={t('name.aria')}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             disabled={busy}
@@ -117,7 +122,7 @@ export function NameForm(): ReactElement | null {
               className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
             >
               {submitIcon}
-              {editing ? 'Save' : 'Save name'}
+              {editing ? t('name.save') : t('name.saveName')}
             </button>
             {editing ? (
               <button
@@ -129,7 +134,7 @@ export function NameForm(): ReactElement | null {
                 disabled={busy}
                 className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
               >
-                Cancel
+                {t('name.cancel')}
               </button>
             ) : null}
           </div>
@@ -148,14 +153,14 @@ export function NameForm(): ReactElement | null {
             className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
           >
             <Pencil aria-hidden="true" className="h-4 w-4" />
-            Edit
+            {t('name.edit')}
           </button>
         </div>
       )}
 
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-red-600">
-          {error}
+          {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
         </p>
       ) : null}
     </div>

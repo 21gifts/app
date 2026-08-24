@@ -13,6 +13,9 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: appRoot,
+  outputFileTracingIncludes: {
+    '/handbook': ['./docs/handbook/**/*'],
+  },
   async redirects() {
     return [{ source: '/legal.html', destination: '/legal', permanent: true }];
   },
