@@ -6,7 +6,7 @@ import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
 
 /**
- * `/login` — the LNURL-auth sign-in page.
+ * `/login` — the passkey sign-in page.
  *
  * @returns The login screen.
  */

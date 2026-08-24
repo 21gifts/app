@@ -1,13 +1,10 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  proxyAuthLnurlCallbackGet,
-  proxyAuthLnurlGet,
   proxyAuthPasskeyAuthenticateBeginPost,
   proxyAuthPasskeyAuthenticateFinishPost,
   proxyAuthPasskeyRegisterBeginPost,
   proxyAuthPasskeyRegisterFinishPost,
-  proxyAuthSessionGet,
   proxyLightningAddressGet,
   proxyGiftsStatsGet,
   proxyMeGet,
@@ -30,25 +27,6 @@ function stubApi(): ReturnType<typeof vi.fn> {
 }
 
 describe('api proxy wrappers', () => {
-  it('proxyAuthLnurlGet hits /auth/lnurl', async () => {
-    const fetchMock = stubApi();
-    const res = await proxyAuthLnurlGet(new Request('http://localhost/auth/lnurl'));
-    expect(res.status).toBe(200);
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/lnurl');
-  });
-
-  it('proxyAuthLnurlCallbackGet hits /auth/lnurl/callback', async () => {
-    const fetchMock = stubApi();
-    await proxyAuthLnurlCallbackGet(new Request('http://localhost/auth/lnurl/callback?k1=aa'));
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/lnurl/callback');
-  });
-
-  it('proxyAuthSessionGet hits /auth/session', async () => {
-    const fetchMock = stubApi();
-    await proxyAuthSessionGet(new Request('http://localhost/auth/session'));
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/session');
-  });
-
   it('proxyMeGet hits /me', async () => {
     const fetchMock = stubApi();
     await proxyMeGet(new Request('http://localhost/me'));

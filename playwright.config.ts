@@ -46,8 +46,6 @@ export default defineConfig({
       env: {
         ...process.env,
         HOSTNAME: '0.0.0.0',
-        // Local protocol stub so same-origin proxies succeed. Browser specs
-        // may still intercept `/auth/lnurl` for isolated UI states.
         NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
       },
     },

@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test('same-origin api proxy routes exist', async ({ request }) => {
-  expect((await request.get('/auth/lnurl')).status()).toBe(200);
-  expect((await request.get('/auth/lnurl/callback')).status()).toBe(200);
-  expect((await request.get('/auth/session')).status()).toBe(200);
+  expect((await request.get('/auth/lnurl')).status()).toBe(404);
+  expect((await request.get('/auth/session')).status()).toBe(404);
   expect((await request.get('/me')).status()).toBe(401);
   expect((await request.post('/me/name')).status()).toBe(401);
   expect((await request.post('/me/lightning-address')).status()).toBe(401);

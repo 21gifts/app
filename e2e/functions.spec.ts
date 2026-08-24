@@ -1,15 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
-function dummyLinkingKey(): string {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  let hex = '02';
-  for (const byte of bytes) {
-    hex += byte.toString(16).padStart(2, '0');
-  }
-  return hex;
-}
-
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
 async function mockPayCallback(page: Page): Promise<void> {
@@ -27,19 +17,10 @@ async function mockPayCallback(page: Page): Promise<void> {
   });
 }
 
-async function signInViaStub(page: Page, request: APIRequestContext): Promise<void> {
+async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
+  await installFakeWebAuthn(page);
   await page.goto('/login');
-  const pending = page.waitForResponse((res) => {
-    const pathName = new URL(res.url()).pathname;
-    return res.request().method() === 'GET' && pathName === '/auth/lnurl';
-  });
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  const start = (await (await pending).json()) as { k1: string };
-  const cb = await request.get(
-    `/auth/lnurl/callback?tag=login&k1=${start.k1}&sig=00&key=${dummyLinkingKey()}`,
-  );
-  expect(cb.status()).toBe(200);
-  expect(await cb.json()).toEqual({ status: 'OK' });
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -121,18 +102,19 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
 }
 
 async function loginHttp(request: APIRequestContext): Promise<string> {
-  const startRes = await request.get('/auth/lnurl');
-  expect(startRes.status()).toBe(200);
-  const start = (await startRes.json()) as { k1: string; pollToken: string };
-  const cb = await request.get(
-    `/auth/lnurl/callback?tag=login&k1=${start.k1}&sig=00&key=${dummyLinkingKey()}`,
-  );
-  expect((await cb.json()) as { status: string }).toEqual({ status: 'OK' });
-  const sess = await request.get('/auth/session', {
-    headers: { 'x-poll-token': start.pollToken },
+  const begin = await request.post('/auth/passkey/register/begin');
+  expect(begin.status()).toBe(200);
+  const started = (await begin.json()) as { challengeId: string };
+  const finish = await request.post('/auth/passkey/register/finish', {
+    headers: { origin: 'http://localhost:3000' },
+    data: {
+      challengeId: started.challengeId,
+      credential: { id: `cred_${started.challengeId.slice(0, 8)}`, rawId: 'YQ', type: 'public-key' },
+    },
   });
-  const body = (await sess.json()) as { status: string; token: string };
-  expect(body.status).toBe('authenticated');
+  expect(finish.status()).toBe(200);
+  const body = (await finish.json()) as { token: string };
+  expect(body.token.length).toBeGreaterThan(8);
   return body.token;
 }
 
@@ -143,50 +125,15 @@ test('Function: GET — healthz is ok', async ({ request }) => {
 });
 
 test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {
-  const res = await request.get('/auth/lnurl');
+  const res = await request.post('/auth/passkey/register/begin');
   expect(res.status()).toBe(200);
-  const body = (await res.json()) as { k1: string };
-  expect(body.k1.length).toBeGreaterThan(8);
+  const body = (await res.json()) as { challengeId: string };
+  expect(body.challengeId.length).toBeGreaterThan(8);
 });
 
-test('Function: proxyApiRequest — GET /auth/lnurl is 200', async ({ request }) => {
-  const res = await request.get('/auth/lnurl');
+test('Function: proxyApiRequest — POST passkey register begin is 200', async ({ request }) => {
+  const res = await request.post('/auth/passkey/register/begin');
   expect(res.status()).toBe(200);
-});
-
-test('Function: proxyAuthLnurlGet — GET /auth/lnurl returns a challenge', async ({ request }) => {
-  const res = await request.get('/auth/lnurl');
-  const body = (await res.json()) as { lnurl: string; k1: string; pollToken: string };
-  expect(body.lnurl.startsWith('lnurl1')).toBe(true);
-  expect(body.k1.length).toBeGreaterThan(8);
-  expect(body.pollToken.length).toBeGreaterThan(8);
-});
-
-test('Function: startLnurlAuth — clicking login starts the challenge and shows the QR', async ({
-  page,
-}) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
-});
-
-test('Function: proxyAuthLnurlCallbackGet — callback without params is ERROR', async ({
-  request,
-}) => {
-  const res = await request.get('/auth/lnurl/callback');
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { status: string }).status).toBe('ERROR');
-});
-
-test('Function: proxyAuthSessionGet — poll after callback is authenticated', async ({
-  request,
-}) => {
-  const token = await loginHttp(request);
-  expect(token.length).toBeGreaterThan(8);
-});
-
-test('Function: pollSession — live login reaches the signed-in view', async ({ page, request }) => {
-  await signInViaStub(page, request);
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
@@ -408,59 +355,66 @@ test('Function: LoginPage — login heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Log in to 21.gifts' })).toBeVisible();
 });
 
-test('Function: LoginCard — wallet sign-in action is visible', async ({ page }) => {
+test('Function: LoginCard — passkey actions are visible', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue with passkey' })).toBeVisible();
 });
 
-test('Function: useLnurlLogin — clicking login shows the QR', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
-});
-
-test('Function: QrCode — clicking login shows the QR', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
+test('Function: QrCode — donate shows a Bitcoin payment QR', async ({ page }) => {
+  await mockPayCallback(page);
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
 });
 
 test('Function: uppercaseLnurl — Wallet of Satoshi href is uppercased', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await mockPayCallback(page);
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
-    /walletofsatoshi:lightning:LNURL1/,
+    /walletofsatoshi:lightning:LNBC21N1EXAMPLEINVOICE/,
   );
 });
 
 test('Function: walletOfSatoshiHref — Wallet of Satoshi href uses the custom scheme', async ({
   page,
 }) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await mockPayCallback(page);
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
     /^walletofsatoshi:lightning:/,
   );
 });
 
-test('Function: isAndroidUserAgent — Android login uses an Intent URL', async ({ page }) => {
+test('Function: isAndroidUserAgent — Android donate uses an Intent URL', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgent', {
       value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
       configurable: true,
     });
   });
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await mockPayCallback(page);
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
     /package=com.livingroomofsatoshi.wallet/,
   );
 });
 
-test('Function: walletOfSatoshiIntentHref — Android login pins the WoS package', async ({
+test('Function: walletOfSatoshiIntentHref — Android donate pins the WoS package', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -469,8 +423,11 @@ test('Function: walletOfSatoshiIntentHref — Android login pins the WoS package
       configurable: true,
     });
   });
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await mockPayCallback(page);
+  await page.goto('/donate');
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
     'href',
     /package=com.livingroomofsatoshi.wallet/,
@@ -512,7 +469,7 @@ test('Function: LightningAddressForm — link and unlink a Wallet of Satoshi add
 test('Function: clearSession — log out returns to the start action', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue with passkey' })).toBeVisible();
   expect(await page.evaluate(() => window.localStorage.getItem('21gifts.session'))).toBeNull();
 });
 

@@ -11,16 +11,8 @@ import { randomBytes } from 'node:crypto';
 const PORT = 3001;
 const HOST = '127.0.0.1';
 
-/** @typedef {{ k1: string, pollToken: string, status: 'pending' | 'authenticated' | 'used', linkingKey: string | null, token: string | null, account: object | null }} Challenge */
-
-/** @type {Map<string, Challenge>} */
-const byK1 = new Map();
-/** @type {Map<string, Challenge>} */
-const byPoll = new Map();
 /** @type {Map<string, object>} */
 const byToken = new Map();
-/** @type {Map<string, object>} */
-const byLinkingKey = new Map();
 /** @type {Map<string, { type: 'register' | 'authenticate' }>} */
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
@@ -43,7 +35,7 @@ function json(res, status, body) {
   res.writeHead(status, {
     'content-type': 'application/json',
     'access-control-allow-origin': '*',
-    'access-control-allow-headers': 'authorization, content-type, x-poll-token, user-agent',
+    'access-control-allow-headers': 'authorization, content-type, user-agent',
     'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
   });
   res.end(payload);
@@ -82,7 +74,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'access-control-allow-origin': '*',
-      'access-control-allow-headers': 'authorization, content-type, x-poll-token, user-agent',
+      'access-control-allow-headers': 'authorization, content-type, user-agent',
       'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
     });
     res.end();
@@ -95,81 +87,6 @@ const server = http.createServer(async (req, res) => {
 
   if (method === 'GET' && pathName === '/healthz') {
     json(res, 200, { status: 'ok' });
-    return;
-  }
-
-  if (method === 'GET' && pathName === '/auth/lnurl') {
-    const k1 = hex(randomBytes(32));
-    const pollToken = hex(randomBytes(32));
-    const challenge = {
-      k1,
-      pollToken,
-      status: 'pending',
-      linkingKey: null,
-      token: null,
-      account: null,
-    };
-    byK1.set(k1, challenge);
-    byPoll.set(pollToken, challenge);
-    json(res, 200, {
-      lnurl: 'lnurl1dp68gurn8ghj7example',
-      k1,
-      pollToken,
-      expiresInSeconds: 90,
-    });
-    return;
-  }
-
-  if (method === 'GET' && pathName === '/auth/lnurl/callback') {
-    const k1 = url.searchParams.get('k1');
-    const sig = url.searchParams.get('sig');
-    const key = url.searchParams.get('key');
-    if (!k1 || !sig || !key) {
-      json(res, 200, { status: 'ERROR', reason: 'Missing k1, sig, or key' });
-      return;
-    }
-    const challenge = byK1.get(k1);
-    if (!challenge || challenge.status !== 'pending') {
-      json(res, 200, { status: 'ERROR', reason: 'Unknown k1' });
-      return;
-    }
-    const account = byLinkingKey.get(key) ?? newAccount(key);
-    byLinkingKey.set(key, account);
-    const token = hex(randomBytes(32));
-    challenge.status = 'authenticated';
-    challenge.linkingKey = key;
-    challenge.token = token;
-    challenge.account = account;
-    byToken.set(token, account);
-    json(res, 200, { status: 'OK' });
-    return;
-  }
-
-  if (method === 'GET' && pathName === '/auth/session') {
-    const pollToken = req.headers['x-poll-token'];
-    if (typeof pollToken !== 'string' || pollToken === '') {
-      json(res, 200, { status: 'expired' });
-      return;
-    }
-    const challenge = byPoll.get(pollToken);
-    if (!challenge) {
-      json(res, 200, { status: 'expired' });
-      return;
-    }
-    if (challenge.status === 'pending') {
-      json(res, 200, { status: 'pending' });
-      return;
-    }
-    if (challenge.status === 'used') {
-      json(res, 200, { status: 'used' });
-      return;
-    }
-    challenge.status = 'used';
-    json(res, 200, {
-      status: 'authenticated',
-      token: challenge.token,
-      account: challenge.account,
-    });
     return;
   }
 

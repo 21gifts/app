@@ -5,11 +5,9 @@ import {
   fetchMe,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
-  pollSession,
   setLightningAddress,
   setName,
   resolveLightningAddress,
-  startLnurlAuth,
   startPasskeyAuthentication,
   startPasskeyRegistration,
   unlinkLightningAddress,
@@ -24,8 +22,6 @@ const account = {
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
 };
-
-const challenge = { lnurl: 'ln', k1: 'k1', pollToken: 'ptok', expiresInSeconds: 90 };
 
 /** The subset of `Response` the api client touches. */
 interface FakeResponse {
@@ -47,52 +43,6 @@ function stubFetch(response: FakeResponse): Mock {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-});
-
-describe('startLnurlAuth', () => {
-  it('returns the validated challenge', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: challenge });
-
-    await expect(startLnurlAuth()).resolves.toEqual(challenge);
-    expect(fetchMock).toHaveBeenCalledWith(`/auth/lnurl`);
-  });
-
-  it('throws on a non-ok response', async () => {
-    stubFetch({ ok: false, status: 503, body: {} });
-    await expect(startLnurlAuth()).rejects.toThrow('Failed to start LNURL auth: 503');
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { lnurl: 'x' } });
-    await expect(startLnurlAuth()).rejects.toThrow();
-  });
-});
-
-describe('pollSession', () => {
-  it('returns the validated result and sends the poll-token header', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: { status: 'pending' } });
-
-    await expect(pollSession('ptok')).resolves.toEqual({ status: 'pending' });
-    expect(fetchMock).toHaveBeenCalledWith(`/auth/session`, {
-      headers: { 'X-Poll-Token': 'ptok' },
-    });
-  });
-
-  it('returns an authenticated result with token and account', async () => {
-    const body = { status: 'authenticated', token: 'sess', account };
-    stubFetch({ ok: true, status: 200, body });
-    await expect(pollSession('ptok')).resolves.toEqual(body);
-  });
-
-  it('throws on a non-ok response', async () => {
-    stubFetch({ ok: false, status: 500, body: {} });
-    await expect(pollSession('ptok')).rejects.toThrow('Failed to poll session: 500');
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { status: 'authenticated' } });
-    await expect(pollSession('ptok')).rejects.toThrow();
-  });
 });
 
 describe('fetchMe', () => {

@@ -29,31 +29,13 @@ export const SCREEN_VARIANTS = [
     route: '/login',
     id: 'idle',
     image: 'login.png',
-    needle: 'Log in with Wallet of Satoshi',
+    needle: 'Create a passkey',
   },
   {
     route: '/login',
     id: 'starting',
     image: 'login-starting.png',
     needle: 'Preparing your login',
-  },
-  {
-    route: '/login',
-    id: 'qr',
-    image: 'login-qr.png',
-    needle: 'Login QR code',
-  },
-  {
-    route: '/login',
-    id: 'qr-android',
-    image: 'login-qr-android.png',
-    needle: 'package=com.livingroomofsatoshi.wallet',
-  },
-  {
-    route: '/login',
-    id: 'expired',
-    image: 'login-expired.png',
-    needle: 'Login expired',
   },
   {
     route: '/login',
