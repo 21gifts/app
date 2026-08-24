@@ -189,8 +189,8 @@ or renaming a key in one catalog without the others is rejected.
 `src/__tests__/lib/messages.test.ts` asserts the key sets are identical and
 every value is non-empty after trim; `npm test` / `npm run test:coverage`
 (and CI) fail the PR when they diverge or a value is empty/whitespace.
-`translate` / `useTranslations` throw if a key is absent at runtime — no
-silent English fallback.
+`translate` (and `t` from `useTranslations`) throws if a key is absent at
+runtime — no silent English fallback.
 
 New or changed visitor-facing copy goes through a catalog key in the **same
 PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not

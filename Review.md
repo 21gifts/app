@@ -20,7 +20,7 @@ Every visitor-facing UI string must be present in **all** locale catalogs
 
 ## Completeness gates
 
-These must be green on the PR. An undeclared missing gate is rejected:
+These must be green on the PR. A missing or red gate is rejected:
 
 - `npm run typecheck`
 - `npm run lint`
