@@ -43,7 +43,7 @@ function scaleValue(scale: BarScale, sats: number, usd: string): number {
 }
 
 /**
- * Compact BTC | USD segmented control for bar-chart scale.
+ * Compact BTC | USD segmented control for diagram scale.
  *
  * @param value - Active scale.
  * @param onChange - Called with the next scale.
@@ -135,7 +135,7 @@ function CumulativeOverTimeChart(
       />
     );
   }
-  const padL = 56;
+  const padL = 96;
   const padR = 16;
   const padT = 16;
   const padB = 36;
@@ -370,12 +370,16 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
 }
 
 /**
- * Non-empty charts branch with per-chart BTC/USD bar-scale state.
+ * Non-empty charts branch with independent BTC/USD scale state per diagram.
+ *
+ * Over time shows one cumulative series. Person and month bars rescale; their
+ * labels stay both units.
  *
  * @param stats - Loaded gift stats with at least one gift.
  * @returns Diagram sections.
  */
 function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
+  const [overTimeScale, setOverTimeScale] = useState<BarScale>('btc');
   const [personScale, setPersonScale] = useState<BarScale>('btc');
   const [monthScale, setMonthScale] = useState<BarScale>('btc');
 
@@ -385,24 +389,30 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
         {"USD is the BTC-USD daily close (UTC) on each gift's day."}
       </p>
       <section>
-        <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">Total spend over time</h2>
-        <h3 className="mt-6 text-white/80">BTC over time</h3>
-        <div className="mt-4">
-          {CumulativeOverTimeChart(
-            stats.spendOverTime,
-            (p) => Number(p.cumulativeBtc),
-            formatBtcTick,
-            'BTC over time',
-          )}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">
+            Total spend over time
+          </h2>
+          <BarScaleToggle
+            value={overTimeScale}
+            onChange={setOverTimeScale}
+            groupLabel="Over time scale"
+          />
         </div>
-        <h3 className="mt-8 text-white/80">USD over time</h3>
-        <div className="mt-4">
-          {CumulativeOverTimeChart(
-            stats.spendOverTime,
-            (p) => Number(p.cumulativeUsd),
-            formatUsdTick,
-            'USD over time',
-          )}
+        <div className="mt-6">
+          {overTimeScale === 'btc'
+            ? CumulativeOverTimeChart(
+                stats.spendOverTime,
+                (p) => Number(p.cumulativeBtc),
+                formatBtcTick,
+                'Spend over time in BTC',
+              )
+            : CumulativeOverTimeChart(
+                stats.spendOverTime,
+                (p) => Number(p.cumulativeUsd),
+                formatUsdTick,
+                'Spend over time in USD',
+              )}
         </div>
       </section>
       <section>

@@ -658,15 +658,19 @@ test('Function: formatUsdDisplay — empty stats hero shows $0.00', async ({ pag
 test('Function: formatBtcTick — populated stats draw the BTC chart', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
-  await expect(page.getByLabel('BTC over time')).toBeVisible();
-  await expect(page.getByLabel('BTC over time').getByText('0.000015')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in BTC')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in BTC').getByText('0.000015')).toBeVisible();
 });
 
 test('Function: formatUsdTick — populated stats draw the USD chart', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
-  await expect(page.getByLabel('USD over time')).toBeVisible();
-  await expect(page.getByLabel('USD over time').getByText('$1.43')).toBeVisible();
+  await page
+    .getByRole('group', { name: 'Over time scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await expect(page.getByLabel('Spend over time in USD')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in USD').getByText('$1.43')).toBeVisible();
 });
 
 test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a challenge', async ({
