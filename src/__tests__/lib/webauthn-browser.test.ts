@@ -92,6 +92,29 @@ describe('creationOptionsFromJSON', () => {
     expect(options.excludeCredentials?.[0]?.transports).toEqual(['internal']);
   });
 
+  it('throws when excludeCredentials is present but not an array', () => {
+    const base = {
+      challenge: bytesToBase64Url(new Uint8Array([9, 8, 7])),
+      rp: { id: 'localhost', name: '21.gifts' },
+      user: {
+        id: bytesToBase64Url(new Uint8Array([1, 2])),
+        name: 'n',
+        displayName: 'd',
+      },
+    };
+    const parse = vi.fn();
+    vi.stubGlobal('PublicKeyCredential', { parseCreationOptionsFromJSON: parse });
+    expect(() => creationOptionsFromJSON({ ...base, excludeCredentials: 'invalid' })).toThrow(
+      TypeError,
+    );
+    expect(() => creationOptionsFromJSON({ ...base, excludeCredentials: { id: 'AQ' } })).toThrow(
+      TypeError,
+    );
+    expect(() => creationOptionsFromJSON({ ...base, excludeCredentials: null })).toThrow(TypeError);
+    expect(parse).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('throws when excludeCredentials is non-empty but every item is invalid', () => {
     expect(() =>
       creationOptionsFromJSON({
@@ -154,7 +177,13 @@ describe('creationOptionsFromJSON', () => {
     const parsed = { challenge: new Uint8Array([1]).buffer } as PublicKeyCredentialCreationOptions;
     const parse = vi.fn().mockReturnValue(parsed);
     vi.stubGlobal('PublicKeyCredential', { parseCreationOptionsFromJSON: parse });
-    const json = { challenge: 'AA' };
+    const json = {
+      challenge: 'AA',
+      excludeCredentials: [
+        { type: 'public-key', id: bytesToBase64Url(new Uint8Array([9])) },
+        { type: 'password', id: 'AQ' },
+      ],
+    };
     expect(creationOptionsFromJSON(json)).toBe(parsed);
     expect(parse).toHaveBeenCalledWith(json);
     vi.unstubAllGlobals();
@@ -178,12 +207,40 @@ describe('requestOptionsFromJSON', () => {
   it('maps allowCredentials from base64url ids', () => {
     const options = requestOptionsFromJSON({
       challenge: bytesToBase64Url(new Uint8Array([4, 5])),
-      allowCredentials: [{ type: 'public-key', id: bytesToBase64Url(new Uint8Array([7, 8])) }],
+      allowCredentials: [
+        { type: 'public-key', id: bytesToBase64Url(new Uint8Array([7, 8])) },
+        { type: 'password', id: 'AQ' },
+      ],
     });
     expect(options.allowCredentials).toHaveLength(1);
     expect(new Uint8Array(options.allowCredentials?.[0]?.id as ArrayBuffer)).toEqual(
       new Uint8Array([7, 8]),
     );
+  });
+
+  it('throws when allowCredentials is present but not an array', () => {
+    const parse = vi.fn();
+    vi.stubGlobal('PublicKeyCredential', { parseRequestOptionsFromJSON: parse });
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+        allowCredentials: 'invalid',
+      }),
+    ).toThrow(TypeError);
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+        allowCredentials: { id: 'AQ' },
+      }),
+    ).toThrow(TypeError);
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+        allowCredentials: null,
+      }),
+    ).toThrow(TypeError);
+    expect(parse).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('throws when allowCredentials is non-empty but every item is invalid', () => {
@@ -241,8 +298,15 @@ describe('requestOptionsFromJSON', () => {
     const parsed = { challenge: new Uint8Array([1]).buffer } as PublicKeyCredentialRequestOptions;
     const parse = vi.fn().mockReturnValue(parsed);
     vi.stubGlobal('PublicKeyCredential', { parseRequestOptionsFromJSON: parse });
-    const json = { challenge: 'AA' };
+    const json = {
+      challenge: 'AA',
+      allowCredentials: [
+        { type: 'public-key', id: bytesToBase64Url(new Uint8Array([7, 8])) },
+        { type: 'password', id: 'AQ' },
+      ],
+    };
     expect(requestOptionsFromJSON(json)).toBe(parsed);
+    expect(parse).toHaveBeenCalledWith(json);
     vi.unstubAllGlobals();
   });
 });

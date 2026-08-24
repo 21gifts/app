@@ -41,7 +41,7 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
  *
  * @param options - `PublicKeyCredentialCreationOptionsJSON` from the api.
  * @returns Options for `navigator.credentials.create`.
- * @throws TypeError when a non-empty `excludeCredentials` list has no valid `public-key` entries.
+ * @throws TypeError when `excludeCredentials` is present but not an array, or a non-empty list has no valid `public-key` entries.
  */
 export function creationOptionsFromJSON(
   options: Record<string, unknown>,
@@ -101,7 +101,7 @@ export function creationOptionsFromJSON(
  *
  * @param options - `PublicKeyCredentialRequestOptionsJSON` from the api.
  * @returns Options for `navigator.credentials.get`.
- * @throws TypeError when a non-empty `allowCredentials` list has no valid `public-key` entries.
+ * @throws TypeError when `allowCredentials` is present but not an array, or a non-empty list has no valid `public-key` entries.
  */
 export function requestOptionsFromJSON(
   options: Record<string, unknown>,
@@ -147,11 +147,14 @@ export function requestOptionsFromJSON(
  *
  * @param raw - `allowCredentials` / `excludeCredentials` JSON, or absent.
  * @returns Descriptors, or `undefined` when the field is missing.
- * @throws TypeError when the list is non-empty but no item is a valid descriptor.
+ * @throws TypeError when `raw` is present but not an array, or the list is non-empty but no item is a valid descriptor.
  */
 function credentialDescriptorsFromJSON(raw: unknown): PublicKeyCredentialDescriptor[] | undefined {
-  if (!Array.isArray(raw)) {
+  if (raw === undefined) {
     return undefined;
+  }
+  if (!Array.isArray(raw)) {
+    throw new TypeError('WebAuthn credential descriptor list was not an array');
   }
   const descriptors: PublicKeyCredentialDescriptor[] = [];
   for (const item of raw) {
