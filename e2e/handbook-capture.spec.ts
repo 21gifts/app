@@ -347,6 +347,10 @@ test('stats usd-scale', async ({ page }) => {
   });
   await page.goto('/stats');
   await page
+    .getByRole('group', { name: 'Over time scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await page
     .getByRole('group', { name: 'By person bar scale' })
     .getByRole('button', { name: 'USD' })
     .click();
@@ -354,6 +358,8 @@ test('stats usd-scale', async ({ page }) => {
     .getByRole('group', { name: 'By month bar scale' })
     .getByRole('button', { name: 'USD' })
     .click();
+  await expect(page.getByLabel('Spend over time in USD')).toBeVisible();
+  await expect(page.getByLabel('Spend by person in USD')).toBeVisible();
   await expect(page.getByLabel('Spend by month in USD')).toBeVisible();
   await writePng(page, 'stats-usd-scale.png');
 });
