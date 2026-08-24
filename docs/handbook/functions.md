@@ -432,7 +432,7 @@
 
 - **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present.
 - **Inputs:** Record from `POST /auth/passkey/register/begin`.
-- **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is non-empty but has no valid entries.
+- **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
 - **Used by:** `usePasskeyLogin.register`.
 
 ## Function: credentialToJSON
@@ -488,7 +488,7 @@
 
 - **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Maps `allowCredentials` when present; otherwise discoverable `[]`.
 - **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
-- **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is non-empty but has no valid entries.
+- **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
 - **Used by:** `usePasskeyLogin.authenticate`.
 
 ## Function: startPasskeyAuthentication

@@ -107,6 +107,27 @@ describe('creationOptionsFromJSON', () => {
     ).toThrow(TypeError);
   });
 
+  it('throws when excludeCredentials items are not public-key or not base64url', () => {
+    const base = {
+      challenge: bytesToBase64Url(new Uint8Array([9, 8, 7])),
+      rp: { id: 'localhost', name: '21.gifts' },
+      user: {
+        id: bytesToBase64Url(new Uint8Array([1, 2])),
+        name: 'n',
+        displayName: 'd',
+      },
+    };
+    expect(() =>
+      creationOptionsFromJSON({ ...base, excludeCredentials: [{ type: 'password', id: 'AQ' }] }),
+    ).toThrow(TypeError);
+    expect(() =>
+      creationOptionsFromJSON({
+        ...base,
+        excludeCredentials: [{ type: 'public-key', id: '%' }],
+      }),
+    ).toThrow(TypeError);
+  });
+
   it('uses native parseCreationOptionsFromJSON when present', () => {
     const parsed = { challenge: new Uint8Array([1]).buffer } as PublicKeyCredentialCreationOptions;
     const parse = vi.fn().mockReturnValue(parsed);
@@ -150,6 +171,35 @@ describe('requestOptionsFromJSON', () => {
         allowCredentials: [{ type: 'public-key', id: 1 }],
       }),
     ).toThrow(TypeError);
+  });
+
+  it('throws when allowCredentials items are not public-key or not base64url', () => {
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+        allowCredentials: [{ type: 'password', id: 'AQ' }],
+      }),
+    ).toThrow(TypeError);
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+        allowCredentials: [{ type: 'public-key', id: '%' }],
+      }),
+    ).toThrow(TypeError);
+  });
+
+  it('validates allowCredentials before the native parser', () => {
+    const parsed = { challenge: new Uint8Array([1]).buffer } as PublicKeyCredentialRequestOptions;
+    const parse = vi.fn().mockReturnValue(parsed);
+    vi.stubGlobal('PublicKeyCredential', { parseRequestOptionsFromJSON: parse });
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: 'AA',
+        allowCredentials: [{ type: 'password', id: 'AQ' }],
+      }),
+    ).toThrow(TypeError);
+    expect(parse).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('omits optional request fields when absent', () => {

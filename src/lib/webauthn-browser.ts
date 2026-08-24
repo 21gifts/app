@@ -41,7 +41,7 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
  *
  * @param options - `PublicKeyCredentialCreationOptionsJSON` from the api.
  * @returns Options for `navigator.credentials.create`.
- * @throws TypeError when a non-empty `excludeCredentials` list has no valid entries.
+ * @throws TypeError when a non-empty `excludeCredentials` list has no valid `public-key` entries.
  */
 export function creationOptionsFromJSON(
   options: Record<string, unknown>,
@@ -55,6 +55,9 @@ export function creationOptionsFromJSON(
         }
       | undefined
   )?.parseCreationOptionsFromJSON;
+  if ('excludeCredentials' in options) {
+    credentialDescriptorsFromJSON(options['excludeCredentials']);
+  }
   if (typeof parse === 'function') {
     return parse(options);
   }
@@ -98,7 +101,7 @@ export function creationOptionsFromJSON(
  *
  * @param options - `PublicKeyCredentialRequestOptionsJSON` from the api.
  * @returns Options for `navigator.credentials.get`.
- * @throws TypeError when a non-empty `allowCredentials` list has no valid entries.
+ * @throws TypeError when a non-empty `allowCredentials` list has no valid `public-key` entries.
  */
 export function requestOptionsFromJSON(
   options: Record<string, unknown>,
@@ -112,6 +115,9 @@ export function requestOptionsFromJSON(
         }
       | undefined
   )?.parseRequestOptionsFromJSON;
+  if ('allowCredentials' in options) {
+    credentialDescriptorsFromJSON(options['allowCredentials']);
+  }
   if (typeof parse === 'function') {
     return parse(options);
   }
@@ -154,12 +160,18 @@ function credentialDescriptorsFromJSON(raw: unknown): PublicKeyCredentialDescrip
     }
     const id = (item as { id: unknown }).id;
     const type = (item as { type: unknown }).type;
-    if (typeof id !== 'string' || typeof type !== 'string') {
+    if (typeof id !== 'string' || type !== 'public-key') {
+      continue;
+    }
+    let rawId: Uint8Array;
+    try {
+      rawId = base64UrlToBytes(id);
+    } catch {
       continue;
     }
     const descriptor: PublicKeyCredentialDescriptor = {
-      type: type as PublicKeyCredentialType,
-      id: Uint8Array.from(base64UrlToBytes(id)),
+      type: 'public-key',
+      id: Uint8Array.from(rawId),
     };
     const transports = (item as { transports?: unknown }).transports;
     if (Array.isArray(transports)) {
