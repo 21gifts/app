@@ -1,5 +1,5 @@
 /**
- * Persistence for the LNURL-auth session token.
+ * Persistence for the passkey session token.
  *
  * The token lives in `localStorage` so a returning visitor stays logged in.
  * Every accessor is guarded with `typeof window === 'undefined'` so the module

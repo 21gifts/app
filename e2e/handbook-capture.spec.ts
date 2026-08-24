@@ -8,7 +8,6 @@ import path from 'node:path';
  */
 test.skip(process.env['UPDATE_HANDBOOK_IMAGES'] !== '1', 'set UPDATE_HANDBOOK_IMAGES=1');
 
-const LNURL = 'lnurl1dp68gurn8ghj7example';
 const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,
@@ -27,28 +26,6 @@ async function writePng(page: Page, basename: string, fullPage = true): Promise<
   fs.mkdirSync(path.dirname(publicPath), { recursive: true });
   fs.writeFileSync(docsPath, buffer);
   fs.writeFileSync(publicPath, buffer);
-}
-
-async function mockPendingAuth(page: Page): Promise<void> {
-  await page.route(/\/auth\/lnurl$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        lnurl: LNURL,
-        k1: 'ab'.repeat(32),
-        pollToken: 'cd'.repeat(32),
-        expiresInSeconds: 90,
-      }),
-    });
-  });
-  await page.route(/\/auth\/session$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ status: 'pending' }),
-    });
-  });
 }
 
 test('home default', async ({ page }) => {
@@ -73,7 +50,7 @@ test('legal default', async ({ page }) => {
 
 test('login idle', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
   await writePng(page, 'login.png');
 });
 
@@ -82,71 +59,23 @@ test('login starting', async ({ page }) => {
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/auth\/lnurl$/, async (route) => {
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
     await held;
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   await writePng(page, 'login-starting.png');
   release();
 });
 
-test('login qr', async ({ page }) => {
-  await mockPendingAuth(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
-  await writePng(page, 'login-qr.png');
-});
-
-test('login qr-android', async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
-      configurable: true,
-    });
-  });
-  await mockPendingAuth(page);
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
-  await writePng(page, 'login-qr-android.png');
-});
-
-test('login expired', async ({ page }) => {
-  await page.route(/\/auth\/lnurl$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        lnurl: LNURL,
-        k1: 'ab'.repeat(32),
-        pollToken: 'cd'.repeat(32),
-        expiresInSeconds: 90,
-      }),
-    });
-  });
-  await page.route(/\/auth\/session$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ status: 'expired' }),
-    });
-  });
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-  await expect(page.getByText('Login expired')).toBeVisible({ timeout: 10_000 });
-  await writePng(page, 'login-expired.png');
-});
-
 test('login error', async ({ page }) => {
-  await page.route(/\/auth\/lnurl$/, async (route) => {
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
+  await page.getByRole('button', { name: 'Create a passkey' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
   await writePng(page, 'login-error.png');
 });

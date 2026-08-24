@@ -55,7 +55,7 @@ app/
 │   │   ├── gifts/stats/
 │   │   │   └── route.ts         # GET /gifts/stats same-origin proxy
 │   │   ├── login/
-│   │   │   └── page.tsx         # GET /login — LNURL-auth + signed-in form
+│   │   │   └── page.tsx         # GET /login — passkey + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -95,7 +95,7 @@ app/
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
-│   ├── login.spec.ts            # /login WoS QR, lightning URI, copy LNURL
+│   ├── login.spec.ts            # /login passkey create/continue + signed-in forms
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
@@ -316,7 +316,7 @@ variable is unset or empty.
 | `NEXT_PUBLIC_API_URL` | `https://dev-api.21.gifts` | `https://api.21.gifts` |
 
 `NEXT_PUBLIC_API_URL` is the **upstream api**. The browser calls same-origin
-paths (`/auth/lnurl`, `/me`, …) which the App Router proxies to that URL.
+paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL.
 
 ## CI / CD
 

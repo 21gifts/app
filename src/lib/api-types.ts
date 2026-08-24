@@ -20,8 +20,8 @@ export const accountSchema = z.object({
  * An authenticated 21.gifts account.
  *
  * `role` gates capabilities (`basis` for ordinary givers, `moderator` for
- * elevated review actions); `linkingKey` is the wallet's LNURL-auth public key,
- * or `null` for passkey-created accounts that have not bound a wallet.
+ * elevated review actions); `linkingKey` is a leftover wallet public key from
+ * the retired LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
@@ -29,45 +29,6 @@ export const accountSchema = z.object({
  * configured on the api.
  */
 export type Account = z.infer<typeof accountSchema>;
-
-/**
- * Runtime schema for the payload of `GET /auth/lnurl`.
- *
- * `k1` is the public challenge encoded into the QR; `pollToken` is the secret
- * the client sends back (in the `X-Poll-Token` header) while polling.
- */
-export const startChallengeSchema = z.object({
-  lnurl: z.string(),
-  k1: z.string(),
-  pollToken: z.string(),
-  expiresInSeconds: z.number(),
-});
-
-/**
- * A freshly minted LNURL-auth challenge to render and poll against.
- */
-export type StartChallenge = z.infer<typeof startChallengeSchema>;
-
-/**
- * Runtime schema for the payload of `GET /auth/session`.
- *
- * Modelled as a discriminated union on `status`: `token` and `account` exist
- * only in the `'authenticated'` variant and are required there. This makes an
- * `'authenticated'` response that omits them a hard validation failure (fail
- * loud) rather than a silently-ignored state, and lets callers narrow on
- * `status` without defensive undefined checks.
- */
-export const sessionResultSchema = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('pending') }),
-  z.object({ status: z.literal('expired') }),
-  z.object({ status: z.literal('used') }),
-  z.object({ status: z.literal('authenticated'), token: z.string(), account: accountSchema }),
-]);
-
-/**
- * The current state of an LNURL-auth challenge as seen by the poller.
- */
-export type SessionResult = z.infer<typeof sessionResultSchema>;
 
 /**
  * Runtime schema for the payload of `GET /lightning-address`.

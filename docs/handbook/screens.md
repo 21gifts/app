@@ -3,7 +3,7 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (Wallet of Satoshi login and address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (passkey login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
 - **Actions:** Read the pitch, change language, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`.
 
@@ -22,7 +22,7 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; Wallet of Satoshi login on this origin). Legal body copy stays English.
+- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; passkey login on this origin). Legal body copy stays English.
 - **Actions:** Change language. Read the legal body. Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
@@ -65,50 +65,32 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 
 ## Screen: /login
 
-- **URL:** `/login` — passkey first, Wallet of Satoshi as a second method.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Create a passkey** / **Continue with passkey** / **Log in with Wallet of Satoshi**, then QR and **Open Wallet of Satoshi**, or signed-in account. Error and expiry are terminal until **Try again**. There is no generic wallet link and no copy control.
-- **Actions:** Change language. Create or continue with a passkey, or scan the QR / tap **Open Wallet of Satoshi**. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
-- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useLnurlLogin`, `startLnurlAuth`, `pollSession`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `uppercaseLnurl`, `QrCode`, `useAuthStore`, `LanguageSwitcher`.
+- **URL:** `/login` — passkey only.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Create a passkey** / **Continue with passkey**, or signed-in account. Error is terminal until **Try again**.
+- **Actions:** Change language. Create or continue with a passkey. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
 
-Logged out, no challenge yet. Heading **Sign in to 21.gifts**, **Create a passkey**, **Continue with passkey**, **Log in with Wallet of Satoshi**.
+Logged out. Heading **Sign in to 21.gifts**, **Create a passkey**, **Continue with passkey**.
 
 ![21.gifts login idle](images/login.png)
 
 ### Variant: starting
 
-Transient after the start click, before `/auth/lnurl` returns: spinner and **Preparing your login…**.
+Transient after a passkey click, before the ceremony finishes: spinner and **Preparing your login…**.
 
 ![21.gifts login starting](images/login-starting.png)
 
-### Variant: qr
-
-Challenge pending on desktop/iOS. QR and **Open Wallet of Satoshi**. No generic wallet link and no copy control.
-
-![21.gifts login QR](images/login-qr.png)
-
-### Variant: qr-android
-
-Same QR card, but **Open Wallet of Satoshi** is an Android Intent that pins package `com.livingroomofsatoshi.wallet`.
-
-![21.gifts login QR Android](images/login-qr-android.png)
-
-### Variant: expired
-
-Poll returned `expired` or `used`. Copy **Login expired** and **Try again** (calls `start()`).
-
-![21.gifts login expired](images/login-expired.png)
-
 ### Variant: error
 
-Challenge start or a later request failed. Copy **Something went wrong. Please try again.** and **Try again**.
+Passkey begin or finish failed. Copy **Something went wrong. Please try again.** and **Try again**.
 
 ![21.gifts login error](images/login-error.png)
 
 ### Variant: signed-in
 
-Session present, no name and no Wallet of Satoshi address yet. **Signed in**, role, shortened linking key, name form, address form, **Log out**.
+Session present, no name and no Wallet of Satoshi address yet. **Signed in**, role, name form, address form, **Log out**.
 
 ![21.gifts login signed in](images/login-signed-in.png)
 

@@ -108,9 +108,9 @@
 
 ## Function: LoginCard
 
-- **Purpose:** Login UI: passkey first, Wallet of Satoshi LNURL-auth second. Hydrate session, start challenge, QR, Wallet of Satoshi deep link, poll, expiry, then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
-- **Inputs:** Uses `usePasskeyLogin`, `useLnurlLogin`, and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
-- **Returns / side effects:** React element covering idle/waiting/expired/error/signed-in. Does not navigate away from `/login`.
+- **Purpose:** Login UI: passkey create or continue, then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
+- **Inputs:** Uses `usePasskeyLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe`.
+- **Returns / side effects:** React element covering idle/starting/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
 
 ## Function: LoginPage
@@ -125,7 +125,7 @@
 - **Purpose:** SVG QR for a string (LNURL or bolt11).
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated).
 - **Returns / side effects:** React element.
-- **Used by:** `LoginCard` and `DonateForm`.
+- **Used by:** `DonateForm`.
 
 ## Function: RootLayout
 
@@ -188,7 +188,7 @@
 - **Purpose:** Detects Android so the WoS CTA can use an Intent URL.
 - **Inputs:** `userAgent` string.
 - **Returns / side effects:** `true` iff `/Android/i` matches.
-- **Used by:** `LoginCard` QrView and `DonateForm`.
+- **Used by:** `DonateForm`.
 
 ## Function: loadHandbookDocuments
 
@@ -224,13 +224,6 @@
 - **Inputs:** Raw cookie or `<select>` value, or `undefined`.
 - **Returns / side effects:** That locale, or `null`. Pure function — no I/O.
 - **Used by:** `getRequestLocale` (cookie) and `LanguageSwitcher` (option value).
-
-## Function: pollSession
-
-- **Purpose:** GET `/auth/session` with `X-Poll-Token`.
-- **Inputs:** `pollToken`.
-- **Returns / side effects:** `SessionResult` (`pending` / `authenticated` / `expired` / `used`).
-- **Used by:** `useLnurlLogin`.
 
 ## Function: requestDonateInvoice
 
@@ -274,13 +267,6 @@
 - **Returns / side effects:** Updated `Account`.
 - **Used by:** `LightningAddressForm`.
 
-## Function: startLnurlAuth
-
-- **Purpose:** GET `/auth/lnurl` — creates k1 + LNURL + poll token.
-- **Inputs:** None.
-- **Returns / side effects:** `StartChallenge`.
-- **Used by:** `useLnurlLogin`.
-
 ## Function: translate
 
 - **Purpose:** Look up a catalog key and replace `{name}` placeholders from `vars`.
@@ -300,21 +286,14 @@
 - **Purpose:** Uppercases a bech32 LNURL or BOLT11 payment request.
 - **Inputs:** `lnurl` string.
 - **Returns / side effects:** Uppercase string.
-- **Used by:** QR value and Wallet of Satoshi hrefs (`LoginCard`, `DonateForm`).
+- **Used by:** `walletOfSatoshiHref` and `walletOfSatoshiIntentHref` (`DonateForm`).
 
 ## Function: useAuthStore
 
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
 - **Returns / side effects:** Auth state object.
-- **Used by:** `LoginCard`, `useLnurlLogin`, `NameForm`, `LightningAddressForm` on `/login` (not `/`).
-
-## Function: useLnurlLogin
-
-- **Purpose:** Hook: start LNURL-auth, poll until authenticated or expired. Returns `{ status, lnurl, start }` — there is no separate `error` field (errors are a `status` of `'error'`).
-- **Inputs:** None.
-- **Returns / side effects:** `UseLnurlLogin` status machine.
-- **Used by:** `LoginCard`.
+- **Used by:** `LoginCard`, `NameForm`, `LightningAddressForm` on `/login` (not `/`).
 
 ## Function: useTranslations
 
@@ -328,14 +307,14 @@
 - **Purpose:** iOS/desktop WoS deep link.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase payload.
-- **Used by:** `LoginCard` and `DonateForm` when not Android.
+- **Used by:** `DonateForm` when not Android.
 
 ## Function: walletOfSatoshiIntentHref
 
 - **Purpose:** Android Chrome Intent pinning the WoS package.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `intent:lightning:…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
-- **Used by:** `LoginCard` and `DonateForm` on Android.
+- **Used by:** `DonateForm` on Android.
 
 ## Function: DELETE
 
@@ -388,31 +367,10 @@
 
 ## Function: proxyApiRequest
 
-- **Purpose:** Forwards an App Router request to `getApiUrl()` + path, copying query, body, and authorization / content-type / poll-token / user-agent headers.
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path, copying query, body, and authorization / content-type / user-agent headers.
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response`, or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.
-
-## Function: proxyAuthLnurlCallbackGet
-
-- **Purpose:** Proxies GET `/auth/lnurl/callback` (wallet LUD-04).
-- **Inputs:** `Request` with k1/sig/key query.
-- **Returns / side effects:** Upstream `Response`.
-- **Used by:** Route GET `/auth/lnurl/callback`.
-
-## Function: proxyAuthLnurlGet
-
-- **Purpose:** Proxies GET `/auth/lnurl`.
-- **Inputs:** `Request`.
-- **Returns / side effects:** Upstream `Response`.
-- **Used by:** Route GET `/auth/lnurl`.
-
-## Function: proxyAuthSessionGet
-
-- **Purpose:** Proxies GET `/auth/session`.
-- **Inputs:** `Request` with `X-Poll-Token`.
-- **Returns / side effects:** Upstream `Response`.
-- **Used by:** Route GET `/auth/session`.
 
 ## Function: proxyGiftsStatsGet
 

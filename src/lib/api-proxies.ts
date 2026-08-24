@@ -1,36 +1,6 @@
 import { proxyApiRequest } from '@/lib/api-proxy';
 
 /**
- * Proxies GET /auth/lnurl to the 21.gifts api.
- *
- * @param request - Incoming App Router request.
- * @returns The upstream response.
- */
-export async function proxyAuthLnurlGet(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/auth/lnurl');
-}
-
-/**
- * Proxies GET /auth/lnurl/callback to the 21.gifts api (wallet-facing LUD-04).
- *
- * @param request - Incoming App Router request (k1, sig, key query params).
- * @returns The upstream response.
- */
-export async function proxyAuthLnurlCallbackGet(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/auth/lnurl/callback');
-}
-
-/**
- * Proxies GET /auth/session to the 21.gifts api.
- *
- * @param request - Incoming App Router request (`X-Poll-Token` header).
- * @returns The upstream response.
- */
-export async function proxyAuthSessionGet(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/auth/session');
-}
-
-/**
  * Proxies POST /auth/passkey/register/begin to the 21.gifts api.
  *
  * @param request - Incoming App Router request.

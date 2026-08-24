@@ -10,8 +10,6 @@ test.skip(process.platform !== 'linux', 'visual baselines are linux/chromium');
 
 test.describe.configure({ mode: 'serial' });
 
-const LNURL = 'lnurl1dp68gurn8ghj7example';
-
 const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,
@@ -73,7 +71,7 @@ test.describe('screen baselines', () => {
 
   test('screen /login', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
     await shotScreen(page, 'screen-login', 'login.png');
   });
 
@@ -189,32 +187,6 @@ test.describe('function baselines', () => {
         ...SHOT,
       });
     }
-  });
-
-  test('LoginCard QR + QrCode', async ({ page }) => {
-    await page.route(/\/auth\/lnurl$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          lnurl: LNURL,
-          k1: 'ab'.repeat(32),
-          pollToken: 'cd'.repeat(32),
-          expiresInSeconds: 90,
-        }),
-      });
-    });
-    await page.route(/\/auth\/session$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ status: 'pending' }),
-      });
-    });
-    await page.goto('/login');
-    await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
-    await expect(page.getByRole('img', { name: 'Login QR code' })).toBeVisible();
-    await expect(page).toHaveScreenshot('state-login-qr.png', { fullPage: true, ...SHOT });
   });
 
   test('LightningAddressForm signed-in', async ({ page }) => {
