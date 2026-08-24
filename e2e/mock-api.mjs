@@ -19,6 +19,8 @@ const byK1 = new Map();
 const byPoll = new Map();
 /** @type {Map<string, object>} */
 const byToken = new Map();
+/** @type {Map<string, object>} */
+const byLinkingKey = new Map();
 /** @type {Map<string, { type: 'register' | 'authenticate' }>} */
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
@@ -131,7 +133,8 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, { status: 'ERROR', reason: 'Unknown k1' });
       return;
     }
-    const account = newAccount(key);
+    const account = byLinkingKey.get(key) ?? newAccount(key);
+    byLinkingKey.set(key, account);
     const token = hex(randomBytes(32));
     challenge.status = 'authenticated';
     challenge.linkingKey = key;
@@ -227,7 +230,12 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with an "address" string' });
       return;
     }
-    account.lightningAddress = parsed.address;
+    const trimmed = parsed.address.trim();
+    if (!/^[^@]+@[^@]+$/.test(trimmed) || trimmed.length > 255) {
+      json(res, 400, { error: 'Not a valid Lightning Address (expected name@domain)' });
+      return;
+    }
+    account.lightningAddress = trimmed;
     account.lightningAddressVerified = false;
     json(res, 200, account);
     return;
@@ -319,7 +327,14 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const credId = credential.id;
-    if (typeof credId !== 'string' || credId === '' || credential.type !== 'public-key') {
+    const rawId = credential.rawId;
+    if (
+      typeof credId !== 'string' ||
+      credId === '' ||
+      credential.type !== 'public-key' ||
+      typeof rawId !== 'string' ||
+      rawId === ''
+    ) {
       json(res, 400, { error: 'Unknown credential' });
       return;
     }

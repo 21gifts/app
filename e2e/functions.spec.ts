@@ -1,6 +1,15 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
-const DUMMY_KEY = `02${'a'.repeat(62)}`;
+function dummyLinkingKey(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  let hex = '02';
+  for (const byte of bytes) {
+    hex += byte.toString(16).padStart(2, '0');
+  }
+  return hex;
+}
+
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
 async function mockPayCallback(page: Page): Promise<void> {
@@ -27,7 +36,7 @@ async function signInViaStub(page: Page, request: APIRequestContext): Promise<vo
   await page.getByRole('button', { name: 'Log in with Wallet of Satoshi' }).click();
   const start = (await (await pending).json()) as { k1: string };
   const cb = await request.get(
-    `/auth/lnurl/callback?tag=login&k1=${start.k1}&sig=00&key=${DUMMY_KEY}`,
+    `/auth/lnurl/callback?tag=login&k1=${start.k1}&sig=00&key=${dummyLinkingKey()}`,
   );
   expect(cb.status()).toBe(200);
   expect(await cb.json()).toEqual({ status: 'OK' });
@@ -52,10 +61,11 @@ async function installFakeWebAuthn(page: Page): Promise<void> {
     }
     const rawId = crypto.getRandomValues(new Uint8Array(16)).buffer;
     const idBytes = new Uint8Array(rawId);
-    let id = '';
+    let binary = '';
     for (const byte of idBytes) {
-      id += byte.toString(16).padStart(2, '0');
+      binary += String.fromCharCode(byte);
     }
+    const id = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/u, '');
     const attestation = {
       id,
       rawId,
@@ -115,7 +125,7 @@ async function loginHttp(request: APIRequestContext): Promise<string> {
   expect(startRes.status()).toBe(200);
   const start = (await startRes.json()) as { k1: string; pollToken: string };
   const cb = await request.get(
-    `/auth/lnurl/callback?tag=login&k1=${start.k1}&sig=00&key=${DUMMY_KEY}`,
+    `/auth/lnurl/callback?tag=login&k1=${start.k1}&sig=00&key=${dummyLinkingKey()}`,
   );
   expect((await cb.json()) as { status: string }).toEqual({ status: 'OK' });
   const sess = await request.get('/auth/session', {
