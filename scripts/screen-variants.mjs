@@ -122,6 +122,30 @@ export const SCREEN_VARIANTS = [
     needle: 'Try again',
   },
   {
+    route: '/stats/[day]',
+    id: 'default',
+    image: 'stats-day.png',
+    needle: 'alice',
+  },
+  {
+    route: '/stats/[day]',
+    id: 'empty',
+    image: 'stats-day-empty.png',
+    needle: 'No gifts recorded on this day.',
+  },
+  {
+    route: '/stats/[day]',
+    id: 'loading',
+    image: 'stats-day-loading.png',
+    needle: 'Loading…',
+  },
+  {
+    route: '/stats/[day]',
+    id: 'error',
+    image: 'stats-day-error.png',
+    needle: 'Try again',
+  },
+  {
     route: '/handbook',
     id: 'default',
     image: 'handbook.png',

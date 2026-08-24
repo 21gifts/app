@@ -32,11 +32,43 @@ The only state: imprint plus privacy, marketing chrome.
 
 ![21.gifts legal](images/legal.png)
 
+## Screen: /stats/[day]
+
+- **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
+- **What the user sees:** Dark 21.gifts header, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, Sats, BTC, USD), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Stats body copy stays English.
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Open **All stats**. Change language. Header **Log in** goes to `/login`.
+- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`).
+- **Auth:** None.
+
+### Variant: default
+
+Loaded day with at least one gift row (recipient **alice**).
+
+![21.gifts gifts on a day](images/stats-day.png)
+
+### Variant: empty
+
+No gifts that UTC day. Copy **No gifts recorded on this day.**
+
+![21.gifts empty day](images/stats-day-empty.png)
+
+### Variant: loading
+
+Waiting on `GET /gifts`. Copy **Loading…**
+
+![21.gifts day loading](images/stats-day-loading.png)
+
+### Variant: error
+
+Fetch failed. Button **Try again**.
+
+![21.gifts day error](images/stats-day-error.png)
+
 ## Screen: /stats
 
 - **URL:** `/stats` — public gift totals (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Gifts**, four KPI cards (total spent in **BTC** and **USD** with a sats caption, gifts, people, period), then diagrams: **Total spend over time** (one cumulative chart), **By person** and **By month**. Each diagram has a BTC/USD control that defaults to BTC; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the charts. Switch **Total spend over time** / **By person** / **By month** between BTC and USD. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Gifts**, four KPI cards (total spent in **BTC** and **USD** with a sats caption, gifts, people, period), then diagrams: **Total spend over time** (one cumulative chart plus UTC-day links for days with spend), **By person** and **By month**. Each diagram has a BTC/USD control that defaults to BTC; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time**. Switch **Total spend over time** / **By person** / **By month** between BTC and USD. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`.
 
 ### Variant: default

@@ -35,6 +35,13 @@
 - **Used by:** `finishPasskeyRegistration`.
 - **Auth:** Public.
 
+## Endpoint: GET /gifts
+
+- **Purpose:** Same-origin proxy of api `GET /gifts?day=YYYY-MM-DD` (individual outbound gifts that UTC day).
+- **Errors:** Upstream 400/503, or 502 if the api is unreachable.
+- **Used by:** `fetchGiftDay` on `/stats/[day]`.
+- **Auth:** Public.
+
 ## Endpoint: GET /gifts/stats
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals).

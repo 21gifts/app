@@ -6,6 +6,7 @@ import {
   proxyAuthPasskeyRegisterBeginPost,
   proxyAuthPasskeyRegisterFinishPost,
   proxyLightningAddressGet,
+  proxyGiftsGet,
   proxyGiftsStatsGet,
   proxyMeGet,
   proxyMeLightningAddressDelete,
@@ -68,6 +69,14 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/gifts/stats');
+  });
+
+  it('proxyGiftsGet hits /gifts and forwards day', async () => {
+    const fetchMock = stubApi();
+    await proxyGiftsGet(new Request('http://localhost/gifts?day=2026-06-01'));
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toBe('/gifts');
+    expect(url.searchParams.get('day')).toBe('2026-06-01');
   });
 
   it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {

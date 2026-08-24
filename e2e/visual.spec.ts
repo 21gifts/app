@@ -138,6 +138,12 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-stats', 'stats.png');
   });
 
+  test('screen /stats/[day]', async ({ page }) => {
+    await page.goto('/stats/2026-06-01');
+    await expect(page.getByText('alice')).toBeVisible();
+    await shotScreen(page, 'screen-stats-day', 'stats-day.png');
+  });
+
   test('screen /donate', async ({ page }) => {
     await page.goto('/donate');
     await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();

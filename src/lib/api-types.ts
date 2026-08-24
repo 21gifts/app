@@ -124,6 +124,40 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * One outbound gift in `GET /gifts?day=`.
+ */
+export const giftDayGiftSchema = z.object({
+  paidAt: z.string(),
+  amountSats: z.number().int().nonnegative(),
+  amountBtc: btcAmountStringSchema,
+  amountUsd: usdAmountStringSchema,
+  recipient: z.string(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /gifts?day=YYYY-MM-DD`.
+ */
+export const giftDaySchema = z.object({
+  day: z.string(),
+  giftCount: z.number().int().nonnegative(),
+  totalSats: z.number().int().nonnegative(),
+  totalBtc: btcAmountStringSchema,
+  totalUsd: usdAmountStringSchema,
+  gifts: z.array(giftDayGiftSchema),
+  fx: giftStatsFxSchema,
+});
+
+/**
+ * Outbound gifts for one UTC day from the api.
+ */
+export type GiftDay = z.infer<typeof giftDaySchema>;
+
+/**
+ * One gift in a per-day list.
+ */
+export type GiftDayGift = z.infer<typeof giftDayGiftSchema>;
+
+/**
  * Runtime schema for passkey begin (`register` or `authenticate`).
  *
  * `options` is the WebAuthn JSON options object (challenge, rp, user, …).

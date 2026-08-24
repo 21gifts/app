@@ -153,6 +153,12 @@ describe('StatsDashboard', () => {
     expect(within(svg).getByText('2026-06-02')).toBeTruthy();
     expect(within(svg).getAllByText('2026-06-01')).toHaveLength(1);
     expect(within(svg).getAllByText('2026-06-02')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
+      '/stats/2026-06-01',
+    );
+    expect(screen.getByRole('link', { name: '2026-06-02' }).getAttribute('href')).toBe(
+      '/stats/2026-06-02',
+    );
   });
 
   it('renders KPIs, footnote, BTC/USD charts, and person labels', () => {

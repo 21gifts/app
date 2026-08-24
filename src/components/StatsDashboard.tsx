@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import Link from 'next/link';
 import type { GiftStats } from '@/lib/api-types';
 import { formatBtcTick, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
@@ -399,6 +400,19 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
             groupLabel="Over time scale"
           />
         </div>
+        <p className="mt-3 text-sm text-white/60">
+          {stats.spendOverTime
+            .filter((point) => point.sats > 0)
+            .map((point) => (
+              <Link
+                key={point.day}
+                href={`/stats/${point.day}`}
+                className="mr-3 text-[#f7931a] underline"
+              >
+                {point.day}
+              </Link>
+            ))}
+        </p>
         <div className="mt-6">
           {overTimeScale === 'btc'
             ? CumulativeOverTimeChart(
