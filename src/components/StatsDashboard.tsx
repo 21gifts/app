@@ -248,23 +248,29 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
       {rows.map((row, i) => {
         const x = padL + i * barW + barW * 0.15;
         const w = barW * 0.7;
-        const y = yAt(row.sats);
-        const h = padT + innerH - y;
+        const axisY = padT + innerH;
+        const barTop = yAt(row.sats);
+        const h = axisY - barTop;
+        const displayH = row.sats > 0 ? Math.max(h, 1) : 0;
+        const usdY = Math.min(barTop - 6, axisY - 22);
+        const btcY = usdY - 14;
         return (
           <g key={row.month}>
-            <rect x={x} y={y} width={w} height={Math.max(h, 1)} fill={ORANGE} />
+            {displayH > 0 ? (
+              <rect x={x} y={axisY - displayH} width={w} height={displayH} fill={ORANGE} />
+            ) : null}
             <text
               x={x + w / 2}
-              y={y - 16}
+              y={btcY}
               textAnchor="middle"
               fill="rgba(255,255,255,0.7)"
               fontSize="11"
             >
-              {formatBtcTick(Number(row.btc))} ₿
+              {row.btc} ₿
             </text>
             <text
               x={x + w / 2}
-              y={y - 4}
+              y={usdY}
               textAnchor="middle"
               fill="rgba(255,255,255,0.7)"
               fontSize="11"

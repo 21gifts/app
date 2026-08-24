@@ -255,7 +255,7 @@ describe('StatsDashboard', () => {
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     const svg = screen.getByLabelText('Spend by month');
-    expect(svg.textContent).toContain('0.015 ₿');
+    expect(svg.textContent).toContain('0.01500000 ₿');
     expect(svg.textContent).toContain('$1,425.00');
   });
 
@@ -273,7 +273,26 @@ describe('StatsDashboard', () => {
     const svg = screen.getByLabelText('Spend by month');
     expect(svg.textContent).toContain('2026-02');
     expect(svg.textContent).toContain('2026-03');
-    expect(svg.textContent).toContain('0 ₿');
+    expect(svg.textContent).toContain('0.00000000 ₿');
     expect(svg.textContent).toContain('$0.00');
+    expect(svg.querySelectorAll('rect')).toHaveLength(1);
+  });
+
+  it('keeps a one-pixel floor for tiny positive months', () => {
+    const tiny: GiftStats = {
+      ...SAMPLE,
+      byMonth: [
+        { month: '2026-01', giftCount: 1, sats: 1, btc: '0.00000001', usd: '0.00' },
+        { month: '2026-02', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '950.00' },
+      ],
+    };
+    render(<StatsDashboard stats={tiny} error={null} loading={false} onRetry={() => undefined} />);
+    const svg = screen.getByLabelText('Spend by month');
+    const rects = [...svg.querySelectorAll('rect')];
+    expect(rects).toHaveLength(2);
+    const y0 = Number(rects[0]?.getAttribute('y'));
+    const h0 = Number(rects[0]?.getAttribute('height'));
+    expect(h0).toBeGreaterThanOrEqual(1);
+    expect(y0 + h0).toBe(184);
   });
 });
