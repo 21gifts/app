@@ -276,6 +276,31 @@ describe('LoginCard', () => {
     expect(useAuthStore.getState().account).toBeNull();
   });
 
+  it('clears an in-memory session when hydration 401s the same token', async () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockResolvedValue(null);
+    useAuthStore.setState({ session: 'tok', account });
+
+    renderWithLocale(<LoginCard />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBeNull();
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('cancels an in-flight passkey when hydration succeeds', async () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockResolvedValue(account);
+
+    renderWithLocale(<LoginCard />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBe('tok');
+    });
+    expect(cancelPasskeySpy).toHaveBeenCalled();
+  });
+
   it('logs but keeps the token when hydration fails', async () => {
     vi.mocked(loadSession).mockReturnValue('tok');
     vi.mocked(fetchMe).mockRejectedValue(new Error('500'));

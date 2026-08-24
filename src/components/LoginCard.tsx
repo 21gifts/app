@@ -8,7 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
-import { clearSession, loadSession } from '@/lib/session-storage';
+import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -16,9 +16,10 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * Shows the signed-in account when one is present. On mount it rehydrates
  * from a persisted token: a valid token logs the visitor straight in unless a
- * newer in-page session or logout already won; a rejected token is cleared
- * only when it still belongs to this hydration. Unmount and logout invalidate
- * in-flight hydration. Logout cancels an in-flight passkey ceremony.
+ * newer in-page session or logout already won; a rejected token calls
+ * `clearAuth` when the in-memory session is absent or still that token.
+ * Unmount and logout invalidate in-flight hydration. Logout and successful
+ * hydration cancel an in-flight passkey ceremony.
  *
  * @returns The card element.
  */
@@ -41,31 +42,30 @@ export function LoginCard(): ReactElement {
           return;
         }
         const current = useAuthStore.getState();
-        // Logout or a newer login replaced the persisted token.
         if (loadSession() !== token) {
           return;
         }
-        // A newer login may have replaced the persisted token while this
-        // GET /me was in flight. Do not clobber it.
         if (current.session !== null && current.session !== token) {
           return;
         }
         if (maybeAccount === null) {
-          if (current.session === token) {
+          if (current.session === null || current.session === token) {
             clearAuth();
-          } else {
-            clearSession();
           }
           return;
         }
         if (current.session === token && current.account !== null) {
           return;
         }
+        passkey.cancel();
         setAuth(token, maybeAccount);
       })
       .catch((error: unknown) => {
         console.error('Session hydration failed', error);
       });
+    return (): void => {
+      hydrateGen.current += 1;
+    };
   }, [setAuth, clearAuth]);
 
   let body: ReactElement;
