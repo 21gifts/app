@@ -194,10 +194,10 @@ silent English fallback.
 
 New or changed visitor-facing copy goes through a catalog key in the **same
 PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
-catalogize): legal body copy (English), handbook markdown bodies (English),
-product tokens such as `Wallet of Satoshi` / `GitHub`, language-switcher
-endonym labels (`English` / `Deutsch` / `Español` / `Filipino`), and stats
-body copy (English).
+catalogize): legal body copy (English), handbook markdown bodies and handbook
+chapter-navigation labels (English), product tokens such as
+`Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
+`Deutsch` / `Español` / `Filipino`), and stats body copy (English).
 
 Reviewers follow `Review.md`.
 
