@@ -171,6 +171,44 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/gifts') {
+    const day = url.searchParams.get('day');
+    if (day === '2026-06-01') {
+      json(res, 200, {
+        day: '2026-06-01',
+        giftCount: 1,
+        totalSats: 500,
+        totalBtc: '0.00000500',
+        totalUsd: '0.48',
+        gifts: [
+          {
+            paidAt: '2026-06-01T12:00:00.000Z',
+            amountSats: 500,
+            amountBtc: '0.00000500',
+            amountUsd: '0.48',
+            recipient: 'alice',
+          },
+        ],
+        fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+      });
+      return;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day ?? '')) {
+      json(res, 200, {
+        day,
+        giftCount: 0,
+        totalSats: 0,
+        totalBtc: '0.00000000',
+        totalUsd: '0.00',
+        gifts: [],
+        fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+      });
+      return;
+    }
+    json(res, 400, { error: 'Expected a UTC day (YYYY-MM-DD)' });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/gifts/stats') {
     json(res, 200, {
       totalSats: 0,

@@ -99,3 +99,13 @@ export async function proxyLightningAddressGet(request: Request): Promise<Respon
 export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/gifts/stats');
 }
+
+/**
+ * Proxies GET /gifts to the 21.gifts api (forwards `day` query).
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyGiftsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/gifts');
+}
