@@ -5,6 +5,8 @@ import type { GiftStats } from '@/lib/api-types';
 
 const EMPTY: GiftStats = {
   totalSats: 0,
+  totalBtc: '0.00000000',
+  totalUsd: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -12,6 +14,11 @@ const EMPTY: GiftStats = {
   spendOverTime: [],
   byRecipient: [],
   byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
 };
 
 vi.mock('@/lib/api', () => ({

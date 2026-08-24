@@ -101,15 +101,34 @@ describe('lnAddressResolvedSchema', () => {
 });
 
 describe('giftStatsSchema', () => {
+  const fx = {
+    quote: 'BTC-USD' as const,
+    dayBasis: 'utc' as const,
+    source: 'coinbase-exchange-daily-close' as const,
+  };
+
   const stats = {
     totalSats: 10,
+    totalBtc: '0.00000010',
+    totalUsd: '0.01',
     giftCount: 1,
     recipientCount: 1,
     firstPaidAt: '2026-06-01T00:00:00.000Z',
     lastPaidAt: '2026-06-01T00:00:00.000Z',
-    spendOverTime: [{ day: '2026-06-01', sats: 10, cumulativeSats: 10 }],
-    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10 }],
-    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10 }],
+    spendOverTime: [
+      {
+        day: '2026-06-01',
+        sats: 10,
+        cumulativeSats: 10,
+        btc: '0.00000010',
+        cumulativeBtc: '0.00000010',
+        usd: '0.01',
+        cumulativeUsd: '0.01',
+      },
+    ],
+    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
+    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
+    fx,
   };
 
   it('accepts a full stats payload', () => {
@@ -121,6 +140,8 @@ describe('giftStatsSchema', () => {
       ...stats,
       giftCount: 0,
       totalSats: 0,
+      totalBtc: '0.00000000',
+      totalUsd: '0.00',
       recipientCount: 0,
       firstPaidAt: null,
       lastPaidAt: null,
@@ -133,5 +154,37 @@ describe('giftStatsSchema', () => {
 
   it('rejects a negative sat count', () => {
     expect(() => giftStatsSchema.parse({ ...stats, totalSats: -1 })).toThrow();
+  });
+
+  it('rejects a payload missing totalBtc', () => {
+    expect(() =>
+      giftStatsSchema.parse(
+        Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'totalBtc')),
+      ),
+    ).toThrow();
+  });
+
+  it('rejects a payload missing totalUsd', () => {
+    expect(() =>
+      giftStatsSchema.parse(
+        Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'totalUsd')),
+      ),
+    ).toThrow();
+  });
+
+  it('rejects a payload missing fx', () => {
+    expect(() =>
+      giftStatsSchema.parse(
+        Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'fx')),
+      ),
+    ).toThrow();
+  });
+
+  it('rejects a bad BTC money string', () => {
+    expect(() => giftStatsSchema.parse({ ...stats, totalBtc: '0.015' })).toThrow();
+  });
+
+  it('rejects a bad USD money string', () => {
+    expect(() => giftStatsSchema.parse({ ...stats, totalUsd: '1425' })).toThrow();
   });
 });
