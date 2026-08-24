@@ -73,7 +73,8 @@ function CumulativeOverTimeChart(
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
   const values = series.map(valueAt);
-  const maxY = Math.max(...values, 0) || 1;
+  const dataMax = Math.max(...values, 0);
+  const maxY = dataMax === 0 ? 1 : dataMax;
   const n = series.length;
   const xAt = (i: number): number => padL + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
   const yAt = (v: number): number => padT + innerH - (v / maxY) * innerH;
@@ -91,7 +92,7 @@ function CumulativeOverTimeChart(
       : `${padL},${bottom} ${line} ${(padL + innerW).toFixed(1)},${bottom}`;
   const yTicks: number[] = [];
   const yTickLabels = new Set<string>();
-  for (const t of [0, 0.5, 1]) {
+  for (const t of dataMax === 0 ? [0] : [0, 1, 0.5]) {
     const tick = maxY * t;
     const label = formatTick(tick);
     if (yTickLabels.has(label)) {

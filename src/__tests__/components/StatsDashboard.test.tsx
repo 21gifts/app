@@ -232,6 +232,15 @@ describe('StatsDashboard', () => {
     const svg = screen.getByLabelText('BTC over time');
     const zeros = [...svg.querySelectorAll('text')].filter((el) => el.textContent === '0');
     expect(zeros).toHaveLength(1);
+    const maxLabels = [...svg.querySelectorAll('text')].filter(
+      (el) => el.textContent === '0.00000001',
+    );
+    expect(maxLabels).toHaveLength(1);
+    expect(Number(maxLabels[0]?.getAttribute('y'))).toBe(20);
+    const usdSvg = screen.getByLabelText('USD over time');
+    const usdTickTexts = [...usdSvg.querySelectorAll('text')].map((el) => el.textContent);
+    expect(usdTickTexts.filter((t) => t === '$0')).toHaveLength(1);
+    expect(usdTickTexts.some((t) => t === '$1' || t === '$0.5')).toBe(false);
   });
 
   it('keeps month labels on the by-month chart', () => {
