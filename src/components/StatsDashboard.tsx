@@ -43,7 +43,7 @@ function scaleValue(scale: BarScale, sats: number, usd: string): number {
 }
 
 /**
- * Compact BTC | USD segmented control for bar-chart scale.
+ * Compact BTC | USD segmented control for diagram scale.
  *
  * @param value - Active scale.
  * @param onChange - Called with the next scale.
