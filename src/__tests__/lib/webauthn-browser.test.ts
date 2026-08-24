@@ -126,6 +126,28 @@ describe('creationOptionsFromJSON', () => {
         excludeCredentials: [{ type: 'public-key', id: '%' }],
       }),
     ).toThrow(TypeError);
+    expect(() =>
+      creationOptionsFromJSON({
+        ...base,
+        excludeCredentials: [{ type: 'public-key', id: '' }],
+      }),
+    ).toThrow(TypeError);
+  });
+
+  it('validates excludeCredentials before the native parser', () => {
+    const parsed = { challenge: new Uint8Array([1]).buffer } as PublicKeyCredentialCreationOptions;
+    const parse = vi.fn().mockReturnValue(parsed);
+    vi.stubGlobal('PublicKeyCredential', { parseCreationOptionsFromJSON: parse });
+    expect(() =>
+      creationOptionsFromJSON({
+        challenge: 'AA',
+        rp: { id: 'localhost', name: '21.gifts' },
+        user: { id: 'AQ', name: 'n', displayName: 'd' },
+        excludeCredentials: [{ type: 'public-key', id: '' }],
+      }),
+    ).toThrow(TypeError);
+    expect(parse).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('uses native parseCreationOptionsFromJSON when present', () => {
@@ -184,6 +206,12 @@ describe('requestOptionsFromJSON', () => {
       requestOptionsFromJSON({
         challenge: bytesToBase64Url(new Uint8Array([4, 5])),
         allowCredentials: [{ type: 'public-key', id: '%' }],
+      }),
+    ).toThrow(TypeError);
+    expect(() =>
+      requestOptionsFromJSON({
+        challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+        allowCredentials: [{ type: 'public-key', id: '' }],
       }),
     ).toThrow(TypeError);
   });

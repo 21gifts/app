@@ -169,6 +169,9 @@ function credentialDescriptorsFromJSON(raw: unknown): PublicKeyCredentialDescrip
     } catch {
       continue;
     }
+    if (rawId.byteLength === 0) {
+      continue;
+    }
     const descriptor: PublicKeyCredentialDescriptor = {
       type: 'public-key',
       id: Uint8Array.from(rawId),
