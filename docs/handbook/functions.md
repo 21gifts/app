@@ -139,7 +139,7 @@
 - **Purpose:** Removes the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
-- **Used by:** `useAuthStore.clearAuth` and `LoginCard` when session hydration gets 401.
+- **Used by:** `useAuthStore.clearAuth`.
 
 ## Function: fetchGiftStats
 
