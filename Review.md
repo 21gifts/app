@@ -13,9 +13,10 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
   copy (English), handbook markdown bodies and handbook chapter-navigation
   labels (English), product tokens, switcher endonyms, stats body copy
   (English), document/social metadata (English)).
-- The four catalogs have the **same key set** (`npm run typecheck` fails on a
-  missing key). Every value is non-empty after trim
-  (`src/__tests__/lib/messages.test.ts` fails otherwise). Both must pass.
+- The four catalogs have the **same key set**, and every value is non-empty
+  after trim. `npm run typecheck` fails on a missing key.
+  `src/__tests__/lib/messages.test.ts` fails on a divergent key set or an
+  empty/whitespace value. Both must pass.
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
