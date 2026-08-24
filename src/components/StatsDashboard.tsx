@@ -1,4 +1,6 @@
-import type { ReactElement } from 'react';
+'use client';
+
+import { useState, type ReactElement } from 'react';
 import type { GiftStats } from '@/lib/api-types';
 import { formatBtcTick, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
@@ -15,6 +17,73 @@ export interface StatsDashboardProps {
 }
 
 const ORANGE = '#f7931a';
+
+type BarScale = 'btc' | 'usd';
+
+/**
+ * Converts an API USD amount string to integer cents for bar sizing.
+ *
+ * @param usd - USD amount as a decimal string (e.g. `"50.00"`).
+ * @returns Rounded cents.
+ */
+function usdCents(usd: string): number {
+  return Math.round(Number(usd) * 100);
+}
+
+/**
+ * Numeric bar-scale value for the active unit.
+ *
+ * @param scale - Whether bars are sized by BTC (sats) or USD (cents).
+ * @param sats - Whole satoshis.
+ * @param usd - USD amount string from the stats payload.
+ * @returns Sats when `scale` is `btc`, else cents.
+ */
+function scaleValue(scale: BarScale, sats: number, usd: string): number {
+  return scale === 'btc' ? sats : usdCents(usd);
+}
+
+/**
+ * Compact BTC | USD segmented control for bar-chart scale.
+ *
+ * @param value - Active scale.
+ * @param onChange - Called with the next scale.
+ * @param groupLabel - Accessible name for the button group.
+ * @returns Toggle element.
+ */
+function BarScaleToggle({
+  value,
+  onChange,
+  groupLabel,
+}: {
+  value: BarScale;
+  onChange: (next: BarScale) => void;
+  groupLabel: string;
+}): ReactElement {
+  return (
+    <div
+      role="group"
+      aria-label={groupLabel}
+      className="flex overflow-hidden rounded-md border border-white/20 text-xs"
+    >
+      <button
+        type="button"
+        aria-pressed={value === 'btc'}
+        className={`px-2 py-1 ${value === 'btc' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
+        onClick={() => onChange('btc')}
+      >
+        BTC
+      </button>
+      <button
+        type="button"
+        aria-pressed={value === 'usd'}
+        className={`px-2 py-1 ${value === 'usd' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
+        onClick={() => onChange('usd')}
+      >
+        USD
+      </button>
+    </div>
+  );
+}
 
 /**
  * Formats a sat count with grouping separators.
@@ -160,12 +229,13 @@ function CumulativeOverTimeChart(
 /**
  * Horizontal bar chart of spend by recipient.
  *
- * Bars are sized by sats (stable integer scale). Labels show BTC and USD.
+ * Bars are sized by the active scale (sats or USD cents). Labels show BTC and USD.
  *
  * @param rows - Recipient totals.
+ * @param scale - Whether bar widths use sats or USD cents.
  * @returns Bar list.
  */
-function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
+function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactElement {
   const width = 800;
   const rowH = 40;
   const padL = 8;
@@ -174,23 +244,26 @@ function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
   const valueW = 220;
   const barMax = width - padL - padR - labelW - valueW;
   const height = Math.max(rows.length, 1) * rowH;
-  const max = Math.max(...rows.map((r) => r.sats), 1);
+  const max = Math.max(...rows.map((r) => scaleValue(scale, r.sats, r.usd)), 1);
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
       role="img"
-      aria-label="Spend by person"
+      aria-label={scale === 'btc' ? 'Spend by person in BTC' : 'Spend by person in USD'}
     >
       {rows.map((row, i) => {
         const y = i * rowH;
-        const barW = Math.max(2, (row.sats / max) * barMax);
+        const value = scaleValue(scale, row.sats, row.usd);
+        const barW = value === 0 ? 0 : Math.max(2, (value / max) * barMax);
         return (
           <g key={row.recipient}>
             <text x={padL} y={y + 22} fill="rgba(255,255,255,0.9)" fontSize="14">
               {row.recipient}
             </text>
-            <rect x={padL + labelW} y={y + 12} width={barW} height={12} rx={6} fill={ORANGE} />
+            {barW > 0 ? (
+              <rect x={padL + labelW} y={y + 12} width={barW} height={12} rx={6} fill={ORANGE} />
+            ) : null}
             <text
               x={width - padR}
               y={y + 22}
@@ -210,21 +283,23 @@ function ByPersonChart(rows: GiftStats['byRecipient']): ReactElement {
 /**
  * Vertical bar chart of spend by month.
  *
- * Bars are sized by sats. Labels above each bar show BTC and USD.
+ * Bars are sized by the active scale (sats or USD cents). Labels above each bar show BTC and USD.
  *
  * @param rows - Monthly totals.
+ * @param scale - Whether bar heights use sats or USD cents.
  * @returns SVG figure.
  */
-function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
+function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement {
   const width = 800;
   const height = 220;
+  const monthAria = scale === 'btc' ? 'Spend by month in BTC' : 'Spend by month in USD';
   if (rows.length === 0) {
     return (
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full"
         role="img"
-        aria-label="Spend by month"
+        aria-label={monthAria}
       />
     );
   }
@@ -234,7 +309,7 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
   const padB = 36;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
-  const maxY = Math.max(...rows.map((r) => r.sats), 1);
+  const maxY = Math.max(...rows.map((r) => scaleValue(scale, r.sats, r.usd)), 1);
   const barW = innerW / Math.max(rows.length, 1);
   const yAt = (v: number): number => padT + innerH - (v / maxY) * innerH;
 
@@ -243,28 +318,35 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
       role="img"
-      aria-label="Spend by month"
+      aria-label={monthAria}
     >
       {rows.map((row, i) => {
         const x = padL + i * barW + barW * 0.15;
         const w = barW * 0.7;
-        const y = yAt(row.sats);
-        const h = padT + innerH - y;
+        const axisY = padT + innerH;
+        const value = scaleValue(scale, row.sats, row.usd);
+        const barTop = yAt(value);
+        const h = axisY - barTop;
+        const displayH = value > 0 ? Math.max(h, 1) : 0;
+        const usdY = Math.min(barTop - 6, axisY - 22);
+        const btcY = usdY - 14;
         return (
           <g key={row.month}>
-            <rect x={x} y={y} width={w} height={Math.max(h, 1)} fill={ORANGE} />
+            {displayH > 0 ? (
+              <rect x={x} y={axisY - displayH} width={w} height={displayH} fill={ORANGE} />
+            ) : null}
             <text
               x={x + w / 2}
-              y={y - 16}
+              y={btcY}
               textAnchor="middle"
               fill="rgba(255,255,255,0.7)"
               fontSize="11"
             >
-              {formatBtcTick(Number(row.btc))} ₿
+              {row.btc} ₿
             </text>
             <text
               x={x + w / 2}
-              y={y - 4}
+              y={usdY}
               textAnchor="middle"
               fill="rgba(255,255,255,0.7)"
               fontSize="11"
@@ -284,6 +366,68 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
         );
       })}
     </svg>
+  );
+}
+
+/**
+ * Non-empty charts branch with per-chart BTC/USD bar-scale state.
+ *
+ * @param stats - Loaded gift stats with at least one gift.
+ * @returns Diagram sections.
+ */
+function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
+  const [personScale, setPersonScale] = useState<BarScale>('btc');
+  const [monthScale, setMonthScale] = useState<BarScale>('btc');
+
+  return (
+    <>
+      <p className="text-sm text-white/60">
+        {"USD is the BTC-USD daily close (UTC) on each gift's day."}
+      </p>
+      <section>
+        <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">Total spend over time</h2>
+        <h3 className="mt-6 text-white/80">BTC over time</h3>
+        <div className="mt-4">
+          {CumulativeOverTimeChart(
+            stats.spendOverTime,
+            (p) => Number(p.cumulativeBtc),
+            formatBtcTick,
+            'BTC over time',
+          )}
+        </div>
+        <h3 className="mt-8 text-white/80">USD over time</h3>
+        <div className="mt-4">
+          {CumulativeOverTimeChart(
+            stats.spendOverTime,
+            (p) => Number(p.cumulativeUsd),
+            formatUsdTick,
+            'USD over time',
+          )}
+        </div>
+      </section>
+      <section>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By person</h2>
+          <BarScaleToggle
+            value={personScale}
+            onChange={setPersonScale}
+            groupLabel="By person bar scale"
+          />
+        </div>
+        <div className="mt-6">{ByPersonChart(stats.byRecipient, personScale)}</div>
+      </section>
+      <section>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By month</h2>
+          <BarScaleToggle
+            value={monthScale}
+            onChange={setMonthScale}
+            groupLabel="By month bar scale"
+          />
+        </div>
+        <div className="mt-6">{ByMonthChart(stats.byMonth, monthScale)}</div>
+      </section>
+    </>
   );
 }
 
@@ -354,42 +498,7 @@ export function StatsDashboard({
       {empty ? (
         <p className="text-white/60">No gifts recorded yet.</p>
       ) : (
-        <>
-          <p className="text-sm text-white/60">
-            {"USD is the BTC-USD daily close (UTC) on each gift's day."}
-          </p>
-          <section>
-            <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">
-              Total spend over time
-            </h2>
-            <h3 className="mt-6 text-white/80">BTC over time</h3>
-            <div className="mt-4">
-              {CumulativeOverTimeChart(
-                stats.spendOverTime,
-                (p) => Number(p.cumulativeBtc),
-                formatBtcTick,
-                'BTC over time',
-              )}
-            </div>
-            <h3 className="mt-8 text-white/80">USD over time</h3>
-            <div className="mt-4">
-              {CumulativeOverTimeChart(
-                stats.spendOverTime,
-                (p) => Number(p.cumulativeUsd),
-                formatUsdTick,
-                'USD over time',
-              )}
-            </div>
-          </section>
-          <section>
-            <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By person</h2>
-            <div className="mt-6">{ByPersonChart(stats.byRecipient)}</div>
-          </section>
-          <section>
-            <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By month</h2>
-            <div className="mt-6">{ByMonthChart(stats.byMonth)}</div>
-          </section>
-        </>
+        <StatsCharts stats={stats} />
       )}
     </div>
   );
