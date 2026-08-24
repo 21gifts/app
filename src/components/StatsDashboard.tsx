@@ -251,11 +251,14 @@ function ByMonthChart(rows: GiftStats['byMonth']): ReactElement {
         const axisY = padT + innerH;
         const barTop = yAt(row.sats);
         const h = axisY - barTop;
+        const displayH = row.sats > 0 ? Math.max(h, 1) : 0;
         const usdY = Math.min(barTop - 6, axisY - 22);
         const btcY = usdY - 14;
         return (
           <g key={row.month}>
-            {row.sats > 0 ? <rect x={x} y={barTop} width={w} height={h} fill={ORANGE} /> : null}
+            {displayH > 0 ? (
+              <rect x={x} y={axisY - displayH} width={w} height={displayH} fill={ORANGE} />
+            ) : null}
             <text
               x={x + w / 2}
               y={btcY}

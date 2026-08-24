@@ -277,4 +277,19 @@ describe('StatsDashboard', () => {
     expect(svg.textContent).toContain('$0.00');
     expect(svg.querySelectorAll('rect')).toHaveLength(1);
   });
+
+  it('keeps a one-pixel floor for tiny positive months', () => {
+    const tiny: GiftStats = {
+      ...SAMPLE,
+      byMonth: [
+        { month: '2026-01', giftCount: 1, sats: 1, btc: '0.00000001', usd: '0.00' },
+        { month: '2026-02', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '950.00' },
+      ],
+    };
+    render(<StatsDashboard stats={tiny} error={null} loading={false} onRetry={() => undefined} />);
+    const svg = screen.getByLabelText('Spend by month');
+    const rects = [...svg.querySelectorAll('rect')];
+    expect(rects).toHaveLength(2);
+    expect(Number(rects[0]?.getAttribute('height'))).toBeGreaterThanOrEqual(1);
+  });
 });
