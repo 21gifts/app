@@ -627,6 +627,28 @@ test('Function: StatsDashboard — empty stats hide the spend chart heading', as
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toHaveCount(0);
 });
 
+test('Function: StatsDashboard — month USD scale makes the higher-USD month taller', async ({
+  page,
+}) => {
+  await stubGiftStats(page, {
+    ...POPULATED_STATS,
+    giftCount: 2,
+    byMonth: [
+      { month: '2026-06', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
+      { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+    ],
+  });
+  await page.goto('/stats');
+  await page
+    .getByRole('group', { name: 'By month bar scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  const svg = page.getByLabel('Spend by month in USD');
+  const juneH = Number(await svg.locator('rect').nth(0).getAttribute('height'));
+  const julyH = Number(await svg.locator('rect').nth(1).getAttribute('height'));
+  expect(julyH).toBeGreaterThan(juneH);
+});
+
 test('Function: formatUsdDisplay — empty stats hero shows $0.00', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');

@@ -19,6 +19,11 @@ const E2E_ACCOUNT = {
 };
 
 async function writePng(page: Page, basename: string, fullPage = true): Promise<void> {
+  if (fullPage) {
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
+  }
   const buffer = await page.screenshot({ fullPage, animations: 'disabled', caret: 'hide' });
   const docsPath = path.join('docs', 'handbook', 'images', basename);
   const publicPath = path.join('public', 'handbook-images', basename);
@@ -289,6 +294,68 @@ test('stats default', async ({ page }) => {
   await page.goto('/stats');
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
   await writePng(page, 'stats.png');
+});
+
+test('stats usd-scale', async ({ page }) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 1_100_000,
+        totalBtc: '0.01100000',
+        totalUsd: '950.00',
+        giftCount: 2,
+        recipientCount: 2,
+        firstPaidAt: '2026-06-01T00:00:00.000Z',
+        lastPaidAt: '2026-07-01T00:00:00.000Z',
+        spendOverTime: [
+          {
+            day: '2026-06-01',
+            sats: 1_000_000,
+            cumulativeSats: 1_000_000,
+            btc: '0.01000000',
+            cumulativeBtc: '0.01000000',
+            usd: '50.00',
+            cumulativeUsd: '50.00',
+          },
+          {
+            day: '2026-07-01',
+            sats: 100_000,
+            cumulativeSats: 1_100_000,
+            btc: '0.00100000',
+            cumulativeBtc: '0.01100000',
+            usd: '900.00',
+            cumulativeUsd: '950.00',
+          },
+        ],
+        byRecipient: [
+          { recipient: 'alice', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
+          { recipient: 'bob', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+        ],
+        byMonth: [
+          { month: '2026-06', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
+          { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+        ],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+        },
+      }),
+    });
+  });
+  await page.goto('/stats');
+  await page
+    .getByRole('group', { name: 'By person bar scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await page
+    .getByRole('group', { name: 'By month bar scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await expect(page.getByLabel('Spend by month in USD')).toBeVisible();
+  await writePng(page, 'stats-usd-scale.png');
 });
 
 test('stats empty', async ({ page }) => {

@@ -99,6 +99,12 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/stats',
+    id: 'usd-scale',
+    image: 'stats-usd-scale.png',
+    needle: 'Spend by month in USD',
+  },
+  {
+    route: '/stats',
     id: 'empty',
     image: 'stats-empty.png',
     needle: 'No gifts recorded yet.',
