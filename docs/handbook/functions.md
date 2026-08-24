@@ -109,7 +109,7 @@
 ## Function: LoginCard
 
 - **Purpose:** Login UI: passkey create or continue, then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
-- **Inputs:** Uses `usePasskeyLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe` without overwriting a newer in-page session.
+- **Inputs:** Uses `usePasskeyLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe` without overwriting a newer in-page session or restoring after logout. Logout cancels an in-flight passkey ceremony.
 - **Returns / side effects:** React element covering idle/starting/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
 

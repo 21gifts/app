@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2, LogOut } from 'lucide-react';
-import { useEffect, type ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { NameForm } from '@/components/NameForm';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -15,8 +15,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * The login surface: passkey create or continue.
  *
  * Shows the signed-in account when one is present. On mount it rehydrates
- * from a persisted token: a valid token logs the visitor straight in, a
- * rejected (401) token is cleared.
+ * from a persisted token: a valid token logs the visitor straight in unless a
+ * newer in-page session or logout already won; a rejected token is cleared
+ * only when it still belongs to this hydration. Unmount and logout invalidate
+ * in-flight hydration. Logout cancels an in-flight passkey ceremony.
  *
  * @returns The card element.
  */
@@ -25,18 +27,26 @@ export function LoginCard(): ReactElement {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const passkey = usePasskeyLogin();
+  const hydrateGen = useRef(0);
 
   useEffect(() => {
     const token = loadSession();
     if (token === null) {
       return;
     }
+    const gen = hydrateGen.current;
     fetchMe(token)
       .then((maybeAccount) => {
-        if (loadSession() !== token) {
+        if (gen !== hydrateGen.current) {
           return;
         }
         const current = useAuthStore.getState();
+        // Logout or a newer login replaced the persisted token.
+        if (loadSession() !== token) {
+          return;
+        }
+        // A newer login may have replaced the persisted token while this
+        // GET /me was in flight. Do not clobber it.
         if (current.session !== null && current.session !== token) {
           return;
         }
@@ -60,7 +70,16 @@ export function LoginCard(): ReactElement {
 
   let body: ReactElement;
   if (account !== null) {
-    body = <LoggedInView account={account} onLogout={clearAuth} />;
+    body = (
+      <LoggedInView
+        account={account}
+        onLogout={() => {
+          hydrateGen.current += 1;
+          passkey.cancel();
+          clearAuth();
+        }}
+      />
+    );
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
   } else if (passkey.status === 'error') {
