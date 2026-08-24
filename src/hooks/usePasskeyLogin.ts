@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
@@ -155,6 +155,14 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     }
     register();
   }, [authenticate, register]);
+
+  useEffect(() => {
+    return (): void => {
+      runIdRef.current += 1;
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
 
   return { status, register, authenticate, retry, cancel };
 }
