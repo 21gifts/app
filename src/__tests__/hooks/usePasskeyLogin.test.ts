@@ -374,6 +374,19 @@ describe('usePasskeyLogin', () => {
     expect(vi.mocked(startPasskeyRegistration)).not.toHaveBeenCalled();
   });
 
+  it('retries register after a failed register', async () => {
+    vi.mocked(startPasskeyRegistration).mockRejectedValue(new Error('nope'));
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('error');
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(vi.mocked(startPasskeyRegistration)).toHaveBeenCalledTimes(2);
+  });
+
   it('goes to error when create returns a non-passkey credential', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,
