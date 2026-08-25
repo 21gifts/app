@@ -149,6 +149,57 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('cancel aborts in-flight login before register starts', async () => {
+    let resolveGet: (value: unknown) => void = () => undefined;
+    const create = vi.fn();
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveGet = resolve;
+            }),
+        ),
+        create,
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.login();
+    });
+    act(() => {
+      result.current.cancel();
+    });
+    await act(async () => {
+      resolveGet({ id: 'cred', type: 'public-key' });
+      await Promise.resolve();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(create).not.toHaveBeenCalled();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('login goes to error when fallback create fails', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn().mockResolvedValue(null),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('error');
+    expect(startPasskeyRegistration).toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
   it('returns to idle when the user cancels', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,

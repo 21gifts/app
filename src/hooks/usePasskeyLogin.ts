@@ -27,7 +27,7 @@ export interface UsePasskeyLogin {
   register: () => void;
   /** Sign in with an existing passkey. */
   authenticate: () => void;
-  /** Repeat the last register or authenticate attempt after an error. */
+  /** Repeats the originating flow after an error. The single-button path restarts login. */
   retry: () => void;
   /** Aborts an in-flight WebAuthn prompt. */
   cancel: () => void;
