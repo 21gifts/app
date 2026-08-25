@@ -150,15 +150,15 @@ describe('usePasskeyLogin', () => {
   });
 
   it('cancel aborts in-flight login before register starts', async () => {
-    let resolveGet: (value: unknown) => void = () => undefined;
+    let rejectGet: (reason: unknown) => void = () => undefined;
     const create = vi.fn();
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
         get: vi.fn().mockImplementation(
           () =>
-            new Promise((resolve) => {
-              resolveGet = resolve;
+            new Promise((_resolve, reject) => {
+              rejectGet = reject;
             }),
         ),
         create,
@@ -172,7 +172,7 @@ describe('usePasskeyLogin', () => {
       result.current.cancel();
     });
     await act(async () => {
-      resolveGet({ id: 'cred', type: 'public-key' });
+      rejectGet(new DOMException('no', 'NotAllowedError'));
       await Promise.resolve();
     });
     expect(result.current.status).toBe('idle');
