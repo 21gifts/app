@@ -12,7 +12,7 @@ import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The login surface: passkey create or continue.
+ * The login surface: one Log in button, then signed-in account.
  *
  * Shows the signed-in account when one is present. On mount it rehydrates
  * from a persisted token: a valid token logs the visitor straight in unless a
@@ -85,9 +85,7 @@ export function LoginCard(): ReactElement {
   } else if (passkey.status === 'error') {
     body = <ErrorView onRetry={passkey.retry} />;
   } else {
-    body = (
-      <StartView onCreatePasskey={passkey.register} onContinuePasskey={passkey.authenticate} />
-    );
+    body = <StartView onLogin={passkey.login} />;
   }
 
   return (
@@ -133,19 +131,17 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
 
 /** Props for {@link StartView}. */
 interface StartViewProps {
-  /** Called to create a new discoverable passkey. */
-  onCreatePasskey: () => void;
-  /** Called to sign in with an existing passkey. */
-  onContinuePasskey: () => void;
+  /** Called to sign in with an existing passkey, or create one. */
+  onLogin: () => void;
 }
 
 /**
- * The initial logged-out state: create a passkey or continue with one.
+ * The initial logged-out state: a single Log in button.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({ onCreatePasskey, onContinuePasskey }: StartViewProps): ReactElement {
+function StartView({ onLogin }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -153,18 +149,11 @@ function StartView({ onCreatePasskey, onContinuePasskey }: StartViewProps): Reac
       <h2 className="text-center text-lg font-medium text-neutral-900">{t('login.heading')}</h2>
       <button
         type="button"
-        onClick={onCreatePasskey}
+        onClick={onLogin}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Fingerprint aria-hidden="true" className="h-4 w-4" />
-        {t('login.createPasskey')}
-      </button>
-      <button
-        type="button"
-        onClick={onContinuePasskey}
-        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-      >
-        {t('login.continuePasskey')}
+        {t('login.submit')}
       </button>
     </>
   );

@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-test('login page renders passkey actions only', async ({ page }) => {
+test('login page renders a single Log in button', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Continue with passkey' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Create a passkey' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Continue with passkey' })).toHaveCount(0);
 });
 
 test('login shows Preparing your login while passkey begin hangs', async ({ page }) => {
@@ -17,7 +18,7 @@ test('login shows Preparing your login while passkey begin hangs', async ({ page
     await route.abort();
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   release();
 });
@@ -27,7 +28,7 @@ test('login shows an error when passkey begin fails', async ({ page }) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
 });
 
@@ -113,5 +114,5 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
   await expect(page.getByText(/Add your name so people know who you are/i)).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });

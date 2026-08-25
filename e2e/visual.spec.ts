@@ -71,7 +71,7 @@ test.describe('screen baselines', () => {
 
   test('screen /login', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
     await shotScreen(page, 'screen-login', 'login.png');
   });
 

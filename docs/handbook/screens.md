@@ -104,13 +104,13 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — passkey only.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Create a passkey** / **Continue with passkey**, or signed-in account. Error is terminal until **Try again**.
-- **Actions:** Change language. Create or continue with a passkey. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, or signed-in account. Error is terminal until **Try again**.
+- **Actions:** Change language. Log in (existing passkey, or create one if that ceremony fails). When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
 
-Logged out. Heading **Sign in to 21.gifts**, **Create a passkey**, **Continue with passkey**.
+Logged out. Heading **Sign in to 21.gifts**, one **Log in** button.
 
 ![21.gifts login idle](images/login.png)
 

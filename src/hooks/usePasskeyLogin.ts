@@ -21,6 +21,8 @@ export type PasskeyStatus = 'idle' | 'starting' | 'error';
 export interface UsePasskeyLogin {
   /** Where the passkey flow currently is. */
   status: PasskeyStatus;
+  /** One-tap login: existing passkey, then create if that ceremony fails. */
+  login: () => void;
   /** Create a new discoverable passkey and sign in. */
   register: () => void;
   /** Sign in with an existing passkey. */
@@ -48,16 +50,35 @@ function isUserCancel(error: unknown): boolean {
 }
 
 /**
+ * Thrown when a newer click or unmount superseded this ceremony.
+ */
+class SupersededError extends Error {
+  /**
+   * @returns A stale-run error.
+   */
+  public constructor() {
+    super('passkey run superseded');
+    this.name = 'SupersededError';
+  }
+}
+
+/**
  * Drives passkey register / authenticate. A run id ignores superseded clicks.
  *
- * @returns Status plus register, authenticate, retry, and cancel.
+ * @returns Status plus login, register, authenticate, retry, and cancel.
  */
 export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const runIdRef = useRef(0);
-  const lastKindRef = useRef<'register' | 'authenticate'>('register');
+  const lastKindRef = useRef<'register' | 'authenticate'>('authenticate');
   const abortRef = useRef<AbortController | null>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
+
+  const guard = useCallback((runId: number): void => {
+    if (runId !== runIdRef.current) {
+      throw new SupersededError();
+    }
+  }, []);
 
   const cancel = useCallback((): void => {
     runIdRef.current += 1;
@@ -66,87 +87,111 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     setStatus('idle');
   }, []);
 
-  const register = useCallback((): void => {
-    lastKindRef.current = 'register';
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const runId = ++runIdRef.current;
-    setStatus('starting');
-    void (async () => {
-      try {
-        const begin = await startPasskeyRegistration();
-        if (runId !== runIdRef.current) {
-          return;
-        }
-        const credential = await navigator.credentials.create({
-          publicKey: creationOptionsFromJSON(begin.options),
-          signal: controller.signal,
-        });
-        if (runId !== runIdRef.current) {
-          return;
-        }
-        if (credential === null || credential.type !== 'public-key') {
-          throw new Error('Passkey creation returned no credential');
-        }
-        const session = await finishPasskeyRegistration(
-          begin.challengeId,
-          credentialToJSON(credential as PublicKeyCredential),
-        );
-        if (runId !== runIdRef.current) {
-          return;
-        }
-        setAuth(session.token, session.account);
-        setStatus('idle');
-      } catch (error: unknown) {
-        if (runId !== runIdRef.current) {
-          return;
-        }
-        setStatus(isUserCancel(error) ? 'idle' : 'error');
+  const beginRun = useCallback(
+    (
+      kind: 'register' | 'authenticate',
+    ): {
+      runId: number;
+      controller: AbortController;
+    } => {
+      lastKindRef.current = kind;
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const runId = ++runIdRef.current;
+      setStatus('starting');
+      return { runId, controller };
+    },
+    [],
+  );
+
+  const completeRegistration = useCallback(
+    async (runId: number, controller: AbortController): Promise<void> => {
+      const begin = await startPasskeyRegistration();
+      guard(runId);
+      const credential = await navigator.credentials.create({
+        publicKey: creationOptionsFromJSON(begin.options),
+        signal: controller.signal,
+      });
+      guard(runId);
+      if (credential === null || credential.type !== 'public-key') {
+        throw new Error('Passkey creation returned no credential');
       }
-    })();
-  }, [setAuth]);
+      const session = await finishPasskeyRegistration(
+        begin.challengeId,
+        credentialToJSON(credential as PublicKeyCredential),
+      );
+      guard(runId);
+      setAuth(session.token, session.account);
+      setStatus('idle');
+    },
+    [guard, setAuth],
+  );
+
+  const completeAuthentication = useCallback(
+    async (runId: number, controller: AbortController): Promise<void> => {
+      const begin = await startPasskeyAuthentication();
+      guard(runId);
+      const credential = await navigator.credentials.get({
+        publicKey: requestOptionsFromJSON(begin.options),
+        signal: controller.signal,
+      });
+      guard(runId);
+      if (credential === null || credential.type !== 'public-key') {
+        throw new Error('Passkey assertion returned no credential');
+      }
+      const session = await finishPasskeyAuthentication(
+        begin.challengeId,
+        credentialToJSON(credential as PublicKeyCredential),
+      );
+      guard(runId);
+      setAuth(session.token, session.account);
+      setStatus('idle');
+    },
+    [guard, setAuth],
+  );
+
+  const finishWithError = useCallback((runId: number, error: unknown): void => {
+    if (error instanceof SupersededError || runId !== runIdRef.current) {
+      return;
+    }
+    setStatus(isUserCancel(error) ? 'idle' : 'error');
+  }, []);
+
+  const register = useCallback((): void => {
+    const { runId, controller } = beginRun('register');
+    void completeRegistration(runId, controller).catch((error: unknown) => {
+      finishWithError(runId, error);
+    });
+  }, [beginRun, completeRegistration, finishWithError]);
 
   const authenticate = useCallback((): void => {
-    lastKindRef.current = 'authenticate';
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const runId = ++runIdRef.current;
-    setStatus('starting');
+    const { runId, controller } = beginRun('authenticate');
+    void completeAuthentication(runId, controller).catch((error: unknown) => {
+      finishWithError(runId, error);
+    });
+  }, [beginRun, completeAuthentication, finishWithError]);
+
+  const login = useCallback((): void => {
+    const { runId, controller } = beginRun('authenticate');
     void (async () => {
       try {
-        const begin = await startPasskeyAuthentication();
-        if (runId !== runIdRef.current) {
-          return;
-        }
-        const credential = await navigator.credentials.get({
-          publicKey: requestOptionsFromJSON(begin.options),
-          signal: controller.signal,
-        });
-        if (runId !== runIdRef.current) {
-          return;
-        }
-        if (credential === null || credential.type !== 'public-key') {
-          throw new Error('Passkey assertion returned no credential');
-        }
-        const session = await finishPasskeyAuthentication(
-          begin.challengeId,
-          credentialToJSON(credential as PublicKeyCredential),
-        );
-        if (runId !== runIdRef.current) {
-          return;
-        }
-        setAuth(session.token, session.account);
-        setStatus('idle');
+        await completeAuthentication(runId, controller);
       } catch (error: unknown) {
-        if (runId !== runIdRef.current) {
+        if (error instanceof SupersededError || runId !== runIdRef.current) {
           return;
         }
-        setStatus(isUserCancel(error) ? 'idle' : 'error');
+        lastKindRef.current = 'register';
+        const createController = new AbortController();
+        abortRef.current = createController;
+        try {
+          await completeRegistration(runId, createController);
+        } catch (createError: unknown) {
+          finishWithError(runId, createError);
+        }
       }
     })();
-  }, [setAuth]);
+  }, [beginRun, completeAuthentication, completeRegistration, finishWithError]);
 
   const retry = useCallback((): void => {
     if (lastKindRef.current === 'authenticate') {
@@ -164,5 +209,5 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     };
   }, []);
 
-  return { status, register, authenticate, retry, cancel };
+  return { status, login, register, authenticate, retry, cancel };
 }

@@ -74,6 +74,40 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('login uses an existing passkey without creating one', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const create = vi.fn();
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(useAuthStore.getState().account?.id).toBe('acc_1');
+    expect(create).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('login creates a passkey when get is dismissed', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn().mockResolvedValue(cred),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(useAuthStore.getState().session).toBe('tok');
+    expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
   it('returns to idle when the user cancels', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,

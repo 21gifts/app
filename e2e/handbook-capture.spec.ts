@@ -55,7 +55,7 @@ test('legal default', async ({ page }) => {
 
 test('login idle', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await writePng(page, 'login.png');
 });
 
@@ -69,7 +69,7 @@ test('login starting', async ({ page }) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   await writePng(page, 'login-starting.png');
   release();
@@ -80,7 +80,7 @@ test('login error', async ({ page }) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Create a passkey' }).click();
+  await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
   await writePng(page, 'login-error.png');
 });
