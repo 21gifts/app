@@ -13,7 +13,7 @@ test('login shows Preparing your login while passkey begin hangs', async ({ page
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
     await held;
     await route.abort();
   });
@@ -24,7 +24,7 @@ test('login shows Preparing your login while passkey begin hangs', async ({ page
 });
 
 test('login shows an error when passkey begin fails', async ({ page }) => {
-  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');

@@ -107,6 +107,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
 
   const completeRegistration = useCallback(
     async (runId: number, controller: AbortController): Promise<void> => {
+      guard(runId);
       const begin = await startPasskeyRegistration();
       guard(runId);
       const credential = await navigator.credentials.create({
@@ -130,6 +131,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
 
   const completeAuthentication = useCallback(
     async (runId: number, controller: AbortController): Promise<void> => {
+      guard(runId);
       const begin = await startPasskeyAuthentication();
       guard(runId);
       const credential = await navigator.credentials.get({
