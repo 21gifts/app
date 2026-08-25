@@ -64,7 +64,7 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Data in the app</h3>
         <p className="text-white/70">
-          The application on this same origin uses a login to sign in and Wallet of Satoshi to
+          The application on this same origin lets you sign in and uses Wallet of Satoshi to
           receive Bitcoin. It does not hold funds. Bitcoin payments go directly from the
           donor&apos;s Wallet of Satoshi to the receiver&apos;s Wallet of Satoshi address.
         </p>

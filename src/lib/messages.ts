@@ -43,7 +43,7 @@ const en = {
     "Funds move from the donor's Wallet of Satoshi to the receiver's Wallet of Satoshi address. 21.gifts never holds, routes, or escrows the money. There is nothing for us to freeze.",
   'home.why2Title': 'Your login stays on your device',
   'home.why2Body':
-    'Identity is a login for this site. 21.gifts never sees a password — only a signed assertion. No password database to leak.',
+    '21.gifts never sees a password — only a signed assertion. No password database to leak.',
   'home.why3Title': 'Your Bitcoin, not ours',
   'home.why3Body':
     'Gifts are Bitcoin payments to a Wallet of Satoshi address. If 21.gifts disappeared tomorrow, those addresses would still work.',
@@ -178,7 +178,7 @@ const de = {
     'Das Geld geht von Wallet of Satoshi der gebenden Person an die Wallet of Satoshi address der empfangenden Person. 21.gifts hält, routet oder treuhändert nichts. Es gibt nichts, das wir einfrieren könnten.',
   'home.why2Title': 'Ihr Login bleibt bei Ihnen',
   'home.why2Body':
-    'Identität ist ein Login für diese Seite. 21.gifts sieht kein Passwort — nur eine signierte Anmeldung. Keine Passwort-Datenbank, die lecken kann.',
+    '21.gifts sieht kein Passwort — nur eine signierte Anmeldung. Keine Passwort-Datenbank, die lecken kann.',
   'home.why3Title': 'Ihr Bitcoin, nicht unserer',
   'home.why3Body':
     'Geschenke sind Bitcoin-Zahlungen an eine Wallet of Satoshi address. Würde 21.gifts morgen verschwinden, funktionieren diese Adressen weiter.',
@@ -301,7 +301,7 @@ const es = {
     'Los fondos van de Wallet of Satoshi de quien da a la Wallet of Satoshi address de quien recibe. 21.gifts no retiene, enruta ni deja en depósito el dinero. No hay nada que podamos congelar.',
   'home.why2Title': 'Tu login permanece en tu dispositivo',
   'home.why2Body':
-    'La identidad es un login para este sitio. 21.gifts no ve una contraseña — solo una aserción firmada. No hay base de datos de contraseñas que se pueda filtrar.',
+    '21.gifts no ve una contraseña — solo una aserción firmada. No hay base de datos de contraseñas que se pueda filtrar.',
   'home.why3Title': 'Tu Bitcoin, no el nuestro',
   'home.why3Body':
     'Los regalos son pagos Bitcoin a una Wallet of Satoshi address. Si 21.gifts desapareciera mañana, esas direcciones seguirían funcionando.',
@@ -424,7 +424,7 @@ const fil = {
     'Gumagalaw ang pondo mula sa Wallet of Satoshi ng nagbibigay patungo sa Wallet of Satoshi address ng tumatanggap. Hindi humahawak, nagr-route, o nag-escrow ang 21.gifts. Walang pwedeng i-freeze.',
   'home.why2Title': 'Nasa device mo ang login',
   'home.why2Body':
-    'Ang identidad ay isang login para sa site na ito. Walang password na nakikita ng 21.gifts — signed assertion lang. Walang password database na pwedeng tumagas.',
+    'Walang password na nakikita ng 21.gifts — signed assertion lang. Walang password database na pwedeng tumagas.',
   'home.why3Title': 'Ang Bitcoin mo, hindi sa amin',
   'home.why3Body':
     'Bitcoin payment ang mga handog sa isang Wallet of Satoshi address. Kung mawala ang 21.gifts bukas, gagana pa rin ang mga address na iyon.',

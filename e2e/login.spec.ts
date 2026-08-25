@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('login page renders passkey actions only', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Create a login' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toHaveCount(0);
 });
 

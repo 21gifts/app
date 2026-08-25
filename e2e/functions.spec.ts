@@ -176,8 +176,8 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Create a login' }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
-  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -442,7 +442,7 @@ test('Function: LoginPage — login heading is visible', async ({ page }) => {
 test('Function: LoginCard — passkey actions are visible', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Create a login' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
 });
 
 test('Function: QrCode — donate shows a Bitcoin payment QR', async ({ page }) => {
@@ -553,7 +553,7 @@ test('Function: LightningAddressForm — link and unlink a Wallet of Satoshi add
 test('Function: clearSession — log out returns to the start action', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.localStorage.getItem('21gifts.session'))).toBeNull();
 });
 
