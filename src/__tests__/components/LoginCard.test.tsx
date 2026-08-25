@@ -65,10 +65,10 @@ afterEach(() => {
 describe('LoginCard', () => {
   it('shows the login call-to-action when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
-    const create = screen.getByRole('button', { name: /create a passkey/i });
+    const create = screen.getByRole('button', { name: /create a login/i });
     fireEvent.click(create);
     expect(registerSpy).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: /continue with passkey/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
     expect(authenticateSpy).toHaveBeenCalledTimes(1);
   });
 

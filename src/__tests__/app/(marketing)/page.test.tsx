@@ -39,6 +39,11 @@ describe('Home', () => {
     expect(document.body.textContent).not.toMatch(/LNURL/i);
   });
 
+  it('does not use passkey jargon', async () => {
+    render(await Home());
+    expect(document.body.textContent).not.toMatch(/passkey/i);
+  });
+
   it('links Ask for help to login', async () => {
     render(await Home());
     const link = screen.getByRole('link', { name: 'Ask for help' });

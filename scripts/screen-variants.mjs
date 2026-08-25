@@ -29,7 +29,7 @@ export const SCREEN_VARIANTS = [
     route: '/login',
     id: 'idle',
     image: 'login.png',
-    needle: 'Create a passkey',
+    needle: 'Create a login',
   },
   {
     route: '/login',

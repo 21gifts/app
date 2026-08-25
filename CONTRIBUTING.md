@@ -57,7 +57,7 @@ app/
 │   │   │   └── stats/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
 │   │   ├── login/
-│   │   │   └── page.tsx         # GET /login — passkey + signed-in form
+│   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -99,7 +99,7 @@ app/
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
-│   ├── login.spec.ts            # /login passkey create/continue + signed-in forms
+│   ├── login.spec.ts            # /login create/continue + signed-in forms
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
