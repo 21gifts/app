@@ -71,6 +71,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const runIdRef = useRef(0);
   const lastKindRef = useRef<'register' | 'authenticate'>('authenticate');
+  const entryKindRef = useRef<'login' | 'register' | 'authenticate'>('login');
   const abortRef = useRef<AbortController | null>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -161,6 +162,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, []);
 
   const register = useCallback((): void => {
+    entryKindRef.current = 'register';
     const { runId, controller } = beginRun('register');
     void completeRegistration(runId, controller).catch((error: unknown) => {
       finishWithError(runId, error);
@@ -168,6 +170,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeRegistration, finishWithError]);
 
   const authenticate = useCallback((): void => {
+    entryKindRef.current = 'authenticate';
     const { runId, controller } = beginRun('authenticate');
     void completeAuthentication(runId, controller).catch((error: unknown) => {
       finishWithError(runId, error);
@@ -175,6 +178,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeAuthentication, finishWithError]);
 
   const login = useCallback((): void => {
+    entryKindRef.current = 'login';
     const { runId, controller } = beginRun('authenticate');
     void (async () => {
       try {
@@ -201,12 +205,16 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeAuthentication, completeRegistration, finishWithError]);
 
   const retry = useCallback((): void => {
+    if (entryKindRef.current === 'login') {
+      login();
+      return;
+    }
     if (lastKindRef.current === 'authenticate') {
       authenticate();
       return;
     }
     register();
-  }, [authenticate, register]);
+  }, [authenticate, login, register]);
 
   useEffect(() => {
     return (): void => {

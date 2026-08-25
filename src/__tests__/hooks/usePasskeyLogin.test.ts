@@ -90,6 +90,30 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('retries the single-button flow after an authenticate error', async () => {
+    vi.mocked(startPasskeyAuthentication).mockRejectedValueOnce(new Error('nope'));
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('error');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn().mockResolvedValue(cred),
+      },
+    });
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().session).toBe('tok');
+    vi.unstubAllGlobals();
+  });
+
   it('login does not create a passkey when authenticate begin fails', async () => {
     const create = vi.fn();
     vi.stubGlobal('navigator', {

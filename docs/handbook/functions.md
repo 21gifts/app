@@ -572,5 +572,5 @@
 
 - **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). `cancel` aborts an in-flight WebAuthn prompt.
 - **Inputs:** None (reads `useAuthStore`).
-- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }`. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
+- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
 - **Used by:** `LoginCard`.
