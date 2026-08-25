@@ -21,7 +21,7 @@ export type PasskeyStatus = 'idle' | 'starting' | 'error';
 export interface UsePasskeyLogin {
   /** Where the passkey flow currently is. */
   status: PasskeyStatus;
-  /** One-tap login: existing passkey, then create if that ceremony fails. */
+  /** One-tap login: existing passkey, or create when the browser has none. */
   login: () => void;
   /** Create a new discoverable passkey and sign in. */
   register: () => void;
@@ -179,6 +179,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         await completeAuthentication(runId, controller);
       } catch (error: unknown) {
         if (error instanceof SupersededError || runId !== runIdRef.current) {
+          return;
+        }
+        const noPasskey = error instanceof DOMException && error.name === 'NotAllowedError';
+        if (!noPasskey) {
+          finishWithError(runId, error);
           return;
         }
         lastKindRef.current = 'register';

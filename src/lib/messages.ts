@@ -29,7 +29,7 @@ const en = {
     'You sign in with a passkey. There are no usernames, no passwords, and no email sign-ups.',
   'home.step1Title': 'Sign in with a passkey',
   'home.step1Body':
-    'Create a passkey in the browser, or continue with one you already have. That credential is your account — nothing else to remember.',
+    'One tap in the browser. It uses a sign-in you already have, or creates one. That is your account — nothing else to remember.',
   'home.step2Title': 'Add a Wallet of Satoshi address',
   'home.step2BodyBefore': 'Link where gifts should land, as',
   'home.step2BodyAfter': '. Anyone can then send Bitcoin to you from Wallet of Satoshi.',
@@ -163,7 +163,7 @@ const de = {
     'Sie melden sich mit einem Passkey an. Keine Benutzernamen, keine Passwörter, keine E-Mail-Registrierung.',
   'home.step1Title': 'Mit einem Passkey anmelden',
   'home.step1Body':
-    'Erstellen Sie einen Passkey im Browser, oder fahren Sie mit einem vorhandenen fort. Diese Anmeldung ist Ihr Konto — sonst nichts merken.',
+    'Ein Tipp im Browser. Er nutzt eine vorhandene Anmeldung oder legt eine an. Das ist Ihr Konto — sonst nichts merken.',
   'home.step2Title': 'Wallet of Satoshi address hinterlegen',
   'home.step2BodyBefore': 'Hinterlegen Sie, wo Geschenke ankommen sollen, als',
   'home.step2BodyAfter': '. Danach kann Ihnen jede Person aus Wallet of Satoshi senden.',
@@ -285,7 +285,7 @@ const es = {
     'Entras con una passkey. Sin nombres de usuario, sin contraseñas y sin registro por correo.',
   'home.step1Title': 'Entra con una passkey',
   'home.step1Body':
-    'Crea una passkey en el navegador, o continúa con una que ya tengas. Esa credencial es tu cuenta — nada más que recordar.',
+    'Un toque en el navegador. Usa un inicio de sesión que ya tengas, o crea uno. Esa es tu cuenta — nada más que recordar.',
   'home.step2Title': 'Añade una Wallet of Satoshi address',
   'home.step2BodyBefore': 'Indica dónde deben llegar los regalos, como',
   'home.step2BodyAfter': '. Cualquiera podrá enviarte Bitcoin desde Wallet of Satoshi.',
@@ -407,7 +407,7 @@ const fil = {
     'Mag-log in ka gamit ang passkey. Walang username, walang password, at walang email sign-up.',
   'home.step1Title': 'Mag-log in gamit ang passkey',
   'home.step1Body':
-    'Gumawa ng passkey sa browser, o magpatuloy sa isa na meron ka na. Iyon ang account mo — wala nang ibang tandaan.',
+    'Isang tap sa browser. Gagamitin ang login na meron ka na, o gagawa ng bago. Iyon ang account mo — wala nang ibang tandaan.',
   'home.step2Title': 'Magdagdag ng Wallet of Satoshi address',
   'home.step2BodyBefore': 'I-link kung saan dapat tumama ang mga handog, bilang',
   'home.step2BodyAfter':

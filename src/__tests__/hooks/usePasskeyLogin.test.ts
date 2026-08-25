@@ -90,6 +90,23 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('login does not create a passkey when authenticate begin fails', async () => {
+    const create = vi.fn();
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get: vi.fn() },
+    });
+    vi.mocked(startPasskeyAuthentication).mockRejectedValue(new Error('nope'));
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('error');
+    expect(create).not.toHaveBeenCalled();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('login creates a passkey when get is dismissed', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {

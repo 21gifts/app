@@ -148,6 +148,7 @@ async function installFakeWebAuthn(page: Page): Promise<void> {
     };
     const isBytes = (value: unknown): boolean =>
       value instanceof ArrayBuffer || ArrayBuffer.isView(value);
+    let registered = false;
     Object.defineProperty(navigator, 'credentials', {
       configurable: true,
       value: {
@@ -156,12 +157,16 @@ async function installFakeWebAuthn(page: Page): Promise<void> {
           if (!publicKey || !isBytes(publicKey.challenge) || !isBytes(publicKey.user?.id)) {
             throw new Error('invalid creation options');
           }
+          registered = true;
           return attestation;
         },
         get: async (options?: CredentialRequestOptions) => {
           const publicKey = options?.publicKey;
           if (!publicKey || !isBytes(publicKey.challenge)) {
             throw new Error('invalid request options');
+          }
+          if (!registered) {
+            throw new DOMException('No credentials', 'NotAllowedError');
           }
           return assertion;
         },
