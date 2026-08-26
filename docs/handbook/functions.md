@@ -173,12 +173,12 @@
 
 - **Purpose:** Next.js page for `/setup/address`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with a light language switcher and **Log out** chrome.
+- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with language switcher and **Log out** grouped top-right.
 - **Used by:** Route `/setup/address`.
 
 ## Function: LogoutButton
 
-- **Purpose:** Logs the visitor out from the page chrome (top-left), not from the card, and returns them to `/login`.
+- **Purpose:** Logs the visitor out from the page chrome (top-right), not from the card, and returns them to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
 - **Returns / side effects:** Button. Clears the session and `router.replace('/login')`.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
@@ -194,7 +194,7 @@
 
 - **Purpose:** Next.js page for `/setup/name`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `NameSetup` with a light language switcher and **Log out** chrome.
+- **Returns / side effects:** `OnboardingGate` around `NameSetup` with language switcher and **Log out** grouped top-right.
 - **Used by:** Route `/setup/name`.
 
 ## Function: OnboardingGate
@@ -208,7 +208,7 @@
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with a light language switcher and **Log out** chrome.
+- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with language switcher and **Log out** grouped top-right.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
