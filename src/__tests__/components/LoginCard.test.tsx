@@ -135,7 +135,7 @@ describe('LoginCard', () => {
     });
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('heading', { name: 'Welcome, Ada' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /send a gift/i })).toHaveAttribute('href', '/donate');
+    expect(screen.getByRole('link', { name: /send a gift/i }).getAttribute('href')).toBe('/donate');
     expect(screen.getByRole('button', { name: /unlink/i })).toBeTruthy();
   });
 
