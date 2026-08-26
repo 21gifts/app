@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent, ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -29,7 +30,7 @@ function nativeLabel(locale: Locale): string {
  * refreshes the App Router tree so server components re-negotiate locale.
  *
  * @param props - Visual tone for marketing (`dark`) or login/donate (`light`),
- *   and optional `embedded` when the select is a segment of `SignedInChrome`.
+ *   and optional `embedded` when shown as a text action in `SignedInChrome`.
  * @returns The language select element.
  */
 export function LanguageSwitcher(props: {
@@ -50,14 +51,36 @@ export function LanguageSwitcher(props: {
     router.refresh();
   };
 
-  const toneText = tone === 'dark' ? 'text-white' : 'text-neutral-900';
-  const className = embedded
-    ? `border-0 bg-transparent px-2 py-1 text-sm outline-none ${toneText}`
-    : `rounded-md border px-2 py-1 text-sm outline-none ${
-        tone === 'dark'
-          ? 'border-white/20 bg-transparent text-white'
-          : 'border-neutral-300 bg-transparent text-neutral-900'
-      }`;
+  const options = LOCALES.map((code) => (
+    <option key={code} value={code}>
+      {nativeLabel(code)}
+    </option>
+  ));
+
+  if (embedded) {
+    return (
+      <div className="relative inline-flex items-center">
+        <select
+          aria-label={t('language.label')}
+          value={locale}
+          onChange={onChange}
+          className="cursor-pointer appearance-none bg-transparent py-1 pr-5 text-sm text-neutral-500 outline-none hover:text-neutral-900"
+        >
+          {options}
+        </select>
+        <ChevronDown
+          aria-hidden="true"
+          className="pointer-events-none absolute right-0 h-3.5 w-3.5 text-neutral-400"
+        />
+      </div>
+    );
+  }
+
+  const className = `rounded-md border px-2 py-1 text-sm outline-none ${
+    tone === 'dark'
+      ? 'border-white/20 bg-transparent text-white'
+      : 'border-neutral-300 bg-transparent text-neutral-900'
+  }`;
 
   return (
     <select
@@ -66,11 +89,7 @@ export function LanguageSwitcher(props: {
       onChange={onChange}
       className={className}
     >
-      {LOCALES.map((code) => (
-        <option key={code} value={code}>
-          {nativeLabel(code)}
-        </option>
-      ))}
+      {options}
     </select>
   );
 }
