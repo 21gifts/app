@@ -1,13 +1,12 @@
 'use client';
 
 import type { ReactElement } from 'react';
-import { LogoutButton } from '@/components/LogoutButton';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The second post-login screen: ask for a Wallet of Satoshi address.
+ * The second post-login screen: ask for a Wallet of Satoshi address. No log out.
  *
  * @returns The address setup card.
  */
@@ -23,7 +22,6 @@ export function AddressSetup(): ReactElement {
         <p className="text-sm text-neutral-500">{t('login.helloName', { name: name.trim() })}</p>
       ) : null}
       <LightningAddressForm />
-      <LogoutButton />
     </section>
   );
 }

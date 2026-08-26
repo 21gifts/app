@@ -142,13 +142,13 @@ Signed in, no name yet. **Your name**, **Save name**, **Log out**.
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** Light language switcher. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form, **Log out**. No name form.
-- **Actions:** Link an address, log out, change language. After save, the visitor is sent to `/welcome`.
-- **Calls:** `AddressSetup`, `LightningAddressForm`, `LogoutButton`, `OnboardingGate`, `LanguageSwitcher`.
+- **What the user sees:** Light language switcher. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form. No **Log out**.
+- **Actions:** Link an address, change language. After save, the visitor is sent to `/welcome`.
+- **Calls:** `AddressSetup`, `LightningAddressForm`, `OnboardingGate`, `LanguageSwitcher`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**, **Log out**.
+Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. No **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 

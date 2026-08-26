@@ -49,6 +49,7 @@ describe('AddressSetup', () => {
     expect(screen.getByText('Hi, Ada')).toBeTruthy();
     expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });
 
   it('omits the greeting when the store has no name', () => {

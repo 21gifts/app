@@ -164,9 +164,9 @@
 
 ## Function: AddressSetup
 
-- **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved.
+- **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved. No log out.
 - **Inputs:** Reads `account.name` from `useAuthStore` for the greeting.
-- **Returns / side effects:** Card with heading **Your Wallet of Satoshi address**, `LightningAddressForm`, and `LogoutButton`.
+- **Returns / side effects:** Card with heading **Your Wallet of Satoshi address** and `LightningAddressForm`. No `LogoutButton`.
 - **Used by:** Screen `/setup/address`.
 
 ## Function: AddressSetupPage
@@ -181,7 +181,7 @@
 - **Purpose:** Logs the visitor out and returns them to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
 - **Returns / side effects:** Button. Clears the session and `router.replace('/login')`.
-- **Used by:** `NameSetup`, `AddressSetup`, `WelcomeScreen`.
+- **Used by:** `NameSetup`, `WelcomeScreen`.
 
 ## Function: NameSetup
 
