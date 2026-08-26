@@ -71,7 +71,7 @@ test.describe('screen baselines', () => {
 
   test('screen /login', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Create a passkey' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
     await shotScreen(page, 'screen-login', 'login.png');
   });
 
@@ -161,6 +161,69 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
     // Viewport only: a full-page shot would nest the other screen PNGs inside this one.
     await shotScreen(page, 'screen-handbook', 'handbook.png', false);
+  });
+});
+
+test.describe('login variant baselines', () => {
+  test('login starting', async ({ page }) => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await held;
+      await route.fulfill({ status: 503, body: 'unavailable' });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByText('Preparing your login…')).toBeVisible();
+    await shotScreen(page, 'state-login-starting', 'login-starting.png');
+    release();
+  });
+
+  test('login error', async ({ page }) => {
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({ status: 503, body: 'unavailable' });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-login-error', 'login-error.png');
+  });
+
+  test('login signed-in named', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
+      });
+    });
+    await page.goto('/login');
+    await expect(page.getByText('Ada')).toBeVisible();
+    await shotScreen(page, 'state-login-signed-in-named', 'login-signed-in-named.png');
+  });
+
+  test('login signed-in linked', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
+      });
+    });
+    await page.goto('/login');
+    await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
+    await shotScreen(page, 'state-login-signed-in-linked', 'login-signed-in-linked.png');
   });
 });
 
