@@ -49,6 +49,24 @@ describe('LoginCard', () => {
     expect(screen.getByText('Preparing your login…')).toBeTruthy();
   });
 
+  it('shows preparing when a signed-in account is already in the store', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      },
+    });
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByText('Preparing your login…')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
+  });
+
   it('shows a passkey error with try again', () => {
     mockPasskey('error');
     renderWithLocale(<LoginCard />);

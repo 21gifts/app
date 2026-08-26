@@ -125,21 +125,21 @@
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate). Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, and `/donate`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/setup/name`, `/setup/address`, `/welcome`, and `/donate`.
 
 ## Function: NameForm
 
 - **Purpose:** Logged-in form to set or edit a display name.
 - **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
-- **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
+- **Used by:** `NameSetup` on screen `/setup/name` (not on `/` or `/login`).
 
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
 - **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Request failures use `la.errorRequest` so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out.
-- **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
+- **Used by:** `AddressSetup` on screen `/setup/address` (not on `/` or `/login`).
 
 ## Function: LocaleProvider
 
@@ -279,7 +279,7 @@
 - **Purpose:** GET `/me` with the bearer session.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `Account` or `null` on 401.
-- **Used by:** `LoginCard` session hydration.
+- **Used by:** `useHydrateSession`.
 
 ## Function: formatBtcTick
 
@@ -349,7 +349,7 @@
 - **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
-- **Used by:** `LoginCard` on mount.
+- **Used by:** `useHydrateSession` on mount.
 
 ## Function: parseAcceptLanguage
 
@@ -440,14 +440,14 @@
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
 - **Returns / side effects:** Auth state object.
-- **Used by:** `LoginCard`, `NameForm`, `LightningAddressForm` on `/login` (not `/`).
+- **Used by:** `NameForm` on `/setup/name` and `LightningAddressForm` on `/setup/address` (not `/` or `/login`).
 
 ## Function: useTranslations
 
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`.
 
 ## Function: walletOfSatoshiHref
 
@@ -657,4 +657,4 @@
 - **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). `cancel` aborts an in-flight WebAuthn prompt.
 - **Inputs:** None (reads `useAuthStore`).
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
-- **Used by:** `LoginCard`.
+- **Used by:** `OnboardingGate` and `LoginCard`.

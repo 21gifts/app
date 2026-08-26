@@ -18,7 +18,7 @@ export function useHydrateSession(): { ready: boolean } {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const hydrateGen = useRef(0);
-  const [ready, setReady] = useState(() => loadSession() === null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const token = loadSession();
