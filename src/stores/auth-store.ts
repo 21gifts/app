@@ -35,8 +35,9 @@ interface AuthState {
  * Global authentication store.
  *
  * Deliberately starts with `session = null` and never reads `localStorage` at
- * module init: hydration happens explicitly on the client (see `LoginCard`) so
- * server and first client render agree and React does not warn. See `useHydrateSession`.
+ * module init: hydration happens explicitly on the client via
+ * `useHydrateSession` (`OnboardingGate`) so server and first client render
+ * agree and React does not warn.
  */
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,

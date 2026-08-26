@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
@@ -78,6 +78,29 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('renders name children when the account still needs a name', async () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="name">
+        <p>name-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('name-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a named account from the name screen to the address screen', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    renderWithLocale(
+      <OnboardingGate screen="name">
+        <p>name-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/address');
+    });
   });
 
   it('does not bounce a name screen to login while a stored token is hydrating', () => {
