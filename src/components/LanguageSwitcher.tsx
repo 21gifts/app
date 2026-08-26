@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent, ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -30,7 +30,7 @@ function nativeLabel(locale: Locale): string {
  * refreshes the App Router tree so server components re-negotiate locale.
  *
  * @param props - Visual tone for marketing (`dark`) or login/donate (`light`),
- *   and optional `embedded` when shown as a text action in `SignedInChrome`.
+ *   and optional `embedded` when shown with a matching globe icon in `SignedInChrome`.
  * @returns The language select element.
  */
 export function LanguageSwitcher(props: {
@@ -59,19 +59,16 @@ export function LanguageSwitcher(props: {
 
   if (embedded) {
     return (
-      <div className="relative inline-flex items-center">
+      <div className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition hover:text-neutral-900">
+        <Globe aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         <select
           aria-label={t('language.label')}
           value={locale}
           onChange={onChange}
-          className="cursor-pointer appearance-none bg-transparent py-1 pr-5 text-sm text-neutral-500 outline-none hover:text-neutral-900"
+          className="cursor-pointer appearance-none bg-transparent py-1 text-sm outline-none"
         >
           {options}
         </select>
-        <ChevronDown
-          aria-hidden="true"
-          className="pointer-events-none absolute right-0 h-3.5 w-3.5 text-neutral-400"
-        />
       </div>
     );
   }

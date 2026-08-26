@@ -123,7 +123,7 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate) and optional `embedded` (quiet text action in `SignedInChrome`). Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and `SignedInChrome`.
 
@@ -178,9 +178,9 @@
 
 ## Function: LogoutButton
 
-- **Purpose:** Quiet log-out text in `SignedInChrome` (top-right page chrome, not on the card); clears the session and returns the visitor to `/login`.
+- **Purpose:** Matching icon+text log-out in `SignedInChrome` (top-right page chrome, not on the card); clears the session and returns the visitor to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
-- **Returns / side effects:** Text button. Clears the session and `router.replace('/login')`.
+- **Returns / side effects:** Icon+text button. Clears the session and `router.replace('/login')`.
 - **Used by:** `SignedInChrome`.
 
 ## Function: NameSetup
@@ -206,9 +206,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: language and **Log out** as matching quiet text, not on the card.
+- **Purpose:** Top-right signed-in chrome: language and **Log out** as matching icon+text actions, not on the card.
 - **Inputs:** None. Composes `LanguageSwitcher` (`tone="light"`, `embedded`) and `LogoutButton`.
-- **Returns / side effects:** Absolutely positioned chrome with an unstyled language select and a text log-out control.
+- **Returns / side effects:** Absolutely positioned chrome with a globe+language select and a matching log-out icon+text control.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
 
 ## Function: WelcomePage

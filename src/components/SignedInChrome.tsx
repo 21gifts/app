@@ -3,7 +3,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LogoutButton } from '@/components/LogoutButton';
 
 /**
- * Top-right signed-in page chrome: language and log out as matching text actions.
+ * Top-right signed-in page chrome: language and log out as matching icon+text actions.
  *
  * @returns The language and log-out chrome.
  */
