@@ -310,7 +310,7 @@ test.describe('function baselines', () => {
     }
   });
 
-  test('LightningAddressForm signed-in', async ({ page }) => {
+  test('LightningAddressForm welcome after linked address', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
