@@ -46,10 +46,12 @@ describe('useHydrateSession', () => {
   it('becomes ready after the first storage check when no token is stored', async () => {
     vi.mocked(loadSession).mockReturnValue(null);
     renderWithLocale(<Probe />);
-    expect(screen.getByText('pending')).toBeTruthy();
+    // No token: the effect calls setReady(true) synchronously. Testing Library
+    // flushes that effect inside render, so the pending frame is not observable.
     await waitFor(() => {
       expect(screen.getByText('ready')).toBeTruthy();
     });
+    expect(fetchMe).not.toHaveBeenCalled();
   });
 
   it('stays pending until fetchMe settles when a token is stored', async () => {
