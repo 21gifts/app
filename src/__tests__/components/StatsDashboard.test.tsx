@@ -153,13 +153,18 @@ describe('StatsDashboard', () => {
     expect(within(svg).getByText('2026-06-02')).toBeTruthy();
     expect(within(svg).getAllByText('2026-06-01')).toHaveLength(1);
     expect(within(svg).getAllByText('2026-06-02')).toHaveLength(1);
-    expect(screen.queryByRole('link', { name: '2026-06-01' })).toBeNull();
-    expect(screen.queryByRole('link', { name: '2026-06-02' })).toBeNull();
+    expect(within(svg).getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
+      '/stats/2026-06-01',
+    );
+    expect(within(svg).getByRole('link', { name: '2026-06-02' }).getAttribute('href')).toBe(
+      '/stats/2026-06-02',
+    );
     expect(
       screen
-        .queryAllByRole('link')
-        .filter((el) => /^\d{4}-\d{2}-\d{2}$/.test(el.textContent ?? '')),
-    ).toEqual([]);
+        .getByRole('heading', { name: 'Total spend over time' })
+        .closest('section')
+        ?.querySelector('p a'),
+    ).toBeNull();
   });
 
   it('renders KPIs, footnote, BTC/USD charts, and person labels', () => {
@@ -179,14 +184,20 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend by month in BTC')).toBeTruthy();
     expect(screen.getByText('alice')).toBeTruthy();
     expect(screen.getByText('0.01000000 ₿ · $950.00')).toBeTruthy();
-    expect(screen.queryByRole('link', { name: '2026-06-01' })).toBeNull();
-    expect(screen.queryByRole('link', { name: '2026-06-02' })).toBeNull();
-    expect(screen.queryByRole('link', { name: '2026-06-03' })).toBeNull();
+    const svg = screen.getByLabelText('Spend over time in BTC');
+    expect(within(svg).getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
+      '/stats/2026-06-01',
+    );
+    expect(within(svg).queryByRole('link', { name: '2026-06-02' })).toBeNull();
+    expect(within(svg).getByRole('link', { name: '2026-06-03' }).getAttribute('href')).toBe(
+      '/stats/2026-06-03',
+    );
     expect(
       screen
-        .queryAllByRole('link')
-        .filter((el) => /^\d{4}-\d{2}-\d{2}$/.test(el.textContent ?? '')),
-    ).toEqual([]);
+        .getByRole('heading', { name: 'Total spend over time' })
+        .closest('section')
+        ?.querySelector('p a'),
+    ).toBeNull();
   });
 
   it('anchors the first and last spend-over-time dates so full YYYY-MM-DD labels stay in view', () => {

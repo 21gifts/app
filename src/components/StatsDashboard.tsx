@@ -111,6 +111,8 @@ function utcDay(iso: string | null): string {
 /**
  * Cumulative spend-over-time area chart for one money series.
  *
+ * Days with spend are SVG links to `/stats/{day}` on the series (not a text list).
+ *
  * @param series - Daily cumulative points.
  * @param valueAt - Extract the numeric cumulative value used for scale only.
  * @param formatTick - Axis tick label formatter.
@@ -201,6 +203,24 @@ function CumulativeOverTimeChart(
       ))}
       <polygon points={area} fill={ORANGE} fillOpacity="0.25" />
       <polyline points={line} fill="none" stroke={ORANGE} strokeWidth="2" />
+      {series.map((point, i) => {
+        if (point.sats <= 0) {
+          return null;
+        }
+        const cx = xAt(i);
+        const cy = yAt(values[i] as number);
+        return (
+          <a
+            key={`${ariaLabel}-day-${point.day}`}
+            href={`/stats/${point.day}`}
+            aria-label={point.day}
+            className="cursor-pointer"
+          >
+            <circle cx={cx} cy={cy} r={10} fill="transparent" />
+            <circle cx={cx} cy={cy} r={3.5} fill={ORANGE} />
+          </a>
+        );
+      })}
       {xIdx.map((i, tickIndex) => {
         const point = series[i] as (typeof series)[number];
         const anchor =
@@ -372,8 +392,8 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
 /**
  * Non-empty charts branch with independent BTC/USD scale state per diagram.
  *
- * Over time shows one cumulative series. Person and month bars rescale; their
- * labels stay both units.
+ * Over time shows one cumulative series; days with spend link to `/stats/{day}`
+ * on the chart. Person and month bars rescale; their labels stay both units.
  *
  * @param stats - Loaded gift stats with at least one gift.
  * @returns Diagram sections.

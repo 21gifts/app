@@ -662,6 +662,14 @@ test('Function: StatsDashboard — empty stats hide the spend chart heading', as
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toHaveCount(0);
 });
 
+test('Function: StatsDashboard — a spend day on the chart opens /stats/{day}', async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.goto('/stats');
+  await page.getByLabel('Spend over time in BTC').getByRole('link', { name: '2026-06-01' }).click();
+  await expect(page).toHaveURL(/\/stats\/2026-06-01$/);
+  await expect(page.getByText('alice')).toBeVisible();
+});
+
 test('Function: StatsDashboard — month USD scale makes the higher-USD month taller', async ({
   page,
 }) => {

@@ -59,7 +59,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (BTC + USD totals with a sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. Each of **Total spend over time**, **By person**, and **By month** has a BTC/USD control (default BTC). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
+- **Purpose:** Renders gift KPIs (BTC + USD totals with a sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** has a BTC/USD control (default BTC). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `StatsLoader`.
