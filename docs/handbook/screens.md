@@ -129,39 +129,39 @@ Login begin or finish failed. Copy **Something went wrong. Please try again.** a
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** Light language switcher top-right. **Log out** top-right next to the language switcher, not on the card. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **What the user sees:** One top-right control with language and **Log out** (shared border), not on the card. Heading **Your name**, name form. No Wallet of Satoshi form.
 - **Actions:** Save a name, log out, change language. After save, the visitor is sent to `/setup/address`.
-- **Calls:** `NameSetup`, `NameForm`, `LogoutButton`, `OnboardingGate`, `LanguageSwitcher`.
+- **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name**, **Save name**. **Log out** top-right next to the language switcher, not on the card.
+Signed in, no name yet. **Your name**, **Save name**. One top-right control with language and **Log out** (shared border), not on the card.
 
 ![21.gifts name setup](images/setup-name.png)
 
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** Light language switcher top-right. **Log out** top-right next to the language switcher, not on the address card. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **What the user sees:** One top-right control with language and **Log out** (shared border), not on the card. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
 - **Actions:** Link an address, log out, change language. After save, the visitor is sent to `/welcome`.
-- **Calls:** `AddressSetup`, `LightningAddressForm`, `LogoutButton`, `OnboardingGate`, `LanguageSwitcher`.
+- **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. **Log out** top-right next to the language switcher, not on the address card.
+Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. One top-right control with language and **Log out** (shared border), not on the card.
 
 ![21.gifts address setup](images/setup-address.png)
 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Light language switcher top-right. **Log out** top-right next to the language switcher, not on the card. Gift icon, **Welcome, {name}**, ready copy, **Send a gift**. No name or address form.
+- **What the user sees:** One top-right control with language and **Log out** (shared border), not on the card. Gift icon, **Welcome, {name}**, ready copy, **Send a gift**. No name or address form.
 - **Actions:** Open `/donate`, log out, change language.
-- **Calls:** `WelcomeScreen`, `LogoutButton`, `OnboardingGate`, `LanguageSwitcher`.
+- **Calls:** `WelcomeScreen`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, **Send a gift**. **Log out** top-right next to the language switcher, not on the card.
+Gift icon, **Welcome, Ada**, **Send a gift**. One top-right control with language and **Log out** (shared border), not on the card.
 
 ![21.gifts welcome](images/welcome.png)
 

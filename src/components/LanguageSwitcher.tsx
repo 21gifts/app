@@ -28,11 +28,15 @@ function nativeLabel(locale: Locale): string {
  * Native `<select>` that persists the visitor's language choice in a cookie and
  * refreshes the App Router tree so server components re-negotiate locale.
  *
- * @param props - Visual tone for marketing (`dark`) or login/donate (`light`).
+ * @param props - Visual tone for marketing (`dark`) or login/donate (`light`),
+ *   and optional `embedded` when the select is a segment of `SignedInChrome`.
  * @returns The language select element.
  */
-export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElement {
-  const { tone } = props;
+export function LanguageSwitcher(props: {
+  tone: 'dark' | 'light';
+  embedded?: boolean;
+}): ReactElement {
+  const { tone, embedded = false } = props;
   const { locale, t } = useTranslations();
   const router = useRouter();
 
@@ -46,17 +50,21 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
     router.refresh();
   };
 
-  const toneClass =
-    tone === 'dark'
-      ? 'border-white/20 bg-transparent text-white'
-      : 'border-neutral-300 bg-transparent text-neutral-900';
+  const toneText = tone === 'dark' ? 'text-white' : 'text-neutral-900';
+  const className = embedded
+    ? `border-0 bg-transparent px-2 py-1 text-sm outline-none ${toneText}`
+    : `rounded-md border px-2 py-1 text-sm outline-none ${
+        tone === 'dark'
+          ? 'border-white/20 bg-transparent text-white'
+          : 'border-neutral-300 bg-transparent text-neutral-900'
+      }`;
 
   return (
     <select
       aria-label={t('language.label')}
       value={locale}
       onChange={onChange}
-      className={`rounded-md border px-2 py-1 text-sm outline-none ${toneClass}`}
+      className={className}
     >
       {LOCALES.map((code) => (
         <option key={code} value={code}>

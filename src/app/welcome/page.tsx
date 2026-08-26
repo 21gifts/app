@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { LogoutButton } from '@/components/LogoutButton';
 import { OnboardingGate } from '@/components/OnboardingGate';
+import { SignedInChrome } from '@/components/SignedInChrome';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 
 /**
@@ -12,10 +11,7 @@ import { WelcomeScreen } from '@/components/WelcomeScreen';
 export default function WelcomePage(): ReactElement {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6">
-      <div className="absolute top-4 right-5 flex items-center gap-4">
-        <LanguageSwitcher tone="light" />
-        <LogoutButton />
-      </div>
+      <SignedInChrome />
       <OnboardingGate screen="welcome">
         <WelcomeScreen />
       </OnboardingGate>

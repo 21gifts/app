@@ -7,9 +7,9 @@ import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Logs the visitor out from the page chrome (top-right), not from the card.
+ * Log-out segment of `SignedInChrome` (top-right page chrome, not on the card).
  *
- * @returns The log-out button.
+ * @returns The log-out button segment.
  */
 export function LogoutButton(): ReactElement {
   const { t } = useTranslations();
@@ -25,7 +25,7 @@ export function LogoutButton(): ReactElement {
         clearAuth();
         router.replace('/login');
       }}
-      className="text-sm text-neutral-500 transition hover:text-neutral-900"
+      className="px-3 py-1 text-sm text-neutral-900 transition hover:bg-neutral-50"
     >
       {t('login.logOut')}
     </button>

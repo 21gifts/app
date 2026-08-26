@@ -1113,3 +1113,13 @@ test('Function: LogoutButton — log out returns to login', async ({ page, reque
   await expect(page).toHaveURL(/\/login/);
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
+
+test('Function: SignedInChrome — language and log out share the chrome', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page.getByLabel('Language')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+});

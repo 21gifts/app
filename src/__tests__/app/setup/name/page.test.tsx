@@ -12,16 +12,8 @@ vi.mock('@/components/OnboardingGate', () => ({
   OnboardingGate: ({ children }: { children: ReactNode }) => children,
 }));
 
-vi.mock('@/components/LanguageSwitcher', () => ({
-  LanguageSwitcher: () => <div data-testid="language-switcher" />,
-}));
-
-vi.mock('@/components/LogoutButton', () => ({
-  LogoutButton: () => (
-    <button type="button" data-testid="logout-button">
-      Log out
-    </button>
-  ),
+vi.mock('@/components/SignedInChrome', () => ({
+  SignedInChrome: () => <div data-testid="signed-in-chrome" />,
 }));
 
 afterEach(cleanup);
@@ -30,6 +22,6 @@ describe('NameSetupPage', () => {
   it('renders the name setup card', () => {
     renderWithLocale(<NameSetupPage />);
     expect(screen.getByTestId('name-setup')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
+    expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
   });
 });

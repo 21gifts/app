@@ -123,9 +123,9 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate). Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate) and optional `embedded` (segment of `SignedInChrome`: no own border). Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/setup/name`, `/setup/address`, `/welcome`, and `/donate`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and `SignedInChrome`.
 
 ## Function: NameForm
 
@@ -173,15 +173,15 @@
 
 - **Purpose:** Next.js page for `/setup/address`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with language switcher and **Log out** grouped top-right.
+- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with `SignedInChrome`.
 - **Used by:** Route `/setup/address`.
 
 ## Function: LogoutButton
 
-- **Purpose:** Logs the visitor out from the page chrome (top-right), not from the card, and returns them to `/login`.
+- **Purpose:** Log-out segment of `SignedInChrome` (top-right page chrome, not on the card); clears the session and returns the visitor to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
-- **Returns / side effects:** Button. Clears the session and `router.replace('/login')`.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
+- **Returns / side effects:** Button segment. Clears the session and `router.replace('/login')`.
+- **Used by:** `SignedInChrome`.
 
 ## Function: NameSetup
 
@@ -194,7 +194,7 @@
 
 - **Purpose:** Next.js page for `/setup/name`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `NameSetup` with language switcher and **Log out** grouped top-right.
+- **Returns / side effects:** `OnboardingGate` around `NameSetup` with `SignedInChrome`.
 - **Used by:** Route `/setup/name`.
 
 ## Function: OnboardingGate
@@ -204,11 +204,18 @@
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, or `/welcome`.
 - **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/welcome`.
 
+## Function: SignedInChrome
+
+- **Purpose:** One top-right signed-in control that pairs language and **Log out** behind a shared border and divider (not on the card).
+- **Inputs:** None. Composes `LanguageSwitcher` (`tone="light"`, `embedded`) and `LogoutButton`.
+- **Returns / side effects:** Absolutely positioned chrome element with language select, vertical divider, and log-out segment.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
+
 ## Function: WelcomePage
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with language switcher and **Log out** grouped top-right.
+- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with `SignedInChrome`.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
