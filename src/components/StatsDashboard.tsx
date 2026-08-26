@@ -221,7 +221,7 @@ function CumulativeOverTimeChart(
             <rect
               x={hitX}
               y={padT}
-              width={Math.max(hitEnd - hitX, 1)}
+              width={hitEnd - hitX}
               height={innerH}
               fill="transparent"
             />
