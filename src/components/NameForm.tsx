@@ -150,6 +150,7 @@ export function NameForm(): ReactElement | null {
           <button
             type="button"
             onClick={() => {
+              /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
               setDraft(name ?? '');
               setEditing(true);
               setError(null);

@@ -223,7 +223,7 @@
 - **Purpose:** True when the account has a non-null display name that is non-empty after trim.
 - **Inputs:** `account`.
 - **Returns / side effects:** Boolean. No side effects.
-- **Used by:** `nextOnboardingPath`, `NameForm`, `AddressSetup`.
+- **Used by:** `nextOnboardingPath`, `NameForm`.
 
 ## Function: hasLightningAddress
 
