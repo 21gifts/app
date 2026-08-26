@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useAuthStore } from '@/stores/auth-store';
@@ -17,6 +17,12 @@ import { useAuthStore } from '@/stores/auth-store';
 export function LoginCard(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const passkey = usePasskeyLogin();
+
+  useEffect(() => {
+    if (account !== null) {
+      passkey.cancel();
+    }
+  }, [account, passkey.cancel]);
 
   let body: ReactElement;
   if (account !== null) {

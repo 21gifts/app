@@ -103,6 +103,46 @@ describe('OnboardingGate', () => {
     });
   });
 
+  it('renders address children when the account has a name and no address', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    renderWithLocale(
+      <OnboardingGate screen="address">
+        <p>address-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('address-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a complete account from the address screen to welcome', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="address">
+        <p>address-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/welcome');
+    });
+  });
+
+  it('renders welcome children when name and address are both saved', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('welcome-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it('does not bounce a name screen to login while a stored token is hydrating', () => {
     vi.mocked(loadSession).mockReturnValue('tok');
     vi.mocked(fetchMe).mockReturnValue(new Promise(() => undefined));

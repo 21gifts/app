@@ -65,6 +65,7 @@ describe('LoginCard', () => {
     renderWithLocale(<LoginCard />);
     expect(screen.getByText('Preparing your login…')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
+    expect(cancelPasskeySpy).toHaveBeenCalled();
   });
 
   it('shows a passkey error with try again', () => {
