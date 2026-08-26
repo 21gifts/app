@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LogoutButton } from '@/components/LogoutButton';
