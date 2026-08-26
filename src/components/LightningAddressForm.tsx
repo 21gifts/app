@@ -169,6 +169,7 @@ export function LightningAddressForm(): ReactElement | null {
             <button
               type="button"
               onClick={() => {
+                /* v8 ignore next — display branch only mounts when hasLightningAddress; address is non-null */
                 setDraft(address ?? '');
                 setEditing(true);
                 setError(null);
