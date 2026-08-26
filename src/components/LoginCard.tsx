@@ -147,13 +147,7 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
       </>
     );
   } else {
-    step = (
-      <>
-        <WelcomeView name={displayName} />
-        <NameForm />
-        <LightningAddressForm />
-      </>
-    );
+    step = <WelcomeView name={displayName} />;
   }
 
   return (

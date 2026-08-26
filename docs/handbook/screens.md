@@ -105,7 +105,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 
 - **URL:** `/login` — login only.
 - **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, then signed-in steps: name, Wallet of Satoshi address, welcome. Error is terminal until **Try again**.
-- **Actions:** Change language. Log in (existing login, or create one when the browser has none). When signed in, add a name if missing, then a Wallet of Satoshi address if missing; then a welcome with **Send a gift**. Edit or unlink from welcome. Log out. No client redirect to `/`.
+- **Actions:** Change language. Log in (existing login, or create one when the browser has none). When signed in, add a name if missing, then a Wallet of Satoshi address if missing; then a welcome with **Send a gift**. Log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
@@ -140,7 +140,7 @@ Signed in with a display name set and no address yet. Greeting **Hi, Ada** and t
 
 ### Variant: signed-in-linked
 
-Signed in with a name and a Wallet of Satoshi address. Welcome **Welcome, Ada**, gift icon, **Send a gift**, then the name and address forms (**Edit** / **Unlink**).
+Signed in with a name and a Wallet of Satoshi address. Welcome only: gift icon, **Welcome, Ada**, **You are ready to receive Bitcoin gifts.**, **Send a gift**. No name or address form.
 
 ![21.gifts login signed in linked](images/login-signed-in-linked.png)
 

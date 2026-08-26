@@ -136,7 +136,9 @@ describe('LoginCard', () => {
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('heading', { name: 'Welcome, Ada' })).toBeTruthy();
     expect(screen.getByRole('link', { name: /send a gift/i }).getAttribute('href')).toBe('/donate');
-    expect(screen.getByRole('button', { name: /unlink/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit/i })).toBeNull();
   });
 
   it('shows the signed-in view and logs out', () => {

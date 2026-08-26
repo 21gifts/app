@@ -326,7 +326,8 @@ test.describe('function baselines', () => {
       });
     });
     await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
     await expect(page).toHaveScreenshot('state-login-signed-in-linked.png', {
       fullPage: true,
       ...SHOT,

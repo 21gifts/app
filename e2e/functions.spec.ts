@@ -315,7 +315,7 @@ test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
-  await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
 test('Function: DELETE — DELETE /me/lightning-address clears the address', async ({ request }) => {
@@ -345,16 +345,18 @@ test('Function: proxyMeLightningAddressDelete — DELETE clears the address', as
 });
 
 test('Function: unlinkLightningAddress — signed-in form unlinks the address', async ({
-  page,
   request,
 }) => {
-  await signInViaStub(page, request);
-  await saveOnboardingName(page);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
-  await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
-  await page.getByRole('button', { name: 'Unlink' }).click();
-  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
+  const token = await loginHttp(request);
+  await request.post('/me/lightning-address', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { address: 'alice@walletofsatoshi.com' },
+  });
+  const res = await request.delete('/me/lightning-address', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
 });
 
 test('Function: proxyLightningAddressGet — GET resolves a Wallet of Satoshi address', async ({
@@ -559,9 +561,8 @@ test('Function: LightningAddressForm — link and unlink a Wallet of Satoshi add
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
-  await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
-  await page.getByRole('button', { name: 'Unlink' }).click();
-  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
 });
 
 test('Function: clearSession — log out returns to the start action', async ({ page, request }) => {
