@@ -95,6 +95,17 @@ describe('LoginCard', () => {
     expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
+  it('asks for a name when an address exists but a name does not', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: /welcome/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
+  });
+
   it('asks for a name before a Wallet of Satoshi address', () => {
     useAuthStore.setState({ session: 'sess', account });
     renderWithLocale(<LoginCard />);

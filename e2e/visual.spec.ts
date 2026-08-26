@@ -191,6 +191,23 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-error', 'login-error.png');
   });
 
+  test('login signed-in', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(E2E_ACCOUNT),
+      });
+    });
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Link address' })).toHaveCount(0);
+    await shotScreen(page, 'state-login-signed-in', 'login-signed-in.png');
+  });
+
   test('login signed-in named', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -310,7 +327,10 @@ test.describe('function baselines', () => {
     });
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
-    await expect(page).toHaveScreenshot('state-login-signed-in.png', { fullPage: true, ...SHOT });
+    await expect(page).toHaveScreenshot('state-login-signed-in-linked.png', {
+      fullPage: true,
+      ...SHOT,
+    });
   });
 
   test('DonateForm invoice QR', async ({ page }) => {

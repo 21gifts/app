@@ -148,6 +148,7 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
   await page.getByRole('button', { name: 'Unlink' }).click();
   await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
   await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toHaveCount(0);
   await expect(page.getByText(/Add your name so people know who you are/i)).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Log out' }).click();
