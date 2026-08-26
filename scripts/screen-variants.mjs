@@ -29,7 +29,7 @@ export const SCREEN_VARIANTS = [
     route: '/login',
     id: 'idle',
     image: 'login.png',
-    needle: 'Create a login',
+    needle: "getByRole('button', { name: 'Log in', exact: true })",
   },
   {
     route: '/login',
@@ -41,7 +41,7 @@ export const SCREEN_VARIANTS = [
     route: '/login',
     id: 'error',
     image: 'login-error.png',
-    needle: 'Something went wrong. Please try again.',
+    needle: 'Try login again',
   },
   {
     route: '/login',

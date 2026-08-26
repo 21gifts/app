@@ -74,7 +74,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns to idle when the user cancels', async () => {
+  it('goes to error when the user dismisses the register picker', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
@@ -86,7 +86,7 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.register();
     });
-    expect(result.current.status).toBe('idle');
+    expect(result.current.status).toBe('error');
     vi.unstubAllGlobals();
   });
 
@@ -191,7 +191,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('error');
   });
 
-  it('returns to idle when authenticate is cancelled', async () => {
+  it('goes to error when authenticate is dismissed', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
@@ -202,6 +202,22 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.authenticate();
+    });
+    expect(result.current.status).toBe('error');
+    vi.unstubAllGlobals();
+  });
+
+  it('returns to idle when register is aborted', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockRejectedValue(new DOMException('aborted', 'AbortError')),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
     });
     expect(result.current.status).toBe('idle');
     vi.unstubAllGlobals();

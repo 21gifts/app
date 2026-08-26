@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('login page renders passkey actions only', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Create a login' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Register' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Log in with Wallet of Satoshi' })).toHaveCount(0);
 });
 
@@ -12,23 +12,25 @@ test('login shows Preparing your login while passkey begin hangs', async ({ page
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
     await held;
     await route.abort();
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Create a login' }).click();
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   release();
 });
 
 test('login shows an error when passkey begin fails', async ({ page }) => {
-  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
     await route.fulfill({ status: 503, body: 'unavailable' });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Create a login' }).click();
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try login again' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
 });
 
 const E2E_ACCOUNT = {
@@ -113,5 +115,5 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
   await expect(page.getByText(/Add your name so people know who you are/i)).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(page.getByRole('button', { name: 'Create a login' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
 });

@@ -12,7 +12,7 @@ import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The login surface: passkey create or continue.
+ * The login surface: one Log in action, then register after a failure.
  *
  * Shows the signed-in account when one is present. On mount it rehydrates
  * from a persisted token: a valid token logs the visitor straight in unless a
@@ -83,11 +83,9 @@ export function LoginCard(): ReactElement {
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
   } else if (passkey.status === 'error') {
-    body = <ErrorView onRetry={passkey.retry} />;
+    body = <ErrorView onRetryLogin={passkey.authenticate} onRegister={passkey.register} />;
   } else {
-    body = (
-      <StartView onCreatePasskey={passkey.register} onContinuePasskey={passkey.authenticate} />
-    );
+    body = <StartView onLogin={passkey.authenticate} />;
   }
 
   return (
@@ -133,19 +131,17 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
 
 /** Props for {@link StartView}. */
 interface StartViewProps {
-  /** Called to create a new discoverable passkey. */
-  onCreatePasskey: () => void;
-  /** Called to sign in with an existing passkey. */
-  onContinuePasskey: () => void;
+  /** Called to sign in. */
+  onLogin: () => void;
 }
 
 /**
- * The initial logged-out state: create a passkey or continue with one.
+ * The initial logged-out state: a single login action.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({ onCreatePasskey, onContinuePasskey }: StartViewProps): ReactElement {
+function StartView({ onLogin }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -153,17 +149,10 @@ function StartView({ onCreatePasskey, onContinuePasskey }: StartViewProps): Reac
       <h2 className="text-center text-lg font-medium text-neutral-900">{t('login.heading')}</h2>
       <button
         type="button"
-        onClick={onCreatePasskey}
+        onClick={onLogin}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         <Fingerprint aria-hidden="true" className="h-4 w-4" />
-        {t('login.createPasskey')}
-      </button>
-      <button
-        type="button"
-        onClick={onContinuePasskey}
-        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-      >
         {t('login.continuePasskey')}
       </button>
     </>
@@ -187,17 +176,19 @@ function StartingView(): ReactElement {
 
 /** Props for {@link ErrorView}. */
 interface ErrorViewProps {
-  /** Called to restart the login flow. */
-  onRetry: () => void;
+  /** Called to try login again. */
+  onRetryLogin: () => void;
+  /** Called to register a new login. */
+  onRegister: () => void;
 }
 
 /**
- * The error state: a request failed or a response was malformed.
+ * After a failed login: try again, or register.
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
  */
-function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
+function ErrorView({ onRetryLogin, onRegister }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -205,10 +196,17 @@ function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
       <p className="text-center text-sm text-neutral-500">{t('login.error')}</p>
       <button
         type="button"
-        onClick={onRetry}
+        onClick={onRetryLogin}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         {t('login.retry')}
+      </button>
+      <button
+        type="button"
+        onClick={onRegister}
+        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+      >
+        {t('login.createPasskey')}
       </button>
     </>
   );

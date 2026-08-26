@@ -65,9 +65,7 @@ afterEach(() => {
 describe('LoginCard', () => {
   it('shows the login call-to-action when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
-    const create = screen.getByRole('button', { name: /create a login/i });
-    fireEvent.click(create);
-    expect(registerSpy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Register' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
     expect(authenticateSpy).toHaveBeenCalledTimes(1);
   });
@@ -88,11 +86,13 @@ describe('LoginCard', () => {
     expect(screen.queryByTitle(account.linkingKey)).toBeNull();
   });
 
-  it('shows a passkey error with try again', () => {
+  it('shows a passkey error with try login again and register', () => {
     mockPasskey('error');
     renderWithLocale(<LoginCard />);
-    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
-    expect(retrySpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Try login again' }));
+    expect(authenticateSpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    expect(registerSpy).toHaveBeenCalledTimes(1);
   });
 
   it('shows the signed-in view and logs out', () => {

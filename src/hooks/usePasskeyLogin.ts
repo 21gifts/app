@@ -32,19 +32,16 @@ export interface UsePasskeyLogin {
 }
 
 /**
- * Whether the user dismissed the WebAuthn prompt (not an app error).
+ * Whether this run was aborted by the app (`AbortController.abort()`).
  *
- * Picker dismiss is `NotAllowedError`; `AbortController.abort()` is
- * `AbortError`. Both return the visitor to idle rather than the error card.
+ * Picker dismiss (`NotAllowedError`) is an app error so the visitor can try
+ * login again or register. Programmatic abort stays idle.
  *
  * @param error - Unknown rejection.
- * @returns True when the ceremony was dismissed.
+ * @returns True when this run was aborted by the app.
  */
-function isUserCancel(error: unknown): boolean {
-  return (
-    error instanceof DOMException &&
-    (error.name === 'NotAllowedError' || error.name === 'AbortError')
-  );
+function isAbort(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
 }
 
 /**
@@ -102,7 +99,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         if (runId !== runIdRef.current) {
           return;
         }
-        setStatus(isUserCancel(error) ? 'idle' : 'error');
+        setStatus(isAbort(error) ? 'idle' : 'error');
       }
     })();
   }, [setAuth]);
@@ -143,7 +140,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         if (runId !== runIdRef.current) {
           return;
         }
-        setStatus(isUserCancel(error) ? 'idle' : 'error');
+        setStatus(isAbort(error) ? 'idle' : 'error');
       }
     })();
   }, [setAuth]);
