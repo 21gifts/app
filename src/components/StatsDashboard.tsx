@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
-import Link from 'next/link';
 import type { GiftStats } from '@/lib/api-types';
 import { formatBtcTick, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
@@ -112,6 +111,8 @@ function utcDay(iso: string | null): string {
 /**
  * Cumulative spend-over-time area chart for one money series.
  *
+ * Days with spend are SVG links to `/stats/{day}` on the series (not a text list).
+ *
  * @param series - Daily cumulative points.
  * @param valueAt - Extract the numeric cumulative value used for scale only.
  * @param formatTick - Axis tick label formatter.
@@ -177,7 +178,7 @@ function CumulativeOverTimeChart(
     <svg
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
-      role="img"
+      role="group"
       aria-label={ariaLabel}
     >
       {yTicks.map((tick) => (
@@ -202,6 +203,26 @@ function CumulativeOverTimeChart(
       ))}
       <polygon points={area} fill={ORANGE} fillOpacity="0.25" />
       <polyline points={line} fill="none" stroke={ORANGE} strokeWidth="2" />
+      {series.map((point, i) => {
+        if (point.sats <= 0) {
+          return null;
+        }
+        const cx = xAt(i);
+        const cy = yAt(values[i] as number);
+        const hitX = i === 0 ? padL : (xAt(i - 1) + cx) / 2;
+        const hitEnd = i === n - 1 ? padL + innerW : (cx + xAt(i + 1)) / 2;
+        return (
+          <a
+            key={`${ariaLabel}-day-${point.day}`}
+            href={`/stats/${point.day}`}
+            aria-label={point.day}
+            className="cursor-pointer"
+          >
+            <rect x={hitX} y={padT} width={hitEnd - hitX} height={innerH} fill="transparent" />
+            <circle cx={cx} cy={cy} r={3.5} fill={ORANGE} pointerEvents="none" />
+          </a>
+        );
+      })}
       {xIdx.map((i, tickIndex) => {
         const point = series[i] as (typeof series)[number];
         const anchor =
@@ -373,8 +394,8 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
 /**
  * Non-empty charts branch with independent BTC/USD scale state per diagram.
  *
- * Over time shows one cumulative series. Person and month bars rescale; their
- * labels stay both units.
+ * Over time shows one cumulative series; days with spend link to `/stats/{day}`
+ * on the chart. Person and month bars rescale; their labels stay both units.
  *
  * @param stats - Loaded gift stats with at least one gift.
  * @returns Diagram sections.
@@ -400,19 +421,6 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
             groupLabel="Over time scale"
           />
         </div>
-        <p className="mt-3 text-sm text-white/60">
-          {stats.spendOverTime
-            .filter((point) => point.sats > 0)
-            .map((point) => (
-              <Link
-                key={point.day}
-                href={`/stats/${point.day}`}
-                className="mr-3 text-[#f7931a] underline"
-              >
-                {point.day}
-              </Link>
-            ))}
-        </p>
         <div className="mt-6">
           {overTimeScale === 'btc'
             ? CumulativeOverTimeChart(
