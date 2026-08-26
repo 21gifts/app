@@ -30,6 +30,7 @@ const account = {
   createdAt: 1_700_000_000,
 };
 
+const loginSpy = vi.fn();
 const registerSpy = vi.fn();
 const authenticateSpy = vi.fn();
 const retrySpy = vi.fn();
@@ -40,6 +41,7 @@ const ORIGINAL_UA = window.navigator.userAgent;
 function mockPasskey(status: PasskeyStatus = 'idle'): void {
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status,
+    login: loginSpy,
     register: registerSpy,
     authenticate: authenticateSpy,
     retry: retrySpy,
@@ -63,13 +65,11 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
-  it('shows the login call-to-action when logged out and idle', () => {
+  it('shows a single Log in button when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
-    const create = screen.getByRole('button', { name: /create a passkey/i });
-    fireEvent.click(create);
-    expect(registerSpy).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: /continue with passkey/i }));
-    expect(authenticateSpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
+    expect(loginSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 
   it('shows a loading state while a passkey ceremony starts', () => {

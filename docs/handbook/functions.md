@@ -150,8 +150,8 @@
 
 ## Function: LoginCard
 
-- **Purpose:** Login UI: passkey create or continue, then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
-- **Inputs:** Uses `usePasskeyLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe` without overwriting a newer in-page session or restoring after logout. A rejected token calls `clearAuth` when the in-memory session is absent or still that token. Successful hydration cancels an in-flight passkey ceremony. Logout cancels an in-flight passkey ceremony. Unmount invalidates in-flight hydration.
+- **Purpose:** Login UI: one **Log in** button (existing login, or create when the browser has none), then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
+- **Inputs:** Uses `usePasskeyLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe` without overwriting a newer in-page session or restoring after logout. A rejected token calls `clearAuth` when the in-memory session is absent or still that token. Successful hydration cancels an in-flight login ceremony. Logout cancels an in-flight login ceremony. Unmount invalidates in-flight hydration.
 - **Returns / side effects:** React element covering idle/starting/error/signed-in. Does not navigate away from `/login`.
 - **Used by:** Screen `/login`.
 
@@ -570,7 +570,7 @@
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey create and continue; stores the session on success. `cancel` aborts an in-flight WebAuthn prompt.
+- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). `cancel` aborts an in-flight WebAuthn prompt.
 - **Inputs:** None (reads `useAuthStore`).
-- **Returns / side effects:** `{ status, register, authenticate, retry, cancel }`. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
+- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
 - **Used by:** `LoginCard`.

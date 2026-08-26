@@ -12,6 +12,12 @@ test.describe('Accept-Language de', () => {
       page.getByRole('heading', { name: /Direkte Geschenke von Mensch zu Mensch/ }),
     ).toBeVisible();
   });
+
+  test('login button is German', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Anmelden' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
+  });
 });
 
 test.describe('Accept-Language es', () => {
@@ -24,6 +30,11 @@ test.describe('Accept-Language es', () => {
     await page.goto('/donate');
     await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible();
   });
+
+  test('login button is Spanish', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
+  });
 });
 
 test.describe('Accept-Language tl without en', () => {
@@ -35,6 +46,11 @@ test.describe('Accept-Language tl without en', () => {
   test('home CTA is Filipino', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('link', { name: 'Humiling ng tulong' })).toBeVisible();
+  });
+
+  test('login button is Filipino', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Mag-log in' })).toBeVisible();
   });
 });
 
