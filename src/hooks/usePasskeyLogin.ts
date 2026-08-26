@@ -27,26 +27,23 @@ export interface UsePasskeyLogin {
   register: () => void;
   /** Sign in with an existing passkey. */
   authenticate: () => void;
-  /** Repeats the originating flow after an error. The single-button path restarts login. */
+  /** Repeats the originating flow after an error. */
   retry: () => void;
   /** Aborts an in-flight WebAuthn prompt. */
   cancel: () => void;
 }
 
 /**
- * Whether the user dismissed the WebAuthn prompt (not an app error).
+ * Whether this run was aborted by the app (`AbortController.abort()`).
  *
- * Picker dismiss is `NotAllowedError`; `AbortController.abort()` is
- * `AbortError`. Both return the visitor to idle rather than the error card.
+ * Picker dismiss (`NotAllowedError`) is a failure so the visitor can try
+ * login again or register. Programmatic abort stays idle.
  *
  * @param error - Unknown rejection.
- * @returns True when the ceremony was dismissed.
+ * @returns True when this run was aborted by the app.
  */
-function isUserCancel(error: unknown): boolean {
-  return (
-    error instanceof DOMException &&
-    (error.name === 'NotAllowedError' || error.name === 'AbortError')
-  );
+function isAbort(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
 }
 
 /**
@@ -158,7 +155,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     if (error instanceof SupersededError || runId !== runIdRef.current) {
       return;
     }
-    setStatus(isUserCancel(error) ? 'idle' : 'error');
+    setStatus(isAbort(error) ? 'idle' : 'error');
   }, []);
 
   const register = useCallback((): void => {
@@ -180,29 +177,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const login = useCallback((): void => {
     entryKindRef.current = 'login';
     const { runId, controller } = beginRun('authenticate');
-    void (async () => {
-      try {
-        await completeAuthentication(runId, controller);
-      } catch (error: unknown) {
-        if (error instanceof SupersededError || runId !== runIdRef.current) {
-          return;
-        }
-        const noPasskey = error instanceof DOMException && error.name === 'NotAllowedError';
-        if (!noPasskey) {
-          finishWithError(runId, error);
-          return;
-        }
-        lastKindRef.current = 'register';
-        const createController = new AbortController();
-        abortRef.current = createController;
-        try {
-          await completeRegistration(runId, createController);
-        } catch (createError: unknown) {
-          finishWithError(runId, createError);
-        }
-      }
-    })();
-  }, [beginRun, completeAuthentication, completeRegistration, finishWithError]);
+    void completeAuthentication(runId, controller).catch((error: unknown) => {
+      finishWithError(runId, error);
+    });
+  }, [beginRun, completeAuthentication, finishWithError]);
 
   const retry = useCallback((): void => {
     if (entryKindRef.current === 'login') {

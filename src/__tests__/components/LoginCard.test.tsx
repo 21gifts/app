@@ -88,11 +88,13 @@ describe('LoginCard', () => {
     expect(screen.queryByTitle(account.linkingKey)).toBeNull();
   });
 
-  it('shows a passkey error with try again', () => {
+  it('shows a passkey error with try login again and register', () => {
     mockPasskey('error');
     renderWithLocale(<LoginCard />);
-    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
-    expect(retrySpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Try login again' }));
+    expect(authenticateSpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    expect(registerSpy).toHaveBeenCalledTimes(1);
   });
 
   it('shows the signed-in view and logs out', () => {

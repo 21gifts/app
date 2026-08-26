@@ -99,7 +99,7 @@ app/
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── donate.spec.ts           # /donate form heading + submit button
-│   ├── login.spec.ts            # /login single Log in button + signed-in forms
+│   ├── login.spec.ts            # /login then retry/register after failure + signed-in forms
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub

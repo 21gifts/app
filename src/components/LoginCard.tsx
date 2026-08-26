@@ -12,7 +12,7 @@ import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The login surface: one Log in button, then signed-in account.
+ * The login surface: one Log in button, then retry or register after failure.
  *
  * Shows the signed-in account when one is present. On mount it rehydrates
  * from a persisted token: a valid token logs the visitor straight in unless a
@@ -83,7 +83,7 @@ export function LoginCard(): ReactElement {
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
   } else if (passkey.status === 'error') {
-    body = <ErrorView onRetry={passkey.retry} />;
+    body = <ErrorView onRetryLogin={passkey.authenticate} onRegister={passkey.register} />;
   } else {
     body = <StartView onLogin={passkey.login} />;
   }
@@ -131,7 +131,7 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
 
 /** Props for {@link StartView}. */
 interface StartViewProps {
-  /** Called to sign in with an existing passkey, or create one. */
+  /** Called to sign in. */
   onLogin: () => void;
 }
 
@@ -176,17 +176,19 @@ function StartingView(): ReactElement {
 
 /** Props for {@link ErrorView}. */
 interface ErrorViewProps {
-  /** Called to restart the login flow. */
-  onRetry: () => void;
+  /** Called to try login again. */
+  onRetryLogin: () => void;
+  /** Called to register a new login. */
+  onRegister: () => void;
 }
 
 /**
- * The error state: a request failed or a response was malformed.
+ * After a failed login: try again, or register.
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
  */
-function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
+function ErrorView({ onRetryLogin, onRegister }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -194,10 +196,17 @@ function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
       <p className="text-center text-sm text-neutral-500">{t('login.error')}</p>
       <button
         type="button"
-        onClick={onRetry}
+        onClick={onRetryLogin}
         className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
         {t('login.retry')}
+      </button>
+      <button
+        type="button"
+        onClick={onRegister}
+        className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+      >
+        {t('login.register')}
       </button>
     </>
   );

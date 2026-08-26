@@ -90,29 +90,18 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('retries the single-button flow after an authenticate error', async () => {
-    vi.mocked(startPasskeyAuthentication).mockRejectedValueOnce(new Error('nope'));
+  it('retries login without creating a passkey', async () => {
+    vi.mocked(startPasskeyAuthentication).mockRejectedValue(new Error('nope'));
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.login();
     });
     expect(result.current.status).toBe('error');
-    expect(startPasskeyRegistration).not.toHaveBeenCalled();
-    const cred = { id: 'cred', type: 'public-key' };
-    vi.stubGlobal('navigator', {
-      ...navigator,
-      credentials: {
-        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
-        create: vi.fn().mockResolvedValue(cred),
-      },
-    });
     await act(async () => {
       result.current.retry();
     });
     expect(startPasskeyAuthentication).toHaveBeenCalledTimes(2);
-    expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState().session).toBe('tok');
-    vi.unstubAllGlobals();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
   });
 
   it('login does not create a passkey when authenticate begin fails', async () => {
@@ -132,21 +121,22 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('login creates a passkey when get is dismissed', async () => {
-    const cred = { id: 'cred', type: 'public-key' };
+  it('login goes to error when get is dismissed', async () => {
+    const create = vi.fn();
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
         get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
-        create: vi.fn().mockResolvedValue(cred),
+        create,
       },
     });
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.login();
     });
-    expect(useAuthStore.getState().session).toBe('tok');
-    expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toBe('error');
+    expect(create).not.toHaveBeenCalled();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
@@ -183,25 +173,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('login goes to error when fallback create fails', async () => {
-    vi.stubGlobal('navigator', {
-      ...navigator,
-      credentials: {
-        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
-        create: vi.fn().mockResolvedValue(null),
-      },
-    });
-    const { result } = renderHook(() => usePasskeyLogin());
-    await act(async () => {
-      result.current.login();
-    });
-    expect(result.current.status).toBe('error');
-    expect(startPasskeyRegistration).toHaveBeenCalled();
-    expect(useAuthStore.getState().session).toBeNull();
-    vi.unstubAllGlobals();
-  });
-
-  it('returns to idle when the user cancels', async () => {
+  it('goes to error when the user dismisses the register picker', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
@@ -213,7 +185,7 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.register();
     });
-    expect(result.current.status).toBe('idle');
+    expect(result.current.status).toBe('error');
     vi.unstubAllGlobals();
   });
 
@@ -318,7 +290,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('error');
   });
 
-  it('returns to idle when authenticate is cancelled', async () => {
+  it('goes to error when authenticate is dismissed', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
@@ -330,7 +302,7 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.authenticate();
     });
-    expect(result.current.status).toBe('idle');
+    expect(result.current.status).toBe('error');
     vi.unstubAllGlobals();
   });
 

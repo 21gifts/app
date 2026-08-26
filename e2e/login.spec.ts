@@ -31,9 +31,11 @@ test('login shows an error when passkey begin fails', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try login again' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
 });
 
-test('login Try again restarts the single-button flow', async ({ page }) => {
+test('login Try login again restarts authenticate', async ({ page }) => {
   let authenticateBegins = 0;
   let registerBegins = 0;
   let release: () => void = () => undefined;
@@ -56,7 +58,7 @@ test('login Try again restarts the single-button flow', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
-  await page.getByRole('button', { name: 'Try again' }).click();
+  await page.getByRole('button', { name: 'Try login again' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
   await expect.poll(() => authenticateBegins).toBe(2);
   expect(registerBegins).toBe(0);

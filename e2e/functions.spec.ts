@@ -97,11 +97,21 @@ async function stubGiftStats(page: Page, body: unknown): Promise<void> {
   });
 }
 
+async function completeLogin(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  const signedIn = page.getByText('Signed in');
+  const register = page.getByRole('button', { name: 'Register' });
+  await signedIn.or(register).waitFor({ state: 'visible', timeout: 10_000 });
+  if (await register.isVisible()) {
+    await register.click();
+    await expect(signedIn).toBeVisible({ timeout: 10_000 });
+  }
+}
+
 async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
 }
 
 async function installFakeWebAuthn(page: Page): Promise<void> {
@@ -178,11 +188,10 @@ async function installFakeWebAuthn(page: Page): Promise<void> {
 async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
   await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
-  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -446,8 +455,8 @@ test('Function: LoginPage — login heading is visible', async ({ page }) => {
 
 test('Function: LoginCard — a single Log in button is visible', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Register' })).toHaveCount(0);
 });
 
 test('Function: QrCode — donate shows a Bitcoin payment QR', async ({ page }) => {
@@ -723,8 +732,7 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
 }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
 });
 
 test('Function: proxyAuthPasskeyRegisterFinishPost — POST finish without body is 400', async ({
@@ -739,8 +747,7 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
 }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
 });
 
 test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a challenge', async ({
@@ -776,8 +783,7 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
 }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
   await expect(page.getByText('basis')).toBeVisible();
   const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
   expect(token).toBeTruthy();
@@ -790,29 +796,25 @@ test('Function: creationOptionsFromJSON — create passkey reaches the signed-in
 }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
 });
 
 test('Function: credentialToJSON — create passkey reaches the signed-in view', async ({ page }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
 });
 
 test('Function: base64UrlToBytes — create passkey reaches the signed-in view', async ({ page }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
 });
 
 test('Function: bytesToBase64Url — create passkey reaches the signed-in view', async ({ page }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await completeLogin(page);
 });
 
 test('Function: requestOptionsFromJSON — continue with passkey reaches the signed-in view', async ({

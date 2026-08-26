@@ -104,8 +104,8 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, or signed-in account. Error is terminal until **Try again**.
-- **Actions:** Change language. Log in (existing login, or create one when the browser has none). When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, or signed-in account. After a failed login: **Try login again** and **Register**.
+- **Actions:** Change language. Log in. After a failure, try login again or register. When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
@@ -122,7 +122,7 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 
 ### Variant: error
 
-Login begin or finish failed. Copy **Something went wrong. Please try again.** and **Try again**.
+Login begin or finish failed. Copy **Something went wrong. Please try again.**, **Try login again**, and **Register**.
 
 ![21.gifts login error](images/login-error.png)
 

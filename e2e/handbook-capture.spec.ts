@@ -82,6 +82,7 @@ test('login error', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try login again' })).toBeVisible();
   await writePng(page, 'login-error.png');
 });
 
