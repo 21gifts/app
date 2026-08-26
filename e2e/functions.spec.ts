@@ -101,10 +101,7 @@ async function completeLogin(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Log in', exact: true }).click();
   const signedIn = page.getByText('Signed in');
   const register = page.getByRole('button', { name: 'Register' });
-  await Promise.race([
-    signedIn.waitFor({ state: 'visible', timeout: 10_000 }),
-    register.waitFor({ state: 'visible', timeout: 10_000 }),
-  ]);
+  await signedIn.or(register).waitFor({ state: 'visible', timeout: 10_000 });
   if (await register.isVisible()) {
     await register.click();
     await expect(signedIn).toBeVisible({ timeout: 10_000 });
