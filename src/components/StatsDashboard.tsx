@@ -178,7 +178,7 @@ function CumulativeOverTimeChart(
     <svg
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
-      role="img"
+      role="group"
       aria-label={ariaLabel}
     >
       {yTicks.map((tick) => (
@@ -209,6 +209,8 @@ function CumulativeOverTimeChart(
         }
         const cx = xAt(i);
         const cy = yAt(values[i] as number);
+        const hitX = i === 0 ? padL : (xAt(i - 1) + cx) / 2;
+        const hitEnd = i === n - 1 ? padL + innerW : (cx + xAt(i + 1)) / 2;
         return (
           <a
             key={`${ariaLabel}-day-${point.day}`}
@@ -216,7 +218,13 @@ function CumulativeOverTimeChart(
             aria-label={point.day}
             className="cursor-pointer"
           >
-            <circle cx={cx} cy={cy} r={10} fill="transparent" />
+            <rect
+              x={hitX}
+              y={padT}
+              width={Math.max(hitEnd - hitX, 1)}
+              height={innerH}
+              fill="transparent"
+            />
             <circle cx={cx} cy={cy} r={3.5} fill={ORANGE} />
           </a>
         );

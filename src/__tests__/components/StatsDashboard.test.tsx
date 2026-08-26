@@ -118,6 +118,7 @@ describe('StatsDashboard', () => {
     render(<StatsDashboard stats={odd} error={null} loading={false} onRetry={() => undefined} />);
     expect(screen.getByRole('heading', { name: 'Total spend over time' })).toBeTruthy();
     expect(screen.getByLabelText('Spend over time in BTC')).toBeTruthy();
+    expect(screen.getByLabelText('Spend over time in BTC').getAttribute('role')).toBe('img');
     expect(screen.queryByLabelText('Spend over time in USD')).toBeNull();
     expect(screen.getByLabelText('Spend by person in BTC')).toBeTruthy();
     expect(screen.getByLabelText('Spend by month in BTC')).toBeTruthy();
@@ -185,6 +186,7 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('alice')).toBeTruthy();
     expect(screen.getByText('0.01000000 ₿ · $950.00')).toBeTruthy();
     const svg = screen.getByLabelText('Spend over time in BTC');
+    expect(svg.getAttribute('role')).toBe('group');
     expect(within(svg).getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
       '/stats/2026-06-01',
     );
@@ -198,6 +200,41 @@ describe('StatsDashboard', () => {
         .closest('section')
         ?.querySelector('p a'),
     ).toBeNull();
+  });
+
+  it('keeps over-time day hit strips from overlapping on a long series', () => {
+    const spendOverTime = Array.from({ length: 40 }, (_, i) => {
+      const utc = new Date(Date.UTC(2026, 5, 1 + i));
+      const day = utc.toISOString().slice(0, 10);
+      const sats = (i + 1) * 100;
+      return {
+        day,
+        sats,
+        cumulativeSats: sats,
+        btc: '0.00000100',
+        cumulativeBtc: '0.00000100',
+        usd: '1.00',
+        cumulativeUsd: '1.00',
+      };
+    });
+    const longSeries: GiftStats = {
+      ...SAMPLE,
+      spendOverTime,
+    };
+    render(
+      <StatsDashboard stats={longSeries} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    const svg = screen.getByLabelText('Spend over time in BTC');
+    expect(svg.getAttribute('role')).toBe('group');
+    const rects = [...svg.querySelectorAll('a rect')];
+    expect(rects).toHaveLength(40);
+    for (let i = 1; i < rects.length; i += 1) {
+      const prev = rects[i - 1];
+      const cur = rects[i];
+      const prevRight = Number(prev?.getAttribute('x')) + Number(prev?.getAttribute('width'));
+      const x = Number(cur?.getAttribute('x'));
+      expect(x).toBeGreaterThanOrEqual(prevRight - 0.01);
+    }
   });
 
   it('anchors the first and last spend-over-time dates so full YYYY-MM-DD labels stay in view', () => {
