@@ -3,7 +3,7 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (passkey login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
 - **Actions:** Read the pitch, change language, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`.
 
@@ -22,7 +22,7 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; passkey login on this origin). Legal body copy stays English.
+- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; login on this origin). Legal body copy stays English.
 - **Actions:** Change language. Read the legal body. Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
@@ -103,9 +103,9 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 
 ## Screen: /login
 
-- **URL:** `/login` — passkey only.
+- **URL:** `/login` — login only.
 - **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, or signed-in account. Error is terminal until **Try again**.
-- **Actions:** Change language. Log in (existing passkey, or create one when the browser has none). When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **Actions:** Change language. Log in (existing login, or create one when the browser has none). When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
@@ -116,13 +116,13 @@ Logged out. Heading **Sign in to 21.gifts**, one **Log in** button.
 
 ### Variant: starting
 
-Transient after a passkey click, before the ceremony finishes: spinner and **Preparing your login…**.
+Transient after a login click, before the ceremony finishes: spinner and **Preparing your login…**.
 
 ![21.gifts login starting](images/login-starting.png)
 
 ### Variant: error
 
-Passkey begin or finish failed. Copy **Something went wrong. Please try again.** and **Try again**.
+Login begin or finish failed. Copy **Something went wrong. Please try again.** and **Try again**.
 
 ![21.gifts login error](images/login-error.png)
 

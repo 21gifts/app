@@ -19,7 +19,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * newer in-page session or logout already won; a rejected token calls
  * `clearAuth` when the in-memory session is absent or still that token.
  * Unmount and logout invalidate in-flight hydration. Logout and successful
- * hydration cancel an in-flight passkey ceremony.
+ * hydration cancel an in-flight login ceremony.
  *
  * @returns The card element.
  */

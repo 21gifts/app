@@ -26,10 +26,10 @@ const en = {
   'home.howKicker': 'How it works',
   'home.howTitle': 'Three steps, no accounts in the traditional sense',
   'home.howLead':
-    'You sign in with a passkey. There are no usernames, no passwords, and no email sign-ups.',
-  'home.step1Title': 'Sign in with a passkey',
+    'You log in on this site. There are no usernames, no passwords, and no email sign-ups.',
+  'home.step1Title': 'Log in',
   'home.step1Body':
-    'One tap in the browser. It uses a sign-in you already have, or creates one. That is your account — nothing else to remember.',
+    'One tap in the browser. It uses a login you already have, or creates one. That is your account — nothing else to remember.',
   'home.step2Title': 'Add a Wallet of Satoshi address',
   'home.step2BodyBefore': 'Link where gifts should land, as',
   'home.step2BodyAfter': '. Anyone can then send Bitcoin to you from Wallet of Satoshi.',
@@ -41,9 +41,9 @@ const en = {
   'home.why1Title': 'Truly peer-to-peer',
   'home.why1Body':
     "Funds move from the donor's Wallet of Satoshi to the receiver's Wallet of Satoshi address. 21.gifts never holds, routes, or escrows the money. There is nothing for us to freeze.",
-  'home.why2Title': 'Your passkey is the login',
+  'home.why2Title': 'Your login stays on your device',
   'home.why2Body':
-    'Identity is a passkey for this site. 21.gifts never sees a password — only a signed assertion. No password database to leak.',
+    '21.gifts never sees a password — only a signed assertion. No password database to leak.',
   'home.why3Title': 'Your Bitcoin, not ours',
   'home.why3Body':
     'Gifts are Bitcoin payments to a Wallet of Satoshi address. If 21.gifts disappeared tomorrow, those addresses would still work.',
@@ -59,10 +59,10 @@ const en = {
     "No. Payments go directly from the donor's Wallet of Satoshi to the receiver's Wallet of Satoshi address. 21.gifts is never in the payment path and earns nothing per transaction.",
   'home.faq3Q': 'What happens to my keys?',
   'home.faq3A':
-    'Login credentials stay on your device (and any platform passkey sync you use). 21.gifts only sees a signed passkey assertion and, if you choose, the Wallet of Satoshi address you publish. There is no password and no seed stored on our servers.',
+    'Login credentials stay on your device (and any platform sync you use). 21.gifts only sees a signed login assertion and, if you choose, the Wallet of Satoshi address you publish. There is no password and no seed stored on our servers.',
   'home.faq4Q': 'Can I lose access to my account?',
   'home.faq4A':
-    'Yes. If you lose the passkey and any platform sync, the account cannot be recovered in v1. Keep a backup of the authenticator you sign in with.',
+    'Yes. If you lose the login and any platform sync, the account cannot be recovered in v1. Keep a backup of the device you sign in with.',
   'home.faq5Q': 'How do I send a gift?',
   'home.faq5A':
     "Open Send help, enter the recipient's Wallet of Satoshi address and an amount in sats, then pay with Wallet of Satoshi. You do not need to log in to give.",
@@ -160,10 +160,10 @@ const de = {
   'home.howKicker': "So funktioniert's",
   'home.howTitle': 'Drei Schritte, keine Konten im herkömmlichen Sinn',
   'home.howLead':
-    'Sie melden sich mit einem Passkey an. Keine Benutzernamen, keine Passwörter, keine E-Mail-Registrierung.',
-  'home.step1Title': 'Mit einem Passkey anmelden',
+    'Sie melden sich an. Keine Benutzernamen, keine Passwörter, keine E-Mail-Registrierung.',
+  'home.step1Title': 'Anmelden',
   'home.step1Body':
-    'Ein Tipp im Browser. Er nutzt eine vorhandene Anmeldung oder legt eine an. Das ist Ihr Konto — sonst nichts merken.',
+    'Ein Tipp im Browser. Er nutzt ein vorhandenes Login oder legt eines an. Das ist Ihr Konto — sonst nichts merken.',
   'home.step2Title': 'Wallet of Satoshi address hinterlegen',
   'home.step2BodyBefore': 'Hinterlegen Sie, wo Geschenke ankommen sollen, als',
   'home.step2BodyAfter': '. Danach kann Ihnen jede Person aus Wallet of Satoshi senden.',
@@ -175,9 +175,9 @@ const de = {
   'home.why1Title': 'Echt peer-to-peer',
   'home.why1Body':
     'Das Geld geht von Wallet of Satoshi der gebenden Person an die Wallet of Satoshi address der empfangenden Person. 21.gifts hält, routet oder treuhändert nichts. Es gibt nichts, das wir einfrieren könnten.',
-  'home.why2Title': 'Ihr Passkey ist die Anmeldung',
+  'home.why2Title': 'Ihr Login bleibt bei Ihnen',
   'home.why2Body':
-    'Identität ist ein Passkey für diese Seite. 21.gifts sieht kein Passwort — nur eine signierte Anmeldung. Keine Passwort-Datenbank, die lecken kann.',
+    '21.gifts sieht kein Passwort — nur eine signierte Anmeldung. Keine Passwort-Datenbank, die lecken kann.',
   'home.why3Title': 'Ihr Bitcoin, nicht unserer',
   'home.why3Body':
     'Geschenke sind Bitcoin-Zahlungen an eine Wallet of Satoshi address. Würde 21.gifts morgen verschwinden, funktionieren diese Adressen weiter.',
@@ -193,10 +193,10 @@ const de = {
     'Nein. Zahlungen gehen direkt von Wallet of Satoshi der gebenden Person an die Wallet of Satoshi address der empfangenden Person. 21.gifts liegt nicht im Zahlungsweg und verdient nichts pro Transaktion.',
   'home.faq3Q': 'Was passiert mit meinen Schlüsseln?',
   'home.faq3A':
-    'Anmeldedaten bleiben auf Ihrem Gerät (und in einer Passkey-Sync, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Passkey-Anmeldung und, wenn Sie das wollen, die Wallet of Satoshi address, die Sie veröffentlichen. Kein Passwort und kein Seed auf unseren Servern.',
+    'Anmeldedaten bleiben auf Ihrem Gerät (und in einer Login-Sync, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldung und, wenn Sie das wollen, die Wallet of Satoshi address, die Sie veröffentlichen. Kein Passwort und kein Seed auf unseren Servern.',
   'home.faq4Q': 'Kann ich den Zugang zu meinem Konto verlieren?',
   'home.faq4A':
-    'Ja. Wenn Sie den Passkey und jede Plattform-Sync verlieren, ist das Konto in v1 nicht wiederherstellbar. Sichern Sie den Authenticator, mit dem Sie sich anmelden.',
+    'Ja. Wenn Sie das Login und jede Plattform-Sync verlieren, ist das Konto in v1 nicht wiederherstellbar. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
   'home.faq5Q': 'Wie sende ich ein Geschenk?',
   'home.faq5A':
     'Öffnen Sie Hilfe senden, geben Sie die Wallet of Satoshi address der empfangenden Person und einen Betrag in Sats ein und zahlen Sie mit Wallet of Satoshi. Zum Geben müssen Sie sich nicht anmelden.',
@@ -282,10 +282,10 @@ const es = {
   'home.howKicker': 'Cómo funciona',
   'home.howTitle': 'Tres pasos, sin cuentas al estilo tradicional',
   'home.howLead':
-    'Entras con una passkey. Sin nombres de usuario, sin contraseñas y sin registro por correo.',
-  'home.step1Title': 'Entra con una passkey',
+    'Entras con un login. Sin nombres de usuario, sin contraseñas y sin registro por correo.',
+  'home.step1Title': 'Iniciar sesión',
   'home.step1Body':
-    'Un toque en el navegador. Usa un inicio de sesión que ya tengas, o crea uno. Esa es tu cuenta — nada más que recordar.',
+    'Un toque en el navegador. Usa un login que ya tengas, o crea uno. Esa es tu cuenta — nada más que recordar.',
   'home.step2Title': 'Añade una Wallet of Satoshi address',
   'home.step2BodyBefore': 'Indica dónde deben llegar los regalos, como',
   'home.step2BodyAfter': '. Cualquiera podrá enviarte Bitcoin desde Wallet of Satoshi.',
@@ -297,9 +297,9 @@ const es = {
   'home.why1Title': 'Peer-to-peer de verdad',
   'home.why1Body':
     'Los fondos van de Wallet of Satoshi de quien da a la Wallet of Satoshi address de quien recibe. 21.gifts no retiene, enruta ni deja en depósito el dinero. No hay nada que podamos congelar.',
-  'home.why2Title': 'Tu passkey es el inicio de sesión',
+  'home.why2Title': 'Tu login permanece en tu dispositivo',
   'home.why2Body':
-    'La identidad es una passkey para este sitio. 21.gifts no ve una contraseña — solo una aserción firmada. No hay base de datos de contraseñas que se pueda filtrar.',
+    '21.gifts no ve una contraseña — solo una aserción firmada. No hay base de datos de contraseñas que se pueda filtrar.',
   'home.why3Title': 'Tu Bitcoin, no el nuestro',
   'home.why3Body':
     'Los regalos son pagos Bitcoin a una Wallet of Satoshi address. Si 21.gifts desapareciera mañana, esas direcciones seguirían funcionando.',
@@ -315,10 +315,10 @@ const es = {
     'No. Los pagos van directo de Wallet of Satoshi de quien da a la Wallet of Satoshi address de quien recibe. 21.gifts no está en la ruta de pago y no gana nada por transacción.',
   'home.faq3Q': '¿Qué pasa con mis claves?',
   'home.faq3A':
-    'Las credenciales de acceso quedan en tu dispositivo (y en la sincronización de passkeys de la plataforma, si la usas). 21.gifts solo ve una aserción de passkey firmada y, si lo eliges, la Wallet of Satoshi address que publicas. No hay contraseña ni semilla en nuestros servidores.',
+    'Las credenciales de acceso quedan en tu dispositivo (y en la sincronización de la plataforma, si la usas). 21.gifts solo ve una aserción de login firmada y, si lo eliges, la Wallet of Satoshi address que publicas. No hay contraseña ni semilla en nuestros servidores.',
   'home.faq4Q': '¿Puedo perder el acceso a mi cuenta?',
   'home.faq4A':
-    'Sí. Si pierdes la passkey y cualquier sincronización de plataforma, la cuenta no se puede recuperar en v1. Conserva una copia de seguridad del autenticador con el que entras.',
+    'Sí. Si pierdes el login y cualquier sincronización de plataforma, la cuenta no se puede recuperar en v1. Conserva una copia de seguridad del dispositivo con el que entras.',
   'home.faq5Q': '¿Cómo envío un regalo?',
   'home.faq5A':
     'Abre Enviar ayuda, escribe la Wallet of Satoshi address de quien recibe y un monto en sats, y paga con Wallet of Satoshi. No hace falta iniciar sesión para dar.',
@@ -403,9 +403,8 @@ const fil = {
   'home.ctaSend': 'Magpadala ng tulong',
   'home.howKicker': 'Paano ito gumagana',
   'home.howTitle': 'Tatlong hakbang, walang account sa tradisyonal na paraan',
-  'home.howLead':
-    'Mag-log in ka gamit ang passkey. Walang username, walang password, at walang email sign-up.',
-  'home.step1Title': 'Mag-log in gamit ang passkey',
+  'home.howLead': 'Mag-log in ka. Walang username, walang password, at walang email sign-up.',
+  'home.step1Title': 'Mag-log in',
   'home.step1Body':
     'Isang tap sa browser. Gagamitin ang login na meron ka na, o gagawa ng bago. Iyon ang account mo — wala nang ibang tandaan.',
   'home.step2Title': 'Magdagdag ng Wallet of Satoshi address',
@@ -420,9 +419,9 @@ const fil = {
   'home.why1Title': 'Tunay na peer-to-peer',
   'home.why1Body':
     'Gumagalaw ang pondo mula sa Wallet of Satoshi ng nagbibigay patungo sa Wallet of Satoshi address ng tumatanggap. Hindi humahawak, nagr-route, o nag-escrow ang 21.gifts. Walang pwedeng i-freeze.',
-  'home.why2Title': 'Ang passkey mo ang login',
+  'home.why2Title': 'Nasa device mo ang login',
   'home.why2Body':
-    'Ang identidad ay isang passkey para sa site na ito. Walang password na nakikita ng 21.gifts — signed assertion lang. Walang password database na pwedeng tumagas.',
+    'Walang password na nakikita ng 21.gifts — signed assertion lang. Walang password database na pwedeng tumagas.',
   'home.why3Title': 'Ang Bitcoin mo, hindi sa amin',
   'home.why3Body':
     'Bitcoin payment ang mga handog sa isang Wallet of Satoshi address. Kung mawala ang 21.gifts bukas, gagana pa rin ang mga address na iyon.',
@@ -438,10 +437,10 @@ const fil = {
     'Hindi. Diretso ang bayad mula sa Wallet of Satoshi ng nagbibigay patungo sa Wallet of Satoshi address ng tumatanggap. Wala ang 21.gifts sa payment path at walang kita per transaction.',
   'home.faq3Q': 'Ano ang nangyayari sa mga key ko?',
   'home.faq3A':
-    'Nanatili ang login credentials sa device mo (at sa passkey sync ng platform, kung ginagamit mo). Nakikita lang ng 21.gifts ang signed passkey assertion at, kung pipiliin mo, ang Wallet of Satoshi address na ipinapaskil mo. Walang password at walang seed sa aming servers.',
+    'Nanatili ang login credentials sa device mo (at sa sync ng platform, kung ginagamit mo). Nakikita lang ng 21.gifts ang signed login assertion at, kung pipiliin mo, ang Wallet of Satoshi address na ipinapaskil mo. Walang password at walang seed sa aming servers.',
   'home.faq4Q': 'Puwede ba akong mawalan ng access sa account?',
   'home.faq4A':
-    'Oo. Kung mawala ang passkey at anumang platform sync, hindi na mare-recover ang account sa v1. Mag-backup ng authenticator na ginagamit mo sa pag-log in.',
+    'Oo. Kung mawala ang login at anumang platform sync, hindi na mare-recover ang account sa v1. Mag-backup ng device na ginagamit mo sa pag-log in.',
   'home.faq5Q': 'Paano ako magpapadala ng handog?',
   'home.faq5A':
     'Buksan ang Magpadala ng tulong, ilagay ang Wallet of Satoshi address ng tatanggap at ang amount sa sats, tapos magbayad gamit ang Wallet of Satoshi. Hindi kailangang mag-log in para magbigay.',

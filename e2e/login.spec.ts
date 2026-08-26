@@ -6,6 +6,7 @@ test('login page renders a single Log in button', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Create a passkey' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Continue with passkey' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Create a login' })).toHaveCount(0);
 });
 
 test('login shows Preparing your login while passkey begin hangs', async ({ page }) => {
