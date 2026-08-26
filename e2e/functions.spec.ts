@@ -344,7 +344,7 @@ test('Function: proxyMeLightningAddressDelete — DELETE clears the address', as
   expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
 });
 
-test('Function: unlinkLightningAddress — signed-in form unlinks the address', async ({
+test('Function: unlinkLightningAddress — DELETE /me/lightning-address clears the address', async ({
   request,
 }) => {
   const token = await loginHttp(request);
@@ -553,10 +553,7 @@ test('Function: loadSession — reload keeps the signed-in view', async ({ page,
   await expect(page.getByText('Signed in')).toBeVisible();
 });
 
-test('Function: LightningAddressForm — link and unlink a Wallet of Satoshi address', async ({
-  page,
-  request,
-}) => {
+test('Function: LightningAddressForm — link reaches welcome', async ({ page, request }) => {
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');

@@ -73,7 +73,7 @@ const E2E_ACCOUNT = {
   createdAt: 1_700_000_000,
 };
 
-test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi address', async ({
+test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({
   page,
 }) => {
   await page.addInitScript(() => {
