@@ -5,7 +5,11 @@ import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { setLightningAddress, unlinkLightningAddress } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
+import { hasLightningAddress } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Validation or request failure shown on the Lightning Address form. */
+type LightningAddressError = { type: 'empty' } | { type: 'request' };
 
 /**
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
@@ -15,6 +19,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * the saved Lightning Address fields into that account so a concurrent name
  * write is not overwritten. Renders nothing when no account — or, defensively,
  * no session token — is present, since it is only mounted inside the logged-in view.
+ *
+ * Treats a missing or whitespace-only address the same as `hasLightningAddress`:
+ * the link prompt stays up until a non-empty trimmed address is saved.
  *
  * @returns The Lightning Address section, or `null` when there is nothing to show.
  */
@@ -26,13 +33,14 @@ export function LightningAddressForm(): ReactElement | null {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<'request' | null>(null);
+  const [error, setError] = useState<LightningAddressError | null>(null);
 
   if (account === null || session === null) {
     return null;
   }
 
   const address = account.lightningAddress;
+  const linked = hasLightningAddress(account);
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
@@ -57,7 +65,7 @@ export function LightningAddressForm(): ReactElement | null {
       }
       onFresh(result);
     } catch {
-      setError('request');
+      setError({ type: 'request' });
     } finally {
       setBusy(false);
     }
@@ -90,7 +98,12 @@ export function LightningAddressForm(): ReactElement | null {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    void run((token) => setLightningAddress(token, draft));
+    const trimmed = draft.trim();
+    if (trimmed === '') {
+      setError({ type: 'empty' });
+      return;
+    }
+    void run((token) => setLightningAddress(token, trimmed));
   };
 
   let submitIcon: ReactElement;
@@ -108,9 +121,9 @@ export function LightningAddressForm(): ReactElement | null {
         {t('la.heading')}
       </p>
 
-      {address === null || editing ? (
+      {!linked || editing ? (
         <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
-          {address === null ? (
+          {!linked ? (
             <p className="text-center text-sm text-neutral-500">{t('la.prompt')}</p>
           ) : null}
           <input
@@ -156,7 +169,7 @@ export function LightningAddressForm(): ReactElement | null {
             <button
               type="button"
               onClick={() => {
-                setDraft(address);
+                setDraft(address ?? '');
                 setEditing(true);
                 setError(null);
               }}
@@ -183,7 +196,7 @@ export function LightningAddressForm(): ReactElement | null {
 
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-red-600">
-          {t('la.errorRequest')}
+          {error.type === 'empty' ? t('la.errorEmpty') : t('la.errorRequest')}
         </p>
       ) : null}
     </div>

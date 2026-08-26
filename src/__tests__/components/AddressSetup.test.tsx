@@ -68,4 +68,40 @@ describe('AddressSetup', () => {
     expect(screen.queryByText(/Hi,/)).toBeNull();
     expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
   });
+
+  it('omits the greeting when the name is empty', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: '',
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      },
+    });
+    renderWithLocale(<AddressSetup />);
+    expect(screen.queryByText(/Hi,/)).toBeNull();
+    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+  });
+
+  it('omits the greeting when the name is whitespace-only', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: '   ',
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      },
+    });
+    renderWithLocale(<AddressSetup />);
+    expect(screen.queryByText(/Hi,/)).toBeNull();
+    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+  });
 });

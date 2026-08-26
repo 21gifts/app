@@ -39,4 +39,37 @@ describe('onboarding', () => {
     const account = { ...base, lightningAddress: 'alice@walletofsatoshi.com' };
     expect(nextOnboardingPath(account)).toBe('/setup/name');
   });
+
+  it('treats an empty name as incomplete', () => {
+    const account = { ...base, name: '' };
+    expect(hasDisplayName(account)).toBe(false);
+    expect(nextOnboardingPath(account)).toBe('/setup/name');
+  });
+
+  it('treats a whitespace-only name as incomplete', () => {
+    const account = { ...base, name: '   ' };
+    expect(hasDisplayName(account)).toBe(false);
+    expect(nextOnboardingPath(account)).toBe('/setup/name');
+  });
+
+  it('treats an empty lightning address as incomplete when named', () => {
+    const account = { ...base, name: 'Ada', lightningAddress: '' };
+    expect(hasLightningAddress(account)).toBe(false);
+    expect(nextOnboardingPath(account)).toBe('/setup/address');
+  });
+
+  it('treats a whitespace-only lightning address as incomplete when named', () => {
+    const account = { ...base, name: 'Ada', lightningAddress: '   ' };
+    expect(hasLightningAddress(account)).toBe(false);
+    expect(nextOnboardingPath(account)).toBe('/setup/address');
+  });
+
+  it('keeps a whitespace name on the name screen even when an address exists', () => {
+    const account = {
+      ...base,
+      name: '   ',
+      lightningAddress: 'alice@walletofsatoshi.com',
+    };
+    expect(nextOnboardingPath(account)).toBe('/setup/name');
+  });
 });

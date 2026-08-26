@@ -54,6 +54,18 @@ describe('NameForm', () => {
     expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
   });
 
+  it('shows the prompt for a whitespace-only name instead of display/edit', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...baseAccount, name: '   ' },
+    });
+    renderWithLocale(<NameForm />);
+
+    expect(screen.getByText(/people know who you are/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /edit/i })).toBeNull();
+  });
+
   it('does not call the api when the name is empty', () => {
     renderWithLocale(<NameForm />);
 
