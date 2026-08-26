@@ -40,8 +40,8 @@ function listPngs(dir) {
   return fs.readdirSync(dir).filter((n) => n.endsWith('.png'));
 }
 
-function hasSnapshot(files, prefix) {
-  return files.some((n) => n.startsWith(`${prefix}-`) && n.endsWith('-linux.png'));
+function hasSnapshot(files, arg) {
+  return files.includes(`${arg}-chromium-linux.png`);
 }
 
 const missing = [];
@@ -63,7 +63,7 @@ const visualSrc = fs.readFileSync(E2E_VISUAL, 'utf8');
 for (const route of [...screens].sort()) {
   const arg = screenArg(route);
   if (!hasSnapshot(snapFiles, arg)) {
-    missing.push(`Screen ${route} has no Playwright Linux baseline ${arg}-*-linux.png`);
+    missing.push(`Screen ${route} has no Playwright Linux baseline ${arg}-chromium-linux.png`);
   }
   if (!visualSrc.includes(`'${arg}'`) && !visualSrc.includes(`"${arg}"`)) {
     missing.push(
@@ -84,7 +84,7 @@ for (const route of [...screens].sort()) {
 for (const variant of SCREEN_VARIANTS) {
   if (!hasSnapshot(snapFiles, variant.visual)) {
     missing.push(
-      `Variant ${variant.route} ${variant.id} has no Playwright Linux baseline ${variant.visual}-*-linux.png`,
+      `Variant ${variant.route} ${variant.id} has no Playwright Linux baseline ${variant.visual}-chromium-linux.png`,
     );
   }
 }
@@ -93,7 +93,7 @@ const fns = extractFunctions(path.join(ROOT, 'src'));
 for (const name of [...fns].sort()) {
   const arg = `function-${name}`;
   if (!hasSnapshot(snapFiles, arg)) {
-    missing.push(`Function ${name} has no Playwright Linux baseline ${arg}-*-linux.png`);
+    missing.push(`Function ${name} has no Playwright Linux baseline ${arg}-chromium-linux.png`);
   }
 }
 
