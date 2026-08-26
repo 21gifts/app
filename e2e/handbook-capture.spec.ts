@@ -85,7 +85,7 @@ test('login error', async ({ page }) => {
   await writePng(page, 'login-error.png');
 });
 
-test('login signed-in', async ({ page }) => {
+test('setup name', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -96,12 +96,12 @@ test('login signed-in', async ({ page }) => {
       body: JSON.stringify(E2E_ACCOUNT),
     });
   });
-  await page.goto('/login');
-  await expect(page.getByText('Signed in')).toBeVisible();
-  await writePng(page, 'login-signed-in.png');
+  await page.goto('/setup/name');
+  await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
+  await writePng(page, 'setup-name.png');
 });
 
-test('login signed-in-named', async ({ page }) => {
+test('setup address', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -112,12 +112,12 @@ test('login signed-in-named', async ({ page }) => {
       body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
     });
   });
-  await page.goto('/login');
-  await expect(page.getByText('Ada')).toBeVisible();
-  await writePng(page, 'login-signed-in-named.png');
+  await page.goto('/setup/address');
+  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
+  await writePng(page, 'setup-address.png');
 });
 
-test('login signed-in-linked', async ({ page }) => {
+test('welcome', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -132,9 +132,9 @@ test('login signed-in-linked', async ({ page }) => {
       }),
     });
   });
-  await page.goto('/login');
+  await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-  await writePng(page, 'login-signed-in-linked.png');
+  await writePng(page, 'welcome.png');
 });
 
 test('donate form', async ({ page }) => {

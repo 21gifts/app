@@ -190,8 +190,10 @@ test.describe('login variant baselines', () => {
     await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-login-error', 'login-error.png');
   });
+});
 
-  test('login signed-in', async ({ page }) => {
+test.describe('onboarding screens', () => {
+  test('screen /setup/name', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -202,13 +204,12 @@ test.describe('login variant baselines', () => {
         body: JSON.stringify(E2E_ACCOUNT),
       });
     });
-    await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Link address' })).toHaveCount(0);
-    await shotScreen(page, 'state-login-signed-in', 'login-signed-in.png');
+    await page.goto('/setup/name');
+    await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
+    await shotScreen(page, 'screen-setup-name', 'setup-name.png');
   });
 
-  test('login signed-in named', async ({ page }) => {
+  test('screen /setup/address', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -219,12 +220,14 @@ test.describe('login variant baselines', () => {
         body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
       });
     });
-    await page.goto('/login');
-    await expect(page.getByText('Ada')).toBeVisible();
-    await shotScreen(page, 'state-login-signed-in-named', 'login-signed-in-named.png');
+    await page.goto('/setup/address');
+    await expect(
+      page.getByRole('heading', { name: 'Your Wallet of Satoshi address' }),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-setup-address', 'setup-address.png');
   });
 
-  test('login signed-in linked', async ({ page }) => {
+  test('screen /welcome', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -239,9 +242,9 @@ test.describe('login variant baselines', () => {
         }),
       });
     });
-    await page.goto('/login');
+    await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await shotScreen(page, 'state-login-signed-in-linked', 'login-signed-in-linked.png');
+    await shotScreen(page, 'screen-welcome', 'welcome.png');
   });
 });
 
@@ -325,10 +328,10 @@ test.describe('function baselines', () => {
         }),
       });
     });
-    await page.goto('/login');
+    await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
-    await expect(page).toHaveScreenshot('state-login-signed-in-linked.png', {
+    await expect(page).toHaveScreenshot('screen-welcome.png', {
       fullPage: true,
       ...SHOT,
     });
