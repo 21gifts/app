@@ -21,7 +21,7 @@ export type PasskeyStatus = 'idle' | 'starting' | 'error';
 export interface UsePasskeyLogin {
   /** Where the passkey flow currently is. */
   status: PasskeyStatus;
-  /** One-tap login: existing passkey, or create when the browser has none. */
+  /** Authenticate with an existing login. Does not register. */
   login: () => void;
   /** Create a new discoverable passkey and sign in. */
   register: () => void;
