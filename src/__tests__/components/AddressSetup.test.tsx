@@ -50,4 +50,22 @@ describe('AddressSetup', () => {
     expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
   });
+
+  it('omits the greeting when the store has no name', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      },
+    });
+    renderWithLocale(<AddressSetup />);
+    expect(screen.queryByText(/Hi,/)).toBeNull();
+    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+  });
 });

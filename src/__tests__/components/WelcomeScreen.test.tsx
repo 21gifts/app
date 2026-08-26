@@ -45,4 +45,21 @@ describe('WelcomeScreen', () => {
     expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
   });
+
+  it('still renders a welcome heading when the store has no name', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      },
+    });
+    renderWithLocale(<WelcomeScreen />);
+    expect(screen.getByRole('heading', { name: /Welcome/ })).toBeTruthy();
+  });
 });
