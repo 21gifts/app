@@ -2,6 +2,7 @@ import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { fetchMe } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -77,5 +78,16 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('does not bounce a name screen to login while a stored token is hydrating', () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(
+      <OnboardingGate screen="name">
+        <p>name-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).not.toHaveBeenCalled();
   });
 });

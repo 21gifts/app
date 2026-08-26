@@ -1,4 +1,4 @@
-import { act, cleanup, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
@@ -28,8 +28,8 @@ const account = {
 
 /** Mounts the hydration hook. */
 function Probe(): ReactElement {
-  useHydrateSession();
-  return <p>probe</p>;
+  const { ready } = useHydrateSession();
+  return <p>{ready ? 'ready' : 'pending'}</p>;
 }
 
 beforeEach(() => {
@@ -43,6 +43,29 @@ afterEach(() => {
 });
 
 describe('useHydrateSession', () => {
+  it('is ready immediately when no token is stored', () => {
+    vi.mocked(loadSession).mockReturnValue(null);
+    renderWithLocale(<Probe />);
+    expect(screen.getByText('ready')).toBeTruthy();
+  });
+
+  it('stays pending until fetchMe settles when a token is stored', async () => {
+    let resolve!: (value: typeof account | null) => void;
+    const pending = new Promise<typeof account | null>((r) => {
+      resolve = r;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    renderWithLocale(<Probe />);
+    expect(screen.getByText('pending')).toBeTruthy();
+
+    await act(async () => {
+      resolve(account);
+    });
+    expect(screen.getByText('ready')).toBeTruthy();
+  });
+
   it('does not clobber a profile already stored for the same token', async () => {
     let resolve!: (value: typeof account | null) => void;
     const pending = new Promise<typeof account | null>((r) => {

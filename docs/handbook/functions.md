@@ -243,7 +243,7 @@
 
 - **Purpose:** Rehydrates a persisted session token into the auth store.
 - **Inputs:** Reads `loadSession` and calls `fetchMe`.
-- **Returns / side effects:** Void. Sets or clears auth. Unmount invalidates in-flight work.
+- **Returns / side effects:** `{ ready }`. Sets or clears auth. `ready` is false until storage/`/me` has settled so setup screens do not bounce to `/login`. Unmount invalidates in-flight work.
 - **Used by:** `OnboardingGate`.
 
 ## Function: QrCode

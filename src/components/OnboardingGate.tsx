@@ -35,12 +35,15 @@ interface OnboardingGateProps {
  * @returns Children, or a spinner while redirecting.
  */
 export function OnboardingGate({ screen, children }: OnboardingGateProps): ReactElement {
-  useHydrateSession();
+  const { ready } = useHydrateSession();
   const router = useRouter();
   const { cancel } = usePasskeyLogin();
   const account = useAuthStore((state) => state.account);
 
   useEffect(() => {
+    if (!ready) {
+      return;
+    }
     if (screen === 'login') {
       if (account !== null) {
         cancel();
@@ -56,8 +59,11 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     if (target !== PATH[screen]) {
       router.replace(target);
     }
-  }, [account, cancel, router, screen]);
+  }, [account, cancel, ready, router, screen]);
 
+  if (!ready) {
+    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;
+  }
   if (screen === 'login') {
     return <>{children}</>;
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchMe } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
@@ -11,15 +11,19 @@ import { useAuthStore } from '@/stores/auth-store';
  * A valid token logs the visitor in unless a newer in-page session already
  * won. A rejected token calls `clearAuth` when the in-memory session is
  * absent or still that token. Unmount invalidates in-flight hydration.
+ *
+ * @returns Whether this mount has finished checking storage / `/me`.
  */
-export function useHydrateSession(): void {
+export function useHydrateSession(): { ready: boolean } {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const hydrateGen = useRef(0);
+  const [ready, setReady] = useState(() => loadSession() === null);
 
   useEffect(() => {
     const token = loadSession();
     if (token === null) {
+      setReady(true);
       return;
     }
     const gen = hydrateGen.current;
@@ -48,9 +52,16 @@ export function useHydrateSession(): void {
       })
       .catch((error: unknown) => {
         console.error('Session hydration failed', error);
+      })
+      .finally(() => {
+        if (gen === hydrateGen.current) {
+          setReady(true);
+        }
       });
     return (): void => {
       hydrateGen.current += 1;
     };
   }, [setAuth, clearAuth]);
+
+  return { ready };
 }
