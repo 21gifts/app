@@ -34,18 +34,23 @@ test('login shows an error when passkey begin fails', async ({ page }) => {
 });
 
 test('login Try again restarts the single-button flow', async ({ page }) => {
-  let calls = 0;
+  let authenticateBegins = 0;
+  let registerBegins = 0;
   let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
   await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
-    calls += 1;
-    if (calls === 1) {
+    authenticateBegins += 1;
+    if (authenticateBegins === 1) {
       await route.fulfill({ status: 503, body: 'unavailable' });
       return;
     }
     await held;
+    await route.abort();
+  });
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+    registerBegins += 1;
     await route.abort();
   });
   await page.goto('/login');
@@ -53,6 +58,8 @@ test('login Try again restarts the single-button flow', async ({ page }) => {
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByText('Preparing your login…')).toBeVisible();
+  await expect.poll(() => authenticateBegins).toBe(2);
+  expect(registerBegins).toBe(0);
   release();
 });
 

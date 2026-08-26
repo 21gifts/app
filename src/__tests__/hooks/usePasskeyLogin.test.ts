@@ -109,6 +109,7 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.retry();
     });
+    expect(startPasskeyAuthentication).toHaveBeenCalledTimes(2);
     expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().session).toBe('tok');
     vi.unstubAllGlobals();
