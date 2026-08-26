@@ -7,7 +7,7 @@ export type OnboardingPath = '/setup/name' | '/setup/address' | '/welcome';
  * Whether the account has a display name to show.
  *
  * @param account - Signed-in account.
- * @returns True when `name` is a non-empty string.
+ * @returns True when `name` is non-null and non-empty after trim.
  */
 export function hasDisplayName(account: Account): boolean {
   return account.name !== null && account.name.trim() !== '';
@@ -17,7 +17,7 @@ export function hasDisplayName(account: Account): boolean {
  * Whether the account has a Wallet of Satoshi address to receive gifts.
  *
  * @param account - Signed-in account.
- * @returns True when `lightningAddress` is a non-empty string.
+ * @returns True when `lightningAddress` is non-null and non-empty after trim.
  */
 export function hasLightningAddress(account: Account): boolean {
   return account.lightningAddress !== null && account.lightningAddress.trim() !== '';
