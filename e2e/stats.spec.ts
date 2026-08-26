@@ -92,6 +92,8 @@ test('stats page shows total spend over time', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
   await expect(page.getByText('₿ 0.00001500')).toBeVisible();
   await expect(page.locator('dl').getByText('$1.43')).toBeVisible();
+  await expect(page.getByRole('link', { name: '2026-06-01' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '2026-07-01' })).toHaveCount(0);
 });
 
 test('stats page empty copy', async ({ page }) => {
