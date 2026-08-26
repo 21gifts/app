@@ -228,6 +228,11 @@ describe('StatsDashboard', () => {
     expect(svg.getAttribute('role')).toBe('group');
     const rects = [...svg.querySelectorAll('a rect')];
     expect(rects).toHaveLength(40);
+    expect(
+      [...svg.querySelectorAll('a circle')].every(
+        (el) => el.getAttribute('pointer-events') === 'none',
+      ),
+    ).toBe(true);
     for (let i = 1; i < rects.length; i += 1) {
       const prev = rects[i - 1];
       const cur = rects[i];

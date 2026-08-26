@@ -218,14 +218,8 @@ function CumulativeOverTimeChart(
             aria-label={point.day}
             className="cursor-pointer"
           >
-            <rect
-              x={hitX}
-              y={padT}
-              width={hitEnd - hitX}
-              height={innerH}
-              fill="transparent"
-            />
-            <circle cx={cx} cy={cy} r={3.5} fill={ORANGE} />
+            <rect x={hitX} y={padT} width={hitEnd - hitX} height={innerH} fill="transparent" />
+            <circle cx={cx} cy={cy} r={3.5} fill={ORANGE} pointerEvents="none" />
           </a>
         );
       })}
