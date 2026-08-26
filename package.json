@@ -9,7 +9,9 @@
     "url": "https://github.com/21gifts/app.git"
   },
   "scripts": {
+    "predev": "node scripts/sync-handbook-images.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/sync-handbook-images.mjs",
     "build": "next build",
     "start": "next start",
     "start:standalone": "rm -rf .next/standalone/.next/static .next/standalone/public .next/standalone/docs && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && cp -r docs .next/standalone/docs && node .next/standalone/server.js",
@@ -22,7 +24,7 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:update-snapshots": "playwright test e2e/visual.spec.ts --update-snapshots",
-    "handbook:images": "UPDATE_HANDBOOK_IMAGES=1 playwright test e2e/handbook-capture.spec.ts",
+    "handbook:images": "node scripts/sync-handbook-images.mjs",
     "handbook:check": "node scripts/check-handbook.mjs",
     "e2e:check": "node scripts/check-e2e.mjs",
     "screenshot:check": "node scripts/check-screenshots.mjs"

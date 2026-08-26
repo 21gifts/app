@@ -5,6 +5,10 @@
  *
  * Snapshot files live next to the visual spec (Playwright default layout):
  *   e2e/visual.spec.ts-snapshots/<arg>-<project>-<platform>.png
+ *
+ * Handbook URLs under public/handbook-images/ are filled at build/dev from
+ * these baselines (see scripts/sync-handbook-images.mjs); this check does not
+ * require committed PNGs there.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,8 +18,6 @@ import { SCREEN_VARIANTS } from './screen-variants.mjs';
 const ROOT = process.cwd();
 const SNAP_DIR = path.join(ROOT, 'e2e', 'visual.spec.ts-snapshots');
 const E2E_VISUAL = path.join(ROOT, 'e2e', 'visual.spec.ts');
-const HANDBOOK_IMAGES = path.join(ROOT, 'docs', 'handbook', 'images');
-const PUBLIC_IMAGES = path.join(ROOT, 'public', 'handbook-images');
 const SCREENS_MD = path.join(ROOT, 'docs', 'handbook', 'screens.md');
 
 /**
@@ -57,8 +59,6 @@ if (snapFiles.length === 0) {
 const screens = extractScreens();
 const screensMd = fs.existsSync(SCREENS_MD) ? fs.readFileSync(SCREENS_MD, 'utf8') : '';
 const visualSrc = fs.readFileSync(E2E_VISUAL, 'utf8');
-const handbookPngs = listPngs(HANDBOOK_IMAGES);
-const publicPngs = listPngs(PUBLIC_IMAGES);
 
 for (const route of [...screens].sort()) {
   const arg = screenArg(route);
@@ -79,44 +79,13 @@ for (const route of [...screens].sort()) {
   if (!imageRef.test(body)) {
     missing.push(`Screen ${route} handbook section has no ![…](images/${mdName})`);
   }
-  const docsFile = path.join(HANDBOOK_IMAGES, mdName);
-  const publicFile = path.join(PUBLIC_IMAGES, mdName);
-  if (!handbookPngs.includes(mdName)) {
-    missing.push(`docs/handbook/images/${mdName} is missing`);
-  }
-  if (!publicPngs.includes(mdName)) {
-    missing.push(`public/handbook-images/${mdName} is missing`);
-  }
-  if (fs.existsSync(docsFile) && fs.existsSync(publicFile)) {
-    const docsBuf = fs.readFileSync(docsFile);
-    const publicBuf = fs.readFileSync(publicFile);
-    if (!docsBuf.equals(publicBuf)) {
-      missing.push(`${mdName} differs between docs/handbook/images and public/handbook-images`);
-    }
-  }
 }
 
 for (const variant of SCREEN_VARIANTS) {
-  if (!handbookPngs.includes(variant.image)) {
+  if (!hasSnapshot(snapFiles, variant.visual)) {
     missing.push(
-      `docs/handbook/images/${variant.image} is missing (variant ${variant.route} ${variant.id})`,
+      `Variant ${variant.route} ${variant.id} has no Playwright Linux baseline ${variant.visual}-*-linux.png`,
     );
-  }
-  if (!publicPngs.includes(variant.image)) {
-    missing.push(
-      `public/handbook-images/${variant.image} is missing (variant ${variant.route} ${variant.id})`,
-    );
-  }
-  const docsFile = path.join(HANDBOOK_IMAGES, variant.image);
-  const publicFile = path.join(PUBLIC_IMAGES, variant.image);
-  if (fs.existsSync(docsFile) && fs.existsSync(publicFile)) {
-    const docsBuf = fs.readFileSync(docsFile);
-    const publicBuf = fs.readFileSync(publicFile);
-    if (!docsBuf.equals(publicBuf)) {
-      missing.push(
-        `${variant.image} differs between docs/handbook/images and public/handbook-images`,
-      );
-    }
   }
 }
 

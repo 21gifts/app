@@ -38,7 +38,7 @@ npm run dev    # → http://localhost:3000
 | `npm run e2e`                  | Playwright against the mock api (:3001) plus the production standalone server (:3000)                                                         |
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
-| `npm run handbook:images`      | Capture handbook PNGs for every screen variant (`UPDATE_HANDBOOK_IMAGES=1`)                                                                   |
+| `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
 | `npm run screenshot:check`     | Fail if a screen or export lacks a Playwright PNG baseline                                                                                    |
 | `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
@@ -90,10 +90,11 @@ app/
 │   ├── screens.md
 │   ├── functions.md
 │   ├── endpoints.md
-│   └── images/                  # Screen PNGs (copied to public/handbook-images/)
+│   └── images/                  # Markdown still references images/<file>.png; PNGs are not committed
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
-│   ├── screen-variants.mjs      # Every UI state of every screen (handbook + e2e needles)
+│   ├── screen-variants.mjs      # Every UI state of every screen (handbook + e2e needles + visual args)
+│   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
 │   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
 ├── e2e/
@@ -104,10 +105,10 @@ app/
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
-│   ├── visual.spec.ts           # Linux Chromium screenshot baselines
-│   ├── handbook-capture.spec.ts # UPDATE_HANDBOOK_IMAGES=1 writes docs/handbook/images
+│   ├── visual.spec.ts           # Linux Chromium screenshot baselines (single source for handbook images)
 │   └── visual.spec.ts-snapshots/
 ├── public/                      # Static assets served from /
+│   └── handbook-images/         # Built from visual baselines (gitignored *.png; keep .gitkeep)
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
 ├── playwright.config.ts         # chromium; mock api :3001 + standalone :3000
@@ -250,7 +251,7 @@ assertion for that state). Every HTTP endpoint discovered from
 `request.get|post|put|patch|delete` of that path. Every exported function/class
 **must** have a Playwright test whose title contains `Function: <Name>` and that
 exercises that export through the running Next server (UI or `request`), not
-only a handbook screenshot. `npm run e2e:check` scans Playwright spec files under `e2e/` (except `handbook-capture.spec.ts`)
+only a handbook screenshot. `npm run e2e:check` scans Playwright spec files under `e2e/`
 and **fails the PR** if a screen has no matching `goto`, a variant has no
 `needle`, an endpoint has no matching `request.<verb>` call, or a function has
 no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
@@ -259,16 +260,17 @@ is an undeclared deviation and is rejected. CI runs `e2e:check` then `e2e`.
 
 ### Screenshot baselines (hard requirement)
 
-Every UI screen **must** have:
+There is **one** source for screen images: Playwright Linux Chromium baselines
+under `e2e/visual.spec.ts-snapshots/`. Every UI screen **must** have a
+`toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`.
+Handbook Markdown keeps `images/<name>.png` references; those bytes are filled
+into `public/handbook-images/` by `npm run handbook:images` / `prebuild` /
+`predev` from the matching baseline (`variant.visual` → `variant.image`). Do
+not commit PNGs under `docs/handbook/images/` or `public/handbook-images/`.
 
-- a Playwright `toHaveScreenshot('screen-…png')` in `e2e/visual.spec.ts`
-- a handbook image `docs/handbook/images/<name>.png` referenced from that
-  screen's handbook section, copied to `public/handbook-images/`
-
-Every **variant** in `scripts/screen-variants.mjs` **must** have the same
-handbook image pair (`docs/handbook/images/<variant.image>` and
-`public/handbook-images/`). Default screen shots stay the Playwright
-`screen-…` baselines; extra states are documented with their own PNGs.
+Every **variant** in `scripts/screen-variants.mjs` **must** have a Playwright
+Linux baseline `${visual}-chromium-linux.png`. Default screen shots use the
+`screen-…` args; extra states use `state-…` args.
 
 Every exported function **must** have a Playwright baseline
 `function-<Name>.png` (the handbook section on `/handbook`, clipped). Adding a
@@ -280,7 +282,6 @@ Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
 
 ```bash
 docker run --rm -v "$PWD":/work -w /work \
-  -e UPDATE_HANDBOOK_IMAGES=1 \
   mcr.microsoft.com/playwright:v1.61.1-noble \
   bash -lc 'npm ci && npm run e2e:update-snapshots'
 ```

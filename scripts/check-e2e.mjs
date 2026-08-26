@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Fail if Playwright spec files under e2e/ (except handbook-capture) do not
- * exercise every UI screen, HTTP endpoint, and exported function. A screen
- * needs page.goto of that path; an endpoint needs request.get/post/put/patch/
- * delete of that path; a function needs a test('Function: <Name> …') title.
- * Only files named *.spec.ts are scanned. Run from the repo root.
+ * Fail if Playwright spec files under e2e/ do not exercise every UI screen,
+ * HTTP endpoint, and exported function. A screen needs page.goto of that path;
+ * an endpoint needs request.get/post/put/patch/delete of that path; a function
+ * needs a test('Function: <Name> …') title. Only files named *.spec.ts are
+ * scanned. Run from the repo root.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,10 +19,7 @@ function e2eText() {
     console.error('E2E MISSING: e2e/ directory does not exist');
     process.exit(1);
   }
-  const files = walk(
-    E2E_DIR,
-    (p) => p.endsWith('.spec.ts') && !p.endsWith(`${path.sep}handbook-capture.spec.ts`),
-  );
+  const files = walk(E2E_DIR, (p) => p.endsWith('.spec.ts'));
   if (files.length === 0) {
     console.error('E2E MISSING: e2e/ has no spec files');
     process.exit(1);
