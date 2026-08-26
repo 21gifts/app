@@ -16,11 +16,20 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   LanguageSwitcher: () => <div data-testid="language-switcher" />,
 }));
 
+vi.mock('@/components/LogoutButton', () => ({
+  LogoutButton: () => (
+    <button type="button" data-testid="logout-button">
+      Log out
+    </button>
+  ),
+}));
+
 afterEach(cleanup);
 
 describe('WelcomePage', () => {
   it('renders the welcome card', () => {
     renderWithLocale(<WelcomePage />);
     expect(screen.getByTestId('welcome-screen')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
   });
 });

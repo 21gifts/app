@@ -8,7 +8,7 @@ import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Logs the visitor out and returns them to `/login`.
+ * Logs the visitor out from the page chrome (top-left), not from the card.
  *
  * @returns The log-out button.
  */
@@ -26,7 +26,7 @@ export function LogoutButton(): ReactElement {
         clearAuth();
         router.replace('/login');
       }}
-      className="mt-2 inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+      className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition hover:text-neutral-900"
     >
       <LogOut aria-hidden="true" className="h-4 w-4" />
       {t('login.logOut')}

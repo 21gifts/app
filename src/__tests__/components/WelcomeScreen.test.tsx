@@ -1,24 +1,10 @@
 import { cleanup, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
-import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('next/navigation', () => ({
-  useRouter: (): { replace: () => void } => ({ replace: vi.fn() }),
-}));
-vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
-
 beforeEach(() => {
-  vi.mocked(usePasskeyLogin).mockReturnValue({
-    status: 'idle',
-    login: vi.fn(),
-    register: vi.fn(),
-    authenticate: vi.fn(),
-    retry: vi.fn(),
-    cancel: vi.fn(),
-  });
   useAuthStore.setState({
     session: 'tok',
     account: {
@@ -44,6 +30,7 @@ describe('WelcomeScreen', () => {
     expect(screen.getByRole('link', { name: /send a gift/i }).getAttribute('href')).toBe('/donate');
     expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });
 
   it('still renders a welcome heading when the store has no name', () => {

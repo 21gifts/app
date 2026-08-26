@@ -1,14 +1,9 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NameSetup } from '@/components/NameSetup';
-import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('next/navigation', () => ({
-  useRouter: (): { replace: () => void } => ({ replace: vi.fn() }),
-}));
-vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 vi.mock('@/lib/api', () => ({
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
@@ -16,14 +11,6 @@ vi.mock('@/lib/api', () => ({
 }));
 
 beforeEach(() => {
-  vi.mocked(usePasskeyLogin).mockReturnValue({
-    status: 'idle',
-    login: vi.fn(),
-    register: vi.fn(),
-    authenticate: vi.fn(),
-    retry: vi.fn(),
-    cancel: vi.fn(),
-  });
   useAuthStore.setState({
     session: 'tok',
     account: {
@@ -48,5 +35,6 @@ describe('NameSetup', () => {
     expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /link address/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });
 });

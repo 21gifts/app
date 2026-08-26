@@ -164,7 +164,7 @@
 
 ## Function: AddressSetup
 
-- **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved. No log out.
+- **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved. No `LogoutButton` on the card.
 - **Inputs:** Reads `account.name` from `useAuthStore` for the greeting.
 - **Returns / side effects:** Card with heading **Your Wallet of Satoshi address** and `LightningAddressForm`. No `LogoutButton`.
 - **Used by:** Screen `/setup/address`.
@@ -173,28 +173,28 @@
 
 - **Purpose:** Next.js page for `/setup/address`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with a light language switcher.
+- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with a light language switcher and **Log out** chrome.
 - **Used by:** Route `/setup/address`.
 
 ## Function: LogoutButton
 
-- **Purpose:** Logs the visitor out and returns them to `/login`.
+- **Purpose:** Logs the visitor out from the page chrome (top-left), not from the card, and returns them to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
 - **Returns / side effects:** Button. Clears the session and `router.replace('/login')`.
-- **Used by:** `NameSetup`, `WelcomeScreen`.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
 
 ## Function: NameSetup
 
 - **Purpose:** First post-login screen: display name form.
 - **Inputs:** None besides `NameForm` store reads.
-- **Returns / side effects:** Card with heading **Your name**, `NameForm`, and `LogoutButton`.
+- **Returns / side effects:** Card with heading **Your name** and `NameForm`. No `LogoutButton` on the card.
 - **Used by:** Screen `/setup/name`.
 
 ## Function: NameSetupPage
 
 - **Purpose:** Next.js page for `/setup/name`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `NameSetup` with a light language switcher.
+- **Returns / side effects:** `OnboardingGate` around `NameSetup` with a light language switcher and **Log out** chrome.
 - **Used by:** Route `/setup/name`.
 
 ## Function: OnboardingGate
@@ -208,14 +208,14 @@
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with a light language switcher.
+- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with a light language switcher and **Log out** chrome.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
 
 - **Purpose:** Third post-login screen after name and address are saved.
 - **Inputs:** Reads `account.name` from `useAuthStore`.
-- **Returns / side effects:** Gift icon, **Welcome, {name}**, ready copy, **Send a gift** (`/donate`), `LogoutButton`. No name or address form.
+- **Returns / side effects:** Gift icon, **Welcome, {name}**, ready copy, **Send a gift** (`/donate`). No name or address form. No `LogoutButton` on the card.
 - **Used by:** Screen `/welcome`.
 
 ## Function: hasDisplayName

@@ -1003,7 +1003,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
   });
   await page.goto('/setup/address');
   await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
 
 test('Function: WelcomePage — welcome heading is visible', async ({ page }) => {

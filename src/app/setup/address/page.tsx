@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { AddressSetup } from '@/components/AddressSetup';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { LogoutButton } from '@/components/LogoutButton';
 import { OnboardingGate } from '@/components/OnboardingGate';
 
 /**
@@ -11,6 +12,9 @@ import { OnboardingGate } from '@/components/OnboardingGate';
 export default function AddressSetupPage(): ReactElement {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6">
+      <div className="absolute top-4 left-5">
+        <LogoutButton />
+      </div>
       <div className="absolute top-4 right-5">
         <LanguageSwitcher tone="light" />
       </div>

@@ -3,7 +3,6 @@
 import { Gift } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
-import { LogoutButton } from '@/components/LogoutButton';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -31,7 +30,6 @@ export function WelcomeScreen(): ReactElement {
         <Gift aria-hidden="true" className="h-4 w-4" />
         {t('login.welcomeCta')}
       </Link>
-      <LogoutButton />
     </section>
   );
 }
