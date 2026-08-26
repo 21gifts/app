@@ -1,6 +1,7 @@
 'use client';
 
-import { AlertTriangle, Fingerprint, Loader2, LogOut } from 'lucide-react';
+import { AlertTriangle, Fingerprint, Gift, Loader2, LogOut } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useRef, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { NameForm } from '@/components/NameForm';
@@ -12,7 +13,7 @@ import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The login surface: one Log in button, then signed-in account.
+ * The login surface: one Log in button, then name, address, and welcome.
  *
  * Shows the signed-in account when one is present. On mount it rehydrates
  * from a persisted token: a valid token logs the visitor straight in unless a
@@ -104,19 +105,61 @@ interface LoggedInViewProps {
 }
 
 /**
- * The signed-in state: role, name form, address form, and a log-out button.
+ * Whether the account has a display name to show.
+ *
+ * @param account - Signed-in account.
+ * @returns True when `name` is a non-empty string.
+ */
+function hasDisplayName(account: Account): boolean {
+  return account.name !== null && account.name.trim() !== '';
+}
+
+/**
+ * Whether the account has a Wallet of Satoshi address to receive gifts.
+ *
+ * @param account - Signed-in account.
+ * @returns True when `lightningAddress` is a non-empty string.
+ */
+function hasLightningAddress(account: Account): boolean {
+  return account.lightningAddress !== null && account.lightningAddress.trim() !== '';
+}
+
+/**
+ * The signed-in state: ask for a name, then an address, then welcome.
  *
  * @param props - See {@link LoggedInViewProps}.
  * @returns The signed-in view.
  */
 function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
   const { t } = useTranslations();
+  const named = hasDisplayName(account);
+  const linked = hasLightningAddress(account);
+  const displayName = named ? (account.name as string) : '';
+
+  let step: ReactElement;
+  if (!named) {
+    step = <NameForm />;
+  } else if (!linked) {
+    step = (
+      <>
+        <p className="text-sm text-neutral-500">{t('login.helloName', { name: displayName })}</p>
+        <LightningAddressForm />
+      </>
+    );
+  } else {
+    step = (
+      <>
+        <WelcomeView name={displayName} />
+        <NameForm />
+        <LightningAddressForm />
+      </>
+    );
+  }
+
   return (
     <>
       <p className="text-xs tracking-widest text-neutral-400 uppercase">{t('login.signedIn')}</p>
-      <p className="text-lg font-medium text-neutral-900 capitalize">{account.role}</p>
-      <NameForm />
-      <LightningAddressForm />
+      {step}
       <button
         type="button"
         onClick={onLogout}
@@ -125,6 +168,38 @@ function LoggedInView({ account, onLogout }: LoggedInViewProps): ReactElement {
         <LogOut aria-hidden="true" className="h-4 w-4" />
         {t('login.logOut')}
       </button>
+    </>
+  );
+}
+
+/** Props for {@link WelcomeView}. */
+interface WelcomeViewProps {
+  /** Display name already saved on the account. */
+  name: string;
+}
+
+/**
+ * Shown once name and Wallet of Satoshi address are both saved.
+ *
+ * @param props - See {@link WelcomeViewProps}.
+ * @returns The welcome block.
+ */
+function WelcomeView({ name }: WelcomeViewProps): ReactElement {
+  const { t } = useTranslations();
+  return (
+    <>
+      <Gift aria-hidden="true" className="h-10 w-10 text-neutral-900" />
+      <h2 className="text-center text-lg font-medium text-neutral-900">
+        {t('login.welcomeHeading', { name })}
+      </h2>
+      <p className="text-center text-sm text-neutral-500">{t('login.welcomeBody')}</p>
+      <Link
+        href="/donate"
+        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+      >
+        <Gift aria-hidden="true" className="h-4 w-4" />
+        {t('login.welcomeCta')}
+      </Link>
     </>
   );
 }

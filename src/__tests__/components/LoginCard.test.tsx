@@ -95,15 +95,45 @@ describe('LoginCard', () => {
     expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
+  it('asks for a name before a Wallet of Satoshi address', () => {
+    useAuthStore.setState({ session: 'sess', account });
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /link address/i })).toBeNull();
+  });
+
+  it('asks for a Wallet of Satoshi address after a name is saved', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: 'Ada' },
+    });
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByText('Hi, Ada')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
+  });
+
+  it('shows a welcome after name and address are saved', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+      },
+    });
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('heading', { name: 'Welcome, Ada' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /send a gift/i })).toHaveAttribute('href', '/donate');
+    expect(screen.getByRole('button', { name: /unlink/i })).toBeTruthy();
+  });
+
   it('shows the signed-in view and logs out', () => {
     useAuthStore.setState({ session: 'sess', account });
     renderWithLocale(<LoginCard />);
 
-    expect(screen.getByText('basis')).toBeTruthy();
     expect(screen.queryByTitle(account.linkingKey)).toBeNull();
-    // The Lightning Address section is wired into the signed-in view.
     expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /log out/i }));
     expect(cancelPasskeySpy).toHaveBeenCalledTimes(1);
@@ -260,7 +290,7 @@ describe('LoginCard', () => {
 
     renderWithLocale(<LoginCard />);
 
-    expect(await screen.findByText('basis')).toBeTruthy();
+    expect(await screen.findByText('Signed in')).toBeTruthy();
     expect(useAuthStore.getState().session).toBe('tok');
   });
 

@@ -104,6 +104,12 @@ async function signInViaStub(page: Page, _request: APIRequestContext): Promise<v
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
 }
 
+async function saveOnboardingName(page: Page): Promise<void> {
+  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
+}
+
 async function installFakeWebAuthn(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const pk = globalThis.PublicKeyCredential as unknown as {
@@ -306,6 +312,7 @@ test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi
   request,
 }) => {
   await signInViaStub(page, request);
+  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
@@ -342,6 +349,7 @@ test('Function: unlinkLightningAddress — signed-in form unlinks the address', 
   request,
 }) => {
   await signInViaStub(page, request);
+  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
   await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
@@ -528,7 +536,7 @@ test('Function: useAuthStore — live login reaches the signed-in view', async (
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page.getByText('basis')).toBeVisible();
+  await expect(page.getByText('Signed in')).toBeVisible();
 });
 
 test('Function: saveSession — live login persists the session token', async ({ page, request }) => {
@@ -548,6 +556,7 @@ test('Function: LightningAddressForm — link and unlink a Wallet of Satoshi add
   request,
 }) => {
   await signInViaStub(page, request);
+  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
@@ -786,7 +795,7 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText('basis')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
   const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
   expect(token).toBeTruthy();
   const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });

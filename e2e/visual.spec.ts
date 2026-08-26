@@ -217,12 +217,13 @@ test.describe('login variant baselines', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           ...E2E_ACCOUNT,
+          name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
         }),
       });
     });
     await page.goto('/login');
-    await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await shotScreen(page, 'state-login-signed-in-linked', 'login-signed-in-linked.png');
   });
 });
@@ -300,11 +301,15 @@ test.describe('function baselines', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(E2E_ACCOUNT),
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
       });
     });
     await page.goto('/login');
-    await expect(page.getByText('Signed in')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
     await expect(page).toHaveScreenshot('state-login-signed-in.png', { fullPage: true, ...SHOT });
   });
 

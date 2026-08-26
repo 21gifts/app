@@ -104,8 +104,8 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, or signed-in account. Error is terminal until **Try again**.
-- **Actions:** Change language. Log in (existing login, or create one when the browser has none). When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, then signed-in steps: name, Wallet of Satoshi address, welcome. Error is terminal until **Try again**.
+- **Actions:** Change language. Log in (existing login, or create one when the browser has none). When signed in, add a name if missing, then a Wallet of Satoshi address if missing; then a welcome with **Send a gift**. Edit or unlink from welcome. Log out. No client redirect to `/`.
 - **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
@@ -128,19 +128,19 @@ Login begin or finish failed. Copy **Something went wrong. Please try again.** a
 
 ### Variant: signed-in
 
-Session present, no name and no Wallet of Satoshi address yet. **Signed in**, role, name form, address form, **Log out**.
+Session present, no name and no Wallet of Satoshi address yet. **Signed in**, name form only, **Log out**. The address form is not shown yet.
 
 ![21.gifts login signed in](images/login-signed-in.png)
 
 ### Variant: signed-in-named
 
-Signed in with a display name set. Shows the name plus **Edit**, and the empty address form.
+Signed in with a display name set and no address yet. Greeting **Hi, Ada** and the empty address form. The name form is not shown.
 
 ![21.gifts login signed in named](images/login-signed-in-named.png)
 
 ### Variant: signed-in-linked
 
-Signed in with an address on the account. Name form (set or **Edit**) plus the address with **Edit** / **Unlink** (no verification UI).
+Signed in with a name and a Wallet of Satoshi address. Welcome **Welcome, Ada**, gift icon, **Send a gift**, then the name and address forms (**Edit** / **Unlink**).
 
 ![21.gifts login signed in linked](images/login-signed-in-linked.png)
 

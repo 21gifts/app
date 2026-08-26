@@ -95,6 +95,7 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
         contentType: 'application/json',
         body: JSON.stringify({
           ...E2E_ACCOUNT,
+          name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
         }),
       });
@@ -104,7 +105,7 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ ...E2E_ACCOUNT, lightningAddress: null }),
+        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada', lightningAddress: null }),
       });
       return;
     }
@@ -123,15 +124,20 @@ test('signed-in session hydrates, then links and unlinks a Wallet of Satoshi add
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
   await expect(
     page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
-  ).toBeVisible();
+  ).toHaveCount(0);
 
   await page.getByLabel('Name').fill('Ada');
   await page.getByRole('button', { name: 'Save name' }).click();
-  await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByText('Hi, Ada')).toBeVisible();
+  await expect(
+    page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toHaveCount(0);
 
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
 
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();

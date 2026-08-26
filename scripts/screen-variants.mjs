@@ -59,7 +59,7 @@ export const SCREEN_VARIANTS = [
     route: '/login',
     id: 'signed-in-linked',
     image: 'login-signed-in-linked.png',
-    needle: "getByRole('button', { name: 'Unlink' })",
+    needle: "getByRole('heading', { name: 'Welcome, Ada' })",
   },
   {
     route: '/donate',
