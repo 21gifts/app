@@ -13,11 +13,14 @@ is a stub.
 Do not merge a PR that adds a screen, export, or endpoint without updating this
 handbook in the same PR. Undeclared gaps are rejected, not discussed.
 
-Every screen **variant** also needs a committed screenshot under
-`docs/handbook/images/` (and `public/handbook-images/`). Default screens plus
-every exported function need a Playwright Linux baseline.
-`npm run screenshot:check` fails the PR when either is missing. The variant
-list lives in `scripts/screen-variants.mjs`.
+Every screen **variant** needs a Playwright Linux baseline under
+`e2e/visual.spec.ts-snapshots/` (named from the variant’s `visual` field in
+`scripts/screen-variants.mjs`). Markdown keeps `images/<file>.png` references;
+those bytes are copied to `public/handbook-images/` by
+`npm run handbook:images` / `prebuild` / `predev` from the baselines. Do not
+commit PNGs under `docs/handbook/images/`. Default screens plus every exported
+function also need a Playwright Linux baseline.
+`npm run screenshot:check` fails the PR when a baseline is missing.
 
 See [screens.md](screens.md), [functions.md](functions.md), and
 [endpoints.md](endpoints.md).

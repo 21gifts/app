@@ -68,4 +68,9 @@ describe('LanguageSwitcher', () => {
     expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=xx`);
     expect(refresh).not.toHaveBeenCalled();
   });
+
+  it('omits the framed border when embedded', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
+    expect(screen.getByLabelText('Language').className).not.toContain('border-neutral-300');
+  });
 });

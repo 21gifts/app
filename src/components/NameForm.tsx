@@ -5,6 +5,7 @@ import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { setName } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
+import { hasDisplayName } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the name form. */
@@ -17,6 +18,9 @@ type NameError = { type: 'empty' } | { type: 'request' };
  * the saved `name` into that account so a concurrent address write is not
  * overwritten. Renders nothing when no account — or, defensively, no session
  * token — is present, since it is only mounted inside the logged-in view.
+ *
+ * Treats a missing or whitespace-only name the same as `hasDisplayName`: the
+ * prompt and input stay up until a non-empty trimmed name is saved.
  *
  * @returns The name section, or `null` when there is nothing to show.
  */
@@ -35,6 +39,7 @@ export function NameForm(): ReactElement | null {
   }
 
   const name = account.name;
+  const named = hasDisplayName(account);
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
@@ -99,9 +104,9 @@ export function NameForm(): ReactElement | null {
         {t('name.heading')}
       </p>
 
-      {name === null || editing ? (
+      {!named || editing ? (
         <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
-          {name === null ? (
+          {!named ? (
             <p className="text-center text-sm text-neutral-500">{t('name.prompt')}</p>
           ) : null}
           <input
@@ -145,7 +150,8 @@ export function NameForm(): ReactElement | null {
           <button
             type="button"
             onClick={() => {
-              setDraft(name);
+              /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
+              setDraft(name ?? '');
               setEditing(true);
               setError(null);
             }}

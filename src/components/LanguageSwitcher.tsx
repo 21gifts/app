@@ -1,5 +1,6 @@
 'use client';
 
+import { Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent, ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -28,11 +29,15 @@ function nativeLabel(locale: Locale): string {
  * Native `<select>` that persists the visitor's language choice in a cookie and
  * refreshes the App Router tree so server components re-negotiate locale.
  *
- * @param props - Visual tone for marketing (`dark`) or login/donate (`light`).
+ * @param props - Visual tone for marketing (`dark`) or login/donate (`light`),
+ *   and optional `embedded` when shown with a matching globe icon in `SignedInChrome`.
  * @returns The language select element.
  */
-export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElement {
-  const { tone } = props;
+export function LanguageSwitcher(props: {
+  tone: 'dark' | 'light';
+  embedded?: boolean;
+}): ReactElement {
+  const { tone, embedded = false } = props;
   const { locale, t } = useTranslations();
   const router = useRouter();
 
@@ -46,23 +51,42 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
     router.refresh();
   };
 
-  const toneClass =
+  const options = LOCALES.map((code) => (
+    <option key={code} value={code}>
+      {nativeLabel(code)}
+    </option>
+  ));
+
+  if (embedded) {
+    return (
+      <div className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition hover:text-neutral-900">
+        <Globe aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+        <select
+          aria-label={t('language.label')}
+          value={locale}
+          onChange={onChange}
+          className="cursor-pointer appearance-none bg-transparent py-1 text-sm outline-none"
+        >
+          {options}
+        </select>
+      </div>
+    );
+  }
+
+  const className = `rounded-md border px-2 py-1 text-sm outline-none ${
     tone === 'dark'
       ? 'border-white/20 bg-transparent text-white'
-      : 'border-neutral-300 bg-transparent text-neutral-900';
+      : 'border-neutral-300 bg-transparent text-neutral-900'
+  }`;
 
   return (
     <select
       aria-label={t('language.label')}
       value={locale}
       onChange={onChange}
-      className={`rounded-md border px-2 py-1 text-sm outline-none ${toneClass}`}
+      className={className}
     >
-      {LOCALES.map((code) => (
-        <option key={code} value={code}>
-          {nativeLabel(code)}
-        </option>
-      ))}
+      {options}
     </select>
   );
 }

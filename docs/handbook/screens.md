@@ -104,9 +104,9 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**, or signed-in account. Error is terminal until **Try again**.
-- **Actions:** Change language. Log in (existing login, or create one when the browser has none). When signed in, set a display name, link/unlink a Wallet of Satoshi address, and log out. No client redirect to `/`.
-- **Calls:** `LoginCard`, `NameForm`, `LightningAddressForm`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, or `/welcome`.
+- **Actions:** Change language. Log in (existing login, or create one when the browser has none).
+- **Calls:** `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
 
 ### Variant: idle
 
@@ -126,23 +126,44 @@ Login begin or finish failed. Copy **Something went wrong. Please try again.** a
 
 ![21.gifts login error](images/login-error.png)
 
-### Variant: signed-in
+## Screen: /setup/name
 
-Session present, no name and no Wallet of Satoshi address yet. **Signed in**, role, name form, address form, **Log out**.
+- **URL:** `/setup/name` — first screen after login.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **Actions:** Save a name, log out, change language. After save, the visitor is sent to `/setup/address`.
+- **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
-![21.gifts login signed in](images/login-signed-in.png)
+### Variant: default
 
-### Variant: signed-in-named
+Signed in, no name yet. **Your name**, **Save name**. Language and **Log out** as matching icon+text top-right, not on the card.
 
-Signed in with a display name set. Shows the name plus **Edit**, and the empty address form.
+![21.gifts name setup](images/setup-name.png)
 
-![21.gifts login signed in named](images/login-signed-in-named.png)
+## Screen: /setup/address
 
-### Variant: signed-in-linked
+- **URL:** `/setup/address` — second screen after login.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **Actions:** Link an address, log out, change language. After save, the visitor is sent to `/welcome`.
+- **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
-Signed in with an address on the account. Name form (set or **Edit**) plus the address with **Edit** / **Unlink** (no verification UI).
+### Variant: default
 
-![21.gifts login signed in linked](images/login-signed-in-linked.png)
+Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. Language and **Log out** as matching icon+text top-right, not on the card.
+
+![21.gifts address setup](images/setup-address.png)
+
+## Screen: /welcome
+
+- **URL:** `/welcome` — third screen after login, when name and address are both saved.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, ready copy, **Send a gift**. No name or address form.
+- **Actions:** Open `/donate`, log out, change language.
+- **Calls:** `WelcomeScreen`, `SignedInChrome`, `OnboardingGate`.
+
+### Variant: default
+
+Gift icon, **Welcome, Ada**, **Send a gift**. Language and **Log out** as matching icon+text top-right, not on the card.
+
+![21.gifts welcome](images/welcome.png)
 
 ## Screen: /donate
 
