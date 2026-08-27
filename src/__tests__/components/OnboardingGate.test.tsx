@@ -1,0 +1,156 @@
+import { cleanup, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { OnboardingGate } from '@/components/OnboardingGate';
+import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { fetchMe } from '@/lib/api';
+import { loadSession } from '@/lib/session-storage';
+import { useAuthStore } from '@/stores/auth-store';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const replace = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { replace: typeof replace } => ({ replace }),
+}));
+vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+vi.mock('@/lib/session-storage', () => ({
+  loadSession: vi.fn(),
+  saveSession: vi.fn(),
+  clearSession: vi.fn(),
+}));
+vi.mock('@/lib/api', () => ({
+  fetchMe: vi.fn(),
+}));
+
+const account = {
+  id: 'acc_1',
+  linkingKey: null as string | null,
+  role: 'basis' as const,
+  name: null as string | null,
+  lightningAddress: null as string | null,
+  lightningAddressVerified: false,
+  createdAt: 1,
+};
+
+beforeEach(() => {
+  replace.mockClear();
+  vi.mocked(loadSession).mockReturnValue(null);
+  vi.mocked(usePasskeyLogin).mockReturnValue({
+    status: 'idle',
+    login: vi.fn(),
+    register: vi.fn(),
+    authenticate: vi.fn(),
+    retry: vi.fn(),
+    cancel: vi.fn(),
+  });
+  useAuthStore.setState({ session: null, account: null });
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe('OnboardingGate', () => {
+  it('renders login children while logged out', () => {
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('login-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a signed-in visitor from login to the name screen', () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/setup/name');
+  });
+
+  it('sends a logged-out visitor from welcome to login', () => {
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('renders name children when the account still needs a name', async () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="name">
+        <p>name-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('name-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a named account from the name screen to the address screen', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    renderWithLocale(
+      <OnboardingGate screen="name">
+        <p>name-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/address');
+    });
+  });
+
+  it('renders address children when the account has a name and no address', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    renderWithLocale(
+      <OnboardingGate screen="address">
+        <p>address-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('address-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a complete account from the address screen to welcome', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="address">
+        <p>address-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/welcome');
+    });
+  });
+
+  it('renders welcome children when name and address are both saved', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('welcome-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('does not bounce a name screen to login while a stored token is hydrating', () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(
+      <OnboardingGate screen="name">
+        <p>name-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).not.toHaveBeenCalled();
+  });
+});

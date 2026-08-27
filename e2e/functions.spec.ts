@@ -101,7 +101,15 @@ async function signInViaStub(page: Page, _request: APIRequestContext): Promise<v
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+}
+
+async function saveOnboardingName(page: Page): Promise<void> {
+  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
 }
 
 async function installFakeWebAuthn(page: Page): Promise<void> {
@@ -179,11 +187,13 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 }
 
 async function loginHttp(request: APIRequestContext): Promise<string> {
@@ -235,7 +245,8 @@ test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) 
 test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page.getByText('Signed in')).toBeVisible();
+  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {
@@ -306,9 +317,11 @@ test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi
   request,
 }) => {
   await signInViaStub(page, request);
+  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
-  await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
 test('Function: DELETE — DELETE /me/lightning-address clears the address', async ({ request }) => {
@@ -337,16 +350,19 @@ test('Function: proxyMeLightningAddressDelete — DELETE clears the address', as
   expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
 });
 
-test('Function: unlinkLightningAddress — signed-in form unlinks the address', async ({
-  page,
+test('Function: unlinkLightningAddress — DELETE /me/lightning-address clears the address', async ({
   request,
 }) => {
-  await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
-  await expect(page.getByRole('button', { name: 'Unlink' })).toBeVisible();
-  await page.getByRole('button', { name: 'Unlink' }).click();
-  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
+  const token = await loginHttp(request);
+  await request.post('/me/lightning-address', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { address: 'alice@walletofsatoshi.com' },
+  });
+  const res = await request.delete('/me/lightning-address', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
 });
 
 test('Function: proxyLightningAddressGet — GET resolves a Wallet of Satoshi address', async ({
@@ -528,7 +544,8 @@ test('Function: useAuthStore — live login reaches the signed-in view', async (
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page.getByText('basis')).toBeVisible();
+  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: saveSession — live login persists the session token', async ({ page, request }) => {
@@ -540,19 +557,18 @@ test('Function: saveSession — live login persists the session token', async ({
 test('Function: loadSession — reload keeps the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page.getByText('Signed in')).toBeVisible();
+  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
-test('Function: LightningAddressForm — link and unlink a Wallet of Satoshi address', async ({
-  page,
-  request,
-}) => {
+test('Function: LightningAddressForm — link reaches welcome', async ({ page, request }) => {
   await signInViaStub(page, request);
+  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
-  await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
-  await page.getByRole('button', { name: 'Unlink' }).click();
-  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
 });
 
 test('Function: clearSession — log out returns to the start action', async ({ page, request }) => {
@@ -732,7 +748,8 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: proxyAuthPasskeyRegisterFinishPost — POST finish without body is 400', async ({
@@ -748,7 +765,8 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a challenge', async ({
@@ -785,8 +803,9 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText('basis')).toBeVisible();
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
   const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
   expect(token).toBeTruthy();
   const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
@@ -799,28 +818,32 @@ test('Function: creationOptionsFromJSON — create passkey reaches the signed-in
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: credentialToJSON — create passkey reaches the signed-in view', async ({ page }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: base64UrlToBytes — create passkey reaches the signed-in view', async ({ page }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: bytesToBase64Url — create passkey reaches the signed-in view', async ({ page }) => {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByText('Signed in')).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
 });
 
 test('Function: requestOptionsFromJSON — continue with passkey reaches the signed-in view', async ({
@@ -888,4 +911,215 @@ test.describe('Function: parseAcceptLanguage', () => {
 test('Function: HandbookIntro — handbook heading is visible', async ({ page }) => {
   await page.goto('/handbook');
   await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
+});
+
+test('Function: NameSetupPage — name screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/setup/name');
+  await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
+});
+
+test('Function: NameSetup — name screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/setup/name');
+  await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
+});
+
+test('Function: AddressSetupPage — address screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/setup/address');
+  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
+});
+
+test('Function: AddressSetup — address screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/setup/address');
+  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+});
+
+test('Function: WelcomePage — welcome heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: OnboardingGate — login sends a new account to the name screen', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/name/);
+});
+
+test('Function: nextOnboardingPath — login sends a new account to the name screen', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/name/);
+});
+
+test('Function: hasDisplayName — login sends a new account to the name screen', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/name/);
+});
+
+test('Function: hasLightningAddress — named account without address stays on address screen', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/setup/address');
+  await expect(page).toHaveURL(/\/setup\/address/);
+});
+
+test('Function: useHydrateSession — reload keeps the name screen', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await page.reload();
+  await expect(page).toHaveURL(/\/setup\/name/);
+});
+
+test('Function: LogoutButton — log out returns to login', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: SignedInChrome — language and log out share the chrome', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page.getByLabel('Language')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });

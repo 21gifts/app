@@ -59,6 +59,45 @@ describe('LightningAddressForm', () => {
     expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
   });
 
+  it('shows the link prompt for a whitespace-only address instead of display/unlink', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...baseAccount, lightningAddress: '   ' },
+    });
+    renderWithLocale(<LightningAddressForm />);
+
+    expect(screen.getByText(/gifts can reach you/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /edit/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
+  });
+
+  it('does not call the api when the address is whitespace', () => {
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: '   ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+
+    expect(screen.getByRole('alert').textContent).toBe('Enter your Wallet of Satoshi address');
+    expect(setLightningAddress).not.toHaveBeenCalled();
+  });
+
+  it('trims the address before posting', async () => {
+    const updated: Account = { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' };
+    vi.mocked(setLightningAddress).mockResolvedValue(updated);
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: '  me@walletofsatoshi.com  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+
+    expect(await screen.findByText('me@walletofsatoshi.com')).toBeTruthy();
+    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com');
+  });
+
   it('links an address and updates the store', async () => {
     const updated: Account = { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' };
     vi.mocked(setLightningAddress).mockResolvedValue(updated);

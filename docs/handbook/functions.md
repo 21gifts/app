@@ -123,23 +123,23 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate). Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, and `/donate`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and `SignedInChrome`.
 
 ## Function: NameForm
 
 - **Purpose:** Logged-in form to set or edit a display name.
 - **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
-- **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
+- **Used by:** `NameSetup` on screen `/setup/name` (not on `/` or `/login`).
 
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
-- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Request failures use `la.errorRequest` so they re-render after a locale change.
+- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out.
-- **Used by:** `LoginCard` signed-in view on screen `/login` (not on `/`).
+- **Used by:** `AddressSetup` on screen `/setup/address` (not on `/` or `/login`).
 
 ## Function: LocaleProvider
 
@@ -150,17 +150,108 @@
 
 ## Function: LoginCard
 
-- **Purpose:** Login UI: one **Log in** button (existing login, or create when the browser has none), then signed-in view with `NameForm` and `LightningAddressForm`. Visitor-facing copy via `useTranslations`.
-- **Inputs:** Uses `usePasskeyLogin` and `useAuthStore`. Rehydrates via `loadSession` + `fetchMe` without overwriting a newer in-page session or restoring after logout. A rejected token calls `clearAuth` when the in-memory session is absent or still that token. Successful hydration cancels an in-flight login ceremony. Logout cancels an in-flight login ceremony. Unmount invalidates in-flight hydration.
-- **Returns / side effects:** React element covering idle/starting/error/signed-in. Does not navigate away from `/login`.
+- **Purpose:** Login UI: one **Log in** button (existing login, or create when the browser has none), preparing, or error. After success, `OnboardingGate` leaves `/login`.
+- **Inputs:** Uses `usePasskeyLogin` and `useAuthStore`.
+- **Returns / side effects:** React element covering idle/starting/error. A signed-in account shows the preparing spinner until redirect.
 - **Used by:** Screen `/login`.
 
 ## Function: LoginPage
 
 - **Purpose:** Next.js page for `/login` with localized heading and a light language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** Renders `LoginCard` and `LanguageSwitcher` (top-right).
+- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, or `/welcome`.
 - **Used by:** Route `/login`.
+
+## Function: AddressSetup
+
+- **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved. No `LogoutButton` on the card.
+- **Inputs:** Reads `account.name` from `useAuthStore` for the greeting.
+- **Returns / side effects:** Card with heading **Your Wallet of Satoshi address** and `LightningAddressForm`. No `LogoutButton`.
+- **Used by:** Screen `/setup/address`.
+
+## Function: AddressSetupPage
+
+- **Purpose:** Next.js page for `/setup/address`.
+- **Inputs:** None.
+- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with `SignedInChrome`.
+- **Used by:** Route `/setup/address`.
+
+## Function: LogoutButton
+
+- **Purpose:** Matching icon+text log-out in `SignedInChrome` (top-right page chrome, not on the card); clears the session and returns the visitor to `/login`.
+- **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
+- **Returns / side effects:** Icon+text button. Clears the session and `router.replace('/login')`.
+- **Used by:** `SignedInChrome`.
+
+## Function: NameSetup
+
+- **Purpose:** First post-login screen: display name form.
+- **Inputs:** None besides `NameForm` store reads.
+- **Returns / side effects:** Card with heading **Your name** and `NameForm`. No `LogoutButton` on the card.
+- **Used by:** Screen `/setup/name`.
+
+## Function: NameSetupPage
+
+- **Purpose:** Next.js page for `/setup/name`.
+- **Inputs:** None.
+- **Returns / side effects:** `OnboardingGate` around `NameSetup` with `SignedInChrome`.
+- **Used by:** Route `/setup/name`.
+
+## Function: OnboardingGate
+
+- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen.
+- **Inputs:** `screen` (`login` / `name` / `address` / `welcome`) and `children`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, or `/welcome`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/welcome`.
+
+## Function: SignedInChrome
+
+- **Purpose:** Top-right signed-in chrome: language and **Log out** as matching icon+text actions, not on the card.
+- **Inputs:** None. Composes `LanguageSwitcher` (`tone="light"`, `embedded`) and `LogoutButton`.
+- **Returns / side effects:** Absolutely positioned chrome with a globe+language select and a matching log-out icon+text control.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
+
+## Function: WelcomePage
+
+- **Purpose:** Next.js page for `/welcome`.
+- **Inputs:** None.
+- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with `SignedInChrome`.
+- **Used by:** Route `/welcome`.
+
+## Function: WelcomeScreen
+
+- **Purpose:** Third post-login screen after name and address are saved.
+- **Inputs:** Reads `account.name` from `useAuthStore`.
+- **Returns / side effects:** Gift icon, **Welcome, {name}**, ready copy, **Send a gift** (`/donate`). No name or address form. No `LogoutButton` on the card.
+- **Used by:** Screen `/welcome`.
+
+## Function: hasDisplayName
+
+- **Purpose:** True when the account has a non-null display name that is non-empty after trim.
+- **Inputs:** `account`.
+- **Returns / side effects:** Boolean. No side effects.
+- **Used by:** `nextOnboardingPath`, `NameForm`.
+
+## Function: hasLightningAddress
+
+- **Purpose:** True when the account has a non-null Wallet of Satoshi address that is non-empty after trim.
+- **Inputs:** `account`.
+- **Returns / side effects:** Boolean. No side effects.
+- **Used by:** `nextOnboardingPath`, `LightningAddressForm`.
+
+## Function: nextOnboardingPath
+
+- **Purpose:** Picks `/setup/name`, `/setup/address`, or `/welcome` from the account.
+- **Inputs:** `account`.
+- **Returns / side effects:** Path string. No side effects.
+- **Used by:** `OnboardingGate`.
+
+## Function: useHydrateSession
+
+- **Purpose:** Rehydrates a persisted session token into the auth store.
+- **Inputs:** Reads `loadSession` and calls `fetchMe`.
+- **Returns / side effects:** `{ ready }`. Sets or clears auth. `ready` is false until storage/`/me` has settled so setup screens do not bounce to `/login`. Unmount invalidates in-flight work.
+- **Used by:** `OnboardingGate`.
 
 ## Function: QrCode
 
@@ -195,7 +286,7 @@
 - **Purpose:** GET `/me` with the bearer session.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `Account` or `null` on 401.
-- **Used by:** `LoginCard` session hydration.
+- **Used by:** `useHydrateSession`.
 
 ## Function: formatBtcTick
 
@@ -265,7 +356,7 @@
 - **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
-- **Used by:** `LoginCard` on mount.
+- **Used by:** `useHydrateSession` on mount.
 
 ## Function: parseAcceptLanguage
 
@@ -356,14 +447,14 @@
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
 - **Returns / side effects:** Auth state object.
-- **Used by:** `LoginCard`, `NameForm`, `LightningAddressForm` on `/login` (not `/`).
+- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
 
 ## Function: useTranslations
 
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`.
 
 ## Function: walletOfSatoshiHref
 
@@ -573,4 +664,4 @@
 - **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). `cancel` aborts an in-flight WebAuthn prompt.
 - **Inputs:** None (reads `useAuthStore`).
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
-- **Used by:** `LoginCard`.
+- **Used by:** `OnboardingGate`, `LoginCard`, and `LogoutButton`.

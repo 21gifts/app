@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LoginCard } from '@/components/LoginCard';
+import { OnboardingGate } from '@/components/OnboardingGate';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
@@ -18,10 +19,12 @@ export default async function LoginPage(): Promise<ReactElement> {
       <div className="absolute top-4 right-5">
         <LanguageSwitcher tone="light" />
       </div>
-      <h1 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
-        {translate(messages, 'login.pageTitle')}
-      </h1>
-      <LoginCard />
+      <OnboardingGate screen="login">
+        <h1 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
+          {translate(messages, 'login.pageTitle')}
+        </h1>
+        <LoginCard />
+      </OnboardingGate>
     </main>
   );
 }
