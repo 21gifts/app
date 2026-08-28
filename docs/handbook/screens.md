@@ -155,13 +155,13 @@ Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, composer textarea with **Post** to the right), **Send a gift**. No name or address form.
-- **Actions:** Post a message, retry a failed load, open `/donate`, log out, change language.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, composer textarea with **Post** to the right). No name or address form. No donate CTA.
+- **Actions:** Post a message, retry a failed load, log out, change language.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp), composer, **Send a gift**. Language and **Log out** as matching icon+text top-right, not on the card.
+Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp), composer. Language and **Log out** as matching icon+text top-right, not on the card.
 
 ![21.gifts welcome](images/welcome.png)
 

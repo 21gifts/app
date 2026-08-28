@@ -154,7 +154,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByLabel('Your message')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Send a gift' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Send a gift' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /verify/i })).toHaveCount(0);

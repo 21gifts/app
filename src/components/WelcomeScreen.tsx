@@ -1,7 +1,6 @@
 'use client';
 
 import { Gift } from 'lucide-react';
-import Link from 'next/link';
 import type { ReactElement } from 'react';
 import { ForumLoader } from '@/components/ForumLoader';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -10,8 +9,8 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * The third post-login screen: welcome after name and address are saved.
  *
- * Embeds {@link ForumLoader} (forum list + composer) below the heading and
- * above **Send a gift**. Card is `max-w-xl` to fit the board.
+ * Embeds {@link ForumLoader} (forum list + composer) below the heading.
+ * Card is `max-w-xl` to fit the board.
  *
  * @returns The welcome card.
  */
@@ -27,12 +26,6 @@ export function WelcomeScreen(): ReactElement {
         {t('login.welcomeHeading', { name })}
       </h1>
       <ForumLoader />
-      <Link
-        href="/donate"
-        className="inline-flex items-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
-      >
-        {t('login.welcomeCta')}
-      </Link>
     </section>
   );
 }

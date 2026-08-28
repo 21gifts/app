@@ -32,9 +32,7 @@ describe('WelcomeScreen', () => {
   it('shows a welcome without name or address forms', async () => {
     renderWithLocale(<WelcomeScreen />);
     expect(screen.getByRole('heading', { name: 'Welcome, Ada' })).toBeTruthy();
-    const cta = screen.getByRole('link', { name: /send a gift/i });
-    expect(cta.getAttribute('href')).toBe('/donate');
-    expect(cta.querySelector('svg')).toBeNull();
+    expect(screen.queryByRole('link', { name: /send a gift/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
