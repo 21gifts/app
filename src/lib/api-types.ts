@@ -184,3 +184,30 @@ export const passkeySessionSchema = z.object({
  * A session issued immediately after a successful passkey ceremony.
  */
 export type PasskeySession = z.infer<typeof passkeySessionSchema>;
+
+/**
+ * Trimmed forum body length accepted by `POST /messages` (api `MESSAGE_MAX_LENGTH`).
+ */
+export const FORUM_MESSAGE_MAX_LENGTH = 500;
+
+/**
+ * Runtime schema for one public forum message from `GET`/`POST /messages`.
+ */
+export const forumMessageSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * Runtime schema for the payload of `GET /messages`.
+ */
+export const forumListSchema = z.object({
+  messages: z.array(forumMessageSchema),
+});
+
+/**
+ * One public forum message from the api.
+ */
+export type ForumMessage = z.infer<typeof forumMessageSchema>;

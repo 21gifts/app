@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   accountSchema,
+  FORUM_MESSAGE_MAX_LENGTH,
   lnAddressResolvedSchema,
   giftStatsSchema,
   passkeyBeginSchema,
@@ -17,6 +18,12 @@ const account = {
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
 };
+
+describe('FORUM_MESSAGE_MAX_LENGTH', () => {
+  it('matches the api POST /messages cap', () => {
+    expect(FORUM_MESSAGE_MAX_LENGTH).toBe(500);
+  });
+});
 
 describe('accountSchema', () => {
   it('accepts a well-formed account without a linked address', () => {

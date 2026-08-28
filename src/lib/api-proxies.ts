@@ -109,3 +109,23 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
 export async function proxyGiftsGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/gifts');
 }
+
+/**
+ * Proxies GET /messages to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMessagesGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/messages');
+}
+
+/**
+ * Proxies POST /messages to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyMessagesPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/messages');
+}

@@ -100,8 +100,6 @@ const en = {
   'login.logOut': 'Log out',
   'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
-  'login.welcomeBody': 'You are ready to receive Bitcoin gifts.',
-  'login.welcomeCta': 'Send a gift',
   'setup.nameTitle': 'Your name',
   'setup.addressTitle': 'Your Wallet of Satoshi address',
 
@@ -143,6 +141,19 @@ const en = {
   'donate.pay': 'Pay {amount} to {address}',
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
+
+  'forum.heading': 'Forum',
+  'forum.composerLabel': 'Your message',
+  'forum.placeholder': 'Write a message',
+  'forum.post': 'Post',
+  'forum.empty': 'No messages yet. Be the first to write.',
+  'forum.loading': 'Loading…',
+  'forum.error': 'Could not load messages. Please try again.',
+  'forum.retry': 'Try again',
+  'forum.errorEmpty': 'Enter a message',
+  'forum.errorTooLong': 'Keep it to 500 characters',
+  'forum.errorRequest': 'Could not post your message',
+  'forum.listLabel': 'All messages',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -245,8 +256,6 @@ const de = {
   'login.logOut': 'Abmelden',
   'login.helloName': 'Hallo, {name}',
   'login.welcomeHeading': 'Willkommen, {name}',
-  'login.welcomeBody': 'Sie sind bereit, Bitcoin-Geschenke zu empfangen.',
-  'login.welcomeCta': 'Ein Geschenk senden',
   'setup.nameTitle': 'Ihr Name',
   'setup.addressTitle': 'Ihre Wallet of Satoshi-Adresse',
   'name.heading': 'Name',
@@ -285,6 +294,19 @@ const de = {
   'donate.pay': '{amount} an {address} zahlen',
   'donate.satOne': '1 Sat',
   'donate.sats': '{n} Sats',
+
+  'forum.heading': 'Forum',
+  'forum.composerLabel': 'Ihre Nachricht',
+  'forum.placeholder': 'Nachricht schreiben',
+  'forum.post': 'Senden',
+  'forum.empty': 'Noch keine Nachrichten. Schreiben Sie die erste.',
+  'forum.loading': 'Wird geladen…',
+  'forum.error': 'Nachrichten konnten nicht geladen werden. Bitte erneut versuchen.',
+  'forum.retry': 'Erneut versuchen',
+  'forum.errorEmpty': 'Nachricht eingeben',
+  'forum.errorTooLong': 'Maximal 500 Zeichen',
+  'forum.errorRequest': 'Nachricht konnte nicht gesendet werden',
+  'forum.listLabel': 'Alle Nachrichten',
 } satisfies Messages;
 
 const es = {
@@ -381,8 +403,6 @@ const es = {
   'login.logOut': 'Cerrar sesión',
   'login.helloName': 'Hola, {name}',
   'login.welcomeHeading': 'Hola, {name}',
-  'login.welcomeBody': 'Ya puedes recibir regalos en Bitcoin.',
-  'login.welcomeCta': 'Enviar un regalo',
   'setup.nameTitle': 'Tu nombre',
   'setup.addressTitle': 'Tu dirección de Wallet of Satoshi',
   'name.heading': 'Nombre',
@@ -421,6 +441,19 @@ const es = {
   'donate.pay': 'Paga {amount} a {address}',
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
+
+  'forum.heading': 'Foro',
+  'forum.composerLabel': 'Tu mensaje',
+  'forum.placeholder': 'Escribe un mensaje',
+  'forum.post': 'Publicar',
+  'forum.empty': 'Aún no hay mensajes. Sé el primero en escribir.',
+  'forum.loading': 'Cargando…',
+  'forum.error': 'No se pudieron cargar los mensajes. Inténtalo de nuevo.',
+  'forum.retry': 'Intentar de nuevo',
+  'forum.errorEmpty': 'Escribe un mensaje',
+  'forum.errorTooLong': 'Máximo 500 caracteres',
+  'forum.errorRequest': 'No se pudo publicar el mensaje',
+  'forum.listLabel': 'Todos los mensajes',
 } satisfies Messages;
 
 const fil = {
@@ -517,8 +550,6 @@ const fil = {
   'login.logOut': 'Mag-log out',
   'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
-  'login.welcomeBody': 'Handa ka nang tumanggap ng mga handog na Bitcoin.',
-  'login.welcomeCta': 'Magpadala ng handog',
   'setup.nameTitle': 'Ang pangalan mo',
   'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
   'name.heading': 'Pangalan',
@@ -558,6 +589,19 @@ const fil = {
   'donate.pay': 'Magbayad ng {amount} kay {address}',
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
+
+  'forum.heading': 'Forum',
+  'forum.composerLabel': 'Iyong mensahe',
+  'forum.placeholder': 'Sumulat ng mensahe',
+  'forum.post': 'I-post',
+  'forum.empty': 'Wala pang mensahe. Maging una sa pagsulat.',
+  'forum.loading': 'Loading…',
+  'forum.error': 'Hindi ma-load ang mga mensahe. Subukan ulit.',
+  'forum.retry': 'Subukan ulit',
+  'forum.errorEmpty': 'Maglagay ng mensahe',
+  'forum.errorTooLong': 'Hanggang 500 na karakter',
+  'forum.errorRequest': 'Hindi ma-post ang mensahe',
+  'forum.listLabel': 'Lahat ng mensahe',
 } satisfies Messages;
 
 /**

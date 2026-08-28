@@ -129,6 +129,17 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       body: JSON.stringify(E2E_ACCOUNT),
     });
   });
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+      return;
+    }
+    await route.continue();
+  });
 
   await page.goto('/login');
   await expect(page).toHaveURL(/\/setup\/name/);
@@ -153,7 +164,8 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
 
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Send a gift' })).toBeVisible();
+  await expect(page.getByLabel('Your message')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Send a gift' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /verify/i })).toHaveCount(0);
