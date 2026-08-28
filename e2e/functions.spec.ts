@@ -481,17 +481,44 @@ async function reachWelcome(page: Page, request: APIRequestContext): Promise<voi
   await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
 }
 
+async function attachTinyJpeg(page: Page): Promise<void> {
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+}
+
+async function postAndExpectPhotoRow(page: Page, caption?: string): Promise<string> {
+  const posted = page.waitForResponse((response) => {
+    if (response.request().method() !== 'POST' || !response.ok()) {
+      return false;
+    }
+    return /\/messages\/?$/.test(new URL(response.url()).pathname);
+  });
+  await page.getByRole('button', { name: 'Post' }).click();
+  const created = (await (await posted).json()) as {
+    id: string;
+    text: string;
+    hasPhoto: boolean;
+  };
+  expect(created.hasPhoto).toBe(true);
+  expect(created.text).toBe(caption ?? '');
+  const row = page.locator(`li[data-message-id="${created.id}"]`);
+  await expect(row).toBeVisible();
+  await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({
+    timeout: 10_000,
+  });
+  if (caption !== undefined) {
+    await expect(row).toContainText(caption);
+  }
+  return created.id;
+}
+
 test('Function: prepareForumPhoto — attaching a jpeg shows a preview then posts it', async ({
   page,
   request,
 }) => {
   await reachWelcome(page, request);
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
-  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
-  await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByRole('img', { name: 'Photo from Ada' }).first()).toBeVisible({
-    timeout: 10_000,
-  });
+  await attachTinyJpeg(page);
+  await postAndExpectPhotoRow(page);
 });
 
 test('Function: isForumPhotoFile — photo-only post does not require text', async ({
@@ -499,26 +526,17 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
   request,
 }) => {
   await reachWelcome(page, request);
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
-  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await attachTinyJpeg(page);
   await expect(page.getByLabel('Your message')).toHaveValue('');
-  await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByRole('img', { name: 'Photo from Ada' }).first()).toBeVisible({
-    timeout: 10_000,
-  });
-  await expect(page.getByText('No messages yet. Be the first to write.')).toHaveCount(0);
+  await postAndExpectPhotoRow(page);
 });
 
 test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
   await reachWelcome(page, request);
   const caption = `Caption ${Date.now()}`;
   await page.getByLabel('Your message').fill(caption);
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
-  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
-  await page.getByRole('button', { name: 'Post' }).click();
-  const row = page.getByRole('listitem').filter({ hasText: caption });
-  await expect(row).toBeVisible();
-  await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({ timeout: 10_000 });
+  await attachTinyJpeg(page);
+  await postAndExpectPhotoRow(page, caption);
 });
 
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {

@@ -484,7 +484,41 @@ describe('ForumLoader', () => {
 
   it('sets tooLarge and clears a photo draft', async () => {
     fetchMock.mockResolvedValue([]);
-    prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' }).mockResolvedValueOnce({
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,abc',
+        },
+      })
+      .mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'big.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep the photo under 1 MB');
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('clears a photo draft when Remove photo is clicked', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockResolvedValueOnce({
       ok: true,
       photo: {
         contentType: 'image/jpeg',
@@ -498,12 +532,6 @@ describe('ForumLoader', () => {
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
-      target: { files: [new File([new Uint8Array([1])], 'big.jpg', { type: 'image/jpeg' })] },
-    });
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Keep the photo under 1 MB');
-    });
-    fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
     await waitFor(() => {
@@ -511,6 +539,42 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(screen.queryByAltText('Selected photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('clears a prior photo draft when a replacement throws', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,abc',
+        },
+      })
+      .mockRejectedValueOnce(new Error('Could not decode image'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(postMock).not.toHaveBeenCalled();
   });
 
   it('ignores a failed photo fetch', async () => {
