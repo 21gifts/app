@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   check:
-    name: Typecheck, Lint, Handbook, Screenshots, Test, Build
+    name: Typecheck, Lint, Handbook, E2E-check, Screenshots, Test (100% coverage), Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

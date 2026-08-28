@@ -261,7 +261,7 @@ and **fails the PR** if a screen has no matching `goto`, a variant has no
 `needle`, an endpoint has no matching `request.<verb>` call, or a function has
 no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
-is an undeclared deviation and is rejected. CI runs `e2e:check` then `e2e`.
+is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check job and `e2e` in the parallel E2E job.
 
 ### Screenshot baselines (hard requirement)
 
@@ -330,12 +330,12 @@ paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL
 
 ## CI / CD
 
-| Workflow               | Trigger               | Action                                                                                                                                         |
-| ---------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts) | Two parallel jobs: Check (typecheck, lint, handbook, e2e-check, screenshots, test 100%, build on Node 22) and E2E (Playwright `v1.61.1-noble`) |
-| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                                 |
-| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                               |
-| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                                      |
+| Workflow               | Trigger               | Action                                                                                                                                                    |
+| ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts) | Two parallel jobs: Check (typecheck, lint, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) and E2E (Playwright `v1.61.1-noble`) |
+| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                                            |
+| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                                          |
+| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                                                 |
 
 Images target `linux/arm64`.
 
