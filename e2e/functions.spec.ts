@@ -489,7 +489,9 @@ test('Function: prepareForumPhoto — attaching a jpeg shows a preview then post
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByAltText('Photo from Ada')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('img', { name: 'Photo from Ada' }).first()).toBeVisible({
+    timeout: 10_000,
+  });
 });
 
 test('Function: isForumPhotoFile — photo-only post does not require text', async ({
@@ -501,7 +503,9 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByLabel('Your message')).toHaveValue('');
   await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByAltText('Photo from Ada')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('img', { name: 'Photo from Ada' }).first()).toBeVisible({
+    timeout: 10_000,
+  });
   await expect(page.getByText('No messages yet. Be the first to write.')).toHaveCount(0);
 });
 
@@ -512,8 +516,9 @@ test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByText(caption)).toBeVisible();
-  await expect(page.getByAltText('Photo from Ada')).toBeVisible({ timeout: 10_000 });
+  const row = page.getByRole('listitem').filter({ hasText: caption });
+  await expect(row).toBeVisible();
+  await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({ timeout: 10_000 });
 });
 
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
