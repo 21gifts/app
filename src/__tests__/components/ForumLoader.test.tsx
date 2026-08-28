@@ -386,6 +386,102 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('sets unsupported when prepareForumPhoto throws', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockRejectedValueOnce(new Error('Could not decode image'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+  });
+
+  it('ignores a stale prepare after a newer pick starts', async () => {
+    fetchMock.mockResolvedValue([]);
+    let resolveFirst: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'second',
+        previewUrl: 'data:image/jpeg;base64,second',
+      },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([2])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+    });
+    resolveFirst?.({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'first',
+        previewUrl: 'data:image/jpeg;base64,first',
+      },
+    });
+    await Promise.resolve();
+    expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+  });
+
+  it('ignores a stale prepare rejection after a newer pick starts', async () => {
+    fetchMock.mockResolvedValue([]);
+    let rejectFirst: ((reason: Error) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'second',
+        previewUrl: 'data:image/jpeg;base64,second',
+      },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([2])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+    });
+    rejectFirst?.(new Error('Could not decode image'));
+    await Promise.resolve();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+  });
+
   it('sets tooLarge and clears a photo draft', async () => {
     fetchMock.mockResolvedValue([]);
     prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' }).mockResolvedValueOnce({
@@ -467,6 +563,37 @@ describe('ForumLoader', () => {
     view.unmount();
     resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     await Promise.resolve();
+  });
+
+  it('revokes a photo blob if unmount happens during createObjectURL', async () => {
+    let resolvePhoto: ((value: Blob) => void) | undefined;
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalled();
+    });
+    const revoke = vi.mocked(URL.revokeObjectURL);
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      view.unmount();
+      return 'blob:late';
+    });
+    resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    await Promise.resolve();
+    expect(revoke).toHaveBeenCalledWith('blob:late');
   });
 
   it('posts a photo-only message and shows the preview immediately', async () => {
