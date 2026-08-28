@@ -330,12 +330,12 @@ paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL
 
 ## CI / CD
 
-| Workflow               | Trigger           | Action                                                                                                                            |
-| ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Workflow               | Trigger               | Action                                                                                                                            |
+| ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yaml`              | PR (including drafts) | Typecheck + lint + handbook + e2e-check + screenshots + test (100% coverage) + build + e2e (Playwright `v1.61.1-noble` container) |
-| `deploy-dev.yaml`      | push to `develop` | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                    |
-| `deploy-prd.yaml`      | push to `main`    | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                  |
-| `auto-release-pr.yaml` | push to `develop` | Auto-create Release PR (`develop → main`)                                                                                         |
+| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                    |
+| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                  |
+| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                         |
 
 Images target `linux/arm64`.
 
