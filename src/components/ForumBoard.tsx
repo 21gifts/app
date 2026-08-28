@@ -102,7 +102,6 @@ export function ForumBoard({
       <h2 className="text-center text-lg font-semibold tracking-tight text-neutral-900">
         {t('forum.heading')}
       </h2>
-      <p className="text-center text-sm text-neutral-500">{t('forum.lead')}</p>
 
       {middle}
 

@@ -137,7 +137,6 @@ const en = {
   'donate.sats': '{n} sats',
 
   'forum.heading': 'Forum',
-  'forum.lead': 'Everyone can read and write.',
   'forum.composerLabel': 'Your message',
   'forum.placeholder': 'Write a message',
   'forum.post': 'Post',
@@ -284,7 +283,6 @@ const de = {
   'donate.sats': '{n} Sats',
 
   'forum.heading': 'Forum',
-  'forum.lead': 'Jeder kann lesen und schreiben.',
   'forum.composerLabel': 'Ihre Nachricht',
   'forum.placeholder': 'Nachricht schreiben',
   'forum.post': 'Senden',
@@ -425,7 +423,6 @@ const es = {
   'donate.sats': '{n} sats',
 
   'forum.heading': 'Foro',
-  'forum.lead': 'Todos pueden leer y escribir.',
   'forum.composerLabel': 'Tu mensaje',
   'forum.placeholder': 'Escribe un mensaje',
   'forum.post': 'Publicar',
@@ -567,7 +564,6 @@ const fil = {
   'donate.sats': '{n} sats',
 
   'forum.heading': 'Forum',
-  'forum.lead': 'Lahat ay maaaring magbasa at magsulat.',
   'forum.composerLabel': 'Iyong mensahe',
   'forum.placeholder': 'Sumulat ng mensahe',
   'forum.post': 'I-post',

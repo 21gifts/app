@@ -227,7 +227,7 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, lead that everyone can read and write, list of every post (name, text, timestamp) or empty/loading/error, and a messenger-style composer (textarea with **Post** to the right).
+- **Purpose:** Presentational public forum: heading **Forum**, list of every post (name, text, timestamp) or empty/loading/error, and a messenger-style composer (textarea with **Post** to the right).
 - **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError`.
 - **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network.
 - **Used by:** `ForumLoader`.

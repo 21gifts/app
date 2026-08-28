@@ -37,7 +37,7 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
-    expect(screen.getByText('Everyone can read and write.')).toBeTruthy();
+    expect(screen.queryByText('Everyone can read and write.')).toBeNull();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     const field = screen.getByLabelText('Your message');
