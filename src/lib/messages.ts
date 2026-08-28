@@ -137,7 +137,8 @@ const en = {
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
 
-  'forum.heading': 'Messages',
+  'forum.heading': 'Forum',
+  'forum.lead': 'Everyone can read and write.',
   'forum.composerLabel': 'Your message',
   'forum.placeholder': 'Write a message',
   'forum.post': 'Post',
@@ -147,7 +148,7 @@ const en = {
   'forum.retry': 'Try again',
   'forum.errorEmpty': 'Enter a message',
   'forum.errorRequest': 'Could not post your message',
-  'forum.listLabel': 'Messages',
+  'forum.listLabel': 'All messages',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -284,7 +285,8 @@ const de = {
   'donate.satOne': '1 Sat',
   'donate.sats': '{n} Sats',
 
-  'forum.heading': 'Nachrichten',
+  'forum.heading': 'Forum',
+  'forum.lead': 'Jeder kann lesen und schreiben.',
   'forum.composerLabel': 'Ihre Nachricht',
   'forum.placeholder': 'Nachricht schreiben',
   'forum.post': 'Senden',
@@ -294,7 +296,7 @@ const de = {
   'forum.retry': 'Erneut versuchen',
   'forum.errorEmpty': 'Nachricht eingeben',
   'forum.errorRequest': 'Nachricht konnte nicht gesendet werden',
-  'forum.listLabel': 'Nachrichten',
+  'forum.listLabel': 'Alle Nachrichten',
 } satisfies Messages;
 
 const es = {
@@ -425,7 +427,8 @@ const es = {
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
 
-  'forum.heading': 'Mensajes',
+  'forum.heading': 'Foro',
+  'forum.lead': 'Todos pueden leer y escribir.',
   'forum.composerLabel': 'Tu mensaje',
   'forum.placeholder': 'Escribe un mensaje',
   'forum.post': 'Publicar',
@@ -435,7 +438,7 @@ const es = {
   'forum.retry': 'Intentar de nuevo',
   'forum.errorEmpty': 'Escribe un mensaje',
   'forum.errorRequest': 'No se pudo publicar el mensaje',
-  'forum.listLabel': 'Mensajes',
+  'forum.listLabel': 'Todos los mensajes',
 } satisfies Messages;
 
 const fil = {
@@ -567,7 +570,8 @@ const fil = {
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
 
-  'forum.heading': 'Mga mensahe',
+  'forum.heading': 'Forum',
+  'forum.lead': 'Lahat ay maaaring magbasa at magsulat.',
   'forum.composerLabel': 'Iyong mensahe',
   'forum.placeholder': 'Sumulat ng mensahe',
   'forum.post': 'I-post',
@@ -577,7 +581,7 @@ const fil = {
   'forum.retry': 'Subukan ulit',
   'forum.errorEmpty': 'Maglagay ng mensahe',
   'forum.errorRequest': 'Hindi ma-post ang mensahe',
-  'forum.listLabel': 'Mga mensahe',
+  'forum.listLabel': 'Lahat ng mensahe',
 } satisfies Messages;
 
 /**

@@ -227,7 +227,7 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading, list or empty/loading/error middle region, and composer (textarea + Post) with client form errors.
+- **Purpose:** Presentational public forum: heading **Forum**, lead that everyone can read and write, list of every post (name, text, timestamp) or empty/loading/error, and composer (textarea + Post).
 - **Inputs:** `ForumBoardProps` — `messages`, `error`, `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError`.
 - **Returns / side effects:** React element. Formats timestamps via `formatForumTime`. No network.
 - **Used by:** `ForumLoader`.

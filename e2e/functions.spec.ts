@@ -1117,7 +1117,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
     });
   });
   await page.goto('/welcome');
-  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
 });
 
 test('Function: ForumLoader — empty forum copy is visible', async ({ page }) => {

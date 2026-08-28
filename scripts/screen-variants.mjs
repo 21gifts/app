@@ -70,7 +70,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'welcome.png',
     visual: 'screen-welcome',
-    needle: "getByRole('heading', { name: 'Welcome, Ada' })",
+    needle: 'Does anyone have spare sats this week?',
   },
   {
     route: '/welcome',

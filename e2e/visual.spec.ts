@@ -323,10 +323,22 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           messages: [
             {
-              id: 'm1',
+              id: 'm3',
               name: 'Ada',
-              text: 'Hello from Ada',
+              text: 'Thank you both — that helps.',
               createdAt: '2026-08-28T12:00:00.000Z',
+            },
+            {
+              id: 'm2',
+              name: 'Carol',
+              text: 'I can send a small gift tomorrow.',
+              createdAt: '2026-08-28T11:00:00.000Z',
+            },
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
             },
           ],
         }),
@@ -334,7 +346,8 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
+    await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
     await shotScreen(page, 'screen-welcome');
   });
 });
@@ -641,10 +654,6 @@ test.describe('function baselines', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
-    await expect(page).toHaveScreenshot('screen-welcome.png', {
-      fullPage: true,
-      ...SHOT,
-    });
   });
 
   test('NotFound', async ({ page }) => {

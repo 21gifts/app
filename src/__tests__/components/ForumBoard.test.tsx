@@ -36,7 +36,8 @@ describe('ForumBoard', () => {
         formError={null}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
+    expect(screen.getByText('Everyone can read and write.')).toBeTruthy();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
@@ -127,7 +128,7 @@ describe('ForumBoard', () => {
         formError={null}
       />,
     );
-    const list = screen.getByRole('list', { name: 'Messages' });
+    const list = screen.getByRole('list', { name: 'All messages' });
     expect(list).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();

@@ -37,7 +37,7 @@ describe('WelcomeScreen', () => {
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
     });
   });
 
