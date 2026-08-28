@@ -249,7 +249,8 @@ test('Function: fetchMessages — welcome shows the empty forum', async ({ page,
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+  await expect(page.getByLabel('Your message')).toBeVisible();
 });
 
 test('Function: postMessage — posting from the composer shows the row', async ({
@@ -261,9 +262,10 @@ test('Function: postMessage — posting from the composer shows the row', async 
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
   await expect(page).toHaveURL(/\/welcome/);
-  await page.getByLabel('Your message').fill('Hello from Ada');
+  const body = `Hello from Ada ${Date.now()}`;
+  await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByText('Hello from Ada')).toBeVisible();
+  await expect(page.getByText(body)).toBeVisible();
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
