@@ -316,9 +316,101 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Ada',
+              text: 'Hello from Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
     await shotScreen(page, 'screen-welcome');
+  });
+});
+
+test.describe('welcome forum variants', () => {
+  async function seedAda(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
+      });
+    });
+  }
+
+  test('welcome empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-empty');
+  });
+
+  test('welcome loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages$/, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-loading');
+    release();
+  });
+
+  test('welcome error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.abort();
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-error');
+  });
+
+  test('welcome validation-error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByText('Enter a message')).toBeVisible();
+    await shotScreen(page, 'state-welcome-validation-error');
   });
 });
 
@@ -537,6 +629,13 @@ test.describe('function baselines', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
         }),
+      });
+    });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
       });
     });
     await page.goto('/welcome');

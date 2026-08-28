@@ -56,6 +56,8 @@ app/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
+│   │   ├── messages/
+│   │   │   └── route.ts         # GET/POST /messages same-origin proxy
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
@@ -68,7 +70,9 @@ app/
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
-│   │   └── GiftDayTable.tsx     # Per-day gift rows
+│   │   ├── GiftDayTable.tsx     # Per-day gift rows
+│   │   ├── ForumBoard.tsx       # Public forum list + composer
+│   │   └── ForumLoader.tsx      # Fetch/post state for /welcome forum
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -76,7 +80,8 @@ app/
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
-│   │   └── utc-day.ts           # UTC YYYY-MM-DD calendar check
+│   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
+│   │   └── forum-time.ts        # UTC display timestamps for forum rows
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file

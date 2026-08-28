@@ -1,0 +1,99 @@
+'use client';
+
+import { useEffect, useState, type ReactElement } from 'react';
+import { ForumBoard } from '@/components/ForumBoard';
+import { fetchMessages, postMessage } from '@/lib/api';
+import type { ForumMessage } from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
+
+/**
+ * Client loader for the public forum on `/welcome`.
+ *
+ * Reads the session from the auth store, fetches messages with a cancelled-flag
+ * pattern matching {@link StatsLoader}, and owns composer draft/post state.
+ * Renders nothing when there is no session.
+ *
+ * @returns The forum board, or `null` without a session.
+ */
+export function ForumLoader(): ReactElement | null {
+  const session = useAuthStore((state) => state.session);
+  const [messages, setMessages] = useState<ForumMessage[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [attempt, setAttempt] = useState(0);
+  const [draft, setDraft] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [formError, setFormError] = useState<'empty' | 'request' | null>(null);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    void (async () => {
+      try {
+        const next = await fetchMessages(session);
+        if (!cancelled) {
+          setMessages(next);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setMessages(null);
+          setError(
+            cause instanceof Error ? cause.message : 'Could not load messages. Please try again.',
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt, session]);
+
+  if (session === null) {
+    return null;
+  }
+
+  const onPost = (): void => {
+    const trimmed = draft.trim();
+    if (trimmed === '') {
+      setFormError('empty');
+      return;
+    }
+    setPosting(true);
+    setFormError(null);
+    void (async () => {
+      try {
+        const created = await postMessage(session, trimmed);
+        setMessages((prev) => [created, ...(prev ?? [])]);
+        setDraft('');
+      } catch {
+        setFormError('request');
+      } finally {
+        setPosting(false);
+      }
+    })();
+  };
+
+  return (
+    <ForumBoard
+      messages={messages}
+      error={error}
+      loading={loading}
+      posting={posting}
+      draft={draft}
+      onDraftChange={setDraft}
+      onPost={onPost}
+      onRetry={() => {
+        setAttempt((n) => n + 1);
+      }}
+      formError={formError}
+    />
+  );
+}

@@ -155,15 +155,39 @@ Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, ready copy, **Send a gift**. No name or address form.
-- **Actions:** Open `/donate`, log out, change language.
-- **Calls:** `WelcomeScreen`, `SignedInChrome`, `OnboardingGate`.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, ready copy, public forum (message name, text, timestamp, composer textarea + **Post**), **Send a gift**. No name or address form.
+- **Actions:** Post a message, retry a failed load, open `/donate`, log out, change language.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, **Send a gift**. Language and **Log out** as matching icon+text top-right, not on the card.
+Gift icon, **Welcome, Ada**, one visible message (name/text/timestamp) plus composer, **Send a gift**. Language and **Log out** as matching icon+text top-right, not on the card.
 
 ![21.gifts welcome](images/welcome.png)
+
+### Variant: empty
+
+Empty copy **No messages yet. Be the first to write.** plus composer.
+
+![21.gifts welcome empty](images/welcome-empty.png)
+
+### Variant: loading
+
+Loading copy **Loading…** while the messages fetch is in flight.
+
+![21.gifts welcome loading](images/welcome-loading.png)
+
+### Variant: error
+
+Load error **Could not load messages. Please try again.** plus **Try again**.
+
+![21.gifts welcome error](images/welcome-error.png)
+
+### Variant: validation-error
+
+Click **Post** with an empty composer → **Enter a message**.
+
+![21.gifts welcome validation error](images/welcome-validation-error.png)
 
 ## Screen: /donate
 

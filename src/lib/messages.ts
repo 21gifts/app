@@ -136,6 +136,18 @@ const en = {
   'donate.pay': 'Pay {amount} to {address}',
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
+
+  'forum.heading': 'Messages',
+  'forum.composerLabel': 'Your message',
+  'forum.placeholder': 'Write a message',
+  'forum.post': 'Post',
+  'forum.empty': 'No messages yet. Be the first to write.',
+  'forum.loading': 'Loading…',
+  'forum.error': 'Could not load messages. Please try again.',
+  'forum.retry': 'Try again',
+  'forum.errorEmpty': 'Enter a message',
+  'forum.errorRequest': 'Could not post your message',
+  'forum.listLabel': 'Messages',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -271,6 +283,18 @@ const de = {
   'donate.pay': '{amount} an {address} zahlen',
   'donate.satOne': '1 Sat',
   'donate.sats': '{n} Sats',
+
+  'forum.heading': 'Nachrichten',
+  'forum.composerLabel': 'Ihre Nachricht',
+  'forum.placeholder': 'Nachricht schreiben',
+  'forum.post': 'Senden',
+  'forum.empty': 'Noch keine Nachrichten. Schreiben Sie die erste.',
+  'forum.loading': 'Wird geladen…',
+  'forum.error': 'Nachrichten konnten nicht geladen werden. Bitte erneut versuchen.',
+  'forum.retry': 'Erneut versuchen',
+  'forum.errorEmpty': 'Nachricht eingeben',
+  'forum.errorRequest': 'Nachricht konnte nicht gesendet werden',
+  'forum.listLabel': 'Nachrichten',
 } satisfies Messages;
 
 const es = {
@@ -400,6 +424,18 @@ const es = {
   'donate.pay': 'Paga {amount} a {address}',
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
+
+  'forum.heading': 'Mensajes',
+  'forum.composerLabel': 'Tu mensaje',
+  'forum.placeholder': 'Escribe un mensaje',
+  'forum.post': 'Publicar',
+  'forum.empty': 'Aún no hay mensajes. Sé el primero en escribir.',
+  'forum.loading': 'Cargando…',
+  'forum.error': 'No se pudieron cargar los mensajes. Inténtalo de nuevo.',
+  'forum.retry': 'Intentar de nuevo',
+  'forum.errorEmpty': 'Escribe un mensaje',
+  'forum.errorRequest': 'No se pudo publicar el mensaje',
+  'forum.listLabel': 'Mensajes',
 } satisfies Messages;
 
 const fil = {
@@ -530,6 +566,18 @@ const fil = {
   'donate.pay': 'Magbayad ng {amount} kay {address}',
   'donate.satOne': '1 sat',
   'donate.sats': '{n} sats',
+
+  'forum.heading': 'Mga mensahe',
+  'forum.composerLabel': 'Iyong mensahe',
+  'forum.placeholder': 'Sumulat ng mensahe',
+  'forum.post': 'I-post',
+  'forum.empty': 'Wala pang mensahe. Maging una sa pagsulat.',
+  'forum.loading': 'Loading…',
+  'forum.error': 'Hindi ma-load ang mga mensahe. Subukan ulit.',
+  'forum.retry': 'Subukan ulit',
+  'forum.errorEmpty': 'Maglagay ng mensahe',
+  'forum.errorRequest': 'Hindi ma-post ang mensahe',
+  'forum.listLabel': 'Mga mensahe',
 } satisfies Messages;
 
 /**

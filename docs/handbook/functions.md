@@ -220,10 +220,24 @@
 
 ## Function: WelcomeScreen
 
-- **Purpose:** Third post-login screen after name and address are saved.
+- **Purpose:** Third post-login screen after name and address are saved. Embeds `ForumLoader` (forum list + composer) below the body and above **Send a gift**; card is `max-w-lg`.
 - **Inputs:** Reads `account.name` from `useAuthStore`.
-- **Returns / side effects:** Gift icon, **Welcome, {name}**, ready copy, **Send a gift** (`/donate`). No name or address form. No `LogoutButton` on the card.
+- **Returns / side effects:** Gift icon, **Welcome, {name}**, ready copy, forum board, **Send a gift** (`/donate`). No name or address form. No `LogoutButton` on the card.
 - **Used by:** Screen `/welcome`.
+
+## Function: ForumBoard
+
+- **Purpose:** Presentational public forum: heading, list or empty/loading/error middle region, and composer (textarea + Post) with client form errors.
+- **Inputs:** `ForumBoardProps` — `messages`, `error`, `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError`.
+- **Returns / side effects:** React element. Formats timestamps via `formatForumTime`. No network.
+- **Used by:** `ForumLoader`.
+
+## Function: ForumLoader
+
+- **Purpose:** Client loader for the public forum on `/welcome`. Session from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, posts via `postMessage`, cancelled-flag fetch like `StatsLoader`.
+- **Inputs:** None (reads session from the auth store).
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts.
+- **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
 
@@ -288,12 +302,33 @@
 - **Returns / side effects:** `Account` or `null` on 401.
 - **Used by:** `useHydrateSession`.
 
+## Function: fetchMessages
+
+- **Purpose:** GET `/messages` with the bearer session, parse `forumListSchema`, and return the messages array newest-first.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure.
+- **Used by:** `ForumLoader`.
+
+## Function: postMessage
+
+- **Purpose:** POST `/messages` with bearer + `{ text }`, parse `forumMessageSchema`, and return the created message.
+- **Inputs:** `sessionToken`, `text`.
+- **Returns / side effects:** `ForumMessage`. On 400 uses the api error string when present; otherwise throws `Could not post your message`.
+- **Used by:** `ForumLoader`.
+
 ## Function: formatBtcTick
 
 - **Purpose:** Formats a parsed BTC chart-axis value with up to 8 decimals, trailing zeros trimmed.
 - **Inputs:** `btc` number (layout scale only).
 - **Returns / side effects:** Trimmed decimal string (e.g. `0.015`).
 - **Used by:** `StatsDashboard` BTC-over-time chart.
+
+## Function: formatForumTime
+
+- **Purpose:** Formats a forum message timestamp as UTC medium date + short time via `Intl.DateTimeFormat`, or returns the original ISO string when the instant is invalid.
+- **Inputs:** `iso` string, `locale` BCP 47 tag.
+- **Returns / side effects:** Display string. Always uses `timeZone: 'UTC'` so screenshots are host-independent.
+- **Used by:** `ForumBoard`.
 
 ## Function: formatMsatAsSats
 
@@ -553,6 +588,20 @@
 - **Inputs:** `Request` with Bearer token.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route GET `/me`.
+
+## Function: proxyMessagesGet
+
+- **Purpose:** Bearer proxy GET `/messages` to the 21.gifts api (public forum list).
+- **Inputs:** Incoming `Request` with Bearer session.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/messages`.
+
+## Function: proxyMessagesPost
+
+- **Purpose:** Bearer proxy POST `/messages` to the 21.gifts api (create a public forum message).
+- **Inputs:** Incoming `Request` with Bearer session and JSON body.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/messages`.
 
 ## Function: proxyMeLightningAddressDelete
 

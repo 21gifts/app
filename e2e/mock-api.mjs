@@ -17,6 +17,8 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
+/** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
+const forumMessages = [];
 
 function hex(bytes) {
   return Buffer.from(bytes).toString('hex');
@@ -87,6 +89,56 @@ const server = http.createServer(async (req, res) => {
 
   if (method === 'GET' && pathName === '/healthz') {
     json(res, 200, { status: 'ok' });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/messages') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { messages: [...forumMessages] });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/messages') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const name = typeof account.name === 'string' ? account.name.trim() : '';
+    if (name === '') {
+      json(res, 400, { error: 'Set a name before posting' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
+    if (typeof parsed?.text !== 'string') {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
+    const text = parsed.text.trim();
+    if (text.length < 1 || text.length > 500) {
+      json(res, 400, { error: 'Text must be 1–500 characters' });
+      return;
+    }
+    const created = {
+      id: `msg_${hex(randomBytes(8))}`,
+      name,
+      text,
+      createdAt: new Date().toISOString(),
+    };
+    forumMessages.unshift(created);
+    json(res, 200, created);
     return;
   }
 

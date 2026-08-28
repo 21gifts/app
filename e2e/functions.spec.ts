@@ -235,6 +235,30 @@ test('Function: proxyApiRequest — POST passkey register begin is 200', async (
   expect(res.status()).toBe(200);
 });
 
+test('Function: proxyMessagesGet — GET /messages without bearer is 401', async ({ request }) => {
+  expect((await request.get('/messages')).status()).toBe(401);
+});
+
+test('Function: proxyMessagesPost — POST /messages without bearer is 401', async ({ request }) => {
+  expect((await request.post('/messages', { data: { text: 'hi' } })).status()).toBe(401);
+});
+
+test('Function: fetchMessages — GET /messages with bearer is 200', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.get('/messages', { headers: { authorization: `Bearer ${token}` } });
+  expect(res.status()).toBe(200);
+  expect(Array.isArray(((await res.json()) as { messages: unknown[] }).messages)).toBe(true);
+});
+
+test('Function: postMessage — POST /messages without a name is 400', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/messages', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { text: 'hello' },
+  });
+  expect(res.status()).toBe(400);
+});
+
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
   const token = await loginHttp(request);
   const res = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
@@ -1025,6 +1049,13 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
       }),
     });
   });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
@@ -1048,8 +1079,115 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
       }),
     });
   });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+});
+
+test('Function: ForumLoader — empty forum copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+});
+
+test('Function: formatForumTime — message timestamp is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
+  await expect(page.getByText(/2026/)).toBeVisible();
 });
 
 test('Function: OnboardingGate — login sends a new account to the name screen', async ({
