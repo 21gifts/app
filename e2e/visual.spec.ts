@@ -861,7 +861,7 @@ test.describe('function baselines', () => {
         };
       }, section.id);
       expect(clip).not.toBeNull();
-      await expect(page).toHaveScreenshot(`function-${section.name}.png`, {
+      await expect.soft(page).toHaveScreenshot(`function-${section.name}.png`, {
         clip: clip as { x: number; y: number; width: number; height: number },
         fullPage: true,
         // Function clips sit below handbook screen PNGs; those images changing

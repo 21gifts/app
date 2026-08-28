@@ -472,6 +472,66 @@ test('Function: postContact — sending from contact shows success', async ({ pa
   await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
 });
 
+async function reachWelcome(page: Page, request: APIRequestContext): Promise<void> {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+}
+
+test('Function: prepareForumPhoto — attaching a jpeg shows a preview then posts it', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible({ timeout: 10_000 });
+});
+
+test('Function: isForumPhotoFile — photo-only post does not require text', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByLabel('Your message')).toHaveValue('');
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText('No messages yet. Be the first to write.')).toHaveCount(0);
+});
+
+test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  const caption = `Caption ${Date.now()}`;
+  await page.getByLabel('Your message').fill(caption);
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText(caption)).toBeVisible();
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible({ timeout: 10_000 });
+});
+
+test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
+});
+
+test('Function: ForumLoader — remove photo clears the preview', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Remove photo' }).click();
+  await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
+});
+
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
   const token = await loginHttp(request);
   const res = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
