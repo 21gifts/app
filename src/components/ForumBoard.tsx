@@ -29,7 +29,8 @@ export interface ForumBoardProps {
 }
 
 /**
- * Presentational public forum: heading, list or empty/loading/error, and composer.
+ * Presentational public forum: heading, list or empty/loading/error, and a
+ * messenger-style composer (textarea with Post to the right).
  *
  * Always shows the heading and composer so validation errors can surface even
  * when the list is empty. Light neutral palette to match {@link WelcomeScreen}.
@@ -105,26 +106,24 @@ export function ForumBoard({
 
       {middle}
 
-      <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2">
         <textarea
           aria-label={t('forum.composerLabel')}
           placeholder={t('forum.placeholder')}
           value={draft}
           onChange={(event) => onDraftChange(event.target.value)}
-          rows={3}
+          rows={2}
           disabled={posting}
-          className="w-full resize-y rounded-2xl border border-neutral-300 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+          className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
         />
-        <div className="flex items-center justify-center">
-          <button
-            type="submit"
-            disabled={posting}
-            className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
-          >
-            {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-            {t('forum.post')}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={posting}
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-neutral-900 px-5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+        >
+          {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
+          {t('forum.post')}
+        </button>
       </form>
 
       {formError === 'empty' ? (

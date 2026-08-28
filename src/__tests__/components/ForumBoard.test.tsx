@@ -40,7 +40,10 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Everyone can read and write.')).toBeTruthy();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
+    const field = screen.getByLabelText('Your message');
+    const button = screen.getByRole('button', { name: 'Post' });
+    expect(button).toBeTruthy();
+    expect(field.nextElementSibling).toBe(button);
   });
 
   it('shows loading copy when loading and messages are null', () => {
