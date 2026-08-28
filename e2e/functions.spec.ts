@@ -251,6 +251,7 @@ test('Function: fetchMessages — welcome shows the empty forum', async ({ page,
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
+  await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
   await expect(page.getByLabel('Your message')).toBeVisible();
 });
 
