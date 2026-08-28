@@ -29,9 +29,8 @@ export function WelcomeScreen(): ReactElement {
       <ForumLoader />
       <Link
         href="/donate"
-        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+        className="inline-flex items-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
       >
-        <Gift aria-hidden="true" className="h-4 w-4" />
         {t('login.welcomeCta')}
       </Link>
     </section>
