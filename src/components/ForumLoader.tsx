@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { ForumBoard } from '@/components/ForumBoard';
 import { fetchMessages, postMessage } from '@/lib/api';
-import type { ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -23,7 +23,9 @@ export function ForumLoader(): ReactElement | null {
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
-  const [formError, setFormError] = useState<'empty' | 'request' | null>(null);
+  const [formError, setFormError] = useState<'empty' | 'tooLong' | 'request' | null>(
+    null,
+  );
 
   useEffect(() => {
     if (session === null) {
@@ -68,6 +70,10 @@ export function ForumLoader(): ReactElement | null {
     const trimmed = draft.trim();
     if (trimmed === '') {
       setFormError('empty');
+      return;
+    }
+    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
+      setFormError('tooLong');
       return;
     }
     setPosting(true);

@@ -159,6 +159,21 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('does not post when the trimmed draft is longer than 500 characters', async () => {
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: `${'a'.repeat(501)}` },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
   it('prepends a post when the list has not loaded yet', async () => {
     fetchMock.mockReturnValue(new Promise(() => undefined));
     const created: ForumMessage = {

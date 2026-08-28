@@ -186,6 +186,11 @@ export const passkeySessionSchema = z.object({
 export type PasskeySession = z.infer<typeof passkeySessionSchema>;
 
 /**
+ * Trimmed forum body length accepted by `POST /messages` (api `MESSAGE_MAX_LENGTH`).
+ */
+export const FORUM_MESSAGE_MAX_LENGTH = 500;
+
+/**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.
  */
 export const forumMessageSchema = z.object({

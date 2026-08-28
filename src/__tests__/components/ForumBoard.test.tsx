@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ForumBoard } from '@/components/ForumBoard';
-import type { ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -44,6 +44,7 @@ describe('ForumBoard', () => {
     const button = screen.getByRole('button', { name: 'Post' });
     expect(button).toBeTruthy();
     expect(field.nextElementSibling).toBe(button);
+    expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
   });
 
   it('shows loading copy when loading and messages are null', () => {
@@ -198,6 +199,23 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+  });
+
+  it('shows formError tooLong alert', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="tooLong"
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
   });
 
   it('shows formError request alert', () => {

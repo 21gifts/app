@@ -144,6 +144,7 @@ const en = {
   'forum.error': 'Could not load messages. Please try again.',
   'forum.retry': 'Try again',
   'forum.errorEmpty': 'Enter a message',
+  'forum.errorTooLong': 'Keep it to 500 characters',
   'forum.errorRequest': 'Could not post your message',
   'forum.listLabel': 'All messages',
 } as const;
@@ -289,6 +290,7 @@ const de = {
   'forum.error': 'Nachrichten konnten nicht geladen werden. Bitte erneut versuchen.',
   'forum.retry': 'Erneut versuchen',
   'forum.errorEmpty': 'Nachricht eingeben',
+  'forum.errorTooLong': 'Maximal 500 Zeichen',
   'forum.errorRequest': 'Nachricht konnte nicht gesendet werden',
   'forum.listLabel': 'Alle Nachrichten',
 } satisfies Messages;
@@ -428,6 +430,7 @@ const es = {
   'forum.error': 'No se pudieron cargar los mensajes. Inténtalo de nuevo.',
   'forum.retry': 'Intentar de nuevo',
   'forum.errorEmpty': 'Escribe un mensaje',
+  'forum.errorTooLong': 'Máximo 500 caracteres',
   'forum.errorRequest': 'No se pudo publicar el mensaje',
   'forum.listLabel': 'Todos los mensajes',
 } satisfies Messages;
@@ -568,6 +571,7 @@ const fil = {
   'forum.error': 'Hindi ma-load ang mga mensahe. Subukan ulit.',
   'forum.retry': 'Subukan ulit',
   'forum.errorEmpty': 'Maglagay ng mensahe',
+  'forum.errorTooLong': 'Hanggang 500 na karakter',
   'forum.errorRequest': 'Hindi ma-post ang mensahe',
   'forum.listLabel': 'Lahat ng mensahe',
 } satisfies Messages;

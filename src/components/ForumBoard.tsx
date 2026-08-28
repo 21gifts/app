@@ -3,7 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import { type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import type { ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 
 /** Props for {@link ForumBoard}. */
@@ -25,7 +25,7 @@ export interface ForumBoardProps {
   /** Retry handler for a failed fetch. */
   onRetry: () => void;
   /** Client-side composer validation or request failure. */
-  formError: 'empty' | 'request' | null;
+  formError: 'empty' | 'tooLong' | 'request' | null;
 }
 
 /**
@@ -114,6 +114,7 @@ export function ForumBoard({
           placeholder={t('forum.placeholder')}
           value={draft}
           onChange={(event) => onDraftChange(event.target.value)}
+          maxLength={FORUM_MESSAGE_MAX_LENGTH}
           rows={2}
           disabled={posting}
           className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
@@ -131,6 +132,11 @@ export function ForumBoard({
       {formError === 'empty' ? (
         <p role="alert" className="text-center text-sm text-red-600">
           {t('forum.errorEmpty')}
+        </p>
+      ) : null}
+      {formError === 'tooLong' ? (
+        <p role="alert" className="text-center text-sm text-red-600">
+          {t('forum.errorTooLong')}
         </p>
       ) : null}
       {formError === 'request' ? (
