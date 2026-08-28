@@ -161,15 +161,39 @@ Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, ready copy, **Send a gift**. No name or address form.
-- **Actions:** Open `/donate`, log out, change language.
-- **Calls:** `WelcomeScreen`, `SignedInChrome`, `OnboardingGate`.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, composer textarea with **Post** to the right). No name or address form. No donate CTA.
+- **Actions:** Post a message, retry a failed load, log out, change language.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, **Send a gift**. Language and **Log out** as matching icon+text top-right, not on the card.
+Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp), composer. Language and **Log out** as matching icon+text top-right, not on the card.
 
 ![21.gifts welcome](images/welcome.png)
+
+### Variant: empty
+
+Empty copy **No messages yet. Be the first to write.** plus composer.
+
+![21.gifts welcome empty](images/welcome-empty.png)
+
+### Variant: loading
+
+Loading copy **Loading…** while the messages fetch is in flight.
+
+![21.gifts welcome loading](images/welcome-loading.png)
+
+### Variant: error
+
+Load error **Could not load messages. Please try again.** plus **Try again**.
+
+![21.gifts welcome error](images/welcome-error.png)
+
+### Variant: validation-error
+
+Click **Post** with an empty composer → **Enter a message**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
+
+![21.gifts welcome validation error](images/welcome-validation-error.png)
 
 ## Screen: /donate
 

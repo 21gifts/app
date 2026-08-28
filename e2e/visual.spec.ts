@@ -327,9 +327,114 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+            },
+            {
+              id: 'm2',
+              name: 'Carol',
+              text: 'I can send a small gift tomorrow.',
+              createdAt: '2026-08-28T11:00:00.000Z',
+            },
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
+    await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
     await shotScreen(page, 'screen-welcome');
+  });
+});
+
+test.describe('welcome forum variants', () => {
+  async function seedAda(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
+      });
+    });
+  }
+
+  test('welcome empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-empty');
+  });
+
+  test('welcome loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages$/, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-loading');
+    release();
+  });
+
+  test('welcome error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.abort();
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-error');
+  });
+
+  test('welcome validation-error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByText('Enter a message')).toBeVisible();
+    await shotScreen(page, 'state-welcome-validation-error');
   });
 });
 
@@ -550,13 +655,16 @@ test.describe('function baselines', () => {
         }),
       });
     });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
-    await expect(page).toHaveScreenshot('screen-welcome.png', {
-      fullPage: true,
-      ...SHOT,
-    });
   });
 
   test('NotFound', async ({ page }) => {

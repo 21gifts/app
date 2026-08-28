@@ -70,6 +70,20 @@
 - **Used by:** `fetchMe`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /messages
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages` (public forum list, newest-first).
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `fetchMessages`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /messages
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message).
+- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Used by:** `postMessage`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/lightning-address
 
 - **Purpose:** Same-origin proxy to link or replace a Wallet of Satoshi address.

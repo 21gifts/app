@@ -1,12 +1,15 @@
 import { z } from 'zod';
 import {
   accountSchema,
+  forumListSchema,
+  forumMessageSchema,
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
   type Account,
+  type ForumMessage,
   type GiftDay,
   type GiftStats,
   type LnAddressResolved,
@@ -239,6 +242,57 @@ export async function fetchGiftStats(): Promise<GiftStats> {
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
   }
+}
+
+/**
+ * Fetches every public forum message (newest first).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The message list.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link forumListSchema}.
+ */
+export async function fetchMessages(sessionToken: string): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch('/messages', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return forumListSchema.parse(await response.json()).messages;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Posts a new public forum message.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param text - Message body as typed (api trims and validates length).
+ * @returns The created {@link ForumMessage}.
+ * @throws Error when the api rejects the text (400) — the api error string
+ * when present, otherwise a fallback — on any other non-2xx status, or when
+ * the body fails {@link forumMessageSchema} validation.
+ */
+export async function postMessage(sessionToken: string, text: string): Promise<ForumMessage> {
+  const response = await fetch('/messages', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not post your message');
+  }
+  return forumMessageSchema.parse(await response.json());
 }
 
 /**

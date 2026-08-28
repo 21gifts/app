@@ -4,8 +4,10 @@ import {
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
+  fetchMessages,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  postMessage,
   setLightningAddress,
   setName,
   resolveLightningAddress,
@@ -363,6 +365,78 @@ describe('fetchGiftStats', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+});
+
+const forumMessage = {
+  id: 'm1',
+  name: 'Ada',
+  text: 'Hello from Ada',
+  createdAt: '2026-08-28T12:00:00.000Z',
+};
+
+describe('fetchMessages', () => {
+  it('returns the validated messages and sends the bearer header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage] },
+    });
+    await expect(fetchMessages('sess')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: [{ id: 'm1' }] } });
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('postMessage', () => {
+  it('posts the text and returns the validated message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(postMessage('sess', 'Hello from Ada')).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada' }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Message too long' } });
+    await expect(postMessage('sess', 'x')).rejects.toThrow('Message too long');
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(postMessage('sess', 'x')).rejects.toThrow('Could not post your message');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postMessage('sess', 'x')).rejects.toThrow('Could not post your message');
   });
 });
 

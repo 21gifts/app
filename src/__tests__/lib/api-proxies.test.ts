@@ -12,6 +12,8 @@ import {
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeNamePost,
+  proxyMessagesGet,
+  proxyMessagesPost,
 } from '@/lib/api-proxies';
 
 afterEach(() => {
@@ -77,6 +79,21 @@ describe('api proxy wrappers', () => {
     const url = fetchMock.mock.calls[0]?.[0] as URL;
     expect(url.pathname).toBe('/gifts');
     expect(url.searchParams.get('day')).toBe('2026-06-01');
+  });
+
+  it('proxyMessagesGet hits /messages', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesGet(new Request('http://localhost/messages'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
+  });
+
+  it('proxyMessagesPost hits POST /messages', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPost(
+      new Request('http://localhost/messages', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
   });
 
   it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {
