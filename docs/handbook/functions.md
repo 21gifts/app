@@ -201,7 +201,7 @@
 
 - **Purpose:** Best-effort handoff from an in-app WebView to the system browser so the visitor can complete a passkey login in Safari or Chrome.
 - **Inputs:** Absolute `https` login `url`, and optional `SystemBrowserHost` (`win`; defaults to `globalThis.window`). Missing window is a no-op.
-- **Returns / side effects:** On Android, sets `location.href` to a Chrome Intent URL with an encoded fallback. On iOS Telegram (`TelegramWebviewProxy` or UA `Telegram`), sets `location.href` to `x-safari-` + `url`. Otherwise calls `host.open(url, '_blank', 'noopener,noreferrer')`. No network of its own.
+- **Returns / side effects:** On Android, sets `location.href` to a Chrome Intent URL with an encoded fallback. Else if `Telegram.WebApp.openLink` is a function, calls it. Else on iOS Telegram (JS bridges or UA `Telegram`), sets `location.href` to `x-safari-` + `url`. Otherwise calls `host.open(url, '_blank', 'noopener,noreferrer')`. No network of its own.
 - **Used by:** `LoginCard` **Open in browser** button on the in-app escape card, the `/login` in-app e2e flow, and handbook coverage for the in-app login variant.
 
 ## Function: OnboardingGate

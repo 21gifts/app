@@ -34,6 +34,8 @@ function systemHost(partial: {
   origin?: string;
   pathname?: string;
   TelegramWebviewProxy?: unknown;
+  TelegramWebview?: unknown;
+  Telegram?: InAppBrowserHost['Telegram'];
 }): SystemBrowserHost & { open: ReturnType<typeof vi.fn> } {
   const location = {
     href: partial.href ?? 'https://21.gifts/login',
@@ -48,6 +50,12 @@ function systemHost(partial: {
   };
   if (partial.TelegramWebviewProxy !== undefined) {
     result.TelegramWebviewProxy = partial.TelegramWebviewProxy;
+  }
+  if (partial.TelegramWebview !== undefined) {
+    result.TelegramWebview = partial.TelegramWebview;
+  }
+  if (partial.Telegram !== undefined) {
+    result.Telegram = partial.Telegram;
   }
   return result;
 }
@@ -105,6 +113,7 @@ describe('isInAppBrowser', () => {
 
 describe('openInSystemBrowser', () => {
   const url = 'https://21.gifts/login';
+  const iosUa = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)';
 
   it('is a no-op when window is missing', () => {
     vi.stubGlobal('window', undefined);
@@ -124,7 +133,7 @@ describe('openInSystemBrowser', () => {
 
   it('sets x-safari- href for iOS Telegram via bridge', () => {
     const win = systemHost({
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      userAgent: iosUa,
       TelegramWebviewProxy: { postEvent() {} },
     });
     openInSystemBrowser(url, win);
@@ -138,6 +147,41 @@ describe('openInSystemBrowser', () => {
     });
     openInSystemBrowser(url, win);
     expect(win.location.href).toBe(`x-safari-${url}`);
+    expect(win.open).not.toHaveBeenCalled();
+  });
+
+  it('sets x-safari- href for iOS with only TelegramWebview', () => {
+    const win = systemHost({
+      userAgent: iosUa,
+      TelegramWebview: {},
+    });
+    const initialHref = win.location.href;
+    openInSystemBrowser(url, win);
+    expect(win.location.href).toBe(`x-safari-${url}`);
+    expect(win.location.href).not.toBe(initialHref);
+    expect(win.open).not.toHaveBeenCalled();
+  });
+
+  it('sets x-safari- href for iOS with Telegram.WebApp but no openLink', () => {
+    const win = systemHost({
+      userAgent: iosUa,
+      Telegram: { WebApp: {} },
+    });
+    openInSystemBrowser(url, win);
+    expect(win.location.href).toBe(`x-safari-${url}`);
+    expect(win.open).not.toHaveBeenCalled();
+  });
+
+  it('calls Telegram.WebApp.openLink when it is a function', () => {
+    const openLink = vi.fn();
+    const win = systemHost({
+      userAgent: iosUa,
+      Telegram: { WebApp: { openLink } },
+    });
+    const initialHref = win.location.href;
+    openInSystemBrowser(url, win);
+    expect(openLink).toHaveBeenCalledWith(url);
+    expect(win.location.href).toBe(initialHref);
     expect(win.open).not.toHaveBeenCalled();
   });
 
@@ -162,7 +206,7 @@ describe('openInSystemBrowser', () => {
 
   it('falls back to open for iPhone without Telegram', () => {
     const win = systemHost({
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      userAgent: iosUa,
     });
     const initialHref = win.location.href;
     openInSystemBrowser(url, win);
@@ -173,7 +217,7 @@ describe('openInSystemBrowser', () => {
   it('falls back to open for iOS Telegram when url is not https', () => {
     const httpUrl = 'http://21.gifts/login';
     const win = systemHost({
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      userAgent: iosUa,
       TelegramWebviewProxy: { postEvent() {} },
     });
     const initialHref = win.location.href;

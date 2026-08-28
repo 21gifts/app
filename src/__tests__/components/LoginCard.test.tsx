@@ -129,8 +129,9 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
   });
 
-  it('marks Copy link as copied after a successful clipboard write', async () => {
+  it('marks Copy link as copied after clipboard succeeds when fallback fails', async () => {
     vi.mocked(isInAppBrowser).mockReturnValue(true);
+    stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     renderWithLocale(<LoginCard />);
@@ -146,9 +147,14 @@ describe('LoginCard', () => {
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}${window.location.pathname}`);
   });
 
-  it('falls back to execCommand when clipboard write rejects', async () => {
+  it('uses sync execCommand first and shows Copied without waiting for clipboard', async () => {
     vi.mocked(isInAppBrowser).mockReturnValue(true);
-    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>(() => {
+          /* never settles */
+        }),
+    );
     Object.assign(navigator, { clipboard: { writeText } });
     const exec = stubExecCommand(() => true);
     renderWithLocale(<LoginCard />);
@@ -156,12 +162,9 @@ describe('LoginCard', () => {
       expect(screen.getByRole('button', { name: 'Copy link' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Copied' }).getAttribute('data-copied')).toBe(
-        'true',
-      );
-    });
     expect(exec).toHaveBeenCalledWith('copy');
+    expect(screen.getByRole('button', { name: 'Copied' }).getAttribute('data-copied')).toBe('true');
+    expect(writeText).not.toHaveBeenCalled();
   });
 
   it('stays idle and logs once when clipboard and fallback both fail', async () => {
@@ -183,7 +186,7 @@ describe('LoginCard', () => {
     ).toBeNull();
   });
 
-  it('stays idle and logs when execCommand throws', async () => {
+  it('stays idle and logs when execCommand throws then clipboard rejects', async () => {
     vi.mocked(isInAppBrowser).mockReturnValue(true);
     const writeText = vi.fn().mockRejectedValue(new Error('denied'));
     Object.assign(navigator, { clipboard: { writeText } });
@@ -199,6 +202,7 @@ describe('LoginCard', () => {
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalled();
     });
+    expect(writeText).toHaveBeenCalled();
     expect(
       screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied'),
     ).toBeNull();
@@ -229,6 +233,7 @@ describe('LoginCard', () => {
 
   it('ignores a clipboard write that resolves after unmount', async () => {
     vi.mocked(isInAppBrowser).mockReturnValue(true);
+    stubExecCommand(() => false);
     let resolveWrite: (() => void) | undefined;
     const writeText = vi.fn(
       () =>
@@ -242,6 +247,7 @@ describe('LoginCard', () => {
       expect(screen.getByRole('button', { name: 'Copy link' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(writeText).toHaveBeenCalled();
     unmount();
     await act(async () => {
       resolveWrite?.();
@@ -252,6 +258,7 @@ describe('LoginCard', () => {
 
   it('ignores a clipboard reject that settles after unmount', async () => {
     vi.mocked(isInAppBrowser).mockReturnValue(true);
+    const exec = stubExecCommand(() => false);
     let rejectWrite: ((error: Error) => void) | undefined;
     const writeText = vi.fn(
       () =>
@@ -260,23 +267,27 @@ describe('LoginCard', () => {
         }),
     );
     Object.assign(navigator, { clipboard: { writeText } });
-    const exec = stubExecCommand(() => true);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { unmount } = renderWithLocale(<LoginCard />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy link' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(exec).toHaveBeenCalledWith('copy');
+    expect(writeText).toHaveBeenCalled();
     unmount();
     await act(async () => {
       rejectWrite?.(new Error('denied'));
       await Promise.resolve();
     });
-    expect(exec).not.toHaveBeenCalled();
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull();
   });
 
   it('clears a pending reset timer on unmount', async () => {
     vi.useFakeTimers();
     vi.mocked(isInAppBrowser).mockReturnValue(true);
+    stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     const { unmount } = renderWithLocale(<LoginCard />);
@@ -296,6 +307,7 @@ describe('LoginCard', () => {
   it('restarts the Copied timer on a second click', async () => {
     vi.useFakeTimers();
     vi.mocked(isInAppBrowser).mockReturnValue(true);
+    stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     renderWithLocale(<LoginCard />);
@@ -328,6 +340,7 @@ describe('LoginCard', () => {
   it('restores Copy link after the copied timer elapses', async () => {
     vi.useFakeTimers();
     vi.mocked(isInAppBrowser).mockReturnValue(true);
+    stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     renderWithLocale(<LoginCard />);

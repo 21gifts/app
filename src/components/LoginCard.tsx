@@ -20,7 +20,6 @@ function fallbackCopy(text: string): boolean {
   ta.value = text;
   ta.setAttribute('aria-hidden', 'true');
   ta.className = 'fixed opacity-0';
-  ta.readOnly = true;
   document.body.appendChild(ta);
   ta.select();
   let ok = false;
@@ -145,19 +144,18 @@ function InAppBrowserView(): ReactElement {
 
   async function copyLink(): Promise<void> {
     const url = loginUrl();
+    if (fallbackCopy(url)) {
+      flashCopied();
+      return;
+    }
     try {
       await navigator.clipboard.writeText(url);
       if (!mounted.current) {
         return;
       }
       flashCopied();
-      return;
     } catch {
       if (!mounted.current) {
-        return;
-      }
-      if (fallbackCopy(url)) {
-        flashCopied();
         return;
       }
       console.error('Copy link failed');
