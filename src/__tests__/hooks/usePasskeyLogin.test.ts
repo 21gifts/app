@@ -177,6 +177,77 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('login skips the passkey ceremony when isInAppBrowser is true', async () => {
+    const get = vi.fn();
+    vi.mocked(isInAppBrowser).mockReturnValue(true);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unsupported');
+    expect(startPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('authenticate skips the passkey ceremony when isInAppBrowser is true', async () => {
+    const get = vi.fn();
+    vi.mocked(isInAppBrowser).mockReturnValue(true);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('unsupported');
+    expect(startPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('register skips the passkey ceremony when isInAppBrowser is true', async () => {
+    const create = vi.fn();
+    vi.mocked(isInAppBrowser).mockReturnValue(true);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('unsupported');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('login sets unsupported when get is NotAllowedError after entering an in-app browser', async () => {
+    const create = vi.fn();
+    vi.mocked(isInAppBrowser).mockReturnValueOnce(false).mockReturnValue(true);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create,
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unsupported');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('cancel aborts in-flight login before register starts', async () => {
     let rejectGet: (reason: unknown) => void = () => undefined;
     const create = vi.fn();

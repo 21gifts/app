@@ -163,6 +163,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, []);
 
   const register = useCallback((): void => {
+    if (isInAppBrowser()) {
+      setStatus('unsupported');
+      return;
+    }
     entryKindRef.current = 'register';
     const { runId, controller } = beginRun('register');
     void completeRegistration(runId, controller).catch((error: unknown) => {
@@ -171,6 +175,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeRegistration, finishWithError]);
 
   const authenticate = useCallback((): void => {
+    if (isInAppBrowser()) {
+      setStatus('unsupported');
+      return;
+    }
     entryKindRef.current = 'authenticate';
     const { runId, controller } = beginRun('authenticate');
     void completeAuthentication(runId, controller).catch((error: unknown) => {
@@ -179,6 +187,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeAuthentication, finishWithError]);
 
   const login = useCallback((): void => {
+    if (isInAppBrowser()) {
+      setStatus('unsupported');
+      return;
+    }
     entryKindRef.current = 'login';
     const { runId, controller } = beginRun('authenticate');
     void (async () => {
