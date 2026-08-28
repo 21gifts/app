@@ -1,13 +1,39 @@
 'use client';
 
-import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
-import { useEffect, type ReactElement } from 'react';
+import { AlertTriangle, ExternalLink, Fingerprint, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { isInAppBrowser, openInSystemBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
+const COPY_RESET_MS = 1200;
+
 /**
- * The `/login` card: one Log in button, preparing, or error.
+ * Copy `text` via a hidden textarea and `document.execCommand('copy')`.
+ *
+ * @param text - Absolute URL to put on the clipboard.
+ * @returns Whether the browser reported a successful copy.
+ */
+function fallbackCopy(text: string): boolean {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('aria-hidden', 'true');
+  ta.className = 'fixed opacity-0';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch {
+    ok = false;
+  }
+  ta.remove();
+  return ok;
+}
+
+/**
+ * The `/login` card: Log in, preparing, error, or in-app browser escape.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/address`, or `/welcome`.
@@ -17,6 +43,11 @@ import { useAuthStore } from '@/stores/auth-store';
 export function LoginCard(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const passkey = usePasskeyLogin();
+  const [inApp, setInApp] = useState(false);
+
+  useEffect(() => {
+    setInApp(isInAppBrowser());
+  }, []);
 
   useEffect(() => {
     if (account !== null) {
@@ -27,6 +58,8 @@ export function LoginCard(): ReactElement {
   let body: ReactElement;
   if (account !== null) {
     body = <StartingView />;
+  } else if (inApp || passkey.status === 'unsupported') {
+    body = <InAppBrowserView />;
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
   } else if (passkey.status === 'error') {
@@ -68,6 +101,98 @@ function StartView({ onLogin }: StartViewProps): ReactElement {
         <Fingerprint aria-hidden="true" className="h-4 w-4" />
         {t('login.submit')}
       </button>
+    </>
+  );
+}
+
+/**
+ * Escape hatch when the visitor is inside Telegram or another in-app browser.
+ *
+ * @returns The in-app browser view.
+ */
+function InAppBrowserView(): ReactElement {
+  const { t } = useTranslations();
+  const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(true);
+  const showIosHint = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (resetTimer.current !== null) {
+        clearTimeout(resetTimer.current);
+      }
+    };
+  }, []);
+
+  function loginUrl(): string {
+    return `${window.location.origin}${window.location.pathname}`;
+  }
+
+  function flashCopied(): void {
+    setCopied(true);
+    if (resetTimer.current !== null) {
+      clearTimeout(resetTimer.current);
+    }
+    resetTimer.current = setTimeout(() => {
+      setCopied(false);
+      resetTimer.current = null;
+    }, COPY_RESET_MS);
+  }
+
+  async function copyLink(): Promise<void> {
+    const url = loginUrl();
+    if (fallbackCopy(url)) {
+      flashCopied();
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      if (!mounted.current) {
+        return;
+      }
+      flashCopied();
+    } catch {
+      if (!mounted.current) {
+        return;
+      }
+      console.error('Copy link failed');
+    }
+  }
+
+  return (
+    <>
+      <ExternalLink aria-hidden="true" className="h-8 w-8 text-neutral-400" />
+      <h2 className="text-center text-lg font-medium text-neutral-900">
+        {t('login.inAppHeading')}
+      </h2>
+      <p className="text-center text-sm text-neutral-500">{t('login.inAppBody')}</p>
+      {showIosHint ? (
+        <p className="text-center text-sm text-neutral-500">{t('login.inAppIosHint')}</p>
+      ) : null}
+      <div className="flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            openInSystemBrowser(loginUrl());
+          }}
+          className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+        >
+          {t('login.openInBrowser')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void copyLink();
+          }}
+          data-copied={copied ? 'true' : undefined}
+          className="rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-medium text-neutral-900"
+        >
+          {copied ? t('login.linkCopied') : t('login.copyLink')}
+        </button>
+      </div>
     </>
   );
 }

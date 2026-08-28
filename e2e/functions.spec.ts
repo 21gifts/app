@@ -466,6 +466,27 @@ test('Function: LoginCard — a single Log in button is visible', async ({ page 
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
 });
 
+test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Open this page in your browser' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
+});
+
+test('Function: openInSystemBrowser — Open in browser is shown in Telegram WebView', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Open in browser' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open in browser' }).click();
+  // Do not assert navigation.
+});
+
 test('Function: QrCode — donate shows a Bitcoin payment QR', async ({ page }) => {
   await mockPayCallback(page);
   await page.goto('/donate');

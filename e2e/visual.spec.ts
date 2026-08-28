@@ -264,6 +264,17 @@ test.describe('login variant baselines', () => {
     await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-login-error');
   });
+
+  test('login in-app', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
+    });
+    await page.goto('/login');
+    await expect(
+      page.getByRole('heading', { name: 'Open this page in your browser' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-login-in-app');
+  });
 });
 
 test.describe('onboarding screens', () => {

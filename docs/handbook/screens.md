@@ -104,9 +104,9 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, or `/welcome`.
-- **Actions:** Change language. Log in (existing login, or create one when the browser has none).
-- **Calls:** `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, or `/welcome`.
+- **Actions:** Change language. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
+- **Calls:** `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
 ### Variant: idle
 
@@ -125,6 +125,12 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 Login begin or finish failed. Copy **Something went wrong. Please try again.** and **Try again**.
 
 ![21.gifts login error](images/login-error.png)
+
+### Variant: in-app
+
+Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** button; **Open in browser** and **Copy link** instead.
+
+![21.gifts login in-app](images/login-in-app.png)
 
 ## Screen: /setup/name
 
