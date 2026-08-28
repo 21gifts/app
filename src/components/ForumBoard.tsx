@@ -1,12 +1,20 @@
 'use client';
 
-import { Bitcoin, Loader2, X } from 'lucide-react';
+import { Bitcoin, ImagePlus, Loader2, Send, X } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, type ReactElement, useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactElement,
+} from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
+import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import {
   isAndroidUserAgent,
@@ -16,7 +24,14 @@ import {
 } from '@/lib/wos-deep-link';
 
 /** Client-side composer validation or request failure. */
-export type ForumFormError = 'empty' | 'tooLong' | 'request' | 'rateLimit' | null;
+export type ForumFormError =
+  | 'empty'
+  | 'tooLong'
+  | 'request'
+  | 'rateLimit'
+  | 'unsupported'
+  | 'tooLarge'
+  | null;
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError = 'amount' | 'request' | 'rateLimit' | null;
@@ -79,6 +94,14 @@ export interface ForumBoardProps {
   lawsVisible: boolean;
   /** Called when the user clicks the hint dismiss control. */
   onDismissLaws: () => void;
+  /** Prepared photo waiting to post, or `null`. */
+  photoDraft: ForumPhotoPayload | null;
+  /** Called when the visitor picks a file from the attach control. */
+  onPickPhoto: (file: File) => void;
+  /** Clears the pending photo draft. */
+  onClearPhoto: () => void;
+  /** Message id → blob/object URL for inline photos already loaded. */
+  photoUrls: Readonly<Record<string, string>>;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -93,9 +116,11 @@ const MODE_LABEL_KEY: Record<
 /**
  * Presentational public forum: heading, optional dismissible living-room laws
  * hint box with links to `/rules` and `/contact`, Active/All/Most popular
- * selector, list or empty/loading/error, composer, per-card sats total with a
- * Bitcoin pay icon when the note is payable, and pay-on-note sheet (amount →
- * desktop QR + Wallet of Satoshi, smartphone Wallet of Satoshi deep link only).
+ * selector, list or empty/loading/error, composer (attach + textarea + Send
+ * icon), per-card sats total with a Bitcoin pay icon when the note is payable,
+ * pay-on-note sheet (amount → desktop QR + Wallet of Satoshi, smartphone Wallet
+ * of Satoshi deep link only), and optional inline photos (caption below the
+ * photo).
  *
  * This is a messenger-group thread (oldest top, newest bottom above the
  * composer), not a social feed. Props stay newest-first; Active and All reverse
@@ -103,9 +128,10 @@ const MODE_LABEL_KEY: Record<
  *
  * Always shows the heading, mode selector, and composer so validation errors
  * can surface even when the list is empty. Light neutral palette to match
- * {@link WelcomeScreen}.
+ * {@link WelcomeScreen}. Photos render from {@link ForumBoardProps.photoUrls}
+ * blob URLs — never from an unauthenticated `<img src="/messages/.../photo">`.
  *
- * @param props - Messages payload plus loading/error/composer/pay/mode state.
+ * @param props - Messages payload plus loading/error/composer/pay/mode/photo/laws state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -132,9 +158,14 @@ export function ForumBoard({
   onModeChange,
   lawsVisible,
   onDismissLaws,
+  photoDraft,
+  onPickPhoto,
+  onClearPhoto,
+  photoUrls,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const composerRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const newestId = messages?.[0]?.id ?? null;
   const [showPaymentQr, setShowPaymentQr] = useState(false);
 
@@ -166,6 +197,14 @@ export function ForumBoard({
     onPaySubmit();
   };
 
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    if (file !== undefined) {
+      onPickPhoto(file);
+    }
+    event.target.value = '';
+  };
+
   const errorBlock = (
     <div className="flex flex-col items-center gap-3">
       <p className="text-center text-sm text-neutral-700">{t('forum.error')}</p>
@@ -195,6 +234,7 @@ export function ForumBoard({
     middle = (
       <ul aria-label={t('forum.listLabel')} className="flex flex-col gap-4">
         {displayed.map((message) => {
+          const photoUrl = message.hasPhoto ? photoUrls[message.id] : undefined;
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
@@ -212,6 +252,7 @@ export function ForumBoard({
           return (
             <li
               key={message.id}
+              data-message-id={message.id}
               className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -220,7 +261,17 @@ export function ForumBoard({
                   {formatForumTime(message.createdAt, locale)}
                 </time>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{message.text}</p>
+              {photoUrl !== undefined ? (
+                /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
+                <img
+                  src={photoUrl}
+                  alt={t('forum.photoAlt', { name: message.name })}
+                  className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                />
+              ) : null}
+              {message.text !== '' ? (
+                <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{message.text}</p>
+              ) : null}
               <div className="mt-3 flex items-center gap-1.5">
                 <p className="text-xs font-medium text-neutral-500">
                   {formatSatsLabel(message.sats)}
@@ -390,25 +441,69 @@ export function ForumBoard({
       {middle}
       {error && messages !== null ? errorBlock : null}
 
-      <form ref={composerRef} onSubmit={handleSubmit} className="flex items-end gap-2">
-        <textarea
-          aria-label={t('forum.composerLabel')}
-          placeholder={t('forum.placeholder')}
-          value={draft}
-          onChange={(event) => onDraftChange(event.target.value)}
-          maxLength={FORUM_MESSAGE_MAX_LENGTH}
-          rows={2}
-          disabled={posting}
-          className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={posting}
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-neutral-900 px-5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
-        >
-          {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-          {t('forum.post')}
-        </button>
+      <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={t('forum.attach')}
+            disabled={posting}
+            onClick={() => {
+              fileInputRef.current?.click();
+            }}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-neutral-300 leading-none text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+          >
+            <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            disabled={posting}
+            onChange={handleFileChange}
+          />
+          <textarea
+            aria-label={t('forum.composerLabel')}
+            placeholder={t('forum.placeholder')}
+            value={draft}
+            onChange={(event) => onDraftChange(event.target.value)}
+            maxLength={FORUM_MESSAGE_MAX_LENGTH}
+            rows={2}
+            disabled={posting}
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={posting}
+            aria-label={t('forum.post')}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-900 leading-none text-white transition hover:bg-neutral-700 disabled:opacity-50"
+          >
+            {posting ? (
+              <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+            ) : (
+              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+            )}
+          </button>
+        </div>
+        {photoDraft !== null ? (
+          <div className="flex items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+            <img
+              src={photoDraft.previewUrl}
+              alt={t('forum.previewAlt')}
+              className="h-20 w-20 rounded-lg object-cover"
+            />
+            <button
+              type="button"
+              onClick={onClearPhoto}
+              disabled={posting}
+              aria-label={t('forum.removePhoto')}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-white disabled:opacity-50"
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
       </form>
 
       {formError === 'empty' ? (
@@ -429,6 +524,16 @@ export function ForumBoard({
       {formError === 'rateLimit' ? (
         <p role="alert" className="text-center text-sm text-red-600">
           {t('forum.errorRateLimit')}
+        </p>
+      ) : null}
+      {formError === 'unsupported' ? (
+        <p role="alert" className="text-center text-sm text-red-600">
+          {t('forum.errorUnsupported')}
+        </p>
+      ) : null}
+      {formError === 'tooLarge' ? (
+        <p role="alert" className="text-center text-sm text-red-600">
+          {t('forum.errorTooLarge')}
         </p>
       ) : null}
     </div>

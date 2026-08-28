@@ -186,13 +186,13 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a message, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
-- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, timestamp, optional inline photo then caption text below the photo, sat total always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, and optional photo preview with **Remove photo** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo message, attach/remove a photo draft, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `fetchMessagePhoto`, `visibleForumMessages`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer. Pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -216,7 +216,7 @@ Copy **No messages with sats yet.** Active selected, unpaid notes hidden, compos
 
 ### Variant: empty
 
-Empty copy **No messages yet. Be the first to write.** plus composer.
+Empty copy **No messages yet. Be the first to write.** plus composer (attach + textarea + Post).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -234,9 +234,15 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer → **Enter a message**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
+Click **Post** with an empty composer and no photo → **Enter a message or add a photo**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
+
+### Variant: photo
+
+On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.
+
+![21.gifts welcome photo](images/welcome-photo.png)
 
 ### Variant: menu-open
 

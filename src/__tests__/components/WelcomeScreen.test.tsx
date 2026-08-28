@@ -14,6 +14,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn().mockResolvedValue([]),
   postMessage: vi.fn(),
+  fetchMessagePhoto: vi.fn(),
 }));
 
 beforeEach(() => {

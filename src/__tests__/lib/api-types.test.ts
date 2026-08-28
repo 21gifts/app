@@ -5,6 +5,7 @@ import {
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
   FORUM_MESSAGE_MAX_LENGTH,
+  forumMessageSchema,
   lnAddressResolvedSchema,
   giftStatsSchema,
   passkeyBeginSchema,
@@ -52,6 +53,38 @@ describe('contactSchema', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
+      }),
+    ).toThrow();
+  });
+});
+
+describe('forumMessageSchema', () => {
+  const base = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+  };
+
+  it('accepts text with no photo', () => {
+    expect(forumMessageSchema.parse(base)).toEqual(base);
+  });
+
+  it('accepts an empty text when hasPhoto is true', () => {
+    const photoOnly = { ...base, text: '', hasPhoto: true };
+    expect(forumMessageSchema.parse(photoOnly)).toEqual(photoOnly);
+  });
+
+  it('rejects a missing hasPhoto flag', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        id: base.id,
+        name: base.name,
+        text: base.text,
+        createdAt: base.createdAt,
       }),
     ).toThrow();
   });

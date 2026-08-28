@@ -62,7 +62,9 @@ app/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
 │   │   ├── messages/
 │   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
-│   │   │   └── [id]/invoice/route.ts  # POST /messages/:id/invoice pay-on-note
+│   │   │   └── [id]/
+│   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
+│   │   │       └── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
 │   │   ├── me/
 │   │   │   ├── name/
 │   │   │   │   └── route.ts     # POST /me/name
@@ -85,8 +87,8 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list (messenger-group chronological), composer, sat totals, pay-on-note sheet
-│   │   ├── ForumLoader.tsx      # Fetch/post state for /welcome forum
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/feed-mode/pay/laws-dismiss state for /welcome forum
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
 │   │   └── ContactLoader.tsx    # Post state for /contact
@@ -99,7 +101,8 @@ app/
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
-│   │   └── forum-feed.ts        # Client-side Active/All/Most popular forum filter
+│   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
+│   │   └── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file
@@ -256,6 +259,15 @@ iPad is not a smartphone.
 `ForumBoard` is the current pay sheet. Any new pay UI follows the same
 split. Mounting `QrCode` (or any payment QR) on a smartphone UA is an
 undeclared deviation and is rejected. Reviewers follow `Review.md`.
+
+### Icon action controls (hard requirement)
+
+New action buttons are **icon-only**: lucide icon plus a catalog
+`aria-label`, with no visible button text. Existing examples are the
+forum composer (**Add a photo** / **Post** / **Remove photo**) and the
+pay Bitcoin control. Menu stays icon+text; profile Back stays a link —
+do not retrofit those. Adding a new primary action as a text button is
+an undeclared deviation and is rejected. Reviewers follow `Review.md`.
 
 ### Handbook (hard requirement)
 

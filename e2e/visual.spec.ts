@@ -156,6 +156,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 5,
             payable: true,
+            hasPhoto: false,
           },
           {
             id: 'm2',
@@ -164,6 +165,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
             createdAt: '2026-08-28T11:00:00.000Z',
             sats: 21,
             payable: true,
+            hasPhoto: false,
           },
           {
             id: 'm1',
@@ -172,6 +174,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
             createdAt: '2026-08-28T10:00:00.000Z',
             sats: 0,
             payable: true,
+            hasPhoto: false,
           },
         ],
       }),
@@ -435,6 +438,7 @@ test.describe('welcome forum variants', () => {
               createdAt: '2026-08-28T10:00:00.000Z',
               sats: 0,
               payable: true,
+              hasPhoto: false,
             },
           ],
         }),
@@ -497,6 +501,7 @@ test.describe('welcome forum variants', () => {
               createdAt: '2026-08-28T10:00:00.000Z',
               sats: 0,
               payable: true,
+              hasPhoto: false,
             },
           ],
         }),
@@ -564,8 +569,47 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
     await page.getByRole('button', { name: 'Post' }).click();
-    await expect(page.getByText('Enter a message')).toBeVisible();
+    await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
     await shotScreen(page, 'state-welcome-validation-error');
+  });
+
+  test('welcome photo', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-photo',
+              name: 'Ada',
+              text: '',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: true,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        // 1×1 JPEG
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-photo');
   });
 
   test('welcome menu-open', async ({ page }) => {

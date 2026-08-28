@@ -147,7 +147,14 @@ export const SCREEN_VARIANTS = [
     id: 'validation-error',
     image: 'welcome-validation-error.png',
     visual: 'state-welcome-validation-error',
-    needle: 'Enter a message',
+    needle: 'Enter a message or add a photo',
+  },
+  {
+    route: '/welcome',
+    id: 'photo',
+    image: 'welcome-photo.png',
+    visual: 'state-welcome-photo',
+    needle: 'Photo from Ada',
   },
   {
     route: '/welcome',

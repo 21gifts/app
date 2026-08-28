@@ -9,6 +9,7 @@ const ADA: ForumMessage = {
   createdAt: '2026-08-28T12:00:00.000Z',
   sats: 5,
   payable: true,
+  hasPhoto: false,
 };
 
 const CAROL: ForumMessage = {
@@ -18,6 +19,7 @@ const CAROL: ForumMessage = {
   createdAt: '2026-08-28T11:00:00.000Z',
   sats: 21,
   payable: true,
+  hasPhoto: false,
 };
 
 const BOB: ForumMessage = {
@@ -27,6 +29,7 @@ const BOB: ForumMessage = {
   createdAt: '2026-08-28T10:00:00.000Z',
   sats: 0,
   payable: true,
+  hasPhoto: false,
 };
 
 const TIE_NEWER: ForumMessage = {
@@ -36,6 +39,7 @@ const TIE_NEWER: ForumMessage = {
   createdAt: '2026-08-28T14:00:00.000Z',
   sats: 10,
   payable: true,
+  hasPhoto: false,
 };
 
 const TIE_OLDER: ForumMessage = {
@@ -45,6 +49,7 @@ const TIE_OLDER: ForumMessage = {
   createdAt: '2026-08-28T13:00:00.000Z',
   sats: 10,
   payable: true,
+  hasPhoto: false,
 };
 
 const TIE_SAME_TIME_LOW_ID: ForumMessage = {
@@ -54,6 +59,7 @@ const TIE_SAME_TIME_LOW_ID: ForumMessage = {
   createdAt: '2026-08-28T14:00:00.000Z',
   sats: 10,
   payable: true,
+  hasPhoto: false,
 };
 
 describe('forum-feed', () => {

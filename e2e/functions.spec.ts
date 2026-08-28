@@ -91,6 +91,7 @@ async function stubPayableNote(page: Page): Promise<void> {
             createdAt: '2026-08-28T10:00:00.000Z',
             sats: 0,
             payable: true,
+            hasPhoto: false,
           },
         ],
       }),
@@ -306,6 +307,129 @@ test('Function: proxyContactPost — POST /contact/submit without bearer is 401'
   request,
 }) => {
   expect((await request.post('/contact/submit', { data: { text: 'hi' } })).status()).toBe(401);
+});
+
+test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/messages/m1/photo')).status()).toBe(401);
+});
+
+test('Function: fetchMessagePhoto — photo-only row shows the image alt', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: Buffer.from(
+        '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+        'base64',
+      ),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+});
+
+test('Function: prepareForumPhoto — attach control is visible on welcome', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+});
+
+test('Function: isForumPhotoFile — attach control accepts jpeg png webp', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  const input = page.locator('input[type="file"]');
+  await expect(input).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
 });
 
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
@@ -1417,6 +1541,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 1,
             payable: true,
+            hasPhoto: false,
           },
         ],
       }),
@@ -1462,6 +1587,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 5,
             payable: true,
+            hasPhoto: false,
           },
           {
             id: 'm2',
@@ -1470,6 +1596,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
             createdAt: '2026-08-28T11:00:00.000Z',
             sats: 21,
             payable: true,
+            hasPhoto: false,
           },
           {
             id: 'm1',
@@ -1478,6 +1605,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
             createdAt: '2026-08-28T10:00:00.000Z',
             sats: 0,
             payable: true,
+            hasPhoto: false,
           },
         ],
       }),

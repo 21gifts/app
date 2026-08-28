@@ -86,7 +86,7 @@
 
 ## Endpoint: POST /messages
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message).
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message with optional photo).
 - **Errors:** Upstream 401/400/429, or 502 if the api is unreachable.
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.
@@ -103,6 +103,13 @@
 - **Purpose:** Same-origin Bearer proxy of api POST `/contact` (create an in-app contact message to 21.gifts). Nested under `/contact/submit` because the UI page already owns `/contact`.
 - **Errors:** Upstream 401/400, or 502 if the api is unreachable.
 - **Used by:** `postContact`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /messages/[id]/photo
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id/photo` (raw JPEG/PNG/WebP bytes for one forum message). Clients fetch with Authorization and render via blob URLs — not bare `<img src>`.
+- **Errors:** Upstream 401/404, or 502 if the api is unreachable.
+- **Used by:** `fetchMessagePhoto`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/lightning-address
