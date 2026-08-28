@@ -228,15 +228,15 @@
 ## Function: ForumBoard
 
 - **Purpose:** Presentational public forum: heading **Forum**, lead that everyone can read and write, list of every post (name, text, timestamp) or empty/loading/error, and composer (textarea + Post).
-- **Inputs:** `ForumBoardProps` — `messages`, `error`, `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError`.
-- **Returns / side effects:** React element. Formats timestamps via `formatForumTime`. No network.
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError`.
+- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network.
 - **Used by:** `ForumLoader`.
 
 ## Function: ForumLoader
 
 - **Purpose:** Client loader for the public forum on `/welcome`. Session from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, posts via `postMessage`, cancelled-flag fetch like `StatsLoader`.
 - **Inputs:** None (reads session from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts.
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts. Fetch failure sets the error flag; does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName

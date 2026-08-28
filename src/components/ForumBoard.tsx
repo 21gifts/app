@@ -10,8 +10,8 @@ import { formatForumTime } from '@/lib/forum-time';
 export interface ForumBoardProps {
   /** Loaded messages newest-first, or `null` before the first successful load. */
   messages: ForumMessage[] | null;
-  /** Visitor-facing load error, or `null`. */
-  error: string | null;
+  /** True when the latest fetch failed. Copy comes from `forum.error`. */
+  error: boolean;
   /** True while a fetch is in flight. */
   loading: boolean;
   /** True while a post is in flight. */
@@ -58,10 +58,10 @@ export function ForumBoard({
   let middle: ReactElement;
   if (loading && messages === null) {
     middle = <p className="text-center text-sm text-neutral-500">{t('forum.loading')}</p>;
-  } else if (error !== null && messages === null) {
+  } else if (error && messages === null) {
     middle = (
       <div className="flex flex-col items-center gap-3">
-        <p className="text-center text-sm text-neutral-700">{error}</p>
+        <p className="text-center text-sm text-neutral-700">{t('forum.error')}</p>
         <button
           type="button"
           onClick={onRetry}

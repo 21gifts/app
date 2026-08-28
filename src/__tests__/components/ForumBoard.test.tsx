@@ -26,7 +26,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
-        error={null}
+        error={false}
         loading={false}
         posting={false}
         draft=""
@@ -47,7 +47,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={null}
-        error={null}
+        error={false}
         loading={true}
         posting={false}
         draft=""
@@ -64,7 +64,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={null}
-        error={null}
+        error={false}
         loading={false}
         posting={false}
         draft=""
@@ -82,7 +82,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={null}
-        error="Could not load messages. Please try again."
+        error={true}
         loading={false}
         posting={false}
         draft=""
@@ -97,11 +97,31 @@ describe('ForumBoard', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it('localizes the load error', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={null}
+        error={true}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+      />,
+      'de',
+    );
+    expect(
+      screen.getByText('Nachrichten konnten nicht geladen werden. Bitte erneut versuchen.'),
+    ).toBeTruthy();
+  });
+
   it('shows the empty copy', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
-        error={null}
+        error={false}
         loading={false}
         posting={false}
         draft=""
@@ -118,7 +138,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE, MULTILINE]}
-        error={null}
+        error={false}
         loading={false}
         posting={false}
         draft=""
@@ -143,7 +163,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
-        error={null}
+        error={false}
         loading={false}
         posting={false}
         draft=""
@@ -160,7 +180,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
-        error={null}
+        error={false}
         loading={false}
         posting={false}
         draft=""
@@ -177,7 +197,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
-        error={null}
+        error={false}
         loading={false}
         posting={true}
         draft="Hi"
@@ -198,7 +218,7 @@ describe('ForumBoard', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
-        error={null}
+        error={false}
         loading={false}
         posting={false}
         draft=""

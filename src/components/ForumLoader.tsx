@@ -18,7 +18,7 @@ import { useAuthStore } from '@/stores/auth-store';
 export function ForumLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
@@ -31,19 +31,17 @@ export function ForumLoader(): ReactElement | null {
     }
     let cancelled = false;
     setLoading(true);
-    setError(null);
+    setError(false);
     void (async () => {
       try {
         const next = await fetchMessages(session);
         if (!cancelled) {
           setMessages(next);
         }
-      } catch (cause) {
+      } catch {
         if (!cancelled) {
           setMessages(null);
-          setError(
-            cause instanceof Error ? cause.message : 'Could not load messages. Please try again.',
-          );
+          setError(true);
         }
       } finally {
         if (!cancelled) {

@@ -89,6 +89,26 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('does not render a raw Error.message as the load error', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('SECRET internals'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    });
+    expect(screen.queryByText('SECRET internals')).toBeNull();
+  });
+
+  it('localizes a fetch error', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('SECRET internals'));
+    renderWithLocale(<ForumLoader />, 'de');
+    await waitFor(() => {
+      expect(
+        screen.getByText('Nachrichten konnten nicht geladen werden. Bitte erneut versuchen.'),
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText('SECRET internals')).toBeNull();
+  });
+
   it('ignores a stale fetch after unmount', async () => {
     let resolveStale: ((value: ForumMessage[]) => void) | undefined;
     fetchMock.mockImplementationOnce(
