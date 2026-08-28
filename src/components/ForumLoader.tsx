@@ -23,9 +23,7 @@ export function ForumLoader(): ReactElement | null {
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
-  const [formError, setFormError] = useState<'empty' | 'tooLong' | 'request' | null>(
-    null,
-  );
+  const [formError, setFormError] = useState<'empty' | 'tooLong' | 'request' | null>(null);
 
   useEffect(() => {
     if (session === null) {
