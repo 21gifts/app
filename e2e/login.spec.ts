@@ -63,6 +63,17 @@ test('login Try again restarts the single-button flow', async ({ page }) => {
   release();
 });
 
+test('login in-app browser shows escape card instead of Log in', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Open this page in your browser' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open in browser' })).toBeVisible();
+});
+
 const E2E_ACCOUNT = {
   id: 'acc_e2e',
   linkingKey: `02${'a'.repeat(62)}`,

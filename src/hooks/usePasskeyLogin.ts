@@ -7,6 +7,7 @@ import {
   startPasskeyAuthentication,
   startPasskeyRegistration,
 } from '@/lib/api';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -15,7 +16,7 @@ import {
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Discrete states of the passkey login flow. */
-export type PasskeyStatus = 'idle' | 'starting' | 'error';
+export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported';
 
 /** Public surface returned by {@link usePasskeyLogin}. */
 export interface UsePasskeyLogin {
@@ -190,6 +191,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         const noPasskey = error instanceof DOMException && error.name === 'NotAllowedError';
         if (!noPasskey) {
           finishWithError(runId, error);
+          return;
+        }
+        if (isInAppBrowser()) {
+          setStatus('unsupported');
           return;
         }
         lastKindRef.current = 'register';

@@ -7,6 +7,7 @@ import {
   startPasskeyAuthentication,
   startPasskeyRegistration,
 } from '@/lib/api';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', () => ({
@@ -14,6 +15,10 @@ vi.mock('@/lib/api', () => ({
   finishPasskeyRegistration: vi.fn(),
   startPasskeyAuthentication: vi.fn(),
   finishPasskeyAuthentication: vi.fn(),
+}));
+
+vi.mock('@/lib/in-app-browser', () => ({
+  isInAppBrowser: vi.fn(() => false),
 }));
 
 vi.mock('@/lib/webauthn-browser', () => ({
@@ -36,6 +41,7 @@ const begin = { challengeId: 'ch', options: { challenge: 'aa' } };
 
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
+  vi.mocked(isInAppBrowser).mockReturnValue(false);
   vi.mocked(startPasskeyRegistration).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyRegistration).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
@@ -147,6 +153,27 @@ describe('usePasskeyLogin', () => {
     });
     expect(useAuthStore.getState().session).toBe('tok');
     expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('login sets unsupported when get is NotAllowedError inside an in-app browser', async () => {
+    const create = vi.fn();
+    vi.mocked(isInAppBrowser).mockReturnValue(true);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create,
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unsupported');
+    expect(create).not.toHaveBeenCalled();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBeNull();
     vi.unstubAllGlobals();
   });
 
