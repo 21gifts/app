@@ -244,8 +244,32 @@ describe('ForumLoader', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('Early')).toBeTruthy();
+      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
     });
-    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('does not duplicate a post already present from fetch', async () => {
+    const created: ForumMessage = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    fetchMock.mockResolvedValue([created]);
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: 'Hello from Ada' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.getAllByText('Hello from Ada')).toHaveLength(1);
   });
 
   it('posts a trimmed message, prepends it, and clears the draft', async () => {

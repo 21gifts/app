@@ -75,7 +75,15 @@ export function ForumLoader(): ReactElement | null {
     void (async () => {
       try {
         const created = await postMessage(session, trimmed);
-        setMessages((prev) => [created, ...(prev ?? [])]);
+        setMessages((prev) => {
+          if (prev === null) {
+            return [created];
+          }
+          if (prev.some((message) => message.id === created.id)) {
+            return prev;
+          }
+          return [created, ...prev];
+        });
         setDraft('');
       } catch {
         setFormError('request');

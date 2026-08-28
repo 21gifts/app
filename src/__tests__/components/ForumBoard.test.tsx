@@ -100,6 +100,27 @@ describe('ForumBoard', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the list and still shows retry when a load error arrives later', () => {
+    const onRetry = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={true}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={onRetry}
+        formError={null}
+      />,
+    );
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
   it('localizes the load error', () => {
     renderWithLocale(
       <ForumBoard

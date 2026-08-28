@@ -243,20 +243,27 @@ test('Function: proxyMessagesPost — POST /messages without bearer is 401', asy
   expect((await request.post('/messages', { data: { text: 'hi' } })).status()).toBe(401);
 });
 
-test('Function: fetchMessages — GET /messages with bearer is 200', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.get('/messages', { headers: { authorization: `Bearer ${token}` } });
-  expect(res.status()).toBe(200);
-  expect(Array.isArray(((await res.json()) as { messages: unknown[] }).messages)).toBe(true);
+test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
 });
 
-test('Function: postMessage — POST /messages without a name is 400', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.post('/messages', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { text: 'hello' },
-  });
-  expect(res.status()).toBe(400);
+test('Function: postMessage — posting from the composer shows the row', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await page.getByLabel('Your message').fill('Hello from Ada');
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {

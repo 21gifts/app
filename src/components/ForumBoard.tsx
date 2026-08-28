@@ -56,22 +56,24 @@ export function ForumBoard({
     onPost();
   };
 
+  const errorBlock = (
+    <div className="flex flex-col items-center gap-3">
+      <p className="text-center text-sm text-neutral-700">{t('forum.error')}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+      >
+        {t('forum.retry')}
+      </button>
+    </div>
+  );
+
   let middle: ReactElement;
   if (loading && messages === null) {
     middle = <p className="text-center text-sm text-neutral-500">{t('forum.loading')}</p>;
   } else if (error && messages === null) {
-    middle = (
-      <div className="flex flex-col items-center gap-3">
-        <p className="text-center text-sm text-neutral-700">{t('forum.error')}</p>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-        >
-          {t('forum.retry')}
-        </button>
-      </div>
-    );
+    middle = errorBlock;
   } else if (messages !== null && messages.length === 0) {
     middle = <p className="text-center text-sm text-neutral-500">{t('forum.empty')}</p>;
   } else if (messages !== null) {
@@ -104,6 +106,7 @@ export function ForumBoard({
       </h2>
 
       {middle}
+      {error && messages !== null ? errorBlock : null}
 
       <form onSubmit={handleSubmit} className="flex items-end gap-2">
         <textarea
