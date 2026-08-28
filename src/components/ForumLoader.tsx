@@ -36,11 +36,17 @@ export function ForumLoader(): ReactElement | null {
       try {
         const next = await fetchMessages(session);
         if (!cancelled) {
-          setMessages(next);
+          setMessages((prev) => {
+            if (prev === null) {
+              return next;
+            }
+            const ids = new Set(next.map((message) => message.id));
+            const extra = prev.filter((message) => !ids.has(message.id));
+            return [...extra, ...next];
+          });
         }
       } catch {
         if (!cancelled) {
-          setMessages(null);
           setError(true);
         }
       } finally {

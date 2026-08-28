@@ -176,6 +176,78 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('keeps an early post when the in-flight fetch later resolves', async () => {
+    let resolveFetch: ((value: ForumMessage[]) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+    const created: ForumMessage = {
+      id: 'm-early',
+      name: 'Ada',
+      text: 'Early',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    };
+    const fromServer: ForumMessage = {
+      id: 'm1',
+      name: 'Bob',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Loading…')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Early' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('Early')).toBeTruthy();
+    });
+    await act(async () => {
+      resolveFetch?.([fromServer]);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Early')).toBeTruthy();
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+  });
+
+  it('keeps an early post when the in-flight fetch later rejects', async () => {
+    let rejectFetch: ((reason: Error) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectFetch = reject;
+        }),
+    );
+    const created: ForumMessage = {
+      id: 'm-early',
+      name: 'Ada',
+      text: 'Early',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Loading…')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Early' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('Early')).toBeTruthy();
+    });
+    await act(async () => {
+      rejectFetch?.(new Error('gone'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Early')).toBeTruthy();
+    });
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
   it('posts a trimmed message, prepends it, and clears the draft', async () => {
     fetchMock.mockResolvedValue([]);
     const created: ForumMessage = {

@@ -236,7 +236,7 @@
 
 - **Purpose:** Client loader for the public forum on `/welcome`. Session from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, posts via `postMessage`, cancelled-flag fetch like `StatsLoader`.
 - **Inputs:** None (reads session from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts. Fetch failure sets the error flag; does not pass `Error.message` to the board.
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts. Fetch failure sets the error flag without clearing an already-posted list. A late GET merges locally posted rows that the response does not yet contain. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -549,10 +549,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, address link, and passkey begin/finish.
+- **Used by:** Same-origin name save, address link, passkey begin/finish, and forum message create (`POST /messages`).
 
 ## Function: proxyApiRequest
 
