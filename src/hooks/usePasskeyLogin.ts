@@ -7,6 +7,7 @@ import {
   startPasskeyAuthentication,
   startPasskeyRegistration,
 } from '@/lib/api';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -15,7 +16,7 @@ import {
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Discrete states of the passkey login flow. */
-export type PasskeyStatus = 'idle' | 'starting' | 'error';
+export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported';
 
 /** Public surface returned by {@link usePasskeyLogin}. */
 export interface UsePasskeyLogin {
@@ -162,6 +163,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, []);
 
   const register = useCallback((): void => {
+    if (isInAppBrowser()) {
+      setStatus('unsupported');
+      return;
+    }
     entryKindRef.current = 'register';
     const { runId, controller } = beginRun('register');
     void completeRegistration(runId, controller).catch((error: unknown) => {
@@ -170,6 +175,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeRegistration, finishWithError]);
 
   const authenticate = useCallback((): void => {
+    if (isInAppBrowser()) {
+      setStatus('unsupported');
+      return;
+    }
     entryKindRef.current = 'authenticate';
     const { runId, controller } = beginRun('authenticate');
     void completeAuthentication(runId, controller).catch((error: unknown) => {
@@ -178,6 +187,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeAuthentication, finishWithError]);
 
   const login = useCallback((): void => {
+    if (isInAppBrowser()) {
+      setStatus('unsupported');
+      return;
+    }
     entryKindRef.current = 'login';
     const { runId, controller } = beginRun('authenticate');
     void (async () => {
@@ -190,6 +203,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         const noPasskey = error instanceof DOMException && error.name === 'NotAllowedError';
         if (!noPasskey) {
           finishWithError(runId, error);
+          return;
+        }
+        if (isInAppBrowser()) {
+          setStatus('unsupported');
           return;
         }
         lastKindRef.current = 'register';

@@ -52,6 +52,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Something went wrong. Please try again.',
   },
   {
+    route: '/login',
+    id: 'in-app',
+    image: 'login-in-app.png',
+    visual: 'state-login-in-app',
+    needle: 'Open this page in your browser',
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',
