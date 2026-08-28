@@ -100,7 +100,10 @@ export function ForumLoader(): ReactElement | null {
       loading={loading}
       posting={posting}
       draft={draft}
-      onDraftChange={setDraft}
+      onDraftChange={(value) => {
+        setDraft(value);
+        setFormError(null);
+      }}
       onPost={onPost}
       onRetry={() => {
         setAttempt((n) => n + 1);

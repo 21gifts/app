@@ -154,6 +154,9 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     expect(postMock).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('prepends a post when the list has not loaded yet', async () => {
