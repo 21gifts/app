@@ -10,8 +10,8 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * The third post-login screen: welcome after name and address are saved.
  *
- * Embeds {@link ForumLoader} (forum list + composer) below the body and above
- * **Send a gift**. Card is `max-w-lg` to fit the board.
+ * Embeds {@link ForumLoader} (forum list + composer) below the heading and
+ * above **Send a gift**. Card is `max-w-xl` to fit the board.
  *
  * @returns The welcome card.
  */
@@ -26,7 +26,6 @@ export function WelcomeScreen(): ReactElement {
       <h1 className="text-center text-2xl font-semibold tracking-tight">
         {t('login.welcomeHeading', { name })}
       </h1>
-      <p className="text-center text-sm text-neutral-500">{t('login.welcomeBody')}</p>
       <ForumLoader />
       <Link
         href="/donate"

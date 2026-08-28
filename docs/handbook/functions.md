@@ -220,9 +220,9 @@
 
 ## Function: WelcomeScreen
 
-- **Purpose:** Third post-login screen after name and address are saved. Embeds `ForumLoader` (forum list + composer) below the body and above **Send a gift**; card is `max-w-lg`.
+- **Purpose:** Third post-login screen after name and address are saved. Embeds `ForumLoader` (forum list + composer) below the heading and above **Send a gift**; card is `max-w-xl`.
 - **Inputs:** Reads `account.name` from `useAuthStore`.
-- **Returns / side effects:** Gift icon, **Welcome, {name}**, ready copy, forum board, **Send a gift** (`/donate`). No name or address form. No `LogoutButton` on the card.
+- **Returns / side effects:** Gift icon, **Welcome, {name}**, forum board, **Send a gift** (`/donate`). No name or address form. No `LogoutButton` on the card.
 - **Used by:** Screen `/welcome`.
 
 ## Function: ForumBoard
