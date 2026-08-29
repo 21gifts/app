@@ -250,6 +250,84 @@ After a successful post of caption **Hello with this photo.** plus a JPEG: the r
 
 ![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
 
+### Variant: composer-text
+
+Typed caption **Caption before attaching a photo.** in the composer; no preview yet; attach + Post idle.
+
+![21.gifts welcome composer text](images/welcome-composer-text.png)
+
+### Variant: composer-photo
+
+JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.
+
+![21.gifts welcome composer photo](images/welcome-composer-photo.png)
+
+### Variant: composer-photo-and-text
+
+Preview plus caption **Caption with selected photo.**, ready to Post.
+
+![21.gifts welcome composer photo and text](images/welcome-composer-photo-and-text.png)
+
+### Variant: composer-text-after-remove
+
+After **Remove photo**, caption **Caption kept after removing photo.** remains; preview gone.
+
+![21.gifts welcome composer text after remove](images/welcome-composer-text-after-remove.png)
+
+### Variant: preparing-photo
+
+Attach in flight (Post disabled + spinner, no preview yet). Native file picker is OS chrome and is not a variant.
+
+![21.gifts welcome preparing photo](images/welcome-preparing-photo.png)
+
+### Variant: preparing-photo-and-text
+
+Same spinner, caption **Caption while the photo is preparing.** already in the textarea.
+
+![21.gifts welcome preparing photo and text](images/welcome-preparing-photo-and-text.png)
+
+### Variant: posting-photo-and-text
+
+Post in flight: spinner on **Post**, composer disabled, preview and caption **Caption while the post is in flight.** still shown.
+
+![21.gifts welcome posting photo and text](images/welcome-posting-photo-and-text.png)
+
+### Variant: photo-loading
+
+Forum row for Ada with caption **Caption waiting for the photo to load.** and `hasPhoto`, image bytes not yet loaded so no `<img>`. A failed photo fetch looks the same (text-only row) — not a separate variant.
+
+![21.gifts welcome photo loading](images/welcome-photo-loading.png)
+
+### Variant: error-unsupported
+
+Attach a GIF → **Use a JPEG, PNG, or WebP photo**.
+
+![21.gifts welcome error unsupported](images/welcome-error-unsupported.png)
+
+### Variant: error-unsupported-with-text
+
+Same alert with caption **Caption with an unsupported photo.** still in the composer.
+
+![21.gifts welcome error unsupported with text](images/welcome-error-unsupported-with-text.png)
+
+### Variant: error-too-large
+
+Encoded JPEG over 1 MB → **Keep the photo under 1 MB**.
+
+![21.gifts welcome error too large](images/welcome-error-too-large.png)
+
+### Variant: error-too-large-with-text
+
+Same alert with caption **Caption with a photo that is too large.** still in the composer.
+
+![21.gifts welcome error too large with text](images/welcome-error-too-large-with-text.png)
+
+### Variant: error-request-photo-and-text
+
+POST fails after caption+JPEG → **Could not post your message**; preview and caption remain.
+
+![21.gifts welcome error request photo and text](images/welcome-error-request-photo-and-text.png)
+
 ### Variant: menu-open
 
 Open **Menu** top-right only (do not click Language) → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), a collapsed **Language** row (Globe + label + chevron, same row chrome as Profile / Log out), and **Log out**. No English / Deutsch / Español / Filipino option rows. No native language select.

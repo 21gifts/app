@@ -668,8 +668,7 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-photo-and-text');
   });
 
-  test('welcome menu-open', async ({ page }) => {
-    await seedAda(page);
+  async function emptyForum(page: Page): Promise<void> {
     await page.route(/\/messages$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -677,6 +676,278 @@ test.describe('welcome forum variants', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
+  }
+
+  const TINY_GIF = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64',
+  );
+
+  async function attachGif(page: Page): Promise<void> {
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'tiny.gif',
+      mimeType: 'image/gif',
+      buffer: TINY_GIF,
+    });
+  }
+
+  async function attachTinyJpeg(page: Page): Promise<void> {
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  }
+
+  async function hangCreateImageBitmap(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+  }
+
+  async function stubTooLargeJpeg(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+  }
+
+  test('welcome composer-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption before attaching a photo.');
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption before attaching a photo.');
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-composer-text');
+  });
+
+  test('welcome composer-photo', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await attachTinyJpeg(page);
+    await expect(page.getByLabel('Your message')).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-photo');
+  });
+
+  test('welcome composer-photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with selected photo.');
+    await attachTinyJpeg(page);
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected photo.');
+    await shotScreen(page, 'state-welcome-composer-photo-and-text');
+  });
+
+  test('welcome composer-text-after-remove', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption kept after removing photo.');
+    await attachTinyJpeg(page);
+    await page.getByRole('button', { name: 'Remove photo' }).click();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption kept after removing photo.');
+    await shotScreen(page, 'state-welcome-composer-text-after-remove');
+  });
+
+  test('welcome preparing-photo', async ({ page }) => {
+    await seedAda(page);
+    await hangCreateImageBitmap(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-preparing-photo');
+  });
+
+  test('welcome preparing-photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await hangCreateImageBitmap(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption while the photo is preparing.');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByLabel('Your message')).toHaveValue(
+      'Caption while the photo is preparing.',
+    );
+    await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-preparing-photo-and-text');
+  });
+
+  test('welcome posting-photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await held;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'm-posting',
+            name: 'Ada',
+            text: 'Caption while the post is in flight.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption while the post is in flight.');
+    await attachTinyJpeg(page);
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue(
+      'Caption while the post is in flight.',
+    );
+    await shotScreen(page, 'state-welcome-posting-photo-and-text');
+    release();
+  });
+
+  test('welcome photo-loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-loading',
+              name: 'Ada',
+              text: 'Caption waiting for the photo to load.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: true,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/m-loading\/photo$/, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('Caption waiting for the photo to load.')).toBeVisible();
+    await expect(page.getByAltText('Photo from Ada')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-photo-loading');
+    release();
+  });
+
+  test('welcome error-unsupported', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await attachGif(page);
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-unsupported');
+  });
+
+  test('welcome error-unsupported-with-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with an unsupported photo.');
+    await attachGif(page);
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption with an unsupported photo.');
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-unsupported-with-text');
+  });
+
+  test('welcome error-too-large', async ({ page }) => {
+    await seedAda(page);
+    await stubTooLargeJpeg(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-too-large');
+  });
+
+  test('welcome error-too-large-with-text', async ({ page }) => {
+    await seedAda(page);
+    await stubTooLargeJpeg(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with a photo that is too large.');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue(
+      'Caption with a photo that is too large.',
+    );
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-too-large-with-text');
+  });
+
+  test('welcome error-request-photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption when posting fails.');
+    await attachTinyJpeg(page);
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByText('Could not post your message')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption when posting fails.');
+    await shotScreen(page, 'state-welcome-error-request-photo-and-text');
+  });
+
+  test('welcome menu-open', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
