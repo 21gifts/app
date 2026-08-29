@@ -81,7 +81,8 @@ export function ForumLoader(): ReactElement | null {
 
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
-   * Stop uses `messagesRef` + merge outside setState so empty GET keeps local unsigned extras.
+   * Stop uses `messagesRef` + merge outside setState (empty GET keeps local unsigned extras);
+   * store update is `setMessages((prev) => mergeMessages(prev, next))`.
    *
    * @param activeSession - Session token for the fetch.
    */
@@ -101,7 +102,7 @@ export function ForumLoader(): ReactElement | null {
             return;
           }
           const merged = mergeMessages(messagesRef.current, next);
-          setMessages(merged);
+          setMessages((prev) => mergeMessages(prev, next));
           if (merged.length > 0 && merged.every((message) => message.payable)) {
             return;
           }
