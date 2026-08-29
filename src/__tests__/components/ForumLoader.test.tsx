@@ -274,6 +274,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -293,6 +294,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -317,6 +319,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient'));
@@ -775,6 +778,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
