@@ -647,12 +647,14 @@ test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agre
   });
   expect(first.status()).toBe(200);
   const firstBody = (await first.json()) as { rulesAgreedAt: number | null };
+  viewKey: 'a'.repeat(64),
   expect(typeof firstBody.rulesAgreedAt).toBe('number');
   const second = await request.post('/me/rules-agreement', {
     headers: { authorization: `Bearer ${token}` },
   });
   expect(second.status()).toBe(200);
   const secondBody = (await second.json()) as { rulesAgreedAt: number | null };
+  viewKey: 'a'.repeat(64),
   expect(secondBody.rulesAgreedAt).toBe(firstBody.rulesAgreedAt);
 });
 
@@ -702,6 +704,7 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -727,6 +730,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -754,6 +758,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1904,6 +1909,7 @@ test('Function: OnboardingGate — name and address without agreement go to rule
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });

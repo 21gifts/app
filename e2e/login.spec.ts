@@ -134,6 +134,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });

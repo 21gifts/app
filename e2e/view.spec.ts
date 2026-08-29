@@ -122,6 +122,7 @@ test('signed-in profile shows the view-key URL and copy control', async ({ page 
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
         viewKey: KEY,
       }),
     });

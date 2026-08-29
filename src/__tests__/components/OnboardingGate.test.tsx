@@ -32,6 +32,7 @@ const account = {
   forumLawsDismissed: false,
   createdAt: 1,
   rulesAgreedAt: null as number | null,
+  viewKey: 'a'.repeat(64),
 };
 
 const complete = {

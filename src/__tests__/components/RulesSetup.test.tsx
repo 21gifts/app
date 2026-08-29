@@ -20,6 +20,7 @@ const baseAccount: Account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 beforeEach(() => {
@@ -71,6 +72,7 @@ describe('RulesSetup', () => {
       ...baseAccount,
       name: 'Stale',
       rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
     });
     renderWithLocale(
       <RulesSetup>
@@ -85,6 +87,7 @@ describe('RulesSetup', () => {
       expect(useAuthStore.getState().account).toEqual({
         ...baseAccount,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       });
     });
   });
@@ -112,12 +115,14 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, name: 'Ada', rulesAgreedAt: 1_700_000_001 });
+      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account).toEqual({
       ...baseAccount,
       name: 'Bob',
       rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
     });
   });
 
@@ -155,6 +160,7 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
+      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account?.rulesAgreedAt).toBe(1_700_000_001);
@@ -180,6 +186,7 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
+      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account?.rulesAgreedAt).toBeNull();
@@ -205,6 +212,7 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
+      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account).toBeNull();

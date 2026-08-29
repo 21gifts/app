@@ -290,6 +290,7 @@ describe('dismissForumLaws', () => {
 describe('agreeToRules', () => {
   it('posts agreement and returns the validated account', async () => {
     const agreed = { ...account, rulesAgreedAt: 1_700_000_001 };
+    viewKey: 'a'.repeat(64),
     const fetchMock = stubFetch({ ok: true, status: 200, body: agreed });
 
     await expect(agreeToRules('sess')).resolves.toEqual(agreed);

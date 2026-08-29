@@ -161,7 +161,8 @@ describe('accountSchema', () => {
 
   it('accepts a positive rulesAgreedAt timestamp', () => {
     const agreed = { ...account, rulesAgreedAt: 1_700_000_001 };
-    expect(accountSchema.parse(agreed).rulesAgreedAt).toBe(1_700_000_001);
+    viewKey: ('a'.repeat(64),
+      expect(accountSchema.parse(agreed).rulesAgreedAt).toBe(1_700_000_001));
   });
 
   it('rejects a missing rulesAgreedAt field', () => {

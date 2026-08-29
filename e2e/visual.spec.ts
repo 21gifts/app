@@ -370,6 +370,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: null,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -392,6 +393,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: null,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -413,6 +415,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -443,6 +446,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -641,6 +645,7 @@ test.describe('profile activity chart variants', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -712,6 +717,7 @@ test.describe('welcome forum variants', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -1367,6 +1373,7 @@ test.describe('contact screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -1571,6 +1578,7 @@ test.describe('function baselines', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
