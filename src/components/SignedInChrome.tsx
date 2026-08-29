@@ -42,10 +42,17 @@ export function SignedInChrome(): ReactElement {
       return;
     }
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-        buttonRef.current?.focus();
+      if (event.key !== 'Escape') {
+        return;
       }
+      const expandedLanguage = rootRef.current?.querySelector(
+        '[aria-expanded="true"][aria-haspopup="listbox"]',
+      );
+      if (expandedLanguage) {
+        return;
+      }
+      setOpen(false);
+      buttonRef.current?.focus();
     };
     const onMouseDown = (event: MouseEvent): void => {
       const root = rootRef.current;
@@ -120,9 +127,7 @@ export function SignedInChrome(): ReactElement {
               )}
             </span>
           </Link>
-          <div className="px-3 py-2">
-            <LanguageSwitcher tone="light" embedded />
-          </div>
+          <LanguageSwitcher tone="light" embedded />
           <div className="px-3 py-2">
             <LogoutButton />
           </div>

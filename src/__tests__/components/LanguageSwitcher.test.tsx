@@ -258,13 +258,23 @@ describe('LanguageSwitcher', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('embedded shows the listbox immediately without a pill trigger', () => {
+  it('embedded collapsed shows a Language button without locale options', () => {
     renderWithLocale(<LanguageSwitcher tone="light" embedded />);
-    const listbox = screen.getByLabelText('Language');
-    expect(listbox.getAttribute('role')).toBe('listbox');
-    expect(listbox.className).not.toContain('rounded-full');
-    expect(listbox.className).not.toContain('border-neutral-300');
-    expect(screen.queryByRole('button', { name: 'Language' })).toBeNull();
+    const trigger = screen.getByLabelText('Language');
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.className).not.toContain('rounded-full');
+    expect(trigger.className).not.toContain('border-neutral-300');
+    expect(trigger.getAttribute('tabindex')).not.toBe('-1');
+    expect(screen.queryByRole('option')).toBeNull();
+  });
+
+  it('embedded Language click expands four endonym options', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
+    const trigger = screen.getByLabelText('Language');
+    fireEvent.click(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(trigger.getAttribute('role')).toBe('combobox');
     expect(screen.getAllByRole('option').map((option) => option.getAttribute('id'))).toEqual([
       'language-option-en',
       'language-option-de',
@@ -277,9 +287,10 @@ describe('LanguageSwitcher', () => {
     expect(screen.getByRole('option', { name: 'Filipino' })).toBeTruthy();
   });
 
-  it('embedded option rows stay in the tab order', () => {
+  it('embedded opened options use tabindex -1 for activedescendant', () => {
     renderWithLocale(<LanguageSwitcher tone="light" embedded />);
-    expect(screen.getByRole('option', { name: 'Deutsch' }).getAttribute('tabindex')).not.toBe('-1');
+    fireEvent.click(screen.getByLabelText('Language'));
+    expect(screen.getByRole('option', { name: 'Deutsch' }).getAttribute('tabindex')).toBe('-1');
   });
 
   it('standalone combobox exposes aria-activedescendant while open', () => {
@@ -294,9 +305,20 @@ describe('LanguageSwitcher', () => {
 
   it('embedded selecting Español writes the cookie and refreshes', () => {
     renderWithLocale(<LanguageSwitcher tone="light" embedded />);
+    fireEvent.click(screen.getByLabelText('Language'));
     fireEvent.click(screen.getByRole('option', { name: 'Español' }));
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=es`);
     expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('embedded Language click again collapses the listbox', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
+    const trigger = screen.getByLabelText('Language');
+    fireEvent.click(trigger);
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    fireEvent.click(trigger);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('dark standalone uses white trigger chrome and dark panel', () => {

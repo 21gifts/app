@@ -476,6 +476,22 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu');
   });
+
+  test('welcome menu-language-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByLabel('Language').click();
+    await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-language');
+  });
 });
 
 test.describe('contact screens', () => {
