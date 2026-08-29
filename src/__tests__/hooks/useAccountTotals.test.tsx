@@ -200,6 +200,7 @@ describe('useAccountTotals', () => {
           lightningAddressVerified: false,
           forumLawsDismissed: false,
           createdAt: 1,
+          rulesAgreedAt: null,
         },
       });
     });
