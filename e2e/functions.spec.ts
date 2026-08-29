@@ -337,7 +337,7 @@ test('Function: postContact — sending from contact shows success', async ({ pa
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await page.goto('/contact');
   const body = `Contact note ${Date.now()}`;
