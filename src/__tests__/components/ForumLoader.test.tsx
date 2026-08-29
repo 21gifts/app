@@ -372,6 +372,10 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
 
