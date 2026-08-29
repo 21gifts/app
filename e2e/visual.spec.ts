@@ -337,6 +337,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' }).first()).toBeVisible();
     await shotScreen(page, 'screen-welcome');
   });
 });

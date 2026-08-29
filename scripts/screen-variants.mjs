@@ -77,7 +77,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'welcome.png',
     visual: 'screen-welcome',
-    needle: 'Does anyone have spare sats this week?',
+    needle: 'Send Bitcoin',
   },
   {
     route: '/welcome',

@@ -643,20 +643,23 @@ test('Function: clearSession — log out returns to the start action', async ({ 
 });
 
 test('Function: ForumBoard — welcome forum is the pay surface', async ({ page, request }) => {
+  await stubPayableNote(page);
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
 test('Function: ForumLoader — welcome forum is the pay surface', async ({ page, request }) => {
+  await stubPayableNote(page);
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Link address' }).click();
   await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {
