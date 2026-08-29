@@ -807,9 +807,7 @@ describe('ForumLoader', () => {
       expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
         'data:image/jpeg;base64,abc',
       );
-      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe(
-        'true',
-      );
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
     });
   });
 
@@ -836,9 +834,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByText('Unpaid note')).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe(
-        'true',
-      );
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
     });
   });
 
