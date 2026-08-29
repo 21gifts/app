@@ -77,6 +77,7 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -93,6 +94,7 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -131,6 +133,7 @@ test('welcome forum hides laws when already dismissed on the account', async ({ 
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });

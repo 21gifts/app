@@ -60,7 +60,8 @@ app/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
 │   │   │   ├── name/route.ts    # POST /me/name
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
-│   │   │   └── lightning-address/route.ts  # POST/DELETE /me/lightning-address
+│   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
+│   │   │   └── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
 │   │   ├── contact/
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
 │   │   │   └── submit/
@@ -74,11 +75,6 @@ app/
 │   │   │   └── [id]/
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   │       └── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
-│   │   ├── me/
-│   │   │   ├── name/
-│   │   │   │   └── route.ts     # POST /me/name
-│   │   │   └── forum-laws-dismissed/
-│   │   │       └── route.ts     # POST /me/forum-laws-dismissed
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
