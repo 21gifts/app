@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Bitcoin, Loader2 } from 'lucide-react';
 import { type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
@@ -72,7 +72,8 @@ export interface ForumBoardProps {
 
 /**
  * Presentational public forum: heading, list or empty/loading/error, composer,
- * per-card sats total, and pay-on-note sheet (amount → QR / Wallet of Satoshi).
+ * per-card sats total with a Bitcoin pay icon beside it, and pay-on-note sheet
+ * (amount → QR / Wallet of Satoshi).
  *
  * Always shows the heading and composer so validation errors can surface even
  * when the list is empty. Light neutral palette to match {@link WelcomeScreen}.
@@ -170,17 +171,18 @@ export function ForumBoard({
                 </time>
               </div>
               <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{message.text}</p>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="mt-3 flex items-center gap-1.5">
                 <p className="text-xs font-medium text-neutral-500">
                   {formatSatsLabel(message.sats)}
                 </p>
                 <button
                   type="button"
+                  aria-label={t('forum.pay')}
                   disabled={!message.payable || payBusy}
                   onClick={() => onPayOpen(message.id)}
-                  className="inline-flex items-center rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-500 transition hover:bg-white hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {t('forum.pay')}
+                  <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 </button>
               </div>
 
