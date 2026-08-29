@@ -143,6 +143,20 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Deutsch' })",
   },
   {
+    route: '/welcome',
+    id: 'pay-qr',
+    image: 'welcome-pay-qr.png',
+    visual: 'state-welcome-pay-qr',
+    needle: 'Bitcoin payment QR code',
+  },
+  {
+    route: '/welcome',
+    id: 'pay-smartphone',
+    image: 'welcome-pay-smartphone.png',
+    visual: 'state-welcome-pay-smartphone',
+    needle: 'iPhone pay sheet has no QR',
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',

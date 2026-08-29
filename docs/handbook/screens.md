@@ -186,7 +186,7 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum as a messenger-group thread (two unmissable living-room laws above the thread, links to **Living room rules** `/rules` and **Contact** `/contact`, then oldest notes at the top, newest at the bottom above the composer; message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum as a messenger-group thread (two unmissable living-room laws above the thread, links to **Living room rules** `/rules` and **Contact** `/contact`, then oldest notes at the top, newest at the bottom above the composer; message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right). Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
 - **Actions:** Post a message, pay a payable note in-app, open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
@@ -231,6 +231,18 @@ Open **Menu** top-right only (do not click Language) → Profile link (sat total
 After **Menu**, click **Language** → the four endonym rows (English / Deutsch / Español / Filipino) expand in flow under the Language trigger with a check on the current locale. The Menu grows; this is not an absolute popover.
 
 ![21.gifts welcome menu language](images/welcome-menu-language.png)
+
+### Variant: pay-qr
+
+Payable note, amount submitted. On a computer the pay sheet shows the Bitcoin payment QR and **Open Wallet of Satoshi**.
+
+![21.gifts welcome pay QR](images/welcome-pay-qr.png)
+
+### Variant: pay-smartphone
+
+Same pay sheet on a smartphone user-agent: **Open Wallet of Satoshi** only, no QR.
+
+![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
 ## Screen: /rules
 

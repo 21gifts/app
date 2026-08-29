@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isAndroidUserAgent,
+  isSmartphoneUserAgent,
   uppercaseLnurl,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
@@ -16,6 +17,42 @@ describe('isAndroidUserAgent', () => {
   it('rejects iPhone and desktop', () => {
     expect(isAndroidUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toBe(false);
     expect(isAndroidUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')).toBe(false);
+  });
+});
+
+describe('isSmartphoneUserAgent', () => {
+  it('detects iPhone', () => {
+    expect(isSmartphoneUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)')).toBe(
+      true,
+    );
+  });
+
+  it('detects iPod', () => {
+    expect(isSmartphoneUserAgent('Mozilla/5.0 (iPod; CPU iPhone OS 17_0 like Mac OS X)')).toBe(
+      true,
+    );
+  });
+
+  it('detects Android with Mobile', () => {
+    expect(
+      isSmartphoneUserAgent(
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects Android without Mobile', () => {
+    expect(isSmartphoneUserAgent('Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36')).toBe(
+      false,
+    );
+  });
+
+  it('rejects iPad', () => {
+    expect(isSmartphoneUserAgent('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)')).toBe(false);
+  });
+
+  it('rejects desktop Macintosh', () => {
+    expect(isSmartphoneUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')).toBe(false);
   });
 });
 

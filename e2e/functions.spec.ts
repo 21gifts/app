@@ -115,7 +115,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByLabel('Amount (sats)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
 }
 
 async function stubGiftStats(page: Page, body: unknown): Promise<void> {
@@ -600,6 +600,22 @@ test('Function: openInSystemBrowser — Open in browser is shown in Telegram Web
 
 test('Function: QrCode — pay sheet shows the invoice QR', async ({ page, request }) => {
   await openPayInvoice(page, request);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+});
+
+test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet link', async ({
+  page,
+  request,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    });
+  });
+  await openPayInvoice(page, request);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
 });
 
 test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({
@@ -627,7 +643,8 @@ test('Function: isAndroidUserAgent — Android pay sheet uses an Intent href', a
 }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgent', {
-      get: () => 'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36',
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
     });
   });
   await openPayInvoice(page, request);
@@ -643,7 +660,8 @@ test('Function: walletOfSatoshiIntentHref — Android pay sheet pins the WoS pac
 }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgent', {
-      get: () => 'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36',
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
     });
   });
   await openPayInvoice(page, request);

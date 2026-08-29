@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
@@ -13,6 +13,7 @@ vi.mock('next/link', () => ({
 }));
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+const originalUserAgent = navigator.userAgent;
 
 beforeEach(() => {
   HTMLElement.prototype.scrollIntoView = vi.fn();
@@ -21,6 +22,10 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  Object.defineProperty(navigator, 'userAgent', {
+    configurable: true,
+    value: originalUserAgent,
+  });
 });
 
 const SAMPLE: ForumMessage = {
@@ -450,7 +455,7 @@ describe('ForumBoard', () => {
     );
   });
 
-  it('shows the invoice QR and wallet link', () => {
+  it('shows the invoice QR and wallet link', async () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -469,9 +474,67 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByText('Pay 21 sats')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeTruthy();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+  });
+
+  it('hides the invoice QR on iPhone and keeps the wallet link', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+  });
+
+  it('hides the invoice QR on Android Mobile and uses an Intent href', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'Open Wallet of Satoshi' }).getAttribute('href'),
+    ).toMatch(/^intent:lightning:/);
   });
 
   it('shows formError empty alert', () => {

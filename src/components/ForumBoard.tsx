@@ -2,13 +2,14 @@
 
 import { Bitcoin, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, type ReactElement, useEffect, useRef } from 'react';
+import { type FormEvent, type ReactElement, useEffect, useRef, useState } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import {
   isAndroidUserAgent,
+  isSmartphoneUserAgent,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
@@ -75,7 +76,8 @@ export interface ForumBoardProps {
  * Presentational public forum: heading, two living-room laws with links to
  * `/rules` and `/contact`, list or empty/loading/error, composer, per-card
  * sats total with a Bitcoin pay icon when the note is payable, and
- * pay-on-note sheet (amount → QR / Wallet of Satoshi).
+ * pay-on-note sheet (amount → desktop QR + Wallet of Satoshi, smartphone
+ * Wallet of Satoshi deep link only).
  *
  * This is a messenger-group thread (oldest top, newest bottom above the
  * composer), not a social feed. Props stay newest-first; the DOM list is
@@ -111,6 +113,7 @@ export function ForumBoard({
   const { t, locale } = useTranslations();
   const composerRef = useRef<HTMLFormElement>(null);
   const newestId = messages?.[0]?.id ?? null;
+  const [showPaymentQr, setShowPaymentQr] = useState(false);
 
   useEffect(() => {
     if (newestId === null) {
@@ -118,6 +121,10 @@ export function ForumBoard({
     }
     composerRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
   }, [newestId]);
+
+  useEffect(() => {
+    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
+  }, []);
 
   const formatSatsLabel = (sats: number): string => {
     if (sats === 1) {
@@ -266,7 +273,9 @@ export function ForumBoard({
                   <p className="text-center text-sm text-neutral-600">
                     {t('forum.payConfirm', { amount: formatSatsLabel(invoiceForCard.amountSats) })}
                   </p>
-                  <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
+                  {showPaymentQr ? (
+                    <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
+                  ) : null}
                   {/* v8 ignore start -- wosHref is set whenever an invoice is shown */}
                   {wosHref !== null ? (
                     <a
