@@ -146,12 +146,13 @@ describe('LightningAddressForm', () => {
     renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
-      target: { value: 'missing@walletofsatoshi.com' },
+      target: { value: PLACEHOLDER },
     });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('That Wallet of Satoshi address could not be found');
+    expect(setLightningAddress).toHaveBeenCalledWith('sess', PLACEHOLDER);
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
   });
 
