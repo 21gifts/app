@@ -186,13 +186,13 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum (two unmissable living-room laws above the thread, links to **Living room rules** `/rules` and **Contact** `/contact`, then message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum as a messenger-group thread (two unmissable living-room laws above the thread, links to **Living room rules** `/rules` and **Contact** `/contact`, then oldest notes at the top, newest at the bottom above the composer; message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
 - **Actions:** Post a message, pay a payable note in-app, open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with the two laws and rules/contact links, posts from more than one person (Bob, Carol, Ada — name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable), composer. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Gift icon, **Welcome, Ada**, public **Forum** as a messenger-group thread with the two laws and rules/contact links: posts in chronological order (oldest at the top, newest at the bottom above the composer). Visible order Bob, then Carol, then Ada (fixture timestamps 10:00 / 11:00 / 12:00 — Ada newest, immediately above the composer), each with name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 

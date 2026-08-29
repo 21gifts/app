@@ -265,9 +265,9 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, list of every post (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet (amount → QR / Wallet of Satoshi).
+- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, list of every post (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet (amount → QR / Wallet of Satoshi). Props `messages` are newest-first (API window); the DOM list is chronological (oldest at the top, newest at the bottom above the composer). New posts appear at the bottom. Messenger-group thread, not a social feed.
 - **Inputs:** `ForumBoardProps` — messages, error (boolean load-failure flag), loading, posting, draft, onDraftChange, onPost, onRetry, formError (`empty` / `tooLong` / `request` / `rateLimit`), plus pay-sheet fields (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
-- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network / no fetch.
+- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network / no fetch. Scrolls the composer into view when the newest message id is set or changes.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
