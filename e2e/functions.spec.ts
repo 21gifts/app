@@ -1327,7 +1327,7 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   await expect(page.getByLabel('Language')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
   await openSignedInMenu(page);
-  await expect(page.getByRole('menuitem', { name: /Profile/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
   await expect(page.getByLabel('Language')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
@@ -1352,7 +1352,7 @@ test('Function: accountTotals — menu shows received sats for alice', async ({ 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('menuitem', { name: /Received 1000 sats/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received 1000 sats/ })).toBeVisible();
 });
 
 test('Function: recipientHandleFromAddress — alice handle matches stats row', async ({ page }) => {

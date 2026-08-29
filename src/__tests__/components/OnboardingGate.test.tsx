@@ -166,6 +166,18 @@ describe('OnboardingGate', () => {
     expect(replace).toHaveBeenCalledWith('/login');
   });
 
+  it('sends a named account without an address from profile to the address screen', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/address');
+    });
+  });
+
   it('sends an unnamed account from profile to the name screen', async () => {
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(

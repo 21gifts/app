@@ -201,7 +201,7 @@
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (with given/received totals), language, and **Log out**.
 - **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button; when open, a menu with Profile link (`/profile`), embedded language select, and log out.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`), embedded language select, and log out. Escape closes and restores focus to Menu.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`.
 
 ## Function: ProfilePage

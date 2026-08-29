@@ -447,7 +447,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Menu' }).click();
-    await expect(page.getByRole('menuitem', { name: /Profile/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu');
   });
 });

@@ -124,7 +124,7 @@ describe('SignedInChrome', () => {
   it('opens the menu with Profile, Language, Log out, and zero totals', async () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expect(screen.getByRole('menuitem', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
+    expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     await waitFor(() => {
@@ -132,12 +132,14 @@ describe('SignedInChrome', () => {
     });
   });
 
-  it('closes the menu on Escape', () => {
+  it('closes the menu on Escape and restores focus to Menu', () => {
     renderWithLocale(<SignedInChrome />);
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expect(screen.getByLabelText('Language')).toBeTruthy();
+    const menuButton = screen.getByRole('button', { name: 'Menu' });
+    fireEvent.click(menuButton);
+    screen.getByLabelText('Language').focus();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByLabelText('Language')).toBeNull();
+    expect(document.activeElement).toBe(menuButton);
   });
 
   it('closes the menu on outside mousedown', () => {
@@ -185,7 +187,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.getByLabelText('Language')).toBeTruthy();
-    fireEvent.click(screen.getByRole('menuitem', { name: /Profile/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
     expect(screen.queryByLabelText('Language')).toBeNull();
   });
 });

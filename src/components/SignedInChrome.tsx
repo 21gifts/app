@@ -26,7 +26,7 @@ function formatSatsAmount(
 }
 
 /**
- * Top-right signed-in page chrome: one Menu control; open for Profile, language, and log out.
+ * Top-right signed-in page chrome: one Menu disclosure; open for Profile, language, and log out.
  *
  * @returns The signed-in Menu chrome.
  */
@@ -34,6 +34,7 @@ export function SignedInChrome(): ReactElement {
   const { t } = useTranslations();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const { donatedSats, receivedSats, loading } = useAccountTotals();
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export function SignedInChrome(): ReactElement {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setOpen(false);
+        buttonRef.current?.focus();
       }
     };
     const onMouseDown = (event: MouseEvent): void => {
@@ -66,9 +68,11 @@ export function SignedInChrome(): ReactElement {
   return (
     <div ref={rootRef} className="absolute top-4 right-5">
       <button
+        ref={buttonRef}
         type="button"
+        id="signed-in-menu-button"
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-controls="signed-in-menu"
         aria-label={t('aria.menu')}
         onClick={() => {
           setOpen((current) => !current);
@@ -80,12 +84,11 @@ export function SignedInChrome(): ReactElement {
       </button>
       {open ? (
         <div
-          role="menu"
+          id="signed-in-menu"
           className="absolute right-0 z-50 mt-2 min-w-[16rem] rounded-xl border border-neutral-200 bg-white p-2 shadow-lg"
         >
           <Link
             href="/profile"
-            role="menuitem"
             onClick={() => {
               setOpen(false);
             }}
