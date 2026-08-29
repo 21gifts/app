@@ -752,7 +752,6 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
   await page.goto('/setup/rules');
   await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
->>>>>>> f5aa981 (Require living-room rules agreement in onboarding)
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
