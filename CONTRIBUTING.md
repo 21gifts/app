@@ -77,7 +77,7 @@ app/
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
-│   │   ├── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
+│   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   └── forum-time.ts        # UTC display timestamps for forum rows
 │   ├── types/

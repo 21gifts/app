@@ -197,7 +197,7 @@ export function ForumBoard({
                       autoComplete="off"
                       autoCorrect="off"
                       spellCheck={false}
-                      placeholder="21"
+                      placeholder={t('forum.payAmountPlaceholder')}
                       value={payDraft}
                       disabled={payBusy}
                       onChange={(event) => onPayDraftChange(event.target.value)}

@@ -80,7 +80,7 @@
 ## Endpoint: POST /messages
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message).
-- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Errors:** Upstream 401/400/429, or 502 if the api is unreachable.
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.
 

@@ -306,7 +306,7 @@
 
 - **Purpose:** POST `/messages` with bearer + `{ text }`, parse `forumMessageSchema`, and return the created message.
 - **Inputs:** `sessionToken`, `text`.
-- **Returns / side effects:** `ForumMessage`. On 400 uses the api error string when present; otherwise throws `Could not post your message`.
+- **Returns / side effects:** `ForumMessage`. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
 - **Used by:** `ForumLoader`.
 
 ## Function: formatBtcTick
