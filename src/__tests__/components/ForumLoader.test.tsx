@@ -8,12 +8,14 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
   postMessage: vi.fn(),
+  postMessageInvoice: vi.fn(),
 }));
 
-import { fetchMessages, postMessage } from '@/lib/api';
+import { fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchMessages);
 const postMock = vi.mocked(postMessage);
+const invoiceMock = vi.mocked(postMessageInvoice);
 
 const account: Account = {
   id: 'acc_1',
@@ -30,6 +32,8 @@ const SAMPLE: ForumMessage = {
   name: 'Ada',
   text: 'Hello from Ada',
   createdAt: '2026-08-28T12:00:00.000Z',
+  sats: 0,
+  payable: true,
 };
 
 beforeEach(() => {
@@ -41,6 +45,7 @@ afterEach(() => {
   cleanup();
   fetchMock.mockReset();
   postMock.mockReset();
+  invoiceMock.mockReset();
 });
 
 describe('ForumLoader', () => {
@@ -58,12 +63,13 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('shows a fetched message', async () => {
+  it('shows a fetched message with sats', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeTruthy();
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
+      expect(screen.getByText('0 sats')).toBeTruthy();
     });
   });
 
@@ -181,6 +187,8 @@ describe('ForumLoader', () => {
       name: 'Ada',
       text: 'Early',
       createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -207,12 +215,16 @@ describe('ForumLoader', () => {
       name: 'Ada',
       text: 'Early',
       createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
     };
     const fromServer: ForumMessage = {
       id: 'm1',
       name: 'Bob',
       text: 'Hello from Ada',
       createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: true,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -246,6 +258,8 @@ describe('ForumLoader', () => {
       name: 'Ada',
       text: 'Early',
       createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -273,6 +287,8 @@ describe('ForumLoader', () => {
       name: 'Ada',
       text: 'Hello from Ada',
       createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: true,
     };
     fetchMock.mockResolvedValue([created]);
     postMock.mockResolvedValue(created);
@@ -297,6 +313,8 @@ describe('ForumLoader', () => {
       name: 'Ada',
       text: 'Hello',
       createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -329,6 +347,23 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
   });
 
+  it('shows rate-limit copy when posting is rate limited', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new Error('Too many messages'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Too many messages. Please wait a moment and try again.',
+    );
+  });
+
   it('disables Post and shows a spinner while posting', async () => {
     fetchMock.mockResolvedValue([]);
     let resolvePost!: (value: ForumMessage) => void;
@@ -354,6 +389,8 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: 'Hi',
         createdAt: '2026-08-28T15:00:00.000Z',
+        sats: 0,
+        payable: false,
       });
     });
 
@@ -362,5 +399,152 @@ describe('ForumLoader', () => {
         false,
       );
     });
+  });
+
+  it('requests an invoice and shows the QR', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
+      expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+      expect(screen.getByText('Pay 21 sats')).toBeTruthy();
+    });
+    expect(
+      (screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it('rejects a non-positive pay amount before calling the api', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter a whole number of sats greater than zero',
+    );
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('shows pay request error when invoice fails', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockRejectedValue(new Error('Could not start the Bitcoin payment'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+  });
+
+  it('shows pay rate-limit copy when invoice is rate limited', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockRejectedValue(new Error('Too many payments'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+  });
+
+  it('drops a late invoice after cancel', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
+    invoiceMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveInvoice = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => {
+      resolveInvoice?.({ pr: 'lnbc21n1example', amountSats: 21 });
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+  });
+
+  it('drops a late invoice error after cancel', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    let rejectInvoice: ((reason: Error) => void) | undefined;
+    invoiceMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectInvoice = reject;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => {
+      rejectInvoice?.(new Error('gone'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('ignores pay submit when the note is not payable', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false }]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    const amount = screen.queryByLabelText('Amount (sats)');
+    if (amount !== null) {
+      fireEvent.change(amount, { target: { value: '21' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    }
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('does not request a second invoice while one is in flight', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -50,28 +50,26 @@ app/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`, `/stats/[day]`
-│   │   ├── donate/
-│   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
 │   │   ├── messages/
-│   │   │   └── route.ts         # GET/POST /messages same-origin proxy
+│   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
+│   │   │   └── [id]/invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
-│   │   ├── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
 │   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + composer
+│   │   ├── ForumBoard.tsx       # Public forum list, composer, sat totals, pay-on-note sheet
 │   │   └── ForumLoader.tsx      # Fetch/post state for /welcome forum
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
@@ -79,7 +77,7 @@ app/
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
-│   │   ├── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
+│   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   └── forum-time.ts        # UTC display timestamps for forum rows
 │   ├── types/
@@ -104,7 +102,6 @@ app/
 │   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
-│   ├── donate.spec.ts           # /donate form heading + submit button
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
@@ -147,7 +144,7 @@ English, concise, describe _what_ changed.
 ```
 # Good
 Add /healthz route handler
-Wire donate button to LNURL-pay flow
+Wire pay-on-note invoice sheet
 Fix wordmark scaling on small screens
 
 # Bad

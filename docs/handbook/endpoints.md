@@ -53,7 +53,7 @@
 
 - **Purpose:** Same-origin proxy of public LUD-16 resolve.
 - **Errors:** Upstream 400/502, or 502 if the api is unreachable.
-- **Used by:** `resolveLightningAddress` on `/donate`.
+- **Used by:** `resolveLightningAddress` (LUD-16 helper).
 - **Auth:** Public.
 
 ## Endpoint: POST /me/name
@@ -80,8 +80,15 @@
 ## Endpoint: POST /messages
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message).
-- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Errors:** Upstream 401/400/429, or 502 if the api is unreachable.
 - **Used by:** `postMessage`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /messages/[id]/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note).
+- **Errors:** Upstream 401/400/404/429/503, or 502 if the api is unreachable.
+- **Used by:** `postMessageInvoice`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/lightning-address

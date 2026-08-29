@@ -3,8 +3,8 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
-- **Actions:** Read the pitch, change language, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTA **Ask for help** (`/login`).
+- **Actions:** Read the pitch, change language, open login, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -161,13 +161,13 @@ Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, composer textarea with **Post** to the right). No name or address form. No donate CTA.
-- **Actions:** Post a message, retry a failed load, log out, change language.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, sat total, **Send Bitcoin** when the note is payable, composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
+- **Actions:** Post a message, pay a payable note in-app, retry a failed load, log out, change language.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp), composer. Language and **Log out** as matching icon+text top-right, not on the card.
+Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp, sat total, **Send Bitcoin** when payable), composer. Language and **Log out** as matching icon+text top-right, not on the card.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -194,43 +194,6 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 Click **Post** with an empty composer → **Enter a message**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
-
-## Screen: /donate
-
-- **URL:** `/donate` — guest Bitcoin gift. No login required.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Page heading **Send a gift**, form heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
-- **Actions:** Change language. Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
-- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `LanguageSwitcher`.
-
-### Variant: form
-
-Empty/idle form, submit enabled.
-
-![21.gifts donate form](images/donate.png)
-
-### Variant: busy
-
-Payment request in flight: spinner on **Continue**, extra **Cancel** button.
-
-![21.gifts donate busy](images/donate-busy.png)
-
-### Variant: validation-error
-
-Submit with a blank address (or invalid amount). An alert explains what to fix; no payment QR yet.
-
-![21.gifts donate validation error](images/donate-validation-error.png)
-
-### Variant: invoice
-
-Successful create: **Pay N sats to address**, Bitcoin payment QR, **Open Wallet of Satoshi**.
-
-![21.gifts donate invoice](images/donate-invoice.png)
-
-### Variant: invoice-android
-
-Same payment card, but **Open Wallet of Satoshi** is an Android Intent that pins package `com.livingroomofsatoshi.wallet`. The pixels match the desktop invoice variant.
-
-![21.gifts donate invoice Android](images/donate-invoice-android.png)
 
 ## Screen: /handbook
 

@@ -1,19 +1,5 @@
 # Functions
 
-## Function: DonateForm
-
-- **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR. All visitor-facing copy goes through `useTranslations`.
-- **Inputs:** Form state: address and whole-sat amount. Validation and request failures are typed keys (`address` / `amount` / `range` / `request`) so `useTranslations` re-renders them after a locale change.
-- **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
-- **Used by:** Screen `/donate`.
-
-## Function: DonatePage
-
-- **Purpose:** Next.js page for `/donate` with localized heading and a light language switcher.
-- **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** The donate screen wrapped in the root layout; switcher top-right.
-- **Used by:** Route `/donate`.
-
 ## Function: GET
 
 - **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET`.
@@ -115,7 +101,7 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTA to `/login`, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
@@ -123,9 +109,9 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and `SignedInChrome`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, and `SignedInChrome`.
 
 ## Function: NameForm
 
@@ -234,16 +220,16 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, list of every post (name, text, timestamp) or empty/loading/error, and a messenger-style composer (textarea with **Post** to the right, `maxLength` 500).
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request`).
-- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network.
+- **Purpose:** Presentational forum list, composer, sat totals, and pay-on-note sheet (QR / Wallet of Satoshi).
+- **Inputs:** Messages, loading/error/composer/pay callbacks.
+- **Returns / side effects:** React tree. No fetch.
 - **Used by:** `ForumLoader`.
 
 ## Function: ForumLoader
 
-- **Purpose:** Client loader for the public forum on `/welcome`. Session from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, posts via `postMessage`, cancelled-flag fetch like `StatsLoader`.
-- **Inputs:** None (reads session from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage`. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Does not pass `Error.message` to the board.
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay.
+- **Inputs:** Session token.
+- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -279,7 +265,7 @@
 - **Purpose:** SVG QR for a string (LNURL or bolt11).
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated).
 - **Returns / side effects:** React element.
-- **Used by:** `DonateForm`.
+- **Used by:** `ForumBoard`.
 
 ## Function: RootLayout
 
@@ -320,7 +306,7 @@
 
 - **Purpose:** POST `/messages` with bearer + `{ text }`, parse `forumMessageSchema`, and return the created message.
 - **Inputs:** `sessionToken`, `text`.
-- **Returns / side effects:** `ForumMessage`. On 400 uses the api error string when present; otherwise throws `Could not post your message`.
+- **Returns / side effects:** `ForumMessage`. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
 - **Used by:** `ForumLoader`.
 
 ## Function: formatBtcTick
@@ -336,13 +322,6 @@
 - **Inputs:** `iso` string, `locale` BCP 47 tag.
 - **Returns / side effects:** Display string. Always uses `timeZone: 'UTC'` so screenshots are host-independent.
 - **Used by:** `ForumBoard`.
-
-## Function: formatMsatAsSats
-
-- **Purpose:** Formats millisatoshis as an English sat string (`1 sat` / `{n} sats`).
-- **Inputs:** `msat` number.
-- **Returns / side effects:** Decimal string in sats.
-- **Used by:** Unit tests (`lnurl-pay.test.ts`). The donate UI formats amounts via catalog keys `donate.satOne` / `donate.sats` instead.
 
 ## Function: formatUsdDisplay
 
@@ -370,21 +349,21 @@
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
 - **Inputs:** `locale` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** The `Messages` object for that locale. Exhaustive switch over `Locale`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, `HandbookPage`, and the `renderWithLocale` test helper.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, and the `renderWithLocale` test helper.
 
 ## Function: getRequestLocale
 
 - **Purpose:** Resolve the UI locale for the current request without writing cookies.
 - **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
 - **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, and `HandbookPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, and `HandbookPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: isAndroidUserAgent
 
 - **Purpose:** Detects Android so the WoS CTA can use an Intent URL.
 - **Inputs:** `userAgent` string.
 - **Returns / side effects:** `true` iff `/Android/i` matches.
-- **Used by:** `DonateForm`.
+- **Used by:** `ForumBoard`.
 
 ## Function: isInAppBrowser
 
@@ -428,26 +407,12 @@
 - **Returns / side effects:** That locale, or `null`. Pure function — no I/O.
 - **Used by:** `getRequestLocale` (cookie) and `LanguageSwitcher` (option value).
 
-## Function: requestDonateInvoice
-
-- **Purpose:** GET an LNURL-pay callback with `amount` millisatoshis and return the bolt11 string.
-- **Inputs:** `{ callback, amountMsat, fetchImpl? }`. Does not resolve a Lightning Address.
-- **Returns / side effects:** bolt11 `string`, or throws.
-- **Used by:** `DonateForm`.
-
 ## Function: resolveLightningAddress
 
 - **Purpose:** GET `/lightning-address?address=` on the 21.gifts api.
 - **Inputs:** `address`.
 - **Returns / side effects:** Resolved LNURL-pay metadata (callback, min/max).
-- **Used by:** `DonateForm` before paying.
-
-## Function: satsToMsat
-
-- **Purpose:** Converts whole sats to millisatoshis.
-- **Inputs:** `sats` number.
-- **Returns / side effects:** `sats * 1000`.
-- **Used by:** `DonateForm` (converts sats before calling `requestDonateInvoice`).
+- **Used by:** Unit tests and any remaining LUD-16 resolve.
 
 ## Function: saveSession
 
@@ -475,7 +440,7 @@
 - **Purpose:** Look up a catalog key and replace `{name}` placeholders from `vars`.
 - **Inputs:** `catalog` (`Messages`), `key` (`MessageKey`), optional `vars` map of string/number values.
 - **Returns / side effects:** Interpolated string. Throws on a missing key or missing `{name}` — no silent English fallback.
-- **Used by:** Server pages (`Home`, login/donate headings, `NotFound`, `MarketingFooter`, `HandbookPage`) and the `t` helper from `LocaleProvider` / `useTranslations`.
+- **Used by:** Server pages (`Home`, login headings, `NotFound`, `MarketingFooter`, `HandbookPage`) and the `t` helper from `LocaleProvider` / `useTranslations`.
 
 ## Function: unlinkLightningAddress
 
@@ -489,7 +454,7 @@
 - **Purpose:** Uppercases a bech32 LNURL or BOLT11 payment request.
 - **Inputs:** `lnurl` string.
 - **Returns / side effects:** Uppercase string.
-- **Used by:** `walletOfSatoshiHref` and `walletOfSatoshiIntentHref` (`DonateForm`).
+- **Used by:** `walletOfSatoshiHref` and `walletOfSatoshiIntentHref` (`ForumBoard`).
 
 ## Function: useAuthStore
 
@@ -503,21 +468,21 @@
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`.
 
 ## Function: walletOfSatoshiHref
 
 - **Purpose:** iOS/desktop WoS deep link.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase payload.
-- **Used by:** `DonateForm` when not Android.
+- **Used by:** `ForumBoard` when not Android.
 
 ## Function: walletOfSatoshiIntentHref
 
 - **Purpose:** Android Chrome Intent pinning the WoS package.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `intent:lightning:…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
-- **Used by:** `DonateForm` on Android.
+- **Used by:** `ForumBoard` on Android.
 
 ## Function: DELETE
 
@@ -563,10 +528,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, address link, passkey begin/finish, and forum message create (`POST /messages`).
+- **Used by:** Same-origin name save, address link, passkey begin/finish, forum message create (`POST /messages`), and pay-on-note (`POST /messages/[id]/invoice`).
 
 ## Function: proxyApiRequest
 
@@ -728,3 +693,17 @@
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }` with `status` in `idle | starting | error | unsupported`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
 - **Used by:** `OnboardingGate`, `LoginCard`, and `LogoutButton`.
+
+## Function: postMessageInvoice
+
+- **Purpose:** POST `/messages/:id/invoice` with `{ sats }`.
+- **Inputs:** session token, message id, sats.
+- **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy.
+- **Used by:** `ForumLoader`.
+
+## Function: proxyMessagesInvoicePost
+
+- **Purpose:** Same-origin proxy for `POST /messages/:id/invoice`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/messages/[id]/invoice/route.ts`.

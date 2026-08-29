@@ -6,6 +6,7 @@ import {
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
+  messageInvoiceSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
   type Account,
@@ -13,6 +14,7 @@ import {
   type GiftDay,
   type GiftStats,
   type LnAddressResolved,
+  type MessageInvoice,
   type PasskeyBegin,
   type PasskeySession,
 } from '@/lib/api-types';
@@ -272,9 +274,9 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
  * @param sessionToken - A bearer token from a completed challenge.
  * @param text - Message body as typed (api trims and validates length).
  * @returns The created {@link ForumMessage}.
- * @throws Error when the api rejects the text (400) — the api error string
- * when present, otherwise a fallback — on any other non-2xx status, or when
- * the body fails {@link forumMessageSchema} validation.
+ * @throws Error when the api rejects the text (400 or 429) — the api error
+ * string when present, otherwise a fallback — on any other non-2xx status, or
+ * when the body fails {@link forumMessageSchema} validation.
  */
 export async function postMessage(sessionToken: string, text: string): Promise<ForumMessage> {
   const response = await fetch('/messages', {
@@ -285,7 +287,7 @@ export async function postMessage(sessionToken: string, text: string): Promise<F
     },
     body: JSON.stringify({ text }),
   });
-  if (response.status === 400) {
+  if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }
@@ -293,6 +295,48 @@ export async function postMessage(sessionToken: string, text: string): Promise<F
     throw new Error('Could not post your message');
   }
   return forumMessageSchema.parse(await response.json());
+}
+
+/**
+ * Requests a BOLT11 invoice to pay a public forum message.
+ *
+ * Does not increment the message `sats` total — that updates only after the
+ * payment is confirmed on the api.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param messageId - Forum message UUID from the public JSON.
+ * @param sats - Whole satoshis to pay (≥ 1).
+ * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
+ * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
+ * non-2xx), or when the body fails {@link messageInvoiceSchema}.
+ */
+export async function postMessageInvoice(
+  sessionToken: string,
+  messageId: string,
+  sats: number,
+): Promise<MessageInvoice> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/invoice`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sats }),
+  });
+  if (response.status === 400 || response.status === 429) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  if (response.status === 404) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (response.status === 503) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (!response.ok) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return messageInvoiceSchema.parse(await response.json());
 }
 
 /**

@@ -29,7 +29,7 @@ function nativeLabel(locale: Locale): string {
  * Native `<select>` that persists the visitor's language choice in a cookie and
  * refreshes the App Router tree so server components re-negotiate locale.
  *
- * @param props - Visual tone for marketing (`dark`) or login/donate (`light`),
+ * @param props - Visual tone for marketing (`dark`) or login/signed-in chrome (`light`),
  *   and optional `embedded` when shown with a matching globe icon in `SignedInChrome`.
  * @returns The language select element.
  */

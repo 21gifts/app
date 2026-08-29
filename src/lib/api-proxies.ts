@@ -129,3 +129,17 @@ export async function proxyMessagesGet(request: Request): Promise<Response> {
 export async function proxyMessagesPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/messages');
 }
+
+/**
+ * Proxies POST /messages/:id/invoice to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @param messageId - Forum message UUID from the public JSON.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesInvoicePost(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/invoice`);
+}
