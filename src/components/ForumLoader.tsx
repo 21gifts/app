@@ -220,6 +220,7 @@ export function ForumLoader(): ReactElement | null {
           if (cancelled) {
             return;
           }
+          // Leave the row text-only when the photo cannot load.
         }
       }
     })();
@@ -276,7 +277,6 @@ export function ForumLoader(): ReactElement | null {
     return null;
   }
 
-<<<<<<< HEAD
   /* v8 ignore start -- pay-sheet reset */
   const clearPaySheet = (): void => {
     payPollGeneration.current += 1;

@@ -98,6 +98,8 @@ function base64ByteLength(data: string): number {
  *
  * @param file - Browser file from the composer attach control.
  * @returns Ok payload with raw base64 + preview data URL, or a typed error.
+ * @throws If the browser cannot decode the file (`createImageBitmap` rejection
+ * or `<img>` `onerror` → `Could not decode image`).
  */
 export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoResult> {
   if (!isForumPhotoFile(file)) {
@@ -115,20 +117,16 @@ export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoRe
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
-    /* v8 ignore start -- canvas 2d / jpeg data-URL edge cases on some hosts */
     if (context === null) {
       return { ok: false, error: 'unsupported' };
     }
-    /* v8 ignore stop */
     context.drawImage(loaded.source, 0, 0, width, height);
 
     const previewUrl = canvas.toDataURL('image/jpeg', FORUM_PHOTO_JPEG_QUALITY);
     const prefix = 'data:image/jpeg;base64,';
-    /* v8 ignore start -- browsers always emit a jpeg data URL for this call */
     if (!previewUrl.startsWith(prefix)) {
       return { ok: false, error: 'unsupported' };
     }
-    /* v8 ignore stop */
     const data = previewUrl.slice(prefix.length);
     if (base64ByteLength(data) > FORUM_PHOTO_MAX_BYTES) {
       return { ok: false, error: 'tooLarge' };

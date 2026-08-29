@@ -148,6 +148,43 @@ describe('prepareForumPhoto', () => {
     expect(revoke).toHaveBeenCalledWith('blob:preview');
   });
 
+  it('returns unsupported when canvas 2d context is missing', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({
+        width: 10,
+        height: 10,
+        close: vi.fn(),
+      }),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+
+    await expect(prepareForumPhoto(jpegFile())).resolves.toEqual({
+      ok: false,
+      error: 'unsupported',
+    });
+  });
+
+  it('returns unsupported when toDataURL is not a jpeg data URL', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({
+        width: 10,
+        height: 10,
+        close: vi.fn(),
+      }),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,abc');
+
+    await expect(prepareForumPhoto(jpegFile())).resolves.toEqual({
+      ok: false,
+      error: 'unsupported',
+    });
+  });
+
   it('returns tooLarge when the encoded payload exceeds the byte cap', async () => {
     vi.stubGlobal(
       'createImageBitmap',

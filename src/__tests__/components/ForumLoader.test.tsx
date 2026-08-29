@@ -629,6 +629,40 @@ describe('ForumLoader', () => {
     await Promise.resolve();
   });
 
+  it('does not fetch the next photo after unmount when the current fetch fails', async () => {
+    let rejectFirst: ((reason: Error) => void) | undefined;
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm1',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        hasPhoto: true,
+      },
+      {
+        id: 'm2',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:01:00.000Z',
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledTimes(1);
+    });
+    view.unmount();
+    rejectFirst?.(new Error('gone'));
+    await Promise.resolve();
+    expect(photoMock).toHaveBeenCalledTimes(1);
+  });
+
   it('revokes a photo blob if unmount happens during createObjectURL', async () => {
     let resolvePhoto: ((value: Blob) => void) | undefined;
     fetchMock.mockResolvedValue([
