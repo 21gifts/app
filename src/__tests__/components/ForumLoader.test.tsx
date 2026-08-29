@@ -482,6 +482,45 @@ describe('ForumLoader', () => {
     expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
   });
 
+  it('ignores a stale prepare after unmount', async () => {
+    fetchMock.mockResolvedValue([]);
+    let resolvePrep:
+      | ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void)
+      | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrep = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(prepareMock).toHaveBeenCalled();
+    });
+    view.unmount();
+    resolvePrep?.({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'late',
+        previewUrl: 'data:image/jpeg;base64,late',
+      },
+    });
+    await Promise.resolve();
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+  });
+
   it('sets tooLarge and clears a photo draft', async () => {
     fetchMock.mockResolvedValue([]);
     prepareMock
