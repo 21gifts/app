@@ -135,39 +135,39 @@ Telegram or another in-app WebView detected. Heading **Open this page in your br
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Heading **Your name**, name form. No Wallet of Satoshi form.
-- **Actions:** Save a name, log out, change language. After save, the visitor is sent to `/setup/address`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **Actions:** Save a name; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/setup/address`.
 - **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name**, **Save name**. Language and **Log out** as matching icon+text top-right, not on the card.
+Signed in, no name yet. **Your name**, **Save name**. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Link an address, log out, change language. After save, the visitor is sent to `/welcome`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **Actions:** Link an address; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/welcome`.
 - **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. Language and **Log out** as matching icon+text top-right, not on the card.
+Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, sat total, **Send Bitcoin** when the note is payable, composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
-- **Actions:** Post a message, pay a payable note in-app, retry a failed load, log out, change language.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, sat total, **Send Bitcoin** when the note is payable, composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
+- **Actions:** Post a message, pay a payable note in-app, retry a failed load; open **Menu** for Profile, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp, sat total, **Send Bitcoin** when payable), composer. Language and **Log out** as matching icon+text top-right, not on the card.
+Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp, sat total, **Send Bitcoin** when payable), composer. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -194,6 +194,25 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 Click **Post** with an empty composer → **Enter a message**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
+
+### Variant: menu-open
+
+Open **Menu** top-right → Profile link (with given/received totals), language, and **Log out**.
+
+![21.gifts welcome menu](images/welcome-menu.png)
+
+## Screen: /profile
+
+- **Purpose:** Signed-in profile after onboarding: given/received totals, edit name and Wallet of Satoshi address, return to the forum.
+- **Inputs:** Session account (name + Lightning Address) via `OnboardingGate` / `useAuthStore`; public gift stats via `useAccountTotals`.
+- **Actions:** Open **Menu** for Profile (current), language, or **Log out**; **Back to forum**; save name; link or change address.
+- **Used by:** Route `/profile` (`ProfilePage`).
+
+### Variant: default
+
+Heading **Profile**, given/received totals, **Back to forum**, name form, Wallet of Satoshi address form. One **Menu** top-right.
+
+![21.gifts profile](images/profile.png)
 
 ## Screen: /handbook
 

@@ -108,6 +108,20 @@ export const SCREEN_VARIANTS = [
     needle: 'Enter a message',
   },
   {
+    route: '/welcome',
+    id: 'menu-open',
+    image: 'welcome-menu.png',
+    visual: 'state-welcome-menu',
+    needle: "getByRole('link', { name: /Profile/",
+  },
+  {
+    route: '/profile',
+    id: 'default',
+    image: 'profile.png',
+    visual: 'screen-profile',
+    needle: "getByRole('heading', { name: 'Profile' })",
+  },
+  {
     route: '/stats',
     id: 'default',
     image: 'stats.png',

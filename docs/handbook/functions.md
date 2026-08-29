@@ -109,9 +109,9 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, and `SignedInChrome`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, and the signed-in Menu in `SignedInChrome`.
 
 ## Function: NameForm
 
@@ -164,10 +164,10 @@
 
 ## Function: LogoutButton
 
-- **Purpose:** Matching icon+text log-out in `SignedInChrome` (top-right page chrome, not on the card); clears the session and returns the visitor to `/login`.
+- **Purpose:** Matching icon+text log-out inside the signed-in Menu dropdown (not a free top-right action); clears the session and returns the visitor to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
 - **Returns / side effects:** Icon+text button. Clears the session and `router.replace('/login')`.
-- **Used by:** `SignedInChrome`.
+- **Used by:** `SignedInChrome` Menu dropdown.
 
 ## Function: NameSetup
 
@@ -192,17 +192,52 @@
 
 ## Function: OnboardingGate
 
-- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen.
-- **Inputs:** `screen` (`login` / `name` / `address` / `welcome`) and `children`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, or `/welcome`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/welcome`.
+- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`).
+- **Inputs:** `screen` (`login` / `name` / `address` / `welcome` / `profile`) and `children`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/welcome`, `/profile`.
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: language and **Log out** as matching icon+text actions, not on the card.
-- **Inputs:** None. Composes `LanguageSwitcher` (`tone="light"`, `embedded`) and `LogoutButton`.
-- **Returns / side effects:** Absolutely positioned chrome with a globe+language select and a matching log-out icon+text control.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (with given/received totals), language, and **Log out**.
+- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Absolutely positioned **Menu** button; when open, a menu with Profile link (`/profile`), embedded language select, and log out.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`.
+
+## Function: ProfilePage
+
+- **Purpose:** Next.js page for `/profile`.
+- **Inputs:** None.
+- **Returns / side effects:** `OnboardingGate` around `ProfileScreen` with `SignedInChrome`.
+- **Used by:** Route `/profile`.
+
+## Function: ProfileScreen
+
+- **Purpose:** Signed-in profile card: given/received totals, **Back to forum**, name and Wallet of Satoshi address forms.
+- **Inputs:** `useAccountTotals` for totals; `NameForm` and `LightningAddressForm` for edits; catalog via `useTranslations`.
+- **Returns / side effects:** Heading **Profile**, totals line, link to `/welcome`, name form, address form.
+- **Used by:** `ProfilePage`.
+
+## Function: accountTotals
+
+- **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
+- **Inputs:** `GiftStats` and the account Lightning Address (or null).
+- **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
+- **Used by:** `useAccountTotals`.
+
+## Function: recipientHandleFromAddress
+
+- **Purpose:** Local-part of a Lightning Address (before the first `@`).
+- **Inputs:** Full address or bare handle string.
+- **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
+- **Used by:** `accountTotals`.
+
+## Function: useAccountTotals
+
+- **Purpose:** Fetches public gift stats and derives given/received sats for the signed-in account.
+- **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats` and `accountTotals`.
+- **Returns / side effects:** `{ donatedSats, receivedSats, loading }`. Drops stale responses when the address changes mid-flight; errors resolve to zeros.
+- **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
 

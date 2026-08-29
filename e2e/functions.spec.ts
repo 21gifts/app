@@ -128,6 +128,31 @@ async function stubGiftStats(page: Page, body: unknown): Promise<void> {
   });
 }
 
+async function openSignedInMenu(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Menu' }).click();
+}
+
+async function seedAdaSession(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+}
+
 async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
@@ -220,6 +245,7 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await openSignedInMenu(page);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await page.getByRole('button', { name: 'Log in' }).click();
@@ -637,6 +663,7 @@ test('Function: LightningAddressForm — link reaches welcome', async ({ page, r
 
 test('Function: clearSession — log out returns to the start action', async ({ page, request }) => {
   await signInViaStub(page, request);
+  await openSignedInMenu(page);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   expect(await page.evaluate(() => window.localStorage.getItem('21gifts.session'))).toBeNull();
@@ -1058,6 +1085,10 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
   });
   await page.goto('/setup/address');
   await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(page.getByLabel('Language')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  await openSignedInMenu(page);
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
 
@@ -1280,17 +1311,67 @@ test('Function: useHydrateSession — reload keeps the name screen', async ({ pa
 
 test('Function: LogoutButton — log out returns to login', async ({ page, request }) => {
   await signInViaStub(page, request);
+  await openSignedInMenu(page);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page).toHaveURL(/\/login/);
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
-test('Function: SignedInChrome — language and log out share the chrome', async ({
+test('Function: SignedInChrome — Menu reveals Profile, language, and log out', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(page.getByLabel('Language')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  await openSignedInMenu(page);
+  await expect(page.getByRole('menuitem', { name: /Profile/ })).toBeVisible();
   await expect(page.getByLabel('Language')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+});
+
+test('Function: ProfilePage — profile heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+});
+
+test('Function: ProfileScreen — back to forum is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to forum' })).toBeVisible();
+});
+
+test('Function: accountTotals — menu shows received sats for alice', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('menuitem', { name: /Received 1000 sats/ })).toBeVisible();
+});
+
+test('Function: recipientHandleFromAddress — alice handle matches stats row', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByText(/Received 1000 sats/)).toBeVisible();
+});
+
+test('Function: useAccountTotals — profile totals load from gift stats', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+  });
+  await page.goto('/profile');
+  await expect(page.getByText(/Received 1000 sats/)).toBeVisible();
 });
