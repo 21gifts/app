@@ -159,7 +159,6 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
-      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account?.rulesAgreedAt).toBe(1_700_000_001);
@@ -185,7 +184,6 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
-      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account?.rulesAgreedAt).toBeNull();
@@ -211,7 +209,6 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
-      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account).toBeNull();
