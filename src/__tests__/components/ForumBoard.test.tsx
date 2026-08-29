@@ -222,7 +222,7 @@ describe('ForumBoard', () => {
   it('lists messages with name, sats, formatted time, and pre-wrapped text', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE, MULTILINE]}
+        messages={[MULTILINE, SAMPLE]}
         error={false}
         loading={false}
         posting={false}
@@ -250,7 +250,7 @@ describe('ForumBoard', () => {
   it('renders newest-first props as chronological listitems (oldest top, newest bottom)', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE, MULTILINE]}
+        messages={[MULTILINE, SAMPLE]}
         error={false}
         loading={false}
         posting={false}
@@ -265,10 +265,10 @@ describe('ForumBoard', () => {
 
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(2);
-    expect(items[0]!.textContent).toContain('Bob');
-    expect(items[0]!.textContent).toContain('Line one');
-    expect(items[1]!.textContent).toContain('Ada');
-    expect(items[1]!.textContent).toContain('Hello from Ada');
+    expect(items[0]!.textContent).toContain('Ada');
+    expect(items[0]!.textContent).toContain('Hello from Ada');
+    expect(items[1]!.textContent).toContain('Bob');
+    expect(items[1]!.textContent).toContain('Line one');
     expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
       block: 'end',
       behavior: 'auto',
