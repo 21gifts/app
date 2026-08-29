@@ -46,6 +46,13 @@ describe('accountTotals', () => {
     });
   });
 
+  it('trims surrounding whitespace before matching the recipient handle', () => {
+    expect(accountTotals(STATS, ' Alice@walletofsatoshi.com ')).toEqual({
+      donatedSats: 0,
+      receivedSats: 1000,
+    });
+  });
+
   it('returns zeros when the address is null or blank', () => {
     expect(accountTotals(STATS, null)).toEqual({ donatedSats: 0, receivedSats: 0 });
     expect(accountTotals(STATS, '   ')).toEqual({ donatedSats: 0, receivedSats: 0 });

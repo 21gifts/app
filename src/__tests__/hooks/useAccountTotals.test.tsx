@@ -114,6 +114,27 @@ describe('useAccountTotals', () => {
     expect(fetchMock).toHaveBeenCalledWith('alice');
   });
 
+  it('trims surrounding whitespace on the store address before fetch and totals', async () => {
+    fetchMock.mockResolvedValue(STATS);
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: ' Alice@walletofsatoshi.com ',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      },
+    });
+    renderWithLocale(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByText('ready:0:1000:1')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledWith('Alice');
+  });
+
   it('maps the alice byRecipient row on success', async () => {
     fetchMock.mockResolvedValue(STATS);
     renderWithLocale(<Probe />);

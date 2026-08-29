@@ -45,14 +45,15 @@ export function useAccountTotals(): {
     }
 
     setLoading(true);
-    const handle = recipientHandleFromAddress(addressAtStart.trim());
+    const trimmed = addressAtStart.trim();
+    const handle = recipientHandleFromAddress(trimmed);
     void (async () => {
       try {
         const stats = await fetchGiftStats(handle);
         if (cancelled) {
           return;
         }
-        const totals = accountTotals(stats, addressAtStart);
+        const totals = accountTotals(stats, trimmed);
         setDonatedSats(totals.donatedSats);
         setReceivedSats(totals.receivedSats);
         setReceiveOverTime(stats.spendOverTime);
