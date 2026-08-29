@@ -793,7 +793,8 @@ describe('ForumBoard', () => {
     expect(onPayDraftChange).toHaveBeenCalledWith('42');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -865,6 +866,7 @@ describe('ForumBoard', () => {
   });
 
   it('shows the invoice QR and wallet link', async () => {
+    const onPayCancel = vi.fn();
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -880,12 +882,19 @@ describe('ForumBoard', () => {
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
         payWaiting={true}
+        onPayCancel={onPayCancel}
         {...modeProps('all')}
       />,
     );
     expect(screen.getByText('Pay 21 sats')).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeTruthy();
+    const walletLink = screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' });
+    expect(walletLink.textContent).toContain('Pay');
+    expect(walletLink.querySelector('img[src="/wos-icon.png"]')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.queryByText('Back')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
   });
 
@@ -912,7 +921,7 @@ describe('ForumBoard', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
   });
@@ -941,12 +950,38 @@ describe('ForumBoard', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(
-      screen.getByRole('link', { name: 'Open Wallet of Satoshi' }).getAttribute('href'),
+      screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' }).getAttribute('href'),
     ).toMatch(/^intent:lightning:/);
+  });
+
+  it('shows German invoice sheet labels', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByRole('button', { name: 'Zurück' })).toBeTruthy();
+    expect(screen.queryByText('Zurück')).toBeNull();
+    const walletLink = screen.getByRole('link', { name: 'Mit Wallet of Satoshi zahlen' });
+    expect(walletLink.textContent).toContain('Zahlen');
+    expect(walletLink.textContent).not.toContain('Pay');
   });
 
   it('shows formError empty alert', () => {

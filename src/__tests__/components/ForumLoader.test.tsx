@@ -1415,7 +1415,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
       resolveInvoice?.({ pr: 'lnbc21n1example', amountSats: 21 });
     });
@@ -1473,7 +1473,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
       rejectInvoice?.(new Error('gone'));
     });

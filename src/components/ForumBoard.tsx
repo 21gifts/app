@@ -1,6 +1,6 @@
 'use client';
 
-import { Bitcoin, ImagePlus, Loader2, Send, X } from 'lucide-react';
+import { ArrowLeft, Bitcoin, ImagePlus, Loader2, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import {
   useEffect,
@@ -124,9 +124,9 @@ const MODE_LABEL_KEY: Record<
  * selector, list or empty/loading/error, composer (attach + textarea + Send
  * icon), per-card sats total with a Bitcoin pay icon when the note is payable,
  * optional Founder / Moderator / Verified role pills with click-to-explain,
- * pay-on-note sheet (amount → desktop QR + Wallet of Satoshi, smartphone Wallet
- * of Satoshi deep link only), and optional inline photos (caption below the
- * photo).
+ * pay-on-note sheet (amount → desktop QR + Pay button with Wallet of Satoshi
+ * icon; smartphone deep link only, no QR; top-left back control cancels), and
+ * optional inline photos (caption below the photo).
  *
  * This is a messenger-group thread (oldest top, newest bottom above the
  * composer), not a social feed. Props stay newest-first; Active and All reverse
@@ -325,8 +325,16 @@ export function ForumBoard({
               {sheetOpen && invoiceForCard === null ? (
                 <form
                   onSubmit={handlePaySubmit}
-                  className="mt-3 flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-3"
+                  className="relative mt-3 flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-3 pl-11 pt-10"
                 >
+                  <button
+                    type="button"
+                    aria-label={t('forum.payBack')}
+                    onClick={onPayCancel}
+                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-900"
+                  >
+                    <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+                  </button>
                   <label className="flex flex-col gap-1 text-left text-sm text-neutral-700">
                     {t('forum.payAmountLabel')}
                     <input
@@ -368,20 +376,21 @@ export function ForumBoard({
                       ) : null}
                       {t('forum.payContinue')}
                     </button>
-                    <button
-                      type="button"
-                      onClick={onPayCancel}
-                      className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-                    >
-                      {t('forum.payCancel')}
-                    </button>
                   </div>
                 </form>
               ) : null}
 
               {invoiceForCard !== null ? (
-                <div className="mt-3 flex flex-col items-center gap-3 rounded-xl border border-neutral-200 bg-white p-4">
-                  <p className="text-center text-sm text-neutral-600">
+                <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-neutral-200 bg-white p-4">
+                  <button
+                    type="button"
+                    aria-label={t('forum.payBack')}
+                    onClick={onPayCancel}
+                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-900"
+                  >
+                    <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+                  </button>
+                  <p className="px-10 text-center text-sm text-neutral-600">
                     {t('forum.payConfirm', { amount: formatSatsLabel(invoiceForCard.amountSats) })}
                   </p>
                   {showPaymentQr ? (
@@ -391,8 +400,17 @@ export function ForumBoard({
                   {wosHref !== null ? (
                     <a
                       href={wosHref}
-                      className="text-sm font-medium text-neutral-600 underline underline-offset-4 transition hover:text-neutral-900"
+                      aria-label={t('forum.payOpenWalletAria')}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700"
                     >
+                      <img
+                        src="/wos-icon.png"
+                        alt=""
+                        width={20}
+                        height={20}
+                        aria-hidden="true"
+                        className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                      />
                       {t('forum.payOpenWallet')}
                     </a>
                   ) : null}
@@ -402,13 +420,6 @@ export function ForumBoard({
                     <p className="text-center text-xs text-neutral-500">{t('forum.payWaiting')}</p>
                   ) : null}
                   {/* v8 ignore stop */}
-                  <button
-                    type="button"
-                    onClick={onPayCancel}
-                    className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-                  >
-                    {t('forum.payCancel')}
-                  </button>
                 </div>
               ) : null}
             </li>
