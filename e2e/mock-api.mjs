@@ -281,6 +281,9 @@ const server = http.createServer(async (req, res) => {
       account.rulesAgreedAt = Date.now();
     }
     json(res, 200, account);
+    return;
+  }
+
   const viewMatch = pathName.match(/^\/view\/([^/]+)$/);
   if (method === 'GET' && viewMatch) {
     const key = viewMatch[1];

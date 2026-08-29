@@ -174,6 +174,8 @@ describe('accountSchema', () => {
 
   it('rejects a string rulesAgreedAt timestamp', () => {
     expect(() => accountSchema.parse({ ...account, rulesAgreedAt: '1700000001' })).toThrow();
+  });
+
   it('rejects a missing viewKey', () => {
     const without: Record<string, unknown> = { ...account };
     delete without['viewKey'];
