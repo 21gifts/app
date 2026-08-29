@@ -469,4 +469,79 @@ describe('ForumLoader', () => {
       'Too many payments. Please wait a moment and try again.',
     );
   });
+
+  it('drops a late invoice after cancel', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
+    invoiceMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveInvoice = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => {
+      resolveInvoice?.({ pr: 'lnbc21n1example', amountSats: 21 });
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+  });
+
+  it('drops a late invoice error after cancel', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    let rejectInvoice: ((reason: Error) => void) | undefined;
+    invoiceMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectInvoice = reject;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => {
+      rejectInvoice?.(new Error('gone'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('ignores pay submit when the note is not payable', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false }]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    const amount = screen.queryByLabelText('Amount (sats)');
+    if (amount !== null) {
+      fireEvent.change(amount, { target: { value: '21' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    }
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('does not request a second invoice while one is in flight', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
+  });
 });

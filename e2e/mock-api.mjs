@@ -156,6 +156,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 404, { error: 'Not found' });
       return;
     }
+    if (row.payable !== true) {
+      json(res, 400, { error: 'This note cannot be paid yet' });
+      return;
+    }
     let parsed;
     try {
       parsed = JSON.parse(await readBody(req));

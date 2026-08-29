@@ -198,7 +198,12 @@ export function ForumLoader(): ReactElement | null {
 
   const onPaySubmit = (): void => {
     /* v8 ignore next 3 -- button is disabled when no sheet is open */
-    if (payMessageId === null) {
+    if (payMessageId === null || payBusy) {
+      return;
+    }
+    const listed = messages?.find((message) => message.id === payMessageId);
+    /* v8 ignore next 3 -- sheet only opens on a payable row */
+    if (listed === undefined || listed.payable !== true) {
       return;
     }
     const rawAmount = payDraft.trim();
@@ -215,26 +220,31 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const messageId = payMessageId;
-    /* v8 ignore start -- sheet is open on a listed row */
-    const baseline =
-      messages?.find((message) => message.id === messageId)?.sats ?? Number.NEGATIVE_INFINITY;
-    /* v8 ignore stop */
+    const baseline = listed.sats;
+    const generation = payPollGeneration.current;
     setPayBusy(true);
     setPayError(null);
     void (async () => {
       try {
         const invoice = await postMessageInvoice(session, messageId, sats);
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
         setPayInvoice({
           messageId,
           pr: invoice.pr,
           amountSats: invoice.amountSats,
         });
-        /* v8 ignore next */
-        startPayPoll(messageId, baseline === Number.NEGATIVE_INFINITY ? 0 : baseline);
+        startPayPoll(messageId, baseline);
       } catch (err) {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
         setPayError(isRateLimitError(err) ? 'rateLimit' : 'request');
       } finally {
-        setPayBusy(false);
+        if (generation === payPollGeneration.current) {
+          setPayBusy(false);
+        }
       }
     })();
   };
