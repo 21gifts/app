@@ -59,6 +59,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Open this page in your browser',
   },
   {
+    route: '/donate',
+    id: 'default',
+    image: 'donate.png',
+    visual: 'screen-donate',
+    needle: 'Open the forum',
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',

@@ -3,8 +3,8 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTA **Ask for help** (`/login`).
-- **Actions:** Read the pitch, change language, open login, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
+- **Actions:** Read the pitch, change language, open login, open Send help, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -131,6 +131,19 @@ Login begin or finish failed. Copy **Something went wrong. Please try again.** a
 Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** button; **Open in browser** and **Copy link** instead.
 
 ![21.gifts login in-app](images/login-in-app.png)
+
+## Screen: /donate
+
+- **URL:** `/donate` — public, no auth gate.
+- **What the user sees:** Light language switcher top-right (not marketing header). Heading **Send help**, short lead about picking a forum message then sending Bitcoin, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **Actions:** Change language. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
+- **Calls:** `DonatePage`, `LanguageSwitcher`.
+
+### Variant: default
+
+The only state. Heading **Send help**, explainer lead, **Open the forum**.
+
+![21.gifts donate](images/donate.png)
 
 ## Screen: /setup/name
 

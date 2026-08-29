@@ -22,6 +22,7 @@ const en = {
   'home.lead':
     'Ask for help, or send help, without an organization in the middle. Funds flow donor to receiver directly — the platform never custodies a satoshi.',
   'home.ctaAsk': 'Ask for help',
+  'home.ctaSend': 'Send help',
   'home.howKicker': 'How it works',
   'home.howTitle': 'Three steps, no accounts in the traditional sense',
   'home.howLead':
@@ -64,13 +65,18 @@ const en = {
     'Yes. If you lose the login and any platform sync, the account cannot be recovered in v1. Keep a backup of the device you sign in with.',
   'home.faq5Q': 'How do I send a gift?',
   'home.faq5A':
-    'Log in, open the member forum, and tap the Bitcoin icon next to a post’s sats. Enter an amount in sats, then pay with Wallet of Satoshi. Satoshis go to the author’s address.',
+    'Open Send help. Pick a message on the forum, then send Bitcoin on that post. Enter an amount in sats and pay with Wallet of Satoshi. Satoshis go to the author.',
   'home.faq6Q': 'Why only Bitcoin?',
   'home.faq6A':
     'Bitcoin is fast, low-fee, and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without permission.',
   'home.faq7Q': 'Is this regulated, and how do taxes work?',
   'home.faq7A':
     '21.gifts is a non-profit communication and discovery layer. It is not a payment service provider and does not move funds. Donors and receivers are responsible for their own tax treatment in their jurisdiction.',
+
+  'donate.pageTitle': 'Send help',
+  'donate.lead':
+    'Choose a message on the forum. On that message, send Bitcoin to the person who wrote it.',
+  'donate.continue': 'Open the forum',
 
   'notFound.body': 'This page does not exist.',
   'notFound.back': 'Back home',
@@ -183,6 +189,7 @@ const de = {
   'home.lead':
     'Bitten Sie um Hilfe oder senden Sie Hilfe — ohne Organisation dazwischen. Das Geld fliesst direkt von der gebenden zur empfangenden Person. Die Plattform verwahrt keinen Satoshi.',
   'home.ctaAsk': 'Hilfe erbitten',
+  'home.ctaSend': 'Hilfe senden',
   'home.howKicker': "So funktioniert's",
   'home.howTitle': 'Drei Schritte, keine Konten im herkömmlichen Sinn',
   'home.howLead':
@@ -225,13 +232,17 @@ const de = {
     'Ja. Wenn Sie das Login und jede Plattform-Sync verlieren, ist das Konto in v1 nicht wiederherstellbar. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
   'home.faq5Q': 'Wie sende ich ein Geschenk?',
   'home.faq5A':
-    'Melden Sie sich an, öffnen Sie das Mitgliederforum und tippen Sie auf das Bitcoin-Icon neben den Sats eines Beitrags. Geben Sie einen Betrag in Sats ein und zahlen Sie mit Wallet of Satoshi. Die Satoshis gehen an die Adresse der Autorin oder des Autors.',
+    'Öffnen Sie Hilfe senden. Wählen Sie eine Nachricht im Forum und senden Sie dort Bitcoin. Geben Sie einen Betrag in Sats ein und zahlen Sie mit Wallet of Satoshi. Die Satoshis gehen an die Autorin oder den Autor.',
   'home.faq6Q': 'Warum nur Bitcoin?',
   'home.faq6A':
     'Bitcoin ist schnell, günstig und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. Das braucht keine verwahrende Schicht und lässt weltweit ohne Erlaubnis geben und empfangen.',
   'home.faq7Q': 'Ist das reguliert, und wie ist das mit Steuern?',
   'home.faq7A':
     '21.gifts ist eine gemeinnützige Kommunikations- und Entdeckungsschicht. Es ist kein Zahlungsdienstleister und bewegt kein Geld. Gebende und Empfangende sind selbst für die steuerliche Behandlung in ihrem Rechtsraum verantwortlich.',
+  'donate.pageTitle': 'Hilfe senden',
+  'donate.lead':
+    'Wählen Sie eine Nachricht im Forum. An dieser Nachricht senden Sie Bitcoin an die Person, die sie geschrieben hat.',
+  'donate.continue': 'Forum öffnen',
   'notFound.body': 'Diese Seite gibt es nicht.',
   'notFound.back': 'Zur Startseite',
   'handbook.title': 'Handbuch',
@@ -332,6 +343,7 @@ const es = {
   'home.lead':
     'Pide ayuda o envía ayuda, sin una organización en medio. El dinero va directo de quien da a quien recibe — la plataforma no custodia ni un satoshi.',
   'home.ctaAsk': 'Pedir ayuda',
+  'home.ctaSend': 'Enviar ayuda',
   'home.howKicker': 'Cómo funciona',
   'home.howTitle': 'Tres pasos, sin cuentas al estilo tradicional',
   'home.howLead':
@@ -374,13 +386,16 @@ const es = {
     'Sí. Si pierdes el login y cualquier sincronización de plataforma, la cuenta no se puede recuperar en v1. Conserva una copia de seguridad del dispositivo con el que entras.',
   'home.faq5Q': '¿Cómo envío un regalo?',
   'home.faq5A':
-    'Inicia sesión, abre el foro de miembros y toca el icono de Bitcoin junto a los sats de una publicación. Indica un monto en sats y paga con Wallet of Satoshi. Los satoshis van a la dirección de quien escribió el mensaje.',
+    'Abre Enviar ayuda. Elige un mensaje en el foro y envía Bitcoin en esa publicación. Indica un monto en sats y paga con Wallet of Satoshi. Los satoshis van a quien escribió el mensaje.',
   'home.faq6Q': '¿Por qué solo Bitcoin?',
   'home.faq6A':
     'Bitcoin es rápido, de baja comisión y resistente a la censura. Wallet of Satoshi hace enviar y recibir tan simple como una dirección de correo. Eso elimina cualquier capa custodial y permite dar o recibir en cualquier lugar sin permiso.',
   'home.faq7Q': '¿Está regulado y cómo funcionan los impuestos?',
   'home.faq7A':
     '21.gifts es una capa de comunicación y descubrimiento sin ánimo de lucro. No es un proveedor de servicios de pago y no mueve fondos. Quien da y quien recibe son responsables de su propio tratamiento fiscal en su jurisdicción.',
+  'donate.pageTitle': 'Enviar ayuda',
+  'donate.lead': 'Elige un mensaje en el foro. En ese mensaje, envía Bitcoin a quien lo escribió.',
+  'donate.continue': 'Abrir el foro',
   'notFound.body': 'Esta página no existe.',
   'notFound.back': 'Volver al inicio',
   'handbook.title': 'Manual',
@@ -481,6 +496,7 @@ const fil = {
   'home.lead':
     'Humiling ng tulong, o magpadala ng tulong, nang walang organisasyon sa gitna. Diretso ang pera mula sa nagbibigay patungo sa tumatanggap — walang satoshi na hawak ng platform.',
   'home.ctaAsk': 'Humiling ng tulong',
+  'home.ctaSend': 'Magpadala ng tulong',
   'home.howKicker': 'Paano ito gumagana',
   'home.howTitle': 'Tatlong hakbang, walang account sa tradisyonal na paraan',
   'home.howLead': 'Mag-log in ka. Walang username, walang password, at walang email sign-up.',
@@ -523,13 +539,17 @@ const fil = {
     'Oo. Kung mawala ang login at anumang platform sync, hindi na mare-recover ang account sa v1. Mag-backup ng device na ginagamit mo sa pag-log in.',
   'home.faq5Q': 'Paano ako magpapadala ng handog?',
   'home.faq5A':
-    'Mag-log in, buksan ang member forum, at i-tap ang Bitcoin icon sa tabi ng sats ng isang post. Maglagay ng amount sa sats, tapos magbayad gamit ang Wallet of Satoshi. Sa address ng may-akda papunta ang mga satoshi.',
+    'Buksan ang Magpadala ng tulong. Pumili ng mensahe sa forum, tapos magpadala ng Bitcoin sa post na iyon. Maglagay ng amount sa sats, tapos magbayad gamit ang Wallet of Satoshi. Sa address ng may-akda papunta ang mga satoshi.',
   'home.faq6Q': 'Bakit Bitcoin lang?',
   'home.faq6A':
     'Mabilis, mababa ang fee, at hindi madaling i-censor ang Bitcoin. Ginagawa ng Wallet of Satoshi ang pagpapadala at pagtanggap na kasing-simple ng email address. Inaalis nito ang kailangan ng custodial layer at pinapayagan ang sinuman sa mundo na magbigay o tumanggap nang walang permiso.',
   'home.faq7Q': 'Regulado ba ito, at paano ang buwis?',
   'home.faq7A':
     'Ang 21.gifts ay non-profit na communication at discovery layer. Hindi ito payment service provider at hindi ito naglilipat ng pondo. Responsibilidad ng nagbibigay at tumatanggap ang sarili nilang tax treatment sa kanilang hurisdiksyon.',
+  'donate.pageTitle': 'Magpadala ng tulong',
+  'donate.lead':
+    'Pumili ng mensahe sa forum. Sa mensaheng iyon, magpadala ng Bitcoin sa taong sumulat nito.',
+  'donate.continue': 'Buksan ang forum',
   'notFound.body': 'Walang ganitong page.',
   'notFound.back': 'Bumalik sa home',
   'handbook.title': 'Handbook',
