@@ -186,8 +186,8 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Living room rules**, prompt to read and agree, the full rules body without the public Contact / forum nav, and a full-width **I agree to these rules** button.
-- **Actions:** Read the rules and **I agree to these rules**; open **Menu** for Profile, language, or **Log out**. After agreement, the visitor is sent to `/welcome`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Living room rules**, prompt to read and agree, the full rules body without the public Contact / forum nav, and a full-width **I agree to these rules** button.
+- **Actions:** Read the rules and **I agree to these rules**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After agreement, the visitor is sent to `/welcome`.
 - **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`).
 
 ### Variant: default
@@ -195,6 +195,12 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 Signed in with a name and address and `rulesAgreedAt` still null. Rules body and **I agree to these rules** visible.
 
 ![21.gifts rules setup](images/setup-rules.png)
+
+### Variant: mobile
+
+Narrow viewport (375×812). The rules body wraps; **I agree to these rules** stays full-width after the document.
+
+![21.gifts rules setup mobile](images/setup-rules-mobile.png)
 
 ## Screen: /welcome
 

@@ -101,6 +101,13 @@ export const SCREEN_VARIANTS = [
     needle: 'I agree to these rules',
   },
   {
+    route: '/setup/rules',
+    id: 'mobile',
+    image: 'setup-rules-mobile.png',
+    visual: 'state-setup-rules-mobile',
+    needle: 'setup-rules mobile',
+  },
+  {
     route: '/welcome',
     id: 'default',
     image: 'welcome.png',
