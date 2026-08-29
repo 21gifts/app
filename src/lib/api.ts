@@ -192,6 +192,25 @@ export async function unlinkLightningAddress(sessionToken: string): Promise<Acco
 }
 
 /**
+ * Permanently dismisses the welcome-forum living-room laws hint for the account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link Account}, with `forumLawsDismissed` set to `true`.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function dismissForumLaws(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/forum-laws-dismissed', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not dismiss the living-room hint');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Resolves a Lightning Address to LNURL-pay metadata via the api cache.
  *
  * @param address - The `name@domain` address to look up.

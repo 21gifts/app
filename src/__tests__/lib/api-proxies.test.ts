@@ -9,6 +9,7 @@ import {
   proxyGiftsGet,
   proxyGiftsStatsGet,
   proxyMeGet,
+  proxyMeForumLawsDismissedPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeNamePost,
@@ -43,6 +44,15 @@ describe('api proxy wrappers', () => {
     await proxyMeNamePost(new Request('http://localhost/me/name', { method: 'POST', body: '{}' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/name');
+  });
+
+  it('proxyMeForumLawsDismissedPost hits POST /me/forum-laws-dismissed', async () => {
+    const fetchMock = stubApi();
+    await proxyMeForumLawsDismissedPost(
+      new Request('http://localhost/me/forum-laws-dismissed', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/forum-laws-dismissed');
   });
 
   it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {

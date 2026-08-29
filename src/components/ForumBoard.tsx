@@ -1,6 +1,6 @@
 'use client';
 
-import { Bitcoin, Loader2 } from 'lucide-react';
+import { Bitcoin, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -75,6 +75,10 @@ export interface ForumBoardProps {
   mode: ForumFeedMode;
   /** Called when the visitor picks another mode. */
   onModeChange: (mode: ForumFeedMode) => void;
+  /** When true, render the living-room laws hint box. */
+  lawsVisible: boolean;
+  /** Called when the user clicks the hint dismiss control. */
+  onDismissLaws: () => void;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -87,11 +91,11 @@ const MODE_LABEL_KEY: Record<
 };
 
 /**
- * Presentational public forum: heading, two living-room laws with links to
- * `/rules` and `/contact`, Active/All/Most popular selector, list or
- * empty/loading/error, composer, per-card sats total with a Bitcoin pay icon
- * when the note is payable, and pay-on-note sheet (amount → desktop QR +
- * Wallet of Satoshi, smartphone Wallet of Satoshi deep link only).
+ * Presentational public forum: heading, optional dismissible living-room laws
+ * hint box with links to `/rules` and `/contact`, Active/All/Most popular
+ * selector, list or empty/loading/error, composer, per-card sats total with a
+ * Bitcoin pay icon when the note is payable, and pay-on-note sheet (amount →
+ * desktop QR + Wallet of Satoshi, smartphone Wallet of Satoshi deep link only).
  *
  * This is a messenger-group thread (oldest top, newest bottom above the
  * composer), not a social feed. Props stay newest-first; Active and All reverse
@@ -126,6 +130,8 @@ export function ForumBoard({
   onPayCancel,
   mode,
   onModeChange,
+  lawsVisible,
+  onDismissLaws,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const composerRef = useRef<HTMLFormElement>(null);
@@ -336,18 +342,30 @@ export function ForumBoard({
         {t('forum.heading')}
       </h2>
 
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-center text-sm text-neutral-700">{t('forum.laws1')}</p>
-        <p className="text-center text-sm text-neutral-700">{t('forum.laws2')}</p>
-        <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
-          <Link href="/rules" className="text-neutral-900 underline underline-offset-2">
-            {t('forum.rulesLink')}
-          </Link>
-          <Link href="/contact" className="text-neutral-900 underline underline-offset-2">
-            {t('forum.contactLink')}
-          </Link>
-        </nav>
-      </div>
+      {lawsVisible ? (
+        <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 pr-10">
+          <button
+            type="button"
+            aria-label={t('forum.lawsDismiss')}
+            onClick={onDismissLaws}
+            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 transition hover:bg-white hover:text-neutral-900"
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
+          </button>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-center text-sm text-neutral-700">{t('forum.laws1')}</p>
+            <p className="text-center text-sm text-neutral-700">{t('forum.laws2')}</p>
+            <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
+              <Link href="/rules" className="text-neutral-900 underline underline-offset-2">
+                {t('forum.rulesLink')}
+              </Link>
+              <Link href="/contact" className="text-neutral-900 underline underline-offset-2">
+                {t('forum.contactLink')}
+              </Link>
+            </nav>
+          </div>
+        </div>
+      ) : null}
 
       <div
         role="group"

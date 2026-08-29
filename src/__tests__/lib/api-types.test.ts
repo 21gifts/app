@@ -18,6 +18,7 @@ const account = {
   name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
 };
 
@@ -89,6 +90,19 @@ describe('accountSchema', () => {
 
   it('rejects a non-boolean verification flag', () => {
     expect(() => accountSchema.parse({ ...account, lightningAddressVerified: 'yes' })).toThrow();
+  });
+
+  it('accepts forumLawsDismissed true and false', () => {
+    expect(accountSchema.parse({ ...account, forumLawsDismissed: false }).forumLawsDismissed).toBe(
+      false,
+    );
+    expect(accountSchema.parse({ ...account, forumLawsDismissed: true }).forumLawsDismissed).toBe(
+      true,
+    );
+  });
+
+  it('rejects a non-boolean forumLawsDismissed flag', () => {
+    expect(() => accountSchema.parse({ ...account, forumLawsDismissed: 'yes' })).toThrow();
   });
 
   it('accepts a null linkingKey for passkey accounts', () => {

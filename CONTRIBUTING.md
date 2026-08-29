@@ -63,6 +63,11 @@ app/
 │   │   ├── messages/
 │   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
 │   │   │   └── [id]/invoice/route.ts  # POST /messages/:id/invoice pay-on-note
+│   │   ├── me/
+│   │   │   ├── name/
+│   │   │   │   └── route.ts     # POST /me/name
+│   │   │   └── forum-laws-dismissed/
+│   │   │       └── route.ts     # POST /me/forum-laws-dismissed
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/

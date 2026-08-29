@@ -148,6 +148,7 @@ async function seedAdaSession(page: Page): Promise<void> {
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -381,6 +382,39 @@ test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({
     data: { name: 'A'.repeat(81) },
   });
   expect(tooLong.status()).toBe(400);
+});
+
+test('Function: proxyMeForumLawsDismissedPost — POST /me/forum-laws-dismissed sets the flag', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/forum-laws-dismissed', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { forumLawsDismissed: boolean }).forumLawsDismissed).toBe(true);
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { forumLawsDismissed: boolean }).forumLawsDismissed).toBe(true);
+  const again = await request.post('/me/forum-laws-dismissed', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(again.status()).toBe(200);
+  expect(((await again.json()) as { forumLawsDismissed: boolean }).forumLawsDismissed).toBe(true);
+});
+
+test('Function: dismissForumLaws — welcome laws hint dismisses', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(
+    page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await expect(
+    page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+  ).toHaveCount(0);
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
@@ -1068,6 +1102,7 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
         name: null,
         lightningAddress: null,
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1091,6 +1126,7 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
         name: null,
         lightningAddress: null,
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1114,6 +1150,7 @@ test('Function: AddressSetupPage — address screen heading is visible', async (
         name: 'Ada',
         lightningAddress: null,
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1137,6 +1174,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
         name: 'Ada',
         lightningAddress: null,
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1165,6 +1203,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1195,6 +1234,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1225,6 +1265,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1255,6 +1296,7 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1278,6 +1320,7 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1301,6 +1344,7 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1324,6 +1368,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1354,6 +1399,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });
@@ -1493,6 +1539,7 @@ test('Function: hasLightningAddress — named account without address stays on a
         name: 'Ada',
         lightningAddress: null,
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       }),
     });

@@ -265,9 +265,9 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, Active/All/Most popular selector, list of posts (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet: QR + Wallet of Satoshi on desktop; Wallet of Satoshi deep link only on smartphones (`isSmartphoneUserAgent`). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order.
-- **Inputs:** Messages, loading/error/composer/pay callbacks, controlled `mode` / `onModeChange`.
-- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Scrolls the composer into view when the newest message id is set or changes. No fetch. No mode state of its own.
+- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet: QR + Wallet of Satoshi on desktop; Wallet of Satoshi deep link only on smartphones (`isSmartphoneUserAgent`). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order.
+- **Inputs:** `ForumBoardProps` — messages, loading/error/composer/pay callbacks, controlled `mode` / `onModeChange`, plus required `lawsVisible` and `onDismissLaws`.
+- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
@@ -307,9 +307,9 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes).
-- **Inputs:** Session token.
-- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`. Mode is not persisted.
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes). Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic, restores on failure).
+- **Inputs:** Session token and account from the auth store.
+- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`; may POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -529,6 +529,13 @@
 - **Returns / side effects:** Updated `Account`.
 - **Used by:** `NameForm`.
 
+## Function: dismissForumLaws
+
+- **Purpose:** POST `/me/forum-laws-dismissed` to permanently dismiss the welcome-forum living-room laws hint.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** Updated `Account` with `forumLawsDismissed: true`. No request body.
+- **Used by:** `ForumLoader`.
+
 ## Function: setLightningAddress
 
 - **Purpose:** POST `/me/lightning-address`.
@@ -629,10 +636,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
+- **Used by:** Same-origin name save, forum laws dismiss, address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 
@@ -661,6 +668,13 @@
 - **Inputs:** `Request` with JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/name`.
+
+## Function: proxyMeForumLawsDismissedPost
+
+- **Purpose:** Proxies POST `/me/forum-laws-dismissed`.
+- **Inputs:** `Request` with Bearer session (no body).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/forum-laws-dismissed`.
 
 ## Function: proxyMeGet
 

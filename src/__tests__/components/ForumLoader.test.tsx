@@ -16,13 +16,15 @@ vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
+  dismissForumLaws: vi.fn(),
 }));
 
-import { fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
+import { dismissForumLaws, fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchMessages);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
+const dismissLawsMock = vi.mocked(dismissForumLaws);
 
 const account: Account = {
   id: 'acc_1',
@@ -31,6 +33,7 @@ const account: Account = {
   name: 'Ada',
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
 };
 
@@ -62,6 +65,7 @@ afterEach(() => {
   fetchMock.mockReset();
   postMock.mockReset();
   invoiceMock.mockReset();
+  dismissLawsMock.mockReset();
 });
 
 describe('ForumLoader', () => {
@@ -77,6 +81,71 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
     });
+  });
+
+  it('shows the living-room laws hint when forumLawsDismissed is false', async () => {
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(
+        screen.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+      ).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+  });
+
+  it('hides the living-room laws hint when forumLawsDismissed is true', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    expect(
+      screen.queryByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+  });
+
+  it('dismisses the laws hint and persists via dismissForumLaws', async () => {
+    fetchMock.mockResolvedValue([]);
+    dismissLawsMock.mockResolvedValue({ ...account, forumLawsDismissed: true });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await waitFor(() => {
+      expect(
+        screen.queryByText(
+          'This is a donation platform. Only free gifts — never pay for a promise.',
+        ),
+      ).toBeNull();
+    });
+    expect(dismissLawsMock).toHaveBeenCalledWith('sess');
+    expect(useAuthStore.getState().account?.forumLawsDismissed).toBe(true);
+  });
+
+  it('restores the laws hint when dismissForumLaws rejects', async () => {
+    fetchMock.mockResolvedValue([]);
+    dismissLawsMock.mockRejectedValue(new Error('Could not dismiss the living-room hint'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await waitFor(() => {
+      expect(dismissLawsMock).toHaveBeenCalledWith('sess');
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+      ).toBeTruthy();
+    });
+    expect(useAuthStore.getState().account?.forumLawsDismissed).toBe(false);
   });
 
   it('shows a fetched message with sats', async () => {

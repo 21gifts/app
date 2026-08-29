@@ -7,7 +7,7 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
-import { fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
+import { dismissForumLaws, fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
@@ -56,16 +56,19 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
 /**
  * Client loader for the public forum on `/welcome`.
  *
- * Reads the session from the auth store, fetches messages with a cancelled-flag
- * pattern matching {@link StatsLoader}, owns composer draft/post state, the
- * Active/All/Most popular feed mode, pay-on-note invoice + sats-poll state,
- * and polls until unsigned notes become payable.
+ * Reads the session and account from the auth store, fetches messages with a
+ * cancelled-flag pattern matching {@link StatsLoader}, owns composer
+ * draft/post state, the Active/All/Most popular feed mode, pay-on-note invoice
+ * + sats-poll state, and persists dismiss of the living-room laws hint on the
+ * account. Also polls until unsigned notes become payable.
  * Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
+  const account = useAuthStore((state) => state.account);
+  const setAccount = useAuthStore((state) => state.setAccount);
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -156,6 +159,29 @@ export function ForumLoader(): ReactElement | null {
       payablePollGeneration.current += 1;
     };
   }, []);
+
+  const lawsVisible = account?.forumLawsDismissed !== true;
+
+  const onDismissLaws = (): void => {
+    /* v8 ignore next 3 -- ForumLoader returns null without a session */
+    if (session === null || account === null) {
+      return;
+    }
+    /* v8 ignore next 3 -- dismiss control is hidden when already dismissed */
+    if (account.forumLawsDismissed === true) {
+      return;
+    }
+    const previousAccount = account;
+    setAccount({ ...account, forumLawsDismissed: true });
+    void (async () => {
+      try {
+        const updated = await dismissForumLaws(session);
+        setAccount(updated);
+      } catch {
+        setAccount(previousAccount);
+      }
+    })();
+  };
 
   if (session === null) {
     return null;
@@ -354,6 +380,8 @@ export function ForumLoader(): ReactElement | null {
       onPayCancel={clearPaySheet}
       mode={feedMode}
       onModeChange={onModeChange}
+      lawsVisible={lawsVisible}
+      onDismissLaws={onDismissLaws}
     />
   );
 }

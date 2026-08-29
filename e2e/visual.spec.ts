@@ -13,6 +13,7 @@ const E2E_ACCOUNT = {
   name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
 };
 
