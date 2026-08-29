@@ -307,7 +307,7 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes). Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic, restores on failure).
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes). Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present).
 - **Inputs:** Session token and account from the auth store.
 - **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`; may POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted.
 - **Used by:** `WelcomeScreen`.
