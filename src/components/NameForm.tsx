@@ -22,9 +22,9 @@ type NameError = { type: 'empty' } | { type: 'request' };
  * Treats a missing or whitespace-only name the same as `hasDisplayName`: the
  * prompt and input stay up until a non-empty trimmed name is saved.
  *
- * @param props - `onboarding` shows the field then **Continue** below; `profile`
- *   uses icon actions to the right of the field. Defaults from whether a name
- *   is already saved.
+ * @param props - `onboarding` shows the field at the top and **Continue** at
+ *   the bottom of the screen; `profile` uses icon actions to the right of the
+ *   field. Defaults from whether a name is already saved.
  * @returns The name section, or `null` when there is nothing to show.
  */
 export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): ReactElement | null {
@@ -101,7 +101,10 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
 
   if (variant === 'onboarding') {
     return (
-      <form onSubmit={handleSubmit} className="flex w-full flex-col items-stretch gap-3">
+      <form
+        onSubmit={handleSubmit}
+        className="mt-6 flex w-full flex-1 flex-col items-stretch gap-3"
+      >
         <p className="text-center text-sm text-neutral-500">{t('name.prompt')}</p>
         <input
           type="text"
@@ -122,7 +125,7 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
         <button
           type="submit"
           disabled={busy}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
         >
           {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t('setup.continue')}

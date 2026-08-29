@@ -154,7 +154,7 @@ The only state. Heading **Send help**, explainer lead, **Open the forum**.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name**, name field, **Continue** at the bottom. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
@@ -167,7 +167,7 @@ Signed in, no name yet. **Your name**, name field, **Continue** at the bottom. O
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address**, address field, **Continue** at the bottom. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
