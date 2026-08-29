@@ -36,7 +36,7 @@ function fallbackCopy(text: string): boolean {
  * The `/login` card: Log in, preparing, error, or in-app browser escape.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
- * `/setup/name`, `/setup/address`, or `/welcome`.
+ * `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
  *
  * @returns The card element.
  */
