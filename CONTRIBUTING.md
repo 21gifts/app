@@ -259,9 +259,10 @@ are icon indicators.
 
 Existing hybrid or text controls stay until converted: the signed-in **Menu**
 disclosure (icon plus visible Menu word), **Log out**, **Link address**,
-**Continue**, **Try again**, **Cancel**, and sentence-length links such as
-**Open Wallet of Satoshi**. A **new** text button for an action control is an
-undeclared deviation and is rejected.
+**Continue**, **I agree to these rules** (onboarding consent must be readable
+as an agreement, not an icon), **Try again**, **Cancel**, and sentence-length
+links such as **Open Wallet of Satoshi**. A **new** text button for an action
+control is an undeclared deviation and is rejected.
 
 Reviewers follow `Review.md`.
 
