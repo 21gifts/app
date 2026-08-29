@@ -19,6 +19,7 @@ import {
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
+  proxyViewGet,
 } from '@/lib/api-proxies';
 
 afterEach(() => {
@@ -195,5 +196,12 @@ describe('api proxy wrappers', () => {
       'm1',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/invoice');
+  });
+
+  it('proxyViewGet hits /view/:viewKey (encoded)', async () => {
+    const fetchMock = stubApi();
+    const viewKey = 'a'.repeat(64);
+    await proxyViewGet(new Request(`http://localhost/view-key/${viewKey}`), viewKey);
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}`);
   });
 });

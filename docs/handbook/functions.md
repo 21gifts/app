@@ -237,9 +237,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart replacing the former icon+amount totals row, plus name and Wallet of Satoshi address forms; icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
-- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, and address form — all inside one identity card (no second panel).
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, and a copyable view-key link; icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, address form, and view-key section (hidden when account is null) — all inside one identity card (no second panel).
 - **Used by:** `ProfilePage`.
 
 ## Function: AccountActivityChart
@@ -248,6 +248,48 @@
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
 - **Returns / side effects:** One chrome row (legend left, Sat|USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`.
+
+## Function: ViewProfilePage
+
+- **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
+- **Inputs:** Dynamic route params (`viewKey`).
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. Light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Used by:** Route `/view/[viewKey]`.
+
+## Function: ViewProfileLoader
+
+- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then gift stats for totals. Does not use `useAuthStore`.
+- **Inputs:** `viewKey` string from the route.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. Malformed keys (not 64 lowercase hex) → missing without an api call. Stats failure after a successful profile still shows the card with zero totals.
+- **Used by:** `ViewProfilePage`.
+
+## Function: ViewProfileScreen
+
+- **Purpose:** Presentational read-only profile card: heading, name or unnamed copy, Wallet of Satoshi address or no-address copy, given/received sat totals.
+- **Inputs:** `{ profile, donatedSats, receivedSats, loadingTotals }`.
+- **Returns / side effects:** No menu, logout, or edit forms. Language switcher lives on the page, not in this card.
+- **Used by:** `ViewProfileLoader`.
+
+## Function: ViewKeyCopy
+
+- **Purpose:** Icon-only copy control for the signed-in profile view-key link (`origin + /view/ + viewKey`). Clipboard API with textarea/`execCommand` fallback; flashes a check icon for ~1200ms.
+- **Inputs:** `viewKey` (64 lowercase hex).
+- **Returns / side effects:** Button named from `profile.viewKeyCopy`; `data-copied="true"` while flashed. Does not log the key. Light/neutral theme (not handbook white-on-dark).
+- **Used by:** `ProfileScreen`.
+
+## Function: fetchViewProfile
+
+- **Purpose:** Fetches a public read-only profile by view key via the same-origin proxy.
+- **Inputs:** `viewKey` string.
+- **Returns / side effects:** Validated `ViewProfile`, or `null` on 404. Throws on other non-2xx or a body that fails `viewProfileSchema`. Hits `/view-key/${encodeURIComponent(viewKey)}`.
+- **Used by:** `ViewProfileLoader`.
+
+## Function: proxyViewGet
+
+- **Purpose:** Same-origin proxy of api `GET /view/:viewKey` (public; no auth).
+- **Inputs:** Incoming `Request` and `viewKey` path segment.
+- **Returns / side effects:** Proxied upstream `Response` for `/view/${encodeURIComponent(viewKey)}`.
+- **Used by:** App Router `GET` on `/view-key/[viewKey]`.
 
 ## Function: accountTotals
 

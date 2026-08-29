@@ -74,6 +74,7 @@ function newAccount(linkingKey) {
     forumLawsDismissed: false,
     createdAt: Date.now(),
     rulesAgreedAt: null,
+    viewKey: hex(randomBytes(32)),
   };
 }
 
@@ -280,6 +281,26 @@ const server = http.createServer(async (req, res) => {
       account.rulesAgreedAt = Date.now();
     }
     json(res, 200, account);
+  const viewMatch = pathName.match(/^\/view\/([^/]+)$/);
+  if (method === 'GET' && viewMatch) {
+    const key = viewMatch[1];
+    let found;
+    for (const account of byToken.values()) {
+      if (account.viewKey === key) {
+        found = account;
+        break;
+      }
+    }
+    if (!found) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    json(res, 200, {
+      name: found.name,
+      lightningAddress: found.lightningAddress,
+      lightningAddressVerified: found.lightningAddressVerified,
+      createdAt: found.createdAt,
+    });
     return;
   }
 

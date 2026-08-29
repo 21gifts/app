@@ -36,6 +36,7 @@ beforeEach(() => {
       forumLawsDismissed: false,
       createdAt: 1,
       rulesAgreedAt: null,
+      viewKey: 'a'.repeat(64),
     },
   });
 });
@@ -67,6 +68,7 @@ describe('AddressSetup', () => {
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -87,6 +89,7 @@ describe('AddressSetup', () => {
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -107,6 +110,7 @@ describe('AddressSetup', () => {
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       },
     });
     renderWithLocale(<AddressSetup />);

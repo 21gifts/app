@@ -184,3 +184,14 @@ export async function proxyContactPost(request: Request): Promise<Response> {
 export async function proxyMessagesPhotoGet(request: Request, id: string): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(id)}/photo`);
 }
+
+/**
+ * Proxies GET /view/:viewKey to the 21.gifts api (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @param viewKey - 64-hex view key from the URL.
+ * @returns The upstream response.
+ */
+export async function proxyViewGet(request: Request, viewKey: string): Promise<Response> {
+  return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}`);
+}

@@ -80,7 +80,11 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + address edit
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address + view-key link
+│   │   ├── view/
+│   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
+│   │   ├── view-key/
+│   │   │   └── [viewKey]/route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -89,7 +93,10 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + view-key)
+│   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
+│   │   ├── ViewProfileLoader.tsx # Public view fetch states (loading/missing/error/ready)
+│   │   ├── ViewProfileScreen.tsx # Public read-only profile card
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note

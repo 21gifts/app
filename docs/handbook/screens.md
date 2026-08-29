@@ -422,11 +422,14 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card in place of icon+amount totals, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
 - **Inputs:** Session account (name + Lightning Address + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
 - **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card, edit name and Wallet of Satoshi address, copy the public view-key link, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
+- **Inputs:** Session account (name + Lightning Address + `viewKey`) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD; copy the absolute `/view/<viewKey>` URL.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, Sat|USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, Sat|USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then a **View key** section with the absolute public URL and an icon-only copy control. No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
 
@@ -453,6 +456,37 @@ One receive day (21 sats on **2026-06-01**). Chart draws a horizontal single-poi
 Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
+
+## Screen: /view/[viewKey]
+
+- **Purpose:** Public read-only profile opened via the capability URL `/view/<64-hex>`. Shows name, Wallet of Satoshi address, and given/received sat totals. No session as that user; no edit forms, menu, or logout.
+- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); totals from public `fetchGiftStats` + `accountTotals` for the viewed address.
+- **Actions:** Change language (light switcher top-right). On fetch error, **Try again**. No write actions.
+- **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`). Shared links copied from `/profile`.
+
+### Variant: default
+
+Valid known key. Heading **Profile**, display name, Wallet of Satoshi address, and sat totals.
+
+![21.gifts public view profile](images/view-viewKey.png)
+
+### Variant: missing
+
+Unknown or malformed key. Copy **This profile could not be found.**
+
+![21.gifts public view missing](images/view-missing.png)
+
+### Variant: loading
+
+Waiting on the profile fetch. Copy **Loading…**
+
+![21.gifts public view loading](images/view-loading.png)
+
+### Variant: error
+
+Profile fetch failed. Copy **Could not load this profile. Please try again.** and **Try again**.
+
+![21.gifts public view error](images/view-error.png)
 
 ## Screen: /handbook
 

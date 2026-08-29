@@ -84,6 +84,13 @@
 - **Used by:** `fetchMe`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /view-key/[viewKey]
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey`.
+- **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchViewProfile`.
+- **Auth:** None.
+
 ## Endpoint: GET /messages
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/messages` (public forum list, newest-first).

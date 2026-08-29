@@ -17,6 +17,7 @@ const base: Account = {
   forumLawsDismissed: false,
   createdAt: 1,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 describe('onboarding', () => {

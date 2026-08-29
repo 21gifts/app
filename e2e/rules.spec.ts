@@ -35,6 +35,7 @@ test('welcome forum shows the two laws and links to rules and contact', async ({
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });

@@ -51,6 +51,8 @@ const EMPTY_FX = {
   source: 'coinbase-exchange-daily-close' as const,
 };
 
+const VIEW_KEY = 'a'.repeat(64);
+
 beforeEach(() => {
   vi.mocked(fetchGiftStats).mockReset();
   vi.mocked(fetchGiftStats).mockResolvedValue({
@@ -78,6 +80,7 @@ beforeEach(() => {
       forumLawsDismissed: false,
       createdAt: 1,
       rulesAgreedAt: 1_700_000_001,
+      viewKey: VIEW_KEY,
     },
   });
 });
@@ -166,5 +169,22 @@ describe('ProfileScreen', () => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
     });
     expect(screen.queryByLabelText('Received 1500 sats')).toBeNull();
+  });
+
+  it('shows the view-key heading, absolute URL, and copy control', async () => {
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByRole('heading', { name: 'View key' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy view-key link' })).toBeTruthy();
+    expect(screen.queryByText('Copy view-key link')).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeTruthy();
+    });
+  });
+
+  it('hides the view-key section when account is null', () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy view-key link' })).toBeNull();
   });
 });

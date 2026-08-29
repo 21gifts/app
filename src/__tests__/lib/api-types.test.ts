@@ -10,6 +10,7 @@ import {
   giftStatsSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  viewProfileSchema,
 } from '@/lib/api-types';
 
 const account = {
@@ -22,6 +23,7 @@ const account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 describe('FORUM_MESSAGE_MAX_LENGTH', () => {
@@ -172,6 +174,40 @@ describe('accountSchema', () => {
 
   it('rejects a string rulesAgreedAt timestamp', () => {
     expect(() => accountSchema.parse({ ...account, rulesAgreedAt: '1700000001' })).toThrow();
+  it('rejects a missing viewKey', () => {
+    const without: Record<string, unknown> = { ...account };
+    delete without['viewKey'];
+    expect(() => accountSchema.parse(without)).toThrow();
+  });
+
+  it('rejects an uppercase viewKey', () => {
+    expect(() => accountSchema.parse({ ...account, viewKey: 'A'.repeat(64) })).toThrow();
+  });
+
+  it('rejects a viewKey with the wrong length', () => {
+    expect(() => accountSchema.parse({ ...account, viewKey: 'a'.repeat(63) })).toThrow();
+  });
+});
+
+describe('viewProfileSchema', () => {
+  const profile = {
+    name: 'Ada',
+    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddressVerified: false,
+    createdAt: 1_700_000_000,
+  };
+
+  it('accepts a well-formed named profile', () => {
+    expect(viewProfileSchema.parse(profile)).toEqual(profile);
+  });
+
+  it('accepts null name and null lightningAddress', () => {
+    const bare = { ...profile, name: null, lightningAddress: null };
+    expect(viewProfileSchema.parse(bare)).toEqual(bare);
+  });
+
+  it('rejects an empty name', () => {
+    expect(() => viewProfileSchema.parse({ ...profile, name: '' })).toThrow();
   });
 });
 
