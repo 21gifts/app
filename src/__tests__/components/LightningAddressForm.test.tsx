@@ -92,6 +92,20 @@ describe('LightningAddressForm', () => {
     expect(setLightningAddress).not.toHaveBeenCalled();
   });
 
+  it('does not call the api when the address is the example placeholder', () => {
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: '  You@WalletOfSatoshi.com  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter your own Wallet of Satoshi address, not the example',
+    );
+    expect(setLightningAddress).not.toHaveBeenCalled();
+  });
+
   it('trims the address before posting', async () => {
     const updated: Account = { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' };
     vi.mocked(setLightningAddress).mockResolvedValue(updated);
@@ -136,6 +150,22 @@ describe('LightningAddressForm', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not update your Wallet of Satoshi address');
     // The form stays put so the visitor can correct the value.
+    expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
+  });
+
+  it('shows the not-found message when the address could not be found', async () => {
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error('That Wallet of Satoshi address could not be found'),
+    );
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'missing@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('That Wallet of Satoshi address could not be found');
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
   });
 

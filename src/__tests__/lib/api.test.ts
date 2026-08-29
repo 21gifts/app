@@ -148,6 +148,17 @@ describe('setLightningAddress', () => {
     );
   });
 
+  it('throws the not-found message when the address could not be resolved', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'Lightning Address could not be resolved' },
+    });
+    await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
+      'That Wallet of Satoshi address could not be found',
+    );
+  });
+
   it('rewrites remaining Lightning jargon in a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Lightning Address is taken' } });
     await expect(setLightningAddress('sess', 'x')).rejects.toThrow(

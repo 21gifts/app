@@ -9,7 +9,8 @@ import { hasLightningAddress } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the Lightning Address form. */
-type LightningAddressError = { type: 'empty' } | { type: 'request' };
+type LightningAddressError =
+  { type: 'empty' } | { type: 'request' } | { type: 'example' } | { type: 'notFound' };
 
 /**
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
@@ -70,8 +71,12 @@ export function LightningAddressForm(
         return;
       }
       onFresh(result);
-    } catch {
-      setError({ type: 'request' });
+    } catch (err) {
+      if (err instanceof Error && /could not be found/i.test(err.message)) {
+        setError({ type: 'notFound' });
+      } else {
+        setError({ type: 'request' });
+      }
     } finally {
       setBusy(false);
     }
@@ -109,6 +114,10 @@ export function LightningAddressForm(
       setError({ type: 'empty' });
       return;
     }
+    if (trimmed.toLowerCase() === 'you@walletofsatoshi.com') {
+      setError({ type: 'example' });
+      return;
+    }
     void run((token) => setLightningAddress(token, trimmed));
   };
 
@@ -139,7 +148,13 @@ export function LightningAddressForm(
         />
         {error !== null ? (
           <p role="alert" className="text-center text-sm text-red-600">
-            {error.type === 'empty' ? t('la.errorEmpty') : t('la.errorRequest')}
+            {error.type === 'empty'
+              ? t('la.errorEmpty')
+              : error.type === 'example'
+                ? t('la.errorExample')
+                : error.type === 'notFound'
+                  ? t('la.errorNotFound')
+                  : t('la.errorRequest')}
           </p>
         ) : null}
         <button
@@ -235,7 +250,13 @@ export function LightningAddressForm(
 
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-red-600">
-          {error.type === 'empty' ? t('la.errorEmpty') : t('la.errorRequest')}
+          {error.type === 'empty'
+            ? t('la.errorEmpty')
+            : error.type === 'example'
+              ? t('la.errorExample')
+              : error.type === 'notFound'
+                ? t('la.errorNotFound')
+                : t('la.errorRequest')}
         </p>
       ) : null}
     </div>
