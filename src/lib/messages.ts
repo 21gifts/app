@@ -64,7 +64,7 @@ const en = {
     'Yes. If you lose the login and any platform sync, the account cannot be recovered in v1. Keep a backup of the device you sign in with.',
   'home.faq5Q': 'How do I send a gift?',
   'home.faq5A':
-    'Log in, open the member forum, and choose Send Bitcoin on a post. Enter an amount in sats, then pay with Wallet of Satoshi. Satoshis go to the author’s address.',
+    'Log in, open the member forum, and tap the Bitcoin icon next to a post’s sats. Enter an amount in sats, then pay with Wallet of Satoshi. Satoshis go to the author’s address.',
   'home.faq6Q': 'Why only Bitcoin?',
   'home.faq6A':
     'Bitcoin is fast, low-fee, and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without permission.',
@@ -225,7 +225,7 @@ const de = {
     'Ja. Wenn Sie das Login und jede Plattform-Sync verlieren, ist das Konto in v1 nicht wiederherstellbar. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
   'home.faq5Q': 'Wie sende ich ein Geschenk?',
   'home.faq5A':
-    'Melden Sie sich an, öffnen Sie das Mitgliederforum und wählen Sie Bitcoin senden bei einem Beitrag. Geben Sie einen Betrag in Sats ein und zahlen Sie mit Wallet of Satoshi. Die Satoshis gehen an die Adresse der Autorin oder des Autors.',
+    'Melden Sie sich an, öffnen Sie das Mitgliederforum und tippen Sie auf das Bitcoin-Icon neben den Sats eines Beitrags. Geben Sie einen Betrag in Sats ein und zahlen Sie mit Wallet of Satoshi. Die Satoshis gehen an die Adresse der Autorin oder des Autors.',
   'home.faq6Q': 'Warum nur Bitcoin?',
   'home.faq6A':
     'Bitcoin ist schnell, günstig und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. Das braucht keine verwahrende Schicht und lässt weltweit ohne Erlaubnis geben und empfangen.',
@@ -374,7 +374,7 @@ const es = {
     'Sí. Si pierdes el login y cualquier sincronización de plataforma, la cuenta no se puede recuperar en v1. Conserva una copia de seguridad del dispositivo con el que entras.',
   'home.faq5Q': '¿Cómo envío un regalo?',
   'home.faq5A':
-    'Inicia sesión, abre el foro de miembros y elige Enviar Bitcoin en una publicación. Indica un monto en sats y paga con Wallet of Satoshi. Los satoshis van a la dirección de quien escribió el mensaje.',
+    'Inicia sesión, abre el foro de miembros y toca el icono de Bitcoin junto a los sats de una publicación. Indica un monto en sats y paga con Wallet of Satoshi. Los satoshis van a la dirección de quien escribió el mensaje.',
   'home.faq6Q': '¿Por qué solo Bitcoin?',
   'home.faq6A':
     'Bitcoin es rápido, de baja comisión y resistente a la censura. Wallet of Satoshi hace enviar y recibir tan simple como una dirección de correo. Eso elimina cualquier capa custodial y permite dar o recibir en cualquier lugar sin permiso.',
@@ -523,7 +523,7 @@ const fil = {
     'Oo. Kung mawala ang login at anumang platform sync, hindi na mare-recover ang account sa v1. Mag-backup ng device na ginagamit mo sa pag-log in.',
   'home.faq5Q': 'Paano ako magpapadala ng handog?',
   'home.faq5A':
-    'Mag-log in, buksan ang member forum, at piliin ang Magpadala ng Bitcoin sa isang post. Maglagay ng amount sa sats, tapos magbayad gamit ang Wallet of Satoshi. Sa address ng may-akda papunta ang mga satoshi.',
+    'Mag-log in, buksan ang member forum, at i-tap ang Bitcoin icon sa tabi ng sats ng isang post. Maglagay ng amount sa sats, tapos magbayad gamit ang Wallet of Satoshi. Sa address ng may-akda papunta ang mga satoshi.',
   'home.faq6Q': 'Bakit Bitcoin lang?',
   'home.faq6A':
     'Mabilis, mababa ang fee, at hindi madaling i-censor ang Bitcoin. Ginagawa ng Wallet of Satoshi ang pagpapadala at pagtanggap na kasing-simple ng email address. Inaalis nito ang kailangan ng custodial layer at pinapayagan ang sinuman sa mundo na magbigay o tumanggap nang walang permiso.',

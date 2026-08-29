@@ -258,6 +258,7 @@ describe('ForumBoard', () => {
         onPayOpen={onPayOpen}
       />,
     );
+    expect(screen.queryByText('Send Bitcoin')).toBeNull();
     const buttons = screen.getAllByRole('button', { name: 'Send Bitcoin' });
     expect((buttons[0] as HTMLButtonElement).disabled).toBe(false);
     expect((buttons[1] as HTMLButtonElement).disabled).toBe(true);
