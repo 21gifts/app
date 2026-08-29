@@ -21,7 +21,7 @@ export function AddressSetup(): ReactElement {
       {name !== null && name !== undefined && name.trim() !== '' ? (
         <p className="text-sm text-neutral-500">{t('login.helloName', { name: name.trim() })}</p>
       ) : null}
-      <LightningAddressForm />
+      <LightningAddressForm variant="onboarding" />
     </section>
   );
 }

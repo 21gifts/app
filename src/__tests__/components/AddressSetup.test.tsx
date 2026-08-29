@@ -47,7 +47,7 @@ describe('AddressSetup', () => {
     renderWithLocale(<AddressSetup />);
     expect(screen.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeTruthy();
     expect(screen.getByText('Hi, Ada')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });
@@ -67,7 +67,7 @@ describe('AddressSetup', () => {
     });
     renderWithLocale(<AddressSetup />);
     expect(screen.queryByText(/Hi,/)).toBeNull();
-    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
   });
 
   it('omits the greeting when the name is empty', () => {
@@ -85,7 +85,7 @@ describe('AddressSetup', () => {
     });
     renderWithLocale(<AddressSetup />);
     expect(screen.queryByText(/Hi,/)).toBeNull();
-    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
   });
 
   it('omits the greeting when the name is whitespace-only', () => {
@@ -103,6 +103,6 @@ describe('AddressSetup', () => {
     });
     renderWithLocale(<AddressSetup />);
     expect(screen.queryByText(/Hi,/)).toBeNull();
-    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
   });
 });

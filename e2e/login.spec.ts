@@ -150,7 +150,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   ).toHaveCount(0);
 
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
-  await page.getByRole('button', { name: 'Save name' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
   await expect(page.getByText('Hi, Ada')).toBeVisible();
@@ -160,7 +160,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toHaveCount(0);
 
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();

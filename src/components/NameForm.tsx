@@ -22,9 +22,12 @@ type NameError = { type: 'empty' } | { type: 'request' };
  * Treats a missing or whitespace-only name the same as `hasDisplayName`: the
  * prompt and input stay up until a non-empty trimmed name is saved.
  *
+ * @param props - `onboarding` shows the field then **Continue** below; `profile`
+ *   uses icon actions to the right of the field. Defaults from whether a name
+ *   is already saved.
  * @returns The name section, or `null` when there is nothing to show.
  */
-export function NameForm(): ReactElement | null {
+export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
@@ -40,6 +43,7 @@ export function NameForm(): ReactElement | null {
 
   const name = account.name;
   const named = hasDisplayName(account);
+  const variant = props.variant ?? (named ? 'profile' : 'onboarding');
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
@@ -94,6 +98,38 @@ export function NameForm(): ReactElement | null {
   ) : (
     <Check aria-hidden="true" className="h-4 w-4" />
   );
+
+  if (variant === 'onboarding') {
+    return (
+      <form onSubmit={handleSubmit} className="flex w-full flex-col items-stretch gap-3">
+        <p className="text-center text-sm text-neutral-500">{t('name.prompt')}</p>
+        <input
+          type="text"
+          autoComplete="name"
+          spellCheck={false}
+          placeholder={t('name.placeholder')}
+          aria-label={t('name.aria')}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          disabled={busy}
+          className="w-full rounded-2xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+        />
+        {error !== null ? (
+          <p role="alert" className="text-center text-sm text-red-600">
+            {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+        >
+          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
+          {t('setup.continue')}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-neutral-200 pt-6">

@@ -110,7 +110,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByLabel('Amount (sats)').fill('21');
@@ -158,14 +158,14 @@ async function signInViaStub(page: Page, _request: APIRequestContext): Promise<v
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
 async function saveOnboardingName(page: Page): Promise<void> {
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
-  await page.getByRole('button', { name: 'Save name' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/address/);
-  await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
 async function installFakeWebAuthn(page: Page): Promise<void> {
@@ -244,13 +244,13 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await openSignedInMenu(page);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
 async function loginHttp(request: APIRequestContext): Promise<string> {
@@ -304,7 +304,7 @@ test('Function: fetchMessages — welcome shows the empty forum', async ({ page,
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
@@ -319,7 +319,7 @@ test('Function: postMessage — posting from the composer shows the row', async 
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   const body = `Hello from Ada ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
@@ -338,7 +338,7 @@ test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, 
   await signInViaStub(page, request);
   await page.reload();
   await expect(page).toHaveURL(/\/setup\/name/);
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {
@@ -367,14 +367,14 @@ test('Function: NameForm — signed-in form saves a display name', async ({ page
   await signInViaStub(page, request);
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
-  await page.getByRole('button', { name: 'Save name' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Ada')).toBeVisible();
 });
 
 test('Function: setName — signed-in form saves a display name', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
-  await page.getByRole('button', { name: 'Save name' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Ada')).toBeVisible();
 });
 
@@ -411,7 +411,7 @@ test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
@@ -640,7 +640,7 @@ test('Function: useAuthStore — live login reaches the signed-in view', async (
 }) => {
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: saveSession — live login persists the session token', async ({ page, request }) => {
@@ -653,14 +653,14 @@ test('Function: loadSession — reload keeps the signed-in view', async ({ page,
   await signInViaStub(page, request);
   await page.reload();
   await expect(page).toHaveURL(/\/setup\/name/);
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: LightningAddressForm — link reaches welcome', async ({ page, request }) => {
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
@@ -679,7 +679,7 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
@@ -689,7 +689,7 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
@@ -836,7 +836,7 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: proxyAuthPasskeyRegisterFinishPost — POST finish without body is 400', async ({
@@ -853,7 +853,7 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a challenge', async ({
@@ -891,8 +891,8 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
   expect(token).toBeTruthy();
   const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
@@ -906,7 +906,7 @@ test('Function: creationOptionsFromJSON — create passkey reaches the signed-in
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: credentialToJSON — create passkey reaches the signed-in view', async ({ page }) => {
@@ -914,7 +914,7 @@ test('Function: credentialToJSON — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: base64UrlToBytes — create passkey reaches the signed-in view', async ({ page }) => {
@@ -922,7 +922,7 @@ test('Function: base64UrlToBytes — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: bytesToBase64Url — create passkey reaches the signed-in view', async ({ page }) => {
@@ -930,7 +930,7 @@ test('Function: bytesToBase64Url — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
-  await expect(page.getByRole('button', { name: 'Save name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: requestOptionsFromJSON — continue with passkey reaches the signed-in view', async ({

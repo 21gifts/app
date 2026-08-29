@@ -149,12 +149,12 @@ The only state. Heading **Send help**, explainer lead, **Open the forum**.
 
 - **URL:** `/setup/name` — first screen after login.
 - **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
-- **Actions:** Save a name; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/setup/address`.
+- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/setup/address`.
 - **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name**, name field with a check icon to the right (**Save name**). One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in, no name yet. **Your name**, name field, **Continue** at the bottom. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
@@ -162,12 +162,12 @@ Signed in, no name yet. **Your name**, name field with a check icon to the right
 
 - **URL:** `/setup/address` — second screen after login.
 - **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Link an address; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/welcome`.
+- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/welcome`.
 - **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address**, address field with a check icon to the right (**Link address**). One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in with a name and no address. **Your Wallet of Satoshi address**, address field, **Continue** at the bottom. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 

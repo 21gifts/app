@@ -115,14 +115,14 @@
 
 ## Function: NameForm
 
-- **Purpose:** Logged-in form to set or edit a display name. Actions are icon-only buttons (`aria-label` from the catalog) to the right of the field: check to save, X to cancel, pencil to edit.
+- **Purpose:** Logged-in form to set or edit a display name. Onboarding (`variant="onboarding"`): field then **Continue** below. Profile: icon-only actions to the right of the field (check, X, pencil).
 - **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
 - **Used by:** `NameSetup` on screen `/setup/name` and `ProfileScreen` on `/profile`.
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Actions are icon-only buttons (`aria-label` from the catalog) to the right of the field: check to save or link, X to cancel, pencil to edit, trash to unlink.
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field then **Continue** below. Profile: icon-only actions to the right of the field (check, X, pencil, trash).
 - **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
@@ -162,7 +162,7 @@
 
 - **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved. No `LogoutButton` on the card.
 - **Inputs:** Reads `account.name` from `useAuthStore` for the greeting.
-- **Returns / side effects:** Card with heading **Your Wallet of Satoshi address** and `LightningAddressForm`. No `LogoutButton`.
+- **Returns / side effects:** Card with heading **Your Wallet of Satoshi address** and `LightningAddressForm` (`variant="onboarding"`). No `LogoutButton`.
 - **Used by:** Screen `/setup/address`.
 
 ## Function: AddressSetupPage
@@ -183,7 +183,7 @@
 
 - **Purpose:** First post-login screen: display name form.
 - **Inputs:** None besides `NameForm` store reads.
-- **Returns / side effects:** Card with heading **Your name** and `NameForm`. No `LogoutButton` on the card.
+- **Returns / side effects:** Card with heading **Your name** and `NameForm` (`variant="onboarding"`). No `LogoutButton` on the card.
 - **Used by:** Screen `/setup/name`.
 
 ## Function: NameSetupPage
