@@ -176,7 +176,7 @@
 
 - **Purpose:** Matching icon+text log-out inside the signed-in Menu dropdown (not a free top-right action); clears the session and returns the visitor to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
-- **Returns / side effects:** Icon+text button. Clears the session and `router.replace('/login')`.
+- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Language). Clears the session and `router.replace('/login')`.
 - **Used by:** `SignedInChrome` Menu dropdown.
 
 ## Function: NameSetup
@@ -209,9 +209,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts), **Living room rules**, **Contact**, language, and **Log out**.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; LogOut log out).
 - **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`) whose totals use icon + amount with `aria-label`/`title` from `profile.given` / `profile.received`, **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
 
 ## Function: ProfilePage

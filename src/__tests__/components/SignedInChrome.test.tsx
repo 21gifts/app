@@ -138,6 +138,16 @@ describe('SignedInChrome', () => {
       expect(screen.getByLabelText('Given 0 sats')).toBeTruthy();
       expect(screen.getByLabelText('Received 0 sats')).toBeTruthy();
     });
+    const profile = screen.getByRole('link', { name: /Profile/ });
+    expect(profile.className.includes('items-center')).toBe(true);
+    expect(profile.className.includes('flex-col')).toBe(false);
+    expect(profile.querySelector('[aria-label="Given 0 sats"]')).toBeTruthy();
+    expect(profile.querySelector('[aria-label="Received 0 sats"]')).toBeTruthy();
+    expect(profile.querySelector('svg')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Living room rules' }).querySelector('svg'),
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Contact' }).querySelector('svg')).toBeTruthy();
   });
 
   it('ignores non-Escape keydown while the menu is open', () => {

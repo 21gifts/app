@@ -330,7 +330,7 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: menu-open
 
-Open **Menu** top-right only (do not click Language) → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), **Living room rules** (`/rules`), **Contact** (`/contact`), a collapsed **Language** row (Globe + label + chevron, same row chrome as Profile / Log out), and **Log out**. No English / Deutsch / Español / Filipino option rows. No native language select.
+Open **Menu** top-right only (do not click Language) → Profile is one line (User icon + Profile + sat totals on the right), Living room rules and Contact each have an icon, Language (Globe + label + chevron), Log out. Accessible names unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
 
 ![21.gifts welcome menu](images/welcome-menu.png)
 
