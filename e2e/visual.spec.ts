@@ -695,7 +695,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount (sats)').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
 
   test('welcome all', async ({ page }) => {
@@ -1231,7 +1231,7 @@ test.describe('welcome forum variants', () => {
     await stubPayInvoice(page);
     await openPaySheet(page);
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-smartphone');
   });
 
