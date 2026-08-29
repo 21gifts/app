@@ -1373,5 +1373,5 @@ test('Function: useAccountTotals — profile totals load from gift stats', async
     byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
   });
   await page.goto('/profile');
-  await expect(page.getByText(/Received 1000 sats/)).toBeVisible();
+  await expect(page.getByLabel('Received 1000 sats')).toBeVisible();
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -61,9 +61,8 @@ export function SignedInChrome(): ReactElement {
     };
   }, [open]);
 
-  const totalsLine = loading
-    ? t('forum.loading')
-    : `${t('profile.given', { amount: formatSatsAmount(t, donatedSats) })} · ${t('profile.received', { amount: formatSatsAmount(t, receivedSats) })}`;
+  const givenAmount = formatSatsAmount(t, donatedSats);
+  const receivedAmount = formatSatsAmount(t, receivedSats);
 
   return (
     <div ref={rootRef} className="absolute top-4 right-5">
@@ -95,7 +94,31 @@ export function SignedInChrome(): ReactElement {
             className="flex flex-col gap-0.5 rounded-lg px-3 py-2 text-sm text-neutral-900 no-underline transition hover:bg-neutral-50"
           >
             <span className="font-medium">{t('profile.title')}</span>
-            <span className="text-neutral-500">{totalsLine}</span>
+            <span className="flex items-center gap-2 text-neutral-500">
+              {loading ? (
+                t('forum.loading')
+              ) : (
+                <>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    aria-label={t('profile.given', { amount: givenAmount })}
+                    title={t('profile.given', { amount: givenAmount })}
+                  >
+                    <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    {givenAmount}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    aria-label={t('profile.received', { amount: receivedAmount })}
+                    title={t('profile.received', { amount: receivedAmount })}
+                  >
+                    <ArrowDownLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    {receivedAmount}
+                  </span>
+                </>
+              )}
+            </span>
           </Link>
           <div className="px-3 py-2">
             <LanguageSwitcher tone="light" embedded />

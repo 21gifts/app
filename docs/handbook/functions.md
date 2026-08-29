@@ -199,9 +199,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (with given/received totals), language, and **Log out**.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts), language, and **Log out**.
 - **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`), embedded language select, and log out. Escape closes and restores focus to Menu.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`) whose totals use icon + amount with `aria-label`/`title` from `profile.given` / `profile.received`, embedded language select, and log out. Escape closes and restores focus to Menu.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`.
 
 ## Function: ProfilePage
@@ -213,9 +213,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile card: given/received totals, **Back to forum**, name and Wallet of Satoshi address forms.
+- **Purpose:** Signed-in profile card: sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts, **Back to forum**, name and Wallet of Satoshi address forms.
 - **Inputs:** `useAccountTotals` for totals; `NameForm` and `LightningAddressForm` for edits; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, totals line, link to `/welcome`, name form, address form.
+- **Returns / side effects:** Heading **Profile**, centered icon+amount totals (accessible names from `profile.given` / `profile.received`), link to `/welcome`, name form, address form.
 - **Used by:** `ProfilePage`.
 
 ## Function: accountTotals

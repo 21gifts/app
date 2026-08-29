@@ -63,7 +63,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByText(/Given 0 sats/)).toBeTruthy();
+      expect(screen.getByLabelText('Given 0 sats')).toBeTruthy();
     });
   });
 
@@ -95,7 +95,7 @@ describe('ProfileScreen', () => {
     });
     renderWithLocale(<ProfileScreen />);
     await waitFor(() => {
-      expect(screen.getByText(/Received 1 sat/)).toBeTruthy();
+      expect(screen.getByLabelText('Received 1 sat')).toBeTruthy();
     });
   });
 });

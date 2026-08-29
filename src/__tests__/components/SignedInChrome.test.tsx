@@ -128,7 +128,8 @@ describe('SignedInChrome', () => {
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByText(/Given 0 sats · Received 0 sats/)).toBeTruthy();
+      expect(screen.getByLabelText('Given 0 sats')).toBeTruthy();
+      expect(screen.getByLabelText('Received 0 sats')).toBeTruthy();
     });
   });
 
@@ -179,7 +180,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     await waitFor(() => {
-      expect(screen.getByText(/Received 1 sat/)).toBeTruthy();
+      expect(screen.getByLabelText('Received 1 sat')).toBeTruthy();
     });
   });
 
