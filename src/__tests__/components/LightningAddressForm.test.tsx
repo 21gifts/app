@@ -210,6 +210,22 @@ describe('LightningAddressForm', () => {
     expect(setLightningAddress).toHaveBeenCalledWith('sess', 'new@walletofsatoshi.com');
   });
 
+  it('shows the example error when saving the placeholder on a linked address', () => {
+    useAuthStore.setState({ session: 'sess', account: linkedAccount });
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'you@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter your own Wallet of Satoshi address, not the example',
+    );
+    expect(setLightningAddress).not.toHaveBeenCalled();
+  });
+
   it('cancels an edit and returns to the display view', () => {
     useAuthStore.setState({ session: 'sess', account: linkedAccount });
     renderWithLocale(<LightningAddressForm />);

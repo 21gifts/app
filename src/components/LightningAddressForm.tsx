@@ -12,6 +12,22 @@ import { useAuthStore } from '@/stores/auth-store';
 type LightningAddressError =
   { type: 'empty' } | { type: 'request' } | { type: 'example' } | { type: 'notFound' };
 
+/** Catalog key for a Lightning Address form alert. */
+function lightningAddressErrorKey(
+  error: LightningAddressError,
+): 'la.errorEmpty' | 'la.errorExample' | 'la.errorNotFound' | 'la.errorRequest' {
+  switch (error.type) {
+    case 'empty':
+      return 'la.errorEmpty';
+    case 'example':
+      return 'la.errorExample';
+    case 'notFound':
+      return 'la.errorNotFound';
+    case 'request':
+      return 'la.errorRequest';
+  }
+}
+
 /**
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
  * receives their gifts.
@@ -148,13 +164,7 @@ export function LightningAddressForm(
         />
         {error !== null ? (
           <p role="alert" className="text-center text-sm text-red-600">
-            {error.type === 'empty'
-              ? t('la.errorEmpty')
-              : error.type === 'example'
-                ? t('la.errorExample')
-                : error.type === 'notFound'
-                  ? t('la.errorNotFound')
-                  : t('la.errorRequest')}
+            {t(lightningAddressErrorKey(error))}
           </p>
         ) : null}
         <button
@@ -250,13 +260,7 @@ export function LightningAddressForm(
 
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-red-600">
-          {error.type === 'empty'
-            ? t('la.errorEmpty')
-            : error.type === 'example'
-              ? t('la.errorExample')
-              : error.type === 'notFound'
-                ? t('la.errorNotFound')
-                : t('la.errorRequest')}
+          {t(lightningAddressErrorKey(error))}
         </p>
       ) : null}
     </div>
