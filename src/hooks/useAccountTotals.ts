@@ -11,10 +11,11 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * Given is always 0 in v1. When an address is set, requests filtered stats via
  * `fetchGiftStats(handle)` and exposes `spendOverTime` as `receiveOverTime`.
- * Blank address skips the fetch (zeros, empty series, `loading: false`). Drops
+ * Blank address skips the fetch (zeros, empty series, `loading: false`). On
+ * each fetch start (including address change) totals and series reset to
+ * zeros/empty; the profile chart SVG remains mounted on empty series. Drops
  * stale responses when the store address changes mid-flight. Errors resolve to
- * zeros and an empty series without throwing into the UI. Does not clear
- * `receiveOverTime` at the start of a refetch so the chart SVG stays mounted.
+ * zeros and an empty series without throwing into the UI.
  *
  * @returns Current totals, receive series, and an in-flight `loading` flag.
  */
@@ -44,6 +45,9 @@ export function useAccountTotals(): {
       };
     }
 
+    setDonatedSats(0);
+    setReceivedSats(0);
+    setReceiveOverTime([]);
     setLoading(true);
     const trimmed = addressAtStart.trim();
     const handle = recipientHandleFromAddress(trimmed);

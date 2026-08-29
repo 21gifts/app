@@ -168,6 +168,53 @@ describe('useAccountTotals', () => {
     });
   });
 
+  it('clears totals and series when switching address after a loaded result', async () => {
+    fetchMock.mockResolvedValueOnce(STATS);
+    let resolveBob!: (value: GiftStats) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveBob = resolve;
+        }),
+    );
+
+    renderWithLocale(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByText('ready:0:1000:1')).toBeTruthy();
+    });
+
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'tok',
+        account: {
+          id: 'acc_1',
+          linkingKey: null,
+          role: 'basis',
+          name: 'Ada',
+          lightningAddress: 'bob@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+        },
+      });
+    });
+
+    expect(screen.getByText('loading:0:0:0')).toBeTruthy();
+
+    await act(async () => {
+      resolveBob({
+        ...STATS,
+        spendOverTime: [],
+        byRecipient: [
+          { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('ready:0:500:0')).toBeTruthy();
+    });
+  });
+
   it('drops a stale result when the lightning address changes mid-flight', async () => {
     let resolveFirst!: (value: GiftStats) => void;
     fetchMock.mockImplementationOnce(
