@@ -1797,6 +1797,11 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
+    'href',
+    '/rules',
+  );
+  await expect(page.getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');
   await expect(page.getByLabel('Language')).toBeVisible();
   await expect(page.getByRole('option', { name: 'Deutsch' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();

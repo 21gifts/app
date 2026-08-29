@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Quiet log-out control used inside the signed-in Menu dropdown, not as a free top-right action.
  *
- * @returns The log-out control.
+ * @returns Full-width Menu-row icon+text log-out control.
  */
 export function LogoutButton(): ReactElement {
   const { t } = useTranslations();
@@ -26,7 +26,7 @@ export function LogoutButton(): ReactElement {
         clearAuth();
         router.replace('/login');
       }}
-      className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition hover:text-neutral-900"
+      className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-900"
     >
       <LogOut aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
       {t('login.logOut')}

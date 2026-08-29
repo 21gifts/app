@@ -118,6 +118,8 @@ describe('SignedInChrome', () => {
   it('shows Menu while Language and Log out stay hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Living room rules' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Contact' })).toBeNull();
     expect(screen.queryByLabelText('Language')).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });
@@ -126,12 +128,26 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
+    expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
+      '/rules',
+    );
+    expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     await waitFor(() => {
       expect(screen.getByLabelText('Given 0 sats')).toBeTruthy();
       expect(screen.getByLabelText('Received 0 sats')).toBeTruthy();
     });
+    const profile = screen.getByRole('link', { name: /Profile/ });
+    expect(profile.className.includes('items-center')).toBe(true);
+    expect(profile.className.includes('flex-col')).toBe(false);
+    expect(profile.querySelector('[aria-label="Given 0 sats"]')).toBeTruthy();
+    expect(profile.querySelector('[aria-label="Received 0 sats"]')).toBeTruthy();
+    expect(profile.querySelector('svg')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Living room rules' }).querySelector('svg'),
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Contact' }).querySelector('svg')).toBeTruthy();
   });
 
   it('ignores non-Escape keydown while the menu is open', () => {
@@ -214,6 +230,20 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.getByLabelText('Language')).toBeTruthy();
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
+
+  it('closes the menu when Living room rules is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Living room rules' }));
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
+
+  it('closes the menu when Contact is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Contact' }));
     expect(screen.queryByLabelText('Language')).toBeNull();
   });
 });

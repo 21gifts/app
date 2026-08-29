@@ -160,39 +160,39 @@ The only state. Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/setup/address`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/setup/address`.
 - **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, language, or **Log out**. After save, the visitor is sent to `/welcome`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/welcome`.
 - **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, timestamp, optional inline photo then caption text below the photo, sat total always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, and optional photo preview with **Remove photo** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo message, attach/remove a photo draft, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, timestamp, optional inline photo then caption text below the photo, sat total always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, and optional photo preview with **Remove photo** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo message, attach/remove a photo draft, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `fetchMessagePhoto`, `visibleForumMessages`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -330,7 +330,7 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: menu-open
 
-Open **Menu** top-right only (do not click Language) → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), a collapsed **Language** row (Globe + label + chevron, same row chrome as Profile / Log out), and **Log out**. No English / Deutsch / Español / Filipino option rows. No native language select.
+Open **Menu** top-right only (do not click Language) → Profile is one line (User icon + Profile + sat totals on the right), Living room rules and Contact each have an icon, Language (Globe + label + chevron), Log out. Accessible names unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
 
 ![21.gifts welcome menu](images/welcome-menu.png)
 
@@ -369,8 +369,8 @@ Full rules body with law **1. Only free donations** visible.
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address required).
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
-- **Actions:** Send a message, open the rules; open **Menu** for Profile, language, or **Log out**.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
+- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**.
 - **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
@@ -396,7 +396,7 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 
 - **Purpose:** Signed-in profile after onboarding: sat totals shown as icons plus amounts, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control.
 - **Inputs:** Session account (name + Lightning Address) via `OnboardingGate` / `useAuthStore`; public gift stats via `useAccountTotals`.
-- **Actions:** Open **Menu** for Profile (current), language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address.
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default

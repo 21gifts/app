@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDownLeft, ArrowUpRight, Menu } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Menu, MessageCircle, ScrollText, User } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -26,7 +26,9 @@ function formatSatsAmount(
 }
 
 /**
- * Top-right signed-in page chrome: one Menu disclosure; open for Profile, language, and log out.
+ * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
+ * rows (Profile with same-line given/received totals, living-room rules,
+ * contact, language, and log out).
  *
  * @returns The signed-in Menu chrome.
  */
@@ -91,17 +93,18 @@ export function SignedInChrome(): ReactElement {
       {open ? (
         <div
           id="signed-in-menu"
-          className="absolute right-0 z-50 mt-2 min-w-[16rem] rounded-xl border border-neutral-200 bg-white p-2 shadow-lg"
+          className="absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-neutral-200 bg-white p-2 shadow-lg"
         >
           <Link
             href="/profile"
             onClick={() => {
               setOpen(false);
             }}
-            className="flex flex-col gap-0.5 rounded-lg px-3 py-2 text-sm text-neutral-900 no-underline transition hover:bg-neutral-50"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-neutral-900 no-underline transition hover:bg-neutral-50"
           >
+            <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             <span className="font-medium">{t('profile.title')}</span>
-            <span className="flex items-center gap-2 text-neutral-500">
+            <span className="ml-auto flex items-center gap-2 text-neutral-500">
               {loading ? (
                 t('forum.loading')
               ) : (
@@ -127,10 +130,28 @@ export function SignedInChrome(): ReactElement {
               )}
             </span>
           </Link>
+          <Link
+            href="/rules"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-neutral-900 no-underline transition hover:bg-neutral-50"
+          >
+            <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+            {t('nav.rules')}
+          </Link>
+          <Link
+            href="/contact"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-neutral-900 no-underline transition hover:bg-neutral-50"
+          >
+            <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+            {t('nav.contact')}
+          </Link>
           <LanguageSwitcher tone="light" embedded />
-          <div className="px-3 py-2">
-            <LogoutButton />
-          </div>
+          <LogoutButton />
         </div>
       ) : null}
     </div>
