@@ -9,18 +9,15 @@ import { hasLightningAddress } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the Lightning Address form. */
-type LightningAddressError =
-  { type: 'empty' } | { type: 'request' } | { type: 'example' } | { type: 'notFound' };
+type LightningAddressError = { type: 'empty' } | { type: 'request' } | { type: 'notFound' };
 
 /** Catalog key for a Lightning Address form alert. */
 function lightningAddressErrorKey(
   error: LightningAddressError,
-): 'la.errorEmpty' | 'la.errorExample' | 'la.errorNotFound' | 'la.errorRequest' {
+): 'la.errorEmpty' | 'la.errorNotFound' | 'la.errorRequest' {
   switch (error.type) {
     case 'empty':
       return 'la.errorEmpty';
-    case 'example':
-      return 'la.errorExample';
     case 'notFound':
       return 'la.errorNotFound';
     case 'request':
@@ -128,10 +125,6 @@ export function LightningAddressForm(
     const trimmed = draft.trim();
     if (trimmed === '') {
       setError({ type: 'empty' });
-      return;
-    }
-    if (trimmed.toLowerCase() === 'you@walletofsatoshi.com') {
-      setError({ type: 'example' });
       return;
     }
     void run((token) => setLightningAddress(token, trimmed));
