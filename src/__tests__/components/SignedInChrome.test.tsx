@@ -133,11 +133,35 @@ describe('SignedInChrome', () => {
     });
   });
 
+  it('ignores non-Escape keydown while the menu is open', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(screen.getByLabelText('Language')).toBeTruthy();
+  });
+
   it('closes the menu on Escape and restores focus to Menu', () => {
     renderWithLocale(<SignedInChrome />);
     const menuButton = screen.getByRole('button', { name: 'Menu' });
     fireEvent.click(menuButton);
     screen.getByLabelText('Language').focus();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByLabelText('Language')).toBeNull();
+    expect(document.activeElement).toBe(menuButton);
+  });
+
+  it('first Escape collapses Language; second Escape closes Menu', () => {
+    renderWithLocale(<SignedInChrome />);
+    const menuButton = screen.getByRole('button', { name: 'Menu' });
+    fireEvent.click(menuButton);
+    const languageButton = screen.getByLabelText('Language');
+    fireEvent.click(languageButton);
+    expect(screen.getByRole('option', { name: 'Deutsch' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('link', { name: /Profile/ })).toBeTruthy();
+    expect(screen.getByLabelText('Language')).toBeTruthy();
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(document.activeElement).toBe(languageButton);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByLabelText('Language')).toBeNull();
     expect(document.activeElement).toBe(menuButton);
