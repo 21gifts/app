@@ -838,6 +838,52 @@ describe('ForumLoader', () => {
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
   });
 
+  it('posts text together with a photo', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    const created: ForumMessage = {
+      id: 'm-both',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        photo: { contentType: 'image/jpeg', data: 'abc' },
+      });
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      'data:image/jpeg;base64,abc',
+    );
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+  });
+
   it('does not replace an existing photo blob with the composer preview', async () => {
     const created: ForumMessage = {
       id: 'm-photo',

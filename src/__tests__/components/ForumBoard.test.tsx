@@ -621,6 +621,38 @@ describe('ForumBoard', () => {
     expect(img.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('renders text and an inline photo together', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            id: 'm-both',
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-both': 'blob:photo' }}
+      />,
+    );
+    const row = screen.getByRole('listitem');
+    expect(row.getAttribute('data-message-id')).toBe('m-both');
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
+  });
+
   it('omits Send Bitcoin when payable is false', () => {
     const onPayOpen = vi.fn();
     renderWithLocale(

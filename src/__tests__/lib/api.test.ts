@@ -533,6 +533,21 @@ describe('postMessage', () => {
     });
   });
 
+  it('posts text together with a photo payload', async () => {
+    const withBoth = { ...forumMessage, hasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: withBoth });
+    const photo = { contentType: 'image/jpeg', data: 'abc' };
+    await expect(postMessage('sess', { text: 'Hello from Ada', photo })).resolves.toEqual(withBoth);
+    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada', photo }),
+    });
+  });
+
   it('throws the api error message on a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Message too long' } });
     await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Message too long');
