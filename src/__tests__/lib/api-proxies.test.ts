@@ -86,6 +86,14 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/gifts/stats');
   });
 
+  it('proxyGiftsStatsGet forwards recipient', async () => {
+    const fetchMock = stubApi();
+    await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats?recipient=alice'));
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toBe('/gifts/stats');
+    expect(url.searchParams.get('recipient')).toBe('alice');
+  });
+
   it('proxyGiftsGet hits /gifts and forwards day', async () => {
     const fetchMock = stubApi();
     await proxyGiftsGet(new Request('http://localhost/gifts?day=2026-06-01'));

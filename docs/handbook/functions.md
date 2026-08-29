@@ -223,10 +223,17 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile card: sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts, name and Wallet of Satoshi address forms, plus an icon-only back control (ArrowLeft) at the top-left that returns to the forum.
-- **Inputs:** `useAccountTotals` for totals; `NameForm` and `LightningAddressForm` for edits; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, centered icon+amount totals (accessible names from `profile.given` / `profile.received`), name form, address form.
+- **Purpose:** Signed-in profile: `max-w-sm` identity card (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts, name and Wallet of Satoshi address forms) and a separate light activity chart panel below; icon-only back control (ArrowLeft) at the top-left returns to the forum. Totals never show `forum.loading`.
+- **Inputs:** `useAccountTotals` for totals and `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; catalog via `useTranslations`.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, centered icon+amount totals (accessible names from `profile.given` / `profile.received`), name form, address form, and the Given/Received chart panel (`max-w-3xl` column).
 - **Used by:** `ProfilePage`.
+
+## Function: AccountActivityChart
+
+- **Purpose:** Light dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend. Reserved `viewBox` height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
+- **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
+- **Returns / side effects:** Title, scale toggle, legend, and SVG. Client state for scale only. No network.
+- **Used by:** `ProfileScreen`.
 
 ## Function: accountTotals
 
@@ -235,18 +242,39 @@
 - **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
 - **Used by:** `useAccountTotals`.
 
+## Function: alignActivitySeries
+
+- **Purpose:** Align receive and donate cumulative `spendOverTime` series onto one sorted UTC-day axis for the profile chart.
+- **Inputs:** `received` and `donated` arrays from `GiftStats.spendOverTime`.
+- **Returns / side effects:** `ActivityPoint[]`. Empty+empty → `[]`. Empty donated → zero Given on each received day. Non-empty both → day union with step-hold carry-forward.
+- **Used by:** `AccountActivityChart`.
+
+## Function: activityValue
+
+- **Purpose:** Read one cumulative chart value from an aligned activity point.
+- **Inputs:** `point`, `series` (`donated` | `received`), `scale` (`sat` | `usd`).
+- **Returns / side effects:** Number used to place the polyline.
+- **Used by:** `AccountActivityChart`, `activityMaxY`.
+
+## Function: activityMaxY
+
+- **Purpose:** Y-axis max for the dual-line chart: max of both series at the active scale, or `1` when empty/all zeros.
+- **Inputs:** `points`, `scale`.
+- **Returns / side effects:** Positive number for SVG scale.
+- **Used by:** `AccountActivityChart`.
+
 ## Function: recipientHandleFromAddress
 
 - **Purpose:** Local-part of a Lightning Address (before the first `@`).
 - **Inputs:** Full address or bare handle string.
 - **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
-- **Used by:** `accountTotals`.
+- **Used by:** `accountTotals`, `useAccountTotals`.
 
 ## Function: useAccountTotals
 
-- **Purpose:** Fetches public gift stats and derives given/received sats for the signed-in account.
-- **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats` and `accountTotals`.
-- **Returns / side effects:** `{ donatedSats, receivedSats, loading }`. Drops stale responses when the address changes mid-flight; errors resolve to zeros.
+- **Purpose:** Fetches gift stats filtered by the signed-in Lightning Address handle and derives given/received sats plus the receive time series.
+- **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats(handle)` and `accountTotals`. Skips the fetch when the address is null/blank.
+- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. Does not clear `receiveOverTime` at the start of a refetch. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
 - **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
@@ -363,10 +391,10 @@
 
 ## Function: fetchGiftStats
 
-- **Purpose:** GET `/gifts/stats` and parse the public gift totals payload.
-- **Inputs:** None.
+- **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
+- **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`.
+- **Used by:** `StatsLoader`, `useAccountTotals`.
 
 ## Function: fetchMe
 
@@ -450,7 +478,14 @@
 - **Purpose:** Formats a parsed USD chart-axis value as a grouped dollar label.
 - **Inputs:** `usd` number (layout scale only).
 - **Returns / side effects:** Label such as `$1,234`.
-- **Used by:** `StatsDashboard` USD-over-time chart.
+- **Used by:** `StatsDashboard` USD-over-time chart, `AccountActivityChart` USD scale.
+
+## Function: formatSatTick
+
+- **Purpose:** Formats a sat chart-axis value with en-US grouping and no unit suffix.
+- **Inputs:** `sats` number (layout scale only).
+- **Returns / side effects:** `0` for zero; otherwise grouped digits such as `1,000`.
+- **Used by:** `AccountActivityChart` Sat scale.
 
 ## Function: getApiUrl
 
@@ -671,8 +706,8 @@
 
 ## Function: proxyGiftsStatsGet
 
-- **Purpose:** Same-origin proxy helper for api `GET /gifts/stats`.
-- **Inputs:** Incoming `Request`.
+- **Purpose:** Same-origin proxy helper for api `GET /gifts/stats` (forwards `recipient` query).
+- **Inputs:** Incoming `Request` (optional `recipient` search param).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/gifts/stats`.
 

@@ -41,3 +41,16 @@ export function formatUsdTick(usd: number): string {
     maximumFractionDigits: 0,
   }).format(Math.round(usd))}`;
 }
+
+/**
+ * Formats a sat axis tick with grouping and no unit suffix.
+ *
+ * @param sats - Sat amount used for chart scale only.
+ * @returns Grouped decimal string (e.g. `1,000`); `0` for zero.
+ */
+export function formatSatTick(sats: number): string {
+  if (sats === 0) {
+    return '0';
+  }
+  return new Intl.NumberFormat('en-US').format(sats);
+}

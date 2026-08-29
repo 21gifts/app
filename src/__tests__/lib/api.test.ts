@@ -393,6 +393,30 @@ describe('fetchGiftStats', () => {
     expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
   });
 
+  it('appends recipient when the handle is non-empty after trim', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('alice')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats?recipient=alice');
+  });
+
+  it('trims recipient spaces before appending', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('  alice  ')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats?recipient=alice');
+  });
+
+  it('URL-encodes special characters in recipient', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('a b/c')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith(`/gifts/stats?recipient=${encodeURIComponent('a b/c')}`);
+  });
+
+  it('omits recipient when blank after trim', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('   ')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
+  });
+
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'Gift stats are unavailable' } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
