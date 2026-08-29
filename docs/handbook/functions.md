@@ -265,9 +265,9 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, list of every post (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet: QR + Wallet of Satoshi on desktop; Wallet of Satoshi deep link only on smartphones (`isSmartphoneUserAgent`). Props `messages` are newest-first (API window); the DOM list is chronological (oldest at the top, newest at the bottom above the composer). New posts appear at the bottom. Messenger-group thread, not a social feed.
-- **Inputs:** `ForumBoardProps` — messages, error (boolean load-failure flag), loading, posting, draft, onDraftChange, onPost, onRetry, formError (`empty` / `tooLong` / `request` / `rateLimit`), plus pay-sheet fields (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
-- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network / no fetch. Scrolls the composer into view when the newest message id is set or changes.
+- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, Active/All/Most popular selector, list of posts (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet: QR + Wallet of Satoshi on desktop; Wallet of Satoshi deep link only on smartphones (`isSmartphoneUserAgent`). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order.
+- **Inputs:** Messages, loading/error/composer/pay callbacks, controlled `mode` / `onModeChange`.
+- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Scrolls the composer into view when the newest message id is set or changes. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
@@ -307,9 +307,9 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes).
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes).
 - **Inputs:** Session token.
-- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`.
+- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`. Mode is not persisted.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -409,6 +409,13 @@
 - **Inputs:** `iso` string, `locale` BCP 47 tag.
 - **Returns / side effects:** Display string. Always uses `timeZone: 'UTC'` so screenshots are host-independent.
 - **Used by:** `ForumBoard`.
+
+## Function: visibleForumMessages
+
+- **Purpose:** Client-side filter and sort of the already-loaded forum thread for the Active / All / Most popular selector. Does not call the api; ranking is among the messages the loader already holds.
+- **Inputs:** `messages` (newest-first list from the api / loader merge) and `mode` (`active` | `all` | `popular`).
+- **Returns / side effects:** A new array. `all` keeps input order including unpaid (`sats === 0`) notes. `active` keeps only paid notes (`sats > 0`) in newest-first order. `popular` keeps only paid notes, ordered by sats descending, then `createdAt` descending, then `id` descending. Never mutates the input array.
+- **Used by:** `ForumBoard`, `ForumLoader`.
 
 ## Function: formatUsdDisplay
 
