@@ -2071,12 +2071,32 @@ test('Function: ViewKeyCopy — profile shows the copy view-key control', async 
   await expect(page.getByRole('button', { name: 'Copy view-key link' })).toBeVisible();
 });
 
-test('Function: fetchViewProfile — same-origin proxy returns the public profile', async ({
-  request,
+test('Function: fetchViewProfile — public view card loads via the client fetch', async ({
+  page,
 }) => {
   const key = 'a'.repeat(64);
-  const res = await request.get(`/view-key/${key}`);
-  expect([200, 404]).toContain(res.status());
+  await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/gifts\/stats$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto(`/view/${key}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('Ada')).toBeVisible();
 });
 
 test('Function: proxyViewGet — GET /view-key/[viewKey] is reachable', async ({ request }) => {
