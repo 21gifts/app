@@ -73,6 +73,7 @@ function newAccount(linkingKey) {
     lightningAddressVerified: false,
     forumLawsDismissed: false,
     createdAt: Date.now(),
+    rulesAgreedAt: null,
   };
 }
 
@@ -263,6 +264,20 @@ const server = http.createServer(async (req, res) => {
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
       return;
+    }
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/rules-agreement') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.rulesAgreedAt === null) {
+      account.rulesAgreedAt = Date.now();
     }
     json(res, 200, account);
     return;

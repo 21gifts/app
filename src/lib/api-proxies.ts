@@ -91,6 +91,16 @@ export async function proxyMeLightningAddressDelete(request: Request): Promise<R
 }
 
 /**
+ * Proxies POST /me/rules-agreement to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session, no body).
+ * @returns The upstream response.
+ */
+export async function proxyMeRulesAgreementPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/rules-agreement');
+}
+
+/**
  * Proxies GET /lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (`address` query param).

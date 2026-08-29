@@ -29,6 +29,7 @@ const account: Account = {
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: 1_700_000_001,
 };
 
 beforeEach(() => {

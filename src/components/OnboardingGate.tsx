@@ -9,14 +9,15 @@ import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Which post-login screen this gate is wrapping. */
-export type OnboardingScreen = 'login' | 'name' | 'address' | 'welcome' | 'profile';
+export type OnboardingScreen = 'login' | 'name' | 'address' | 'rules' | 'welcome' | 'profile';
 
 const PATH: Record<
   Exclude<OnboardingScreen, 'login' | 'profile'>,
-  '/setup/name' | '/setup/address' | '/welcome'
+  '/setup/name' | '/setup/address' | '/setup/rules' | '/welcome'
 > = {
   name: '/setup/name',
   address: '/setup/address',
+  rules: '/setup/rules',
   welcome: '/welcome',
 };
 

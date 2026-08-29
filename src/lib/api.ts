@@ -211,6 +211,25 @@ export async function dismissForumLaws(sessionToken: string): Promise<Account> {
 }
 
 /**
+ * Records agreement to the living-room rules on the signed-in account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link Account}, with `rulesAgreedAt` set.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function agreeToRules(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/rules-agreement', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not save your agreement');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Resolves a Lightning Address to LNURL-pay metadata via the api cache.
  *
  * @param address - The `name@domain` address to look up.

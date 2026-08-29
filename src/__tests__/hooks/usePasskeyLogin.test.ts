@@ -36,6 +36,7 @@ const account = {
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null as number | null,
 };
 
 const begin = { challengeId: 'ch', options: { challenge: 'aa' } };

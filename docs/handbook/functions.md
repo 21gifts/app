@@ -145,7 +145,7 @@
 
 - **Purpose:** Next.js page for `/login` with localized heading and a light language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, or `/welcome`.
+- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
@@ -171,6 +171,20 @@
 - **Inputs:** None.
 - **Returns / side effects:** `OnboardingGate` around `AddressSetup` with `SignedInChrome`.
 - **Used by:** Route `/setup/address`.
+
+## Function: RulesSetup
+
+- **Purpose:** Third post-login screen: living-room rules body and an **I agree** control. Merges only `rulesAgreedAt` into the auth-store account.
+- **Inputs:** `children` — server-rendered `RulesDocument` (with `showNav={false}`).
+- **Returns / side effects:** Heading, prompt, children, error alert, full-width **I agree** button. POSTs `/me/rules-agreement` via `agreeToRules`. Renders `null` without a session.
+- **Used by:** Screen `/setup/rules`.
+
+## Function: RulesSetupPage
+
+- **Purpose:** Next.js page for `/setup/rules`.
+- **Inputs:** None. Calls `getRequestLocale()` / `getCatalog` for the rules body.
+- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RulesDocument showNav={false}` as children. `min-h-svh` for the long rules body.
+- **Used by:** Route `/setup/rules`.
 
 ## Function: LogoutButton
 
@@ -203,16 +217,16 @@
 ## Function: OnboardingGate
 
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`).
-- **Inputs:** `screen` (`login` / `name` / `address` / `welcome` / `profile`) and `children`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/welcome`, `/profile`.
+- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile still requires `next === '/welcome'`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/contact`.
 
 ## Function: SignedInChrome
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; LogOut log out).
 - **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
 - **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
 
 ## Function: ProfilePage
 
@@ -286,7 +300,7 @@
 
 ## Function: WelcomeScreen
 
-- **Purpose:** Third post-login screen after name and address are saved. Embeds `ForumLoader` (forum list + composer) below the heading; card is `max-w-xl`.
+- **Purpose:** Fourth post-login screen after name, address, and living-room rules agreement are saved. Embeds `ForumLoader` (forum list + composer) below the heading; card is `max-w-xl`.
 - **Inputs:** Reads `account.name` from `useAuthStore`.
 - **Returns / side effects:** Gift icon, **Welcome, {name}**, forum board. No name or address form. No donate CTA. No `LogoutButton` on the card.
 - **Used by:** Screen `/welcome`.
@@ -321,10 +335,10 @@
 
 ## Function: RulesDocument
 
-- **Purpose:** Presentational living-room rules body from catalog keys (lead, three laws, wanted/allowed/rather-not/forbidden, house right, CTAs to `/contact` and `/welcome`).
-- **Inputs:** `messages` catalog for the request locale.
+- **Purpose:** Presentational living-room rules body from catalog keys (lead, three laws, wanted/allowed/rather-not/forbidden, house right, optional CTAs to `/contact` and `/welcome`).
+- **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`). When `showNav` is `false`, the public Contact / forum nav is omitted.
 - **Returns / side effects:** React element. Server component — uses `translate`, not `useTranslations`. No network.
-- **Used by:** `RulesPage`.
+- **Used by:** `RulesPage`, `RulesSetupPage`.
 
 ## Function: RulesPage
 
@@ -354,9 +368,16 @@
 - **Returns / side effects:** Boolean. No side effects.
 - **Used by:** `nextOnboardingPath`, `LightningAddressForm`.
 
+## Function: hasAgreedToRules
+
+- **Purpose:** True when the account has a non-null `rulesAgreedAt` timestamp (epoch ms of first living-room rules agreement).
+- **Inputs:** `account`.
+- **Returns / side effects:** Boolean. No side effects.
+- **Used by:** `nextOnboardingPath`.
+
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/setup/name`, `/setup/address`, or `/welcome` from the account.
+- **Purpose:** Picks `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` from the account (name → address → rules agreement → welcome).
 - **Inputs:** `account`.
 - **Returns / side effects:** Path string. No side effects.
 - **Used by:** `OnboardingGate`.
@@ -499,14 +520,14 @@
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
 - **Inputs:** `locale` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** The `Messages` object for that locale. Exhaustive switch over `Locale`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, and the `renderWithLocale` test helper.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, `RulesPage`, `RulesSetupPage`, and the `renderWithLocale` test helper.
 
 ## Function: getRequestLocale
 
 - **Purpose:** Resolve the UI locale for the current request without writing cookies.
 - **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
 - **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, and `HandbookPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, `RulesPage`, and `RulesSetupPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: isAndroidUserAgent
 
@@ -592,6 +613,13 @@
 - **Returns / side effects:** Updated `Account` with `forumLawsDismissed: true`. No request body.
 - **Used by:** `ForumLoader`.
 
+## Function: agreeToRules
+
+- **Purpose:** POST `/me/rules-agreement` with Bearer and no JSON body.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** Updated `Account` with `rulesAgreedAt` set. Throws `'Could not save your agreement'` on a non-ok response.
+- **Used by:** `RulesSetup`.
+
 ## Function: setLightningAddress
 
 - **Purpose:** POST `/me/lightning-address`.
@@ -625,14 +653,14 @@
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
 - **Returns / side effects:** Auth state object.
-- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
+- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
 
 ## Function: useTranslations
 
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`.
 
 ## Function: walletOfSatoshiHref
 
@@ -692,10 +720,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, forum laws dismiss, address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
+- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 
@@ -731,6 +759,13 @@
 - **Inputs:** `Request` with Bearer session (no body).
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/forum-laws-dismissed`.
+
+## Function: proxyMeRulesAgreementPost
+
+- **Purpose:** Proxies POST `/me/rules-agreement`.
+- **Inputs:** Incoming `Request` with Bearer session (no JSON body required by the client).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/me/rules-agreement`.
 
 ## Function: proxyMeGet
 

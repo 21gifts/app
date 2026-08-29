@@ -106,12 +106,19 @@ async function stubPayableNote(page: Page): Promise<void> {
   });
 }
 
+async function agreeToLivingRoomRules(page: Page): Promise<void> {
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  await page.getByRole('button', { name: 'I agree to these rules' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+}
+
 async function openPayInvoice(page: Page, request: APIRequestContext): Promise<void> {
   await stubPayableNote(page);
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -151,6 +158,7 @@ async function seedAdaSession(page: Page): Promise<void> {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -332,6 +340,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -386,6 +395,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -417,6 +427,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -437,7 +448,7 @@ test('Function: fetchMessages — welcome shows the empty forum', async ({ page,
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/welcome/);
+  await agreeToLivingRoomRules(page);
   await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
@@ -452,7 +463,7 @@ test('Function: postMessage — posting from the composer shows the row', async 
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/welcome/);
+  await agreeToLivingRoomRules(page);
   const body = `Hello from Ada ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Post' }).click();
@@ -464,7 +475,7 @@ test('Function: postContact — sending from contact shows success', async ({ pa
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/welcome/);
+  await agreeToLivingRoomRules(page);
   await page.goto('/contact');
   const body = `Contact note ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
@@ -477,6 +488,7 @@ async function reachWelcome(page: Page, request: APIRequestContext): Promise<voi
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
 }
@@ -621,11 +633,31 @@ test('Function: proxyMeForumLawsDismissedPost — POST /me/forum-laws-dismissed 
   expect(((await again.json()) as { forumLawsDismissed: boolean }).forumLawsDismissed).toBe(true);
 });
 
+test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agreement', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  expect((await request.post('/me/rules-agreement')).status()).toBe(401);
+  const first = await request.post('/me/rules-agreement', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(first.status()).toBe(200);
+  const firstBody = (await first.json()) as { rulesAgreedAt: number | null };
+  expect(typeof firstBody.rulesAgreedAt).toBe('number');
+  const second = await request.post('/me/rules-agreement', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(second.status()).toBe(200);
+  const secondBody = (await second.json()) as { rulesAgreedAt: number | null };
+  expect(secondBody.rulesAgreedAt).toBe(firstBody.rulesAgreedAt);
+});
+
 test('Function: dismissForumLaws — welcome laws hint dismisses', async ({ page, request }) => {
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(
     page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
@@ -634,6 +666,96 @@ test('Function: dismissForumLaws — welcome laws hint dismisses', async ({ page
   await expect(
     page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
   ).toHaveCount(0);
+});
+
+test('Function: agreeToRules — signed-in rules screen records agreement', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: RulesSetup — agree button is visible on the rules screen', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+      }),
+    });
+  });
+  await page.goto('/setup/rules');
+  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+});
+
+test('Function: RulesSetupPage — rules setup heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+      }),
+    });
+  });
+  await page.goto('/setup/rules');
+  await expect(page.getByRole('heading', { name: 'Living room rules' })).toBeVisible();
+});
+
+test('Function: hasAgreedToRules — name and address without agreement stay on rules', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+      }),
+    });
+  });
+  await page.goto('/setup/rules');
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
@@ -685,7 +807,7 @@ test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/welcome/);
+  await agreeToLivingRoomRules(page);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
@@ -952,7 +1074,7 @@ test('Function: LightningAddressForm — link reaches welcome', async ({ page, r
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/welcome/);
+  await agreeToLivingRoomRules(page);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
 });
@@ -971,6 +1093,7 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
@@ -992,6 +1115,7 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
@@ -1323,6 +1447,7 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       }),
     });
   });
@@ -1347,6 +1472,7 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       }),
     });
   });
@@ -1371,6 +1497,7 @@ test('Function: AddressSetupPage — address screen heading is visible', async (
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       }),
     });
   });
@@ -1395,6 +1522,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       }),
     });
   });
@@ -1424,6 +1552,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1455,6 +1584,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1486,6 +1616,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1517,6 +1648,7 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1541,6 +1673,7 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1565,6 +1698,7 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1589,6 +1723,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1620,6 +1755,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1666,6 +1802,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -1730,6 +1867,33 @@ test('Function: OnboardingGate — login sends a new account to the name screen'
   await expect(page).toHaveURL(/\/setup\/name/);
 });
 
+test('Function: OnboardingGate — name and address without agreement go to rules', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page).toHaveURL(/\/setup\/rules/);
+});
+
 test('Function: nextOnboardingPath — login sends a new account to the name screen', async ({
   page,
   request,
@@ -1765,6 +1929,7 @@ test('Function: hasLightningAddress — named account without address stays on a
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       }),
     });
   });

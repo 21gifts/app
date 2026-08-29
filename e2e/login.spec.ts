@@ -83,6 +83,7 @@ const E2E_ACCOUNT = {
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null as number | null,
 };
 
 test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({
@@ -123,6 +124,18 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
     }
     await route.continue();
   });
+  await page.route(/\/me\/rules-agreement$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+      }),
+    });
+  });
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -162,6 +175,10 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
 
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
+
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await page.getByRole('button', { name: 'I agree to these rules' }).click();
 
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();

@@ -94,6 +94,20 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Your Wallet of Satoshi address' })",
   },
   {
+    route: '/setup/rules',
+    id: 'default',
+    image: 'setup-rules.png',
+    visual: 'screen-setup-rules',
+    needle: 'I agree to these rules',
+  },
+  {
+    route: '/setup/rules',
+    id: 'mobile',
+    image: 'setup-rules-mobile.png',
+    visual: 'state-setup-rules-mobile',
+    needle: 'setup-rules mobile',
+  },
+  {
     route: '/welcome',
     id: 'default',
     image: 'welcome.png',

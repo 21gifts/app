@@ -35,6 +35,7 @@ beforeEach(() => {
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
+      rulesAgreedAt: null,
     },
   });
 });
@@ -65,6 +66,7 @@ describe('AddressSetup', () => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -84,6 +86,7 @@ describe('AddressSetup', () => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -103,6 +106,7 @@ describe('AddressSetup', () => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       },
     });
     renderWithLocale(<AddressSetup />);

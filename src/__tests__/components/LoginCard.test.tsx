@@ -95,6 +95,7 @@ describe('LoginCard', () => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       },
     });
     renderWithLocale(<LoginCard />);

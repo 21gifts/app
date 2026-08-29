@@ -65,6 +65,7 @@ beforeEach(() => {
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
+      rulesAgreedAt: 1_700_000_001,
     },
   });
 });
@@ -97,6 +98,7 @@ describe('useAccountTotals', () => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       },
     });
     renderWithLocale(<Probe />);
@@ -128,6 +130,7 @@ describe('useAccountTotals', () => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: null,
       },
     });
     renderWithLocale(<Probe />);
@@ -197,6 +200,7 @@ describe('useAccountTotals', () => {
           lightningAddressVerified: false,
           forumLawsDismissed: false,
           createdAt: 1,
+          rulesAgreedAt: null,
         },
       });
     });
@@ -247,6 +251,7 @@ describe('useAccountTotals', () => {
           lightningAddressVerified: false,
           forumLawsDismissed: false,
           createdAt: 1,
+          rulesAgreedAt: 1_700_000_001,
         },
       });
     });
@@ -289,6 +294,7 @@ describe('useAccountTotals', () => {
           lightningAddressVerified: false,
           forumLawsDismissed: false,
           createdAt: 1,
+          rulesAgreedAt: 1_700_000_001,
         },
       });
     });

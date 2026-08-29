@@ -52,6 +52,16 @@ app/
 │   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`, `/stats/[day]`
 │   │   ├── rules/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
+│   │   ├── setup/
+│   │   │   ├── name/page.tsx    # GET /setup/name — first onboarding step
+│   │   │   ├── address/page.tsx # GET /setup/address — second onboarding step
+│   │   │   └── rules/page.tsx   # GET /setup/rules — agree to living-room rules
+│   │   ├── me/
+│   │   │   ├── route.ts         # GET /me same-origin proxy
+│   │   │   ├── name/route.ts    # POST /me/name
+│   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
+│   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
+│   │   │   └── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
 │   │   ├── contact/
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
 │   │   │   └── submit/
@@ -65,11 +75,6 @@ app/
 │   │   │   └── [id]/
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   │       └── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
-│   │   ├── me/
-│   │   │   ├── name/
-│   │   │   │   └── route.ts     # POST /me/name
-│   │   │   └── forum-laws-dismissed/
-│   │   │       └── route.ts     # POST /me/forum-laws-dismissed
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -90,6 +95,7 @@ app/
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/feed-mode/pay/laws-dismiss state for /welcome forum
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
+│   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
 │   │   └── ContactLoader.tsx    # Post state for /contact
 │   ├── lib/
@@ -253,9 +259,10 @@ are icon indicators.
 
 Existing hybrid or text controls stay until converted: the signed-in **Menu**
 disclosure (icon plus visible Menu word), **Log out**, **Link address**,
-**Continue**, **Try again**, **Cancel**, and sentence-length links such as
-**Open Wallet of Satoshi**. A **new** text button for an action control is an
-undeclared deviation and is rejected.
+**Continue**, **I agree to these rules** (onboarding consent must be readable
+as an agreement, not an icon), **Try again**, **Cancel**, and sentence-length
+links such as **Open Wallet of Satoshi**. A **new** text button for an action
+control is an undeclared deviation and is rejected.
 
 Reviewers follow `Review.md`.
 
