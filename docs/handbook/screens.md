@@ -167,7 +167,7 @@ Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp), composer. Language and **Log out** as matching icon+text top-right, not on the card.
+Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp, sat total, **Send Bitcoin** when payable), composer. Language and **Log out** as matching icon+text top-right, not on the card.
 
 ![21.gifts welcome](images/welcome.png)
 

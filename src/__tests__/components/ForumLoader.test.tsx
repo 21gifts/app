@@ -418,6 +418,9 @@ describe('ForumLoader', () => {
       expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
       expect(screen.getByText('Pay 21 sats')).toBeTruthy();
     });
+    expect(
+      (screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
   });
 
   it('rejects a non-positive pay amount before calling the api', async () => {

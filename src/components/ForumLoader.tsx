@@ -235,6 +235,7 @@ export function ForumLoader(): ReactElement | null {
           pr: invoice.pr,
           amountSats: invoice.amountSats,
         });
+        setPayBusy(false);
         startPayPoll(messageId, baseline);
       } catch (err) {
         if (generation !== payPollGeneration.current) {
