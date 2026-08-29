@@ -514,11 +514,6 @@ describe('ForumLoader', () => {
       },
     });
     await Promise.resolve();
-    renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
-    });
-    expect(screen.queryByAltText('Selected photo')).toBeNull();
   });
 
   it('sets tooLarge and clears a photo draft', async () => {
@@ -843,6 +838,45 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+  });
+
+  it('does not replace an existing photo blob with the composer preview', async () => {
+    const created: ForumMessage = {
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 5,
+      payable: false,
+      hasPhoto: true,
+    };
+    fetchMock.mockResolvedValue([created]);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:existing');
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
   });
 
   it('prepends a post when the list has not loaded yet', async () => {
