@@ -2,8 +2,7 @@
 /**
  * In-process 21.gifts api stub for Playwright. Speaks the public HTTP
  * protocol so Next.js same-origin proxies succeed. Not a Lightning node:
- * callbacks accept any signature, and LNURL-pay metadata points at a
- * dummy HTTPS callback that donate e2e intercepts in the browser.
+ * callbacks accept any signature. Pay-on-note uses POST /messages/:id/invoice.
  */
 import http from 'node:http';
 import { randomBytes } from 'node:crypto';
@@ -141,6 +140,35 @@ const server = http.createServer(async (req, res) => {
     };
     forumMessages.unshift(created);
     json(res, 200, created);
+    return;
+  }
+
+  const invoiceMatch = pathName.match(/^\/messages\/([^/]+)\/invoice$/);
+  if (method === 'POST' && invoiceMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const row = forumMessages.find((message) => message.id === invoiceMatch[1]);
+    if (row === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
+      return;
+    }
+    const sats = parsed?.sats;
+    if (!Number.isInteger(sats) || sats < 1) {
+      json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
+      return;
+    }
+    json(res, 200, { pr: `lnbc${sats}n1test`, amountSats: sats });
     return;
   }
 
