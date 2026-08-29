@@ -484,9 +484,7 @@ describe('ForumLoader', () => {
 
   it('ignores a stale prepare after unmount', async () => {
     fetchMock.mockResolvedValue([]);
-    let resolvePrep:
-      | ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void)
-      | undefined;
+    let resolvePrep: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
     prepareMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
