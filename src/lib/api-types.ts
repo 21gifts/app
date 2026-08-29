@@ -199,15 +199,17 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `sats` is the validated payment total for the note (always present, including 0).
  * `payable` is true when a signed-in member can request an invoice for that note.
  */
-export const forumMessageSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  text: z.string(), // may be ''
-  createdAt: z.string().datetime({ offset: true }),
-  sats: z.number().int().nonnegative(),
-  payable: z.boolean(),
-  hasPhoto: z.boolean(),
-});
+export const forumMessageSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    text: z.string(), // may be '' when hasPhoto
+    createdAt: z.string().datetime({ offset: true }),
+    sats: z.number().int().nonnegative(),
+    payable: z.boolean(),
+    hasPhoto: z.boolean(),
+  })
+  .refine((message) => message.text !== '' || message.hasPhoto);
 
 /**
  * Runtime schema for the payload of `GET /messages`.

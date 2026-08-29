@@ -246,7 +246,7 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
+        sats: 5,
         payable: false,
         hasPhoto: true,
       },
@@ -255,12 +255,74 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
     });
-    await revealAll();
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
     });
     view.unmount();
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+  });
+
+  it('does not fetch photos for unpaid hasPhoto notes on Active', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    expect(photoMock).not.toHaveBeenCalled();
+  });
+
+  it('fetches an unpaid hasPhoto note after switching to All', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    expect(photoMock).not.toHaveBeenCalled();
+    await revealAll();
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+    });
+  });
+
+  it('retries a transient photo fetch failure once for a visible note', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 5,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockRejectedValueOnce(new Error('transient'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+    });
+    expect(photoMock).toHaveBeenCalledTimes(2);
   });
 
   it('does not cancel an in-flight photo fetch when payable poll refreshes the list', async () => {
@@ -656,7 +718,7 @@ describe('ForumLoader', () => {
         hasPhoto: true,
       },
     ]);
-    photoMock.mockRejectedValueOnce(new Error('gone'));
+    photoMock.mockRejectedValue(new Error('gone'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
@@ -664,6 +726,7 @@ describe('ForumLoader', () => {
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hi')).toBeTruthy();
+      expect(photoMock).toHaveBeenCalled();
     });
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
   });
@@ -676,7 +739,7 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
+        sats: 5,
         payable: false,
         hasPhoto: true,
       },
@@ -696,6 +759,34 @@ describe('ForumLoader', () => {
     await Promise.resolve();
   });
 
+  it('does not continue a photo retry after unmount', async () => {
+    let rejectRetry: ((reason: Error) => void) | undefined;
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 5,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectRetry = reject;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledTimes(2);
+    });
+    view.unmount();
+    rejectRetry?.(new Error('gone'));
+    await Promise.resolve();
+  });
+
   it('does not fetch the next photo after unmount when the current fetch fails', async () => {
     let rejectFirst: ((reason: Error) => void) | undefined;
     fetchMock.mockResolvedValue([
@@ -704,7 +795,7 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
+        sats: 5,
         payable: false,
         hasPhoto: true,
       },
@@ -713,7 +804,7 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:01:00.000Z',
-        sats: 0,
+        sats: 5,
         payable: false,
         hasPhoto: true,
       },
@@ -742,7 +833,7 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
+        sats: 5,
         payable: false,
         hasPhoto: true,
       },
