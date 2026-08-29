@@ -86,7 +86,7 @@ afterEach(() => {
 });
 
 describe('ProfileScreen', () => {
-  it('shows the heading, back link, name form, and address form', async () => {
+  it('shows the heading, back link, name form, address form, and chart', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Back to forum' }).getAttribute('href')).toBe(
@@ -95,46 +95,24 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText('Back to forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByText('Given')).toBeTruthy();
+    expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.queryByText('Loading…')).toBeNull();
     await waitFor(() => {
-      expect(screen.getByLabelText('Given 0 sats')).toBeTruthy();
+      expect(vi.mocked(fetchGiftStats)).toHaveBeenCalled();
     });
   });
 
-  it('keeps totals as amounts and shows the chart heading while fetch is pending', () => {
+  it('keeps the chart mounted with no Loading… while fetch is pending', () => {
     vi.mocked(fetchGiftStats).mockReturnValue(new Promise<GiftStats>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
-    expect(screen.getByLabelText('Given 0 sats')).toBeTruthy();
-    expect(screen.getByLabelText('Received 0 sats')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Given and received' })).toBeTruthy();
-  });
-
-  it('formats a single received sat with forum.satsOne', async () => {
-    vi.mocked(fetchGiftStats).mockResolvedValue({
-      totalSats: 0,
-      totalBtc: '0.00000000',
-      totalUsd: '0.00',
-      giftCount: 0,
-      recipientCount: 0,
-      firstPaidAt: null,
-      lastPaidAt: null,
-      spendOverTime: [],
-      byRecipient: [
-        {
-          recipient: 'alice',
-          giftCount: 1,
-          sats: 1,
-          btc: '0.00000001',
-          usd: '0.00',
-        },
-      ],
-      byMonth: [],
-      fx: EMPTY_FX,
-    });
-    renderWithLocale(<ProfileScreen />);
-    await waitFor(() => {
-      expect(screen.getByLabelText('Received 1 sat')).toBeTruthy();
-    });
+    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByText('Given')).toBeTruthy();
+    expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
+    expect(screen.queryByLabelText('Given 0 sats')).toBeNull();
   });
 
   it('shows a series day tick after filtered stats load', async () => {
@@ -186,6 +164,6 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
     });
-    expect(screen.getByLabelText('Received 1500 sats')).toBeTruthy();
+    expect(screen.queryByLabelText('Received 1500 sats')).toBeNull();
   });
 });

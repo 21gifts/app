@@ -26,18 +26,18 @@ const GIVEN_STROKE = '#525252';
 const RECEIVED_STROKE = '#f7931a';
 const GRID_STROKE = '#e5e5e5';
 const AXIS_FILL = '#737373';
-const WIDTH = 800;
-const HEIGHT = 280;
-const PAD_L = 72;
-const PAD_R = 16;
-const PAD_T = 16;
-const PAD_B = 40;
+const WIDTH = 400;
+const HEIGHT = 110;
+const PAD_L = 44;
+const PAD_R = 8;
+const PAD_T = 8;
+const PAD_B = 20;
 
 /**
- * Light dual-line cumulative chart of Given and Received with Sat|USD toggle.
+ * Compact dual-line cumulative chart of Given and Received with Sat|USD toggle.
  *
  * @param props - Receive series and optional donate series.
- * @returns Title row, legend, and reserved-height SVG.
+ * @returns Legend + scale chrome and reserved-height SVG (no title heading).
  */
 export function AccountActivityChart({
   received,
@@ -98,11 +98,18 @@ export function AccountActivityChart({
   const receivedLine = linePoints('received');
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold tracking-tight text-neutral-900">
-          {t('profile.chartTitle')}
-        </h2>
+    <div role="group" aria-label={t('profile.chartTitle')} className="flex w-full flex-col gap-2">
+      <div className="flex items-center justify-between gap-3 text-xs text-neutral-600">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#525252]" />
+            {t('profile.legendGiven')}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#f7931a]" />
+            {t('profile.legendReceived')}
+          </span>
+        </div>
         <div
           role="group"
           aria-label={t('profile.chartScale')}
@@ -130,16 +137,6 @@ export function AccountActivityChart({
           </button>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-600">
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#525252]" />
-          {t('profile.legendGiven')}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#f7931a]" />
-          {t('profile.legendReceived')}
-        </span>
-      </div>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="h-auto w-full"
@@ -155,16 +152,16 @@ export function AccountActivityChart({
               y2={yAt(tick)}
               stroke={GRID_STROKE}
             />
-            <text x={PAD_L - 8} y={yAt(tick) + 4} textAnchor="end" fill={AXIS_FILL} fontSize="12">
+            <text x={PAD_L - 6} y={yAt(tick) + 3} textAnchor="end" fill={AXIS_FILL} fontSize="9">
               {formatTick(tick)}
             </text>
           </g>
         ))}
         {donatedLine !== '' ? (
-          <polyline points={donatedLine} fill="none" stroke={GIVEN_STROKE} strokeWidth="2" />
+          <polyline points={donatedLine} fill="none" stroke={GIVEN_STROKE} strokeWidth="1.5" />
         ) : null}
         {receivedLine !== '' ? (
-          <polyline points={receivedLine} fill="none" stroke={RECEIVED_STROKE} strokeWidth="2" />
+          <polyline points={receivedLine} fill="none" stroke={RECEIVED_STROKE} strokeWidth="1.5" />
         ) : null}
         {points.map((point, i) => {
           const prevDonated =
@@ -179,10 +176,10 @@ export function AccountActivityChart({
           return (
             <g key={`dots-${point.day}`}>
               {donatedVal - prevDonated > 0 ? (
-                <circle cx={cx} cy={yAt(donatedVal)} r={3.5} fill={GIVEN_STROKE} />
+                <circle cx={cx} cy={yAt(donatedVal)} r={2} fill={GIVEN_STROKE} />
               ) : null}
               {receivedVal - prevReceived > 0 ? (
-                <circle cx={cx} cy={yAt(receivedVal)} r={3.5} fill={RECEIVED_STROKE} />
+                <circle cx={cx} cy={yAt(receivedVal)} r={2} fill={RECEIVED_STROKE} />
               ) : null}
             </g>
           );
@@ -199,10 +196,10 @@ export function AccountActivityChart({
             <text
               key={`x-${point.day}`}
               x={xAt(i)}
-              y={HEIGHT - 10}
+              y={HEIGHT - 4}
               textAnchor={anchor}
               fill={AXIS_FILL}
-              fontSize="12"
+              fontSize="9"
             >
               {point.day}
             </text>

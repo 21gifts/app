@@ -34,6 +34,8 @@ describe('AccountActivityChart', () => {
     expect(container.textContent).not.toMatch(/20\d{2}-\d{2}-\d{2}/);
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Given and received' })).toBeTruthy();
   });
 
   it('draws the received polyline and keeps Sat pressed', () => {
@@ -43,6 +45,7 @@ describe('AccountActivityChart', () => {
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sat' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText('2026-06-01')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
   });
 
   it('switches aria and USD ticks when USD is pressed', () => {

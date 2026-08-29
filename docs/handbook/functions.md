@@ -223,16 +223,16 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: `max-w-sm` identity card (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts, name and Wallet of Satoshi address forms) and a separate light activity chart panel below; icon-only back control (ArrowLeft) at the top-left returns to the forum. Totals never show `forum.loading`.
-- **Inputs:** `useAccountTotals` for totals and `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, centered icon+amount totals (accessible names from `profile.given` / `profile.received`), name form, address form, and the Given/Received chart panel (`max-w-3xl` column).
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart replacing the former icon+amount totals row, plus name and Wallet of Satoshi address forms; icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; catalog via `useTranslations`.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, and address form — all inside one identity card (no second panel).
 - **Used by:** `ProfilePage`.
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Light dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend. Reserved `viewBox` height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
-- **Returns / side effects:** Title, scale toggle, legend, and SVG. Client state for scale only. No network.
+- **Returns / side effects:** One chrome row (legend left, Sat|USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`.
 
 ## Function: accountTotals

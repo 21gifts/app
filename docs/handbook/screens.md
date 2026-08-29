@@ -394,14 +394,14 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: sat totals shown as icons plus amounts, edit name and Wallet of Satoshi address, a light cumulative Given/Received activity chart (Sat|USD) below the identity card, return to the forum via an icon-only back control.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card in place of icon+amount totals, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
 - **Inputs:** Session account (name + Lightning Address) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
 - **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, outbound/inbound sat totals as `ArrowUpRight` / `ArrowDownLeft` icons with visible amounts (accessible names from `profile.given` / `profile.received`), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). Below the `max-w-sm` identity card: a wider light panel with **Given and received**, Sat|USD toggle, legend, and an empty reserved-height chart (axes only). Icon-only back top-left (returns to the forum); one **Menu** top-right. Totals never swap to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, Sat|USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
 

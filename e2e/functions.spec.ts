@@ -1850,17 +1850,19 @@ test('Function: useAccountTotals — profile totals load from gift stats', async
     byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
   });
   await page.goto('/profile');
-  await expect(page.getByLabel('Received 1000 sats')).toBeVisible();
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: /Received 1000 sats/ })).toBeVisible();
 });
 
-test('Function: AccountActivityChart — profile shows Given and received heading', async ({
+test('Function: AccountActivityChart — profile shows Given legend and sat chart', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
-  await expect(page.getByRole('heading', { name: 'Given and received' })).toBeVisible();
+  await expect(page.getByText('Given', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Given and received in sats')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Given and received' })).toHaveCount(0);
 });
 
 test('Function: alignActivitySeries — receive series days appear on the profile chart', async ({
@@ -1910,7 +1912,7 @@ test('Function: activityMaxY — empty profile chart still reserves the SVG box'
   await page.goto('/profile');
   const chart = page.getByLabel('Given and received in sats');
   await expect(chart).toBeVisible();
-  await expect(chart).toHaveAttribute('viewBox', '0 0 800 280');
+  await expect(chart).toHaveAttribute('viewBox', '0 0 400 110');
 });
 
 test('Function: formatSatTick — populated profile chart shows grouped sat ticks', async ({
