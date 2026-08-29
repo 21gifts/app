@@ -131,9 +131,9 @@ describe('LanguageSwitcher', () => {
     fireEvent.keyDown(trigger, { key: 'ArrowDown' });
     const listbox = screen.getByRole('listbox');
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-en');
-    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-de');
-    fireEvent.keyDown(document, { key: 'Enter' });
+    fireEvent.keyDown(listbox, { key: 'Enter' });
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('listbox')).toBeNull();
@@ -144,9 +144,9 @@ describe('LanguageSwitcher', () => {
     fireEvent.keyDown(screen.getByLabelText('Language'), { key: 'ArrowDown' });
     const listbox = screen.getByRole('listbox');
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-en');
-    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-de');
-    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-es');
   });
 
@@ -157,13 +157,48 @@ describe('LanguageSwitcher', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
+  it('Tab while open closes the listbox without selecting', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" />);
+    fireEvent.click(screen.getByLabelText('Language'));
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('Enter outside the switcher leaves the open listbox alone', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" />);
+    document.cookie = `${LOCALE_COOKIE}=; Path=/; Max-Age=0`;
+    fireEvent.click(screen.getByLabelText('Language'));
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    fireEvent.keyDown(document.body, { key: 'Enter' });
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=`);
+    expect(refresh).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Enter' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('mouse selecting an option keeps focus on the trigger', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" />);
+    const trigger = screen.getByLabelText('Language');
+    fireEvent.click(trigger);
+    const option = screen.getByRole('option', { name: 'Deutsch' });
+    fireEvent.mouseDown(option);
+    fireEvent.click(option);
+    expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('Home and End move the highlight to first and last', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     fireEvent.keyDown(screen.getByLabelText('Language'), { key: 'ArrowDown' });
     const listbox = screen.getByRole('listbox');
-    fireEvent.keyDown(document, { key: 'End' });
+    fireEvent.keyDown(listbox, { key: 'End' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-fil');
-    fireEvent.keyDown(document, { key: 'Home' });
+    fireEvent.keyDown(listbox, { key: 'Home' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-en');
   });
 
@@ -171,9 +206,9 @@ describe('LanguageSwitcher', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     fireEvent.keyDown(screen.getByLabelText('Language'), { key: 'ArrowDown' });
     const listbox = screen.getByRole('listbox');
-    fireEvent.keyDown(document, { key: 'End' });
+    fireEvent.keyDown(listbox, { key: 'End' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-fil');
-    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-en');
   });
 
@@ -182,7 +217,7 @@ describe('LanguageSwitcher', () => {
     fireEvent.keyDown(screen.getByLabelText('Language'), { key: 'Enter' });
     const listbox = screen.getByRole('listbox');
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-en');
-    fireEvent.keyDown(document, { key: 'ArrowUp' });
+    fireEvent.keyDown(listbox, { key: 'ArrowUp' });
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-fil');
   });
 
@@ -197,8 +232,9 @@ describe('LanguageSwitcher', () => {
   it('Space on the highlighted option selects Filipino', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     fireEvent.keyDown(screen.getByLabelText('Language'), { key: ' ' });
-    fireEvent.keyDown(document, { key: 'End' });
-    fireEvent.keyDown(document, { key: ' ' });
+    const listbox = screen.getByRole('listbox');
+    fireEvent.keyDown(listbox, { key: 'End' });
+    fireEvent.keyDown(listbox, { key: ' ' });
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=fil`);
     expect(refresh).toHaveBeenCalledTimes(1);
   });
@@ -216,7 +252,7 @@ describe('LanguageSwitcher', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     document.cookie = `${LOCALE_COOKIE}=; Path=/; Max-Age=0`;
     fireEvent.click(screen.getByLabelText('Language'));
-    fireEvent.keyDown(document, { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Enter' });
     expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=en`);
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.queryByRole('listbox')).toBeNull();

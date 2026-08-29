@@ -112,6 +112,13 @@ export function LanguageSwitcher(props: {
         triggerRef.current?.focus();
         return;
       }
+      if (event.key === 'Tab') {
+        setOpen(false);
+        return;
+      }
+      if (rootRef.current?.contains(event.target as Node) !== true) {
+        return;
+      }
       const currentIndex = LOCALES.indexOf(highlight);
       if (event.key === 'ArrowDown') {
         event.preventDefault();
@@ -272,11 +279,15 @@ export function LanguageSwitcher(props: {
                 tabIndex={-1}
                 aria-selected={selected}
                 className={`${optionRowClass}${selected ? ' font-medium' : ''}`}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
                 onClick={() => {
                   setOpen(false);
                   persistLocale(code, locale, () => {
                     router.refresh();
                   });
+                  triggerRef.current?.focus();
                 }}
                 onMouseEnter={() => {
                   setHighlight(code);
