@@ -192,12 +192,17 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
 
 /**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.
+ *
+ * `sats` is the validated payment total for the note (always present, including 0).
+ * `payable` is true when a signed-in member can request an invoice for that note.
  */
 export const forumMessageSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   text: z.string().min(1),
   createdAt: z.string().datetime({ offset: true }),
+  sats: z.number().int().nonnegative(),
+  payable: z.boolean(),
 });
 
 /**
@@ -211,3 +216,16 @@ export const forumListSchema = z.object({
  * One public forum message from the api.
  */
 export type ForumMessage = z.infer<typeof forumMessageSchema>;
+
+/**
+ * Runtime schema for `POST /messages/:id/invoice` success body.
+ */
+export const messageInvoiceSchema = z.object({
+  pr: z.string().min(1),
+  amountSats: z.number().int().positive(),
+});
+
+/**
+ * BOLT11 invoice issued for paying a forum message.
+ */
+export type MessageInvoice = z.infer<typeof messageInvoiceSchema>;

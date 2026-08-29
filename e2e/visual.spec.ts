@@ -208,12 +208,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-stats-day');
   });
 
-  test('screen /donate', async ({ page }) => {
-    await page.goto('/donate');
-    await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();
-    await shotScreen(page, 'screen-donate');
-  });
-
   test('screen /404', async ({ page }) => {
     await page.goto('/404');
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
@@ -435,63 +429,6 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Post' }).click();
     await expect(page.getByText('Enter a message')).toBeVisible();
     await shotScreen(page, 'state-welcome-validation-error');
-  });
-});
-
-test.describe('donate variant baselines', () => {
-  test('donate busy', async ({ page }) => {
-    let release: () => void = () => undefined;
-    const held = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    await page.route(/\/lightning-address\?/, async (route) => {
-      await held;
-      await route.abort();
-    });
-    await page.goto('/donate');
-    await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
-    await shotScreen(page, 'state-donate-busy');
-    release();
-  });
-
-  test('donate validation-error', async ({ page }) => {
-    await page.goto('/donate');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText('Enter a Wallet of Satoshi address')).toBeVisible();
-    await shotScreen(page, 'state-donate-validation-error');
-  });
-
-  test('donate invoice', async ({ page }) => {
-    await fulfillLnurlPay(page);
-    await page.goto('/donate');
-    await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-    await shotScreen(page, 'state-donate-invoice');
-  });
-
-  test('donate invoice-android', async ({ page }) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'userAgent', {
-        value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
-        configurable: true,
-      });
-    });
-    await fulfillLnurlPay(page);
-    await page.goto('/donate');
-    await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
-      'href',
-      /intent:lightning:LNBC21N1EXAMPLEINVOICE/,
-    );
-    await shotScreen(page, 'state-donate-invoice-android');
   });
 });
 

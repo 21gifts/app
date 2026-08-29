@@ -13,6 +13,7 @@ import {
   proxyMeLightningAddressPost,
   proxyMeNamePost,
   proxyMessagesGet,
+  proxyMessagesInvoicePost,
   proxyMessagesPost,
 } from '@/lib/api-proxies';
 
@@ -134,5 +135,14 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
       '/auth/passkey/authenticate/finish',
     );
+  });
+
+  it('proxyMessagesInvoicePost hits POST /messages/:id/invoice', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesInvoicePost(
+      new Request('http://localhost/messages/m1/invoice', { method: 'POST', body: '{}' }),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/invoice');
   });
 });

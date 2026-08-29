@@ -26,11 +26,6 @@ test.describe('Accept-Language es', () => {
     extraHTTPHeaders: { 'Accept-Language': 'es' },
   });
 
-  test('donate button is Spanish', async ({ page }) => {
-    await page.goto('/donate');
-    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible();
-  });
-
   test('login button is Spanish', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();

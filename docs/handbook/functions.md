@@ -728,3 +728,31 @@
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }` with `status` in `idle | starting | error | unsupported`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
 - **Used by:** `OnboardingGate`, `LoginCard`, and `LogoutButton`.
+
+## Function: ForumBoard
+
+- **Purpose:** Presentational forum list, composer, sat totals, and pay-on-note sheet (QR / Wallet of Satoshi).
+- **Inputs:** Messages, loading/error/composer/pay callbacks.
+- **Returns / side effects:** React tree. No fetch.
+- **Used by:** `ForumLoader`.
+
+## Function: ForumLoader
+
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay.
+- **Inputs:** Session token.
+- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`.
+- **Used by:** `WelcomeScreen`.
+
+## Function: postMessageInvoice
+
+- **Purpose:** POST `/messages/:id/invoice` with `{ sats }`.
+- **Inputs:** session token, message id, sats.
+- **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy.
+- **Used by:** `ForumLoader`.
+
+## Function: proxyMessagesInvoicePost
+
+- **Purpose:** Same-origin proxy for `POST /messages/:id/invoice`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/messages/[id]/invoice/route.ts`.

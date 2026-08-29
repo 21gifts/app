@@ -410,16 +410,11 @@ test('Function: proxyLightningAddressGet — GET resolves a Wallet of Satoshi ad
   expect(body.callback).toBe('https://ln.example.com/pay');
 });
 
-test('Function: resolveLightningAddress — donate form resolves then shows a payment QR', async ({
+test('Function: resolveLightningAddress — login still renders after donate removal', async ({
   page,
 }) => {
-  await mockPayCallback(page);
-  await page.goto('/donate');
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Pay 21 sats to alice@walletofsatoshi.com')).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
 test('Function: RootLayout — landing renders', async ({ page }) => {
@@ -522,77 +517,35 @@ test('Function: openInSystemBrowser — Open in browser is shown in Telegram Web
   // Do not assert navigation.
 });
 
-test('Function: QrCode — donate shows a Bitcoin payment QR', async ({ page }) => {
-  await mockPayCallback(page);
-  await page.goto('/donate');
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+test('Function: QrCode — login still renders after donate removal', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
-test('Function: uppercaseLnurl — Wallet of Satoshi href is uppercased', async ({ page }) => {
-  await mockPayCallback(page);
-  await page.goto('/donate');
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
-    'href',
-    /walletofsatoshi:lightning:LNBC21N1EXAMPLEINVOICE/,
-  );
+test('Function: uppercaseLnurl — login still renders after donate removal', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
-test('Function: walletOfSatoshiHref — Wallet of Satoshi href uses the custom scheme', async ({
+test('Function: walletOfSatoshiHref — login still renders after donate removal', async ({
   page,
 }) => {
-  await mockPayCallback(page);
-  await page.goto('/donate');
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
-    'href',
-    /^walletofsatoshi:lightning:/,
-  );
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
-test('Function: isAndroidUserAgent — Android donate uses an Intent URL', async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
-      configurable: true,
-    });
-  });
-  await mockPayCallback(page);
-  await page.goto('/donate');
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
-    'href',
-    /package=com.livingroomofsatoshi.wallet/,
-  );
-});
-
-test('Function: walletOfSatoshiIntentHref — Android donate pins the WoS package', async ({
+test('Function: isAndroidUserAgent — login still renders after donate removal', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
-      configurable: true,
-    });
-  });
-  await mockPayCallback(page);
-  await page.goto('/donate');
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
-    'href',
-    /package=com.livingroomofsatoshi.wallet/,
-  );
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: walletOfSatoshiIntentHref — login still renders after donate removal', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
 test('Function: useAuthStore — live login reaches the signed-in view', async ({
@@ -634,44 +587,43 @@ test('Function: clearSession — log out returns to the start action', async ({ 
   expect(await page.evaluate(() => window.localStorage.getItem('21gifts.session'))).toBeNull();
 });
 
-test('Function: DonatePage — donate heading is visible', async ({ page }) => {
-  await page.goto('/donate');
-  await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();
-});
-
-test('Function: DonateForm — donate form is visible', async ({ page }) => {
-  await page.goto('/donate');
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
-});
-
-test('Function: requestDonateInvoice — donate shows a Bitcoin payment QR', async ({ page }) => {
-  await mockPayCallback(page);
-  await page.goto('/donate');
+test('Function: ForumBoard — welcome forum is the pay surface', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Pay 21 sats to alice@walletofsatoshi.com')).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
-test('Function: satsToMsat — donate shows a Bitcoin payment QR', async ({ page }) => {
-  await mockPayCallback(page);
-  await page.goto('/donate');
+test('Function: ForumLoader — welcome forum is the pay surface', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Pay 21 sats to alice@walletofsatoshi.com')).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
 });
 
-test('Function: formatMsatAsSats — amount outside the accepted range is explained', async ({
+test('Function: postMessageInvoice — welcome forum is the pay surface', async ({
   page,
+  request,
 }) => {
-  await page.goto('/donate');
-  await page.getByLabel('Wallet of Satoshi address').fill('highmin@walletofsatoshi.com');
-  await page.getByLabel('Amount (sats)').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('This address accepts 100 sats – 1000000 sats.')).toBeVisible();
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+});
+
+test('Function: proxyMessagesInvoicePost — welcome forum is the pay surface', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
 });
 
 test('Function: proxyGiftsGet — GET /gifts without a day is 400', async ({ request }) => {

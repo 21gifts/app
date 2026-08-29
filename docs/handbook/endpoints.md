@@ -84,6 +84,13 @@
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /messages/[id]/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note).
+- **Errors:** Upstream 401/400/404/429/503, or 502 if the api is unreachable.
+- **Used by:** `postMessageInvoice`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/lightning-address
 
 - **Purpose:** Same-origin proxy to link or replace a Wallet of Satoshi address.

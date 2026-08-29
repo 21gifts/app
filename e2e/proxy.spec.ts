@@ -6,6 +6,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/me')).status()).toBe(401);
   expect((await request.get('/messages')).status()).toBe(401);
   expect((await request.post('/messages')).status()).toBe(401);
+  expect((await request.post('/messages/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/me/name')).status()).toBe(401);
   expect((await request.post('/me/lightning-address')).status()).toBe(401);
   expect((await request.delete('/me/lightning-address')).status()).toBe(401);

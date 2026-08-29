@@ -8,6 +8,7 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   postMessage,
+  postMessageInvoice,
   setLightningAddress,
   setName,
   resolveLightningAddress,
@@ -373,6 +374,8 @@ const forumMessage = {
   name: 'Ada',
   text: 'Hello from Ada',
   createdAt: '2026-08-28T12:00:00.000Z',
+  sats: 0,
+  payable: false,
 };
 
 describe('fetchMessages', () => {
@@ -406,6 +409,56 @@ describe('fetchMessages', () => {
     stubFetch({ ok: true, status: 200, body: { messages: [{ id: 'm1' }] } });
     await expect(fetchMessages('sess')).rejects.toThrow(
       'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('postMessageInvoice', () => {
+  it('returns pr and amountSats', async () => {
+    stubFetch({ ok: true, status: 200, body: { pr: 'lnbc21n1test', amountSats: 21 } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).resolves.toEqual({
+      pr: 'lnbc21n1test',
+      amountSats: 21,
+    });
+  });
+
+  it('throws on 429', async () => {
+    stubFetch({ ok: false, status: 429, body: { error: 'Too many payments' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow('Too many payments');
+  });
+
+  it('falls back when a 429 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 429, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'This message cannot be paid yet' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'This message cannot be paid yet',
+    );
+  });
+
+  it('throws on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on other non-ok statuses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
     );
   });
 });

@@ -50,9 +50,9 @@ describe('Home', () => {
     expect(link.getAttribute('href')).toBe('/login');
   });
 
-  it('links Send help to donate', async () => {
+  it('does not offer a Send help /donate CTA', async () => {
     render(await Home());
-    const link = screen.getByRole('link', { name: 'Send help' });
-    expect(link.getAttribute('href')).toBe('/donate');
+    expect(screen.queryByRole('link', { name: 'Send help' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /donate/i })).toBeNull();
   });
 });
