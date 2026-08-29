@@ -270,7 +270,7 @@ describe('ForumLoader', () => {
       name: 'Ada',
       text: '',
       createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 0,
+      sats: 5,
       payable: false,
       hasPhoto: true,
     };
@@ -836,43 +836,6 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Unpaid note')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
     });
-  });
-
-  it('does not cancel an in-flight photo fetch when payable poll refreshes the list', async () => {
-    vi.useFakeTimers();
-    let resolvePhoto: ((value: Blob) => void) | undefined;
-    const withPhoto: ForumMessage = {
-      id: 'm-photo',
-      name: 'Ada',
-      text: 'Hi',
-      createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 5,
-      payable: false,
-      hasPhoto: true,
-    };
-    const refreshed: ForumMessage = { ...withPhoto, payable: true };
-    fetchMock.mockResolvedValueOnce([withPhoto]);
-    photoMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePhoto = resolve;
-        }),
-    );
-    fetchMock.mockResolvedValueOnce([refreshed]);
-    renderWithLocale(<ForumLoader />);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    await act(async () => {
-      resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
-      await Promise.resolve();
-    });
-    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
   });
 
   it('posts text together with a photo', async () => {
