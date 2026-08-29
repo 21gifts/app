@@ -279,15 +279,6 @@ iPad is not a smartphone.
 split. Mounting `QrCode` (or any payment QR) on a smartphone UA is an
 undeclared deviation and is rejected. Reviewers follow `Review.md`.
 
-### Icon action controls (hard requirement)
-
-New action buttons are **icon-only**: lucide icon plus a catalog
-`aria-label`, with no visible button text. Existing examples are the
-forum composer (**Add a photo** / **Post** / **Remove photo**) and the
-pay Bitcoin control. Menu stays icon+text; profile Back stays a link —
-do not retrofit those. Adding a new primary action as a text button is
-an undeclared deviation and is rejected. Reviewers follow `Review.md`.
-
 ### Handbook (hard requirement)
 
 The handbook under `docs/handbook/` **must exist**. Every UI screen, every
