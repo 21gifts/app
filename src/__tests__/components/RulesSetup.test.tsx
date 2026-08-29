@@ -115,7 +115,6 @@ describe('RulesSetup', () => {
 
     await act(async () => {
       resolve({ ...baseAccount, name: 'Ada', rulesAgreedAt: 1_700_000_001 });
-      viewKey: 'a'.repeat(64),
     });
 
     expect(useAuthStore.getState().account).toEqual({

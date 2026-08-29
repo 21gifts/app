@@ -647,14 +647,12 @@ test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agre
   });
   expect(first.status()).toBe(200);
   const firstBody = (await first.json()) as { rulesAgreedAt: number | null };
-  viewKey: 'a'.repeat(64),
   expect(typeof firstBody.rulesAgreedAt).toBe('number');
   const second = await request.post('/me/rules-agreement', {
     headers: { authorization: `Bearer ${token}` },
   });
   expect(second.status()).toBe(200);
   const secondBody = (await second.json()) as { rulesAgreedAt: number | null };
-  viewKey: 'a'.repeat(64),
   expect(secondBody.rulesAgreedAt).toBe(firstBody.rulesAgreedAt);
 });
 
