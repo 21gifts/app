@@ -342,6 +342,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -397,6 +398,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -429,6 +431,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
