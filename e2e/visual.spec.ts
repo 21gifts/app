@@ -406,6 +406,47 @@ test.describe('welcome forum variants', () => {
     });
   }
 
+  async function stubPayInvoice(page: Page): Promise<void> {
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-pay',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-pay/invoice', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1exampleinvoice', amountSats: 21 }),
+      });
+    });
+  }
+
+  async function openPaySheet(page: Page): Promise<void> {
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount (sats)').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
+  }
+
   test('welcome empty', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {
@@ -491,6 +532,30 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Language').click();
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu-language');
+  });
+
+  test('welcome pay-qr', async ({ page }) => {
+    await seedAda(page);
+    await stubPayInvoice(page);
+    await openPaySheet(page);
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-pay-qr');
+  });
+
+  test('welcome pay-smartphone', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await seedAda(page);
+    await stubPayInvoice(page);
+    await openPaySheet(page);
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-pay-smartphone');
   });
 });
 

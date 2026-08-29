@@ -232,6 +232,18 @@ After **Menu**, click **Language** → the four endonym rows (English / Deutsch 
 
 ![21.gifts welcome menu language](images/welcome-menu-language.png)
 
+### Variant: pay-qr
+
+Payable note, amount submitted. On a computer the pay sheet shows the Bitcoin payment QR and **Open Wallet of Satoshi**.
+
+![21.gifts welcome pay QR](images/welcome-pay-qr.png)
+
+### Variant: pay-smartphone
+
+Same pay sheet on a smartphone user-agent: **Open Wallet of Satoshi** only, no QR.
+
+![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
+
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. Light chrome (not the dark marketing shell). No auth gate.
