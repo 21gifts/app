@@ -69,6 +69,7 @@ function newAccount(linkingKey) {
     name: null,
     lightningAddress: null,
     lightningAddressVerified: false,
+    forumLawsDismissed: false,
     createdAt: Date.now(),
   };
 }
@@ -252,6 +253,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     account.name = trimmed;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/forum-laws-dismissed') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.forumLawsDismissed = true;
     json(res, 200, account);
     return;
   }

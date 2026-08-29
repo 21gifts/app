@@ -29,6 +29,7 @@ const account = {
   name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1,
 };
 

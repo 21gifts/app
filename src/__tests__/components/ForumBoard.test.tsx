@@ -68,6 +68,8 @@ const idlePay: Pick<
   | 'onPayDraftChange'
   | 'onPaySubmit'
   | 'onPayCancel'
+  | 'lawsVisible'
+  | 'onDismissLaws'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -79,6 +81,8 @@ const idlePay: Pick<
   onPayDraftChange: () => undefined,
   onPaySubmit: () => undefined,
   onPayCancel: () => undefined,
+  lawsVisible: true,
+  onDismissLaws: () => undefined,
 };
 
 function modeProps(
@@ -126,6 +130,54 @@ describe('ForumBoard', () => {
     expect(button).toBeTruthy();
     expect(field.nextElementSibling).toBe(button);
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+  });
+
+  it('calls onDismissLaws when the Dismiss button is clicked', () => {
+    const onDismissLaws = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        {...modeProps()}
+        onDismissLaws={onDismissLaws}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(onDismissLaws).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the laws hint when lawsVisible is false', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        {...modeProps()}
+        lawsVisible={false}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
+    expect(
+      screen.queryByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    ).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Living room rules' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
   });
 
   it('keeps the mode selector visible while loading', () => {

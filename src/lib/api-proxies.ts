@@ -61,6 +61,16 @@ export async function proxyMeNamePost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/forum-laws-dismissed to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeForumLawsDismissedPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/forum-laws-dismissed');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

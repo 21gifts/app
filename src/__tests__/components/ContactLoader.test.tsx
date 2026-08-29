@@ -27,6 +27,7 @@ const account: Account = {
   name: 'Ada',
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
 };
 

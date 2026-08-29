@@ -63,6 +63,13 @@
 - **Used by:** `setName`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/forum-laws-dismissed
+
+- **Purpose:** Same-origin proxy to permanently dismiss the welcome-forum living-room laws hint (`forumLawsDismissed: true` on the account).
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `dismissForumLaws`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /me
 
 - **Purpose:** Same-origin proxy of the signed-in account.

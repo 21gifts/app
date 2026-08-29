@@ -20,6 +20,7 @@ beforeEach(() => {
       name: null,
       lightningAddress: null,
       lightningAddressVerified: false,
+      forumLawsDismissed: false,
       createdAt: 1,
     },
   });

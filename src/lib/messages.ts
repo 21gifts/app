@@ -175,6 +175,7 @@ const en = {
   'forum.laws2': 'Donors are scarce. No begging, no drama, no pressure.',
   'forum.rulesLink': 'Living room rules',
   'forum.contactLink': 'Contact',
+  'forum.lawsDismiss': 'Dismiss',
 
   'rules.pageTitle': 'Living room rules',
   'rules.heading': 'Living room rules',
@@ -437,6 +438,7 @@ const de = {
   'forum.laws2': 'Spender sind knapp. Kein Betteln, kein Drama, kein Druck.',
   'forum.rulesLink': 'Wohnzimmerregeln',
   'forum.contactLink': 'Kontakt',
+  'forum.lawsDismiss': 'Schließen',
 
   'rules.pageTitle': 'Wohnzimmerregeln',
   'rules.heading': 'Wohnzimmerregeln',
@@ -695,6 +697,7 @@ const es = {
   'forum.laws2': 'Los donantes escasean. Sin mendigar, sin drama, sin presión.',
   'forum.rulesLink': 'Reglas del salón',
   'forum.contactLink': 'Contacto',
+  'forum.lawsDismiss': 'Cerrar',
 
   'rules.pageTitle': 'Reglas del salón',
   'rules.heading': 'Reglas del salón',
@@ -951,6 +954,7 @@ const fil = {
   'forum.laws2': 'Kakaunti ang donor. Walang paghingi, walang drama, walang pressure.',
   'forum.rulesLink': 'Mga patakaran sa living room',
   'forum.contactLink': 'Contact',
+  'forum.lawsDismiss': 'Isara',
 
   'rules.pageTitle': 'Mga patakaran sa living room',
   'rules.heading': 'Mga patakaran sa living room',

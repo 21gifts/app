@@ -13,6 +13,7 @@ export const accountSchema = z.object({
   name: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
+  forumLawsDismissed: z.boolean(),
   createdAt: z.number(),
 });
 
@@ -26,7 +27,9 @@ export const accountSchema = z.object({
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
  * control flag) but unused in the UI — live verification payments are not
- * configured on the api.
+ * configured on the api. `forumLawsDismissed` is true after the user dismissed
+ * the welcome-forum living-room laws hint; false for new accounts and until
+ * they click the X.
  */
 export type Account = z.infer<typeof accountSchema>;
 

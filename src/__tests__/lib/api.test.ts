@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  dismissForumLaws,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
@@ -25,6 +26,7 @@ const account = {
   name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
 };
 
@@ -221,6 +223,31 @@ describe('unlinkLightningAddress', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(unlinkLightningAddress('sess')).rejects.toThrow();
+  });
+});
+
+describe('dismissForumLaws', () => {
+  it('posts and returns the validated account', async () => {
+    const dismissed = { ...account, forumLawsDismissed: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: dismissed });
+
+    await expect(dismissForumLaws('sess')).resolves.toEqual(dismissed);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/forum-laws-dismissed`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(dismissForumLaws('sess')).rejects.toThrow(
+      'Could not dismiss the living-room hint',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(dismissForumLaws('sess')).rejects.toThrow();
   });
 });
 
