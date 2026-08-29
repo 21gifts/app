@@ -6,6 +6,7 @@ import { type FormEvent, type ReactElement, useEffect, useRef, useState } from '
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import { formatForumTime } from '@/lib/forum-time';
 import {
   isAndroidUserAgent,
@@ -70,23 +71,37 @@ export interface ForumBoardProps {
   onPaySubmit: () => void;
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
+  /** Selected feed mode. Default in the loader is Active. */
+  mode: ForumFeedMode;
+  /** Called when the visitor picks another mode. */
+  onModeChange: (mode: ForumFeedMode) => void;
 }
+
+const MODE_LABEL_KEY: Record<
+  ForumFeedMode,
+  'forum.modeActive' | 'forum.modeAll' | 'forum.modePopular'
+> = {
+  active: 'forum.modeActive',
+  all: 'forum.modeAll',
+  popular: 'forum.modePopular',
+};
 
 /**
  * Presentational public forum: heading, two living-room laws with links to
- * `/rules` and `/contact`, list or empty/loading/error, composer, per-card
- * sats total with a Bitcoin pay icon when the note is payable, and
- * pay-on-note sheet (amount → desktop QR + Wallet of Satoshi, smartphone
- * Wallet of Satoshi deep link only).
+ * `/rules` and `/contact`, Active/All/Most popular selector, list or
+ * empty/loading/error, composer, per-card sats total with a Bitcoin pay icon
+ * when the note is payable, and pay-on-note sheet (amount → desktop QR +
+ * Wallet of Satoshi, smartphone Wallet of Satoshi deep link only).
  *
  * This is a messenger-group thread (oldest top, newest bottom above the
- * composer), not a social feed. Props stay newest-first; the DOM list is
- * chronological.
+ * composer), not a social feed. Props stay newest-first; Active and All reverse
+ * the filtered list for the DOM. Most popular keeps sats-desc order.
  *
- * Always shows the heading and composer so validation errors can surface even
- * when the list is empty. Light neutral palette to match {@link WelcomeScreen}.
+ * Always shows the heading, mode selector, and composer so validation errors
+ * can surface even when the list is empty. Light neutral palette to match
+ * {@link WelcomeScreen}.
  *
- * @param props - Messages payload plus loading/error/composer/pay state.
+ * @param props - Messages payload plus loading/error/composer/pay/mode state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -109,6 +124,8 @@ export function ForumBoard({
   onPayDraftChange,
   onPaySubmit,
   onPayCancel,
+  mode,
+  onModeChange,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const composerRef = useRef<HTMLFormElement>(null);
@@ -156,6 +173,8 @@ export function ForumBoard({
     </div>
   );
 
+  const visible = messages === null ? null : visibleForumMessages(messages, mode);
+
   let middle: ReactElement;
   if (loading && messages === null) {
     middle = <p className="text-center text-sm text-neutral-500">{t('forum.loading')}</p>;
@@ -163,11 +182,13 @@ export function ForumBoard({
     middle = errorBlock;
   } else if (messages !== null && messages.length === 0) {
     middle = <p className="text-center text-sm text-neutral-500">{t('forum.empty')}</p>;
-  } else if (messages !== null) {
-    const chronological = messages.slice().reverse();
+  } else if (messages !== null && visible !== null && visible.length === 0) {
+    middle = <p className="text-center text-sm text-neutral-500">{t('forum.emptyPaid')}</p>;
+  } else if (messages !== null && visible !== null) {
+    const displayed = mode === 'popular' ? visible : visible.slice().reverse();
     middle = (
       <ul aria-label={t('forum.listLabel')} className="flex flex-col gap-4">
-        {chronological.map((message) => {
+        {displayed.map((message) => {
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
@@ -326,6 +347,26 @@ export function ForumBoard({
             {t('forum.contactLink')}
           </Link>
         </nav>
+      </div>
+
+      <div
+        role="group"
+        aria-label={t('forum.modeLabel')}
+        className="flex w-full rounded-full border border-neutral-200 bg-neutral-50 p-1"
+      >
+        {FORUM_FEED_MODES.map((next) => (
+          <button
+            key={next}
+            type="button"
+            aria-pressed={mode === next}
+            onClick={() => onModeChange(next)}
+            className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
+              mode === next ? 'bg-neutral-900 text-white' : 'text-neutral-600'
+            }`}
+          >
+            {t(MODE_LABEL_KEY[next])}
+          </button>
+        ))}
       </div>
 
       {middle}

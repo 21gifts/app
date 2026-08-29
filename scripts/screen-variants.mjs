@@ -102,6 +102,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'all',
+    image: 'welcome-all.png',
+    visual: 'state-welcome-all',
+    needle: 'Does anyone have spare sats this week?',
+  },
+  {
+    route: '/welcome',
+    id: 'popular',
+    image: 'welcome-popular.png',
+    visual: 'state-welcome-popular',
+    needle: 'Most popular',
+  },
+  {
+    route: '/welcome',
     id: 'empty',
     image: 'welcome-empty.png',
     visual: 'state-welcome-empty',

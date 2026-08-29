@@ -112,6 +112,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
+  await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByLabel('Amount (sats)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -718,6 +719,7 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
+  await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
@@ -738,6 +740,7 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
+  await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
@@ -1366,7 +1369,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
             name: 'Ada',
             text: 'Hello from Ada',
             createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 0,
+            sats: 1,
             payable: true,
           },
         ],
@@ -1376,6 +1379,77 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
   await page.goto('/welcome');
   await expect(page.getByText('Hello from Ada')).toBeVisible();
   await expect(page.getByText(/2026/)).toBeVisible();
+});
+
+test('Function: visibleForumMessages — Active, All, and Most popular filter the welcome list', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm3',
+            name: 'Ada',
+            text: 'Thank you both — that helps.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+          },
+          {
+            id: 'm2',
+            name: 'Carol',
+            text: 'I can send a small gift tomorrow.',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 21,
+            payable: true,
+          },
+          {
+            id: 'm1',
+            name: 'Bob',
+            text: 'Does anyone have spare sats this week?',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 0,
+            payable: true,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+  await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
+  await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
+
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Most popular' }).click();
+  const items = page.getByRole('listitem');
+  await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
+  await expect(items.nth(0)).toContainText('21 sats');
+  await expect(items.nth(1)).toContainText('Thank you both — that helps.');
+  await expect(items.nth(1)).toContainText('5 sats');
 });
 
 test('Function: OnboardingGate — login sends a new account to the name screen', async ({

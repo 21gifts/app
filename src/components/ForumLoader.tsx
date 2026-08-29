@@ -9,6 +9,7 @@ import {
 } from '@/components/ForumBoard';
 import { fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { DEFAULT_FORUM_FEED_MODE, type ForumFeedMode } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for pay confirmation or payable status. */
@@ -52,9 +53,9 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * Client loader for the public forum on `/welcome`.
  *
  * Reads the session from the auth store, fetches messages with a cancelled-flag
- * pattern matching {@link StatsLoader}, owns composer draft/post state, and
- * owns pay-on-note invoice + sats-poll state. Also polls until unsigned notes
- * become payable.
+ * pattern matching {@link StatsLoader}, owns composer draft/post state, the
+ * Active/All/Most popular feed mode, pay-on-note invoice + sats-poll state,
+ * and polls until unsigned notes become payable.
  * Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
@@ -68,6 +69,7 @@ export function ForumLoader(): ReactElement | null {
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
   const [formError, setFormError] = useState<ForumFormError>(null);
+  const [feedMode, setFeedMode] = useState<ForumFeedMode>(DEFAULT_FORUM_FEED_MODE);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
@@ -229,6 +231,9 @@ export function ForumLoader(): ReactElement | null {
           }
           return [created, ...prev];
         });
+        if (created.sats === 0) {
+          setFeedMode('all');
+        }
         setDraft('');
         startPayablePoll(session);
       } catch (err) {
@@ -330,6 +335,8 @@ export function ForumLoader(): ReactElement | null {
       }}
       onPaySubmit={onPaySubmit}
       onPayCancel={clearPaySheet}
+      mode={feedMode}
+      onModeChange={setFeedMode}
     />
   );
 }

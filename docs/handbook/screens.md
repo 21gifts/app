@@ -186,15 +186,27 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum as a messenger-group thread (two unmissable living-room laws above the thread, links to **Living room rules** `/rules` and **Contact** `/contact`, then oldest notes at the top, newest at the bottom above the composer; message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right). Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
-- **Actions:** Post a message, pay a payable note in-app, open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, two living-room laws with links to **Living room rules** `/rules` and **Contact** `/contact`, then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
+- **Actions:** Post a message, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** as a messenger-group thread with the two laws and rules/contact links: posts in chronological order (oldest at the top, newest at the bottom above the composer). Visible order Bob, then Carol, then Ada (fixture timestamps 10:00 / 11:00 / 12:00 — Ada newest, immediately above the composer), each with name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Gift icon, **Welcome, Ada**, public **Forum** with the two laws and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer. Pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
+
+### Variant: all
+
+Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) is visible with Ada and Carol.
+
+![21.gifts welcome all](images/welcome-all.png)
+
+### Variant: popular
+
+Click **Most popular** — paid notes ordered by sats (Carol 21, then Ada 5). Unpaid Bob is hidden.
+
+![21.gifts welcome popular](images/welcome-popular.png)
 
 ### Variant: empty
 

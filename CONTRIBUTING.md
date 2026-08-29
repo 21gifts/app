@@ -93,7 +93,8 @@ app/
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
-│   │   └── forum-time.ts        # UTC display timestamps for forum rows
+│   │   ├── forum-time.ts        # UTC display timestamps for forum rows
+│   │   └── forum-feed.ts        # Client-side Active/All/Most popular forum filter
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file

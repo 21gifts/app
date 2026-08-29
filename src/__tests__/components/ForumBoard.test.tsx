@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import type { ForumFeedMode } from '@/lib/forum-feed';
 import { formatForumTime } from '@/lib/forum-time';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -46,6 +47,15 @@ const MULTILINE: ForumMessage = {
   payable: false,
 };
 
+const FIVE_SATS: ForumMessage = {
+  id: 'm5',
+  name: 'Ada',
+  text: 'Five sats note',
+  createdAt: '2026-08-28T14:00:00.000Z',
+  sats: 5,
+  payable: true,
+};
+
 const idlePay: Pick<
   ForumBoardProps,
   | 'payMessageId'
@@ -71,8 +81,15 @@ const idlePay: Pick<
   onPayCancel: () => undefined,
 };
 
+function modeProps(
+  mode: ForumFeedMode = 'all',
+  onModeChange: (next: ForumFeedMode) => void = () => undefined,
+): Pick<ForumBoardProps, 'mode' | 'onModeChange'> {
+  return { mode, onModeChange };
+}
+
 describe('ForumBoard', () => {
-  it('shows the heading, composer, and Post button', () => {
+  it('shows the heading, mode selector, composer, and Post button', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -85,9 +102,14 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
     expect(screen.queryByText('Everyone can read and write.')).toBeNull();
     expect(
       screen.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
@@ -106,6 +128,26 @@ describe('ForumBoard', () => {
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
   });
 
+  it('keeps the mode selector visible while loading', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={null}
+        error={false}
+        loading={true}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByText('Loading…')).toBeTruthy();
+  });
+
   it('shows loading copy when loading and messages are null', () => {
     renderWithLocale(
       <ForumBoard
@@ -119,6 +161,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByText('Loading…')).toBeTruthy();
@@ -137,12 +180,13 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
-  it('shows an error and retries', () => {
+  it('shows an error and retries with the selector still present', () => {
     const onRetry = vi.fn();
     renderWithLocale(
       <ForumBoard
@@ -156,8 +200,10 @@ describe('ForumBoard', () => {
         onRetry={onRetry}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
+    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
     expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
@@ -177,6 +223,7 @@ describe('ForumBoard', () => {
         onRetry={onRetry}
         formError={null}
         {...idlePay}
+        {...modeProps('all')}
       />,
     );
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
@@ -198,6 +245,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
       'de',
     );
@@ -206,7 +254,7 @@ describe('ForumBoard', () => {
     ).toBeTruthy();
   });
 
-  it('shows the empty copy', () => {
+  it('shows the empty copy, not emptyPaid, when the loaded list is empty', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -219,12 +267,15 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    expect(screen.queryByText('No messages with sats yet.')).toBeNull();
+    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
   });
 
-  it('lists messages with name, sats, formatted time, and pre-wrapped text', () => {
+  it('hides a zero-sat SAMPLE on Active and shows MULTILINE', () => {
     renderWithLocale(
       <ForumBoard
         messages={[MULTILINE, SAMPLE]}
@@ -237,6 +288,49 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByText('Hello from Ada')).toBeNull();
+    expect(
+      screen.getByText((content) => content.includes('Line one') && content.includes('Line two')),
+    ).toBeTruthy();
+  });
+
+  it('shows emptyPaid when Active hides every loaded row', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    expect(screen.queryByText('No messages yet. Be the first to write.')).toBeNull();
+  });
+
+  it('lists both messages on All including zero-sat SAMPLE', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE, MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        {...modeProps('all')}
       />,
     );
     const list = screen.getByRole('list', { name: 'All messages' });
@@ -265,6 +359,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('all')}
       />,
     );
 
@@ -280,6 +375,29 @@ describe('ForumBoard', () => {
     });
   });
 
+  it('orders popular by sats descending when input is newest-first', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[FIVE_SATS, MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        {...modeProps('popular')}
+      />,
+    );
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]?.textContent).toContain('Line one');
+    expect(items[0]?.textContent).toContain('21 sats');
+    expect(items[1]?.textContent).toContain('Five sats note');
+    expect(items[1]?.textContent).toContain('5 sats');
+  });
+
   it('does not scroll the composer when messages are empty', () => {
     renderWithLocale(
       <ForumBoard
@@ -293,10 +411,55 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
 
     expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('localizes mode buttons in German', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        {...modeProps('active')}
+      />,
+      'de',
+    );
+    expect(screen.getByRole('button', { name: 'Aktiv' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Alle' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Beliebteste' })).toBeTruthy();
+  });
+
+  it('calls onModeChange when All is clicked', () => {
+    const onModeChange = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        mode="active"
+        onModeChange={onModeChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(onModeChange).toHaveBeenCalledWith('all');
   });
 
   it('shows 1 sat for a single sat total', () => {
@@ -312,6 +475,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByText('1 sat')).toBeTruthy();
@@ -332,6 +496,7 @@ describe('ForumBoard', () => {
         formError={null}
         {...idlePay}
         onPayOpen={onPayOpen}
+        {...modeProps('all')}
       />,
     );
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
@@ -380,6 +545,7 @@ describe('ForumBoard', () => {
         onPayDraftChange={onPayDraftChange}
         onPaySubmit={onPaySubmit}
         onPayCancel={onPayCancel}
+        {...modeProps('all')}
       />,
     );
     expect(screen.getByLabelText('Amount (sats)')).toBeTruthy();
@@ -406,6 +572,7 @@ describe('ForumBoard', () => {
         {...idlePay}
         payMessageId="m1"
         payError="amount"
+        {...modeProps('all')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe(
@@ -428,6 +595,7 @@ describe('ForumBoard', () => {
         {...idlePay}
         payMessageId="m1"
         payError="request"
+        {...modeProps('all')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
@@ -448,6 +616,7 @@ describe('ForumBoard', () => {
         {...idlePay}
         payMessageId="m1"
         payError="rateLimit"
+        {...modeProps('all')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe(
@@ -471,6 +640,7 @@ describe('ForumBoard', () => {
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
         payWaiting={true}
+        {...modeProps('all')}
       />,
     );
     expect(screen.getByText('Pay 21 sats')).toBeTruthy();
@@ -550,6 +720,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError="empty"
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
@@ -568,6 +739,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError="tooLong"
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
@@ -586,6 +758,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError="request"
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
@@ -604,6 +777,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError="rateLimit"
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe(
@@ -624,6 +798,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     const button = screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement;
@@ -646,6 +821,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idlePay}
+        {...modeProps('active')}
       />,
     );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });

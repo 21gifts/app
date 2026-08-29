@@ -45,6 +45,10 @@ const SAMPLE: ForumMessage = {
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 
+async function revealAll(): Promise<void> {
+  fireEvent.click(screen.getByRole('button', { name: 'All' }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   HTMLElement.prototype.scrollIntoView = vi.fn();
@@ -78,6 +82,10 @@ describe('ForumLoader', () => {
   it('shows a fetched message with sats', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeTruthy();
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
@@ -306,6 +314,10 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), {
@@ -449,6 +461,10 @@ describe('ForumLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
 
@@ -470,6 +486,10 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
 
@@ -487,6 +507,10 @@ describe('ForumLoader', () => {
     invoiceMock.mockRejectedValue(new Error('Could not start the Bitcoin payment'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
 
@@ -502,6 +526,10 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
@@ -527,6 +555,10 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
@@ -550,6 +582,10 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
@@ -565,6 +601,10 @@ describe('ForumLoader', () => {
   it('omits Send Bitcoin while a loaded note is not payable', async () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false }]);
     renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
@@ -773,6 +813,10 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockReturnValue(new Promise(() => undefined));
     renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
