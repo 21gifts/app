@@ -300,6 +300,12 @@ test('Function: proxyMessagesPost — POST /messages without bearer is 401', asy
   expect((await request.post('/messages', { data: { text: 'hi' } })).status()).toBe(401);
 });
 
+test('Function: proxyContactPost — POST /contact/submit without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/contact/submit', { data: { text: 'hi' } })).status()).toBe(401);
+});
+
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
   await signInViaStub(page, request);
   await saveOnboardingName(page);
@@ -325,6 +331,19 @@ test('Function: postMessage — posting from the composer shows the row', async 
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Post' }).click();
   await expect(page.getByText(body)).toBeVisible();
+});
+
+test('Function: postContact — sending from contact shows success', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Link address' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await page.goto('/contact');
+  const body = `Contact note ${Date.now()}`;
+  await page.getByLabel('Your message').fill(body);
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
@@ -682,6 +701,16 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
+});
+
+test('Function: RulesPage — rules heading is visible', async ({ page }) => {
+  await page.goto('/rules');
+  await expect(page.getByRole('heading', { name: 'Living room rules', level: 1 })).toBeVisible();
+});
+
+test('Function: RulesDocument — only free donations law is visible', async ({ page }) => {
+  await page.goto('/rules');
+  await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
 });
 
 test('Function: ForumLoader — welcome forum is the pay surface', async ({ page, request }) => {
@@ -1188,6 +1217,75 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
   });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+});
+
+test('Function: ContactPage — contact heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/contact');
+  await expect(page.getByRole('heading', { name: 'Contact' })).toBeVisible();
+});
+
+test('Function: ContactScreen — contact lead is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/contact');
+  await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
+});
+
+test('Function: ContactLoader — Send button is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.goto('/contact');
+  await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
 });
 
 test('Function: ForumLoader — empty forum copy is visible', async ({ page }) => {

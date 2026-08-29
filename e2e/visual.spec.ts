@@ -199,6 +199,12 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-stats-day');
   });
 
+  test('screen /rules', async ({ page }) => {
+    await page.goto('/rules');
+    await expect(page.getByText('Only free donations')).toBeVisible();
+    await shotScreen(page, 'screen-rules');
+  });
+
   test('screen /404', async ({ page }) => {
     await page.goto('/404');
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
@@ -469,6 +475,65 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu');
+  });
+});
+
+test.describe('contact screens', () => {
+  async function seedAda(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
+      });
+    });
+  }
+
+  test('screen /contact', async ({ page }) => {
+    await seedAda(page);
+    await page.goto('/contact');
+    await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
+    await shotScreen(page, 'screen-contact');
+  });
+
+  test('contact validation-error', async ({ page }) => {
+    await seedAda(page);
+    await page.goto('/contact');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.getByText('Enter a message')).toBeVisible();
+    await shotScreen(page, 'state-contact-validation-error');
+  });
+
+  test('contact success', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/contact\/submit$/, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'c1',
+          name: 'Ada',
+          text: 'Hello',
+          createdAt: '2026-08-28T12:00:00.000Z',
+        }),
+      });
+    });
+    await page.goto('/contact');
+    await page.getByLabel('Your message').fill('Hello');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
+    await shotScreen(page, 'state-contact-success');
   });
 });
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Bitcoin, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
@@ -71,8 +72,9 @@ export interface ForumBoardProps {
 }
 
 /**
- * Presentational public forum: heading, list or empty/loading/error, composer,
- * per-card sats total with a Bitcoin pay icon when the note is payable, and
+ * Presentational public forum: heading, two living-room laws with links to
+ * `/rules` and `/contact`, list or empty/loading/error, composer, per-card
+ * sats total with a Bitcoin pay icon when the note is payable, and
  * pay-on-note sheet (amount → QR / Wallet of Satoshi).
  *
  * Always shows the heading and composer so validation errors can surface even
@@ -289,6 +291,19 @@ export function ForumBoard({
       <h2 className="text-center text-lg font-semibold tracking-tight text-neutral-900">
         {t('forum.heading')}
       </h2>
+
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-center text-sm text-neutral-700">{t('forum.laws1')}</p>
+        <p className="text-center text-sm text-neutral-700">{t('forum.laws2')}</p>
+        <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
+          <Link href="/rules" className="text-neutral-900 underline underline-offset-2">
+            {t('forum.rulesLink')}
+          </Link>
+          <Link href="/contact" className="text-neutral-900 underline underline-offset-2">
+            {t('forum.contactLink')}
+          </Link>
+        </nav>
+      </div>
 
       {middle}
       {error && messages !== null ? errorBlock : null}

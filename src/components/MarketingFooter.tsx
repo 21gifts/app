@@ -26,6 +26,7 @@ export async function MarketingFooter(): Promise<ReactElement> {
           <Link href="/#faq">{translate(messages, 'nav.faq')}</Link>
           <Link href="/handbook">{translate(messages, 'nav.handbook')}</Link>
           <Link href="/legal">{translate(messages, 'nav.legal')}</Link>
+          <Link href="/rules">{translate(messages, 'nav.rules')}</Link>
         </nav>
         <a
           href="https://github.com/21gifts"

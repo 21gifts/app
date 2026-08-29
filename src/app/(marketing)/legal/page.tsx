@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import type { ReactElement } from 'react';
 
 /**
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
 
 /**
  * Legal notice and privacy policy at `/legal`.
+ *
+ * Contact is in-app only — no published email.
  *
  * @returns The legal screen.
  */
@@ -26,10 +29,11 @@ export default function LegalPage(): ReactElement {
           Switzerland
         </p>
         <p>
-          Email:{' '}
-          <a className="text-[#f7931a] underline underline-offset-2" href="mailto:info@21.gifts">
-            info@21.gifts
-          </a>
+          Contact us in the 21.gifts app after you log in.{' '}
+          <Link className="text-[#f7931a] underline underline-offset-2" href="/contact">
+            Open the app
+          </Link>
+          .
         </p>
         <p>Legal form: non-profit project (entity in formation).</p>
       </section>
@@ -70,16 +74,21 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Contact</h3>
         <p className="text-white/70">
-          If you contact us by email, we will process the information you provide solely to respond
-          to your inquiry, and we will not pass it on to third parties.
+          Contact us in the 21.gifts app after you log in.{' '}
+          <Link className="text-[#f7931a] underline underline-offset-2" href="/contact">
+            Open the app
+          </Link>
+          . Messages you send there are processed solely to respond to your inquiry and are not
+          passed on to third parties.
         </p>
         <h3 className="text-lg font-semibold">Your rights</h3>
         <p className="text-white/70">
           Under the Swiss Federal Act on Data Protection (FADP) you have the right to access,
-          rectify, or delete any personal data we hold about you. Write to{' '}
-          <a className="text-[#f7931a] underline underline-offset-2" href="mailto:info@21.gifts">
-            info@21.gifts
-          </a>
+          rectify, or delete any personal data we hold about you. Contact us in the 21.gifts app
+          after you log in.{' '}
+          <Link className="text-[#f7931a] underline underline-offset-2" href="/contact">
+            Open the app
+          </Link>
           .
         </p>
       </section>

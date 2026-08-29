@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   accountSchema,
+  contactSchema,
   forumListSchema,
   forumMessageSchema,
   lnAddressResolvedSchema,
@@ -10,6 +11,7 @@ import {
   passkeyBeginSchema,
   passkeySessionSchema,
   type Account,
+  type ContactMessage,
   type ForumMessage,
   type GiftDay,
   type GiftStats,
@@ -337,6 +339,35 @@ export async function postMessageInvoice(
     throw new Error('Could not start the Bitcoin payment');
   }
   return messageInvoiceSchema.parse(await response.json());
+}
+
+/**
+ * Posts an in-app contact message to 21.gifts.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param text - Message body as typed (api trims and validates length).
+ * @returns The created {@link ContactMessage}.
+ * @throws Error when the api rejects the text (400) — the api error string
+ * when present, otherwise a fallback — on any other non-2xx status, or when
+ * the body fails {@link contactSchema} validation.
+ */
+export async function postContact(sessionToken: string, text: string): Promise<ContactMessage> {
+  const response = await fetch('/contact/submit', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not send your message' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not send your message');
+  }
+  return contactSchema.parse(await response.json());
 }
 
 /**

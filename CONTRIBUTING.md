@@ -50,6 +50,12 @@ app/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`, `/stats/[day]`
+│   │   ├── rules/
+│   │   │   └── page.tsx         # GET /rules — public living-room rules
+│   │   ├── contact/
+│   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
+│   │   │   └── submit/
+│   │   │       └── route.ts     # POST /contact/submit → api POST /contact
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
@@ -75,7 +81,10 @@ app/
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list, composer, sat totals, pay-on-note sheet
-│   │   └── ForumLoader.tsx      # Fetch/post state for /welcome forum
+│   │   ├── ForumLoader.tsx      # Fetch/post state for /welcome forum
+│   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
+│   │   ├── ContactScreen.tsx    # In-app contact heading + composer
+│   │   └── ContactLoader.tsx    # Post state for /contact
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -107,6 +116,8 @@ app/
 │   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
+│   ├── rules.spec.ts            # /rules living-room laws + CTAs
+│   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher

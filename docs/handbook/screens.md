@@ -28,8 +28,8 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; login on this origin). Legal body copy stays English.
-- **Actions:** Change language. Read the legal body. Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **Actions:** Change language. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -186,13 +186,13 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
-- **Actions:** Post a message, pay a payable note in-app, retry a failed load; open **Menu** for Profile, language, or **Log out**.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum (two unmissable living-room laws above the thread, links to **Living room rules** `/rules` and **Contact** `/contact`, then message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
+- **Actions:** Post a message, pay a payable note in-app, open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable), composer. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Gift icon, **Welcome, Ada**, public **Forum** with the two laws and rules/contact links, posts from more than one person (Bob, Carol, Ada — name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable), composer. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -225,6 +225,46 @@ Click **Post** with an empty composer → **Enter a message**. The composer caps
 Open **Menu** top-right → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), the four language rows (English / Deutsch / Español / Filipino) inside the Menu listbox, and **Log out**. No native language select.
 
 ![21.gifts welcome menu](images/welcome-menu.png)
+
+## Screen: /rules
+
+- **URL:** `/rules` — public living-room rules. Light chrome (not the dark marketing shell). No auth gate.
+- **What the user sees:** Light language switcher top-right. Page heading **Living room rules**, then lead, three laws (title + body + test where present), Wanted / Allowed / Rather not / Forbidden (three forbidden subheads + lists), House right, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
+- **Actions:** Change language. Read the rules. Open contact or the forum.
+- **Calls:** `RulesPage`, `RulesDocument`, `LanguageSwitcher`.
+- **Auth:** None.
+
+### Variant: default
+
+Full rules body with law **1. Only free donations** visible.
+
+![21.gifts living room rules](images/rules.png)
+
+## Screen: /contact
+
+- **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address required).
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
+- **Actions:** Send a message, open the rules; open **Menu** for Profile, language, or **Log out**.
+- **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
+
+### Variant: default
+
+Idle composer with lead and rules link.
+
+![21.gifts contact](images/contact.png)
+
+### Variant: validation-error
+
+Click **Send** with an empty composer → **Enter a message**.
+
+![21.gifts contact validation error](images/contact-validation-error.png)
+
+### Variant: success
+
+After a successful send: **Received. We read this in the app.** Form hidden; rules link remains.
+
+![21.gifts contact success](images/contact-success.png)
 
 ## Screen: /profile
 
