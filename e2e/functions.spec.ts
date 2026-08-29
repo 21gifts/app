@@ -162,7 +162,7 @@ async function signInViaStub(page: Page, _request: APIRequestContext): Promise<v
 }
 
 async function saveOnboardingName(page: Page): Promise<void> {
-  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Save name' }).click();
   await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('button', { name: 'Link address' })).toBeVisible();
@@ -366,14 +366,14 @@ test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
   await signInViaStub(page, request);
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
-  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Save name' }).click();
   await expect(page.getByText('Ada')).toBeVisible();
 });
 
 test('Function: setName — signed-in form saves a display name', async ({ page, request }) => {
   await signInViaStub(page, request);
-  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Save name' }).click();
   await expect(page.getByText('Ada')).toBeVisible();
 });

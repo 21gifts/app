@@ -149,7 +149,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
     page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
   ).toHaveCount(0);
 
-  await page.getByLabel('Name').fill('Ada');
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Save name' }).click();
   await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
