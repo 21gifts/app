@@ -6,8 +6,18 @@ import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
   ),
 }));
 
@@ -60,6 +70,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByRole('link', { name: 'Back to forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
+    expect(screen.queryByText('Back to forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     await waitFor(() => {

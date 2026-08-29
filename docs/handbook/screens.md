@@ -203,14 +203,14 @@ Open **Menu** top-right → Profile link (sat totals as `ArrowUpRight` / `ArrowD
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: sat totals shown as icons plus amounts, edit name and Wallet of Satoshi address, return to the forum.
+- **Purpose:** Signed-in profile after onboarding: sat totals shown as icons plus amounts, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control.
 - **Inputs:** Session account (name + Lightning Address) via `OnboardingGate` / `useAuthStore`; public gift stats via `useAccountTotals`.
-- **Actions:** Open **Menu** for Profile (current), language, or **Log out**; **Back to forum**; save name; link or change address.
+- **Actions:** Open **Menu** for Profile (current), language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, outbound/inbound sat totals as `ArrowUpRight` / `ArrowDownLeft` icons with visible amounts (accessible names from `profile.given` / `profile.received`), **Back to forum**, name form, Wallet of Satoshi address form. One **Menu** top-right.
+Heading **Profile**, outbound/inbound sat totals as `ArrowUpRight` / `ArrowDownLeft` icons with visible amounts (accessible names from `profile.given` / `profile.received`), name form, Wallet of Satoshi address form. Icon-only back top-left (returns to the forum); one **Menu** top-right.
 
 ![21.gifts profile](images/profile.png)
 

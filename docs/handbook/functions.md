@@ -213,9 +213,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile card: sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts, **Back to forum**, name and Wallet of Satoshi address forms.
+- **Purpose:** Signed-in profile card: sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts, name and Wallet of Satoshi address forms, plus an icon-only back control (ArrowLeft) at the top-left that returns to the forum.
 - **Inputs:** `useAccountTotals` for totals; `NameForm` and `LightningAddressForm` for edits; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, centered icon+amount totals (accessible names from `profile.given` / `profile.received`), link to `/welcome`, name form, address form.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, centered icon+amount totals (accessible names from `profile.given` / `profile.received`), name form, address form.
 - **Used by:** `ProfilePage`.
 
 ## Function: accountTotals
