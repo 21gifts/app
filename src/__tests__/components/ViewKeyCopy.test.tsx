@@ -51,6 +51,7 @@ describe('ViewKeyCopy', () => {
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
 
     const button = screen.getByRole('button', { name: 'Copy view-key link' });
+    expect(screen.queryByText('Copy view-key link')).toBeNull();
     expectIdleIcon(button);
     fireEvent.click(button);
     await act(async () => {
