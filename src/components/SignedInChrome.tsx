@@ -120,9 +120,7 @@ export function SignedInChrome(): ReactElement {
               )}
             </span>
           </Link>
-          <div className="px-3 py-2">
-            <LanguageSwitcher tone="light" embedded />
-          </div>
+          <LanguageSwitcher tone="light" embedded />
           <div className="px-3 py-2">
             <LogoutButton />
           </div>

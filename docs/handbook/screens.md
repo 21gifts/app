@@ -222,9 +222,15 @@ Click **Post** with an empty composer → **Enter a message**. The composer caps
 
 ### Variant: menu-open
 
-Open **Menu** top-right → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), the four language rows (English / Deutsch / Español / Filipino) inside the Menu listbox, and **Log out**. No native language select.
+Open **Menu** top-right only (do not click Language) → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), a collapsed **Language** row (Globe + label + chevron, same row chrome as Profile / Log out), and **Log out**. No English / Deutsch / Español / Filipino option rows. No native language select.
 
 ![21.gifts welcome menu](images/welcome-menu.png)
+
+### Variant: menu-language-open
+
+After **Menu**, click **Language** → the four endonym rows (English / Deutsch / Español / Filipino) expand in flow under the Language trigger with a check on the current locale. The Menu grows; this is not an absolute popover.
+
+![21.gifts welcome menu language](images/welcome-menu-language.png)
 
 ## Screen: /rules
 

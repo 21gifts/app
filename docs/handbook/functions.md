@@ -110,7 +110,7 @@
 
 - **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login and donate) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
-- **Returns / side effects:** Standalone combobox + listbox, or an always-open embedded listbox inside the Menu. Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
+- **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Globe + Language + chevron; expands in flow under the trigger with endonym rows). Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and the signed-in Menu in `SignedInChrome`.
 
 ## Function: NameForm
@@ -211,7 +211,7 @@
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts), language, and **Log out**.
 - **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`) whose totals use icon + amount with `aria-label`/`title` from `profile.given` / `profile.received`, embedded language select, and log out. Escape closes and restores focus to Menu.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`) whose totals use icon + amount with `aria-label`/`title` from `profile.given` / `profile.received`, embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`.
 
 ## Function: ProfilePage

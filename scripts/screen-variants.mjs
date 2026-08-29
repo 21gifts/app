@@ -136,6 +136,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('link', { name: /Profile/",
   },
   {
+    route: '/welcome',
+    id: 'menu-language-open',
+    image: 'welcome-menu-language.png',
+    visual: 'state-welcome-menu-language',
+    needle: "getByRole('option', { name: 'Deutsch' })",
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',

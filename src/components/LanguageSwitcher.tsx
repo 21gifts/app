@@ -81,8 +81,8 @@ function persistLocale(next: Locale, current: Locale, refresh: () => void): void
  * Custom listbox that persists the visitor's language choice in a cookie and
  * refreshes the App Router tree so server components re-negotiate locale.
  *
- * Standalone (`embedded` false): Globe pill trigger + popover listbox.
- * Embedded: always-visible listbox rows inside the signed-in Menu (no nested popover).
+ * Standalone (`embedded` false): Globe pill trigger + absolute popover listbox.
+ * Embedded: Menu-row disclosure; locale options appear only after clicking Language.
  *
  * @param props - Visual tone for marketing (`dark`) or login/signed-in chrome (`light`),
  *   and optional `embedded` when shown inside the signed-in Menu dropdown.
@@ -162,47 +162,6 @@ export function LanguageSwitcher(props: {
     };
   }, [open, highlight, locale, router]);
 
-  if (embedded) {
-    return (
-      <div className="flex flex-col gap-1">
-        <div className="inline-flex items-center gap-1.5 text-sm text-neutral-500">
-          <Globe aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {label}
-        </div>
-        <div role="listbox" aria-label={label} className="flex flex-col">
-          {LOCALES.map((code) => {
-            const selected = code === locale;
-            return (
-              <button
-                key={code}
-                type="button"
-                role="option"
-                id={optionId(code)}
-                aria-selected={selected}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50${selected ? ' font-medium' : ''}`}
-                onClick={() => {
-                  persistLocale(code, locale, () => {
-                    router.refresh();
-                  });
-                }}
-              >
-                <span
-                  className="flex h-4 w-4 shrink-0 items-center justify-center"
-                  aria-hidden="true"
-                >
-                  {selected ? (
-                    <Check className="h-4 w-4 shrink-0 text-neutral-900" aria-hidden="true" />
-                  ) : null}
-                </span>
-                {nativeLabel(code)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
   const openListbox = (): void => {
     setHighlight(locale);
     setOpen(true);
@@ -218,6 +177,102 @@ export function LanguageSwitcher(props: {
     }
   };
 
+  const onTriggerClick = (): void => {
+    if (open) {
+      setOpen(false);
+    } else {
+      openListbox();
+    }
+  };
+
+  const selectLocale = (code: Locale): void => {
+    setOpen(false);
+    persistLocale(code, locale, () => {
+      router.refresh();
+    });
+    triggerRef.current?.focus();
+  };
+
+  const optionRowClass =
+    tone === 'dark'
+      ? 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10'
+      : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50';
+
+  const checkClass =
+    tone === 'dark' ? 'h-4 w-4 shrink-0 text-[#f7931a]' : 'h-4 w-4 shrink-0 text-neutral-900';
+
+  const embeddedOptionRowClass =
+    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50';
+
+  const listboxOptions = (rowClass: string, check: string): ReactElement => (
+    <>
+      {LOCALES.map((code) => {
+        const selected = code === locale;
+        return (
+          <button
+            key={code}
+            type="button"
+            role="option"
+            id={optionId(code)}
+            tabIndex={-1}
+            aria-selected={selected}
+            className={`${rowClass}${selected ? ' font-medium' : ''}`}
+            onMouseDown={(event) => {
+              event.preventDefault();
+            }}
+            onClick={() => {
+              selectLocale(code);
+            }}
+            onMouseEnter={() => {
+              setHighlight(code);
+            }}
+          >
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
+              {selected ? <Check className={check} aria-hidden="true" /> : null}
+            </span>
+            {nativeLabel(code)}
+          </button>
+        );
+      })}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div ref={rootRef} className="flex w-full flex-col">
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls="language-listbox"
+          aria-label={label}
+          {...(open
+            ? { role: 'combobox' as const, 'aria-activedescendant': optionId(highlight) }
+            : {})}
+          className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+          onClick={onTriggerClick}
+          onKeyDown={onTriggerKeyDown}
+        >
+          <Globe aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {label}
+          <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+        </button>
+        {open ? (
+          <div
+            role="listbox"
+            id="language-listbox"
+            aria-label={label}
+            aria-activedescendant={optionId(highlight)}
+            className="flex flex-col"
+          >
+            {listboxOptions(embeddedOptionRowClass, 'h-4 w-4 shrink-0 text-neutral-900')}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   const triggerClass =
     tone === 'dark'
       ? 'inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-white/10'
@@ -227,14 +282,6 @@ export function LanguageSwitcher(props: {
     tone === 'dark'
       ? 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-white/10 bg-[#0a090c] p-2 shadow-lg'
       : 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-neutral-200 bg-white p-2 shadow-lg';
-
-  const optionRowClass =
-    tone === 'dark'
-      ? 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10'
-      : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50';
-
-  const checkClass =
-    tone === 'dark' ? 'h-4 w-4 shrink-0 text-[#f7931a]' : 'h-4 w-4 shrink-0 text-neutral-900';
 
   return (
     <div ref={rootRef} className="relative inline-flex">
@@ -248,13 +295,7 @@ export function LanguageSwitcher(props: {
         aria-label={label}
         {...(open ? { 'aria-activedescendant': optionId(highlight) } : {})}
         className={triggerClass}
-        onClick={() => {
-          if (open) {
-            setOpen(false);
-          } else {
-            openListbox();
-          }
-        }}
+        onClick={onTriggerClick}
         onKeyDown={onTriggerKeyDown}
       >
         <Globe aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
@@ -269,41 +310,7 @@ export function LanguageSwitcher(props: {
           aria-activedescendant={optionId(highlight)}
           className={panelClass}
         >
-          {LOCALES.map((code) => {
-            const selected = code === locale;
-            return (
-              <button
-                key={code}
-                type="button"
-                role="option"
-                id={optionId(code)}
-                tabIndex={-1}
-                aria-selected={selected}
-                className={`${optionRowClass}${selected ? ' font-medium' : ''}`}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                }}
-                onClick={() => {
-                  setOpen(false);
-                  persistLocale(code, locale, () => {
-                    router.refresh();
-                  });
-                  triggerRef.current?.focus();
-                }}
-                onMouseEnter={() => {
-                  setHighlight(code);
-                }}
-              >
-                <span
-                  className="flex h-4 w-4 shrink-0 items-center justify-center"
-                  aria-hidden="true"
-                >
-                  {selected ? <Check className={checkClass} aria-hidden="true" /> : null}
-                </span>
-                {nativeLabel(code)}
-              </button>
-            );
-          })}
+          {listboxOptions(optionRowClass, checkClass)}
         </div>
       ) : null}
     </div>
