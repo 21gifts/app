@@ -11,10 +11,10 @@ import { fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** How many times to poll `GET /messages` after showing a pay invoice. */
+/** How many times to poll `GET /messages` for pay confirmation or payable status. */
 const PAY_POLL_ATTEMPTS = 8;
 
-/** Delay between pay-confirmation polls (ms). */
+/** Delay between `GET /messages` polls (ms). */
 const PAY_POLL_MS = 2000;
 
 /**
@@ -53,7 +53,8 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  *
  * Reads the session from the auth store, fetches messages with a cancelled-flag
  * pattern matching {@link StatsLoader}, owns composer draft/post state, and
- * owns pay-on-note invoice + sats-poll state.
+ * owns pay-on-note invoice + sats-poll state. Also polls until unsigned notes
+ * become payable.
  * Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
@@ -74,6 +75,38 @@ export function ForumLoader(): ReactElement | null {
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const payPollGeneration = useRef(0);
+  const payablePollGeneration = useRef(0);
+
+  /**
+   * Polls `GET /messages` until every listed row is payable or attempts run out.
+   *
+   * @param activeSession - Session token for the fetch.
+   */
+  const startPayablePoll = (activeSession: string): void => {
+    const generation = ++payablePollGeneration.current;
+    void (async () => {
+      for (let i = 0; i < PAY_POLL_ATTEMPTS; i += 1) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, PAY_POLL_MS);
+        });
+        if (generation !== payablePollGeneration.current) {
+          return;
+        }
+        try {
+          const next = await fetchMessages(activeSession);
+          if (generation !== payablePollGeneration.current) {
+            return;
+          }
+          setMessages((prev) => mergeMessages(prev, next));
+          if (next.every((message) => message.payable)) {
+            return;
+          }
+        } catch {
+          // Keep polling until attempts are exhausted; do not set board error.
+        }
+      }
+    })();
+  };
 
   useEffect(() => {
     if (session === null) {
@@ -87,6 +120,9 @@ export function ForumLoader(): ReactElement | null {
         const next = await fetchMessages(session);
         if (!cancelled) {
           setMessages((prev) => mergeMessages(prev, next));
+          if (next.some((message) => message.payable === false)) {
+            startPayablePoll(session);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -106,6 +142,7 @@ export function ForumLoader(): ReactElement | null {
   useEffect(() => {
     return () => {
       payPollGeneration.current += 1;
+      payablePollGeneration.current += 1;
     };
   }, []);
 
@@ -188,6 +225,7 @@ export function ForumLoader(): ReactElement | null {
           return [created, ...prev];
         });
         setDraft('');
+        startPayablePoll(session);
       } catch (err) {
         setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       } finally {

@@ -43,6 +43,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   fetchMock.mockReset();
   postMock.mockReset();
   invoiceMock.mockReset();
@@ -519,19 +520,168 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('ignores pay submit when the note is not payable', async () => {
+  it('omits Send Bitcoin while a loaded note is not payable', async () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false }]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    const amount = screen.queryByLabelText('Amount (sats)');
-    if (amount !== null) {
-      fireEvent.change(amount, { target: { value: '21' } });
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    }
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('enables Send Bitcoin after payable poll upgrades an unsigned post', async () => {
+    vi.useFakeTimers();
+    const unsigned: ForumMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+    };
+    const signed: ForumMessage = { ...unsigned, payable: true };
+    fetchMock.mockResolvedValueOnce([]);
+    postMock.mockResolvedValue(unsigned);
+    fetchMock.mockResolvedValueOnce([signed]);
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops the payable poll once every listed row is payable', async () => {
+    vi.useFakeTimers();
+    const unsigned: ForumMessage = { ...SAMPLE, payable: false };
+    const signed: ForumMessage = { ...SAMPLE, payable: true };
+    fetchMock.mockResolvedValueOnce([unsigned]);
+    fetchMock.mockResolvedValueOnce([signed]);
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    const callsAfterFirstPoll = fetchMock.mock.calls.length;
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000 * 8);
+    });
+    expect(fetchMock.mock.calls.length).toBe(callsAfterFirstPoll);
+  });
+
+  it('keeps the board when a payable poll fetch fails', async () => {
+    vi.useFakeTimers();
+    const unsigned: ForumMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+    };
+    const signed: ForumMessage = { ...unsigned, payable: true };
+    fetchMock.mockResolvedValueOnce([]);
+    postMock.mockResolvedValue(unsigned);
+    fetchMock.mockRejectedValueOnce(new Error('poll failed'));
+    fetchMock.mockResolvedValueOnce([signed]);
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
+  it('aborts the payable poll after unmount before the delayed fetch', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValueOnce([{ ...SAMPLE, payable: false }]);
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+
+    cleanup();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a payable poll fetch that resolves after unmount', async () => {
+    vi.useFakeTimers();
+    let resolvePoll: ((value: ForumMessage[]) => void) | undefined;
+    fetchMock.mockResolvedValueOnce([{ ...SAMPLE, payable: false }]);
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    cleanup();
+
+    await act(async () => {
+      resolvePoll?.([{ ...SAMPLE, payable: true }]);
+      await Promise.resolve();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('does not request a second invoice while one is in flight', async () => {

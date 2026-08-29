@@ -72,8 +72,8 @@ export interface ForumBoardProps {
 
 /**
  * Presentational public forum: heading, list or empty/loading/error, composer,
- * per-card sats total with a Bitcoin pay icon beside it, and pay-on-note sheet
- * (amount → QR / Wallet of Satoshi).
+ * per-card sats total with a Bitcoin pay icon when the note is payable, and
+ * pay-on-note sheet (amount → QR / Wallet of Satoshi).
  *
  * Always shows the heading and composer so validation errors can surface even
  * when the list is empty. Light neutral palette to match {@link WelcomeScreen}.
@@ -175,15 +175,17 @@ export function ForumBoard({
                 <p className="text-xs font-medium text-neutral-500">
                   {formatSatsLabel(message.sats)}
                 </p>
-                <button
-                  type="button"
-                  aria-label={t('forum.pay')}
-                  disabled={!message.payable || payBusy}
-                  onClick={() => onPayOpen(message.id)}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-500 transition hover:bg-white hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                </button>
+                {message.payable ? (
+                  <button
+                    type="button"
+                    aria-label={t('forum.pay')}
+                    disabled={payBusy}
+                    onClick={() => onPayOpen(message.id)}
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-500 transition hover:bg-white hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  </button>
+                ) : null}
               </div>
 
               {sheetOpen && invoiceForCard === null ? (

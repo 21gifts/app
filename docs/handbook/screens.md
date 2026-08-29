@@ -161,7 +161,7 @@ Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, sat total with a Bitcoin pay icon beside it, disabled when the note is not payable, composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, sat total with a Bitcoin pay icon beside it; Send Bitcoin when the note is payable; composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
 - **Actions:** Post a message, pay a payable note in-app, retry a failed load; open **Menu** for Profile, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
