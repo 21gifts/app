@@ -240,18 +240,22 @@ English).
 
 ### Icon controls (hard requirement)
 
-Action controls are **lucide icons** with a catalog `aria-label`. Do not ship a
-visible text label on chrome, composer, or list action buttons. That includes
-Menu, attach, send (**Post**), remove-photo, pay Bitcoin, Profile back, and
-given/received arrows. Tests locate them with `getByRole('button', { name })`
-against the aria-label; `queryByText` for the catalog string must be `null`.
+**New action buttons default to icon-only:** a lucide glyph plus a catalog
+`aria-label`, no visible text. Tests locate icon **buttons** with
+`getByRole('button', { name })` against that label and assert
+`queryByText` for the catalog string is `null`. Icon **links** use
+`getByRole('link', { name })`. Non-interactive indicators (given/received
+arrows) use `aria-label` on the glyph, not a button role.
 
-Visible text remains for headings, body copy, form field labels, alerts, and
-sentence-length links (for example **Open Wallet of Satoshi**). Multi-field
-form submits that already exist as text (**Link address**, **Continue**,
-**Try again**) stay until they are converted. **New action buttons default to
-icon-only.** A new text button for an action control is an undeclared
-deviation and is rejected.
+Already icon-only: composer attach, send (**Post**), remove-photo, and the
+Bitcoin pay control. Profile back is an icon **link**. Given/received totals
+are icon indicators.
+
+Existing hybrid or text controls stay until converted: the signed-in **Menu**
+disclosure (icon plus visible Menu word), **Log out**, **Link address**,
+**Continue**, **Try again**, **Cancel**, and sentence-length links such as
+**Open Wallet of Satoshi**. A **new** text button for an action control is an
+undeclared deviation and is rejected.
 
 Reviewers follow `Review.md`.
 

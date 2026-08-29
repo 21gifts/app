@@ -141,7 +141,8 @@ describe('ForumBoard', () => {
       '/rules',
     );
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
-    expect(screen.getByLabelText('Add a photo')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     const field = screen.getByLabelText('Your message');
