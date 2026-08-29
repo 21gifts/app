@@ -31,6 +31,12 @@ export default async function Home(): Promise<ReactElement> {
             >
               {t('home.ctaAsk')}
             </Link>
+            <Link
+              href="/donate"
+              className="rounded-full border border-white/20 px-6 py-3 font-medium text-white no-underline"
+            >
+              {t('home.ctaSend')}
+            </Link>
           </div>
         </div>
       </section>

@@ -547,6 +547,11 @@ test('Function: LoginPage — login heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Log in to 21.gifts' })).toBeVisible();
 });
 
+test('Function: DonatePage — send-help explainer renders', async ({ page }) => {
+  await page.goto('/donate');
+  await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+});
+
 test('Function: LoginCard — a single Log in button is visible', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();

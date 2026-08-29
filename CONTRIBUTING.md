@@ -59,6 +59,8 @@ app/
 │   │   │   └── [id]/invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
+│   │   ├── donate/
+│   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + address edit
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
@@ -106,6 +108,7 @@ app/
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
+│   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub

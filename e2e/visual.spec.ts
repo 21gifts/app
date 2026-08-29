@@ -167,6 +167,12 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-login');
   });
 
+  test('screen /donate', async ({ page }) => {
+    await page.goto('/donate');
+    await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+    await shotScreen(page, 'screen-donate');
+  });
+
   test('screen /stats', async ({ page }) => {
     await page.route('**/gifts/stats', async (route) => {
       await route.fulfill({

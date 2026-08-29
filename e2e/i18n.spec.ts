@@ -13,6 +13,11 @@ test.describe('Accept-Language de', () => {
     ).toBeVisible();
   });
 
+  test('home Send help is German', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Hilfe senden' })).toBeVisible();
+  });
+
   test('login button is German', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Anmelden' })).toBeVisible();

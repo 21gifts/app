@@ -101,7 +101,7 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTA to `/login`, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
@@ -109,9 +109,9 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login and donate) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, and the signed-in Menu in `SignedInChrome`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and the signed-in Menu in `SignedInChrome`.
 
 ## Function: NameForm
 
@@ -147,6 +147,16 @@
 - **Inputs:** None. Calls `getRequestLocale()` for the page title.
 - **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, or `/welcome`.
 - **Used by:** Route `/login`.
+
+## Function: DonatePage
+
+- **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
+- **Inputs:** None. Calls `getRequestLocale()` for localized copy.
+- **Returns / side effects:** Renders heading, lead, **Open the forum** link, and `LanguageSwitcher` (light, top-right). No OnboardingGate.
+- **Used by:**
+  - **Route `/donate`**
+  - **Home CTA `home.ctaSend`**
+  - **LanguageSwitcher on `/donate`**
 
 ## Function: AddressSetup
 
