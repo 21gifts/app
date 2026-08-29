@@ -208,6 +208,12 @@ Click **Most popular** — paid notes ordered by sats (Carol 21, then Ada 5). Un
 
 ![21.gifts welcome popular](images/welcome-popular.png)
 
+### Variant: empty-paid
+
+Copy **No messages with sats yet.** Active selected, unpaid notes hidden, composer visible.
+
+![21.gifts welcome empty paid](images/welcome-empty-paid.png)
+
 ### Variant: empty
 
 Empty copy **No messages yet. Be the first to write.** plus composer.

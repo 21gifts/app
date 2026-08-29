@@ -116,6 +116,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'empty-paid',
+    image: 'welcome-empty-paid.png',
+    visual: 'state-welcome-empty-paid',
+    needle: 'No messages with sats yet.',
+  },
+  {
+    route: '/welcome',
     id: 'empty',
     image: 'welcome-empty.png',
     visual: 'state-welcome-empty',
