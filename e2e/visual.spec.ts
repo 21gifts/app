@@ -140,28 +140,6 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
-async function fulfillLnurlPay(page: Page): Promise<void> {
-  await page.route(/\/lightning-address\?/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        address: 'alice@example.com',
-        callback: 'https://ln.example.com/pay',
-        minSendable: 1000,
-        maxSendable: 1_000_000_000,
-      }),
-    });
-  });
-  await page.route('https://ln.example.com/pay**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ pr: 'lnbc21n1exampleinvoice' }),
-    });
-  });
-}
-
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
     await page.goto('/');
