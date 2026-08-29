@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
@@ -33,14 +34,37 @@ export function ProfileScreen(): ReactElement {
   const { t } = useTranslations();
   const { donatedSats, receivedSats, loading } = useAccountTotals();
 
-  const totalsLine = loading
-    ? t('forum.loading')
-    : `${t('profile.given', { amount: formatSatsAmount(t, donatedSats) })} · ${t('profile.received', { amount: formatSatsAmount(t, receivedSats) })}`;
+  const givenAmount = formatSatsAmount(t, donatedSats);
+  const receivedAmount = formatSatsAmount(t, receivedSats);
 
   return (
     <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
       <h1 className="text-center text-2xl font-semibold tracking-tight">{t('profile.title')}</h1>
-      <p className="text-center text-sm text-neutral-500">{totalsLine}</p>
+      <p className="flex items-center justify-center gap-2 text-sm text-neutral-500">
+        {loading ? (
+          t('forum.loading')
+        ) : (
+          <>
+            <span
+              className="inline-flex items-center gap-1"
+              aria-label={t('profile.given', { amount: givenAmount })}
+              title={t('profile.given', { amount: givenAmount })}
+            >
+              <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+              {givenAmount}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span
+              className="inline-flex items-center gap-1"
+              aria-label={t('profile.received', { amount: receivedAmount })}
+              title={t('profile.received', { amount: receivedAmount })}
+            >
+              <ArrowDownLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+              {receivedAmount}
+            </span>
+          </>
+        )}
+      </p>
       <Link href="/welcome" className="text-sm text-neutral-500 transition hover:text-neutral-900">
         {t('profile.back')}
       </Link>
