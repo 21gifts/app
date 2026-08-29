@@ -121,7 +121,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
 }
 
 async function stubGiftStats(page: Page, body: unknown): Promise<void> {
-  await page.route('**/gifts/stats', async (route) => {
+  await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1850,5 +1850,83 @@ test('Function: useAccountTotals — profile totals load from gift stats', async
     byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
   });
   await page.goto('/profile');
-  await expect(page.getByLabel('Received 1000 sats')).toBeVisible();
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: /Received 1000 sats/ })).toBeVisible();
+});
+
+test('Function: AccountActivityChart — profile shows Given legend and sat chart', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByText('Given', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Given and received in sats')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Given and received' })).toHaveCount(0);
+});
+
+test('Function: alignActivitySeries — receive series days appear on the profile chart', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 1500,
+    giftCount: 2,
+    recipientCount: 1,
+    spendOverTime: POPULATED_STATS.spendOverTime,
+    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+  });
+  await page.goto('/profile');
+  await expect(page.getByText('2026-06-01')).toBeVisible();
+  await expect(page.getByText('2026-07-01')).toBeVisible();
+});
+
+test('Function: activityValue — USD toggle shows received USD on the profile chart', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 1500,
+    totalUsd: '1.43',
+    giftCount: 2,
+    recipientCount: 1,
+    spendOverTime: POPULATED_STATS.spendOverTime,
+    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+  });
+  await page.goto('/profile');
+  await page
+    .getByRole('group', { name: 'Chart scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+  await expect(page.getByLabel('Given and received in USD').getByText('$1.43')).toBeVisible();
+});
+
+test('Function: activityMaxY — empty profile chart still reserves the SVG box', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const chart = page.getByLabel('Given and received in sats');
+  await expect(chart).toBeVisible();
+  await expect(chart).toHaveAttribute('viewBox', '0 0 400 110');
+});
+
+test('Function: formatSatTick — populated profile chart shows grouped sat ticks', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 1500,
+    giftCount: 2,
+    recipientCount: 1,
+    spendOverTime: POPULATED_STATS.spendOverTime,
+    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+  });
+  await page.goto('/profile');
+  await expect(page.getByLabel('Given and received in sats').getByText('1,500')).toBeVisible();
 });

@@ -402,6 +402,189 @@ test.describe('onboarding screens', () => {
   });
 });
 
+const PROFILE_RECEIVE_STATS = {
+  totalSats: 1500,
+  totalBtc: '0.00001500',
+  totalUsd: '1.43',
+  giftCount: 2,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-03T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 500,
+      cumulativeSats: 500,
+      btc: '0.00000500',
+      cumulativeBtc: '0.00000500',
+      usd: '0.48',
+      cumulativeUsd: '0.48',
+    },
+    {
+      day: '2026-06-02',
+      sats: 0,
+      cumulativeSats: 500,
+      btc: '0.00000000',
+      cumulativeBtc: '0.00000500',
+      usd: '0.00',
+      cumulativeUsd: '0.48',
+    },
+    {
+      day: '2026-06-03',
+      sats: 1000,
+      cumulativeSats: 1500,
+      btc: '0.00001000',
+      cumulativeBtc: '0.00001500',
+      usd: '0.95',
+      cumulativeUsd: '1.43',
+    },
+  ],
+  byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+const PROFILE_SINGLE_DAY_STATS = {
+  totalSats: 21,
+  totalBtc: '0.00000021',
+  totalUsd: '0.02',
+  giftCount: 1,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-01T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 21,
+      cumulativeSats: 21,
+      btc: '0.00000021',
+      cumulativeBtc: '0.00000021',
+      usd: '0.02',
+      cumulativeUsd: '0.02',
+    },
+  ],
+  byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 21, btc: '0.00000021', usd: '0.02' }],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+const PROFILE_LARGE_USD_STATS = {
+  totalSats: 1_500_000,
+  totalBtc: '0.01500000',
+  totalUsd: '1425.00',
+  giftCount: 2,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-02T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 500_000,
+      cumulativeSats: 500_000,
+      btc: '0.00500000',
+      cumulativeBtc: '0.00500000',
+      usd: '475.00',
+      cumulativeUsd: '475.00',
+    },
+    {
+      day: '2026-06-02',
+      sats: 1_000_000,
+      cumulativeSats: 1_500_000,
+      btc: '0.01000000',
+      cumulativeBtc: '0.01500000',
+      usd: '950.00',
+      cumulativeUsd: '1425.00',
+    },
+  ],
+  byRecipient: [
+    { recipient: 'alice', giftCount: 2, sats: 1_500_000, btc: '0.01500000', usd: '1425.00' },
+  ],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+test.describe('profile activity chart variants', () => {
+  async function seedAdaProfile(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
+      });
+    });
+  }
+
+  async function stubProfileStats(page: Page, body: unknown): Promise<void> {
+    await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+  }
+
+  test('profile receive', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_RECEIVE_STATS);
+    await page.goto('/profile');
+    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await shotScreen(page, 'state-profile-receive');
+  });
+
+  test('profile usd-scale', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_RECEIVE_STATS);
+    await page.goto('/profile');
+    await page
+      .getByRole('group', { name: 'Chart scale' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+    await shotScreen(page, 'state-profile-usd-scale');
+  });
+
+  test('profile single-day', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_SINGLE_DAY_STATS);
+    await page.goto('/profile');
+    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await shotScreen(page, 'state-profile-single-day');
+  });
+
+  test('profile large-usd', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_LARGE_USD_STATS);
+    await page.goto('/profile');
+    await page
+      .getByRole('group', { name: 'Chart scale' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+    await expect(page.getByText('$1,425')).toBeVisible();
+    await shotScreen(page, 'state-profile-large-usd');
+  });
+});
+
 test.describe('welcome forum variants', () => {
   async function seedAda(page: Page): Promise<void> {
     await page.addInitScript(() => {

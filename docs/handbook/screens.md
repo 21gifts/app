@@ -394,16 +394,40 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: sat totals shown as icons plus amounts, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control.
-- **Inputs:** Session account (name + Lightning Address) via `OnboardingGate` / `useAuthStore`; public gift stats via `useAccountTotals`.
-- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card in place of icon+amount totals, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
+- **Inputs:** Session account (name + Lightning Address) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, outbound/inbound sat totals as `ArrowUpRight` / `ArrowDownLeft` icons with visible amounts (accessible names from `profile.given` / `profile.received`), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). Icon-only back top-left (returns to the forum); one **Menu** top-right.
+Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, Sat|USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
+
+### Variant: receive
+
+Filtered receive series with three UTC days (including a zero-gap day) and received total 1500 sats. Chart shows day ticks such as **2026-06-01**; Given stays flat at zero with a visible legend.
+
+![21.gifts profile receive](images/profile-receive.png)
+
+### Variant: usd-scale
+
+Same receive stub as **receive**, with the chart scale switched to **USD** (`Given and received in USD`).
+
+![21.gifts profile USD scale](images/profile-usd-scale.png)
+
+### Variant: single-day
+
+One receive day (21 sats on **2026-06-01**). Chart draws a horizontal single-point line.
+
+![21.gifts profile single day](images/profile-single-day.png)
+
+### Variant: large-usd
+
+Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
+
+![21.gifts profile large USD](images/profile-large-usd.png)
 
 ## Screen: /handbook
 

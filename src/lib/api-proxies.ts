@@ -101,7 +101,7 @@ export async function proxyLightningAddressGet(request: Request): Promise<Respon
 }
 
 /**
- * Proxies GET /gifts/stats to the 21.gifts api.
+ * Proxies GET /gifts/stats to the 21.gifts api (forwards `recipient` query).
  *
  * @param request - Incoming App Router request.
  * @returns The upstream response.

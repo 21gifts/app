@@ -35,7 +35,7 @@ export function accountTotals(stats: GiftStats, lightningAddress: string | null)
   if (lightningAddress === null || lightningAddress.trim() === '') {
     return { donatedSats: 0, receivedSats: 0 };
   }
-  const handle = recipientHandleFromAddress(lightningAddress).toLowerCase();
+  const handle = recipientHandleFromAddress(lightningAddress.trim()).toLowerCase();
   const row = stats.byRecipient.find((entry) => entry.recipient.toLowerCase() === handle);
   return {
     donatedSats: 0,
