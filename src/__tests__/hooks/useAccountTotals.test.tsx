@@ -95,6 +95,7 @@ describe('useAccountTotals', () => {
         name: 'Ada',
         lightningAddress: '   ',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       },
     });
@@ -125,6 +126,7 @@ describe('useAccountTotals', () => {
         name: 'Ada',
         lightningAddress: ' Alice@walletofsatoshi.com ',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
       },
     });
@@ -193,6 +195,7 @@ describe('useAccountTotals', () => {
           name: 'Ada',
           lightningAddress: 'bob@walletofsatoshi.com',
           lightningAddressVerified: false,
+          forumLawsDismissed: false,
           createdAt: 1,
         },
       });
