@@ -16,6 +16,7 @@ import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
+import type { MessageKey } from '@/lib/messages';
 import {
   isAndroidUserAgent,
   isSmartphoneUserAgent,
@@ -29,6 +30,16 @@ export type ForumFormError =
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError = 'amount' | 'request' | 'rateLimit' | null;
+
+/** Roles that show a clickable tag beside the author name. */
+type ForumTaggedRole = 'founder' | 'moderator' | 'verified';
+
+/** Catalog keys for a tagged role's label and explanation. */
+const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> = {
+  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
+  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
+};
 
 /** Active pay invoice shown under a forum card. */
 export interface ForumPayInvoice {
@@ -112,6 +123,7 @@ const MODE_LABEL_KEY: Record<
  * hint box with links to `/rules` and `/contact`, Active/All/Most popular
  * selector, list or empty/loading/error, composer (attach + textarea + Send
  * icon), per-card sats total with a Bitcoin pay icon when the note is payable,
+ * optional Founder / Moderator / Verified role pills with click-to-explain,
  * pay-on-note sheet (amount → desktop QR + Wallet of Satoshi, smartphone Wallet
  * of Satoshi deep link only), and optional inline photos (caption below the
  * photo).
@@ -162,6 +174,7 @@ export function ForumBoard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newestId = messages?.[0]?.id ?? null;
   const [showPaymentQr, setShowPaymentQr] = useState(false);
+  const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (newestId === null) {
@@ -243,6 +256,15 @@ export function ForumBoard({
                 : walletOfSatoshiHref(invoiceForCard.pr);
           /* v8 ignore stop */
 
+          const taggedRole =
+            message.role === 'founder' ||
+            message.role === 'moderator' ||
+            message.role === 'verified'
+              ? message.role
+              : null;
+          const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
+          const roleHintOpen = openRoleMessageId === message.id;
+
           return (
             <li
               key={message.id}
@@ -250,11 +272,28 @@ export function ForumBoard({
               className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="text-sm font-medium text-neutral-900">{message.name}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-neutral-900">{message.name}</span>
+                  {roleKeys !== null ? (
+                    <button
+                      type="button"
+                      aria-expanded={roleHintOpen}
+                      onClick={() => setOpenRoleMessageId(roleHintOpen ? null : message.id)}
+                      className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs font-medium text-neutral-600"
+                    >
+                      {t(roleKeys.label)}
+                    </button>
+                  ) : null}
+                </div>
                 <time dateTime={message.createdAt} className="text-xs text-neutral-400">
                   {formatForumTime(message.createdAt, locale)}
                 </time>
               </div>
+              {roleHintOpen && roleKeys !== null ? (
+                <p role="status" className="mt-1 text-xs text-neutral-500">
+                  {t(roleKeys.hint)}
+                </p>
+              ) : null}
               {photoUrl !== undefined ? (
                 /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
                 <img

@@ -16,7 +16,7 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean }>} */
+/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string }>} */
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
@@ -151,6 +151,7 @@ const server = http.createServer(async (req, res) => {
       sats: 0,
       payable: false,
       hasPhoto,
+      role: account.role,
     };
     if (hasPhoto) {
       forumPhotos.set(created.id, Buffer.from(parsed.photo.data, 'base64'));

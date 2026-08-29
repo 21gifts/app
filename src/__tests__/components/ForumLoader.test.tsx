@@ -59,6 +59,7 @@ const SAMPLE: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
@@ -249,6 +250,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     const view = renderWithLocale(<ForumLoader />);
@@ -272,6 +274,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -291,6 +294,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -315,6 +319,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient'));
@@ -335,6 +340,7 @@ describe('ForumLoader', () => {
       sats: 5,
       payable: false,
       hasPhoto: true,
+      role: 'basis',
     };
     let resolvePhoto: ((blob: Blob) => void) | undefined;
     photoMock.mockImplementationOnce(
@@ -716,6 +722,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockRejectedValue(new Error('gone'));
@@ -742,6 +749,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -770,6 +778,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
@@ -798,6 +807,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
       {
         id: 'm2',
@@ -807,6 +817,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -836,6 +847,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        role: 'basis',
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -876,6 +888,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: true,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -912,6 +925,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -947,6 +961,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: true,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -984,6 +999,7 @@ describe('ForumLoader', () => {
       sats: 5,
       payable: false,
       hasPhoto: true,
+      role: 'basis',
     };
     fetchMock.mockResolvedValue([created]);
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:existing');
@@ -1024,6 +1040,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1053,6 +1070,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     const fromServer: ForumMessage = {
       id: 'm1',
@@ -1062,6 +1080,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: true,
       hasPhoto: false,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1098,6 +1117,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1128,6 +1148,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: true,
       hasPhoto: false,
+      role: 'basis',
     };
     fetchMock.mockResolvedValue([created]);
     postMock.mockResolvedValue(created);
@@ -1159,6 +1180,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1189,6 +1211,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1272,6 +1295,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: false,
+        role: 'basis',
       });
     });
 
@@ -1479,6 +1503,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);
@@ -1516,6 +1541,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);
@@ -1587,6 +1613,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      role: 'basis',
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);

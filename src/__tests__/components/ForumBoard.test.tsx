@@ -38,6 +38,7 @@ const SAMPLE: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const MULTILINE: ForumMessage = {
@@ -48,6 +49,7 @@ const MULTILINE: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const FIVE_SATS: ForumMessage = {
@@ -58,6 +60,7 @@ const FIVE_SATS: ForumMessage = {
   sats: 5,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const PHOTO: ForumPhotoPayload = {
@@ -570,6 +573,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            role: 'basis',
           },
         ]}
         error={false}
@@ -602,6 +606,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            role: 'basis',
           },
         ]}
         error={false}
@@ -634,6 +639,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            role: 'basis',
           },
         ]}
         error={false}
@@ -1102,5 +1108,137 @@ describe('ForumBoard', () => {
     expect(onDraftChange).toHaveBeenCalledWith('Hi');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(onPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show a role tag for basis', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Founder' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows Founder, Moderator, and Verified tags for those roles', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, id: 'm-founder', role: 'founder' },
+          { ...SAMPLE, id: 'm-mod', name: 'Bob', role: 'moderator' },
+          { ...SAMPLE, id: 'm-ver', name: 'Carol', role: 'verified' },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Founder' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+  });
+
+  it('opens a role hint on click and closes it when the same tag is clicked again', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, role: 'verified' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const tag = screen.getByRole('button', { name: 'Verified' });
+    expect(tag.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(tag);
+    expect(tag.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('status').textContent).toBe(
+      'A moderator met this person in real life and confirmed they are a real human.',
+    );
+    fireEvent.click(tag);
+    expect(tag.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('switches the open role hint when another tag is clicked', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, id: 'm-ver', role: 'verified' },
+          { ...SAMPLE, id: 'm-mod', name: 'Bob', role: 'moderator' },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
+    expect(screen.getByRole('status').textContent).toBe(
+      'A moderator met this person in real life and confirmed they are a real human.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Moderator' }));
+    expect(screen.getByRole('status').textContent).toBe(
+      'This person helps keep the living room in order.',
+    );
+    expect(screen.getByRole('button', { name: 'Verified' }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Moderator' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+  });
+
+  it('localizes the Founder tag label', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, role: 'founder' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByRole('button', { name: 'Gründer' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Gründer' }));
+    expect(screen.getByRole('status').textContent).toBe('Diese Person hat 21.gifts gegründet.');
   });
 });

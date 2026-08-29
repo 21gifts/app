@@ -191,6 +191,13 @@ const en = {
   'forum.rulesLink': 'Living room rules',
   'forum.contactLink': 'Contact',
   'forum.lawsDismiss': 'Dismiss',
+  'forum.role.founder': 'Founder',
+  'forum.role.moderator': 'Moderator',
+  'forum.role.verified': 'Verified',
+  'forum.role.founderHint': 'This person founded 21.gifts.',
+  'forum.role.moderatorHint': 'This person helps keep the living room in order.',
+  'forum.role.verifiedHint':
+    'A moderator met this person in real life and confirmed they are a real human.',
 
   'rules.pageTitle': 'Living room rules',
   'rules.heading': 'Living room rules',
@@ -469,6 +476,13 @@ const de = {
   'forum.rulesLink': 'Wohnzimmerregeln',
   'forum.contactLink': 'Kontakt',
   'forum.lawsDismiss': 'Schließen',
+  'forum.role.founder': 'Gründer',
+  'forum.role.moderator': 'Moderator',
+  'forum.role.verified': 'Verifiziert',
+  'forum.role.founderHint': 'Diese Person hat 21.gifts gegründet.',
+  'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
+  'forum.role.verifiedHint':
+    'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie ein echter Mensch ist.',
 
   'rules.pageTitle': 'Wohnzimmerregeln',
   'rules.heading': 'Wohnzimmerregeln',
@@ -743,6 +757,13 @@ const es = {
   'forum.rulesLink': 'Reglas del salón',
   'forum.contactLink': 'Contacto',
   'forum.lawsDismiss': 'Cerrar',
+  'forum.role.founder': 'Fundador',
+  'forum.role.moderator': 'Moderador',
+  'forum.role.verified': 'Verificado',
+  'forum.role.founderHint': 'Esta persona fundó 21.gifts.',
+  'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
+  'forum.role.verifiedHint':
+    'Un moderador conoció a esta persona en persona y confirmó que es un ser humano real.',
 
   'rules.pageTitle': 'Reglas del salón',
   'rules.heading': 'Reglas del salón',
@@ -1015,6 +1036,13 @@ const fil = {
   'forum.rulesLink': 'Mga patakaran sa living room',
   'forum.contactLink': 'Contact',
   'forum.lawsDismiss': 'Isara',
+  'forum.role.founder': 'Tagapagtatag',
+  'forum.role.moderator': 'Moderator',
+  'forum.role.verified': 'Verified',
+  'forum.role.founderHint': 'Itong tao ang nagtatag ng 21.gifts.',
+  'forum.role.moderatorHint': 'Itong tao ay tumutulong na panatilihing maayos ang living room.',
+  'forum.role.verifiedHint':
+    'Isang moderator ang personal na nakilala ang taong ito at kinumpirma na siya ay totoong tao.',
 
   'rules.pageTitle': 'Mga patakaran sa living room',
   'rules.heading': 'Mga patakaran sa living room',

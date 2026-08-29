@@ -9,7 +9,7 @@ import { z } from 'zod';
 export const accountSchema = z.object({
   id: z.string(),
   linkingKey: z.string().nullable(),
-  role: z.enum(['basis', 'moderator']),
+  role: z.enum(['basis', 'verified', 'moderator', 'founder']),
   name: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
@@ -20,16 +20,16 @@ export const accountSchema = z.object({
 /**
  * An authenticated 21.gifts account.
  *
- * `role` gates capabilities (`basis` for ordinary givers, `moderator` for
- * elevated review actions); `linkingKey` is a leftover wallet public key from
- * the retired LNURL-auth login, or `null` for passkey-created accounts.
+ * `role` is the live membership tier (`basis`, `verified`, `moderator`, or
+ * `founder`); `linkingKey` is a leftover wallet public key from the retired
+ * LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
  * control flag) but unused in the UI — live verification payments are not
  * configured on the api. `forumLawsDismissed` is true after the user dismissed
  * the welcome-forum living-room laws hint; false for new accounts and until
- * they click the X.
+ * they click the X. Forum role tags use `role`, not this flag.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -198,6 +198,8 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  *
  * `sats` is the validated payment total for the note (always present, including 0).
  * `payable` is true when a signed-in member can request an invoice for that note.
+ * `role` is optional with default `basis` so a rolling api deploy without the
+ * field still parses and the board stays lit.
  */
 export const forumMessageSchema = z
   .object({
@@ -208,6 +210,7 @@ export const forumMessageSchema = z
     sats: z.number().int().nonnegative(),
     payable: z.boolean(),
     hasPhoto: z.boolean(),
+    role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
   })
   .refine((message) => message.text !== '' || message.hasPhoto);
 

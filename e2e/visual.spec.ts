@@ -157,6 +157,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
             sats: 5,
             payable: true,
             hasPhoto: false,
+            role: 'moderator',
           },
           {
             id: 'm2',
@@ -166,6 +167,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
             sats: 21,
             payable: true,
             hasPhoto: false,
+            role: 'verified',
           },
           {
             id: 'm1',
@@ -175,6 +177,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
             sats: 0,
             payable: true,
             hasPhoto: false,
+            role: 'basis',
           },
         ],
       }),
@@ -622,6 +625,7 @@ test.describe('welcome forum variants', () => {
               sats: 0,
               payable: true,
               hasPhoto: false,
+              role: 'basis',
             },
           ],
         }),
@@ -685,6 +689,7 @@ test.describe('welcome forum variants', () => {
               sats: 0,
               payable: true,
               hasPhoto: false,
+              role: 'basis',
             },
           ],
         }),
@@ -772,6 +777,7 @@ test.describe('welcome forum variants', () => {
               sats: 0,
               payable: false,
               hasPhoto: true,
+              role: 'basis',
             },
           ],
         }),
@@ -814,6 +820,7 @@ test.describe('welcome forum variants', () => {
             sats: 0,
             payable: false,
             hasPhoto: Boolean(parsed.photo?.data),
+            role: 'basis',
           }),
         });
         return;
@@ -988,6 +995,7 @@ test.describe('welcome forum variants', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            role: 'basis',
           }),
         });
         return;
@@ -1032,6 +1040,7 @@ test.describe('welcome forum variants', () => {
               sats: 0,
               payable: false,
               hasPhoto: true,
+              role: 'basis',
             },
           ],
         }),
@@ -1176,6 +1185,60 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-smartphone');
+  });
+
+  test('welcome role-hint', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+            {
+              id: 'm2',
+              name: 'Carol',
+              text: 'I can send a small gift tomorrow.',
+              createdAt: '2026-08-28T11:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+            },
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'All' }).click();
+    await page.getByRole('button', { name: 'Verified' }).click();
+    await expect(
+      page.getByText(
+        'A moderator met this person in real life and confirmed they are a real human.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-role-hint');
   });
 });
 
