@@ -158,6 +158,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'photo-and-text',
+    image: 'welcome-photo-and-text.png',
+    visual: 'state-welcome-photo-and-text',
+    needle: 'Hello with this photo.',
+  },
+  {
+    route: '/welcome',
     id: 'menu-open',
     image: 'welcome-menu.png',
     visual: 'state-welcome-menu',

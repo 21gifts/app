@@ -244,6 +244,12 @@ On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row 
 
 ![21.gifts welcome photo](images/welcome-photo.png)
 
+### Variant: photo-and-text
+
+After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + textarea + Post).
+
+![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
+
 ### Variant: menu-open
 
 Open **Menu** top-right only (do not click Language) → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), a collapsed **Language** row (Globe + label + chevron, same row chrome as Profile / Log out), and **Log out**. No English / Deutsch / Español / Filipino option rows. No native language select.

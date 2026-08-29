@@ -612,6 +612,51 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-photo');
   });
 
+  test('welcome photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        const parsed = route.request().postDataJSON() as {
+          text?: string;
+          photo?: { data?: string };
+        };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'm-both',
+            name: 'Ada',
+            text: typeof parsed.text === 'string' ? parsed.text.trim() : '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: Boolean(parsed.photo?.data),
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello with this photo.');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Post' }).click();
+    const row = page.locator('li[data-message-id="m-both"]');
+    await expect(row).toContainText('Hello with this photo.');
+    await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByLabel('Your message')).toHaveValue('');
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-photo-and-text');
+  });
+
   test('welcome menu-open', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {
