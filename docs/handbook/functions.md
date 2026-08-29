@@ -323,13 +323,6 @@
 - **Returns / side effects:** Display string. Always uses `timeZone: 'UTC'` so screenshots are host-independent.
 - **Used by:** `ForumBoard`.
 
-## Function: formatMsatAsSats
-
-- **Purpose:** Formats millisatoshis as an English sat string (`1 sat` / `{n} sats`).
-- **Inputs:** `msat` number.
-- **Returns / side effects:** Decimal string in sats.
-- **Used by:** Unit tests. Forum pay copy uses catalog keys `forum.satsReceived`.
-
 ## Function: formatUsdDisplay
 
 - **Purpose:** Formats an API USD amount string (`"1425.00"`) as en-US currency for the stats hero.
