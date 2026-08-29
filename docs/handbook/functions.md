@@ -307,7 +307,7 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes).
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes).
 - **Inputs:** Session token.
 - **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`. Mode is not persisted.
 - **Used by:** `WelcomeScreen`.
@@ -415,7 +415,7 @@
 - **Purpose:** Client-side filter and sort of the already-loaded forum thread for the Active / All / Most popular selector. Does not call the api; ranking is among the messages the loader already holds.
 - **Inputs:** `messages` (newest-first list from the api / loader merge) and `mode` (`active` | `all` | `popular`).
 - **Returns / side effects:** A new array. `all` keeps input order including unpaid (`sats === 0`) notes. `active` keeps only paid notes (`sats > 0`) in newest-first order. `popular` keeps only paid notes, ordered by sats descending, then `createdAt` descending, then `id` descending. Never mutates the input array.
-- **Used by:** `ForumBoard`.
+- **Used by:** `ForumBoard`, `ForumLoader`.
 
 ## Function: formatUsdDisplay
 
