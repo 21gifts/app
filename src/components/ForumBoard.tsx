@@ -149,9 +149,7 @@ export function ForumBoard({
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
           /* v8 ignore start -- Android vs iOS wallet href */
           const android =
-            typeof navigator !== 'undefined'
-              ? isAndroidUserAgent(navigator.userAgent)
-              : false;
+            typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
           const wosHref =
             invoiceForCard === null
               ? null
@@ -249,7 +247,7 @@ export function ForumBoard({
                     {t('forum.payConfirm', { amount: formatSatsLabel(invoiceForCard.amountSats) })}
                   </p>
                   <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
-                  {/* v8 ignore next -- wosHref is set whenever an invoice is shown */}
+                  {/* v8 ignore start -- wosHref is set whenever an invoice is shown */}
                   {wosHref !== null ? (
                     <a
                       href={wosHref}
@@ -257,8 +255,8 @@ export function ForumBoard({
                     >
                       {t('forum.payOpenWallet')}
                     </a>
-                    /* v8 ignore next */
                   ) : null}
+                  {/* v8 ignore stop */}
                   {/* v8 ignore start */}
                   {payWaiting ? (
                     <p className="text-center text-xs text-neutral-500">{t('forum.payWaiting')}</p>

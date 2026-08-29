@@ -3,8 +3,8 @@
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
-- **Actions:** Read the pitch, change language, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTA **Ask for help** (`/login`).
+- **Actions:** Read the pitch, change language, open login, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -161,8 +161,8 @@ Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, composer textarea with **Post** to the right). No name or address form. No donate CTA.
-- **Actions:** Post a message, retry a failed load, log out, change language.
+- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, sat total, **Send Bitcoin** when the note is payable, composer textarea with **Post** to the right). No name or address form. No guest donate CTA.
+- **Actions:** Post a message, pay a payable note in-app, retry a failed load, log out, change language.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default

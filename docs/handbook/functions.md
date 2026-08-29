@@ -115,7 +115,7 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTA to `/login`, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
@@ -234,16 +234,16 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, list of every post (name, text, timestamp) or empty/loading/error, and a messenger-style composer (textarea with **Post** to the right, `maxLength` 500).
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request`).
-- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network.
+- **Purpose:** Presentational forum list, composer, sat totals, and pay-on-note sheet (QR / Wallet of Satoshi).
+- **Inputs:** Messages, loading/error/composer/pay callbacks.
+- **Returns / side effects:** React tree. No fetch.
 - **Used by:** `ForumLoader`.
 
 ## Function: ForumLoader
 
-- **Purpose:** Client loader for the public forum on `/welcome`. Session from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, posts via `postMessage`, cancelled-flag fetch like `StatsLoader`.
-- **Inputs:** None (reads session from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage`. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Does not pass `Error.message` to the board.
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay.
+- **Inputs:** Session token.
+- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -728,20 +728,6 @@
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }` with `status` in `idle | starting | error | unsupported`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
 - **Used by:** `OnboardingGate`, `LoginCard`, and `LogoutButton`.
-
-## Function: ForumBoard
-
-- **Purpose:** Presentational forum list, composer, sat totals, and pay-on-note sheet (QR / Wallet of Satoshi).
-- **Inputs:** Messages, loading/error/composer/pay callbacks.
-- **Returns / side effects:** React tree. No fetch.
-- **Used by:** `ForumLoader`.
-
-## Function: ForumLoader
-
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay.
-- **Inputs:** Session token.
-- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`.
-- **Used by:** `WelcomeScreen`.
 
 ## Function: postMessageInvoice
 

@@ -215,9 +215,10 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const messageId = payMessageId;
-    /* v8 ignore next */
+    /* v8 ignore start -- sheet is open on a listed row */
     const baseline =
       messages?.find((message) => message.id === messageId)?.sats ?? Number.NEGATIVE_INFINITY;
+    /* v8 ignore stop */
     setPayBusy(true);
     setPayError(null);
     void (async () => {

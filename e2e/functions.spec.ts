@@ -1164,6 +1164,8 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
             name: 'Ada',
             text: 'Hello from Ada',
             createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: true,
           },
         ],
       }),

@@ -17,7 +17,7 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
+/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean }>} */
 const forumMessages = [];
 
 function hex(bytes) {
@@ -136,6 +136,8 @@ const server = http.createServer(async (req, res) => {
       name,
       text,
       createdAt: new Date().toISOString(),
+      sats: 0,
+      payable: false,
     };
     forumMessages.unshift(created);
     json(res, 200, created);
