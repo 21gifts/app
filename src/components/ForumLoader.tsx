@@ -100,6 +100,14 @@ export function ForumLoader(): ReactElement | null {
   const payablePollGeneration = useRef(0);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
+  const photoIdsKey =
+    messages === null
+      ? ''
+      : messages
+          .filter((message) => message.hasPhoto)
+          .map((message) => message.id)
+          .sort()
+          .join('\0');
 
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
@@ -176,13 +184,15 @@ export function ForumLoader(): ReactElement | null {
           .join('\0');
 
   useEffect(() => {
-    if (session === null) {
+    if (session === null || photoIdsKey === '') {
       return;
     }
     const listed = messagesRef.current;
+    /* v8 ignore start -- photoIdsKey is empty when messages is null */
     if (listed === null) {
       return;
     }
+    /* v8 ignore stop */
     let cancelled = false;
     const missing = listed.filter(
       (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,

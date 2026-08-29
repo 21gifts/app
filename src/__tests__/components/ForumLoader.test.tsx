@@ -263,6 +263,41 @@ describe('ForumLoader', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
   });
 
+  it('does not cancel an in-flight photo fetch when payable poll refreshes the list', async () => {
+    vi.useFakeTimers();
+    const unsigned: ForumMessage = {
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+    };
+    let resolvePhoto: ((blob: Blob) => void) | undefined;
+    photoMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    fetchMock.mockResolvedValueOnce([unsigned]);
+    fetchMock.mockResolvedValueOnce([{ ...unsigned, payable: true }]);
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    await act(async () => {
+      resolvePhoto?.(new Blob(['x'], { type: 'image/jpeg' }));
+      await Promise.resolve();
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+  });
+
   it('shows a fetch error and retries', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
     fetchMock.mockResolvedValueOnce([]);
