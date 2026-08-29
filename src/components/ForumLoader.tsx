@@ -9,7 +9,11 @@ import {
 } from '@/components/ForumBoard';
 import { fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
-import { DEFAULT_FORUM_FEED_MODE, type ForumFeedMode } from '@/lib/forum-feed';
+import {
+  DEFAULT_FORUM_FEED_MODE,
+  type ForumFeedMode,
+  visibleForumMessages,
+} from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for pay confirmation or payable status. */
@@ -298,6 +302,19 @@ export function ForumLoader(): ReactElement | null {
     })();
   };
 
+  const onModeChange = (next: ForumFeedMode): void => {
+    if (
+      payMessageId !== null &&
+      messages !== null &&
+      !visibleForumMessages(messages, next).some((message) => message.id === payMessageId)
+    ) {
+      clearPaySheet();
+      setFeedMode(next);
+      return;
+    }
+    setFeedMode(next);
+  };
+
   return (
     <ForumBoard
       messages={messages}
@@ -336,7 +353,7 @@ export function ForumLoader(): ReactElement | null {
       onPaySubmit={onPaySubmit}
       onPayCancel={clearPaySheet}
       mode={feedMode}
-      onModeChange={setFeedMode}
+      onModeChange={onModeChange}
     />
   );
 }

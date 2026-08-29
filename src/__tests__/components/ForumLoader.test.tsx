@@ -571,6 +571,37 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
   });
 
+  it('clears an in-flight pay sheet when Active hides the note', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
+    invoiceMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveInvoice = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount (sats)')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveInvoice?.({ pr: 'lnbc21n1example', amountSats: 21 });
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+  });
+
   it('drops a late invoice error after cancel', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     let rejectInvoice: ((reason: Error) => void) | undefined;
