@@ -1059,7 +1059,6 @@ test.describe('welcome forum variants', () => {
   });
 });
 
-
 test.describe('contact screens', () => {
   async function seedAda(page: Page): Promise<void> {
     await page.addInitScript(() => {

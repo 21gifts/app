@@ -436,7 +436,9 @@ describe('fetchMessages', () => {
       status: 200,
       body: { messages: [forumMessageWithoutRole] },
     });
-    await expect(fetchMessages('sess')).resolves.toEqual([{ ...forumMessageWithoutRole, role: 'basis' }]);
+    await expect(fetchMessages('sess')).resolves.toEqual([
+      { ...forumMessageWithoutRole, role: 'basis' },
+    ]);
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       headers: { Authorization: 'Bearer sess' },
     });

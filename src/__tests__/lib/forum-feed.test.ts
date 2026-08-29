@@ -10,6 +10,7 @@ const ADA: ForumMessage = {
   sats: 5,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const CAROL: ForumMessage = {
@@ -20,6 +21,7 @@ const CAROL: ForumMessage = {
   sats: 21,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const BOB: ForumMessage = {
@@ -30,6 +32,7 @@ const BOB: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const TIE_NEWER: ForumMessage = {
@@ -40,6 +43,7 @@ const TIE_NEWER: ForumMessage = {
   sats: 10,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const TIE_OLDER: ForumMessage = {
@@ -50,6 +54,7 @@ const TIE_OLDER: ForumMessage = {
   sats: 10,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 const TIE_SAME_TIME_LOW_ID: ForumMessage = {
@@ -60,6 +65,7 @@ const TIE_SAME_TIME_LOW_ID: ForumMessage = {
   sats: 10,
   payable: true,
   hasPhoto: false,
+  role: 'basis',
 };
 
 describe('forum-feed', () => {
