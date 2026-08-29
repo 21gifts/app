@@ -7,6 +7,7 @@ import {
   fetchMessages,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  postContact,
   postMessage,
   postMessageInvoice,
   setLightningAddress,
@@ -490,6 +491,43 @@ describe('postMessage', () => {
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postMessage('sess', 'x')).rejects.toThrow('Could not post your message');
+  });
+});
+
+const contactMessage = {
+  id: 'c1',
+  name: 'Ada',
+  text: 'Hello from Ada',
+  createdAt: '2026-08-28T12:00:00.000Z',
+};
+
+describe('postContact', () => {
+  it('posts the text and returns the validated message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: contactMessage });
+    await expect(postContact('sess', 'Hello from Ada')).resolves.toEqual(contactMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/contact/submit', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada' }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Message too long' } });
+    await expect(postContact('sess', 'x')).rejects.toThrow('Message too long');
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
   });
 });
 

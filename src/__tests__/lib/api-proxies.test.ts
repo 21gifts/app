@@ -12,6 +12,7 @@ import {
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeNamePost,
+  proxyContactPost,
   proxyMessagesGet,
   proxyMessagesInvoicePost,
   proxyMessagesPost,
@@ -95,6 +96,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
+  });
+
+  it('proxyContactPost hits POST /contact', async () => {
+    const fetchMock = stubApi();
+    await proxyContactPost(
+      new Request('http://localhost/contact/submit', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/contact');
   });
 
   it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {

@@ -1,6 +1,13 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import LegalPage from '@/app/(marketing)/legal/page';
+
+vi.mock('next/link', () => ({
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
 
 afterEach(cleanup);
 
@@ -23,5 +30,19 @@ describe('LegalPage', () => {
   it('documents the optional locale cookie', () => {
     render(<LegalPage />);
     expect(screen.getByText(/sets no cookies unless you choose a language/i)).toBeTruthy();
+  });
+
+  it('has no published email and points contact to the in-app form', () => {
+    const { container } = render(<LegalPage />);
+    expect(container.textContent).not.toMatch(/info@21\.gifts/);
+    expect(container.innerHTML).not.toMatch(/mailto:/);
+    expect(
+      screen.getAllByText(/Contact us in the 21\.gifts app after you log in/i).length,
+    ).toBeGreaterThan(0);
+    const appLinks = screen.getAllByRole('link', { name: 'Open the app' });
+    expect(appLinks.length).toBeGreaterThan(0);
+    for (const link of appLinks) {
+      expect(link.getAttribute('href')).toBe('/contact');
+    }
   });
 });

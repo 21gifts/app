@@ -229,3 +229,23 @@ export const messageInvoiceSchema = z.object({
  * BOLT11 invoice issued for paying a forum message.
  */
 export type MessageInvoice = z.infer<typeof messageInvoiceSchema>;
+
+/**
+ * Trimmed contact body length accepted by `POST /contact` (api `MESSAGE_MAX_LENGTH`).
+ */
+export const CONTACT_MESSAGE_MAX_LENGTH = 500;
+
+/**
+ * Runtime schema for one in-app contact message from `POST /contact`.
+ */
+export const contactSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * One in-app contact message from the api.
+ */
+export type ContactMessage = z.infer<typeof contactSchema>;

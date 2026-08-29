@@ -28,6 +28,13 @@ describe('MarketingFooter', () => {
     );
   });
 
+  it('links Living room rules to /rules', async () => {
+    render(await MarketingFooter());
+    expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
+      '/rules',
+    );
+  });
+
   it('links GitHub to the org', async () => {
     render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'GitHub' }).getAttribute('href')).toBe(

@@ -91,6 +91,13 @@
 - **Used by:** `postMessageInvoice`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /contact/submit
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/contact` (create an in-app contact message to 21.gifts). Nested under `/contact/submit` because the UI page already owns `/contact`.
+- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Used by:** `postContact`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/lightning-address
 
 - **Purpose:** Same-origin proxy to link or replace a Wallet of Satoshi address.

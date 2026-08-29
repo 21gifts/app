@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   accountSchema,
+  CONTACT_MESSAGE_MAX_LENGTH,
+  contactSchema,
   FORUM_MESSAGE_MAX_LENGTH,
   lnAddressResolvedSchema,
   giftStatsSchema,
@@ -22,6 +24,35 @@ const account = {
 describe('FORUM_MESSAGE_MAX_LENGTH', () => {
   it('matches the api POST /messages cap', () => {
     expect(FORUM_MESSAGE_MAX_LENGTH).toBe(500);
+  });
+});
+
+describe('CONTACT_MESSAGE_MAX_LENGTH', () => {
+  it('matches the api POST /contact cap', () => {
+    expect(CONTACT_MESSAGE_MAX_LENGTH).toBe(500);
+  });
+});
+
+describe('contactSchema', () => {
+  it('accepts a well-formed contact message', () => {
+    const message = {
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(contactSchema.parse(message)).toEqual(message);
+  });
+
+  it('rejects an empty text', () => {
+    expect(() =>
+      contactSchema.parse({
+        id: 'c1',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+      }),
+    ).toThrow();
   });
 });
 

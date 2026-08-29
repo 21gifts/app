@@ -265,10 +265,45 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational forum list, composer, sat totals with a Bitcoin pay control only when `payable`, and pay-on-note sheet (QR / Wallet of Satoshi).
-- **Inputs:** Messages, loading/error/composer/pay callbacks.
-- **Returns / side effects:** React tree. No fetch.
+- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, list of every post (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet (amount → QR / Wallet of Satoshi).
+- **Inputs:** `ForumBoardProps` — messages, error (boolean load-failure flag), loading, posting, draft, onDraftChange, onPost, onRetry, formError (`empty` / `tooLong` / `request` / `rateLimit`), plus pay-sheet fields (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
+- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network / no fetch.
 - **Used by:** `ForumLoader`.
+
+## Function: ContactLoader
+
+- **Purpose:** Client loader for in-app contact on `/contact`. Session from `useAuthStore`; returns null without a session. Posts via `postContact`. No inbox fetch.
+- **Inputs:** None (reads session from the auth store).
+- **Returns / side effects:** React element wrapping `ContactScreen`, or `null`. Owns draft/posting/formError/success state. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postContact`. On success clears the draft and sets `success` so the form is hidden.
+- **Used by:** Screen `/contact`.
+
+## Function: ContactPage
+
+- **Purpose:** Next.js page for `/contact`.
+- **Inputs:** None.
+- **Returns / side effects:** `OnboardingGate` around `ContactLoader` with `SignedInChrome`.
+- **Used by:** Route `/contact`.
+
+## Function: ContactScreen
+
+- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and either a messenger-style composer (textarea with **Send**, `maxLength` 500) or success copy. No message list.
+- **Inputs:** `ContactScreenProps` — `posting`, `draft`, `onDraftChange`, `onPost`, `formError` (`empty` / `tooLong` / `request`), `success`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `ContactLoader`.
+
+## Function: RulesDocument
+
+- **Purpose:** Presentational living-room rules body from catalog keys (lead, three laws, wanted/allowed/rather-not/forbidden, house right, CTAs to `/contact` and `/welcome`).
+- **Inputs:** `messages` catalog for the request locale.
+- **Returns / side effects:** React element. Server component — uses `translate`, not `useTranslations`. No network.
+- **Used by:** `RulesPage`.
+
+## Function: RulesPage
+
+- **Purpose:** Next.js page for `/rules` with localized heading and a light language switcher.
+- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
+- **Returns / side effects:** The rules screen wrapped in the root layout; switcher top-right.
+- **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
 
@@ -353,6 +388,13 @@
 - **Inputs:** `sessionToken`, `text`.
 - **Returns / side effects:** `ForumMessage`. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
 - **Used by:** `ForumLoader`.
+
+## Function: postContact
+
+- **Purpose:** POST `/contact/submit` with bearer + `{ text }`, parse `contactSchema`, and return the created message.
+- **Inputs:** `sessionToken`, `text`.
+- **Returns / side effects:** `ContactMessage`. On 400 uses the api error string when present; otherwise throws `Could not send your message`.
+- **Used by:** `ContactLoader`.
 
 ## Function: formatBtcTick
 
@@ -538,14 +580,14 @@
 
 ## Function: LegalPage
 
-- **Purpose:** Next.js page for `/legal` (imprint and privacy).
+- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`.
 - **Inputs:** None.
-- **Returns / side effects:** The legal screen.
+- **Returns / side effects:** The legal screen with links to `/contact`.
 - **Used by:** Route `/legal`.
 
 ## Function: MarketingFooter
 
-- **Purpose:** Footer for marketing pages: wordmark, localized section links, legal, GitHub.
+- **Purpose:** Footer for marketing pages: wordmark, localized section links, legal, living-room rules, GitHub.
 - **Inputs:** None. Resolves locale via `getRequestLocale` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** Footer element.
 - **Used by:** `MarketingLayout`, `NotFound`.
@@ -573,10 +615,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, address link, passkey begin/finish, forum message create (`POST /messages`), and pay-on-note (`POST /messages/[id]/invoice`).
+- **Used by:** Same-origin name save, address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 
@@ -626,6 +668,13 @@
 - **Inputs:** Incoming `Request` with Bearer session and JSON body.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route POST `/messages`.
+
+## Function: proxyContactPost
+
+- **Purpose:** Bearer proxy POST `/contact` to the 21.gifts api (create an in-app contact message). Same-origin path is `/contact/submit` so it does not collide with the `/contact` page.
+- **Inputs:** Incoming `Request` with Bearer session and JSON body.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/contact/submit`.
 
 ## Function: proxyMeLightningAddressDelete
 

@@ -1,9 +1,16 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('next/link', () => ({
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
 
 afterEach(cleanup);
 
@@ -68,6 +75,14 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
     expect(screen.queryByText('Everyone can read and write.')).toBeNull();
+    expect(
+      screen.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    ).toBeTruthy();
+    expect(screen.getByText('Donors are scarce. No begging, no drama, no pressure.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
+      '/rules',
+    );
+    expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     const field = screen.getByLabelText('Your message');

@@ -10,6 +10,7 @@ const en = {
   'nav.handbook': 'Handbook',
   'nav.login': 'Log in',
   'nav.legal': 'Legal & Privacy',
+  'nav.rules': 'Living room rules',
 
   'aria.primary': 'Primary',
   'aria.menu': 'Menu',
@@ -163,6 +164,99 @@ const en = {
   'profile.given': 'Given {amount}',
   'profile.received': 'Received {amount}',
   'profile.back': 'Back to forum',
+
+  'forum.laws1': 'This is a donation platform. Only free gifts — never pay for a promise.',
+  'forum.laws2': 'Donors are scarce. No begging, no drama, no pressure.',
+  'forum.rulesLink': 'Living room rules',
+  'forum.contactLink': 'Contact',
+
+  'rules.pageTitle': 'Living room rules',
+  'rules.heading': 'Living room rules',
+  'rules.lead':
+    'You are a guest in a living room with the windows open. What you write is public. The one test: would you say this with the host, their family, and a donor sitting on the sofa?',
+  'rules.law1Title': '1. Only free donations',
+  'rules.law1Body':
+    'A donation is a gift. No price, no job, no deal. Collecting money by promising to do, deliver, unlock, or continue something is forbidden. Thanks after a gift is the only return allowed — afterwards, freely, with no claim.',
+  'rules.law1Test':
+    'Test: would the payer get something you would not have done without the payment? Then it is not a donation. Out.',
+  'rules.law2Title': '2. Donors come first',
+  'rules.law2Body':
+    'People who want money are plentiful. People willing to pay are not. This room is donor-friendly, not recipient-friendly. What drives donors away is not “a bit much” — it is banned.',
+  'rules.law2Test':
+    'Test: after this message, would a donor rather leave than stay? Then it does not belong here.',
+  'rules.law3Title': '3. Contact stays in the app',
+  'rules.law3Body':
+    'There is no published email, no Telegram, no private side channel. Reach 21.gifts or anyone here in the app only.',
+  'rules.wantedHeading': 'Wanted',
+  'rules.wantedLead': 'What keeps donors here.',
+  'rules.wanted1': 'Thanks. Short, specific, without the next ask attached.',
+  'rules.wanted2': 'A calm, honest note that makes giving easy, not heavy.',
+  'rules.wanted3': 'A quiet situation — no escalation, no timer, no audience.',
+  'rules.wanted4': 'Questions about how gifting works here, answered patiently.',
+  'rules.wanted5': 'Humour and warmth that put no one on the hook.',
+  'rules.wanted6': 'Honouring a note that meant something — freely, without the author selling it.',
+  'rules.allowedHeading': 'Allowed',
+  'rules.allowedLead': 'Fine, as long as laws 1–3 hold. Allowed is not the same as wanted.',
+  'rules.allowed1': 'One short, factual mention of a situation. Once. Without turning up the heat.',
+  'rules.allowed2': 'Bitcoin, when it helps someone in the room and does not push anyone to pay.',
+  'rules.allowed3': 'Other languages. Reading along. Silence.',
+  'rules.allowed4':
+    'Your name and Wallet of Satoshi address on your profile — not pasted into every message.',
+  'rules.allowed5': '“I cannot give right now.” That is a complete sentence.',
+  'rules.ratherNotHeading': 'Rather not',
+  'rules.ratherNotLead': 'Not yet a ban. Repeat or escalate it and it becomes a hard block.',
+  'rules.ratherNot1': 'The same ask again.',
+  'rules.ratherNot2': 'A long hardship where one sentence would do.',
+  'rules.ratherNot3': 'A misery photo where one sentence would do.',
+  'rules.ratherNot4': 'Price talk, trading, stack-flex.',
+  'rules.ratherNot5': 'Orange-pilling someone who is giving — or cannot give.',
+  'rules.ratherNot6': '“Write to me privately.”',
+  'rules.ratherNot7': 'Correcting beginners.',
+  'rules.ratherNot8':
+    'Any message that is more about the recipient than about respect for the donor.',
+  'rules.forbiddenHeading': 'Forbidden — hard-blocked',
+  'rules.forbiddenLead': 'No warning. No debate. Gone.',
+  'rules.forbiddenQuidHeading': 'Against a return (law 1)',
+  'rules.forbiddenQuid1': 'Money for doing — “for 5 000 sats I will draw you.”',
+  'rules.forbiddenQuid2': 'Money for content — “I keep posting if you donate.”',
+  'rules.forbiddenQuid3': 'Money for access — unlock, subscription, file after payment.',
+  'rules.forbiddenQuid4': 'A commission — advice, a logo, homework, “I will do X.”',
+  'rules.forbiddenQuid5': 'A sale — merch, tokens, a course, “an interesting project.”',
+  'rules.forbiddenQuid6':
+    'A dressed-up deal — “donate and I will mention you.” “Whoever gives most gets …”',
+  'rules.forbiddenDonorHeading': 'Driving donors away (law 2)',
+  'rules.forbiddenDonor1': 'Heavy begging — daily, in series, the address in every line.',
+  'rules.forbiddenDonor2':
+    'Dramatizing — superlatives, misery as a stage, pain-photos as leverage.',
+  'rules.forbiddenDonor3': 'Pressure — a countdown, “by tonight”, “or else.”',
+  'rules.forbiddenDonor4':
+    'Guilt — “if you really wanted to help”, ranking donors, calling out people who did not give.',
+  'rules.forbiddenDonor5': 'Soft extortion — “I will only stop writing when …”',
+  'rules.forbiddenOtherHeading': 'Also banned',
+  'rules.forbiddenOther1':
+    'Scams, fake wallets, impersonation, asking for a seed, a key, or a code.',
+  'rules.forbiddenOther2': 'Illegal content, sexual content involving minors, gore, porn, shock.',
+  'rules.forbiddenOther3': 'Doxxing, threats, stalking, hate against a person or group.',
+  'rules.forbiddenOther4': 'Spam, ads, recruiting, extra accounts to harvest gifts.',
+  'rules.forbiddenOther5':
+    'Pretending to be the 21.gifts team. There is no “support will write in the forum.”',
+  'rules.houseHeading': 'House right',
+  'rules.houseBody':
+    'This room exists because donors stay. Recipients are guests in a room set up for givers — not the other way around. We delete and block without a court and without arguing tone. Contact 21.gifts in the app. These rules are not terms of service and not criminal law. They say what 21.gifts is: a donation platform. Turning it into a shop, a job board, or a begging stage is not the wrong tone. It is the wrong house.',
+  'rules.contactCta': 'Contact 21.gifts',
+  'rules.forumCta': 'Back to the forum',
+
+  'contact.pageTitle': 'Contact',
+  'contact.heading': 'Contact',
+  'contact.lead': 'Write to 21.gifts here. There is no email.',
+  'contact.composerLabel': 'Your message',
+  'contact.placeholder': 'Write a message',
+  'contact.send': 'Send',
+  'contact.success': 'Received. We read this in the app.',
+  'contact.errorEmpty': 'Enter a message',
+  'contact.errorTooLong': 'Keep it to 500 characters',
+  'contact.errorRequest': 'Could not send your message',
+  'contact.rulesLink': 'Living room rules',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -180,6 +274,7 @@ const de = {
   'nav.handbook': 'Handbuch',
   'nav.login': 'Anmelden',
   'nav.legal': 'Impressum & Datenschutz',
+  'nav.rules': 'Wohnzimmerregeln',
   'aria.primary': 'Primär',
   'aria.menu': 'Menü',
   'aria.footer': 'Fusszeile',
@@ -324,6 +419,103 @@ const de = {
   'profile.given': 'Gegeben {amount}',
   'profile.received': 'Erhalten {amount}',
   'profile.back': 'Zurück zum Forum',
+
+  'forum.laws1':
+    'Das ist eine Spendenplattform. Nur freie Geschenke — nie zahlen für ein Versprechen.',
+  'forum.laws2': 'Spender sind knapp. Kein Betteln, kein Drama, kein Druck.',
+  'forum.rulesLink': 'Wohnzimmerregeln',
+  'forum.contactLink': 'Kontakt',
+
+  'rules.pageTitle': 'Wohnzimmerregeln',
+  'rules.heading': 'Wohnzimmerregeln',
+  'rules.lead':
+    'Du bist Gast in einem Wohnzimmer mit offenen Fenstern. Was du schreibst, ist öffentlich. Der eine Test: würdest du das so sagen, wenn die Gastgeberin, ihre Familie und ein Spender auf dem Sofa sitzen?',
+  'rules.law1Title': '1. Nur freie Spende',
+  'rules.law1Body':
+    'Eine Spende ist ein Geschenk. Kein Preis, kein Auftrag, kein Deal. Geld einsammeln mit dem Versprechen, etwas zu tun, zu liefern, aufzumachen oder weiterzumachen, ist verboten. Dank nach einer Spende ist die einzige Gegenleistung, die es geben darf — nachträglich, frei, ohne Anspruch.',
+  'rules.law1Test':
+    'Test: kriegt der Zahlende etwas, das du ohne die Zahlung nicht getan hättest? Dann ist es keine Spende. Raus.',
+  'rules.law2Title': '2. Der knappe Gast ist der Spender',
+  'rules.law2Body':
+    'Menschen, die Geld wollen, gibt es genug. Menschen, die bereit sind zu zahlen, nicht. Dieser Raum ist spendersfreundlich, nicht empfängerfreundlich. Was Spender vertreibt, ist nicht „ungeschickt“ — es ist verboten.',
+  'rules.law2Test':
+    'Test: würde ein Spender nach dieser Nachricht eher gehen als bleiben? Dann gehört sie nicht hierher.',
+  'rules.law3Title': '3. Kontakt nur in der App',
+  'rules.law3Body':
+    'Keine veröffentlichte Mail, kein Telegram, kein privater Nebenkanal. Wer 21.gifts oder jemand hier erreichen will, tut das in der App.',
+  'rules.wantedHeading': 'Gewollt',
+  'rules.wantedLead': 'Was Spender hier behält.',
+  'rules.wanted1': 'Danke. Konkret, kurz, ohne die nächste Bitte dranzuhängen.',
+  'rules.wanted2': 'Ein ruhiger, ehrlicher Satz, der das Geben leicht macht, nicht schwer.',
+  'rules.wanted3': 'Eine ruhige Lage — ohne Steigerung, ohne Timer, ohne Publikum.',
+  'rules.wanted4': 'Fragen, wie Schenken hier geht, geduldig beantwortet.',
+  'rules.wanted5': 'Humor und Wärme, die niemanden in die Pflicht nehmen.',
+  'rules.wanted6':
+    'Eine Note honorieren, die einem etwas bedeutet hat — freiwillig, ohne dass der Autor sie verkauft.',
+  'rules.allowedHeading': 'Erlaubt',
+  'rules.allowedLead':
+    'Kein Problem, solange Gesetz 1–3 stehen. Erlaubt ist nicht dasselbe wie gewollt.',
+  'rules.allowed1': 'Ein knapper, sachlicher Hinweis auf eine Situation. Einmal. Ohne Steigerung.',
+  'rules.allowed2': 'Bitcoin, soweit es jemandem im Raum nützt und niemanden zum Zahlen drängt.',
+  'rules.allowed3': 'Andere Sprachen. Mitlesen. Stille.',
+  'rules.allowed4':
+    'Der eigene Name und die Wallet of Satoshi-Adresse am Profil — nicht in jeder Nachricht.',
+  'rules.allowed5': '„Ich kann gerade nicht geben.“ Das ist vollständig.',
+  'rules.ratherNotHeading': 'Eher nicht',
+  'rules.ratherNotLead':
+    'Noch nicht das Hausverbot. Wiederholt oder gesteigert wird daraus ein Hart-Block.',
+  'rules.ratherNot1': 'Dieselbe Bitte noch einmal.',
+  'rules.ratherNot2': 'Lange Not, wo ein Satz gereicht hätte.',
+  'rules.ratherNot3': 'Foto vom Elend, wo ein Satz gereicht hätte.',
+  'rules.ratherNot4': 'Kurs, Trading, Stack-Flex.',
+  'rules.ratherNot5': 'Orange-Pilling an jemandem, der gerade gibt — oder nicht geben kann.',
+  'rules.ratherNot6': '„Schreib mir privat.“',
+  'rules.ratherNot7': 'Anfänger korrigieren.',
+  'rules.ratherNot8':
+    'Jede Nachricht, die mehr vom Empfänger handelt als vom Respekt vor dem Spender.',
+  'rules.forbiddenHeading': 'Verboten — hart blockiert',
+  'rules.forbiddenLead': 'Kein Hinweis. Keine Debatte. Weg.',
+  'rules.forbiddenQuidHeading': 'Gegenleistung (Gesetz 1)',
+  'rules.forbiddenQuid1': 'Geld gegen Tun — „Für 5 000 Sats zeichne ich dich.“',
+  'rules.forbiddenQuid2': 'Geld gegen Content — „Ich poste weiter, wenn ihr spendet.“',
+  'rules.forbiddenQuid3': 'Geld gegen Zugang — Unlock, Abo, Datei nach Zahlung.',
+  'rules.forbiddenQuid4': 'Auftrag — Beratung, Logo, Nachhilfe, „ich erledige X.“',
+  'rules.forbiddenQuid5': 'Verkauf — Merch, Token, Kurs, „interessantes Projekt.“',
+  'rules.forbiddenQuid6':
+    'Verkleideter Deal — „Spende, und ich erwähne dich.“ „Wer am meisten gibt, bekommt …“',
+  'rules.forbiddenDonorHeading': 'Spender vertreiben (Gesetz 2)',
+  'rules.forbiddenDonor1':
+    'Intensives Betteln — täglich, in Serie, in jeder Nachricht die Adresse.',
+  'rules.forbiddenDonor2': 'Dramatisieren — Superlative, Elend als Bühne, Leid-Fotos als Hebel.',
+  'rules.forbiddenDonor3': 'Druck — Countdown, „bis heute Nacht“, „sonst passiert …“',
+  'rules.forbiddenDonor4':
+    'Schuld — „Wenn ihr wirklich helfen wolltet“, Spender vergleichen, Nicht-Geber bloßstellen.',
+  'rules.forbiddenDonor5': 'Erpressung light — „Ich höre erst auf zu schreiben, wenn …“',
+  'rules.forbiddenOtherHeading': 'Ausserdem verboten',
+  'rules.forbiddenOther1':
+    'Betrug, Fake-Wallet, Impersonation, Seed, Schlüssel oder Codes verlangen.',
+  'rules.forbiddenOther2': 'Illegales, sexuelle Inhalte mit Minderjährigen, Gore, Porno, Schock.',
+  'rules.forbiddenOther3': 'Doxxing, Drohungen, Stalking, Hass gegen eine Person oder Gruppe.',
+  'rules.forbiddenOther4': 'Spam, Werbung, Recruiting, Extra-Accounts zum Abgreifen von Gaben.',
+  'rules.forbiddenOther5':
+    'Als 21.gifts-Team ausgeben. Es gibt kein „Support schreibt dich im Forum an.“',
+  'rules.houseHeading': 'Hausrecht',
+  'rules.houseBody':
+    'Der Raum existiert, weil Spender bleiben. Empfänger sind Gäste in einem Zimmer, das für Gebende eingerichtet ist — nicht umgekehrt. Wir löschen und sperren ohne Gericht und ohne Debatte über Ton. Kontakt zu 21.gifts nur in der App. Das ersetzt keine AGB und kein Strafrecht. Es sagt, was 21.gifts ist: eine Spendenplattform. Wer daraus einen Laden, einen Auftragstisch oder eine Bettelbühne macht, ist nicht im falschen Ton. Der ist im falschen Haus.',
+  'rules.contactCta': '21.gifts kontaktieren',
+  'rules.forumCta': 'Zurück zum Forum',
+
+  'contact.pageTitle': 'Kontakt',
+  'contact.heading': 'Kontakt',
+  'contact.lead': 'Schreiben Sie 21.gifts hier. Es gibt keine E-Mail.',
+  'contact.composerLabel': 'Ihre Nachricht',
+  'contact.placeholder': 'Nachricht schreiben',
+  'contact.send': 'Senden',
+  'contact.success': 'Angekommen. Wir lesen das in der App.',
+  'contact.errorEmpty': 'Nachricht eingeben',
+  'contact.errorTooLong': 'Maximal 500 Zeichen',
+  'contact.errorRequest': 'Nachricht konnte nicht gesendet werden',
+  'contact.rulesLink': 'Wohnzimmerregeln',
 } satisfies Messages;
 
 const es = {
@@ -335,6 +527,7 @@ const es = {
   'nav.handbook': 'Manual',
   'nav.login': 'Iniciar sesión',
   'nav.legal': 'Aviso legal y privacidad',
+  'nav.rules': 'Reglas del salón',
   'aria.primary': 'Principal',
   'aria.menu': 'Menú',
   'aria.footer': 'Pie de página',
@@ -478,6 +671,101 @@ const es = {
   'profile.given': 'Donado {amount}',
   'profile.received': 'Recibido {amount}',
   'profile.back': 'Volver al foro',
+
+  'forum.laws1':
+    'Esta es una plataforma de donaciones. Solo regalos libres — nunca pagar por una promesa.',
+  'forum.laws2': 'Los donantes escasean. Sin mendigar, sin drama, sin presión.',
+  'forum.rulesLink': 'Reglas del salón',
+  'forum.contactLink': 'Contacto',
+
+  'rules.pageTitle': 'Reglas del salón',
+  'rules.heading': 'Reglas del salón',
+  'rules.lead':
+    'Eres invitado en un salón con las ventanas abiertas. Lo que escribes es público. La única prueba: ¿dirías esto con la anfitriona, su familia y un donante sentados en el sofá?',
+  'rules.law1Title': '1. Solo donaciones libres',
+  'rules.law1Body':
+    'Una donación es un regalo. Sin precio, sin trabajo, sin trato. Recaudar dinero prometiendo hacer, entregar, desbloquear o continuar algo está prohibido. Gracias después de un regalo es la única devolución permitida — después, libremente, sin reclamo.',
+  'rules.law1Test':
+    'Prueba: ¿el que paga obtiene algo que no habrías hecho sin el pago? Entonces no es una donación. Fuera.',
+  'rules.law2Title': '2. Los donantes van primero',
+  'rules.law2Body':
+    'Quienes quieren dinero abundan. Quienes están dispuestos a pagar, no. Este salón es amable con el donante, no con el receptor. Lo que ahuyenta a los donantes no es «un poco de más» — está prohibido.',
+  'rules.law2Test':
+    'Prueba: ¿después de este mensaje un donante preferiría irse a quedarse? Entonces no pertenece aquí.',
+  'rules.law3Title': '3. El contacto se queda en la app',
+  'rules.law3Body':
+    'No hay correo publicado, ni Telegram, ni canal privado. Contacta a 21.gifts o a cualquiera aquí solo en la app.',
+  'rules.wantedHeading': 'Deseado',
+  'rules.wantedLead': 'Lo que retiene a los donantes aquí.',
+  'rules.wanted1': 'Gracias. Cortas, concretas, sin la siguiente petición pegada.',
+  'rules.wanted2': 'Una nota calmada y honesta que hace fácil dar, no pesado.',
+  'rules.wanted3': 'Una situación tranquila — sin escalada, sin temporizador, sin público.',
+  'rules.wanted4': 'Preguntas sobre cómo funciona el regalo aquí, respondidas con paciencia.',
+  'rules.wanted5': 'Humor y calidez que no ponen a nadie en el gancho.',
+  'rules.wanted6': 'Honrar una nota que significó algo — libremente, sin que el autor la venda.',
+  'rules.allowedHeading': 'Permitido',
+  'rules.allowedLead':
+    'Bien, mientras se cumplan las leyes 1–3. Permitido no es lo mismo que deseado.',
+  'rules.allowed1':
+    'Una mención breve y factual de una situación. Una vez. Sin subir la temperatura.',
+  'rules.allowed2': 'Bitcoin, cuando ayuda a alguien en el salón y no empuja a nadie a pagar.',
+  'rules.allowed3': 'Otros idiomas. Leer en silencio. Silencio.',
+  'rules.allowed4':
+    'Tu nombre y dirección de Wallet of Satoshi en tu perfil — no pegados en cada mensaje.',
+  'rules.allowed5': '«No puedo dar ahora.» Esa es una frase completa.',
+  'rules.ratherNotHeading': 'Mejor no',
+  'rules.ratherNotLead':
+    'Aún no es un bloqueo. Repetirlo o escalarlo lo convierte en un bloqueo duro.',
+  'rules.ratherNot1': 'La misma petición otra vez.',
+  'rules.ratherNot2': 'Una penuria larga donde bastaría una frase.',
+  'rules.ratherNot3': 'Una foto de miseria donde bastaría una frase.',
+  'rules.ratherNot4': 'Hablar de precios, trading, alardear del stack.',
+  'rules.ratherNot5': 'Hacer orange-pill a quien está dando — o no puede dar.',
+  'rules.ratherNot6': '«Escríbeme en privado.»',
+  'rules.ratherNot7': 'Corregir a principiantes.',
+  'rules.ratherNot8': 'Cualquier mensaje que hable más del receptor que del respeto al donante.',
+  'rules.forbiddenHeading': 'Prohibido — bloqueo duro',
+  'rules.forbiddenLead': 'Sin aviso. Sin debate. Fuera.',
+  'rules.forbiddenQuidHeading': 'A cambio de algo (ley 1)',
+  'rules.forbiddenQuid1': 'Dinero por hacer — «por 5 000 sats te dibujo.»',
+  'rules.forbiddenQuid2': 'Dinero por contenido — «sigo publicando si donáis.»',
+  'rules.forbiddenQuid3': 'Dinero por acceso — desbloqueo, suscripción, archivo tras el pago.',
+  'rules.forbiddenQuid4': 'Un encargo — consejo, un logo, deberes, «haré X.»',
+  'rules.forbiddenQuid5': 'Una venta — merch, tokens, un curso, «un proyecto interesante.»',
+  'rules.forbiddenQuid6': 'Un trato disfrazado — «dona y te menciono.» «Quien más dé recibe …»',
+  'rules.forbiddenDonorHeading': 'Ahuyentar a los donantes (ley 2)',
+  'rules.forbiddenDonor1': 'Mendicidad intensa — diaria, en serie, la dirección en cada línea.',
+  'rules.forbiddenDonor2':
+    'Dramatizar — superlativos, miseria como escenario, fotos de dolor como palanca.',
+  'rules.forbiddenDonor3': 'Presión — una cuenta atrás, «para esta noche», «o si no.»',
+  'rules.forbiddenDonor4':
+    'Culpa — «si de verdad quisierais ayudar», ranking de donantes, señalar a quien no dio.',
+  'rules.forbiddenDonor5': 'Extorsión suave — «solo dejaré de escribir cuando …»',
+  'rules.forbiddenOtherHeading': 'También prohibido',
+  'rules.forbiddenOther1':
+    'Estafas, carteras falsas, impersonación, pedir una seed, una clave o un código.',
+  'rules.forbiddenOther2': 'Contenido ilegal, contenido sexual con menores, gore, porno, shock.',
+  'rules.forbiddenOther3': 'Doxxing, amenazas, acoso, odio contra una persona o grupo.',
+  'rules.forbiddenOther4': 'Spam, anuncios, reclutamiento, cuentas extra para cosechar regalos.',
+  'rules.forbiddenOther5':
+    'Hacerse pasar por el equipo de 21.gifts. No existe «soporte te escribirá en el foro.»',
+  'rules.houseHeading': 'Derecho de admisión',
+  'rules.houseBody':
+    'Este salón existe porque los donantes se quedan. Los receptores son invitados en un espacio montado para quien da — no al revés. Borramos y bloqueamos sin tribunal y sin discutir el tono. Contacta a 21.gifts en la app. Estas reglas no son condiciones de servicio ni derecho penal. Dicen qué es 21.gifts: una plataforma de donaciones. Convertirlo en una tienda, un tablón de encargos o un escenario de mendicidad no es el tono equivocado. Es la casa equivocada.',
+  'rules.contactCta': 'Contactar a 21.gifts',
+  'rules.forumCta': 'Volver al foro',
+
+  'contact.pageTitle': 'Contacto',
+  'contact.heading': 'Contacto',
+  'contact.lead': 'Escribe a 21.gifts aquí. No hay correo.',
+  'contact.composerLabel': 'Tu mensaje',
+  'contact.placeholder': 'Escribe un mensaje',
+  'contact.send': 'Enviar',
+  'contact.success': 'Recibido. Lo leemos en la app.',
+  'contact.errorEmpty': 'Escribe un mensaje',
+  'contact.errorTooLong': 'Máximo 500 caracteres',
+  'contact.errorRequest': 'No se pudo enviar el mensaje',
+  'contact.rulesLink': 'Reglas del salón',
 } satisfies Messages;
 
 const fil = {
@@ -489,6 +777,7 @@ const fil = {
   'nav.handbook': 'Handbook',
   'nav.login': 'Mag-log in',
   'nav.legal': 'Legal at Privacy',
+  'nav.rules': 'Mga patakaran sa living room',
   'aria.primary': 'Pangunahin',
   'aria.menu': 'Menu',
   'aria.footer': 'Pang-ibaba',
@@ -633,6 +922,101 @@ const fil = {
   'profile.given': 'Ibinigay {amount}',
   'profile.received': 'Natanggap {amount}',
   'profile.back': 'Bumalik sa forum',
+
+  'forum.laws1': 'Ito ay donation platform. Libreng handog lang — huwag magbayad para sa pangako.',
+  'forum.laws2': 'Kakaunti ang donor. Walang paghingi, walang drama, walang pressure.',
+  'forum.rulesLink': 'Mga patakaran sa living room',
+  'forum.contactLink': 'Contact',
+
+  'rules.pageTitle': 'Mga patakaran sa living room',
+  'rules.heading': 'Mga patakaran sa living room',
+  'rules.lead':
+    'Bisita ka sa isang living room na bukas ang mga bintana. Ang isinusulat mo ay pampubliko. Ang isang pagsusulit: sasabihin mo ba ito kung nakaupo sa sofa ang host, ang kanilang pamilya, at isang donor?',
+  'rules.law1Title': '1. Libreng donasyon lang',
+  'rules.law1Body':
+    'Ang donasyon ay handog. Walang presyo, walang trabaho, walang deal. Ang pangongolekta ng pera sa pamamagitan ng pangako na gagawin, ihahatid, bubuksan, o itutuloy ang isang bagay ay bawal. Ang pasasalamat pagkatapos ng handog ang tanging kapalit na pinapayagan — pagkatapos, malaya, walang claim.',
+  'rules.law1Test':
+    'Pagsusulit: makakakuha ba ang nagbayad ng isang bagay na hindi mo sana ginawa kung walang bayad? Kung gayon, hindi ito donasyon. Labas.',
+  'rules.law2Title': '2. Una ang mga donor',
+  'rules.law2Body':
+    'Maraming gustong makakuha ng pera. Kakaunti ang handang magbayad. Ang silid na ito ay donor-friendly, hindi recipient-friendly. Ang nagpapalayas sa donor ay hindi “medyo sobra” — ito ay bawal.',
+  'rules.law2Test':
+    'Pagsusulit: pagkatapos ng mensaheng ito, mas pipiliin ba ng donor na umalis kaysa manatili? Kung gayon, hindi ito nabibilang dito.',
+  'rules.law3Title': '3. Sa app lang ang contact',
+  'rules.law3Body':
+    'Walang published na email, walang Telegram, walang pribadong side channel. Makipag-ugnayan sa 21.gifts o kaninuman dito sa app lang.',
+  'rules.wantedHeading': 'Nais',
+  'rules.wantedLead': 'Ang nagpapanatili sa mga donor dito.',
+  'rules.wanted1': 'Salamat. Maikli, tiyak, walang kasunod na hingi.',
+  'rules.wanted2': 'Tahimik at tapat na tala na nagpapadali sa pagbibigay, hindi nagpapabigat.',
+  'rules.wanted3': 'Tahimik na sitwasyon — walang escalation, walang timer, walang audience.',
+  'rules.wanted4': 'Mga tanong kung paano gumagana ang pagbibigay dito, pasensyang sinasagot.',
+  'rules.wanted5': 'Humor at init na walang inuupakan.',
+  'rules.wanted6':
+    'Pagpapahalaga sa tala na may saysay — malaya, nang hindi ito ibinebenta ng may-akda.',
+  'rules.allowedHeading': 'Pinapayagan',
+  'rules.allowedLead':
+    'Ayos, basta nananatili ang batas 1–3. Ang pinapayagan ay hindi katulad ng nais.',
+  'rules.allowed1':
+    'Isang maikli at factual na banggit ng sitwasyon. Minsan. Walang pagtataas ng init.',
+  'rules.allowed2':
+    'Bitcoin, kapag nakakatulong ito sa isang tao sa silid at hindi nagtutulak na magbayad.',
+  'rules.allowed3': 'Ibang wika. Pakikinig. Katahimikan.',
+  'rules.allowed4':
+    'Ang iyong pangalan at Wallet of Satoshi address sa profile — hindi isinasabit sa bawat mensahe.',
+  'rules.allowed5': '“Hindi ako makapagbigay ngayon.” Kumpleto na iyon.',
+  'rules.ratherNotHeading': 'Mas mabuting huwag',
+  'rules.ratherNotLead': 'Hindi pa ban. Ulitin o palakihin ito at magiging hard block.',
+  'rules.ratherNot1': 'Ang parehong hingi muli.',
+  'rules.ratherNot2': 'Mahabang hirap kung saan sapat ang isang pangungusap.',
+  'rules.ratherNot3': 'Larawan ng kahirapan kung saan sapat ang isang pangungusap.',
+  'rules.ratherNot4': 'Usapang presyo, trading, stack-flex.',
+  'rules.ratherNot5': 'Orange-pilling sa taong nagbibigay — o hindi makapagbigay.',
+  'rules.ratherNot6': '“Sumulat ka sa akin nang pribado.”',
+  'rules.ratherNot7': 'Pagwawasto sa mga baguhan.',
+  'rules.ratherNot8': 'Anumang mensahe na mas tungkol sa recipient kaysa sa respeto sa donor.',
+  'rules.forbiddenHeading': 'Bawal — hard-blocked',
+  'rules.forbiddenLead': 'Walang babala. Walang debate. Wala na.',
+  'rules.forbiddenQuidHeading': 'Kapalit (batas 1)',
+  'rules.forbiddenQuid1': 'Pera para sa gawa — “sa 5 000 sats iguguhit kita.”',
+  'rules.forbiddenQuid2': 'Pera para sa content — “magpo-post pa ako kung magdo-donate kayo.”',
+  'rules.forbiddenQuid3': 'Pera para sa access — unlock, subscription, file pagkatapos magbayad.',
+  'rules.forbiddenQuid4': 'Komisyon — payo, logo, homework, “gagawin ko ang X.”',
+  'rules.forbiddenQuid5': 'Benta — merch, token, kurso, “interesting na proyekto.”',
+  'rules.forbiddenQuid6':
+    'Disguised na deal — “mag-donate at babanggitin kita.” “Kung sino ang pinakamarami ang magbibigay ay makakakuha ng …”',
+  'rules.forbiddenDonorHeading': 'Pagpapalayas sa donor (batas 2)',
+  'rules.forbiddenDonor1': 'Mabigat na paghingi — araw-araw, sunud-sunod, address sa bawat linya.',
+  'rules.forbiddenDonor2':
+    'Pagdramahan — superlatibo, kahirapan bilang entablado, pain-photos bilang leverage.',
+  'rules.forbiddenDonor3': 'Pressure — countdown, “bago maggabi”, “kung hindi.”',
+  'rules.forbiddenDonor4':
+    'Guilt — “kung talagang gusto ninyong tumulong”, pagraranggo ng donor, pagtawag sa hindi nagbigay.',
+  'rules.forbiddenDonor5': 'Soft extortion — “titigil lang akong magsulat kapag …”',
+  'rules.forbiddenOtherHeading': 'Bawal din',
+  'rules.forbiddenOther1': 'Scam, pekeng wallet, impersonation, paghingi ng seed, key, o code.',
+  'rules.forbiddenOther2':
+    'Ilegal na content, sekswal na content na may menor de edad, gore, porn, shock.',
+  'rules.forbiddenOther3': 'Doxxing, banta, stalking, hate laban sa tao o grupo.',
+  'rules.forbiddenOther4': 'Spam, ads, recruiting, dagdag na account para mangolekta ng handog.',
+  'rules.forbiddenOther5': 'Pagpapanggap na 21.gifts team. Walang “susulat ang support sa forum.”',
+  'rules.houseHeading': 'Karapatan ng bahay',
+  'rules.houseBody':
+    'Umiiral ang silid na ito dahil nananatili ang mga donor. Ang mga recipient ay bisita sa silid na inayos para sa mga nagbibigay — hindi baligtad. Nagtatanggal at nagba-block kami nang walang hukuman at walang debate tungkol sa tono. Makipag-ugnayan sa 21.gifts sa app. Ang mga patakarang ito ay hindi terms of service at hindi criminal law. Sinasabi nila kung ano ang 21.gifts: isang donation platform. Ang gawing tindahan, job board, o entablado ng paghingi ay hindi maling tono. Mali ang bahay.',
+  'rules.contactCta': 'Makipag-ugnayan sa 21.gifts',
+  'rules.forumCta': 'Bumalik sa forum',
+
+  'contact.pageTitle': 'Contact',
+  'contact.heading': 'Contact',
+  'contact.lead': 'Sumulat sa 21.gifts dito. Walang email.',
+  'contact.composerLabel': 'Iyong mensahe',
+  'contact.placeholder': 'Sumulat ng mensahe',
+  'contact.send': 'Ipadala',
+  'contact.success': 'Natanggap. Binabasa namin ito sa app.',
+  'contact.errorEmpty': 'Maglagay ng mensahe',
+  'contact.errorTooLong': 'Hanggang 500 na karakter',
+  'contact.errorRequest': 'Hindi maipadala ang mensahe',
+  'contact.rulesLink': 'Mga patakaran sa living room',
 } satisfies Messages;
 
 /**
