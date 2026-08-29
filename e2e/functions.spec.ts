@@ -1363,7 +1363,7 @@ test('Function: recipientHandleFromAddress — alice handle matches stats row', 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByText(/Received 1000 sats/)).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received 1000 sats/ })).toBeVisible();
 });
 
 test('Function: useAccountTotals — profile totals load from gift stats', async ({ page }) => {
