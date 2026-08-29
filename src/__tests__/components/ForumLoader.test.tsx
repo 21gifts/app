@@ -566,6 +566,49 @@ describe('ForumLoader', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps polling when the first payable poll GET returns empty before the note is echoed', async () => {
+    vi.useFakeTimers();
+    const unsigned: ForumMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+    };
+    const signed: ForumMessage = { ...unsigned, payable: true };
+    fetchMock.mockResolvedValueOnce([]);
+    postMock.mockResolvedValue(unsigned);
+    fetchMock.mockResolvedValueOnce([]);
+    fetchMock.mockResolvedValueOnce([signed]);
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
+  });
+
   it('stops the payable poll once every listed row is payable', async () => {
     vi.useFakeTimers();
     const unsigned: ForumMessage = { ...SAMPLE, payable: false };

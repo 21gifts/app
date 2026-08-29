@@ -262,7 +262,7 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; also polls `GET /messages` until notes are payable (8 attempts, 2s).
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes).
 - **Inputs:** Session token.
 - **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`.
 - **Used by:** `WelcomeScreen`.

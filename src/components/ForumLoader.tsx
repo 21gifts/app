@@ -76,9 +76,12 @@ export function ForumLoader(): ReactElement | null {
   const [payWaiting, setPayWaiting] = useState(false);
   const payPollGeneration = useRef(0);
   const payablePollGeneration = useRef(0);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   /**
-   * Polls `GET /messages` until every listed row is payable or attempts run out.
+   * Polls `GET /messages` until every merged row is payable or attempts run out.
+   * Stop uses `messagesRef` + merge outside setState so empty GET keeps local unsigned extras.
    *
    * @param activeSession - Session token for the fetch.
    */
@@ -97,8 +100,9 @@ export function ForumLoader(): ReactElement | null {
           if (generation !== payablePollGeneration.current) {
             return;
           }
-          setMessages((prev) => mergeMessages(prev, next));
-          if (next.every((message) => message.payable)) {
+          const merged = mergeMessages(messagesRef.current, next);
+          setMessages(merged);
+          if (merged.length > 0 && merged.every((message) => message.payable)) {
             return;
           }
         } catch {
