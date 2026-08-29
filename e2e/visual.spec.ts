@@ -859,6 +859,7 @@ test.describe('welcome forum variants', () => {
       await route.abort();
     });
     await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
     await expect(page.getByText('Caption waiting for the photo to load.')).toBeVisible();
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-photo-loading');
