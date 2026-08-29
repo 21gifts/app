@@ -209,10 +209,10 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts), language, and **Log out**.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for Profile (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts), **Living room rules**, **Contact**, language, and **Log out**.
 - **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`) whose totals use icon + amount with `aria-label`/`title` from `profile.given` / `profile.received`, embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel with Profile link (`/profile`) whose totals use icon + amount with `aria-label`/`title` from `profile.given` / `profile.received`, **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
 
 ## Function: ProfilePage
 

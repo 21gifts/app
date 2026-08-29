@@ -26,7 +26,8 @@ function formatSatsAmount(
 }
 
 /**
- * Top-right signed-in page chrome: one Menu disclosure; open for Profile, language, and log out.
+ * Top-right signed-in page chrome: one Menu disclosure; open for Profile,
+ * living-room rules, contact, language, and log out.
  *
  * @returns The signed-in Menu chrome.
  */
@@ -126,6 +127,24 @@ export function SignedInChrome(): ReactElement {
                 </>
               )}
             </span>
+          </Link>
+          <Link
+            href="/rules"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-900 no-underline transition hover:bg-neutral-50"
+          >
+            {t('nav.rules')}
+          </Link>
+          <Link
+            href="/contact"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-900 no-underline transition hover:bg-neutral-50"
+          >
+            {t('nav.contact')}
           </Link>
           <LanguageSwitcher tone="light" embedded />
           <div className="px-3 py-2">

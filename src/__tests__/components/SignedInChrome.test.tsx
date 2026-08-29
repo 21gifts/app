@@ -118,6 +118,8 @@ describe('SignedInChrome', () => {
   it('shows Menu while Language and Log out stay hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Living room rules' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Contact' })).toBeNull();
     expect(screen.queryByLabelText('Language')).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });
@@ -126,6 +128,10 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
+    expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
+      '/rules',
+    );
+    expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     await waitFor(() => {
@@ -214,6 +220,20 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.getByLabelText('Language')).toBeTruthy();
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
+
+  it('closes the menu when Living room rules is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Living room rules' }));
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
+
+  it('closes the menu when Contact is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Contact' }));
     expect(screen.queryByLabelText('Language')).toBeNull();
   });
 });
