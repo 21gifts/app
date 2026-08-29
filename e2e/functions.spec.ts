@@ -124,7 +124,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByLabel('Amount (sats)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 }
 
 async function stubGiftStats(page: Page, body: unknown): Promise<void> {
@@ -991,7 +991,7 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
   });
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 });
 
 test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({
@@ -1000,7 +1000,7 @@ test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', 
 }) => {
   await openPayInvoice(page, request);
   const href = await page
-    .getByRole('link', { name: 'Open Wallet of Satoshi' })
+    .getByRole('link', { name: 'Pay with Wallet of Satoshi' })
     .getAttribute('href');
   expect(href?.startsWith('walletofsatoshi:lightning:LNBC')).toBe(true);
 });
@@ -1010,7 +1010,7 @@ test('Function: walletOfSatoshiHref — pay sheet opens Wallet of Satoshi', asyn
   request,
 }) => {
   await openPayInvoice(page, request);
-  await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 });
 
 test('Function: isAndroidUserAgent — Android pay sheet uses an Intent href', async ({
@@ -1025,7 +1025,7 @@ test('Function: isAndroidUserAgent — Android pay sheet uses an Intent href', a
   });
   await openPayInvoice(page, request);
   const href = await page
-    .getByRole('link', { name: 'Open Wallet of Satoshi' })
+    .getByRole('link', { name: 'Pay with Wallet of Satoshi' })
     .getAttribute('href');
   expect(href?.startsWith('intent:lightning:')).toBe(true);
 });
@@ -1042,7 +1042,7 @@ test('Function: walletOfSatoshiIntentHref — Android pay sheet pins the WoS pac
   });
   await openPayInvoice(page, request);
   const href = await page
-    .getByRole('link', { name: 'Open Wallet of Satoshi' })
+    .getByRole('link', { name: 'Pay with Wallet of Satoshi' })
     .getAttribute('href');
   expect(href?.includes('com.livingroomofsatoshi.wallet')).toBe(true);
 });

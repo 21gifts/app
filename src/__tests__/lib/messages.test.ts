@@ -29,7 +29,8 @@ describe('getCatalog', () => {
       const catalog = getCatalog(locale);
       expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
       expect(catalog['la.aria']).toBe('Wallet of Satoshi address');
-      expect(catalog['forum.payOpenWallet']).toContain('Wallet of Satoshi');
+      expect(catalog['forum.payOpenWallet']).toBe('Pay');
+      expect(catalog['forum.payOpenWalletAria']).toBe('Pay with Wallet of Satoshi');
       expect(catalog['aria.github']).toBe('GitHub');
       for (const [key, value] of Object.entries(catalog)) {
         expect(value, `${locale}.${key}`).not.toMatch(/Wallet-of-Satoshi/);
