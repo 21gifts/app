@@ -238,6 +238,21 @@ chapter-navigation labels (English), product tokens such as
 document/social metadata (`title`, `description`, Open Graph alt text —
 English).
 
+### Icon controls (hard requirement)
+
+Action controls are **lucide icons** with a catalog `aria-label`. Do not ship a
+visible text label on chrome, composer, or list action buttons. That includes
+Menu, attach, send (**Post**), remove-photo, pay Bitcoin, Profile back, and
+given/received arrows. Tests locate them with `getByRole('button', { name })`
+against the aria-label; `queryByText` for the catalog string must be `null`.
+
+Visible text remains for headings, body copy, form field labels, alerts, and
+sentence-length links (for example **Open Wallet of Satoshi**). Multi-field
+form submits that already exist as text (**Link address**, **Continue**,
+**Try again**) stay until they are converted. **New action buttons default to
+icon-only.** A new text button for an action control is an undeclared
+deviation and is rejected.
+
 Reviewers follow `Review.md`.
 
 ### Payment QR vs deep links (hard requirement)
