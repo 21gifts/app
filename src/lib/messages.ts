@@ -388,7 +388,7 @@ const de = {
   'la.unlink': 'Trennen',
   'la.aria': 'Wallet of Satoshi address',
   'la.errorEmpty': 'Wallet of Satoshi Adresse eingeben',
-  'la.errorExample': 'Gib deine eigene Wallet of Satoshi Adresse ein, nicht das Beispiel',
+  'la.errorExample': 'Eigene Wallet of Satoshi Adresse eingeben, nicht das Beispiel',
   'la.errorNotFound': 'Diese Wallet of Satoshi Adresse konnte nicht gefunden werden',
   'la.errorRequest': 'Wallet of Satoshi address konnte nicht aktualisiert werden',
   'forum.heading': 'Forum',
