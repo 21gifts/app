@@ -277,6 +277,21 @@ describe('LanguageSwitcher', () => {
     expect(screen.getByRole('option', { name: 'Filipino' })).toBeTruthy();
   });
 
+  it('embedded option rows stay in the tab order', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
+    expect(screen.getByRole('option', { name: 'Deutsch' }).getAttribute('tabindex')).not.toBe('-1');
+  });
+
+  it('standalone combobox exposes aria-activedescendant while open', () => {
+    renderWithLocale(<LanguageSwitcher tone="light" />);
+    const trigger = screen.getByLabelText('Language');
+    fireEvent.click(trigger);
+    expect(trigger.getAttribute('role')).toBe('combobox');
+    expect(trigger.getAttribute('aria-activedescendant')).toBe('language-option-en');
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowDown' });
+    expect(trigger.getAttribute('aria-activedescendant')).toBe('language-option-de');
+  });
+
   it('embedded selecting Español writes the cookie and refreshes', () => {
     renderWithLocale(<LanguageSwitcher tone="light" embedded />);
     fireEvent.click(screen.getByRole('option', { name: 'Español' }));

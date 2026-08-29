@@ -178,7 +178,6 @@ export function LanguageSwitcher(props: {
                 type="button"
                 role="option"
                 id={optionId(code)}
-                tabIndex={-1}
                 aria-selected={selected}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50${selected ? ' font-medium' : ''}`}
                 onClick={() => {
@@ -242,10 +241,12 @@ export function LanguageSwitcher(props: {
       <button
         ref={triggerRef}
         type="button"
+        role="combobox"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls="language-listbox"
         aria-label={label}
+        {...(open ? { 'aria-activedescendant': optionId(highlight) } : {})}
         className={triggerClass}
         onClick={() => {
           if (open) {
