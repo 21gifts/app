@@ -508,6 +508,18 @@ async function postAndExpectPhotoRow(page: Page, caption?: string): Promise<stri
   });
   if (caption !== undefined) {
     await expect(row).toContainText(caption);
+    await expect
+      .poll(async () =>
+        row.evaluate((el) => {
+          const img = el.querySelector('img');
+          const captionEl = el.querySelector('p');
+          if (img === null || captionEl === null) {
+            return false;
+          }
+          return Boolean(img.compareDocumentPosition(captionEl) & Node.DOCUMENT_POSITION_FOLLOWING);
+        }),
+      )
+      .toBe(true);
   }
   return created.id;
 }

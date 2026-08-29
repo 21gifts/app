@@ -649,8 +649,12 @@ describe('ForumBoard', () => {
     );
     const row = screen.getByRole('listitem');
     expect(row.getAttribute('data-message-id')).toBe('m-both');
-    expect(screen.getByText('Hello from Ada')).toBeTruthy();
-    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
+    const photo = screen.getByAltText('Photo from Ada');
+    const caption = screen.getByText('Hello from Ada');
+    expect(photo.getAttribute('src')).toBe('blob:photo');
+    expect(photo.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('omits Send Bitcoin when payable is false', () => {

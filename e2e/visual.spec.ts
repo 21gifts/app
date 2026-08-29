@@ -649,9 +649,20 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Post' }).click();
     const row = page.locator('li[data-message-id="m-both"]');
     await expect(row).toContainText('Hello with this photo.');
-    await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({
-      timeout: 10_000,
-    });
+    const photo = row.getByRole('img', { name: 'Photo from Ada' });
+    await expect(photo).toBeVisible({ timeout: 10_000 });
+    await expect
+      .poll(async () =>
+        row.evaluate((el) => {
+          const img = el.querySelector('img');
+          const caption = el.querySelector('p');
+          if (img === null || caption === null) {
+            return false;
+          }
+          return Boolean(img.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING);
+        }),
+      )
+      .toBe(true);
     await expect(page.getByLabel('Your message')).toHaveValue('');
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-photo-and-text');
