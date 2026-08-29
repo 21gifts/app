@@ -794,6 +794,7 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -891,6 +892,7 @@ describe('ForumBoard', () => {
     expect(walletLink.textContent).toContain('Pay');
     expect(walletLink.querySelector('img[src="/wos-icon.png"]')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.queryByText('Back')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
@@ -976,6 +978,7 @@ describe('ForumBoard', () => {
       'de',
     );
     expect(screen.getByRole('button', { name: 'Zurück' })).toBeTruthy();
+    expect(screen.queryByText('Zurück')).toBeNull();
     const walletLink = screen.getByRole('link', { name: 'Mit Wallet of Satoshi zahlen' });
     expect(walletLink.textContent).toContain('Zahlen');
     expect(walletLink.textContent).not.toContain('Pay');
