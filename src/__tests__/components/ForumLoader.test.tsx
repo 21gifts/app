@@ -669,6 +669,8 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
         hasPhoto: true,
       },
       {
@@ -676,6 +678,8 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:01:00.000Z',
+        sats: 0,
+        payable: false,
         hasPhoto: true,
       },
     ]);
@@ -703,6 +707,8 @@ describe('ForumLoader', () => {
         name: 'Ada',
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
         hasPhoto: true,
       },
     ]);
