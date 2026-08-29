@@ -518,6 +518,7 @@ describe('ForumBoard', () => {
         formError={null}
         {...idlePay}
         onPayOpen={onPayOpen}
+        {...modeProps('all')}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));

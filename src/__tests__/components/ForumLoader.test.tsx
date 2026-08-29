@@ -733,6 +733,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
+    await revealAll();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
 
@@ -797,6 +798,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
+    await revealAll();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
 
@@ -823,6 +825,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
+    await revealAll();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
 
