@@ -1782,6 +1782,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
             id: 'm1',
             name: 'Ada',
             text: 'Hello from Ada',
+            forumLawsDismissed: false,
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 1,
             payable: true,
@@ -1813,9 +1814,10 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
-        forumLawsDismissed: false,
+        forumLawsDismissed: true,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1829,6 +1831,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
             id: 'm3',
             name: 'Ada',
             text: 'Thank you both — that helps.',
+            forumLawsDismissed: false,
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 5,
             payable: true,

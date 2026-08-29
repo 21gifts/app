@@ -120,6 +120,7 @@ test('signed-in profile shows the view-key URL and copy control', async ({ page 
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
         viewKey: KEY,
       }),
