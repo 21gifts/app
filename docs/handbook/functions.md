@@ -108,9 +108,9 @@
 
 ## Function: LanguageSwitcher
 
-- **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
+- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login and donate) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
-- **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
+- **Returns / side effects:** Standalone combobox + listbox, or an always-open embedded listbox inside the Menu. Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and the signed-in Menu in `SignedInChrome`.
 
 ## Function: NameForm
@@ -448,9 +448,9 @@
 ## Function: parseSupportedLocale
 
 - **Purpose:** Accept a string only when it is exactly one of `en` / `de` / `es` / `fil`.
-- **Inputs:** Raw cookie or `<select>` value, or `undefined`.
+- **Inputs:** Raw cookie or option value, or `undefined`.
 - **Returns / side effects:** That locale, or `null`. Pure function — no I/O.
-- **Used by:** `getRequestLocale` (cookie) and `LanguageSwitcher` (option value).
+- **Used by:** `getRequestLocale` (cookie).
 
 ## Function: resolveLightningAddress
 

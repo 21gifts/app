@@ -155,6 +155,13 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-mobile-nav');
   });
 
+  test('state / language-open', async ({ page }) => {
+    await page.goto('/');
+    await page.getByLabel('Language').click();
+    await expect(page.getByRole('option', { name: 'Español' })).toBeVisible();
+    await shotScreen(page, 'state-root-language');
+  });
+
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
@@ -252,6 +259,13 @@ test.describe('login variant baselines', () => {
       page.getByRole('heading', { name: 'Open this page in your browser' }),
     ).toBeVisible();
     await shotScreen(page, 'state-login-in-app');
+  });
+
+  test('login language-open', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Language').click();
+    await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
+    await shotScreen(page, 'state-login-language');
   });
 });
 

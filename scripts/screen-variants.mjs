@@ -24,6 +24,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('button', { name: 'Menu' })",
   },
   {
+    route: '/',
+    id: 'language-open',
+    image: 'root-language.png',
+    visual: 'state-root-language',
+    needle: "getByRole('option', { name: 'Español' })",
+  },
+  {
     route: '/legal',
     id: 'default',
     image: 'legal.png',
@@ -57,6 +64,13 @@ export const SCREEN_VARIANTS = [
     image: 'login-in-app.png',
     visual: 'state-login-in-app',
     needle: 'Open this page in your browser',
+  },
+  {
+    route: '/login',
+    id: 'language-open',
+    image: 'login-language.png',
+    visual: 'state-login-language',
+    needle: "getByRole('option', { name: 'Deutsch' })",
   },
   {
     route: '/donate',
