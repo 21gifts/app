@@ -7,14 +7,14 @@ import { useTranslations } from '@/components/LocaleProvider';
 /**
  * The first post-login screen: ask for a display name.
  *
- * @returns The name setup card.
+ * @returns The name setup screen.
  */
 export function NameSetup(): ReactElement {
   const { t } = useTranslations();
   return (
-    <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
+    <section className="flex w-full max-w-sm flex-1 flex-col pb-8 pt-24">
       <h1 className="text-center text-2xl font-semibold tracking-tight">{t('setup.nameTitle')}</h1>
-      <NameForm />
+      <NameForm variant="onboarding" />
     </section>
   );
 }

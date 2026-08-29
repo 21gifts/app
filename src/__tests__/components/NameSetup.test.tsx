@@ -33,7 +33,7 @@ describe('NameSetup', () => {
   it('asks for a name and not a Wallet of Satoshi address', () => {
     renderWithLocale(<NameSetup />);
     expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /link address/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });

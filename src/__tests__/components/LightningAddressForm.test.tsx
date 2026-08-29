@@ -50,13 +50,21 @@ describe('LightningAddressForm', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('uses icon actions beside the field on the profile variant without an address', () => {
+    renderWithLocale(<LightningAddressForm variant="profile" />);
+    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /continue/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter your Wallet of Satoshi address');
+  });
+
   it('shows the link prompt and an empty input when no address is set', () => {
     renderWithLocale(<LightningAddressForm />);
 
     const input = screen.getByPlaceholderText(PLACEHOLDER) as HTMLInputElement;
     expect(input.value).toBe('');
     expect(screen.getByText(/gifts can reach you/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
   });
 
   it('shows the link prompt for a whitespace-only address instead of display/unlink', () => {
@@ -67,7 +75,7 @@ describe('LightningAddressForm', () => {
     renderWithLocale(<LightningAddressForm />);
 
     expect(screen.getByText(/gifts can reach you/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /edit/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
   });
@@ -78,7 +86,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: '   ' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(screen.getByRole('alert').textContent).toBe('Enter your Wallet of Satoshi address');
     expect(setLightningAddress).not.toHaveBeenCalled();
@@ -92,7 +100,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: '  me@walletofsatoshi.com  ' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('me@walletofsatoshi.com')).toBeTruthy();
     expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com');
@@ -106,7 +114,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('me@walletofsatoshi.com')).toBeTruthy();
     expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com');
@@ -123,7 +131,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'bad@example' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not update your Wallet of Satoshi address');
@@ -138,7 +146,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('Could not update your Wallet of Satoshi address')).toBeTruthy();
   });
@@ -192,7 +200,7 @@ describe('LightningAddressForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /unlink/i }));
 
-    expect(await screen.findByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /continue/i })).toBeTruthy();
     expect(unlinkLightningAddress).toHaveBeenCalledWith('sess');
     expect(useAuthStore.getState().account).toEqual(baseAccount);
   });
@@ -222,9 +230,9 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-    const button = screen.getByRole('button', { name: /link address/i }) as HTMLButtonElement;
+    const button = screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect((screen.getByPlaceholderText(PLACEHOLDER) as HTMLInputElement).disabled).toBe(true);
 
@@ -246,7 +254,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     act(() => {
       useAuthStore.setState({
@@ -278,7 +286,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     act(() => {
       useAuthStore.setState({ session: 'sess', account: null });
@@ -303,7 +311,7 @@ describe('LightningAddressForm', () => {
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
       target: { value: 'me@walletofsatoshi.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     // The user logs out while the request is in flight.
     act(() => {

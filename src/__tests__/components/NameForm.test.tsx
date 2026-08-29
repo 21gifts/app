@@ -45,13 +45,21 @@ describe('NameForm', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('uses icon actions beside the field on the profile variant without a name', () => {
+    renderWithLocale(<NameForm variant="profile" />);
+    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /continue/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter your name');
+  });
+
   it('shows the prompt and an empty input when no name is set', () => {
     renderWithLocale(<NameForm />);
 
     const input = screen.getByPlaceholderText('Your name') as HTMLInputElement;
     expect(input.value).toBe('');
     expect(screen.getByText(/people know who you are/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
   });
 
   it('shows the prompt for a whitespace-only name instead of display/edit', () => {
@@ -62,14 +70,14 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     expect(screen.getByText(/people know who you are/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /edit/i })).toBeNull();
   });
 
   it('does not call the api when the name is empty', () => {
     renderWithLocale(<NameForm />);
 
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(screen.getByRole('alert').textContent).toBe('Enter your name');
     expect(setName).not.toHaveBeenCalled();
@@ -79,7 +87,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(screen.getByRole('alert').textContent).toBe('Enter your name');
     expect(setName).not.toHaveBeenCalled();
@@ -90,7 +98,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('Ada')).toBeTruthy();
     expect(setName).toHaveBeenCalledWith('sess', 'Ada');
@@ -103,7 +111,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: '  Ada  ' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('Ada')).toBeTruthy();
     expect(setName).toHaveBeenCalledWith('sess', 'Ada');
@@ -114,7 +122,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not save your name');
@@ -126,7 +134,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('Could not save your name')).toBeTruthy();
   });
@@ -157,6 +165,15 @@ describe('NameForm', () => {
     expect(setName).toHaveBeenCalledWith('sess', 'Bob');
   });
 
+  it('shows the request error on the profile edit form', async () => {
+    useAuthStore.setState({ session: 'sess', account: namedAccount });
+    vi.mocked(setName).mockRejectedValue(new Error('nope'));
+    renderWithLocale(<NameForm />);
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not save your name');
+  });
+
   it('cancels an edit and returns to the display view', () => {
     useAuthStore.setState({ session: 'sess', account: namedAccount });
     renderWithLocale(<NameForm />);
@@ -179,9 +196,9 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-    const button = screen.getByRole('button', { name: /save name/i }) as HTMLButtonElement;
+    const button = screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect((screen.getByPlaceholderText('Your name') as HTMLInputElement).disabled).toBe(true);
 
@@ -201,7 +218,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     act(() => {
       useAuthStore.setState({
@@ -230,7 +247,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     act(() => {
       useAuthStore.setState({ session: 'sess', account: null });
@@ -253,7 +270,7 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     act(() => {
       useAuthStore.setState({ session: null, account: null });

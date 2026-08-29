@@ -10,7 +10,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  */
 export default function AddressSetupPage(): ReactElement {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6">
+    <main className="relative flex h-svh flex-col items-center px-6">
       <SignedInChrome />
       <OnboardingGate screen="address">
         <AddressSetup />

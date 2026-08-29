@@ -74,8 +74,8 @@ export function ProfileScreen(): ReactElement {
             </>
           )}
         </p>
-        <NameForm />
-        <LightningAddressForm />
+        <NameForm variant="profile" />
+        <LightningAddressForm variant="profile" />
       </section>
     </>
   );
