@@ -53,7 +53,7 @@
 
 - **Purpose:** Same-origin proxy of public LUD-16 resolve.
 - **Errors:** Upstream 400/502, or 502 if the api is unreachable.
-- **Used by:** `resolveLightningAddress` on `/donate`.
+- **Used by:** `resolveLightningAddress` (LUD-16 helper).
 - **Auth:** Public.
 
 ## Endpoint: POST /me/name

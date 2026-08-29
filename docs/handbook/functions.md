@@ -1,19 +1,5 @@
 # Functions
 
-## Function: DonateForm
-
-- **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR. All visitor-facing copy goes through `useTranslations`.
-- **Inputs:** Form state: address and whole-sat amount. Validation and request failures are typed keys (`address` / `amount` / `range` / `request`) so `useTranslations` re-renders them after a locale change.
-- **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
-- **Used by:** Screen `/donate`.
-
-## Function: DonatePage
-
-- **Purpose:** Next.js page for `/donate` with localized heading and a light language switcher.
-- **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** The donate screen wrapped in the root layout; switcher top-right.
-- **Used by:** Route `/donate`.
-
 ## Function: GET
 
 - **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET`.
@@ -123,9 +109,9 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
 - **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and `SignedInChrome`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, and `SignedInChrome`.
 
 ## Function: NameForm
 
@@ -279,7 +265,7 @@
 - **Purpose:** SVG QR for a string (LNURL or bolt11).
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated).
 - **Returns / side effects:** React element.
-- **Used by:** `DonateForm`.
+- **Used by:** `ForumBoard`.
 
 ## Function: RootLayout
 
@@ -342,7 +328,7 @@
 - **Purpose:** Formats millisatoshis as an English sat string (`1 sat` / `{n} sats`).
 - **Inputs:** `msat` number.
 - **Returns / side effects:** Decimal string in sats.
-- **Used by:** Unit tests (`lnurl-pay.test.ts`). The donate UI formats amounts via catalog keys `donate.satOne` / `donate.sats` instead.
+- **Used by:** Unit tests. Forum pay copy uses catalog keys `forum.satsReceived`.
 
 ## Function: formatUsdDisplay
 
@@ -370,21 +356,21 @@
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
 - **Inputs:** `locale` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** The `Messages` object for that locale. Exhaustive switch over `Locale`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, `HandbookPage`, and the `renderWithLocale` test helper.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, and the `renderWithLocale` test helper.
 
 ## Function: getRequestLocale
 
 - **Purpose:** Resolve the UI locale for the current request without writing cookies.
 - **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
 - **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, and `HandbookPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, and `HandbookPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: isAndroidUserAgent
 
 - **Purpose:** Detects Android so the WoS CTA can use an Intent URL.
 - **Inputs:** `userAgent` string.
 - **Returns / side effects:** `true` iff `/Android/i` matches.
-- **Used by:** `DonateForm`.
+- **Used by:** `ForumBoard`.
 
 ## Function: isInAppBrowser
 
@@ -428,26 +414,12 @@
 - **Returns / side effects:** That locale, or `null`. Pure function — no I/O.
 - **Used by:** `getRequestLocale` (cookie) and `LanguageSwitcher` (option value).
 
-## Function: requestDonateInvoice
-
-- **Purpose:** GET an LNURL-pay callback with `amount` millisatoshis and return the bolt11 string.
-- **Inputs:** `{ callback, amountMsat, fetchImpl? }`. Does not resolve a Lightning Address.
-- **Returns / side effects:** bolt11 `string`, or throws.
-- **Used by:** `DonateForm`.
-
 ## Function: resolveLightningAddress
 
 - **Purpose:** GET `/lightning-address?address=` on the 21.gifts api.
 - **Inputs:** `address`.
 - **Returns / side effects:** Resolved LNURL-pay metadata (callback, min/max).
-- **Used by:** `DonateForm` before paying.
-
-## Function: satsToMsat
-
-- **Purpose:** Converts whole sats to millisatoshis.
-- **Inputs:** `sats` number.
-- **Returns / side effects:** `sats * 1000`.
-- **Used by:** `DonateForm` (converts sats before calling `requestDonateInvoice`).
+- **Used by:** Unit tests and any remaining LUD-16 resolve.
 
 ## Function: saveSession
 
@@ -475,7 +447,7 @@
 - **Purpose:** Look up a catalog key and replace `{name}` placeholders from `vars`.
 - **Inputs:** `catalog` (`Messages`), `key` (`MessageKey`), optional `vars` map of string/number values.
 - **Returns / side effects:** Interpolated string. Throws on a missing key or missing `{name}` — no silent English fallback.
-- **Used by:** Server pages (`Home`, login/donate headings, `NotFound`, `MarketingFooter`, `HandbookPage`) and the `t` helper from `LocaleProvider` / `useTranslations`.
+- **Used by:** Server pages (`Home`, login headings, `NotFound`, `MarketingFooter`, `HandbookPage`) and the `t` helper from `LocaleProvider` / `useTranslations`.
 
 ## Function: unlinkLightningAddress
 
@@ -489,7 +461,7 @@
 - **Purpose:** Uppercases a bech32 LNURL or BOLT11 payment request.
 - **Inputs:** `lnurl` string.
 - **Returns / side effects:** Uppercase string.
-- **Used by:** `walletOfSatoshiHref` and `walletOfSatoshiIntentHref` (`DonateForm`).
+- **Used by:** `walletOfSatoshiHref` and `walletOfSatoshiIntentHref` (`ForumBoard`).
 
 ## Function: useAuthStore
 
@@ -503,21 +475,21 @@
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`.
 
 ## Function: walletOfSatoshiHref
 
 - **Purpose:** iOS/desktop WoS deep link.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase payload.
-- **Used by:** `DonateForm` when not Android.
+- **Used by:** `ForumBoard` when not Android.
 
 ## Function: walletOfSatoshiIntentHref
 
 - **Purpose:** Android Chrome Intent pinning the WoS package.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `intent:lightning:…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
-- **Used by:** `DonateForm` on Android.
+- **Used by:** `ForumBoard` on Android.
 
 ## Function: DELETE
 

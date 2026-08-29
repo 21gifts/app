@@ -195,43 +195,6 @@ Click **Post** with an empty composer → **Enter a message**. The composer caps
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
 
-## Screen: /donate
-
-- **URL:** `/donate` — guest Bitcoin gift. No login required.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Page heading **Send a gift**, form heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
-- **Actions:** Change language. Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
-- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `LanguageSwitcher`.
-
-### Variant: form
-
-Empty/idle form, submit enabled.
-
-![21.gifts donate form](images/donate.png)
-
-### Variant: busy
-
-Payment request in flight: spinner on **Continue**, extra **Cancel** button.
-
-![21.gifts donate busy](images/donate-busy.png)
-
-### Variant: validation-error
-
-Submit with a blank address (or invalid amount). An alert explains what to fix; no payment QR yet.
-
-![21.gifts donate validation error](images/donate-validation-error.png)
-
-### Variant: invoice
-
-Successful create: **Pay N sats to address**, Bitcoin payment QR, **Open Wallet of Satoshi**.
-
-![21.gifts donate invoice](images/donate-invoice.png)
-
-### Variant: invoice-android
-
-Same payment card, but **Open Wallet of Satoshi** is an Android Intent that pins package `com.livingroomofsatoshi.wallet`. The pixels match the desktop invoice variant.
-
-![21.gifts donate invoice Android](images/donate-invoice-android.png)
-
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).
