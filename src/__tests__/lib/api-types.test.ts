@@ -67,6 +67,7 @@ describe('forumMessageSchema', () => {
     sats: 0,
     payable: false,
     hasPhoto: false,
+    role: 'basis' as const,
   };
 
   it('accepts text with no photo', () => {
@@ -121,6 +122,11 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
   });
 
+  it('accepts founder and verified roles', () => {
+    expect(accountSchema.parse({ ...account, role: 'founder' }).role).toBe('founder');
+    expect(accountSchema.parse({ ...account, role: 'verified' }).role).toBe('verified');
+  });
+
   it('rejects an unknown role', () => {
     expect(() => accountSchema.parse({ ...account, role: 'admin' })).toThrow();
   });
@@ -144,6 +150,32 @@ describe('accountSchema', () => {
 
   it('accepts a null linkingKey for passkey accounts', () => {
     expect(accountSchema.parse({ ...account, linkingKey: null }).linkingKey).toBeNull();
+  });
+});
+
+describe('forumMessageSchema', () => {
+  const message = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+  };
+
+  it('defaults a missing role to basis', () => {
+    expect(forumMessageSchema.parse(message)).toEqual({ ...message, role: 'basis' });
+  });
+
+  it('accepts founder, verified, and moderator roles', () => {
+    expect(forumMessageSchema.parse({ ...message, role: 'founder' }).role).toBe('founder');
+    expect(forumMessageSchema.parse({ ...message, role: 'verified' }).role).toBe('verified');
+    expect(forumMessageSchema.parse({ ...message, role: 'moderator' }).role).toBe('moderator');
+  });
+
+  it('rejects an unknown role', () => {
+    expect(() => forumMessageSchema.parse({ ...message, role: 'admin' })).toThrow();
   });
 });
 

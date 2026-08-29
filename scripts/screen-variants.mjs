@@ -283,6 +283,13 @@ export const SCREEN_VARIANTS = [
     needle: 'iPhone pay sheet has no QR',
   },
   {
+    route: '/welcome',
+    id: 'role-hint',
+    image: 'welcome-role-hint.png',
+    visual: 'state-welcome-role-hint',
+    needle: 'A moderator met this person in real life and confirmed they are a real human.',
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',

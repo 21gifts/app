@@ -417,16 +417,26 @@ const forumMessage = {
   sats: 0,
   payable: false,
   hasPhoto: false,
+  role: 'basis' as const,
 };
 
 describe('fetchMessages', () => {
   it('returns the validated messages and sends the bearer header', async () => {
+    const forumMessageWithoutRole = {
+      id: forumMessage.id,
+      name: forumMessage.name,
+      text: forumMessage.text,
+      createdAt: forumMessage.createdAt,
+      sats: forumMessage.sats,
+      payable: forumMessage.payable,
+      hasPhoto: forumMessage.hasPhoto,
+    };
     const fetchMock = stubFetch({
       ok: true,
       status: 200,
-      body: { messages: [forumMessage] },
+      body: { messages: [forumMessageWithoutRole] },
     });
-    await expect(fetchMessages('sess')).resolves.toEqual([forumMessage]);
+    await expect(fetchMessages('sess')).resolves.toEqual([{ ...forumMessageWithoutRole, role: 'basis' }]);
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       headers: { Authorization: 'Bearer sess' },
     });
