@@ -115,17 +115,17 @@
 
 ## Function: NameForm
 
-- **Purpose:** Logged-in form to set or edit a display name.
+- **Purpose:** Logged-in form to set or edit a display name. Actions are icon-only buttons (`aria-label` from the catalog) to the right of the field: check to save, X to cancel, pencil to edit.
 - **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
-- **Used by:** `NameSetup` on screen `/setup/name` (not on `/` or `/login`).
+- **Used by:** `NameSetup` on screen `/setup/name` and `ProfileScreen` on `/profile`.
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Actions are icon-only buttons (`aria-label` from the catalog) to the right of the field: check to save or link, X to cancel, pencil to edit, trash to unlink.
 - **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out.
-- **Used by:** `AddressSetup` on screen `/setup/address` (not on `/` or `/login`).
+- **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
 
 ## Function: LocaleProvider
 

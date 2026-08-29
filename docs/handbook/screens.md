@@ -154,7 +154,7 @@ The only state. Heading **Send help**, explainer lead, **Open the forum**.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name**, **Save name**. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in, no name yet. **Your name**, name field with a check icon to the right (**Save name**). One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
@@ -167,7 +167,7 @@ Signed in, no name yet. **Your name**, **Save name**. One **Menu** top-right; op
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Signed in with a name and no address. **Your Wallet of Satoshi address**, address field with a check icon to the right (**Link address**). One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
@@ -223,7 +223,7 @@ Open **Menu** top-right → Profile link (sat totals as `ArrowUpRight` / `ArrowD
 
 ### Variant: default
 
-Heading **Profile**, outbound/inbound sat totals as `ArrowUpRight` / `ArrowDownLeft` icons with visible amounts (accessible names from `profile.given` / `profile.received`), name form, Wallet of Satoshi address form. Icon-only back top-left (returns to the forum); one **Menu** top-right.
+Heading **Profile**, outbound/inbound sat totals as `ArrowUpRight` / `ArrowDownLeft` icons with visible amounts (accessible names from `profile.given` / `profile.received`), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). Icon-only back top-left (returns to the forum); one **Menu** top-right.
 
 ![21.gifts profile](images/profile.png)
 

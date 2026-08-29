@@ -1,6 +1,6 @@
 'use client';
 
-import { AtSign, Check, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { setLightningAddress, unlinkLightningAddress } from '@/lib/api';
@@ -106,14 +106,11 @@ export function LightningAddressForm(): ReactElement | null {
     void run((token) => setLightningAddress(token, trimmed));
   };
 
-  let submitIcon: ReactElement;
-  if (busy) {
-    submitIcon = <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />;
-  } else if (editing) {
-    submitIcon = <Check aria-hidden="true" className="h-4 w-4" />;
-  } else {
-    submitIcon = <AtSign aria-hidden="true" className="h-4 w-4" />;
-  }
+  const submitIcon = busy ? (
+    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+  ) : (
+    <Check aria-hidden="true" className="h-4 w-4" />
+  );
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-neutral-200 pt-6">
@@ -126,26 +123,26 @@ export function LightningAddressForm(): ReactElement | null {
           {!linked ? (
             <p className="text-center text-sm text-neutral-500">{t('la.prompt')}</p>
           ) : null}
-          <input
-            type="email"
-            inputMode="email"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="you@walletofsatoshi.com"
-            aria-label={t('la.aria')}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            disabled={busy}
-            className="w-full rounded-2xl border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
-          />
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="you@walletofsatoshi.com"
+              aria-label={t('la.aria')}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              disabled={busy}
+              className="min-w-0 flex-1 rounded-2xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+            />
             <button
               type="submit"
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+              aria-label={editing ? t('la.save') : t('la.link')}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-900 text-white transition hover:bg-neutral-700 disabled:opacity-50"
             >
               {submitIcon}
-              {editing ? t('la.save') : t('la.link')}
             </button>
             {editing ? (
               <button
@@ -155,43 +152,42 @@ export function LightningAddressForm(): ReactElement | null {
                   setError(null);
                 }}
                 disabled={busy}
-                className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+                aria-label={t('la.cancel')}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
               >
-                {t('la.cancel')}
+                <X aria-hidden="true" className="h-4 w-4" />
               </button>
             ) : null}
           </div>
         </form>
       ) : (
-        <div className="flex flex-col items-center gap-3">
-          <p className="font-mono text-sm text-neutral-900">{address}</p>
-          <div className="flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                /* v8 ignore next — display branch only mounts when hasLightningAddress; address is non-null */
-                setDraft(address ?? '');
-                setEditing(true);
-                setError(null);
-              }}
-              disabled={busy}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
-            >
-              <Pencil aria-hidden="true" className="h-4 w-4" />
-              {t('la.edit')}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                void run(unlinkLightningAddress);
-              }}
-              disabled={busy}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
-            >
-              <Trash2 aria-hidden="true" className="h-4 w-4" />
-              {t('la.unlink')}
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 flex-1 truncate font-mono text-sm text-neutral-900">{address}</p>
+          <button
+            type="button"
+            onClick={() => {
+              /* v8 ignore next — display branch only mounts when hasLightningAddress; address is non-null */
+              setDraft(address ?? '');
+              setEditing(true);
+              setError(null);
+            }}
+            disabled={busy}
+            aria-label={t('la.edit')}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+          >
+            <Pencil aria-hidden="true" className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void run(unlinkLightningAddress);
+            }}
+            disabled={busy}
+            aria-label={t('la.unlink')}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+          >
+            <Trash2 aria-hidden="true" className="h-4 w-4" />
+          </button>
         </div>
       )}
 
