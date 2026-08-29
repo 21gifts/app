@@ -148,6 +148,52 @@ describe('ForumLoader', () => {
     expect(useAuthStore.getState().account?.forumLawsDismissed).toBe(false);
   });
 
+  it('does not restore an account when logout happens during dismiss', async () => {
+    fetchMock.mockResolvedValue([]);
+    let resolveDismiss: ((value: Account) => void) | undefined;
+    dismissLawsMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveDismiss = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    useAuthStore.getState().clearAuth();
+    resolveDismiss?.({ ...account, forumLawsDismissed: true });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('does not restore an account when logout happens during a failed dismiss', async () => {
+    fetchMock.mockResolvedValue([]);
+    let rejectDismiss: ((reason: Error) => void) | undefined;
+    dismissLawsMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectDismiss = reject;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    useAuthStore.getState().clearAuth();
+    rejectDismiss?.(new Error('Could not dismiss the living-room hint'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('shows a fetched message with sats', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);

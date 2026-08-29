@@ -163,22 +163,32 @@ export function ForumLoader(): ReactElement | null {
   const lawsVisible = account?.forumLawsDismissed !== true;
 
   const onDismissLaws = (): void => {
+    const snapshot = useAuthStore.getState();
     /* v8 ignore next 3 -- ForumLoader returns null without a session */
-    if (session === null || account === null) {
+    if (snapshot.session === null || snapshot.account === null) {
       return;
     }
     /* v8 ignore next 3 -- dismiss control is hidden when already dismissed */
-    if (account.forumLawsDismissed === true) {
+    if (snapshot.account.forumLawsDismissed === true) {
       return;
     }
-    const previousAccount = account;
-    setAccount({ ...account, forumLawsDismissed: true });
+    const token = snapshot.session;
+    const previousDismissed = snapshot.account.forumLawsDismissed;
+    setAccount({ ...snapshot.account, forumLawsDismissed: true });
     void (async () => {
       try {
-        const updated = await dismissForumLaws(session);
-        setAccount(updated);
+        const updated = await dismissForumLaws(token);
+        const current = useAuthStore.getState();
+        if (current.session !== token || current.account === null) {
+          return;
+        }
+        setAccount({ ...current.account, forumLawsDismissed: updated.forumLawsDismissed });
       } catch {
-        setAccount(previousAccount);
+        const current = useAuthStore.getState();
+        if (current.session !== token || current.account === null) {
+          return;
+        }
+        setAccount({ ...current.account, forumLawsDismissed: previousDismissed });
       }
     })();
   };
