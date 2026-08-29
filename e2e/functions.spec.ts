@@ -340,6 +340,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -394,6 +395,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -425,6 +427,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });
@@ -485,6 +488,7 @@ async function reachWelcome(page: Page, request: APIRequestContext): Promise<voi
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
 }
