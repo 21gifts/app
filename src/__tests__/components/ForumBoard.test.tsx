@@ -646,6 +646,7 @@ describe('ForumBoard', () => {
         formError={null}
         {...idleProps}
         photoUrls={{ 'm-both': 'blob:photo' }}
+        {...modeProps('all')}
       />,
     );
     const row = screen.getByRole('listitem');
