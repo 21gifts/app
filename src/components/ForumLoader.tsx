@@ -174,15 +174,6 @@ export function ForumLoader(): ReactElement | null {
     };
   }, [attempt, session]);
 
-  const photoIdsKey =
-    messages === null
-      ? ''
-      : messages
-          .filter((message) => message.hasPhoto)
-          .map((message) => message.id)
-          .sort()
-          .join('\0');
-
   useEffect(() => {
     if (session === null || photoIdsKey === '') {
       return;
