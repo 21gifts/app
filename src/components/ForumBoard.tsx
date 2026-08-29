@@ -2,7 +2,7 @@
 
 import { Bitcoin, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, type ReactElement } from 'react';
+import { type FormEvent, type ReactElement, useEffect, useRef } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
@@ -31,7 +31,7 @@ export interface ForumPayInvoice {
 
 /** Props for {@link ForumBoard}. */
 export interface ForumBoardProps {
-  /** Loaded messages newest-first, or `null` before the first successful load. */
+  /** Loaded messages newest-first (API window), or `null` before the first successful load. */
   messages: ForumMessage[] | null;
   /** True when the latest fetch failed. Copy comes from `forum.error`. */
   error: boolean;
@@ -77,6 +77,10 @@ export interface ForumBoardProps {
  * sats total with a Bitcoin pay icon when the note is payable, and
  * pay-on-note sheet (amount → QR / Wallet of Satoshi).
  *
+ * This is a messenger-group thread (oldest top, newest bottom above the
+ * composer), not a social feed. Props stay newest-first; the DOM list is
+ * chronological.
+ *
  * Always shows the heading and composer so validation errors can surface even
  * when the list is empty. Light neutral palette to match {@link WelcomeScreen}.
  *
@@ -105,6 +109,15 @@ export function ForumBoard({
   onPayCancel,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
+  const composerRef = useRef<HTMLFormElement>(null);
+  const newestId = messages?.[0]?.id ?? null;
+
+  useEffect(() => {
+    if (newestId === null) {
+      return;
+    }
+    composerRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
+  }, [newestId]);
 
   const formatSatsLabel = (sats: number): string => {
     if (sats === 1) {
@@ -144,9 +157,10 @@ export function ForumBoard({
   } else if (messages !== null && messages.length === 0) {
     middle = <p className="text-center text-sm text-neutral-500">{t('forum.empty')}</p>;
   } else if (messages !== null) {
+    const chronological = messages.slice().reverse();
     middle = (
       <ul aria-label={t('forum.listLabel')} className="flex flex-col gap-4">
-        {messages.map((message) => {
+        {chronological.map((message) => {
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
@@ -308,7 +322,7 @@ export function ForumBoard({
       {middle}
       {error && messages !== null ? errorBlock : null}
 
-      <form onSubmit={handleSubmit} className="flex items-end gap-2">
+      <form ref={composerRef} onSubmit={handleSubmit} className="flex items-end gap-2">
         <textarea
           aria-label={t('forum.composerLabel')}
           placeholder={t('forum.placeholder')}

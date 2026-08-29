@@ -43,14 +43,18 @@ const SAMPLE: ForumMessage = {
   payable: true,
 };
 
+const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  HTMLElement.prototype.scrollIntoView = vi.fn();
   useAuthStore.setState({ session: 'sess', account });
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   fetchMock.mockReset();
   postMock.mockReset();
   invoiceMock.mockReset();
@@ -314,7 +318,7 @@ describe('ForumLoader', () => {
     expect(screen.getAllByText('Hello from Ada')).toHaveLength(1);
   });
 
-  it('posts a trimmed message, prepends it, and clears the draft', async () => {
+  it('posts a trimmed message, shows it as the newest row at the bottom, and clears the draft', async () => {
     fetchMock.mockResolvedValue([]);
     const created: ForumMessage = {
       id: 'm2',
@@ -338,6 +342,37 @@ describe('ForumLoader', () => {
     });
     expect(postMock).toHaveBeenCalledWith('sess', 'Hello');
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]!.textContent).toContain('Hello');
+  });
+
+  it('keeps an existing note above a newly posted note in the list', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    const created: ForumMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'New note',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'New note' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('New note')).toBeTruthy();
+    });
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]!.textContent).toContain('Hello from Ada');
+    expect(items[1]!.textContent).toContain('New note');
   });
 
   it('shows a post error when posting fails', async () => {

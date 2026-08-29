@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
@@ -12,7 +12,16 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-afterEach(cleanup);
+const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+
+beforeEach(() => {
+  HTMLElement.prototype.scrollIntoView = vi.fn();
+});
+
+afterEach(() => {
+  cleanup();
+  HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+});
 
 const SAMPLE: ForumMessage = {
   id: 'm1',
@@ -236,6 +245,53 @@ describe('ForumBoard', () => {
       (content) => content.includes('Line one') && content.includes('Line two'),
     );
     expect(preWrap.className).toContain('whitespace-pre-wrap');
+  });
+
+  it('renders newest-first props as chronological listitems (oldest top, newest bottom)', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE, MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+      />,
+    );
+
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]!.textContent).toContain('Bob');
+    expect(items[0]!.textContent).toContain('Line one');
+    expect(items[1]!.textContent).toContain('Ada');
+    expect(items[1]!.textContent).toContain('Hello from Ada');
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+      block: 'end',
+      behavior: 'auto',
+    });
+  });
+
+  it('does not scroll the composer when messages are empty', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+      />,
+    );
+
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
 
   it('shows 1 sat for a single sat total', () => {

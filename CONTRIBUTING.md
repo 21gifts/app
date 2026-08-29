@@ -80,7 +80,7 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list, composer, sat totals, pay-on-note sheet
+│   │   ├── ForumBoard.tsx       # Public forum list (messenger-group chronological), composer, sat totals, pay-on-note sheet
 │   │   ├── ForumLoader.tsx      # Fetch/post state for /welcome forum
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
