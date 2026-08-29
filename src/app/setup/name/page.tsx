@@ -10,7 +10,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  */
 export default function NameSetupPage(): ReactElement {
   return (
-    <main className="relative flex h-svh min-h-screen flex-col items-center px-6">
+    <main className="relative flex h-svh flex-col items-center px-6">
       <SignedInChrome />
       <OnboardingGate screen="name">
         <NameSetup />
