@@ -975,8 +975,9 @@ describe('ForumBoard', () => {
       'de',
     );
     expect(screen.getByRole('button', { name: 'Zurück' })).toBeTruthy();
-    const walletLink = screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' });
-    expect(walletLink.textContent).toContain('Pay');
+    const walletLink = screen.getByRole('link', { name: 'Mit Wallet of Satoshi zahlen' });
+    expect(walletLink.textContent).toContain('Zahlen');
+    expect(walletLink.textContent).not.toContain('Pay');
   });
 
   it('shows formError empty alert', () => {
