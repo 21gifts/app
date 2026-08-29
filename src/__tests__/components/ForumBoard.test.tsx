@@ -669,6 +669,7 @@ describe('ForumBoard', () => {
         {...idlePay}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        {...modeProps('all')}
       />,
     );
     await waitFor(() => {
@@ -697,6 +698,7 @@ describe('ForumBoard', () => {
         {...idlePay}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        {...modeProps('all')}
       />,
     );
     await waitFor(() => {
