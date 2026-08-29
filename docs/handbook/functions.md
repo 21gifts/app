@@ -123,7 +123,7 @@
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil, trash).
-- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
+- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
 

@@ -9,7 +9,21 @@ import { hasLightningAddress } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the Lightning Address form. */
-type LightningAddressError = { type: 'empty' } | { type: 'request' };
+type LightningAddressError = { type: 'empty' } | { type: 'request' } | { type: 'notFound' };
+
+/** Catalog key for a Lightning Address form alert. */
+function lightningAddressErrorKey(
+  error: LightningAddressError,
+): 'la.errorEmpty' | 'la.errorNotFound' | 'la.errorRequest' {
+  switch (error.type) {
+    case 'empty':
+      return 'la.errorEmpty';
+    case 'notFound':
+      return 'la.errorNotFound';
+    case 'request':
+      return 'la.errorRequest';
+  }
+}
 
 /**
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
@@ -70,8 +84,12 @@ export function LightningAddressForm(
         return;
       }
       onFresh(result);
-    } catch {
-      setError({ type: 'request' });
+    } catch (err) {
+      if (err instanceof Error && /could not be found/i.test(err.message)) {
+        setError({ type: 'notFound' });
+      } else {
+        setError({ type: 'request' });
+      }
     } finally {
       setBusy(false);
     }
@@ -139,7 +157,7 @@ export function LightningAddressForm(
         />
         {error !== null ? (
           <p role="alert" className="text-center text-sm text-red-600">
-            {error.type === 'empty' ? t('la.errorEmpty') : t('la.errorRequest')}
+            {t(lightningAddressErrorKey(error))}
           </p>
         ) : null}
         <button
@@ -235,7 +253,7 @@ export function LightningAddressForm(
 
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-red-600">
-          {error.type === 'empty' ? t('la.errorEmpty') : t('la.errorRequest')}
+          {t(lightningAddressErrorKey(error))}
         </p>
       ) : null}
     </div>
