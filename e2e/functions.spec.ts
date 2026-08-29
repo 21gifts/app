@@ -939,9 +939,11 @@ test('Function: requestOptionsFromJSON — continue with passkey reaches the sig
   await signInWithPasskeyThenAgain(page);
 });
 
-test('Function: LanguageSwitcher — landing exposes the language select', async ({ page }) => {
+test('Function: LanguageSwitcher — landing exposes the language switcher', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByLabel('Language')).toBeVisible();
+  await page.getByLabel('Language').click();
+  await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
 });
 
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
@@ -973,7 +975,8 @@ test('Function: parseSupportedLocale — Español cookie localizes the landing h
   page,
 }) => {
   await page.goto('/');
-  await page.getByLabel('Language').selectOption('es');
+  await page.getByLabel('Language').click();
+  await page.getByRole('option', { name: 'Español' }).click();
   await expect(
     page.getByRole('heading', { name: /Regalos directos de persona a persona/ }),
   ).toBeVisible();

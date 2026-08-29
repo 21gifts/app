@@ -19,6 +19,12 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 
 ![21.gifts home mobile nav](images/root-mobile-nav.png)
 
+### Variant: language-open
+
+Open the language switcher in the marketing header. Custom listbox (rounded panel, endonym rows with a check on the current locale) — not OS chrome.
+
+![21.gifts home language](images/root-language.png)
+
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
@@ -132,6 +138,12 @@ Telegram or another in-app WebView detected. Heading **Open this page in your br
 
 ![21.gifts login in-app](images/login-in-app.png)
 
+### Variant: language-open
+
+Open the light language switcher top-right. Custom listbox with endonym rows (English / Deutsch / Español / Filipino) — not a native OS select.
+
+![21.gifts login language](images/login-language.png)
+
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
@@ -210,7 +222,7 @@ Click **Post** with an empty composer → **Enter a message**. The composer caps
 
 ### Variant: menu-open
 
-Open **Menu** top-right → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), language, and **Log out**.
+Open **Menu** top-right → Profile link (sat totals as `ArrowUpRight` / `ArrowDownLeft` icons plus amounts; accessible names stay the catalog Given/Received strings), the four language rows (English / Deutsch / Español / Filipino) inside the Menu listbox, and **Log out**. No native language select.
 
 ![21.gifts welcome menu](images/welcome-menu.png)
 

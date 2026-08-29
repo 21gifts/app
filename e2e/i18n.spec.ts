@@ -74,7 +74,8 @@ test.describe('language switcher cookie', () => {
 
   test('selecting Español sets locale cookie and refreshes UI', async ({ page, context }) => {
     await page.goto('/');
-    await page.getByLabel('Language').selectOption('es');
+    await page.getByLabel('Language').click();
+    await page.getByRole('option', { name: 'Español' }).click();
     await expect(
       page.getByRole('heading', { name: /Regalos directos de persona a persona/ }),
     ).toBeVisible();
