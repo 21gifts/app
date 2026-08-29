@@ -577,6 +577,7 @@ test.describe('profile activity chart variants', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
