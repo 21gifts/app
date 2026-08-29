@@ -78,6 +78,10 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse(photoOnly)).toEqual(photoOnly);
   });
 
+  it('rejects an empty text when hasPhoto is false', () => {
+    expect(() => forumMessageSchema.parse({ ...base, text: '', hasPhoto: false })).toThrow();
+  });
+
   it('rejects a missing hasPhoto flag', () => {
     expect(() =>
       forumMessageSchema.parse({

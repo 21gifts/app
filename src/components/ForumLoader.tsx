@@ -103,7 +103,7 @@ export function ForumLoader(): ReactElement | null {
   const photoIdsKey =
     messages === null
       ? ''
-      : messages
+      : visibleForumMessages(messages, feedMode)
           .filter((message) => message.hasPhoto)
           .map((message) => message.id)
           .sort()
@@ -185,7 +185,8 @@ export function ForumLoader(): ReactElement | null {
     }
     /* v8 ignore stop */
     let cancelled = false;
-    const missing = listed.filter(
+    const visible = visibleForumMessages(listed, feedMode);
+    const missing = visible.filter(
       (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
     );
     if (missing.length === 0) {
@@ -198,31 +199,40 @@ export function ForumLoader(): ReactElement | null {
           continue;
         }
         /* v8 ignore stop */
+        let blob: Blob;
         try {
-          const blob = await fetchMessagePhoto(session, message.id);
-          if (cancelled) {
-            return;
-          }
-          const url = URL.createObjectURL(blob);
-          if (cancelled) {
-            URL.revokeObjectURL(url);
-            return;
-          }
-          setPhotoUrls((prev) => {
-            /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-            if (prev[message.id] !== undefined) {
-              URL.revokeObjectURL(url);
-              return prev;
-            }
-            /* v8 ignore stop */
-            return { ...prev, [message.id]: url };
-          });
+          blob = await fetchMessagePhoto(session, message.id);
         } catch {
           if (cancelled) {
             return;
           }
-          // Leave the row text-only when the photo cannot load.
+          try {
+            blob = await fetchMessagePhoto(session, message.id);
+          } catch {
+            if (cancelled) {
+              return;
+            }
+            // Leave the row text-only when the photo cannot load.
+            continue;
+          }
         }
+        if (cancelled) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        setPhotoUrls((prev) => {
+          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
+          if (prev[message.id] !== undefined) {
+            URL.revokeObjectURL(url);
+            return prev;
+          }
+          /* v8 ignore stop */
+          return { ...prev, [message.id]: url };
+        });
       }
     })();
     return () => {
