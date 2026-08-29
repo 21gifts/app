@@ -17,6 +17,8 @@ export interface QrCodeProps {
  *
  * Wrapped in an `img`-role element carrying an accessible name, so assistive
  * technology announces it as a single image rather than a wall of SVG paths.
+ * Callers must not mount this on a smartphone; {@link ForumBoard} gates it with
+ * `isSmartphoneUserAgent`.
  *
  * @param props - See {@link QrCodeProps}.
  * @returns The QR image element.

@@ -265,7 +265,7 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, list of every post (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet (amount → QR / Wallet of Satoshi). Props `messages` are newest-first (API window); the DOM list is chronological (oldest at the top, newest at the bottom above the composer). New posts appear at the bottom. Messenger-group thread, not a social feed.
+- **Purpose:** Presentational public forum: heading **Forum**, two living-room laws plus links to `/rules` and `/contact`, list of every post (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet: QR + Wallet of Satoshi on desktop; Wallet of Satoshi deep link only on smartphones (`isSmartphoneUserAgent`). Props `messages` are newest-first (API window); the DOM list is chronological (oldest at the top, newest at the bottom above the composer). New posts appear at the bottom. Messenger-group thread, not a social feed.
 - **Inputs:** `ForumBoardProps` — messages, error (boolean load-failure flag), loading, posting, draft, onDraftChange, onPost, onRetry, formError (`empty` / `tooLong` / `request` / `rateLimit`), plus pay-sheet fields (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
 - **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network / no fetch. Scrolls the composer into view when the newest message id is set or changes.
 - **Used by:** `ForumLoader`.
@@ -345,7 +345,7 @@
 - **Purpose:** SVG QR for a string (LNURL or bolt11).
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated).
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard`.
+- **Used by:** `ForumBoard` only when the UA is not a smartphone.
 
 ## Function: RootLayout
 
@@ -451,6 +451,13 @@
 - **Inputs:** `userAgent` string.
 - **Returns / side effects:** `true` iff `/Android/i` matches.
 - **Used by:** `ForumBoard`.
+
+## Function: isSmartphoneUserAgent
+
+- **Purpose:** Detects a smartphone so the pay sheet can hide the payment QR. True for iPhone, iPod, and Android with `Mobile`; false for iPad, Android tablet (no `Mobile`), and desktop. Viewport width is irrelevant.
+- **Inputs:** `userAgent` string (`navigator.userAgent`).
+- **Returns / side effects:** `true` iff the UA is a smartphone. No side effects.
+- **Used by:** `ForumBoard` to hide the payment QR.
 
 ## Function: isInAppBrowser
 

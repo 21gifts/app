@@ -20,6 +20,14 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
+## Payment QR vs deep links
+
+Reject the PR when a pay sheet (or any Bitcoin payment UI) renders a QR
+on a smartphone user-agent. Smartphones pay only via Wallet of Satoshi
+deep links. Desktop may show QR + deep link. Detection is
+`isSmartphoneUserAgent`, not viewport width. See CONTRIBUTING.md
+“Payment QR vs deep links”.
+
 ## Completeness gates
 
 These must be green on the PR. A missing or red gate is rejected:
