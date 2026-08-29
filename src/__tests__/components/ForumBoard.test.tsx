@@ -241,11 +241,11 @@ describe('ForumBoard', () => {
     expect(screen.getByText('1 sat')).toBeTruthy();
   });
 
-  it('disables pay when payable is false and opens when payable', () => {
+  it('omits Send Bitcoin when payable is false', () => {
     const onPayOpen = vi.fn();
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE, MULTILINE]}
+        messages={[MULTILINE]}
         error={false}
         loading={false}
         posting={false}
@@ -258,11 +258,28 @@ describe('ForumBoard', () => {
         onPayOpen={onPayOpen}
       />,
     );
-    expect(screen.queryByText('Send Bitcoin')).toBeNull();
-    const buttons = screen.getAllByRole('button', { name: 'Send Bitcoin' });
-    expect((buttons[0] as HTMLButtonElement).disabled).toBe(false);
-    expect((buttons[1] as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(buttons[0]!);
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(onPayOpen).not.toHaveBeenCalled();
+  });
+
+  it('opens pay when Send Bitcoin is clicked on a payable note', () => {
+    const onPayOpen = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idlePay}
+        onPayOpen={onPayOpen}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     expect(onPayOpen).toHaveBeenCalledWith('m1');
   });
 

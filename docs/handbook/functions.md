@@ -265,14 +265,14 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational forum list, composer, sat totals with a Bitcoin pay icon beside them, and pay-on-note sheet (QR / Wallet of Satoshi).
+- **Purpose:** Presentational forum list, composer, sat totals with a Bitcoin pay control only when `payable`, and pay-on-note sheet (QR / Wallet of Satoshi).
 - **Inputs:** Messages, loading/error/composer/pay callbacks.
 - **Returns / side effects:** React tree. No fetch.
 - **Used by:** `ForumLoader`.
 
 ## Function: ForumLoader
 
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay.
+- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes).
 - **Inputs:** Session token.
 - **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`.
 - **Used by:** `WelcomeScreen`.
