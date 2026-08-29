@@ -52,6 +52,15 @@ app/
 │   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`, `/stats/[day]`
 │   │   ├── rules/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
+│   │   ├── setup/
+│   │   │   ├── name/page.tsx    # GET /setup/name — first onboarding step
+│   │   │   ├── address/page.tsx # GET /setup/address — second onboarding step
+│   │   │   └── rules/page.tsx   # GET /setup/rules — agree to living-room rules
+│   │   ├── me/
+│   │   │   ├── route.ts         # GET /me same-origin proxy
+│   │   │   ├── name/route.ts    # POST /me/name
+│   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
+│   │   │   └── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   ├── contact/
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
 │   │   │   └── submit/
@@ -90,6 +99,7 @@ app/
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/feed-mode/pay/laws-dismiss state for /welcome forum
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
+│   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
 │   │   └── ContactLoader.tsx    # Post state for /contact
 │   ├── lib/

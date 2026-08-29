@@ -12,6 +12,7 @@ import {
   postContact,
   postMessage,
   postMessageInvoice,
+  agreeToRules,
   setLightningAddress,
   setName,
   resolveLightningAddress,
@@ -29,6 +30,7 @@ const account = {
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null,
 };
 
 /** The subset of `Response` the api client touches. */
@@ -249,6 +251,29 @@ describe('dismissForumLaws', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(dismissForumLaws('sess')).rejects.toThrow();
+  });
+});
+
+describe('agreeToRules', () => {
+  it('posts agreement and returns the validated account', async () => {
+    const agreed = { ...account, rulesAgreedAt: 1_700_000_001 };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: agreed });
+
+    await expect(agreeToRules('sess')).resolves.toEqual(agreed);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/rules-agreement`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(agreeToRules('sess')).rejects.toThrow('Could not save your agreement');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(agreeToRules('sess')).rejects.toThrow();
   });
 });
 

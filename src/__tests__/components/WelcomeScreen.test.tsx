@@ -29,6 +29,7 @@ beforeEach(() => {
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
+      rulesAgreedAt: 1_700_000_001,
     },
   });
 });
@@ -62,6 +63,7 @@ describe('WelcomeScreen', () => {
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       },
     });
     renderWithLocale(<WelcomeScreen />);

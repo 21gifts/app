@@ -6,8 +6,9 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/contact` — signed-in in-app contact (only way to reach 21.gifts).
  *
- * Requires name + address via {@link OnboardingGate} `screen="welcome"`, same
- * as `/welcome`. The same-origin proxy lives at `POST /contact/submit`.
+ * Requires name + address + living-room rules agreement via
+ * {@link OnboardingGate} `screen="welcome"`, same as `/welcome`. The
+ * same-origin proxy lives at `POST /contact/submit`.
  *
  * @returns The contact screen.
  */

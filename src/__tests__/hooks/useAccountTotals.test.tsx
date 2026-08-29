@@ -65,6 +65,7 @@ beforeEach(() => {
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
+      rulesAgreedAt: 1_700_000_001,
     },
   });
 });
@@ -247,6 +248,7 @@ describe('useAccountTotals', () => {
           lightningAddressVerified: false,
           forumLawsDismissed: false,
           createdAt: 1,
+          rulesAgreedAt: 1_700_000_001,
         },
       });
     });
@@ -289,6 +291,7 @@ describe('useAccountTotals', () => {
           lightningAddressVerified: false,
           forumLawsDismissed: false,
           createdAt: 1,
+          rulesAgreedAt: 1_700_000_001,
         },
       });
     });

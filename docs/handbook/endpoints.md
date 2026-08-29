@@ -70,6 +70,13 @@
 - **Used by:** `dismissForumLaws`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/rules-agreement
+
+- **Purpose:** Same-origin proxy to record living-room rules agreement on the signed-in account (`rulesAgreedAt`).
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `agreeToRules`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /me
 
 - **Purpose:** Same-origin proxy of the signed-in account.

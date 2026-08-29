@@ -34,6 +34,7 @@ test('welcome forum shows the two laws and links to rules and contact', async ({
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       }),
     });
   });

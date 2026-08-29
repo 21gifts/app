@@ -1,7 +1,7 @@
 import type { Account } from '@/lib/api-types';
 
 /** Where a signed-in visitor belongs in the post-login flow. */
-export type OnboardingPath = '/setup/name' | '/setup/address' | '/welcome';
+export type OnboardingPath = '/setup/name' | '/setup/address' | '/setup/rules' | '/welcome';
 
 /**
  * Whether the account has a display name to show.
@@ -24,7 +24,17 @@ export function hasLightningAddress(account: Account): boolean {
 }
 
 /**
- * Next path after login: name screen, address screen, or welcome.
+ * Whether the account has agreed to the living-room rules.
+ *
+ * @param account - Signed-in account.
+ * @returns True when `rulesAgreedAt` is a non-null timestamp.
+ */
+export function hasAgreedToRules(account: Account): boolean {
+  return account.rulesAgreedAt !== null;
+}
+
+/**
+ * Next path after login: name, address, rules, or welcome.
  *
  * @param account - Signed-in account.
  * @returns The screen the visitor should see.
@@ -35,6 +45,9 @@ export function nextOnboardingPath(account: Account): OnboardingPath {
   }
   if (!hasLightningAddress(account)) {
     return '/setup/address';
+  }
+  if (!hasAgreedToRules(account)) {
+    return '/setup/rules';
   }
   return '/welcome';
 }

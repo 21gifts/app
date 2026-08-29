@@ -7,7 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The third post-login screen: welcome after name and address are saved.
+ * The fourth post-login screen: welcome after name, address, and rules agreement.
  *
  * Embeds {@link ForumLoader} (forum list + composer) below the heading.
  * Card is `max-w-xl` to fit the board.

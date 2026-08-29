@@ -21,6 +21,7 @@ const account = {
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null,
 };
 
 describe('FORUM_MESSAGE_MAX_LENGTH', () => {
@@ -150,6 +151,27 @@ describe('accountSchema', () => {
 
   it('accepts a null linkingKey for passkey accounts', () => {
     expect(accountSchema.parse({ ...account, linkingKey: null }).linkingKey).toBeNull();
+  });
+
+  it('accepts a null rulesAgreedAt', () => {
+    expect(accountSchema.parse(account).rulesAgreedAt).toBeNull();
+  });
+
+  it('accepts a positive rulesAgreedAt timestamp', () => {
+    const agreed = { ...account, rulesAgreedAt: 1_700_000_001 };
+    expect(accountSchema.parse(agreed).rulesAgreedAt).toBe(1_700_000_001);
+  });
+
+  it('rejects a missing rulesAgreedAt field', () => {
+    expect(() =>
+      accountSchema.parse(
+        Object.fromEntries(Object.entries(account).filter(([key]) => key !== 'rulesAgreedAt')),
+      ),
+    ).toThrow();
+  });
+
+  it('rejects a string rulesAgreedAt timestamp', () => {
+    expect(() => accountSchema.parse({ ...account, rulesAgreedAt: '1700000001' })).toThrow();
   });
 });
 

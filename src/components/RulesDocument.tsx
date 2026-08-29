@@ -7,18 +7,24 @@ import { translate } from '@/lib/translate';
 export interface RulesDocumentProps {
   /** Catalog for the negotiated request locale. */
   messages: Messages;
+  /**
+   * When true (default), show the public Contact / forum nav. Set false on the
+   * signed-in onboarding screen so agreement is the only continue action.
+   */
+  showNav?: boolean;
 }
 
 /**
  * Presentational living-room rules body: lead, three laws, wanted / allowed /
- * rather-not / forbidden lists, house right, and CTAs to `/contact` and `/welcome`.
+ * rather-not / forbidden lists, house right, and optional CTAs to `/contact`
+ * and `/welcome`.
  *
  * Server component — copy comes from {@link translate} + the request catalog.
  *
- * @param props - Locale catalog for every `rules.*` key.
+ * @param props - Locale catalog for every `rules.*` key, and optional `showNav`.
  * @returns The rules document.
  */
-export function RulesDocument({ messages }: RulesDocumentProps): ReactElement {
+export function RulesDocument({ messages, showNav = true }: RulesDocumentProps): ReactElement {
   const t = (key: MessageKey): string => translate(messages, key);
 
   const wanted = [
@@ -167,20 +173,22 @@ export function RulesDocument({ messages }: RulesDocumentProps): ReactElement {
         <p className="text-sm leading-relaxed text-neutral-700">{t('rules.houseBody')}</p>
       </section>
 
-      <nav className="flex flex-wrap items-center justify-center gap-4 pb-8 text-sm font-medium">
-        <Link
-          href="/contact"
-          className="rounded-full bg-neutral-900 px-5 py-2.5 text-white transition hover:bg-neutral-700"
-        >
-          {t('rules.contactCta')}
-        </Link>
-        <Link
-          href="/welcome"
-          className="rounded-full border border-neutral-300 px-5 py-2.5 text-neutral-900 transition hover:bg-neutral-50"
-        >
-          {t('rules.forumCta')}
-        </Link>
-      </nav>
+      {showNav ? (
+        <nav className="flex flex-wrap items-center justify-center gap-4 pb-8 text-sm font-medium">
+          <Link
+            href="/contact"
+            className="rounded-full bg-neutral-900 px-5 py-2.5 text-white transition hover:bg-neutral-700"
+          >
+            {t('rules.contactCta')}
+          </Link>
+          <Link
+            href="/welcome"
+            className="rounded-full border border-neutral-300 px-5 py-2.5 text-neutral-900 transition hover:bg-neutral-50"
+          >
+            {t('rules.forumCta')}
+          </Link>
+        </nav>
+      ) : null}
     </article>
   );
 }

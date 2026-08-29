@@ -15,6 +15,7 @@ const E2E_ACCOUNT = {
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null as number | null,
 };
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
@@ -355,6 +356,27 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-setup-address');
   });
 
+  test('screen /setup/rules', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: null,
+        }),
+      });
+    });
+    await page.goto('/setup/rules');
+    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+    await shotScreen(page, 'screen-setup-rules');
+  });
+
   test('screen /welcome', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -367,6 +389,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
@@ -396,6 +419,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
@@ -601,6 +625,7 @@ test.describe('welcome forum variants', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
@@ -1255,6 +1280,7 @@ test.describe('contact screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
@@ -1458,6 +1484,7 @@ test.describe('function baselines', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });

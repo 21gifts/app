@@ -110,7 +110,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, or `/welcome`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
@@ -174,7 +174,7 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 
 - **URL:** `/setup/address` — second screen after login.
 - **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/welcome`.
+- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/setup/rules`.
 - **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
@@ -183,9 +183,22 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 
 ![21.gifts address setup](images/setup-address.png)
 
+## Screen: /setup/rules
+
+- **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Heading **Living room rules**, prompt to read and agree, the full rules body without the public Contact / forum nav, and a full-width **I agree to these rules** button.
+- **Actions:** Read the rules and **I agree to these rules**; open **Menu** for Profile, language, or **Log out**. After agreement, the visitor is sent to `/welcome`.
+- **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`).
+
+### Variant: default
+
+Signed in with a name and address and `rulesAgreedAt` still null. Rules body and **I agree to these rules** visible.
+
+![21.gifts rules setup](images/setup-rules.png)
+
 ## Screen: /welcome
 
-- **URL:** `/welcome` — third screen after login, when name and address are both saved.
+- **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.
 - **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, sat total always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, and optional photo preview with **Remove photo** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
 - **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo message, attach/remove a photo draft, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**.
 - **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `fetchMessagePhoto`, `visibleForumMessages`.
@@ -374,7 +387,7 @@ Full rules body with law **1. Only free donations** visible.
 
 ## Screen: /contact
 
-- **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address required).
+- **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
 - **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
 - **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**.
 - **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
@@ -401,7 +414,7 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 ## Screen: /profile
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card in place of icon+amount totals, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
-- **Inputs:** Session account (name + Lightning Address) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
+- **Inputs:** Session account (name + Lightning Address + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
 - **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD.
 - **Used by:** Route `/profile` (`ProfilePage`).
 

@@ -15,6 +15,8 @@ export const accountSchema = z.object({
   lightningAddressVerified: z.boolean(),
   forumLawsDismissed: z.boolean(),
   createdAt: z.number(),
+  /** Epoch ms of the first living-room rules agreement, or `null` if not yet agreed. */
+  rulesAgreedAt: z.number().nullable(),
 });
 
 /**
@@ -30,6 +32,8 @@ export const accountSchema = z.object({
  * configured on the api. `forumLawsDismissed` is true after the user dismissed
  * the welcome-forum living-room laws hint; false for new accounts and until
  * they click the X. Forum role tags use `role`, not this flag.
+ * `rulesAgreedAt` is the epoch ms of the first agreement to the living-room
+ * rules, or `null` until the giver agrees.
  */
 export type Account = z.infer<typeof accountSchema>;
 

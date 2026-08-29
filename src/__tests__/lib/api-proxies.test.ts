@@ -13,6 +13,7 @@ import {
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeNamePost,
+  proxyMeRulesAgreementPost,
   proxyContactPost,
   proxyMessagesGet,
   proxyMessagesInvoicePost,
@@ -70,6 +71,15 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/me/lightning-address', { method: 'DELETE' }),
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
+  });
+
+  it('proxyMeRulesAgreementPost hits POST /me/rules-agreement', async () => {
+    const fetchMock = stubApi();
+    await proxyMeRulesAgreementPost(
+      new Request('http://localhost/me/rules-agreement', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/rules-agreement');
   });
 
   it('proxyLightningAddressGet hits /lightning-address', async () => {
