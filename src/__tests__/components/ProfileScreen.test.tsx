@@ -67,7 +67,7 @@ describe('ProfileScreen', () => {
     });
   });
 
-  it('formats a single received sat with donate.satOne', async () => {
+  it('formats a single received sat with forum.satsOne', async () => {
     vi.mocked(fetchGiftStats).mockResolvedValue({
       totalSats: 0,
       totalBtc: '0.00000000',

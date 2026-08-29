@@ -150,7 +150,7 @@ describe('SignedInChrome', () => {
     expect(screen.queryByLabelText('Language')).toBeNull();
   });
 
-  it('formats a single received sat with donate.satOne', async () => {
+  it('formats a single received sat with forum.satsOne', async () => {
     vi.mocked(fetchGiftStats).mockResolvedValue({
       totalSats: 1,
       totalBtc: '0.00000001',

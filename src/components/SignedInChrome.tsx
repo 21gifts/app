@@ -16,13 +16,13 @@ import { useAccountTotals } from '@/hooks/useAccountTotals';
  * @returns Localized amount string.
  */
 function formatSatsAmount(
-  t: (key: 'donate.satOne' | 'donate.sats', vars?: { n: string }) => string,
+  t: (key: 'forum.satsOne' | 'forum.sats', vars?: { n: string }) => string,
   sats: number,
 ): string {
   if (sats === 1) {
-    return t('donate.satOne');
+    return t('forum.satsOne');
   }
-  return t('donate.sats', { n: String(sats) });
+  return t('forum.sats', { n: String(sats) });
 }
 
 /**

@@ -23,7 +23,7 @@ export function recipientHandleFromAddress(address: string): string {
 /**
  * Derives given/received sat totals for a signed-in account from public gift stats.
  *
- * Given is always `0` in v1 (guest `/donate` payments are unattributed). Received
+ * Given is always `0` in v1 (payments are not attributed to the signed-in account). Received
  * is the first `byRecipient` row whose `recipient` matches the address handle
  * case-insensitively.
  *
