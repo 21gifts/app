@@ -170,6 +170,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /verify/i })).toHaveCount(0);
 
+  await page.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });

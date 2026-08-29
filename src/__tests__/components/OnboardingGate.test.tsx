@@ -143,6 +143,53 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it('renders profile children when name and address are both saved', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('profile-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a logged-out visitor from profile to login', () => {
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('sends a named account without an address from profile to the address screen', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/address');
+    });
+  });
+
+  it('sends an unnamed account from profile to the name screen', async () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/name');
+    });
+  });
+
   it('does not bounce a name screen to login while a stored token is hydrating', () => {
     vi.mocked(loadSession).mockReturnValue('tok');
     vi.mocked(fetchMe).mockReturnValue(new Promise(() => undefined));

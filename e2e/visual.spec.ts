@@ -340,6 +340,26 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Send Bitcoin' }).first()).toBeVisible();
     await shotScreen(page, 'screen-welcome');
   });
+
+  test('screen /profile', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+        }),
+      });
+    });
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await shotScreen(page, 'screen-profile');
+  });
 });
 
 test.describe('welcome forum variants', () => {
@@ -414,6 +434,21 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Post' }).click();
     await expect(page.getByText('Enter a message')).toBeVisible();
     await shotScreen(page, 'state-welcome-validation-error');
+  });
+
+  test('welcome menu-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu');
   });
 });
 

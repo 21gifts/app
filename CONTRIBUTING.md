@@ -59,6 +59,8 @@ app/
 │   │   │   └── [id]/invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
+│   │   ├── profile/
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address edit
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -67,6 +69,7 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list, composer, sat totals, pay-on-note sheet

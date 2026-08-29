@@ -9,10 +9,10 @@ import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Which post-login screen this gate is wrapping. */
-export type OnboardingScreen = 'login' | 'name' | 'address' | 'welcome';
+export type OnboardingScreen = 'login' | 'name' | 'address' | 'welcome' | 'profile';
 
 const PATH: Record<
-  Exclude<OnboardingScreen, 'login'>,
+  Exclude<OnboardingScreen, 'login' | 'profile'>,
   '/setup/name' | '/setup/address' | '/welcome'
 > = {
   name: '/setup/name',
@@ -55,6 +55,13 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
       router.replace('/login');
       return;
     }
+    if (screen === 'profile') {
+      const next = nextOnboardingPath(account);
+      if (next !== '/welcome') {
+        router.replace(next);
+      }
+      return;
+    }
     const target = nextOnboardingPath(account);
     if (target !== PATH[screen]) {
       router.replace(target);
@@ -66,6 +73,12 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
   }
   if (screen === 'login') {
     return <>{children}</>;
+  }
+  if (screen === 'profile') {
+    if (account !== null && nextOnboardingPath(account) === '/welcome') {
+      return <>{children}</>;
+    }
+    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;
   }
   if (account === null || nextOnboardingPath(account) !== PATH[screen]) {
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;

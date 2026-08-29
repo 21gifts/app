@@ -151,6 +151,11 @@ const en = {
   'forum.payErrorRateLimit': 'Too many payments. Please wait a moment and try again.',
   'forum.payConfirm': 'Pay {amount}',
   'forum.payWaiting': 'Waiting for payment…',
+
+  'profile.title': 'Profile',
+  'profile.given': 'Given {amount}',
+  'profile.received': 'Received {amount}',
+  'profile.back': 'Back to forum',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -301,6 +306,11 @@ const de = {
   'forum.payErrorRateLimit': 'Zu viele Zahlungen. Bitte kurz warten und erneut versuchen.',
   'forum.payConfirm': '{amount} zahlen',
   'forum.payWaiting': 'Warte auf Zahlung…',
+
+  'profile.title': 'Profil',
+  'profile.given': 'Gegeben {amount}',
+  'profile.received': 'Erhalten {amount}',
+  'profile.back': 'Zurück zum Forum',
 } satisfies Messages;
 
 const es = {
@@ -445,6 +455,11 @@ const es = {
   'forum.payErrorRateLimit': 'Demasiados pagos. Espera un momento e inténtalo de nuevo.',
   'forum.payConfirm': 'Pagar {amount}',
   'forum.payWaiting': 'Esperando el pago…',
+
+  'profile.title': 'Perfil',
+  'profile.given': 'Donado {amount}',
+  'profile.received': 'Recibido {amount}',
+  'profile.back': 'Volver al foro',
 } satisfies Messages;
 
 const fil = {
@@ -589,6 +604,11 @@ const fil = {
   'forum.payErrorRateLimit': 'Sobrang daming bayad. Maghintay sandali at subukan ulit.',
   'forum.payConfirm': 'Magbayad ng {amount}',
   'forum.payWaiting': 'Naghihintay ng bayad…',
+
+  'profile.title': 'Profile',
+  'profile.given': 'Ibinigay {amount}',
+  'profile.received': 'Natanggap {amount}',
+  'profile.back': 'Bumalik sa forum',
 } satisfies Messages;
 
 /**

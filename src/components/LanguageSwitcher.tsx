@@ -30,7 +30,7 @@ function nativeLabel(locale: Locale): string {
  * refreshes the App Router tree so server components re-negotiate locale.
  *
  * @param props - Visual tone for marketing (`dark`) or login/signed-in chrome (`light`),
- *   and optional `embedded` when shown with a matching globe icon in `SignedInChrome`.
+ *   and optional `embedded` when shown inside the signed-in Menu dropdown (not a free top-right action).
  * @returns The language select element.
  */
 export function LanguageSwitcher(props: {

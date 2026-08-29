@@ -8,7 +8,7 @@ import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Quiet log-out control in `SignedInChrome` (top-right page chrome, not on the card).
+ * Quiet log-out control used inside the signed-in Menu dropdown, not as a free top-right action.
  *
  * @returns The log-out control.
  */
