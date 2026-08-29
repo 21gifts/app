@@ -24,7 +24,7 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 
 Reject the PR when a pay sheet (or any Bitcoin payment UI) renders a QR
 on a smartphone user-agent. Smartphones pay only via Wallet of Satoshi
-deep links. Desktop may show QR + deep link. Detection is
+deep links. Desktop shows QR and deep link. Detection is
 `isSmartphoneUserAgent`, not viewport width. See CONTRIBUTING.md
 “Payment QR vs deep links”.
 
