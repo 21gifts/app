@@ -17,14 +17,28 @@ vi.mock('@/lib/api', () => ({
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
+  fetchMessagePhoto: vi.fn(),
 }));
 
-import { dismissForumLaws, fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
+vi.mock('@/lib/forum-photo', () => ({
+  prepareForumPhoto: vi.fn(),
+}));
+
+import {
+  dismissForumLaws,
+  fetchMessagePhoto,
+  fetchMessages,
+  postMessage,
+  postMessageInvoice,
+} from '@/lib/api';
+import { prepareForumPhoto } from '@/lib/forum-photo';
 
 const fetchMock = vi.mocked(fetchMessages);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
+const photoMock = vi.mocked(fetchMessagePhoto);
+const prepareMock = vi.mocked(prepareForumPhoto);
 
 const account: Account = {
   id: 'acc_1',
@@ -44,6 +58,7 @@ const SAMPLE: ForumMessage = {
   createdAt: '2026-08-28T12:00:00.000Z',
   sats: 0,
   payable: true,
+  hasPhoto: false,
 };
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
@@ -56,6 +71,19 @@ beforeEach(() => {
   vi.clearAllMocks();
   HTMLElement.prototype.scrollIntoView = vi.fn();
   useAuthStore.setState({ session: 'sess', account });
+  photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => 'blob:mock',
+  });
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => undefined,
+  });
+  vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
 });
 
 afterEach(() => {
@@ -66,6 +94,9 @@ afterEach(() => {
   postMock.mockReset();
   invoiceMock.mockReset();
   dismissLawsMock.mockReset();
+  photoMock.mockReset();
+  prepareMock.mockReset();
+  vi.restoreAllMocks();
 });
 
 describe('ForumLoader', () => {
@@ -208,6 +239,65 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('loads a photo blob URL for hasPhoto messages and revokes on unmount', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+    });
+    view.unmount();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+  });
+
+  it('does not cancel an in-flight photo fetch when payable poll refreshes the list', async () => {
+    vi.useFakeTimers();
+    const unsigned: ForumMessage = {
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: false,
+      hasPhoto: true,
+    };
+    let resolvePhoto: ((blob: Blob) => void) | undefined;
+    photoMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    fetchMock.mockResolvedValueOnce([unsigned]);
+    fetchMock.mockResolvedValueOnce([{ ...unsigned, payable: true }]);
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    await act(async () => {
+      resolvePhoto?.(new Blob(['x'], { type: 'image/jpeg' }));
+      await Promise.resolve();
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+  });
+
   it('shows a fetch error and retries', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
     fetchMock.mockResolvedValueOnce([]);
@@ -280,7 +370,7 @@ describe('ForumLoader', () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
-  it('does not post when the draft is empty or whitespace', async () => {
+  it('does not post when the draft is empty or whitespace without a photo', async () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -288,12 +378,12 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo');
     expect(postMock).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo');
     expect(postMock).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
@@ -315,6 +405,524 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('sets formError when prepareForumPhoto rejects the file', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockResolvedValue({ ok: false, error: 'unsupported' });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([], 'a.gif', { type: 'image/gif' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+  });
+
+  it('sets unsupported when prepareForumPhoto throws', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockRejectedValueOnce(new Error('Could not decode image'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+  });
+
+  it('ignores a stale prepare after a newer pick starts', async () => {
+    fetchMock.mockResolvedValue([]);
+    let resolveFirst: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'second',
+        previewUrl: 'data:image/jpeg;base64,second',
+      },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([2])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+    });
+    resolveFirst?.({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'first',
+        previewUrl: 'data:image/jpeg;base64,first',
+      },
+    });
+    await Promise.resolve();
+    expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+  });
+
+  it('ignores a stale prepare rejection after a newer pick starts', async () => {
+    fetchMock.mockResolvedValue([]);
+    let rejectFirst: ((reason: Error) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'second',
+        previewUrl: 'data:image/jpeg;base64,second',
+      },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([2])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+    });
+    rejectFirst?.(new Error('Could not decode image'));
+    await Promise.resolve();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+  });
+
+  it('ignores a stale prepare after unmount', async () => {
+    fetchMock.mockResolvedValue([]);
+    let resolvePrep: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrep = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(prepareMock).toHaveBeenCalled();
+    });
+    view.unmount();
+    resolvePrep?.({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'late',
+        previewUrl: 'data:image/jpeg;base64,late',
+      },
+    });
+    await Promise.resolve();
+  });
+
+  it('sets tooLarge and clears a photo draft', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,abc',
+        },
+      })
+      .mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'big.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep the photo under 1 MB');
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('clears a photo draft when Remove photo is clicked', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('clears a prior photo draft when a replacement throws', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,abc',
+        },
+      })
+      .mockRejectedValueOnce(new Error('Could not decode image'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('ignores a failed photo fetch', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: 'Hi',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockRejectedValueOnce(new Error('gone'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hi')).toBeTruthy();
+    });
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('ignores a stale photo fetch after unmount', async () => {
+    let resolvePhoto: ((value: Blob) => void) | undefined;
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalled();
+    });
+    view.unmount();
+    resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    await Promise.resolve();
+  });
+
+  it('does not fetch the next photo after unmount when the current fetch fails', async () => {
+    let rejectFirst: ((reason: Error) => void) | undefined;
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm1',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+      {
+        id: 'm2',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:01:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledTimes(1);
+    });
+    view.unmount();
+    rejectFirst?.(new Error('gone'));
+    await Promise.resolve();
+    expect(photoMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('revokes a photo blob if unmount happens during createObjectURL', async () => {
+    let resolvePhoto: ((value: Blob) => void) | undefined;
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+      },
+    ]);
+    photoMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalled();
+    });
+    const revoke = vi.mocked(URL.revokeObjectURL);
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      view.unmount();
+      return 'blob:late';
+    });
+    resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    await Promise.resolve();
+    expect(revoke).toHaveBeenCalledWith('blob:late');
+  });
+
+  it('posts a photo-only message and shows the preview immediately', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    const created: ForumMessage = {
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: '',
+        photo: { contentType: 'image/jpeg', data: 'abc' },
+      });
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        'data:image/jpeg;base64,abc',
+      );
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    });
+  });
+
+  it('switches to All after posting an unpaid note', async () => {
+    fetchMock.mockResolvedValue([]);
+    const created: ForumMessage = {
+      id: 'm-unpaid',
+      name: 'Ada',
+      text: 'Unpaid note',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Unpaid note' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('Unpaid note')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    });
+  });
+
+  it('posts text together with a photo', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    const created: ForumMessage = {
+      id: 'm-both',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        photo: { contentType: 'image/jpeg', data: 'abc' },
+      });
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      'data:image/jpeg;base64,abc',
+    );
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('does not replace an existing photo blob with the composer preview', async () => {
+    const created: ForumMessage = {
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 5,
+      payable: false,
+      hasPhoto: true,
+    };
+    fetchMock.mockResolvedValue([created]);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:existing');
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
+  });
+
   it('prepends a post when the list has not loaded yet', async () => {
     fetchMock.mockReturnValue(new Promise(() => undefined));
     const created: ForumMessage = {
@@ -324,6 +932,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -352,6 +961,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     const fromServer: ForumMessage = {
       id: 'm1',
@@ -360,6 +970,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       sats: 0,
       payable: true,
+      hasPhoto: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -395,6 +1006,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -424,6 +1036,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       sats: 0,
       payable: true,
+      hasPhoto: false,
     };
     fetchMock.mockResolvedValue([created]);
     postMock.mockResolvedValue(created);
@@ -454,6 +1067,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -467,7 +1081,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello')).toBeTruthy();
     });
-    expect(postMock).toHaveBeenCalledWith('sess', 'Hello');
+    expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(1);
@@ -483,6 +1097,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -565,6 +1180,7 @@ describe('ForumLoader', () => {
         createdAt: '2026-08-28T15:00:00.000Z',
         sats: 0,
         payable: false,
+        hasPhoto: false,
       });
     });
 
@@ -771,6 +1387,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);
@@ -807,6 +1424,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);
@@ -877,6 +1495,7 @@ describe('ForumLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       sats: 0,
       payable: false,
+      hasPhoto: false,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);

@@ -290,23 +290,30 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
 }
 
 /**
- * Posts a new public forum message.
+ * Posts a new public forum message (text and/or one photo).
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param text - Message body as typed (api trims and validates length).
+ * @param input - Trimmed text (may be empty when a photo is included) and an
+ * optional JPEG photo payload (`contentType` + raw base64 `data`).
  * @returns The created {@link ForumMessage}.
- * @throws Error when the api rejects the text (400 or 429) — the api error
+ * @throws Error when the api rejects the body (400 or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
  * when the body fails {@link forumMessageSchema} validation.
  */
-export async function postMessage(sessionToken: string, text: string): Promise<ForumMessage> {
+export async function postMessage(
+  sessionToken: string,
+  input: { text: string; photo?: { contentType: string; data: string } },
+): Promise<ForumMessage> {
   const response = await fetch('/messages', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text: input.text,
+      ...(input.photo ? { photo: input.photo } : {}),
+    }),
   });
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
@@ -387,6 +394,37 @@ export async function postContact(sessionToken: string, text: string): Promise<C
     throw new Error('Could not send your message');
   }
   return contactSchema.parse(await response.json());
+}
+
+/**
+ * Fetches the JPEG/PNG/WebP bytes for one forum message photo.
+ *
+ * Auth is a Bearer token in JS memory, so callers must use the returned blob
+ * (for example via `URL.createObjectURL`) instead of an `<img src>` to the
+ * same-origin photo path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Forum message id.
+ * @returns The photo body as a `Blob`.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * response is empty — same family as {@link fetchMessages}; does not leak status.
+ */
+export async function fetchMessagePhoto(sessionToken: string, id: string): Promise<Blob> {
+  try {
+    const response = await fetch(`/messages/${encodeURIComponent(id)}/photo`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return blob;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
 }
 
 /**

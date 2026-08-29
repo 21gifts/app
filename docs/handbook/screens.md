@@ -186,13 +186,13 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /welcome
 
 - **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, text, timestamp, sat total always; pay control / Send Bitcoin only when the note is payable; composer textarea with **Post** to the right. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a message, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
-- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, timestamp, optional inline photo then caption text below the photo, sat total always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, and optional photo preview with **Remove photo** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Paying a note on a computer shows a QR plus **Open Wallet of Satoshi**; on a smartphone only the Wallet of Satoshi deep link (no QR). No name or address form. No guest donate CTA.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo message, attach/remove a photo draft, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, language, or **Log out**.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `fetchMessagePhoto`, `visibleForumMessages`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer. Pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
+Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. One **Menu** top-right; open it for Profile, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -216,7 +216,7 @@ Copy **No messages with sats yet.** Active selected, unpaid notes hidden, compos
 
 ### Variant: empty
 
-Empty copy **No messages yet. Be the first to write.** plus composer.
+Empty copy **No messages yet. Be the first to write.** plus composer (attach + textarea + Post).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -234,9 +234,99 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer → **Enter a message**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
+Click **Post** with an empty composer and no photo → **Enter a message or add a photo**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
+
+### Variant: photo
+
+On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.
+
+![21.gifts welcome photo](images/welcome-photo.png)
+
+### Variant: photo-and-text
+
+After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + textarea + Post).
+
+![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
+
+### Variant: composer-text
+
+Typed caption **Caption before attaching a photo.** in the composer; no preview yet; attach + Post idle.
+
+![21.gifts welcome composer text](images/welcome-composer-text.png)
+
+### Variant: composer-photo
+
+JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.
+
+![21.gifts welcome composer photo](images/welcome-composer-photo.png)
+
+### Variant: composer-photo-and-text
+
+Preview plus caption **Caption with selected photo.**, ready to Post.
+
+![21.gifts welcome composer photo and text](images/welcome-composer-photo-and-text.png)
+
+### Variant: composer-text-after-remove
+
+After **Remove photo**, caption **Caption kept after removing photo.** remains; preview gone.
+
+![21.gifts welcome composer text after remove](images/welcome-composer-text-after-remove.png)
+
+### Variant: preparing-photo
+
+Attach in flight (Post disabled + spinner, no preview yet). Native file picker is OS chrome and is not a variant.
+
+![21.gifts welcome preparing photo](images/welcome-preparing-photo.png)
+
+### Variant: preparing-photo-and-text
+
+Same spinner, caption **Caption while the photo is preparing.** already in the textarea.
+
+![21.gifts welcome preparing photo and text](images/welcome-preparing-photo-and-text.png)
+
+### Variant: posting-photo-and-text
+
+Post in flight: spinner on **Post**, composer disabled, preview and caption **Caption while the post is in flight.** still shown.
+
+![21.gifts welcome posting photo and text](images/welcome-posting-photo-and-text.png)
+
+### Variant: photo-loading
+
+Forum row for Ada with caption **Caption waiting for the photo to load.** and `hasPhoto`, image bytes not yet loaded so no `<img>`. A failed photo fetch looks the same (text-only row) — not a separate variant.
+
+![21.gifts welcome photo loading](images/welcome-photo-loading.png)
+
+### Variant: error-unsupported
+
+Attach a GIF → **Use a JPEG, PNG, or WebP photo**.
+
+![21.gifts welcome error unsupported](images/welcome-error-unsupported.png)
+
+### Variant: error-unsupported-with-text
+
+Same alert with caption **Caption with an unsupported photo.** still in the composer.
+
+![21.gifts welcome error unsupported with text](images/welcome-error-unsupported-with-text.png)
+
+### Variant: error-too-large
+
+Encoded JPEG over 1 MB → **Keep the photo under 1 MB**.
+
+![21.gifts welcome error too large](images/welcome-error-too-large.png)
+
+### Variant: error-too-large-with-text
+
+Same alert with caption **Caption with a photo that is too large.** still in the composer.
+
+![21.gifts welcome error too large with text](images/welcome-error-too-large-with-text.png)
+
+### Variant: error-request-photo-and-text
+
+POST fails after caption+JPEG → **Could not post your message**; preview and caption remain.
+
+![21.gifts welcome error request photo and text](images/welcome-error-request-photo-and-text.png)
 
 ### Variant: menu-open
 

@@ -7,13 +7,20 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
-import { dismissForumLaws, fetchMessages, postMessage, postMessageInvoice } from '@/lib/api';
+import {
+  dismissForumLaws,
+  fetchMessagePhoto,
+  fetchMessages,
+  postMessage,
+  postMessageInvoice,
+} from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
   type ForumFeedMode,
   visibleForumMessages,
 } from '@/lib/forum-feed';
+import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for pay confirmation or payable status. */
@@ -57,11 +64,11 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * Client loader for the public forum on `/welcome`.
  *
  * Reads the session and account from the auth store, fetches messages with a
- * cancelled-flag pattern matching {@link StatsLoader}, owns composer
- * draft/post state, the Active/All/Most popular feed mode, pay-on-note invoice
- * + sats-poll state, and persists dismiss of the living-room laws hint on the
- * account. Also polls until unsigned notes become payable.
- * Renders nothing when there is no session.
+ * cancelled-flag pattern matching {@link StatsLoader}, loads photos via Bearer
+ * + blob URLs, owns composer draft/photo/post state, the Active/All/Most
+ * popular feed mode, pay-on-note invoice + sats-poll state, and persists
+ * dismiss of the living-room laws hint on the account. Also polls until
+ * unsigned notes become payable. Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
@@ -74,7 +81,13 @@ export function ForumLoader(): ReactElement | null {
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
+  const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const photoUrlsRef = useRef(photoUrls);
+  photoUrlsRef.current = photoUrls;
+  const pickGeneration = useRef(0);
   const [posting, setPosting] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [formError, setFormError] = useState<ForumFormError>(null);
   const [feedMode, setFeedMode] = useState<ForumFeedMode>(DEFAULT_FORUM_FEED_MODE);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
@@ -87,6 +100,14 @@ export function ForumLoader(): ReactElement | null {
   const payablePollGeneration = useRef(0);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
+  const photoIdsKey =
+    messages === null
+      ? ''
+      : messages
+          .filter((message) => message.hasPhoto)
+          .map((message) => message.id)
+          .sort()
+          .join('\0');
 
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
@@ -154,9 +175,69 @@ export function ForumLoader(): ReactElement | null {
   }, [attempt, session]);
 
   useEffect(() => {
+    if (session === null || photoIdsKey === '') {
+      return;
+    }
+    const listed = messagesRef.current;
+    /* v8 ignore start -- photoIdsKey is empty when messages is null */
+    if (listed === null) {
+      return;
+    }
+    /* v8 ignore stop */
+    let cancelled = false;
+    const missing = listed.filter(
+      (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
+    );
+    if (missing.length === 0) {
+      return;
+    }
+    void (async () => {
+      for (const message of missing) {
+        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
+        if (photoUrlsRef.current[message.id] !== undefined) {
+          continue;
+        }
+        /* v8 ignore stop */
+        try {
+          const blob = await fetchMessagePhoto(session, message.id);
+          if (cancelled) {
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          if (cancelled) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          setPhotoUrls((prev) => {
+            /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
+            if (prev[message.id] !== undefined) {
+              URL.revokeObjectURL(url);
+              return prev;
+            }
+            /* v8 ignore stop */
+            return { ...prev, [message.id]: url };
+          });
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          // Leave the row text-only when the photo cannot load.
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [photoIdsKey, session]);
+
+  useEffect(() => {
     return () => {
       payPollGeneration.current += 1;
       payablePollGeneration.current += 1;
+      pickGeneration.current += 1;
+      for (const url of Object.values(photoUrlsRef.current)) {
+        URL.revokeObjectURL(url);
+      }
     };
   }, []);
 
@@ -247,9 +328,40 @@ export function ForumLoader(): ReactElement | null {
   };
   /* v8 ignore stop */
 
+  const onPickPhoto = (file: File): void => {
+    const generation = pickGeneration.current + 1;
+    pickGeneration.current = generation;
+    setPreparing(true);
+    void (async () => {
+      try {
+        const result = await prepareForumPhoto(file);
+        if (generation !== pickGeneration.current) {
+          return;
+        }
+        if (!result.ok) {
+          setPhotoDraft(null);
+          setFormError(result.error);
+          return;
+        }
+        setPhotoDraft(result.photo);
+        setFormError(null);
+      } catch {
+        if (generation !== pickGeneration.current) {
+          return;
+        }
+        setPhotoDraft(null);
+        setFormError('unsupported');
+      } finally {
+        if (generation === pickGeneration.current) {
+          setPreparing(false);
+        }
+      }
+    })();
+  };
+
   const onPost = (): void => {
     const trimmed = draft.trim();
-    if (trimmed === '') {
+    if (trimmed === '' && photoDraft === null) {
       setFormError('empty');
       return;
     }
@@ -257,11 +369,18 @@ export function ForumLoader(): ReactElement | null {
       setFormError('tooLong');
       return;
     }
+    pickGeneration.current += 1;
     setPosting(true);
     setFormError(null);
+    const pendingPhoto = photoDraft;
     void (async () => {
       try {
-        const created = await postMessage(session, trimmed);
+        const created = await postMessage(session, {
+          text: trimmed,
+          ...(pendingPhoto === null
+            ? {}
+            : { photo: { contentType: pendingPhoto.contentType, data: pendingPhoto.data } }),
+        });
         setMessages((prev) => {
           if (prev === null) {
             return [created];
@@ -274,7 +393,16 @@ export function ForumLoader(): ReactElement | null {
         if (created.sats === 0) {
           setFeedMode('all');
         }
+        if (created.hasPhoto && pendingPhoto !== null) {
+          setPhotoUrls((prev) => {
+            if (prev[created.id] !== undefined) {
+              return prev;
+            }
+            return { ...prev, [created.id]: pendingPhoto.previewUrl };
+          });
+        }
         setDraft('');
+        setPhotoDraft(null);
         startPayablePoll(session);
       } catch (err) {
         setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
@@ -356,7 +484,7 @@ export function ForumLoader(): ReactElement | null {
       messages={messages}
       error={error}
       loading={loading}
-      posting={posting}
+      posting={posting || preparing}
       draft={draft}
       onDraftChange={(value) => {
         setDraft(value);
@@ -367,6 +495,14 @@ export function ForumLoader(): ReactElement | null {
         setAttempt((n) => n + 1);
       }}
       formError={formError}
+      photoDraft={photoDraft}
+      onPickPhoto={onPickPhoto}
+      onClearPhoto={() => {
+        pickGeneration.current += 1;
+        setPhotoDraft(null);
+        setFormError(null);
+      }}
+      photoUrls={photoUrls}
       payMessageId={payMessageId}
       payDraft={payDraft}
       payBusy={payBusy}

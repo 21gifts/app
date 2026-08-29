@@ -2,9 +2,9 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET`.
-- **Inputs:** Incoming `Request` on proxy routes; none on healthz.
-- **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages` and `/messages/[id]/photo`).
+- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo); none on healthz.
+- **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
 ## Function: HandbookCopyLink
@@ -265,9 +265,9 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, text, timestamp, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (textarea with **Post** to the right, `maxLength` 500), and pay-on-note sheet: QR + Wallet of Satoshi on desktop; Wallet of Satoshi deep link only on smartphones (`isSmartphoneUserAgent`). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order.
-- **Inputs:** `ForumBoardProps` — messages, loading/error/composer/pay callbacks, controlled `mode` / `onModeChange`, plus required `lawsVisible` and `onDismissLaws`.
-- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
+- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, timestamp, optional inline photo from blob URLs then caption text below the photo, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: QR + Wallet of Satoshi on desktop; Wallet of Satoshi deep link only on smartphones (`isSmartphoneUserAgent`). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
+- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
@@ -307,9 +307,9 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Loads `/messages`, posts, and pay invoices; polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes). Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present).
-- **Inputs:** Session token and account from the auth store.
-- **Returns / side effects:** Fetches `/messages` and `/messages/:id/invoice`; may POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted.
+- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo), prepares picks via `prepareForumPhoto`, pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present).
+- **Inputs:** None (reads session and account from the auth store).
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/photoUrls/posting/formError/feedMode/pay state and retry attempts. Empty text without a photo sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage`. Photo-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Revokes blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -382,10 +382,17 @@
 - **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure.
 - **Used by:** `ForumLoader`.
 
+## Function: fetchMessagePhoto
+
+- **Purpose:** GET `/messages/:id/photo` with the bearer session and return the raw image bytes as a `Blob` for `URL.createObjectURL` rendering.
+- **Inputs:** `sessionToken`, message `id`.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load messages. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
+- **Used by:** `ForumLoader`.
+
 ## Function: postMessage
 
-- **Purpose:** POST `/messages` with bearer + `{ text }`, parse `forumMessageSchema`, and return the created message.
-- **Inputs:** `sessionToken`, `text`.
+- **Purpose:** POST `/messages` with bearer + `{ text, photo? }`, parse `forumMessageSchema`, and return the created message (text and/or photo).
+- **Inputs:** `sessionToken`, `input` with `text` and optional `{ contentType, data }` photo.
 - **Returns / side effects:** `ForumMessage`. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
 - **Used by:** `ForumLoader`.
 
@@ -395,6 +402,20 @@
 - **Inputs:** `sessionToken`, `text`.
 - **Returns / side effects:** `ContactMessage`. On 400 uses the api error string when present; otherwise throws `Could not send your message`.
 - **Used by:** `ContactLoader`.
+
+## Function: isForumPhotoFile
+
+- **Purpose:** True when a browser `File` has mime type JPEG, PNG, or WebP for the forum attach control.
+- **Inputs:** `file` from `<input type="file">`.
+- **Returns / side effects:** Boolean. No side effects.
+- **Used by:** `prepareForumPhoto`.
+
+## Function: prepareForumPhoto
+
+- **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL.
+- **Inputs:** `file` accepted by `isForumPhotoFile`.
+- **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
+- **Used by:** `ForumLoader`.
 
 ## Function: formatBtcTick
 
@@ -703,6 +724,13 @@
 - **Inputs:** Incoming `Request` with Bearer session and JSON body.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route POST `/contact/submit`.
+
+## Function: proxyMessagesPhotoGet
+
+- **Purpose:** Bearer proxy GET `/messages/:id/photo` to the 21.gifts api (raw forum photo bytes).
+- **Inputs:** Incoming `Request` with Bearer session, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/messages/[id]/photo`.
 
 ## Function: proxyMeLightningAddressDelete
 

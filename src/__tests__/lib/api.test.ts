@@ -5,6 +5,7 @@ import {
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
+  fetchMessagePhoto,
   fetchMessages,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
@@ -415,6 +416,7 @@ const forumMessage = {
   createdAt: '2026-08-28T12:00:00.000Z',
   sats: 0,
   payable: false,
+  hasPhoto: false,
 };
 
 describe('fetchMessages', () => {
@@ -505,7 +507,7 @@ describe('postMessageInvoice', () => {
 describe('postMessage', () => {
   it('posts the text and returns the validated message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
-    await expect(postMessage('sess', 'Hello from Ada')).resolves.toEqual(forumMessage);
+    await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(forumMessage);
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       method: 'POST',
       headers: {
@@ -516,19 +518,114 @@ describe('postMessage', () => {
     });
   });
 
+  it('includes a photo payload when provided', async () => {
+    const withPhoto = { ...forumMessage, text: '', hasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: withPhoto });
+    const photo = { contentType: 'image/jpeg', data: 'abc' };
+    await expect(postMessage('sess', { text: '', photo })).resolves.toEqual(withPhoto);
+    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: '', photo }),
+    });
+  });
+
+  it('posts text together with a photo payload', async () => {
+    const withBoth = { ...forumMessage, hasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: withBoth });
+    const photo = { contentType: 'image/jpeg', data: 'abc' };
+    await expect(postMessage('sess', { text: 'Hello from Ada', photo })).resolves.toEqual(withBoth);
+    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada', photo }),
+    });
+  });
+
   it('throws the api error message on a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Message too long' } });
-    await expect(postMessage('sess', 'x')).rejects.toThrow('Message too long');
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Message too long');
   });
 
   it('falls back when a 400 body is not an error envelope', async () => {
     stubFetch({ ok: false, status: 400, body: {} });
-    await expect(postMessage('sess', 'x')).rejects.toThrow('Could not post your message');
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
   });
 
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
-    await expect(postMessage('sess', 'x')).rejects.toThrow('Could not post your message');
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
+  });
+});
+
+describe('fetchMessagePhoto', () => {
+  it('returns the blob and sends the bearer header', async () => {
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchMessagePhoto('sess', 'm1')).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('encodes the message id in the path', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchMessagePhoto('sess', 'a/b');
+    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
   });
 });
 

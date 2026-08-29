@@ -163,3 +163,14 @@ export async function proxyMessagesInvoicePost(
 export async function proxyContactPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/contact');
 }
+
+/**
+ * Proxies GET /messages/:id/photo to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param id - Forum message id from the dynamic route segment.
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyMessagesPhotoGet(request: Request, id: string): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(id)}/photo`);
+}

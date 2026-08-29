@@ -62,7 +62,9 @@ app/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
 │   │   ├── messages/
 │   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
-│   │   │   └── [id]/invoice/route.ts  # POST /messages/:id/invoice pay-on-note
+│   │   │   └── [id]/
+│   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
+│   │   │       └── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
 │   │   ├── me/
 │   │   │   ├── name/
 │   │   │   │   └── route.ts     # POST /me/name
@@ -85,8 +87,8 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list (messenger-group chronological), composer, sat totals, pay-on-note sheet
-│   │   ├── ForumLoader.tsx      # Fetch/post state for /welcome forum
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/feed-mode/pay/laws-dismiss state for /welcome forum
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
 │   │   └── ContactLoader.tsx    # Post state for /contact
@@ -99,7 +101,8 @@ app/
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
-│   │   └── forum-feed.ts        # Client-side Active/All/Most popular forum filter
+│   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
+│   │   └── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file
@@ -234,6 +237,25 @@ chapter-navigation labels (English), product tokens such as
 `Deutsch` / `Español` / `Filipino`), stats body copy (English), and
 document/social metadata (`title`, `description`, Open Graph alt text —
 English).
+
+### Icon controls (hard requirement)
+
+**New action buttons default to icon-only:** a lucide glyph plus a catalog
+`aria-label`, no visible text. Tests locate icon **buttons** with
+`getByRole('button', { name })` against that label and assert
+`queryByText` for the catalog string is `null`. Icon **links** use
+`getByRole('link', { name })`. Non-interactive indicators (given/received
+arrows) use `aria-label` on the glyph, not a button role.
+
+Already icon-only: composer attach, send (**Post**), remove-photo, and the
+Bitcoin pay control. Profile back is an icon **link**. Given/received totals
+are icon indicators.
+
+Existing hybrid or text controls stay until converted: the signed-in **Menu**
+disclosure (icon plus visible Menu word), **Log out**, **Link address**,
+**Continue**, **Try again**, **Cancel**, and sentence-length links such as
+**Open Wallet of Satoshi**. A **new** text button for an action control is an
+undeclared deviation and is rejected.
 
 Reviewers follow `Review.md`.
 

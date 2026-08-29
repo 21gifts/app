@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import type { ForumFeedMode } from '@/lib/forum-feed';
+import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -36,6 +37,7 @@ const SAMPLE: ForumMessage = {
   createdAt: '2026-08-28T12:00:00.000Z',
   sats: 0,
   payable: true,
+  hasPhoto: false,
 };
 
 const MULTILINE: ForumMessage = {
@@ -45,6 +47,7 @@ const MULTILINE: ForumMessage = {
   createdAt: '2026-08-28T13:00:00.000Z',
   sats: 21,
   payable: false,
+  hasPhoto: false,
 };
 
 const FIVE_SATS: ForumMessage = {
@@ -54,9 +57,16 @@ const FIVE_SATS: ForumMessage = {
   createdAt: '2026-08-28T14:00:00.000Z',
   sats: 5,
   payable: true,
+  hasPhoto: false,
 };
 
-const idlePay: Pick<
+const PHOTO: ForumPhotoPayload = {
+  contentType: 'image/jpeg',
+  data: 'abc',
+  previewUrl: 'data:image/jpeg;base64,abc',
+};
+
+const idleProps: Pick<
   ForumBoardProps,
   | 'payMessageId'
   | 'payDraft'
@@ -70,6 +80,10 @@ const idlePay: Pick<
   | 'onPayCancel'
   | 'lawsVisible'
   | 'onDismissLaws'
+  | 'photoDraft'
+  | 'onPickPhoto'
+  | 'onClearPhoto'
+  | 'photoUrls'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -83,6 +97,10 @@ const idlePay: Pick<
   onPayCancel: () => undefined,
   lawsVisible: true,
   onDismissLaws: () => undefined,
+  photoDraft: null,
+  onPickPhoto: () => undefined,
+  onClearPhoto: () => undefined,
+  photoUrls: {},
 };
 
 function modeProps(
@@ -93,7 +111,7 @@ function modeProps(
 }
 
 describe('ForumBoard', () => {
-  it('shows the heading, mode selector, composer, and Post button', () => {
+  it('shows the heading, mode selector, attach/send icons, and composer', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -105,7 +123,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -123,12 +141,19 @@ describe('ForumBoard', () => {
       '/rules',
     );
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     const field = screen.getByLabelText('Your message');
     const button = screen.getByRole('button', { name: 'Post' });
     expect(button).toBeTruthy();
+    expect(button.textContent?.trim()).toBe('');
+    expect(screen.getByLabelText('Add a photo').textContent?.trim()).toBe('');
     expect(field.nextElementSibling).toBe(button);
+    expect(field.previousElementSibling?.previousElementSibling).toBe(
+      screen.getByLabelText('Add a photo'),
+    );
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
   });
@@ -146,7 +171,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps()}
         onDismissLaws={onDismissLaws}
       />,
@@ -167,7 +192,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps()}
         lawsVisible={false}
       />,
@@ -192,7 +217,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -212,7 +237,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -231,7 +256,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -251,7 +276,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={onRetry}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -274,7 +299,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={onRetry}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('all')}
       />,
     );
@@ -296,7 +321,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
       'de',
@@ -318,7 +343,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -339,7 +364,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -361,7 +386,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -381,7 +406,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('all')}
       />,
     );
@@ -410,7 +435,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('all')}
       />,
     );
@@ -439,7 +464,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('popular')}
       />,
     );
@@ -462,7 +487,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -482,7 +507,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
       'de',
@@ -505,7 +530,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         mode="active"
         onModeChange={onModeChange}
       />,
@@ -526,11 +551,112 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
     expect(screen.getByText('1 sat')).toBeTruthy();
+  });
+
+  it('renders an inline photo and hides an empty text paragraph', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-photo': 'blob:photo' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('p.whitespace-pre-wrap')).toBeNull();
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
+    expect(screen.getByRole('listitem').getAttribute('data-message-id')).toBe('m-photo');
+  });
+
+  it('renders caption text below the photo', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: 'Caption under the photo',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-photo': 'blob:photo' }}
+        {...modeProps('all')}
+      />,
+    );
+    const img = screen.getByAltText('Photo from Ada');
+    const caption = screen.getByText('Caption under the photo');
+    expect(img.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders text and an inline photo together', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            id: 'm-both',
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-both': 'blob:photo' }}
+        {...modeProps('all')}
+      />,
+    );
+    const row = screen.getByRole('listitem');
+    expect(row.getAttribute('data-message-id')).toBe('m-both');
+    const photo = screen.getByAltText('Photo from Ada');
+    const caption = screen.getByText('Hello from Ada');
+    expect(photo.getAttribute('src')).toBe('blob:photo');
+    expect(photo.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('omits Send Bitcoin when payable is false', () => {
@@ -546,7 +672,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         onPayOpen={onPayOpen}
         {...modeProps('all')}
       />,
@@ -568,13 +694,68 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         onPayOpen={onPayOpen}
         {...modeProps('all')}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     expect(onPayOpen).toHaveBeenCalledWith('m1');
+  });
+
+  it('shows a photo draft preview and clear control', () => {
+    const onClearPhoto = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoDraft={PHOTO}
+        onClearPhoto={onClearPhoto}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    const remove = screen.getByRole('button', { name: 'Remove photo' });
+    expect(remove.textContent?.trim()).toBe('');
+    fireEvent.click(remove);
+    expect(onClearPhoto).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onPickPhoto when a file is chosen', () => {
+    const onPickPhoto = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onPickPhoto={onPickPhoto}
+        {...modeProps('active')}
+      />,
+    );
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByLabelText('Add a photo'));
+    expect(clickSpy).toHaveBeenCalled();
+    const file = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(onPickPhoto).toHaveBeenCalledWith(file);
+    fireEvent.change(input, { target: { files: [] } });
+    expect(onPickPhoto).toHaveBeenCalledTimes(1);
   });
 
   it('renders the amount sheet and submits pay', () => {
@@ -592,7 +773,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         payMessageId="m1"
         payDraft="21"
         onPayDraftChange={onPayDraftChange}
@@ -622,7 +803,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         payMessageId="m1"
         payError="amount"
         {...modeProps('all')}
@@ -645,7 +826,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         payMessageId="m1"
         payError="request"
         {...modeProps('all')}
@@ -666,7 +847,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         payMessageId="m1"
         payError="rateLimit"
         {...modeProps('all')}
@@ -689,7 +870,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
         payWaiting={true}
@@ -718,7 +899,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
         {...modeProps('all')}
@@ -747,7 +928,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
         {...modeProps('all')}
@@ -774,11 +955,11 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError="empty"
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo');
   });
 
   it('shows formError tooLong alert', () => {
@@ -793,7 +974,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError="tooLong"
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -812,7 +993,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError="request"
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -831,13 +1012,51 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError="rateLimit"
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe(
       'Too many messages. Please wait a moment and try again.',
     );
+  });
+
+  it('shows formError unsupported alert', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="unsupported"
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+  });
+
+  it('shows formError tooLarge alert', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="tooLarge"
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep the photo under 1 MB');
   });
 
   it('disables submit and shows a spinner while posting', () => {
@@ -852,7 +1071,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );
@@ -875,7 +1094,7 @@ describe('ForumBoard', () => {
         onPost={onPost}
         onRetry={() => undefined}
         formError={null}
-        {...idlePay}
+        {...idleProps}
         {...modeProps('active')}
       />,
     );

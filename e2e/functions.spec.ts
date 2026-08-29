@@ -91,6 +91,7 @@ async function stubPayableNote(page: Page): Promise<void> {
             createdAt: '2026-08-28T10:00:00.000Z',
             sats: 0,
             payable: true,
+            hasPhoto: false,
           },
         ],
       }),
@@ -308,6 +309,129 @@ test('Function: proxyContactPost — POST /contact/submit without bearer is 401'
   expect((await request.post('/contact/submit', { data: { text: 'hi' } })).status()).toBe(401);
 });
 
+test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/messages/m1/photo')).status()).toBe(401);
+});
+
+test('Function: fetchMessagePhoto — photo-only row shows the image alt', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: Buffer.from(
+        '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+        'base64',
+      ),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+});
+
+test('Function: prepareForumPhoto — attach control is visible on welcome', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+});
+
+test('Function: isForumPhotoFile — attach control accepts jpeg png webp', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  const input = page.locator('input[type="file"]');
+  await expect(input).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
+});
+
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
   await signInViaStub(page, request);
   await saveOnboardingName(page);
@@ -346,6 +470,101 @@ test('Function: postContact — sending from contact shows success', async ({ pa
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
+});
+
+async function reachWelcome(page: Page, request: APIRequestContext): Promise<void> {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+}
+
+async function attachTinyJpeg(page: Page): Promise<void> {
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+}
+
+async function postAndExpectPhotoRow(page: Page, caption?: string): Promise<string> {
+  const posted = page.waitForResponse((response) => {
+    if (response.request().method() !== 'POST' || !response.ok()) {
+      return false;
+    }
+    return /\/messages\/?$/.test(new URL(response.url()).pathname);
+  });
+  await page.getByRole('button', { name: 'Post' }).click();
+  const created = (await (await posted).json()) as {
+    id: string;
+    text: string;
+    hasPhoto: boolean;
+  };
+  expect(created.hasPhoto).toBe(true);
+  expect(created.text).toBe(caption ?? '');
+  const row = page.locator(`li[data-message-id="${created.id}"]`);
+  await expect(row).toBeVisible();
+  await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({
+    timeout: 10_000,
+  });
+  if (caption !== undefined) {
+    await expect(row).toContainText(caption);
+    await expect
+      .poll(async () =>
+        row.evaluate((el) => {
+          const img = el.querySelector('img');
+          const captionEl = el.querySelector('p');
+          if (img === null || captionEl === null) {
+            return false;
+          }
+          return Boolean(img.compareDocumentPosition(captionEl) & Node.DOCUMENT_POSITION_FOLLOWING);
+        }),
+      )
+      .toBe(true);
+  }
+  return created.id;
+}
+
+test('Function: prepareForumPhoto — attaching a jpeg shows a preview then posts it', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await attachTinyJpeg(page);
+  await postAndExpectPhotoRow(page);
+});
+
+test('Function: isForumPhotoFile — photo-only post does not require text', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await attachTinyJpeg(page);
+  await expect(page.getByLabel('Your message')).toHaveValue('');
+  await postAndExpectPhotoRow(page);
+});
+
+test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  const caption = `Caption ${Date.now()}`;
+  await page.getByLabel('Your message').fill(caption);
+  await attachTinyJpeg(page);
+  await postAndExpectPhotoRow(page, caption);
+});
+
+test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
+});
+
+test('Function: ForumLoader — remove photo clears the preview', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Remove photo' }).click();
+  await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
@@ -1417,6 +1636,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 1,
             payable: true,
+            hasPhoto: false,
           },
         ],
       }),
@@ -1462,6 +1682,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 5,
             payable: true,
+            hasPhoto: false,
           },
           {
             id: 'm2',
@@ -1470,6 +1691,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
             createdAt: '2026-08-28T11:00:00.000Z',
             sats: 21,
             payable: true,
+            hasPhoto: false,
           },
           {
             id: 'm1',
@@ -1478,6 +1700,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
             createdAt: '2026-08-28T10:00:00.000Z',
             sats: 0,
             payable: true,
+            hasPhoto: false,
           },
         ],
       }),

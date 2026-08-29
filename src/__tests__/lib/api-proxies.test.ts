@@ -16,6 +16,7 @@ import {
   proxyContactPost,
   proxyMessagesGet,
   proxyMessagesInvoicePost,
+  proxyMessagesPhotoGet,
   proxyMessagesPost,
 } from '@/lib/api-proxies';
 
@@ -115,6 +116,18 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/contact');
+  });
+
+  it('proxyMessagesPhotoGet hits /messages/:id/photo', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoGet(new Request('http://localhost/messages/m1/photo'), 'm1');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/photo');
+  });
+
+  it('proxyMessagesPhotoGet encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoGet(new Request('http://localhost/messages/a%2Fb/photo'), 'a/b');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/photo');
   });
 
   it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {

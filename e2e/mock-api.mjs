@@ -16,10 +16,12 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean }>} */
+/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean }>} */
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
+/** @type {Map<string, Buffer>} */
+const forumPhotos = new Map();
 
 function hex(bytes) {
   return Buffer.from(bytes).toString('hex');
@@ -124,13 +126,21 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
     }
-    if (typeof parsed?.text !== 'string') {
+    const hasPhoto =
+      parsed?.photo !== undefined &&
+      parsed?.photo !== null &&
+      typeof parsed.photo.data === 'string' &&
+      parsed.photo.data.length > 0;
+    const rawText = typeof parsed?.text === 'string' ? parsed.text : hasPhoto ? '' : null;
+    if (rawText === null) {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
     }
-    const text = parsed.text.trim();
-    if (text.length < 1 || text.length > 500) {
-      json(res, 400, { error: 'Text must be 1–500 characters' });
+    const text = rawText.trim();
+    if ((text.length < 1 && !hasPhoto) || text.length > 500) {
+      json(res, 400, {
+        error: 'Text must be 1–500 characters or include a photo',
+      });
       return;
     }
     const created = {
@@ -140,7 +150,11 @@ const server = http.createServer(async (req, res) => {
       createdAt: new Date().toISOString(),
       sats: 0,
       payable: false,
+      hasPhoto,
     };
+    if (hasPhoto) {
+      forumPhotos.set(created.id, Buffer.from(parsed.photo.data, 'base64'));
+    }
     forumMessages.unshift(created);
     json(res, 200, created);
     return;
@@ -215,6 +229,30 @@ const server = http.createServer(async (req, res) => {
     };
     contactMessages.unshift(created);
     json(res, 200, created);
+    return;
+  }
+
+  const photoMatch = pathName.match(/^\/messages\/([^/]+)\/photo$/);
+  if (method === 'GET' && photoMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const id = decodeURIComponent(photoMatch[1]);
+    const bytes = forumPhotos.get(id);
+    if (bytes === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, content-type, user-agent',
+      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    });
+    res.end(bytes);
     return;
   }
 

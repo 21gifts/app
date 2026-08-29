@@ -202,10 +202,11 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
 export const forumMessageSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  text: z.string().min(1),
+  text: z.string(), // may be ''
   createdAt: z.string().datetime({ offset: true }),
   sats: z.number().int().nonnegative(),
   payable: z.boolean(),
+  hasPhoto: z.boolean(),
 });
 
 /**
