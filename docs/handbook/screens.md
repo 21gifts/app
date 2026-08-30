@@ -252,6 +252,18 @@ Last chapter: heading **House right**. The next **I agree to these rules** POSTs
 
 ![21.gifts rules setup house](images/setup-rules-house.png)
 
+### Variant: error
+
+Last-chapter POST failed. Alert **Could not save your agreement**.
+
+![21.gifts rules setup error](images/setup-rules-error.png)
+
+### Variant: busy
+
+Last-chapter POST in flight. Agree disabled with a spinner; **House right** still visible.
+
+![21.gifts rules setup busy](images/setup-rules-busy.png)
+
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.

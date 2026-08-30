@@ -204,6 +204,20 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'House right' })",
   },
   {
+    route: '/setup/rules',
+    id: 'error',
+    image: 'setup-rules-error.png',
+    visual: 'state-setup-rules-error',
+    needle: 'Could not save your agreement',
+  },
+  {
+    route: '/setup/rules',
+    id: 'busy',
+    image: 'setup-rules-busy.png',
+    visual: 'state-setup-rules-busy',
+    needle: "getByRole('button', { name: 'I agree to these rules' })).toBeDisabled()",
+  },
+  {
     route: '/welcome',
     id: 'default',
     image: 'welcome.png',

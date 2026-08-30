@@ -180,7 +180,10 @@ const RULES_SETUP_ACCOUNT = {
 };
 
 /** Signed-in visitor at `/setup/rules` (name + address saved, rules not agreed). */
-async function openRulesSetup(page: Page): Promise<void> {
+async function openRulesSetup(
+  page: Page,
+  agreement: 'none' | 'fail' | 'hang' = 'none',
+): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -191,6 +194,13 @@ async function openRulesSetup(page: Page): Promise<void> {
       body: JSON.stringify(RULES_SETUP_ACCOUNT),
     });
   });
+  if (agreement === 'fail') {
+    await page.route(/\/me\/rules-agreement$/, async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+  } else if (agreement === 'hang') {
+    await page.route(/\/me\/rules-agreement$/, () => undefined);
+  }
 }
 
 /** Advance from the lead chapter; does not POST (stops before the last agree). */
@@ -492,6 +502,25 @@ test.describe('onboarding screens', () => {
     await advanceRulesChapters(page, 8);
     await expect(page.getByRole('heading', { name: 'House right' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-house');
+  });
+
+  test('setup-rules error', async ({ page }) => {
+    await openRulesSetup(page, 'fail');
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 8);
+    await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    await expect(page.getByText('Could not save your agreement')).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-error');
+  });
+
+  test('setup-rules busy', async ({ page }) => {
+    await openRulesSetup(page, 'hang');
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 8);
+    await expect(page.getByRole('heading', { name: 'House right' })).toBeVisible();
+    await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeDisabled();
+    await shotScreen(page, 'state-setup-rules-busy');
   });
 
   test('screen /welcome', async ({ page }) => {

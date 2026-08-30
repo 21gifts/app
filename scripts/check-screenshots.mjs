@@ -54,6 +54,20 @@ function hasSnapshot(files, stem) {
 }
 
 /**
+ * True when `e2e/visual.spec.ts` actually shoots `arg` (not a bare string).
+ *
+ * @param src - visual.spec.ts source.
+ * @param arg - Playwright screenshot name without `.png`.
+ * @returns Whether a `shotScreen` / `toHaveScreenshot` call uses `arg`.
+ */
+function hasVisualShot(src, arg) {
+  const escaped = arg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const shot = new RegExp(`shotScreen\\(\\s*\\w+\\s*,\\s*['"]${escaped}['"]`);
+  const raw = new RegExp(`toHaveScreenshot\\(\\s*['"]${escaped}(?:\\.png)?['"]`);
+  return shot.test(src) || raw.test(src);
+}
+
+/**
  * Chapter ids from `src/lib/rules-chapters.ts` (`lead`, `law1`, …).
  *
  * @returns Ordered ids, or `[]` when the export cannot be parsed.
@@ -100,7 +114,7 @@ for (const route of [...screens].sort()) {
       missing.push(`Screen ${route} has no Playwright Linux baseline ${stem}-linux.png`);
     }
   }
-  if (!visualSrc.includes(`'${arg}'`) && !visualSrc.includes(`"${arg}"`)) {
+  if (!hasVisualShot(visualSrc, arg)) {
     missing.push(
       `Screen ${route} has no shotScreen/toHaveScreenshot('${arg}') in e2e/visual.spec.ts`,
     );
@@ -124,7 +138,7 @@ for (const variant of SCREEN_VARIANTS) {
       );
     }
   }
-  if (!visualSrc.includes(`'${variant.visual}'`) && !visualSrc.includes(`"${variant.visual}"`)) {
+  if (!hasVisualShot(visualSrc, variant.visual)) {
     missing.push(
       `Variant ${variant.route} ${variant.id} has no shotScreen/toHaveScreenshot('${variant.visual}') in e2e/visual.spec.ts`,
     );
