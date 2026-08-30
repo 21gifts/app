@@ -189,8 +189,8 @@
 ## Function: LogoutButton
 
 - **Purpose:** Matching icon+text log-out inside the signed-in Menu dropdown (not a free top-right action); clears the session and returns the visitor to `/login`.
-- **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
-- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Language). Clears the session and `router.replace('/login')`.
+- **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`, `disablePush`.
+- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Language). Best-effort `disablePush` (unsubscribe) while the session token is still valid, then clears the session and `router.replace('/login')`; a `disablePush` failure does not block log out.
 - **Used by:** `SignedInChrome` Menu dropdown.
 
 ## Function: NameSetup
@@ -288,8 +288,8 @@
 
 - **Purpose:** When a local push subscription exists, DELETE its endpoint on the api then `unsubscribe()` locally.
 - **Inputs:** `sessionToken`.
-- **Returns / side effects:** `void`. No-op when there is no subscription.
-- **Used by:** `PushToggle`.
+- **Returns / side effects:** `void`. No-op when there is no subscription. Local `unsubscribe()` still runs if the api DELETE fails.
+- **Used by:** `PushToggle` and `LogoutButton`.
 
 ## Function: fetchVapidPublicKey
 
