@@ -123,7 +123,7 @@ const MODE_LABEL_KEY: Record<
  * Presentational public forum: heading, optional dismissible living-room laws
  * hint box with links to `/rules` and `/contact`, Active/All/Most popular
  * selector, list or empty/loading/error, composer (attach + textarea + Send
- * icon), per-card sats total with a Bitcoin pay icon when the note is payable,
+ * icon), per-card ₿ amount with a Bitcoin pay icon when the note is payable,
  * optional Founder / Moderator / Verified role pills with click-to-explain,
  * pay-on-note sheet (amount → desktop QR + Pay button with Wallet of Satoshi
  * icon; smartphone deep link only, no QR; top-left back control cancels), and

@@ -33,7 +33,7 @@ function usdCents(usd: string): number {
 /**
  * Numeric bar-scale value for the active unit.
  *
- * @param scale - Whether bars are sized by BTC (sats) or USD (cents).
+ * @param scale - Whether bars are sized by ₿ (sats) or USD (cents).
  * @param sats - Whole satoshis.
  * @param usd - USD amount string from the stats payload.
  * @returns Sats when `scale` is `btc`, else cents.
@@ -251,7 +251,7 @@ function CumulativeOverTimeChart(
 /**
  * Horizontal bar chart of spend by recipient.
  *
- * Bars are sized by the active scale (sats or USD cents). Labels show BTC and USD.
+ * Bars are sized by the active scale (sats or USD cents). Labels show ₿ and USD.
  *
  * @param rows - Recipient totals.
  * @param scale - Whether bar widths use sats or USD cents.
@@ -305,7 +305,7 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
 /**
  * Vertical bar chart of spend by month.
  *
- * Bars are sized by the active scale (sats or USD cents). Labels above each bar show BTC and USD.
+ * Bars are sized by the active scale (sats or USD cents). Labels above each bar show ₿ and USD.
  *
  * @param rows - Monthly totals.
  * @param scale - Whether bar heights use sats or USD cents.
@@ -392,7 +392,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
 }
 
 /**
- * Non-empty charts branch with independent BTC/USD scale state per diagram.
+ * Non-empty charts branch with independent ₿/USD scale state per diagram.
  *
  * Over time shows one cumulative series; days with spend link to `/stats/{day}`
  * on the chart. Person and month bars rescale; their labels stay both units.
@@ -464,7 +464,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
 }
 
 /**
- * Gift statistics dashboard: KPI cards and diagrams (BTC + USD).
+ * Gift statistics dashboard: KPI cards and diagrams (₿ + USD).
  *
  * @param props - Stats payload plus loading/error/retry.
  * @returns The dashboard element.
