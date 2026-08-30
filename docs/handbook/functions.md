@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, and `/view-key/[viewKey]`).
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, `/view-key/[viewKey]`, and `/push/vapid-public`).
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls.
@@ -237,10 +237,108 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
-- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + ₿ | USD + SVG), name form, address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `PushToggle`; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + ₿ | USD + SVG), name form, address form, push bell under the address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
 - **Used by:** `ProfilePage`.
+
+## Function: PushToggle
+
+- **Purpose:** Icon-only Bell control to enable or disable Web Push for the signed-in member. Renders nothing without a session or when `serviceWorker` / `PushManager` are missing. On iPhone Safari outside standalone, shows `profile.push.installHint` above the button.
+- **Inputs:** Session from `useAuthStore`; catalog via `useTranslations`; `enablePush` / `disablePush` / `isIosSafari` / `isStandaloneDisplay`.
+- **Returns / side effects:** Icon-only button named from `profile.push.enable` or `profile.push.disable` (`aria-pressed` when subscribed). User gesture calls enable/disable; may show `profile.push.unavailable` on failure.
+- **Used by:** `ProfileScreen`.
+
+## Function: vapidPublicKeyToBytes
+
+- **Purpose:** Decode a VAPID application server public key (url-safe base64) to bytes for `pushManager.subscribe`.
+- **Inputs:** Url-safe base64 public key string.
+- **Returns / side effects:** `Uint8Array`. No network.
+- **Used by:** `enablePush`.
+
+## Function: registerPushWorker
+
+- **Purpose:** Register the push-only service worker at `/sw.js` (scope `/`) and wait until ready.
+- **Inputs:** None (uses `navigator.serviceWorker`).
+- **Returns / side effects:** `ServiceWorkerRegistration`.
+- **Used by:** `enablePush`, `disablePush`.
+
+## Function: isStandaloneDisplay
+
+- **Purpose:** Detect installed / standalone display mode (`display-mode: standalone` or iOS `navigator.standalone`).
+- **Inputs:** None (reads `window` / `navigator`).
+- **Returns / side effects:** `boolean`. No network.
+- **Used by:** `PushToggle`.
+
+## Function: isIosSafari
+
+- **Purpose:** Detect iPhone/iPod stock Safari (Safari in UA, not CriOS/FxiOS).
+- **Inputs:** None (reads `navigator.userAgent`).
+- **Returns / side effects:** `boolean`. No network.
+- **Used by:** `PushToggle`.
+
+## Function: enablePush
+
+- **Purpose:** Register the worker, fetch the VAPID key, request notification permission, subscribe, and POST the subscription to the api.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `void`. Throws `Notification permission denied` or `Push is not configured` (and other api errors).
+- **Used by:** `PushToggle`.
+
+## Function: disablePush
+
+- **Purpose:** When a local push subscription exists, DELETE its endpoint on the api then `unsubscribe()` locally.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `void`. No-op when there is no subscription.
+- **Used by:** `PushToggle`.
+
+## Function: fetchVapidPublicKey
+
+- **Purpose:** GET `/push/vapid-public` with the bearer session and return the VAPID public key string.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `string`. Throws `Push is not configured` on 503; other non-2xx throw with status.
+- **Used by:** `enablePush`.
+
+## Function: postPushSubscription
+
+- **Purpose:** POST `/me/push-subscriptions` with bearer + `{ endpoint, keys }` and validate the response.
+- **Inputs:** `sessionToken`, subscription endpoint + p256dh/auth keys.
+- **Returns / side effects:** `void`. Throws `Push is not configured` on 503; 400 uses api error when present.
+- **Used by:** `enablePush`.
+
+## Function: deletePushSubscription
+
+- **Purpose:** DELETE `/me/push-subscriptions` with bearer + `{ endpoint }`.
+- **Inputs:** `sessionToken`, `endpoint`.
+- **Returns / side effects:** `void`. 404 is success (already gone). Throws `Push is not configured` on 503.
+- **Used by:** `disablePush`.
+
+## Function: proxyPushVapidPublicGet
+
+- **Purpose:** Bearer proxy GET `/push/vapid-public` to the 21.gifts api.
+- **Inputs:** Incoming `Request` with Bearer session.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/push/vapid-public`.
+
+## Function: proxyMePushSubscriptionsPost
+
+- **Purpose:** Bearer proxy POST `/me/push-subscriptions` to the 21.gifts api.
+- **Inputs:** Incoming `Request` with Bearer session and JSON body.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/me/push-subscriptions`.
+
+## Function: proxyMePushSubscriptionsDelete
+
+- **Purpose:** Bearer proxy DELETE `/me/push-subscriptions` to the 21.gifts api.
+- **Inputs:** Incoming `Request` with Bearer session and JSON body.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route DELETE `/me/push-subscriptions`.
+
+## Function: manifest
+
+- **Purpose:** Next.js `MetadataRoute.Manifest` for installable 21.gifts (`/manifest.webmanifest`).
+- **Inputs:** None.
+- **Returns / side effects:** Manifest with name/short_name `21.gifts`, start_url `/welcome`, display `standalone`, theme/background colors, apple-touch-icon at 180×180, plus `icon-192.png` and `icon-512.png`.
+- **Used by:** App Router manifest route.
 
 ## Function: AccountActivityChart
 
@@ -769,10 +867,10 @@
 
 ## Function: DELETE
 
-- **Purpose:** App Router DELETE export on `/me/lightning-address` (re-export of `proxyMeLightningAddressDelete`).
+- **Purpose:** Shared App Router DELETE export name. `/me/lightning-address` re-exports `proxyMeLightningAddressDelete`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsDelete`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin `unlinkLightningAddress`.
+- **Used by:** Same-origin `unlinkLightningAddress` and `deletePushSubscription` / `disablePush`.
 
 ## Function: LegalPage
 
@@ -811,10 +909,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
+- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 

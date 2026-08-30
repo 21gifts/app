@@ -10,6 +10,8 @@ import {
   giftStatsSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  pushSubscriptionResponseSchema,
+  vapidPublicSchema,
   viewProfileSchema,
 } from '@/lib/api-types';
 
@@ -57,6 +59,29 @@ describe('contactSchema', () => {
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
       }),
+    ).toThrow();
+  });
+});
+
+describe('vapidPublicSchema', () => {
+  it('accepts a non-empty public key', () => {
+    expect(vapidPublicSchema.parse({ publicKey: 'BAAAA' })).toEqual({ publicKey: 'BAAAA' });
+  });
+
+  it('rejects an empty public key', () => {
+    expect(() => vapidPublicSchema.parse({ publicKey: '' })).toThrow();
+  });
+});
+
+describe('pushSubscriptionResponseSchema', () => {
+  it('accepts endpoint plus createdAt', () => {
+    const body = { endpoint: 'https://push.example/sub', createdAt: '2026-08-30T00:00:00.000Z' };
+    expect(pushSubscriptionResponseSchema.parse(body)).toEqual(body);
+  });
+
+  it('rejects a missing endpoint', () => {
+    expect(() =>
+      pushSubscriptionResponseSchema.parse({ createdAt: '2026-08-30T00:00:00.000Z' }),
     ).toThrow();
   });
 });

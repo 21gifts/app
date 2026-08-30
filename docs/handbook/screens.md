@@ -487,14 +487,14 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, copy the public view-key link via an icon-only control, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell, copy the public view-key link via an icon-only control, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
 - **Inputs:** Session account (name + Lightning Address + `viewKey` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
-- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between ₿ and USD; copy the public view URL with the icon-only control (the 64-hex key and `/view/<key>` are not shown on screen).
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle Web Push with the icon-only bell (aria from `profile.push.enable` / `profile.push.disable`); toggle the activity chart between ₿ and USD; copy the public view URL with the icon-only control (the 64-hex key and `/view/<key>` are not shown on screen). On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the bell.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, ₿ | USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then an icon-only copy control for the public view URL; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, ₿ | USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), an icon-only notifications bell under the address form, then an icon-only copy control for the public view URL; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
 

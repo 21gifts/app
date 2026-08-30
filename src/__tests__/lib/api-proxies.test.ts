@@ -15,10 +15,13 @@ import {
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
   proxyContactPost,
+  proxyMePushSubscriptionsDelete,
+  proxyMePushSubscriptionsPost,
   proxyMessagesGet,
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
+  proxyPushVapidPublicGet,
   proxyViewGet,
 } from '@/lib/api-proxies';
 
@@ -203,5 +206,29 @@ describe('api proxy wrappers', () => {
     const viewKey = 'a'.repeat(64);
     await proxyViewGet(new Request(`http://localhost/view-key/${viewKey}`), viewKey);
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}`);
+  });
+
+  it('proxyPushVapidPublicGet hits /push/vapid-public', async () => {
+    const fetchMock = stubApi();
+    await proxyPushVapidPublicGet(new Request('http://localhost/push/vapid-public'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/push/vapid-public');
+  });
+
+  it('proxyMePushSubscriptionsPost hits POST /me/push-subscriptions', async () => {
+    const fetchMock = stubApi();
+    await proxyMePushSubscriptionsPost(
+      new Request('http://localhost/me/push-subscriptions', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/push-subscriptions');
+  });
+
+  it('proxyMePushSubscriptionsDelete hits DELETE /me/push-subscriptions', async () => {
+    const fetchMock = stubApi();
+    await proxyMePushSubscriptionsDelete(
+      new Request('http://localhost/me/push-subscriptions', { method: 'DELETE', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/push-subscriptions');
   });
 });

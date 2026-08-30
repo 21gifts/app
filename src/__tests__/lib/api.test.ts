@@ -1,18 +1,21 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  deletePushSubscription,
   dismissForumLaws,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
   fetchMessagePhoto,
   fetchMessages,
+  fetchVapidPublicKey,
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   postContact,
   postMessage,
   postMessageInvoice,
+  postPushSubscription,
   agreeToRules,
   setLightningAddress,
   setName,
@@ -757,6 +760,117 @@ describe('postContact', () => {
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
+  });
+});
+
+describe('fetchVapidPublicKey', () => {
+  it('returns the public key and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { publicKey: 'BAAAA' } });
+    await expect(fetchVapidPublicKey('sess')).resolves.toBe('BAAAA');
+    expect(fetchMock).toHaveBeenCalledWith('/push/vapid-public', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws when push is not configured', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Push is not configured' } });
+    await expect(fetchVapidPublicKey('sess')).rejects.toThrow('Push is not configured');
+  });
+
+  it('throws on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchVapidPublicKey('sess')).rejects.toThrow(
+      'Failed to fetch VAPID public key: 401',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { publicKey: '' } });
+    await expect(fetchVapidPublicKey('sess')).rejects.toThrow();
+  });
+});
+
+describe('postPushSubscription', () => {
+  const sub = {
+    endpoint: 'https://push.example/sub',
+    keys: { p256dh: 'p256', auth: 'auth' },
+  };
+
+  it('posts the subscription and validates the response', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { endpoint: sub.endpoint, createdAt: '2026-08-30T00:00:00.000Z' },
+    });
+    await expect(postPushSubscription('sess', sub)).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/me/push-subscriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(sub),
+    });
+  });
+
+  it('throws when push is not configured', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Push is not configured' } });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow('Push is not configured');
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Invalid subscription' } });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow('Invalid subscription');
+  });
+
+  it('throws a fallback when a 400 body has no error string', async () => {
+    stubFetch({ ok: false, status: 400, body: { nope: true } });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow('Invalid subscription');
+  });
+
+  it('throws on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow(
+      'Could not save push subscription',
+    );
+  });
+});
+
+describe('deletePushSubscription', () => {
+  it('deletes the endpoint', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+    await expect(
+      deletePushSubscription('sess', 'https://push.example/sub'),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/me/push-subscriptions', {
+      method: 'DELETE',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
+    });
+  });
+
+  it('treats 404 as success', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(
+      deletePushSubscription('sess', 'https://push.example/sub'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('throws when push is not configured', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Push is not configured' } });
+    await expect(deletePushSubscription('sess', 'https://push.example/sub')).rejects.toThrow(
+      'Push is not configured',
+    );
+  });
+
+  it('throws on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(deletePushSubscription('sess', 'https://push.example/sub')).rejects.toThrow(
+      'Could not remove push subscription',
+    );
   });
 });
 

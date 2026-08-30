@@ -270,6 +270,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/push/vapid-public') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { publicKey: `B${'A'.repeat(86)}` });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/push-subscriptions') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Invalid subscription' });
+      return;
+    }
+    const endpoint = typeof parsed?.endpoint === 'string' ? parsed.endpoint : '';
+    if (endpoint === '') {
+      json(res, 400, { error: 'Invalid subscription' });
+      return;
+    }
+    json(res, 200, { endpoint, createdAt: new Date().toISOString() });
+    return;
+  }
+
+  if (method === 'DELETE' && pathName === '/me/push-subscriptions') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { ok: true });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/rules-agreement') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
