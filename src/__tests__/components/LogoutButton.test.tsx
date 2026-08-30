@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LogoutButton } from '@/components/LogoutButton';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { disablePush } from '@/lib/push';
 import { clearSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -18,10 +19,16 @@ vi.mock('@/lib/session-storage', () => ({
   saveSession: vi.fn(),
   clearSession: vi.fn(),
 }));
+vi.mock('@/lib/push', () => ({
+  disablePush: vi.fn().mockResolvedValue(undefined),
+}));
 
 beforeEach(() => {
   replace.mockClear();
   cancel.mockClear();
+  vi.mocked(clearSession).mockClear();
+  vi.mocked(disablePush).mockReset();
+  vi.mocked(disablePush).mockResolvedValue(undefined);
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status: 'idle',
     login: vi.fn(),
@@ -53,11 +60,32 @@ afterEach(() => {
 });
 
 describe('LogoutButton', () => {
-  it('clears the session and returns to login', () => {
+  it('clears the session and returns to login', async () => {
     renderWithLocale(<LogoutButton />);
     fireEvent.click(screen.getByRole('button', { name: /log out/i }));
     expect(cancel).toHaveBeenCalled();
-    expect(clearSession).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(clearSession).toHaveBeenCalled();
+    });
+    expect(disablePush).toHaveBeenCalledWith('tok');
+    const disableOrder = vi.mocked(disablePush).mock.invocationCallOrder[0];
+    const clearOrder = vi.mocked(clearSession).mock.invocationCallOrder[0];
+    expect(disableOrder).toBeTypeOf('number');
+    expect(clearOrder).toBeTypeOf('number');
+    expect(disableOrder as number).toBeLessThan(clearOrder as number);
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('still clears and replaces when disablePush rejects', async () => {
+    vi.mocked(disablePush).mockRejectedValueOnce(new Error('offline'));
+    renderWithLocale(<LogoutButton />);
+    fireEvent.click(screen.getByRole('button', { name: /log out/i }));
+    expect(cancel).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(clearSession).toHaveBeenCalled();
+    });
+    expect(disablePush).toHaveBeenCalledWith('tok');
     expect(useAuthStore.getState().account).toBeNull();
     expect(replace).toHaveBeenCalledWith('/login');
   });

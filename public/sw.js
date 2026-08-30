@@ -17,9 +17,8 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      const allFocused =
-        clientList.length > 0 && clientList.every((client) => client.focused === true);
-      if (allFocused) {
+      const anyFocused = clientList.some((client) => client.focused === true);
+      if (anyFocused) {
         return undefined;
       }
       const options = {

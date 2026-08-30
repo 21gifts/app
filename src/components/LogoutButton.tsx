@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { disablePush } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -22,9 +23,15 @@ export function LogoutButton(): ReactElement {
     <button
       type="button"
       onClick={() => {
-        passkey.cancel();
-        clearAuth();
-        router.replace('/login');
+        void (async () => {
+          passkey.cancel();
+          const token = useAuthStore.getState().session;
+          if (token !== null) {
+            await disablePush(token).catch(() => undefined);
+          }
+          clearAuth();
+          router.replace('/login');
+        })();
       }}
       className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted transition hover:bg-app-hover hover:text-app-fg"
     >
