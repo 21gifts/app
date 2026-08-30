@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
@@ -26,6 +26,11 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [index, setIndex] = useState(0);
+  const stepLock = useRef(false);
+
+  useEffect(() => {
+    stepLock.current = false;
+  }, [index]);
 
   if (account === null || session === null) {
     return null;
@@ -39,8 +44,12 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
   const lastIndex = chapters.length - 1;
 
   const handleAgree = (): void => {
+    if (busy || stepLock.current) {
+      return;
+    }
     if (index < lastIndex) {
-      setIndex((currentIndex) => currentIndex + 1);
+      stepLock.current = true;
+      setIndex((currentIndex) => Math.min(currentIndex + 1, lastIndex));
       return;
     }
     setBusy(true);
@@ -70,7 +79,13 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         <button
           type="button"
           aria-label={t('setup.rulesBack')}
-          onClick={() => setIndex((currentIndex) => currentIndex - 1)}
+          onClick={() => {
+            if (stepLock.current) {
+              return;
+            }
+            stepLock.current = true;
+            setIndex((currentIndex) => Math.max(0, currentIndex - 1));
+          }}
           className="absolute top-4 left-5 inline-flex items-center justify-center rounded-full p-2 text-app-muted transition hover:text-app-fg"
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />

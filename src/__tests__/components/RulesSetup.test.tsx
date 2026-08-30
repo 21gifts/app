@@ -124,6 +124,40 @@ describe('RulesSetup', () => {
     expect(screen.queryByText('chapter-two')).toBeNull();
   });
 
+  it('does not skip a chapter when agree is clicked twice in one tick', () => {
+    renderWithLocale(
+      <RulesSetup
+        chapters={[
+          <p key="first">chapter-one</p>,
+          <p key="second">chapter-two</p>,
+          <p key="third">chapter-three</p>,
+        ]}
+      />,
+    );
+    const agree = screen.getByRole('button', { name: 'I agree to these rules' });
+    act(() => {
+      agree.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      agree.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    expect(screen.queryByText('chapter-three')).toBeNull();
+    expect(agreeToRules).not.toHaveBeenCalled();
+  });
+
+  it('does not leave the first chapter when back is clicked twice in one tick', () => {
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    const back = screen.getByRole('button', { name: 'Back' });
+    act(() => {
+      back.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      back.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(screen.getByText('chapter-one')).toBeTruthy();
+    expect(screen.queryByText('chapter-two')).toBeNull();
+  });
+
   it('posts agreement and merges only rulesAgreedAt into the store', async () => {
     vi.mocked(agreeToRules).mockResolvedValue({
       ...baseAccount,
