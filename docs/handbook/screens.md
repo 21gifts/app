@@ -387,7 +387,7 @@ Carol's **Verified** tag clicked; the explanation under that card header is visi
 
 ## Screen: /rules
 
-- **URL:** `/rules` — public living-room rules. Light chrome (not the dark marketing shell). No auth gate.
+- **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate.
 - **What the user sees:** Light language switcher and theme switcher top-right. Page heading **Living room rules**, then lead, three laws (title + body + test where present), Wanted / Allowed / Rather not / Forbidden (three forbidden subheads + lists), House right, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
 - **Actions:** Change language or theme. Read the rules. Open contact or the forum.
 - **Calls:** `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `ThemeSwitcher`.

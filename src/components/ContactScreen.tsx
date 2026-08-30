@@ -26,7 +26,8 @@ export interface ContactScreenProps {
  * Presentational in-app contact: heading, lead, rules link, and either a
  * messenger-style composer or the success copy.
  *
- * Light neutral palette to match {@link WelcomeScreen}. No message inbox.
+ * Uses semantic app tokens (`bg-app-*` / `text-app-*`) to follow the resolved
+ * theme, matching {@link WelcomeScreen}. No message inbox.
  *
  * @param props - Composer and success/error state from {@link ContactLoader}.
  * @returns The contact card.

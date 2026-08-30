@@ -134,7 +134,8 @@ const MODE_LABEL_KEY: Record<
  * the filtered list for the DOM. Most popular keeps sats-desc order.
  *
  * Always shows the heading, mode selector, and composer so validation errors
- * can surface even when the list is empty. Light neutral palette to match
+ * can surface even when the list is empty. Uses semantic app tokens
+ * (`bg-app-*` / `text-app-*`) to follow the resolved theme, matching
  * {@link WelcomeScreen}. Photos render from {@link ForumBoardProps.photoUrls}
  * blob URLs — never from an unauthenticated `<img src="/messages/.../photo">`.
  *
