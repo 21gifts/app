@@ -69,6 +69,15 @@ describe('PushToggle', () => {
     });
   });
 
+  it('treats a missing registration as not subscribed', async () => {
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { getRegistration: vi.fn().mockResolvedValue(undefined) },
+    });
+    renderWithLocale(<PushToggle />);
+    expect(await screen.findByRole('button', { name: 'Enable notifications' })).toBeTruthy();
+  });
+
   it('still shows the enable control when getRegistration throws', async () => {
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
