@@ -10,6 +10,8 @@ import {
   messageInvoiceSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  pushSubscriptionResponseSchema,
+  vapidPublicSchema,
   viewProfileSchema,
   type Account,
   type ContactMessage,
@@ -464,6 +466,92 @@ export async function fetchMessagePhoto(sessionToken: string, id: string): Promi
     return blob;
   } catch {
     throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches the VAPID application server public key for Web Push subscribe.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The url-safe base64 public key string.
+ * @throws Error with message `Push is not configured` on 503, on any other
+ * non-2xx status, or when the body fails {@link vapidPublicSchema} validation.
+ */
+export async function fetchVapidPublicKey(sessionToken: string): Promise<string> {
+  const response = await fetch('/push/vapid-public', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 503) {
+    throw new Error('Push is not configured');
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch VAPID public key: ${response.status}`);
+  }
+  return vapidPublicSchema.parse(await response.json()).publicKey;
+}
+
+/**
+ * Registers a Web Push subscription for the signed-in account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param sub - Browser subscription endpoint plus p256dh/auth keys.
+ * @throws Error with message `Push is not configured` on 503, when the api
+ * rejects the body (400) — the api error string when present — on any other
+ * non-2xx status, or when the body fails {@link pushSubscriptionResponseSchema}.
+ */
+export async function postPushSubscription(
+  sessionToken: string,
+  sub: { endpoint: string; keys: { p256dh: string; auth: string } },
+): Promise<void> {
+  const response = await fetch('/me/push-subscriptions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(sub),
+  });
+  if (response.status === 503) {
+    throw new Error('Push is not configured');
+  }
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Invalid subscription' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not save push subscription');
+  }
+  pushSubscriptionResponseSchema.parse(await response.json());
+}
+
+/**
+ * Removes a Web Push subscription for the signed-in account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param endpoint - The Push API endpoint URL to delete.
+ * @throws Error with message `Push is not configured` on 503, or on any other
+ * non-2xx status other than 404 (already gone is treated as success).
+ */
+export async function deletePushSubscription(
+  sessionToken: string,
+  endpoint: string,
+): Promise<void> {
+  const response = await fetch('/me/push-subscriptions', {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ endpoint }),
+  });
+  if (response.status === 404) {
+    return;
+  }
+  if (response.status === 503) {
+    throw new Error('Push is not configured');
+  }
+  if (!response.ok) {
+    throw new Error('Could not remove push subscription');
   }
 }
 

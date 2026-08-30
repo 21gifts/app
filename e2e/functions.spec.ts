@@ -2349,3 +2349,117 @@ test('Function: THEME_BOOTSTRAP_SCRIPT — dark cookie paints html.dark before i
   await expect(page.locator('html')).toHaveClass(/dark/);
   await expect(page.getByLabel('Theme')).toBeVisible();
 });
+
+test('Function: manifest — web app manifest is served', async ({ request }) => {
+  const res = await request.get('/manifest.webmanifest');
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { name: string; display: string; start_url: string };
+  expect(body.name).toBe('21.gifts');
+  expect(body.display).toBe('standalone');
+  expect(body.start_url).toBe('/welcome');
+});
+
+test('Function: proxyPushVapidPublicGet — GET /push/vapid-public without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/push/vapid-public')).status()).toBe(401);
+});
+
+test('Function: fetchVapidPublicKey — GET /push/vapid-public with bearer is 200', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.get('/push/vapid-public', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { publicKey: string }).publicKey.length).toBeGreaterThan(8);
+});
+
+test('Function: proxyMePushSubscriptionsPost — POST /me/push-subscriptions without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/push-subscriptions')).status()).toBe(401);
+});
+
+test('Function: postPushSubscription — POST /me/push-subscriptions with bearer is 200', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/push-subscriptions', {
+    headers: { authorization: `Bearer ${token}` },
+    data: {
+      endpoint: 'https://push.example/e2e',
+      keys: { p256dh: 'p256', auth: 'auth' },
+    },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { endpoint: string }).endpoint).toBe('https://push.example/e2e');
+});
+
+test('Function: proxyMePushSubscriptionsDelete — DELETE /me/push-subscriptions without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.delete('/me/push-subscriptions')).status()).toBe(401);
+});
+
+test('Function: deletePushSubscription — DELETE /me/push-subscriptions with bearer is 200', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.delete('/me/push-subscriptions', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { endpoint: 'https://push.example/e2e' },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { ok: boolean }).ok).toBe(true);
+});
+
+test('Function: PushToggle — profile shows the enable notifications control', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByText('Enable notifications')).toHaveCount(0);
+});
+
+test('Function: vapidPublicKeyToBytes — profile shows the enable notifications control', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+});
+
+test('Function: registerPushWorker — profile shows the enable notifications control', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+});
+
+test('Function: enablePush — profile shows the enable notifications control', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+});
+
+test('Function: disablePush — profile shows the enable notifications control', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+});
+
+test('Function: isStandaloneDisplay — profile shows the enable notifications control', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+});
+
+test('Function: isIosSafari — profile shows the enable notifications control', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+});

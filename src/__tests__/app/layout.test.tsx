@@ -42,6 +42,15 @@ describe('metadata', () => {
     expect(icons.apple.map((entry) => entry.url)).toContain('/apple-touch-icon.png');
   });
 
+  it('declares the web app manifest and apple web app metadata', () => {
+    expect(metadata.manifest).toBe('/manifest.webmanifest');
+    expect(metadata.appleWebApp).toEqual({
+      capable: true,
+      title: '21.gifts',
+      statusBarStyle: 'default',
+    });
+  });
+
   it('exposes Open Graph website preview metadata', () => {
     const openGraph = metadata.openGraph as NonNullable<Metadata['openGraph']> & {
       type: string;

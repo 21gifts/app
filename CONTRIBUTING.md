@@ -63,8 +63,12 @@ app/
 │   │   │   ├── name/route.ts    # POST /me/name
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
+│   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   └── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   ├── push/
+│   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
 │   │   ├── contact/
+
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
 │   │   │   └── submit/
 │   │   │       └── route.ts     # POST /contact/submit → api POST /contact
@@ -82,8 +86,10 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + address + icon-only view-key copy
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address + push bell + icon-only view-key copy
+│   │   ├── manifest.ts          # Web App Manifest (MetadataRoute.Manifest default export)
 │   │   ├── view/
+
 │   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
 │   │   ├── view-key/
 │   │   │   └── [viewKey]/route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
@@ -95,7 +101,8 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + icon-only view-key copy)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell + icon-only view-key copy)
+│   │   ├── PushToggle.tsx       # Icon-only Bell Web Push enable/disable on profile
 │   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
 │   │   ├── ViewProfileClaim.tsx # Public view passkey claim (icon-only) under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
@@ -119,8 +126,10 @@ app/
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
-│   │   └── forum-photo.ts       # Client resize/JPEG encode for forum photos
+│   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
+│   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
+
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file
 │       ├── app/
@@ -154,6 +163,7 @@ app/
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines (single source for handbook images)
 │   └── visual.spec.ts-snapshots/
 ├── public/                      # Static assets served from /
+│   ├── sw.js                    # Push-only service worker (no cache/offline in v1)
 │   └── handbook-images/         # Built from visual baselines (gitignored *.png; keep .gitkeep)
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
@@ -265,7 +275,8 @@ English).
 `getByRole('link', { name })`. Non-interactive indicators (given/received
 arrows) use `aria-label` on the glyph, not a button role.
 
-Already icon-only: composer attach, send (**Post**), remove-photo, and the
+Already icon-only: composer attach, send (**Post**), remove-photo, profile push
+bell (`PushToggle`), and the
 Bitcoin pay control. Profile back is an icon **link**. Given/received totals
 are icon indicators.
 

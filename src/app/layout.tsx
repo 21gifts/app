@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://21.gifts'),
   title: '21.gifts',
   description,
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: '21.gifts',
+    statusBarStyle: 'default',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '48x48' },

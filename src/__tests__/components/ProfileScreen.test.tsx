@@ -45,6 +45,15 @@ vi.mock('@/lib/api', () => ({
   unlinkLightningAddress: vi.fn(),
 }));
 
+vi.mock('@/lib/push', () => ({
+  enablePush: vi.fn(),
+  disablePush: vi.fn(),
+  isIosSafari: vi.fn().mockReturnValue(false),
+  isStandaloneDisplay: vi.fn().mockReturnValue(false),
+  registerPushWorker: vi.fn(),
+  vapidPublicKeyToBytes: vi.fn(),
+}));
+
 const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,

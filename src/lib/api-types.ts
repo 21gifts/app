@@ -281,3 +281,28 @@ export const contactSchema = z.object({
  * One in-app contact message from the api.
  */
 export type ContactMessage = z.infer<typeof contactSchema>;
+
+/**
+ * Runtime schema for `GET /push/vapid-public` success body.
+ */
+export const vapidPublicSchema = z.object({
+  publicKey: z.string().min(1),
+});
+
+/**
+ * VAPID application server public key from the api.
+ */
+export type VapidPublic = z.infer<typeof vapidPublicSchema>;
+
+/**
+ * Runtime schema for `POST /me/push-subscriptions` success body.
+ */
+export const pushSubscriptionResponseSchema = z.object({
+  endpoint: z.string(),
+  createdAt: z.string(),
+});
+
+/**
+ * Confirmed push subscription row from the api.
+ */
+export type PushSubscriptionResponse = z.infer<typeof pushSubscriptionResponseSchema>;
