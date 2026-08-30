@@ -823,6 +823,11 @@ describe('postPushSubscription', () => {
     await expect(postPushSubscription('sess', sub)).rejects.toThrow('Invalid subscription');
   });
 
+  it('throws a fallback when a 400 body has no error string', async () => {
+    stubFetch({ ok: false, status: 400, body: { nope: true } });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow('Invalid subscription');
+  });
+
   it('throws on other non-ok responses', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postPushSubscription('sess', sub)).rejects.toThrow(

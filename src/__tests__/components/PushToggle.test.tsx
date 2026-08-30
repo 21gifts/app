@@ -69,6 +69,34 @@ describe('PushToggle', () => {
     });
   });
 
+  it('still shows the enable control when getRegistration throws', async () => {
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { getRegistration: vi.fn().mockRejectedValue(new Error('boom')) },
+    });
+    renderWithLocale(<PushToggle />);
+    expect(await screen.findByRole('button', { name: 'Enable notifications' })).toBeTruthy();
+  });
+
+  it('ignores a second click while enable is in flight', async () => {
+    let resolveEnable: (() => void) | undefined;
+    vi.mocked(enablePush).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveEnable = resolve;
+        }),
+    );
+    renderWithLocale(<PushToggle />);
+    const button = await screen.findByRole('button', { name: 'Enable notifications' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(enablePush).toHaveBeenCalledTimes(1);
+    });
+    resolveEnable?.();
+    expect(await screen.findByRole('button', { name: 'Disable notifications' })).toBeTruthy();
+  });
+
   it('renders nothing when service worker or PushManager is missing', async () => {
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,

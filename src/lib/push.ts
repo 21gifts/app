@@ -60,7 +60,8 @@ export function isIosSafari(): boolean {
  *
  * @param sessionToken - Bearer session token.
  * @throws Error with message `Notification permission denied` when permission is
- * not granted, or `Push is not configured` when the api reports 503.
+ * not granted, `Push is not configured` when the api reports 503, or
+ * `Invalid subscription` when the browser omits endpoint or keys.
  */
 export async function enablePush(sessionToken: string): Promise<void> {
   const registration = await registerPushWorker();

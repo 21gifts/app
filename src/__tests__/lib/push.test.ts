@@ -81,6 +81,13 @@ describe('isIosSafari', () => {
     });
     expect(isIosSafari()).toBe(false);
   });
+
+  it('rejects iPhone agents that are not Safari', () => {
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+    });
+    expect(isIosSafari()).toBe(false);
+  });
 });
 
 describe('registerPushWorker', () => {
@@ -146,6 +153,25 @@ describe('enablePush', () => {
 
     await expect(enablePush('sess')).rejects.toThrow('Notification permission denied');
     expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+  });
+
+  it('throws when the browser omits subscription keys', async () => {
+    const subscribe = vi.fn().mockResolvedValue({
+      toJSON: () => ({ endpoint: '', keys: {} }),
+    });
+    const registration = { pushManager: { subscribe } };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', {
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+    });
+    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([9, 8, 7])));
+
+    await expect(enablePush('sess')).rejects.toThrow('Invalid subscription');
   });
 
   it('rethrows when push is not configured', async () => {
