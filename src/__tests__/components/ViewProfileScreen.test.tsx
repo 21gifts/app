@@ -41,7 +41,7 @@ describe('ViewProfileScreen', () => {
     renderWithLocale(<ViewProfileScreen profile={named} received={[]} />);
     expect(screen.queryByRole('button', { name: 'Edit name' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit Wallet of Satoshi address' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Copy view-key link' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove Wallet of Satoshi address' })).toBeNull();
   });
 

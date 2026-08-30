@@ -8,7 +8,7 @@ import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
 const description =
-  'Direct human-to-human giving over Bitcoin. People helping people — no middleman, no cut.';
+  'Direct human-to-human giving in Bitcoin. People helping people — no middleman, no cut.';
 
 /**
  * Document-level metadata the App Router applies to every route's `<head>`,

@@ -118,7 +118,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 
 ### Variant: idle
 
-Logged out. Heading **Sign in to 21.gifts**, one **Log in** button.
+Logged out. Heading **Log in with your device**, one **Log in** button.
 
 ![21.gifts login idle](images/login.png)
 
@@ -291,13 +291,13 @@ Click **Most popular** — paid notes ordered by sats (Carol ₿21, then Ada ₿
 
 ### Variant: empty-paid
 
-Copy **No messages with Bitcoin yet.** Active selected, unpaid notes hidden, composer visible.
+Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidden, composer visible.
 
 ![21.gifts welcome empty paid](images/welcome-empty-paid.png)
 
 ### Variant: empty
 
-Empty copy **No messages yet. Be the first to write.** plus composer (attach + textarea + Post).
+Empty copy **No messages yet — be the first to write one.** plus composer (attach + textarea + Post).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -447,7 +447,7 @@ Payable note, amount submitted, but the author's wallet cannot mint a zap invoic
 
 ### Variant: role-hint
 
-Carol's **Verified** tag clicked; the explanation under that card header is visible (**A moderator met this person in real life and confirmed they are a real human.**). Bob stays without a pill; Ada still shows **Moderator**.
+Carol's **Verified** tag clicked; the explanation under that card header is visible (**A moderator has met this person in real life and confirmed they are real.**). Bob stays without a pill; Ada still shows **Moderator**.
 
 ![21.gifts welcome role hint](images/welcome-role-hint.png)
 
@@ -468,7 +468,7 @@ Full rules body with law card **Only free donations** visible.
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
 - **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
 - **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
@@ -487,7 +487,7 @@ Click **Send** with an empty composer → **Enter a message**.
 
 ### Variant: success
 
-After a successful send: **Received. We read this in the app.** Form hidden; rules link remains.
+After a successful send: **Received — thank you. We read every message here in the app.** Form hidden; rules link remains.
 
 ![21.gifts contact success](images/contact-success.png)
 

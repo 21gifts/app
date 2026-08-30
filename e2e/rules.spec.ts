@@ -48,10 +48,12 @@ test('welcome forum shows the two laws and links to rules and contact', async ({
   });
   await page.goto('/welcome');
   await expect(
-    page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    page.getByText(
+      '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+    ),
   ).toBeVisible();
   await expect(
-    page.getByText('Donors are scarce. No begging, no drama, no pressure.'),
+    page.getByText('Donors are rare — no begging, no drama, no pressure.'),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
     'href',
@@ -111,7 +113,9 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'Dismiss' }).click();
   await expect(
-    page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    page.getByText(
+      '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+    ),
   ).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveCount(0);
@@ -150,7 +154,9 @@ test('welcome forum hides laws when already dismissed on the account', async ({ 
   });
   await page.goto('/welcome');
   await expect(
-    page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    page.getByText(
+      '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+    ),
   ).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();

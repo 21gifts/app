@@ -21,7 +21,7 @@ describe('metadata', () => {
 
   it('describes the product without charity-speak', () => {
     expect(metadata.description).toBe(
-      'Direct human-to-human giving over Bitcoin. People helping people — no middleman, no cut.',
+      'Direct human-to-human giving in Bitcoin. People helping people — no middleman, no cut.',
     );
   });
 

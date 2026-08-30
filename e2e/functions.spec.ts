@@ -494,7 +494,9 @@ test('Function: postContact — sending from contact shows success', async ({ pa
   const body = `Contact note ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
+  await expect(
+    page.getByText('Received — thank you. We read every message here in the app.'),
+  ).toBeVisible();
 });
 
 async function reachWelcome(page: Page, request: APIRequestContext): Promise<void> {
@@ -674,11 +676,15 @@ test('Function: dismissForumLaws — welcome laws hint dismisses', async ({ page
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(
-    page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    page.getByText(
+      '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+    ),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Dismiss' }).click();
   await expect(
-    page.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+    page.getByText(
+      '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+    ),
   ).toHaveCount(0);
 });
 
@@ -1735,7 +1741,11 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
     });
   });
   await page.goto('/contact');
-  await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Write to 21.gifts here — there is no email address. This is the only way to reach us.',
+    ),
+  ).toBeVisible();
 });
 
 test('Function: ContactLoader — Send button is visible', async ({ page }) => {
@@ -1794,7 +1804,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
     });
   });
   await page.goto('/welcome');
-  await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+  await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
 });
 
 test('Function: formatForumTime — message timestamp is visible', async ({ page }) => {
@@ -2046,7 +2056,7 @@ test('Function: ProfilePage — profile heading is visible', async ({ page }) =>
 test('Function: ProfileScreen — back to forum is visible', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('link', { name: 'Back to forum' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
 });
 
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
@@ -2113,7 +2123,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   await expect(page.getByText('Ada')).toBeVisible();
   await expect(page.getByText('Given')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Remove Wallet of Satoshi address' })).toHaveCount(
     0,
@@ -2150,7 +2160,7 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
 test('Function: ViewKeyCopy — profile shows the copy view-key control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toBeVisible();
 });
 
 test('Function: fetchViewProfile — public view card loads via the client fetch', async ({

@@ -35,7 +35,7 @@ describe('HandbookPage', () => {
   it('localizes chapter copy-link labels', async () => {
     vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
     renderWithLocale(await HandbookPage(), 'de');
-    expect(screen.getByRole('button', { name: 'Link kopieren zu Kapitel Overview' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Link zu Kapitel Overview kopieren' })).toBeTruthy();
   });
 
   it('links to the api handbook on GitHub', async () => {

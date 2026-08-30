@@ -26,7 +26,11 @@ describe('ContactScreen', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Contact' })).toBeTruthy();
-    expect(screen.getByText('Write to 21.gifts here. There is no email.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Write to 21.gifts here — there is no email address. This is the only way to reach us.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
@@ -50,7 +54,9 @@ describe('ContactScreen', () => {
         success={true}
       />,
     );
-    expect(screen.getByText('Received. We read this in the app.')).toBeTruthy();
+    expect(
+      screen.getByText('Received — thank you. We read every message here in the app.'),
+    ).toBeTruthy();
     expect(screen.queryByLabelText('Your message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Living room rules' })).toBeTruthy();

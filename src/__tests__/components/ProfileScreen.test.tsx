@@ -102,10 +102,10 @@ describe('ProfileScreen', () => {
   it('shows the heading, back link, name form, address form, and chart', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back to forum' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
-    expect(screen.queryByText('Back to forum')).toBeNull();
+    expect(screen.queryByText('Back to the forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
@@ -182,8 +182,8 @@ describe('ProfileScreen', () => {
 
   it('shows the icon-only view-key copy control without the URL or key', async () => {
     renderWithLocale(<ProfileScreen />);
-    expect(screen.getByRole('button', { name: 'Copy view-key link' })).toBeTruthy();
-    expect(screen.queryByText('Copy view-key link')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy view-only link' })).toBeTruthy();
+    expect(screen.queryByText('Copy view-only link')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
     expect(screen.queryByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeNull();
     expect(screen.queryByText(VIEW_KEY)).toBeNull();
@@ -194,6 +194,6 @@ describe('ProfileScreen', () => {
     useAuthStore.setState({ session: 'tok', account: null });
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Copy view-key link' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
   });
 });

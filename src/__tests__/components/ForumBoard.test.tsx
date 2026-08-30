@@ -137,9 +137,11 @@ describe('ForumBoard', () => {
     );
     expect(screen.queryByText('Everyone can read and write.')).toBeNull();
     expect(
-      screen.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+      screen.getByText(
+        '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+      ),
     ).toBeTruthy();
-    expect(screen.getByText('Donors are scarce. No begging, no drama, no pressure.')).toBeTruthy();
+    expect(screen.getByText('Donors are rare — no begging, no drama, no pressure.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
@@ -202,7 +204,9 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
     expect(
-      screen.queryByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+      screen.queryByText(
+        '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+      ),
     ).toBeNull();
     expect(screen.queryByRole('link', { name: 'Living room rules' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
@@ -330,7 +334,7 @@ describe('ForumBoard', () => {
       'de',
     );
     expect(
-      screen.getByText('Nachrichten konnten nicht geladen werden. Bitte erneut versuchen.'),
+      screen.getByText('Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut.'),
     ).toBeTruthy();
   });
 
@@ -350,8 +354,8 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
-    expect(screen.queryByText('No messages with Bitcoin yet.')).toBeNull();
+    expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    expect(screen.queryByText('No message has received Bitcoin yet.')).toBeNull();
     expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
   });
 
@@ -393,8 +397,8 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
-    expect(screen.queryByText('No messages yet. Be the first to write.')).toBeNull();
+    expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    expect(screen.queryByText('No messages yet — be the first to write one.')).toBeNull();
   });
 
   it('lists both messages on All including zero-sat SAMPLE', () => {
@@ -1234,7 +1238,7 @@ describe('ForumBoard', () => {
     fireEvent.click(tag);
     expect(tag.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByRole('status').textContent).toBe(
-      'A moderator met this person in real life and confirmed they are a real human.',
+      'A moderator has met this person in real life and confirmed they are real.',
     );
     fireEvent.click(tag);
     expect(tag.getAttribute('aria-expanded')).toBe('false');
@@ -1262,7 +1266,7 @@ describe('ForumBoard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
     expect(screen.getByRole('status').textContent).toBe(
-      'A moderator met this person in real life and confirmed they are a real human.',
+      'A moderator has met this person in real life and confirmed they are real.',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Moderator' }));
     expect(screen.getByRole('status').textContent).toBe(
