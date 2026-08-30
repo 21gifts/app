@@ -72,6 +72,7 @@ export function ViewProfileClaim({ viewKey }: { viewKey: string }): ReactElement
         <button
           type="button"
           onClick={() => {
+            claimAttemptedRef.current = false;
             passkey.authenticate();
           }}
           aria-label={claimLabel}

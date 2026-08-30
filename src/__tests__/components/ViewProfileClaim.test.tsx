@@ -99,12 +99,19 @@ describe('ViewProfileClaim', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('shows already-claimed copy on 409', () => {
+  it('shows already-claimed copy on 409', async () => {
+    authenticateSpy.mockImplementation(() => {
+      useAuthStore.setState({ session: 'tok', account });
+    });
     mockPasskey('error', 'This profile already has a passkey');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
     expect(screen.getByText('This profile already has a passkey. Log in instead.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Set up passkey for this profile' }));
     expect(authenticateSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(useAuthStore.getState().account).not.toBeNull();
+    });
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('shows in-app copy when passkeys are unsupported', () => {
