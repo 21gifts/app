@@ -158,6 +158,46 @@ describe('RulesSetup', () => {
     expect(screen.queryByText('chapter-two')).toBeNull();
   });
 
+  it('ignores the second click of a double-click on agree after paint', () => {
+    renderWithLocale(
+      <RulesSetup
+        chapters={[
+          <p key="first">chapter-one</p>,
+          <p key="second">chapter-two</p>,
+          <p key="third">chapter-three</p>,
+        ]}
+      />,
+    );
+    const agree = screen.getByRole('button', { name: 'I agree to these rules' });
+    fireEvent.click(agree, { detail: 1 });
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    fireEvent.click(agree, { detail: 2 });
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    expect(screen.queryByText('chapter-three')).toBeNull();
+  });
+
+  it('ignores the second click of a double-click on back after paint', () => {
+    renderWithLocale(
+      <RulesSetup
+        chapters={[
+          <p key="first">chapter-one</p>,
+          <p key="second">chapter-two</p>,
+          <p key="third">chapter-three</p>,
+        ]}
+      />,
+    );
+    const agree = screen.getByRole('button', { name: 'I agree to these rules' });
+    fireEvent.click(agree, { detail: 1 });
+    fireEvent.click(agree, { detail: 1 });
+    expect(screen.getByText('chapter-three')).toBeTruthy();
+    const back = screen.getByRole('button', { name: 'Back' });
+    fireEvent.click(back, { detail: 1 });
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    fireEvent.click(back, { detail: 2 });
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    expect(screen.queryByText('chapter-one')).toBeNull();
+  });
+
   it('posts agreement and merges only rulesAgreedAt into the store', async () => {
     vi.mocked(agreeToRules).mockResolvedValue({
       ...baseAccount,

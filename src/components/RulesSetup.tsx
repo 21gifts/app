@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
@@ -43,8 +43,8 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
 
   const lastIndex = chapters.length - 1;
 
-  const handleAgree = (): void => {
-    if (busy || stepLock.current) {
+  const handleAgree = (event: MouseEvent<HTMLButtonElement>): void => {
+    if (event.detail > 1 || busy || stepLock.current) {
       return;
     }
     if (index < lastIndex) {
@@ -81,8 +81,8 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         <button
           type="button"
           aria-label={t('setup.rulesBack')}
-          onClick={() => {
-            if (busy || stepLock.current) {
+          onClick={(event) => {
+            if (event.detail > 1 || busy || stepLock.current) {
               return;
             }
             stepLock.current = true;
