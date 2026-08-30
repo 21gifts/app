@@ -27,7 +27,12 @@ export function LogoutButton(): ReactElement {
           passkey.cancel();
           const token = useAuthStore.getState().session;
           if (token !== null) {
-            await disablePush(token).catch(() => undefined);
+            await Promise.race([
+              disablePush(token).catch(() => undefined),
+              new Promise<void>((resolve) => {
+                window.setTimeout(resolve, 5000);
+              }),
+            ]);
           }
           clearAuth();
           router.replace('/login');

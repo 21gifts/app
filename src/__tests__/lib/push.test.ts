@@ -258,4 +258,22 @@ describe('disablePush', () => {
     await disablePush('sess');
     expect(deletePushSubscription).not.toHaveBeenCalled();
   });
+
+  it('still unsubscribes locally when DELETE rejects', async () => {
+    const unsubscribe = vi.fn().mockResolvedValue(true);
+    const subscription = { endpoint: 'https://push.example/sub', unsubscribe };
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(subscription) },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.mocked(deletePushSubscription).mockRejectedValue(new Error('offline'));
+
+    await expect(disablePush('sess')).rejects.toThrow('offline');
+    expect(unsubscribe).toHaveBeenCalled();
+  });
 });

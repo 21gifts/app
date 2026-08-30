@@ -288,7 +288,7 @@
 
 - **Purpose:** When a local push subscription exists, DELETE its endpoint on the api then `unsubscribe()` locally.
 - **Inputs:** `sessionToken`.
-- **Returns / side effects:** `void`. No-op when there is no subscription.
+- **Returns / side effects:** `void`. No-op when there is no subscription. Local `unsubscribe()` still runs if the api DELETE fails.
 - **Used by:** `PushToggle` and `LogoutButton`.
 
 ## Function: fetchVapidPublicKey

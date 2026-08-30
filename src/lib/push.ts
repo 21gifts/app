@@ -113,6 +113,9 @@ export async function disablePush(sessionToken: string): Promise<void> {
   if (subscription === null) {
     return;
   }
-  await deletePushSubscription(sessionToken, subscription.endpoint);
-  await subscription.unsubscribe();
+  try {
+    await deletePushSubscription(sessionToken, subscription.endpoint);
+  } finally {
+    await subscription.unsubscribe().catch(() => undefined);
+  }
 }
