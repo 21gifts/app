@@ -28,7 +28,10 @@ export function PushToggle(): ReactElement | null {
     let cancelled = false;
 
     async function inspect(): Promise<void> {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (
+        typeof navigator.serviceWorker === 'undefined' ||
+        typeof window.PushManager === 'undefined'
+      ) {
         if (!cancelled) {
           setPhase('unsupported');
         }
