@@ -11,11 +11,12 @@ concurrency:
 permissions:
   contents: read
 
+# Each job must finish within 10 minutes; do not raise the timeout.
 jobs:
   check:
     name: Typecheck, Lint, Handbook, E2E-check, Screenshots, Test (100% coverage), Build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,9 +52,9 @@ jobs:
         run: npm run build
 
   e2e:
-    name: E2E
+    name: E2E (behavior)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 10
     # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -65,8 +66,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: End-to-end tests
-        run: npm run e2e
+      - name: End-to-end tests (behavior)
+        run: npm run e2e:behavior
         env:
           HOSTNAME: 0.0.0.0
 
@@ -74,7 +75,40 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-output
+          name: playwright-output-behavior
+          path: |
+            test-results/
+            e2e/visual.spec.ts-snapshots/
+
+  visual:
+    name: Visual (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop-light, desktop-dark, mobile-light, mobile-dark]
+    # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Visual regression (${{ matrix.project }})
+        run: npm run e2e:visual -- --project=${{ matrix.project }}
+        env:
+          HOSTNAME: 0.0.0.0
+
+      - name: Upload Playwright output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-output-${{ matrix.project }}
           path: |
             test-results/
             e2e/visual.spec.ts-snapshots/

@@ -35,7 +35,9 @@ npm run dev    # → http://localhost:3000
 | `npm test`                     | Vitest unit tests, single run                                                                                                                 |
 | `npm run test:watch`           | Vitest in watch mode                                                                                                                          |
 | `npm run test:coverage`        | Vitest with the 100% coverage gate                                                                                                            |
-| `npm run e2e`                  | Playwright against the mock api (:3001) plus the production standalone server (:3000)                                                         |
+| `npm run e2e`                  | Playwright all projects (behavior + four visual combos) against mock api (:3001) + standalone (:3000)                                         |
+| `npm run e2e:behavior`         | Playwright chromium project only (behavioral specs; ignores `visual.spec.ts`)                                                                 |
+| `npm run e2e:visual`           | Playwright `e2e/visual.spec.ts` (pass `--project=<combo>` to run one visual combo)                                                            |
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
@@ -338,7 +340,9 @@ and **fails the PR** if a screen has no matching `goto`, a variant has no
 `needle`, an endpoint has no matching `request.<verb>` call, or a function has
 no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
-is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check job and `e2e` in the parallel E2E job.
+is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check
+job, behavioral specs in the parallel E2E (behavior) job (`chromium` project),
+and pixel compare in four parallel visual combo jobs.
 
 ### Screenshot baselines (hard requirement)
 
@@ -366,6 +370,9 @@ Every exported function **must** have four Playwright baselines
 clipped, in each combo project). Adding a screen or export without updating
 the baselines in the **same PR** is rejected.
 `npm run screenshot:check` (and CI) fails when a PNG is missing.
+`screenshot:check` still runs in the Check job. CI also runs the four visual
+combo projects as parallel jobs on every PR (each with a 10-minute budget) so
+pixel compare remains a gate.
 
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
 `npm run e2e` still runs the behavioral specs. fullPage shots unstick
@@ -418,12 +425,12 @@ paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL
 
 ## CI / CD
 
-| Workflow               | Trigger               | Action                                                                                                                                                    |
-| ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts) | Two parallel jobs: Check (typecheck, lint, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) and E2E (Playwright `v1.61.1-noble`) |
-| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                                            |
-| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                                          |
-| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                                                 |
+| Workflow               | Trigger               | Action                                                                                                                                                                                       |
+| ---------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts) | Check (typecheck, lint, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
+| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                                                                               |
+| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                                                                             |
+| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                                                                                    |
 
 Images target `linux/arm64`.
 
