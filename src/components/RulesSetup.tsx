@@ -52,6 +52,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
       setIndex((currentIndex) => Math.min(currentIndex + 1, lastIndex));
       return;
     }
+    stepLock.current = true;
     setBusy(true);
     setError(false);
     void (async () => {
@@ -68,6 +69,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
       } catch {
         setError(true);
       } finally {
+        stepLock.current = false;
         setBusy(false);
       }
     })();
@@ -80,13 +82,14 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
           type="button"
           aria-label={t('setup.rulesBack')}
           onClick={() => {
-            if (stepLock.current) {
+            if (busy || stepLock.current) {
               return;
             }
             stepLock.current = true;
             setIndex((currentIndex) => Math.max(0, currentIndex - 1));
           }}
-          className="absolute top-4 left-5 inline-flex items-center justify-center rounded-full p-2 text-app-muted transition hover:text-app-fg"
+          disabled={busy}
+          className="absolute top-4 left-5 inline-flex items-center justify-center rounded-full p-2 text-app-muted transition hover:text-app-fg disabled:opacity-50"
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />
         </button>

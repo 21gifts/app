@@ -280,4 +280,40 @@ describe('RulesSetup', () => {
 
     expect(useAuthStore.getState().account).toBeNull();
   });
+
+  it('posts agreement only once when the last chapter is clicked twice in one tick', async () => {
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...baseAccount,
+      rulesAgreedAt: 1_700_000_001,
+    });
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
+    const agree = screen.getByRole('button', { name: 'I agree to these rules' });
+    act(() => {
+      agree.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      agree.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    await waitFor(() => {
+      expect(agreeToRules).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('disables back while the last-chapter request is in flight', async () => {
+    let resolve!: (value: Account) => void;
+    const pending = new Promise<Account>((r) => {
+      resolve = r;
+    });
+    vi.mocked(agreeToRules).mockReturnValue(pending);
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    const back = screen.getByRole('button', { name: 'Back' }) as HTMLButtonElement;
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    expect(back.disabled).toBe(true);
+    fireEvent.click(back);
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    await act(async () => {
+      resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
+    });
+  });
 });
