@@ -19,7 +19,7 @@ afterEach(cleanup);
 describe('HandbookFunctionsPage', () => {
   it('renders the Functions heading and function markdown', async () => {
     renderWithLocale(await HandbookFunctionsPage());
-    expect(screen.getByRole('heading', { name: 'Functions' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Functions' })).toBeTruthy();
     expect(document.getElementById('functions')).not.toBeNull();
     expect(screen.getByLabelText('Topic')).toBeTruthy();
   });
