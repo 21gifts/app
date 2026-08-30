@@ -1,8 +1,11 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { getCatalog } from '@/lib/messages';
 import type { ForumFeedMode } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
@@ -1538,19 +1541,23 @@ describe('ForumBoard', () => {
     expect(screen.getByText('0 replies')).toBeTruthy();
 
     rerender(
-      <ForumBoard
-        messages={[{ ...SAMPLE, replyCount: 2 }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        {...modeProps('all')}
-      />,
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[{ ...SAMPLE, replyCount: 2 }]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
     );
     expect(screen.getByText('2 replies')).toBeTruthy();
   });
@@ -1636,21 +1643,25 @@ describe('ForumBoard', () => {
     expect(screen.queryByPlaceholderText('Write a reply')).toBeNull();
 
     rerender(
-      <ForumBoard
-        messages={[SAMPLE]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        expandedId="m1"
-        replies={[]}
-        {...modeProps('all')}
-      />,
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
     );
     expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Hide replies' })).toBeTruthy();
