@@ -1478,9 +1478,11 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount (₿)').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('alert')).toHaveText(
-      "The author's wallet cannot receive this Bitcoin payment",
-    );
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-pay-author-wallet');
   });
 
