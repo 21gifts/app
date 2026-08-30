@@ -1,3 +1,4 @@
+import { Check, Minus, X } from 'lucide-react';
 import Link from 'next/link';
 import { Fragment, type ReactElement } from 'react';
 import type { MessageKey, Messages } from '@/lib/messages';
@@ -17,6 +18,11 @@ export interface RulesDocumentProps {
   /** When set, render only this chapter. When omitted, render every chapter. */
   chapter?: RulesChapterId;
 }
+
+type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
+
+/** Glyph in front of every list item; `tone` picks the colour of the glyph. */
+type ListTone = 'welcome' | 'allowed' | 'ratherNot' | 'forbidden';
 
 const WANTED = [
   'rules.wanted1',
@@ -66,123 +72,206 @@ const FORBIDDEN_OTHER = [
   'rules.forbiddenOther5',
 ] as const;
 
-function renderChapter(id: RulesChapterId, t: (key: MessageKey) => string): ReactElement {
+const LIST_GLYPH: Record<ListTone, { Icon: typeof Check; className: string }> = {
+  welcome: { Icon: Check, className: 'text-app-accent' },
+  allowed: { Icon: Check, className: 'text-app-muted' },
+  ratherNot: { Icon: Minus, className: 'text-app-muted' },
+  forbidden: { Icon: X, className: 'text-red-600' },
+};
+
+const HEADING = 'text-2xl font-semibold tracking-tight text-app-fg';
+const LEAD = 'text-base leading-relaxed text-app-muted';
+const BODY = 'text-base leading-relaxed text-app-fg';
+const CARD = 'rounded-2xl border border-app-border bg-app-card';
+const KICKER = 'text-xs font-semibold uppercase tracking-[0.2em]';
+
+function RuleList({
+  items,
+  tone,
+  t,
+}: {
+  items: readonly MessageKey[];
+  tone: ListTone;
+  t: Translate;
+}): ReactElement {
+  const { Icon, className } = LIST_GLYPH[tone];
+  return (
+    <ul className={`${CARD} divide-y divide-app-border`}>
+      {items.map((key) => (
+        <li key={key} className="flex items-start gap-3 px-5 py-3.5 text-sm leading-relaxed">
+          <Icon aria-hidden="true" className={`mt-1 h-4 w-4 shrink-0 ${className}`} />
+          <span>{t(key)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TestCallout({ text, t }: { text: string; t: Translate }): ReactElement {
+  return (
+    <div className="rounded-xl bg-app-card-muted px-5 py-4">
+      <p className={`${KICKER} text-app-muted`}>{t('rules.testLabel')}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-app-fg">{text}</p>
+    </div>
+  );
+}
+
+function Law({
+  n,
+  title,
+  body,
+  test,
+  t,
+}: {
+  n: number;
+  title: string;
+  body: string;
+  test?: string;
+  t: Translate;
+}): ReactElement {
+  return (
+    <section className={`${CARD} flex flex-col gap-4 p-6 sm:p-8`}>
+      <p className={`${KICKER} text-app-accent`}>{t('rules.lawKicker', { n })}</p>
+      <h2 className={HEADING}>{title}</h2>
+      <p className={BODY}>{body}</p>
+      {test === undefined ? null : <TestCallout text={test} t={t} />}
+    </section>
+  );
+}
+
+function ListChapter({
+  heading,
+  lead,
+  items,
+  tone,
+  t,
+}: {
+  heading: string;
+  lead: string;
+  items: readonly MessageKey[];
+  tone: ListTone;
+  t: Translate;
+}): ReactElement {
+  return (
+    <section className="flex flex-col gap-5">
+      <header className="flex flex-col gap-1.5">
+        <h2 className={HEADING}>{heading}</h2>
+        <p className={LEAD}>{lead}</p>
+      </header>
+      <RuleList items={items} tone={tone} t={t} />
+    </section>
+  );
+}
+
+function renderChapter(id: RulesChapterId, t: Translate): ReactElement {
   switch (id) {
     case 'lead':
-      return <p className="text-base leading-relaxed text-app-fg">{t('rules.lead')}</p>;
+      return (
+        <section className="flex flex-col gap-5">
+          <p className="text-lg leading-relaxed text-app-fg">{t('rules.lead')}</p>
+          <div className="border-l-2 border-app-accent pl-5">
+            <p className={`${KICKER} text-app-muted`}>{t('rules.testLabel')}</p>
+            <p className="mt-1.5 text-base leading-relaxed text-app-fg">{t('rules.leadTest')}</p>
+          </div>
+        </section>
+      );
     case 'law1':
       return (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.law1Title')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.law1Body')}</p>
-          <p className="text-sm font-medium leading-relaxed text-app-fg">{t('rules.law1Test')}</p>
-        </section>
+        <Law
+          n={1}
+          title={t('rules.law1Title')}
+          body={t('rules.law1Body')}
+          test={t('rules.law1Test')}
+          t={t}
+        />
       );
     case 'law2':
       return (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.law2Title')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.law2Body')}</p>
-          <p className="text-sm font-medium leading-relaxed text-app-fg">{t('rules.law2Test')}</p>
-        </section>
+        <Law
+          n={2}
+          title={t('rules.law2Title')}
+          body={t('rules.law2Body')}
+          test={t('rules.law2Test')}
+          t={t}
+        />
       );
     case 'law3':
-      return (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.law3Title')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.law3Body')}</p>
-        </section>
-      );
+      return <Law n={3} title={t('rules.law3Title')} body={t('rules.law3Body')} t={t} />;
     case 'wanted':
       return (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.wantedHeading')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.wantedLead')}</p>
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
-            {WANTED.map((key) => (
-              <li key={key}>{t(key)}</li>
-            ))}
-          </ul>
-        </section>
+        <ListChapter
+          heading={t('rules.wantedHeading')}
+          lead={t('rules.wantedLead')}
+          items={WANTED}
+          tone="welcome"
+          t={t}
+        />
       );
     case 'allowed':
       return (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.allowedHeading')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.allowedLead')}</p>
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
-            {ALLOWED.map((key) => (
-              <li key={key}>{t(key)}</li>
-            ))}
-          </ul>
-        </section>
+        <ListChapter
+          heading={t('rules.allowedHeading')}
+          lead={t('rules.allowedLead')}
+          items={ALLOWED}
+          tone="allowed"
+          t={t}
+        />
       );
     case 'ratherNot':
       return (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.ratherNotHeading')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.ratherNotLead')}</p>
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
-            {RATHER_NOT.map((key) => (
-              <li key={key}>{t(key)}</li>
-            ))}
-          </ul>
-        </section>
+        <ListChapter
+          heading={t('rules.ratherNotHeading')}
+          lead={t('rules.ratherNotLead')}
+          items={RATHER_NOT}
+          tone="ratherNot"
+          t={t}
+        />
       );
     case 'forbidden':
       return (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.forbiddenHeading')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.forbiddenLead')}</p>
-
-          <div className="flex flex-col gap-2">
-            <h3 className="text-base font-semibold tracking-tight">
+        <section className="flex flex-col gap-6">
+          <header className="flex flex-col gap-1.5">
+            <h2 className={HEADING}>{t('rules.forbiddenHeading')}</h2>
+            <p className={LEAD}>{t('rules.forbiddenLead')}</p>
+          </header>
+          <div className="flex flex-col gap-3">
+            <h3 className="text-base font-semibold tracking-tight text-app-fg">
               {t('rules.forbiddenQuidHeading')}
             </h3>
-            <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
-              {FORBIDDEN_QUID.map((key) => (
-                <li key={key}>{t(key)}</li>
-              ))}
-            </ul>
+            <RuleList items={FORBIDDEN_QUID} tone="forbidden" t={t} />
           </div>
-
-          <div className="flex flex-col gap-2">
-            <h3 className="text-base font-semibold tracking-tight">
+          <div className="flex flex-col gap-3">
+            <h3 className="text-base font-semibold tracking-tight text-app-fg">
               {t('rules.forbiddenDonorHeading')}
             </h3>
-            <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
-              {FORBIDDEN_DONOR.map((key) => (
-                <li key={key}>{t(key)}</li>
-              ))}
-            </ul>
+            <RuleList items={FORBIDDEN_DONOR} tone="forbidden" t={t} />
           </div>
-
-          <div className="flex flex-col gap-2">
-            <h3 className="text-base font-semibold tracking-tight">
+          <div className="flex flex-col gap-3">
+            <h3 className="text-base font-semibold tracking-tight text-app-fg">
               {t('rules.forbiddenOtherHeading')}
             </h3>
-            <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
-              {FORBIDDEN_OTHER.map((key) => (
-                <li key={key}>{t(key)}</li>
-              ))}
-            </ul>
+            <RuleList items={FORBIDDEN_OTHER} tone="forbidden" t={t} />
           </div>
         </section>
       );
     case 'house':
       return (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">{t('rules.houseHeading')}</h2>
-          <p className="text-sm leading-relaxed text-app-fg">{t('rules.houseBody')}</p>
+        <section className="flex flex-col gap-4 rounded-2xl bg-app-card-muted p-6 sm:p-8">
+          <h2 className={HEADING}>{t('rules.houseHeading')}</h2>
+          <p className={BODY}>{t('rules.houseBody')}</p>
+          <p className="text-base font-medium leading-relaxed text-app-fg">
+            {t('rules.houseClosing')}
+          </p>
         </section>
       );
   }
 }
 
 /**
- * Presentational living-room rules body: lead, three laws, wanted / allowed /
- * rather-not / forbidden lists, house right, and optional CTAs to `/contact`
- * and `/welcome`.
+ * Presentational living-room rules body: lead with the sofa test, three law
+ * cards (test callout on laws 1 and 2), welcome / allowed / better-not /
+ * forbidden lists with glyphs, the closing "Our house" block, and optional
+ * CTAs to `/contact` and `/welcome`.
  *
  * Server component — copy comes from {@link translate} + the request catalog.
  * Pass `chapter` to render a single onboarding page.
@@ -195,7 +284,7 @@ export function RulesDocument({
   showNav = true,
   chapter,
 }: RulesDocumentProps): ReactElement {
-  const t = (key: MessageKey): string => translate(messages, key);
+  const t: Translate = (key, vars) => translate(messages, key, vars);
   const nav =
     chapter === undefined && showNav ? (
       <nav className="flex flex-wrap items-center justify-center gap-4 pb-8 text-sm font-medium">

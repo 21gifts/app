@@ -444,7 +444,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 1);
-    await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Only free donations' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-law1');
   });
 
@@ -452,7 +452,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 2);
-    await expect(page.getByRole('heading', { name: '2. Donors come first' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Donors come first' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-law2');
   });
 
@@ -460,7 +460,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 3);
-    await expect(page.getByRole('heading', { name: '3. Contact stays in the app' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Contact stays in the app' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-law3');
   });
 
@@ -468,7 +468,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 4);
-    await expect(page.getByRole('heading', { name: 'Wanted' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-wanted');
   });
 
@@ -484,7 +484,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 6);
-    await expect(page.getByRole('heading', { name: 'Rather not' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Better not' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-ratherNot');
   });
 
@@ -492,7 +492,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 7);
-    await expect(page.getByText('Forbidden — hard-blocked')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Forbidden', exact: true })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-forbidden');
   });
 
@@ -500,7 +500,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 8);
-    await expect(page.getByRole('heading', { name: 'House right' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Our house' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-house');
   });
@@ -518,7 +518,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page, 'hang');
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 8);
-    await expect(page.getByRole('heading', { name: 'House right' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Our house' })).toBeVisible();
     await page.getByRole('button', { name: 'I agree to these rules' }).click();
     await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeDisabled();
     await shotScreen(page, 'state-setup-rules-busy');

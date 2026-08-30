@@ -482,7 +482,7 @@
 
 ## Function: RulesDocument
 
-- **Purpose:** Presentational living-room rules body from catalog keys (lead, three laws, wanted/allowed/rather-not/forbidden, house right, optional CTAs to `/contact` and `/welcome`).
+- **Purpose:** Presentational living-room rules body from catalog keys: lead with the **The test** callout, three law cards (`rules.lawKicker` with `{n}`, title, body, optional test callout), welcome / allowed / better-not / forbidden lists rendered as bordered cards with lucide glyphs (`Check` accent, `Check` muted, `Minus`, `X` red), the **Our house** closing block (`rules.houseBody` + `rules.houseClosing`), and optional CTAs to `/contact` and `/welcome`.
 - **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`); optional `chapter` (`RulesChapterId`). When `chapter` is set, only that chapter is rendered and the public nav is omitted (`showNav` ignored). When `showNav` is `false` and `chapter` is omitted, the public Contact / forum nav is omitted.
 - **Returns / side effects:** React element. Server component — uses `translate`, not `useTranslations`. No network.
 - **Used by:** `RulesPage`, `RulesSetupPage`.
