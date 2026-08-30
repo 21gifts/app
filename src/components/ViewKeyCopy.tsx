@@ -35,7 +35,7 @@ function fallbackCopy(text: string): boolean {
  * `origin + /view/ + viewKey` and flashes a check icon (no hash update).
  *
  * @param props - The account `viewKey` (64 lowercase hex).
- * @returns A button next to the view-key URL.
+ * @returns An icon-only copy button; the URL and key are not displayed.
  */
 export function ViewKeyCopy({ viewKey }: { viewKey: string }): ReactElement {
   const { t } = useTranslations();

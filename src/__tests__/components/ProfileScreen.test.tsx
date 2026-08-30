@@ -171,14 +171,14 @@ describe('ProfileScreen', () => {
     expect(screen.queryByLabelText('Received 1500 sats')).toBeNull();
   });
 
-  it('shows the view-key heading, absolute URL, and copy control', async () => {
+  it('shows the icon-only view-key copy control without the URL or key', async () => {
     renderWithLocale(<ProfileScreen />);
-    expect(screen.getByRole('heading', { name: 'View key' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy view-key link' })).toBeTruthy();
     expect(screen.queryByText('Copy view-key link')).toBeNull();
-    await waitFor(() => {
-      expect(screen.getByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeTruthy();
-    });
+    expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
+    expect(screen.queryByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeNull();
+    expect(screen.queryByText(VIEW_KEY)).toBeNull();
+    expect(screen.queryByText(`/view/${VIEW_KEY}`)).toBeNull();
   });
 
   it('hides the view-key section when account is null', () => {

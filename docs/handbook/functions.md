@@ -237,9 +237,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, and a copyable view-key link; icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
 - **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, address form, and view-key section (hidden when account is null) — all inside one identity card (no second panel).
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
 - **Used by:** `ProfilePage`.
 
 ## Function: AccountActivityChart
@@ -272,7 +272,7 @@
 
 ## Function: ViewKeyCopy
 
-- **Purpose:** Icon-only copy control for the signed-in profile view-key link (`origin + /view/ + viewKey`). Clipboard API with textarea/`execCommand` fallback; flashes a check icon for ~1200ms.
+- **Purpose:** Icon-only copy control for the signed-in profile view-key link (`origin + /view/ + viewKey`); the URL and key are not rendered next to it. Clipboard API with textarea/`execCommand` fallback; flashes a check icon for ~1200ms.
 - **Inputs:** `viewKey` (64 lowercase hex).
 - **Returns / side effects:** Button named from `profile.viewKeyCopy`; `data-copied="true"` while flashed. Does not log the key. Light/neutral theme (not handbook white-on-dark).
 - **Used by:** `ProfileScreen`.

@@ -80,7 +80,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + address + view-key link
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address + icon-only view-key copy
 │   │   ├── view/
 │   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
 │   │   ├── view-key/
@@ -93,7 +93,7 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + view-key)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + icon-only view-key copy)
 │   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states (loading/missing/error/ready)
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card

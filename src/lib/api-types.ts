@@ -36,7 +36,8 @@ export const accountSchema = z.object({
  * `rulesAgreedAt` is the epoch ms of the first agreement to the living-room
  * rules, or `null` until the giver agrees. `viewKey` is a 64-character
  * lowercase hex capability key for the public read-only profile URL
- * `/view/<viewKey>` (owner `/me` only; never shown on the public view payload).
+ * `/view/<viewKey>` (owner `/me` only; never shown on the public view payload;
+ * never rendered as visible text in the signed-in profile UI).
  */
 export type Account = z.infer<typeof accountSchema>;
 
