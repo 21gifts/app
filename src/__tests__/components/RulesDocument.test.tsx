@@ -13,7 +13,7 @@ vi.mock('next/link', () => ({
 afterEach(cleanup);
 
 describe('RulesDocument', () => {
-  it('renders the lead, three laws, and Our house', () => {
+  it('renders the lead, three rules, and Our house', () => {
     render(<RulesDocument messages={getCatalog('en')} />);
     expect(
       screen.getByText(/You are a guest in a living room with the windows open/i),

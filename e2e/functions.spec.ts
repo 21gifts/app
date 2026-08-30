@@ -1158,7 +1158,7 @@ test('Function: RulesPage — rules heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Living room rules', level: 1 })).toBeVisible();
 });
 
-test('Function: RulesDocument — only free donations law is visible', async ({ page }) => {
+test('Function: RulesDocument — only free donations rule is visible', async ({ page }) => {
   await page.goto('/rules');
   await expect(page.getByRole('heading', { name: 'Only free donations' })).toBeVisible();
 });

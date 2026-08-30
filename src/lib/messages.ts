@@ -514,7 +514,6 @@ const de = {
   'forum.payErrorRateLimit':
     'Zu viele Zahlungen. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
   'forum.payErrorAuthorWallet': 'Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen',
-
   'forum.payConfirm': '{amount} zahlen',
   'forum.payWaiting': 'Zahlung wird erwartet…',
   'forum.attach': 'Foto hinzufügen',

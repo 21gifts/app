@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('rules page shows living-room laws and CTAs', async ({ page }) => {
+test('rules page shows the living-room rules and CTAs', async ({ page }) => {
   await page.goto('/rules');
   await expect(page.getByRole('heading', { name: 'Living room rules', level: 1 })).toBeVisible();
   await expect(page.getByText('Only free donations')).toBeVisible();
