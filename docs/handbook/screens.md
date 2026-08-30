@@ -532,12 +532,12 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received + ₿ | USD, name + Wallet of Satoshi address fields) without edit/copy/back/menu/logout. Capability URL `/view/<64-hex>`; key/URL not shown. No `OnboardingGate` on this route.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); receive series from public `fetchGiftStats(handle)` via `recipientHandleFromAddress` (`GET /gifts/stats?recipient=`). Blank address → empty series, no stats fetch. Stats error → card with empty series.
-- **Actions:** Change language (light switcher top-right). On profile fetch error, **Try again**. Chart ₿ | USD is display-only. When logged out and the card is ready: **Set up passkey** (icon-only Fingerprint, `view.claim`) under the card via `ViewProfileClaim`. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
+- **Actions:** Change language (light switcher top-right). On profile fetch error, **Try again**. Chart ₿ | USD is display-only. When logged out and the card is ready: **Set up a passkey for this profile** (icon-only Fingerprint, `view.claim`) under the card via `ViewProfileClaim`. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`). Shared links copied from `/profile`.
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, compact Given/Received chart (legend + ₿ | USD + SVG; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, icon-only **Set up passkey** claim control under the card when logged out, no view-key copy, no back arrow.
+Valid known key. Heading **Profile**, compact Given/Received chart (legend + ₿ | USD + SVG; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, icon-only **Set up a passkey for this profile** claim control under the card when logged out, no view-key copy, no back arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
 
