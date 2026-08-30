@@ -454,7 +454,7 @@ const de = {
   'setup.rulesTitle': 'Wohnzimmerregeln',
   'setup.rulesPrompt': 'Bitte lesen Sie dieses Kapitel.',
   'setup.rulesPromptLast':
-    'Bitte lesen Sie dieses Kapitel. Sie können erst fortfahren, wenn Sie zustimmen.',
+    'Bitte lesen Sie dieses Kapitel. Sie können fortfahren, sobald Sie den Regeln zustimmen.',
   'setup.rulesProgress': '{current} von {total}',
   'setup.rulesBack': 'Zurück',
   'setup.agree': 'Ich stimme diesen Regeln zu',
@@ -1111,7 +1111,7 @@ const fil = {
   'setup.rulesTitle': 'Mga patakaran sa living room',
   'setup.rulesPrompt': 'Pakibasa ang kabanatang ito.',
   'setup.rulesPromptLast':
-    'Pakibasa ang kabanatang ito. Makakapagpatuloy ka lang kapag sumang-ayon ka.',
+    'Pakibasa ang kabanatang ito. Makakapagpatuloy ka kapag sumang-ayon ka sa mga patakaran.',
   'setup.rulesProgress': '{current} sa {total}',
   'setup.rulesBack': 'Bumalik',
   'setup.agree': 'Sumasang-ayon ako sa mga patakarang ito',
