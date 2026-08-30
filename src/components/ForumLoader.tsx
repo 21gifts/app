@@ -44,6 +44,20 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
+ * True when a thrown value is the api author's-wallet rejection for payments.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message looks like an author's-wallet error.
+ */
+function isAuthorWalletError(err: unknown): boolean {
+  /* v8 ignore next 3 */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+}
+
+/**
  * Merges a fresh list into local state, keeping optimistic posts the server
  * has not echoed yet.
  *
@@ -467,7 +481,13 @@ export function ForumLoader(): ReactElement | null {
         if (generation !== payPollGeneration.current) {
           return;
         }
-        setPayError(isRateLimitError(err) ? 'rateLimit' : 'request');
+        setPayError(
+          isRateLimitError(err)
+            ? 'rateLimit'
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
+        );
       } finally {
         if (generation === payPollGeneration.current) {
           setPayBusy(false);

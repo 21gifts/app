@@ -1372,6 +1372,30 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
   });
 
+  it('shows pay author-wallet error when invoice rejects the author wallet', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockRejectedValue(
+      new Error("The author's wallet cannot receive this Bitcoin payment"),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
   it('shows pay rate-limit copy when invoice is rate limited', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockRejectedValue(new Error('Too many payments'));
