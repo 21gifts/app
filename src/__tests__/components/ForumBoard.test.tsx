@@ -38,6 +38,8 @@ const SAMPLE: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -49,6 +51,8 @@ const MULTILINE: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -60,6 +64,8 @@ const FIVE_SATS: ForumMessage = {
   sats: 5,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -87,6 +93,7 @@ const idleProps: Pick<
   | 'onPickPhoto'
   | 'onClearPhoto'
   | 'photoUrls'
+  | 'videoUrls'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -104,6 +111,7 @@ const idleProps: Pick<
   onPickPhoto: () => undefined,
   onClearPhoto: () => undefined,
   photoUrls: {},
+  videoUrls: {},
 };
 
 function modeProps(
@@ -577,6 +585,8 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            hasVideo: false,
+            videoContentType: null,
             role: 'basis',
           },
         ]}
@@ -610,6 +620,8 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            hasVideo: false,
+            videoContentType: null,
             role: 'basis',
           },
         ]}
@@ -643,6 +655,8 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            hasVideo: false,
+            videoContentType: null,
             role: 'basis',
           },
         ]}
@@ -1300,5 +1314,140 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('button', { name: 'Gründer' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Gründer' }));
     expect(screen.getByRole('status').textContent).toBe('Diese Person hat 21.gifts gegründet.');
+  });
+
+  it('renders webm video from videoContentType', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-webm',
+            hasVideo: true,
+            videoContentType: 'video/webm',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const video = document.querySelector('video');
+    expect(video).toBeTruthy();
+    expect(video?.getAttribute('src')).toBe('/messages/vid-webm/video.webm');
+    expect(video?.hasAttribute('controls')).toBe(true);
+    expect(video?.hasAttribute('playsinline')).toBe(true);
+    expect(video?.getAttribute('preload')).toBe('metadata');
+  });
+
+  it('renders quicktime video as .mov', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-mov',
+            hasVideo: true,
+            videoContentType: 'video/quicktime',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('video')?.getAttribute('src')).toBe(
+      '/messages/vid-mov/video.mov',
+    );
+  });
+
+  it('defaults missing videoContentType to .mp4', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'vid-mp4', hasVideo: true, videoContentType: null }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('video')?.getAttribute('src')).toBe(
+      '/messages/vid-mp4/video.mp4',
+    );
+  });
+
+  it('prefers a local videoUrls preview over the rewrite path', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-local',
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        videoUrls={{ 'vid-local': 'blob:preview' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:preview');
+  });
+
+  it('uses the photo URL as the video poster when both are present', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-poster',
+            hasPhoto: true,
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'vid-poster': 'blob:poster' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('video')?.getAttribute('poster')).toBe('blob:poster');
   });
 });

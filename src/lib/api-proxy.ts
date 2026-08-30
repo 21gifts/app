@@ -1,7 +1,23 @@
 import { getApiUrl } from '@/lib/config';
 
 /** Incoming headers that the api accepts and that the browser sends. */
-const FORWARDED_HEADERS = ['authorization', 'content-type', 'origin', 'user-agent'] as const;
+const FORWARDED_HEADERS = [
+  'authorization',
+  'content-type',
+  'origin',
+  'user-agent',
+  'range',
+] as const;
+
+/** Upstream response headers copied onto the client response when present. */
+const RESPONSE_HEADERS = [
+  'content-type',
+  'content-length',
+  'content-range',
+  'accept-ranges',
+  'cache-control',
+  'content-disposition',
+] as const;
 
 /** HTTP methods that carry a body to the api. */
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -10,12 +26,14 @@ const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  * Forwards an App Router request to the 21.gifts api.
  *
  * Used so the browser talks to the public apex (`21.gifts`) while the api
- * process still listens at `api.21.gifts`.
+ * process still listens at `api.21.gifts`. Request bodies stream through
+ * (multipart video uploads) with `duplex: 'half'`; `Range` is forwarded for
+ * partial GETs.
  *
  * @param request - Incoming request (query string and body are forwarded).
  * @param apiPath - Path on the api beginning with `/` (e.g. `/me`).
- * @returns The upstream response (status, content-type, body), or 502 JSON
- * when the api URL is missing, the body cannot be read, or fetch fails.
+ * @returns The upstream response (status, selected headers, body), or 502 JSON
+ * when the api URL is missing or fetch fails.
  */
 export async function proxyApiRequest(request: Request, apiPath: string): Promise<Response> {
   try {
@@ -36,14 +54,17 @@ export async function proxyApiRequest(request: Request, apiPath: string): Promis
       headers,
     };
     if (BODY_METHODS.has(request.method)) {
-      init.body = await request.arrayBuffer();
+      init.body = request.body;
+      (init as RequestInit & { duplex?: string }).duplex = 'half';
     }
 
     const upstream = await fetch(destination, init);
     const responseHeaders = new Headers();
-    const contentType = upstream.headers.get('content-type');
-    if (contentType !== null) {
-      responseHeaders.set('content-type', contentType);
+    for (const name of RESPONSE_HEADERS) {
+      const value = upstream.headers.get(name);
+      if (value !== null) {
+        responseHeaders.set(name, value);
+      }
     }
     return new Response(upstream.body, {
       status: upstream.status,

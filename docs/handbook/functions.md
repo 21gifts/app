@@ -5,7 +5,42 @@
 - **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, `/view-key/[viewKey]`, and `/push/vapid-public`).
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
-- **Used by:** Container probes, browser/wallet same-origin calls.
+- **Used by:** Container probes, browser/wallet same-origin calls. `GET /.well-known/nostr.json` proxies NIP-05.
+
+## Function: OPTIONS
+
+- **Purpose:** CORS preflight for `/.well-known/nostr.json`.
+- **Inputs:** none.
+- **Returns / side effects:** 204 with `Access-Control-Allow-Origin: *`.
+- **Used by:** Damus NIP-05 fetch.
+
+## Function: isForumVideoFile
+
+- **Purpose:** True when a picker file is MP4, WebM, or QuickTime (type or `.mp4`/`.webm`/`.mov` name).
+- **Inputs:** `File`.
+- **Returns / side effects:** boolean.
+- **Used by:** `ForumLoader` attach control.
+
+## Function: prepareForumVideo
+
+- **Purpose:** Size-check (32 MiB) and capture a JPEG poster from the first frame.
+- **Inputs:** `File`.
+- **Returns / side effects:** `{ ok, video }` or `{ ok: false, error }`.
+- **Used by:** `ForumLoader`.
+
+## Function: postMessageVideo
+
+- **Purpose:** Multipart `POST /messages` with `video` + optional `poster`.
+- **Inputs:** session token, `{ text, video, poster? }`.
+- **Returns / side effects:** `ForumMessage`.
+- **Used by:** `ForumLoader` submit.
+
+## Function: forumVideoSrc
+
+- **Purpose:** Build the same-origin forum video path for a message from its MIME type so playback uses `.mp4`, `.webm`, or `.mov` correctly.
+- **Inputs:** `messageId` string and optional `contentType` (`video/mp4` | `video/webm` | `video/quicktime` | null | undefined).
+- **Returns / side effects:** `/messages/{id}/video.mp4` | `.webm` | `.mov` (defaults to `.mp4` when type is missing or unknown). No I/O.
+- **Used by:** `ForumBoard` playback `src` when no local preview URL is set.
 
 ## Function: HandbookCopyLink
 

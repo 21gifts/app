@@ -10,6 +10,8 @@ const ADA: ForumMessage = {
   sats: 5,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -21,6 +23,8 @@ const CAROL: ForumMessage = {
   sats: 21,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -32,6 +36,8 @@ const BOB: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -43,6 +49,8 @@ const TIE_NEWER: ForumMessage = {
   sats: 10,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -54,6 +62,8 @@ const TIE_OLDER: ForumMessage = {
   sats: 10,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 
@@ -65,6 +75,8 @@ const TIE_SAME_TIME_LOW_ID: ForumMessage = {
   sats: 10,
   payable: true,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
 };
 

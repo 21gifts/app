@@ -99,12 +99,28 @@ describe('forumMessageSchema', () => {
   };
 
   it('accepts text with no photo', () => {
-    expect(forumMessageSchema.parse(base)).toEqual(base);
+    expect(forumMessageSchema.parse(base)).toEqual({
+      ...base,
+      hasVideo: false,
+      videoContentType: null,
+    });
   });
 
   it('accepts an empty text when hasPhoto is true', () => {
     const photoOnly = { ...base, text: '', hasPhoto: true };
-    expect(forumMessageSchema.parse(photoOnly)).toEqual(photoOnly);
+    expect(forumMessageSchema.parse(photoOnly)).toEqual({
+      ...photoOnly,
+      hasVideo: false,
+      videoContentType: null,
+    });
+  });
+
+  it('accepts an empty text when hasVideo is true', () => {
+    const videoOnly = { ...base, text: '', hasVideo: true };
+    expect(forumMessageSchema.parse(videoOnly)).toEqual({
+      ...videoOnly,
+      videoContentType: null,
+    });
   });
 
   it('rejects an empty text when hasPhoto is false', () => {
@@ -119,6 +135,30 @@ describe('forumMessageSchema', () => {
         text: base.text,
         createdAt: base.createdAt,
       }),
+    ).toThrow();
+  });
+
+  it('accepts the three video MIME values and null', () => {
+    expect(
+      forumMessageSchema.parse({ ...base, hasVideo: true, videoContentType: 'video/mp4' })
+        .videoContentType,
+    ).toBe('video/mp4');
+    expect(
+      forumMessageSchema.parse({ ...base, hasVideo: true, videoContentType: 'video/webm' })
+        .videoContentType,
+    ).toBe('video/webm');
+    expect(
+      forumMessageSchema.parse({ ...base, hasVideo: true, videoContentType: 'video/quicktime' })
+        .videoContentType,
+    ).toBe('video/quicktime');
+    expect(forumMessageSchema.parse({ ...base, videoContentType: null }).videoContentType).toBe(
+      null,
+    );
+  });
+
+  it('rejects an unknown videoContentType string', () => {
+    expect(() =>
+      forumMessageSchema.parse({ ...base, hasVideo: true, videoContentType: 'video/ogg' }),
     ).toThrow();
   });
 });
@@ -250,7 +290,12 @@ describe('forumMessageSchema', () => {
   };
 
   it('defaults a missing role to basis', () => {
-    expect(forumMessageSchema.parse(message)).toEqual({ ...message, role: 'basis' });
+    expect(forumMessageSchema.parse(message)).toEqual({
+      ...message,
+      role: 'basis',
+      hasVideo: false,
+      videoContentType: null,
+    });
   });
 
   it('accepts founder, verified, and moderator roles', () => {

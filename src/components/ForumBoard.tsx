@@ -15,6 +15,7 @@ import { QrCode } from '@/components/QrCode';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
+import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { formatBitcoin } from '@/lib/stats-money';
@@ -102,12 +103,16 @@ export interface ForumBoardProps {
   onDismissLaws: () => void;
   /** Prepared photo waiting to post, or `null`. */
   photoDraft: ForumPhotoPayload | null;
+  /** Prepared video waiting to post, or `null`. */
+  videoDraft?: ForumVideoPayload | null;
   /** Called when the visitor picks a file from the attach control. */
   onPickPhoto: (file: File) => void;
   /** Clears the pending photo draft. */
   onClearPhoto: () => void;
   /** Message id → blob/object URL for inline photos already loaded. */
   photoUrls: Readonly<Record<string, string>>;
+  /** Message id → blob/object URL for a just-posted video (local preview). */
+  videoUrls?: Readonly<Record<string, string>>;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -167,9 +172,11 @@ export function ForumBoard({
   lawsVisible,
   onDismissLaws,
   photoDraft,
+  videoDraft = null,
   onPickPhoto,
   onClearPhoto,
   photoUrls,
+  videoUrls = {},
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const composerRef = useRef<HTMLFormElement>(null);
@@ -237,6 +244,9 @@ export function ForumBoard({
       <ul aria-label={t('forum.listLabel')} className="flex flex-col gap-4">
         {displayed.map((message) => {
           const photoUrl = message.hasPhoto ? photoUrls[message.id] : undefined;
+          const videoSrc = message.hasVideo
+            ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
+            : undefined;
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
@@ -289,7 +299,16 @@ export function ForumBoard({
                   {t(roleKeys.hint)}
                 </p>
               ) : null}
-              {photoUrl !== undefined ? (
+              {videoSrc !== undefined ? (
+                <video
+                  src={videoSrc}
+                  poster={photoUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="mt-2 max-h-80 w-full rounded-xl bg-black"
+                />
+              ) : photoUrl !== undefined ? (
                 /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
                 <img
                   src={photoUrl}
@@ -503,7 +522,7 @@ export function ForumBoard({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
             className="hidden"
             disabled={posting}
             onChange={handleFileChange}
@@ -531,6 +550,24 @@ export function ForumBoard({
             )}
           </button>
         </div>
+        {videoDraft !== null ? (
+          <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+            <video
+              src={videoDraft.previewUrl}
+              className="h-20 w-20 rounded-lg object-cover"
+              muted
+            />
+            <button
+              type="button"
+              onClick={onClearPhoto}
+              disabled={posting}
+              aria-label={t('forum.removePhoto')}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
         {photoDraft !== null ? (
           <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}

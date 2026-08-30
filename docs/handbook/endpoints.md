@@ -1,5 +1,19 @@
 # HTTP endpoints (Next.js route handlers)
 
+## Endpoint: GET /.well-known/nostr.json
+
+- **Purpose:** Proxies NIP-05 `nostr.json` from the api onto the site apex. CORS `*`.
+- **Errors:** Upstream 502/503.
+- **Used by:** Damus verification.
+- **Auth:** none.
+
+## Endpoint: OPTIONS /.well-known/nostr.json
+
+- **Purpose:** CORS preflight for NIP-05.
+- **Errors:** none.
+- **Used by:** Browsers.
+- **Auth:** none.
+
 ## Endpoint: GET /healthz
 
 - **Purpose:** Liveness JSON `{ status: 'ok' }` from `src/app/healthz/route.ts`.

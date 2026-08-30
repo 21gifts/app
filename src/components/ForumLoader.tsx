@@ -13,6 +13,7 @@ import {
   fetchMessages,
   postMessage,
   postMessageInvoice,
+  postMessageVideo,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import {
@@ -21,6 +22,7 @@ import {
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
+import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for pay confirmation or payable status. */
@@ -96,9 +98,11 @@ export function ForumLoader(): ReactElement | null {
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
+  const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
   const pickGeneration = useRef(0);
   const [posting, setPosting] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -358,6 +362,21 @@ export function ForumLoader(): ReactElement | null {
     setPreparing(true);
     void (async () => {
       try {
+        if (isForumVideoFile(file)) {
+          const result = await prepareForumVideo(file);
+          if (generation !== pickGeneration.current) {
+            return;
+          }
+          if (!result.ok) {
+            setVideoDraft(null);
+            setFormError(result.error);
+            return;
+          }
+          setPhotoDraft(null);
+          setVideoDraft(result.video);
+          setFormError(null);
+          return;
+        }
         const result = await prepareForumPhoto(file);
         if (generation !== pickGeneration.current) {
           return;
@@ -367,6 +386,7 @@ export function ForumLoader(): ReactElement | null {
           setFormError(result.error);
           return;
         }
+        setVideoDraft(null);
         setPhotoDraft(result.photo);
         setFormError(null);
       } catch {
@@ -385,7 +405,7 @@ export function ForumLoader(): ReactElement | null {
 
   const onPost = (): void => {
     const trimmed = draft.trim();
-    if (trimmed === '' && photoDraft === null) {
+    if (trimmed === '' && photoDraft === null && videoDraft === null) {
       setFormError('empty');
       return;
     }
@@ -397,14 +417,22 @@ export function ForumLoader(): ReactElement | null {
     setPosting(true);
     setFormError(null);
     const pendingPhoto = photoDraft;
+    const pendingVideo = videoDraft;
     void (async () => {
       try {
-        const created = await postMessage(session, {
-          text: trimmed,
-          ...(pendingPhoto === null
-            ? {}
-            : { photo: { contentType: pendingPhoto.contentType, data: pendingPhoto.data } }),
-        });
+        const created =
+          pendingVideo !== null
+            ? await postMessageVideo(session, {
+                text: trimmed,
+                video: pendingVideo.file,
+                poster: pendingVideo.poster,
+              })
+            : await postMessage(session, {
+                text: trimmed,
+                ...(pendingPhoto === null
+                  ? {}
+                  : { photo: { contentType: pendingPhoto.contentType, data: pendingPhoto.data } }),
+              });
         setMessages((prev) => {
           if (prev === null) {
             return [created];
@@ -425,8 +453,17 @@ export function ForumLoader(): ReactElement | null {
             return { ...prev, [created.id]: pendingPhoto.previewUrl };
           });
         }
+        if (created.hasVideo && pendingVideo !== null) {
+          setVideoUrls((prev) => {
+            if (prev[created.id] !== undefined) {
+              return prev;
+            }
+            return { ...prev, [created.id]: pendingVideo.previewUrl };
+          });
+        }
         setDraft('');
         setPhotoDraft(null);
+        setVideoDraft(null);
         startPayablePoll(session);
       } catch (err) {
         setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
@@ -526,13 +563,16 @@ export function ForumLoader(): ReactElement | null {
       }}
       formError={formError}
       photoDraft={photoDraft}
+      videoDraft={videoDraft}
       onPickPhoto={onPickPhoto}
       onClearPhoto={() => {
         pickGeneration.current += 1;
         setPhotoDraft(null);
+        setVideoDraft(null);
         setFormError(null);
       }}
       photoUrls={photoUrls}
+      videoUrls={videoUrls}
       payMessageId={payMessageId}
       payDraft={payDraft}
       payBusy={payBusy}
