@@ -4,10 +4,49 @@
  * is how coverage silently drops.
  *
  * `needle` must appear in e2e/*.spec.ts (the behavioral assertion for that state).
- * `image` is the handbook filename (URL `/handbook-images/<image>`).
- * `visual` is the Playwright baseline arg
- * (`e2e/visual.spec.ts-snapshots/${visual}-chromium-linux.png`).
+ * `image` is the handbook filename (URL `/handbook-images/<file>`), filled from
+ * the desktop-light baseline (or the first combo listed on the variant).
+ * `visual` is the Playwright screenshot arg. Each variant is captured in every
+ * {@link BASELINE_COMBOS} entry unless `combos` restricts it:
+ *   e2e/visual.spec.ts-snapshots/${visual}-${combo.id}-linux.png
+ * `combos` is optional; omit it for all four desktop/mobile × light/dark shots.
  */
+
+/** One required visual baseline combo: viewport × theme. */
+export const BASELINE_COMBOS = [
+  { id: 'desktop-light', viewport: 'desktop', theme: 'light' },
+  { id: 'desktop-dark', viewport: 'desktop', theme: 'dark' },
+  { id: 'mobile-light', viewport: 'mobile', theme: 'light' },
+  { id: 'mobile-dark', viewport: 'mobile', theme: 'dark' },
+];
+
+/** Combo used for handbook Markdown images. */
+export const HANDBOOK_COMBO_ID = 'desktop-light';
+
+/**
+ * Combo ids a variant must have PNG baselines for.
+ *
+ * @param variant - Screen variant row.
+ * @returns Combo ids.
+ */
+export function variantComboIds(variant) {
+  if (Array.isArray(variant.combos) && variant.combos.length > 0) {
+    return variant.combos;
+  }
+  return BASELINE_COMBOS.map((combo) => combo.id);
+}
+
+/**
+ * Playwright snapshot stem for a visual arg and combo (`-linux.png` is added by Playwright).
+ *
+ * @param visual - Variant `visual` or `function-${name}`.
+ * @param comboId - Combo id.
+ * @returns Snapshot arg Playwright stores as `${stem}-linux.png`.
+ */
+export function comboSnapshotStem(visual, comboId) {
+  return `${visual}-${comboId}`;
+}
+
 export const SCREEN_VARIANTS = [
   {
     route: '/',
@@ -22,6 +61,7 @@ export const SCREEN_VARIANTS = [
     image: 'root-mobile-nav.png',
     visual: 'state-root-mobile-nav',
     needle: "getByRole('button', { name: 'Menu' })",
+    combos: ['mobile-light', 'mobile-dark'],
   },
   {
     route: '/',
@@ -42,13 +82,6 @@ export const SCREEN_VARIANTS = [
     id: 'idle',
     image: 'login.png',
     visual: 'screen-login',
-    needle: "getByRole('button', { name: 'Log in' })",
-  },
-  {
-    route: '/login',
-    id: 'dark',
-    image: 'login-dark.png',
-    visual: 'state-login-dark',
     needle: "getByRole('button', { name: 'Log in' })",
   },
   {
@@ -94,24 +127,10 @@ export const SCREEN_VARIANTS = [
     needle: 'Open the forum',
   },
   {
-    route: '/donate',
-    id: 'dark',
-    image: 'donate-dark.png',
-    visual: 'state-donate-dark',
-    needle: 'Open the forum',
-  },
-  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',
     visual: 'screen-setup-name',
-    needle: "getByRole('heading', { name: 'Your name' })",
-  },
-  {
-    route: '/setup/name',
-    id: 'dark',
-    image: 'setup-name-dark.png',
-    visual: 'state-setup-name-dark',
     needle: "getByRole('heading', { name: 'Your name' })",
   },
   {
@@ -122,13 +141,6 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Your Wallet of Satoshi address' })",
   },
   {
-    route: '/setup/address',
-    id: 'dark',
-    image: 'setup-address-dark.png',
-    visual: 'state-setup-address-dark',
-    needle: "getByRole('heading', { name: 'Your Wallet of Satoshi address' })",
-  },
-  {
     route: '/setup/rules',
     id: 'default',
     image: 'setup-rules.png',
@@ -136,31 +148,10 @@ export const SCREEN_VARIANTS = [
     needle: 'I agree to these rules',
   },
   {
-    route: '/setup/rules',
-    id: 'mobile',
-    image: 'setup-rules-mobile.png',
-    visual: 'state-setup-rules-mobile',
-    needle: 'setup-rules mobile',
-  },
-  {
-    route: '/setup/rules',
-    id: 'dark',
-    image: 'setup-rules-dark.png',
-    visual: 'state-setup-rules-dark',
-    needle: 'I agree to these rules',
-  },
-  {
     route: '/welcome',
     id: 'default',
     image: 'welcome.png',
     visual: 'screen-welcome',
-    needle: 'Send Bitcoin',
-  },
-  {
-    route: '/welcome',
-    id: 'dark',
-    image: 'welcome-dark.png',
-    visual: 'state-welcome-dark',
     needle: 'Send Bitcoin',
   },
   {
@@ -344,6 +335,7 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
     needle: 'Bitcoin payment QR code',
+    combos: ['desktop-light', 'desktop-dark'],
   },
   {
     route: '/welcome',
@@ -351,6 +343,7 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-pay-smartphone.png',
     visual: 'state-welcome-pay-smartphone',
     needle: 'iPhone pay sheet has no QR',
+    combos: ['mobile-light', 'mobile-dark'],
   },
   {
     route: '/welcome',
@@ -367,24 +360,10 @@ export const SCREEN_VARIANTS = [
     needle: 'Only free donations',
   },
   {
-    route: '/rules',
-    id: 'dark',
-    image: 'rules-dark.png',
-    visual: 'state-rules-dark',
-    needle: 'Only free donations',
-  },
-  {
     route: '/contact',
     id: 'default',
     image: 'contact.png',
     visual: 'screen-contact',
-    needle: 'Write to 21.gifts here. There is no email.',
-  },
-  {
-    route: '/contact',
-    id: 'dark',
-    image: 'contact-dark.png',
-    visual: 'state-contact-dark',
     needle: 'Write to 21.gifts here. There is no email.',
   },
   {
@@ -406,13 +385,6 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'profile.png',
     visual: 'screen-profile',
-    needle: "getByRole('heading', { name: 'Profile' })",
-  },
-  {
-    route: '/profile',
-    id: 'dark',
-    image: 'profile-dark.png',
-    visual: 'state-profile-dark',
     needle: "getByRole('heading', { name: 'Profile' })",
   },
   {

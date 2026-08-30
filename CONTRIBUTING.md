@@ -345,18 +345,25 @@ is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check job
 There is **one** source for screen images: Playwright Linux Chromium baselines
 under `e2e/visual.spec.ts-snapshots/`. Every UI screen **must** have a
 `toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`.
-Handbook Markdown keeps `images/<name>.png` references; those bytes are filled
-into `public/handbook-images/` by `npm run handbook:images` / `prebuild` /
-`predev` from the matching baseline (`variant.visual` → `variant.image`). Do
+Visual specs run in four projects (`desktop-light`, `desktop-dark`,
+`mobile-light`, `mobile-dark`) so each shot is stored as
+`${arg}-${combo}-linux.png`. Handbook Markdown keeps `images/<name>.png`
+references; those bytes are filled into `public/handbook-images/` by
+`npm run handbook:images` / `prebuild` / `predev` from the **desktop-light**
+baseline (`variant.visual` + `HANDBOOK_COMBO_ID` → `variant.image`). Do
 not commit PNGs under `docs/handbook/images/` or `public/handbook-images/`.
 
 Every **variant** in `scripts/screen-variants.mjs` **must** have a Playwright
-Linux baseline `${visual}-chromium-linux.png`. Default screen shots use the
-`screen-…` args; extra states use `state-…` args.
+Linux baseline for **each** combo in `BASELINE_COMBOS` (or the variant’s
+`combos` list): `${visual}-${combo.id}-linux.png`. Default screen shots use
+the `screen-…` args; extra states use `state-…` args. Restrict `combos` only
+when the UI cannot exist (hamburger nav on desktop, payment QR on a
+smartphone, smartphone pay sheet on desktop).
 
-Every exported function **must** have a Playwright baseline
-`function-<Name>.png` (the handbook section on `/handbook`, clipped). Adding a
-screen or export without updating the baselines in the **same PR** is rejected.
+Every exported function **must** have four Playwright baselines
+`function-<Name>-${combo}-linux.png` (the handbook section on `/handbook`,
+clipped, in each combo project). Adding a screen or export without updating
+the baselines in the **same PR** is rejected.
 `npm run screenshot:check` (and CI) fails when a PNG is missing.
 
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so

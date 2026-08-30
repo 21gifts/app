@@ -1,5 +1,7 @@
 # Screens
 
+Every variant below is captured as four Linux Chromium baselines: desktop light, desktop dark, mobile light, and mobile dark (`scripts/screen-variants.mjs` `BASELINE_COMBOS`). Markdown images are the desktop-light shot (or the first combo listed on the variant, e.g. mobile-nav). The other three PNGs are visual-test baselines only.
+
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
@@ -120,12 +122,6 @@ Logged out. Heading **Sign in to 21.gifts**, one **Log in** button.
 
 ![21.gifts login idle](images/login.png)
 
-### Variant: dark
-
-Same idle login chrome under OS dark preference (or a dark theme cookie): marketing-matching background `#0a090c`, white text, orange accent. QR plate stays white when present elsewhere; login has no QR.
-
-![21.gifts login dark](images/login-dark.png)
-
 ### Variant: starting
 
 Transient after a login click, before the ceremony finishes: spinner and **Preparing your login…**.
@@ -169,12 +165,6 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 ![21.gifts donate](images/donate.png)
 
-### Variant: dark
-
-Same donate chrome under dark preference: background `#0a090c`, white text, orange accent.
-
-![21.gifts donate dark](images/donate-dark.png)
-
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
@@ -187,12 +177,6 @@ Same donate chrome under dark preference: background `#0a090c`, white text, oran
 Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
-
-### Variant: dark
-
-Same name-setup chrome under dark preference: background `#0a090c`, white text, orange accent.
-
-![21.gifts name setup dark](images/setup-name-dark.png)
 
 ## Screen: /setup/address
 
@@ -207,12 +191,6 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 
 ![21.gifts address setup](images/setup-address.png)
 
-### Variant: dark
-
-Same address-setup chrome under dark preference: background `#0a090c`, white text, orange accent.
-
-![21.gifts address setup dark](images/setup-address-dark.png)
-
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
@@ -226,18 +204,6 @@ Signed in with a name and address and `rulesAgreedAt` still null. Rules body and
 
 ![21.gifts rules setup](images/setup-rules.png)
 
-### Variant: mobile
-
-Narrow viewport (375×812). The rules body wraps; **I agree to these rules** stays full-width after the document.
-
-![21.gifts rules setup mobile](images/setup-rules-mobile.png)
-
-### Variant: dark
-
-Same rules-setup chrome under dark preference: background `#0a090c`, white text, orange accent.
-
-![21.gifts rules setup dark](images/setup-rules-dark.png)
-
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.
@@ -250,12 +216,6 @@ Same rules-setup chrome under dark preference: background `#0a090c`, white text,
 Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol ₿21 then Ada ₿5); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. Founder / Moderator / Verified pills beside the name when `role` is one of those three; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
-
-### Variant: dark
-
-Same welcome chrome under dark preference: marketing-matching background `#0a090c`, white text, orange accent. QR still on white when the pay sheet is open.
-
-![21.gifts welcome dark](images/welcome-dark.png)
 
 ### Variant: all
 
@@ -439,12 +399,6 @@ Full rules body with law **1. Only free donations** visible.
 
 ![21.gifts living room rules](images/rules.png)
 
-### Variant: dark
-
-Same rules chrome under dark preference: marketing-matching background `#0a090c`, white text, orange accent.
-
-![21.gifts living room rules dark](images/rules-dark.png)
-
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
@@ -458,12 +412,6 @@ Same rules chrome under dark preference: marketing-matching background `#0a090c`
 Idle composer with lead and rules link.
 
 ![21.gifts contact](images/contact.png)
-
-### Variant: dark
-
-Same contact chrome under dark preference: marketing-matching background `#0a090c`, white text, orange accent.
-
-![21.gifts contact dark](images/contact-dark.png)
 
 ### Variant: validation-error
 
@@ -489,12 +437,6 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, ₿ | USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then an icon-only copy control for the public view URL; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
-
-### Variant: dark
-
-Same profile chrome under dark preference: marketing-matching background `#0a090c`, white text, orange accent.
-
-![21.gifts profile dark](images/profile-dark.png)
 
 ### Variant: receive
 

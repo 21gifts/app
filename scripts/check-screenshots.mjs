@@ -5,6 +5,7 @@
  *
  * Snapshot files live next to the visual spec (Playwright default layout):
  *   e2e/visual.spec.ts-snapshots/<arg>-<project>-<platform>.png
+ * Visual projects are the four {@link BASELINE_COMBOS} ids.
  *
  * Handbook URLs under public/handbook-images/ are filled at build/dev from
  * these baselines (see scripts/sync-handbook-images.mjs); this check does not
@@ -13,7 +14,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractFunctions, extractScreens, sectionBody } from './check-handbook.mjs';
-import { SCREEN_VARIANTS } from './screen-variants.mjs';
+import {
+  HANDBOOK_COMBO_ID,
+  SCREEN_VARIANTS,
+  comboSnapshotStem,
+  variantComboIds,
+} from './screen-variants.mjs';
 
 const ROOT = process.cwd();
 const SNAP_DIR = path.join(ROOT, 'e2e', 'visual.spec.ts-snapshots');
@@ -40,8 +46,9 @@ function listPngs(dir) {
   return fs.readdirSync(dir).filter((n) => n.endsWith('.png'));
 }
 
-function hasSnapshot(files, arg) {
-  return files.includes(`${arg}-chromium-linux.png`);
+function hasSnapshot(files, stem) {
+  const file = `${stem.replaceAll('_', '-')}-linux.png`;
+  return files.includes(file);
 }
 
 const missing = [];
@@ -62,15 +69,20 @@ const visualSrc = fs.readFileSync(E2E_VISUAL, 'utf8');
 
 for (const route of [...screens].sort()) {
   const arg = screenArg(route);
-  if (!hasSnapshot(snapFiles, arg)) {
-    missing.push(`Screen ${route} has no Playwright Linux baseline ${arg}-chromium-linux.png`);
+  const defaultVariant = SCREEN_VARIANTS.find((v) => v.route === route);
+  const comboIds =
+    defaultVariant === undefined ? [HANDBOOK_COMBO_ID] : variantComboIds(defaultVariant);
+  for (const comboId of comboIds) {
+    const stem = comboSnapshotStem(arg, comboId);
+    if (!hasSnapshot(snapFiles, stem)) {
+      missing.push(`Screen ${route} has no Playwright Linux baseline ${stem}-linux.png`);
+    }
   }
   if (!visualSrc.includes(`'${arg}'`) && !visualSrc.includes(`"${arg}"`)) {
     missing.push(
       `Screen ${route} has no shotScreen/toHaveScreenshot('${arg}') in e2e/visual.spec.ts`,
     );
   }
-  const defaultVariant = SCREEN_VARIANTS.find((v) => v.route === route);
   const mdName = defaultVariant?.image ?? `${arg.replace(/^screen-/, '')}.png`;
   const imageRef = new RegExp(
     `!\\[[^\\]]*\\]\\(images/${mdName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`,
@@ -82,18 +94,26 @@ for (const route of [...screens].sort()) {
 }
 
 for (const variant of SCREEN_VARIANTS) {
-  if (!hasSnapshot(snapFiles, variant.visual)) {
-    missing.push(
-      `Variant ${variant.route} ${variant.id} has no Playwright Linux baseline ${variant.visual}-chromium-linux.png`,
-    );
+  for (const comboId of variantComboIds(variant)) {
+    const stem = comboSnapshotStem(variant.visual, comboId);
+    if (!hasSnapshot(snapFiles, stem)) {
+      missing.push(
+        `Variant ${variant.route} ${variant.id} ${comboId} has no Playwright Linux baseline ${stem}-linux.png`,
+      );
+    }
   }
 }
 
 const fns = extractFunctions(path.join(ROOT, 'src'));
 for (const name of [...fns].sort()) {
   const arg = `function-${name}`;
-  if (!hasSnapshot(snapFiles, arg)) {
-    missing.push(`Function ${name} has no Playwright Linux baseline ${arg}-chromium-linux.png`);
+  for (const comboId of variantComboIds({})) {
+    const stem = comboSnapshotStem(arg, comboId);
+    if (!hasSnapshot(snapFiles, stem)) {
+      missing.push(
+        `Function ${name} ${comboId} has no Playwright Linux baseline ${stem}-linux.png`,
+      );
+    }
   }
 }
 
@@ -111,5 +131,5 @@ if (missing.length) {
 }
 
 console.log(
-  `Screenshots complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants, ${fns.size} functions, ${snapFiles.length} PNG baselines.`,
+  `Screenshots complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants × 4 combos (restricted where listed), ${fns.size} functions × 4 combos, ${snapFiles.length} PNG baselines.`,
 );

@@ -134,6 +134,21 @@ const STATS_EMPTY = {
   },
 };
 
+/**
+ * True when this visual run is a mobile combo project.
+ *
+ * @param testInfo - Playwright test info (project name is the combo id).
+ * @returns Whether the project id starts with `mobile-`.
+ */
+function isMobileProject(testInfo: { project: { name: string } }): boolean {
+  return testInfo.project.name.startsWith('mobile-');
+}
+
+test.beforeEach(async ({ page }, testInfo) => {
+  const theme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
+  await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
+});
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage,
@@ -194,8 +209,8 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-root');
   });
 
-  test('state / mobile-nav', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('state / mobile-nav', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo), 'hamburger nav is md:hidden on desktop');
     await page.goto('/');
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByLabel('Primary').getByRole('link', { name: 'Handbook' })).toBeVisible();
@@ -384,29 +399,6 @@ test.describe('onboarding screens', () => {
     await page.goto('/setup/rules');
     await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
     await shotScreen(page, 'screen-setup-rules');
-  });
-
-  test('setup-rules mobile', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: null,
-          viewKey: 'a'.repeat(64),
-        }),
-      });
-    });
-    await page.goto('/setup/rules');
-    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
-    await shotScreen(page, 'state-setup-rules-mobile');
   });
 
   test('screen /welcome', async ({ page }) => {
@@ -1303,7 +1295,8 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-theme');
   });
 
-  test('welcome pay-qr', async ({ page }) => {
+  test('welcome pay-qr', async ({ page }, testInfo) => {
+    test.skip(isMobileProject(testInfo), 'payment QR is desktop-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
@@ -1311,14 +1304,8 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-pay-qr');
   });
 
-  test('welcome pay-smartphone', async ({ page }) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'userAgent', {
-        get: () =>
-          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-      });
-    });
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('welcome pay-smartphone', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo), 'smartphone pay sheet is mobile-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
@@ -1523,152 +1510,9 @@ test.describe('stats variant baselines', () => {
   });
 });
 
-test.describe('dark variant baselines', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'dark' });
-  });
-
-  test('login dark', async ({ page }) => {
-    await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
-    await shotScreen(page, 'state-login-dark');
-  });
-
-  test('donate dark', async ({ page }) => {
-    await page.goto('/donate');
-    await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
-    await shotScreen(page, 'state-donate-dark');
-  });
-
-  test('setup-name dark', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(E2E_ACCOUNT),
-      });
-    });
-    await page.goto('/setup/name');
-    await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
-    await shotScreen(page, 'state-setup-name-dark');
-  });
-
-  test('setup-rules dark', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: null,
-        }),
-      });
-    });
-    await page.goto('/setup/rules');
-    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
-    await shotScreen(page, 'state-setup-rules-dark');
-  });
-
-  test('setup-address dark', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
-      });
-    });
-    await page.goto('/setup/address');
-    await expect(
-      page.getByRole('heading', { name: 'Your Wallet of Satoshi address' }),
-    ).toBeVisible();
-    await shotScreen(page, 'state-setup-address-dark');
-  });
-
-  test('welcome dark', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-        }),
-      });
-    });
-    await fulfillMixedSatsMessages(page);
-    await page.goto('/welcome');
-    await expect(page.getByRole('button', { name: 'Send Bitcoin' }).first()).toBeVisible();
-    await shotScreen(page, 'state-welcome-dark');
-  });
-
-  test('rules dark', async ({ page }) => {
-    await page.goto('/rules');
-    await expect(page.getByText('Only free donations')).toBeVisible();
-    await shotScreen(page, 'state-rules-dark');
-  });
-
-  test('contact dark', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-        }),
-      });
-    });
-    await page.goto('/contact');
-    await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
-    await shotScreen(page, 'state-contact-dark');
-  });
-
-  test('profile dark', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-        }),
-      });
-    });
-    await page.goto('/profile');
-    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await shotScreen(page, 'state-profile-dark');
-  });
-});
-
 test.describe('function baselines', () => {
-  // ~140 Function: clips; CI's default 30s timed out after the theme/BIP-177 sections were added.
-  test.describe.configure({ timeout: 120_000 });
+  // ~140 Function: clips × 4 combo projects; 30s timed out, 120s is tight on mobile workers.
+  test.describe.configure({ timeout: 180_000 });
 
   test('every handbook function section', async ({ page }) => {
     await page.goto('/handbook');
