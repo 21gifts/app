@@ -64,12 +64,12 @@ export function isIosSafari(): boolean {
  * `Invalid subscription` when the browser omits endpoint or keys.
  */
 export async function enablePush(sessionToken: string): Promise<void> {
-  const registration = await registerPushWorker();
-  const publicKey = await fetchVapidPublicKey(sessionToken);
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') {
     throw new Error('Notification permission denied');
   }
+  const registration = await registerPushWorker();
+  const publicKey = await fetchVapidPublicKey(sessionToken);
   const applicationServerKey = new Uint8Array(vapidPublicKeyToBytes(publicKey));
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
@@ -87,12 +87,18 @@ export async function enablePush(sessionToken: string): Promise<void> {
     typeof auth !== 'string' ||
     auth === ''
   ) {
+    await subscription.unsubscribe().catch(() => undefined);
     throw new Error('Invalid subscription');
   }
-  await postPushSubscription(sessionToken, {
-    endpoint,
-    keys: { p256dh, auth },
-  });
+  try {
+    await postPushSubscription(sessionToken, {
+      endpoint,
+      keys: { p256dh, auth },
+    });
+  } catch (err) {
+    await subscription.unsubscribe().catch(() => undefined);
+    throw err;
+  }
 }
 
 /**

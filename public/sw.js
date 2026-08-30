@@ -3,7 +3,8 @@
 self.addEventListener('push', (event) => {
   let payload = {};
   try {
-    payload = event.data ? event.data.json() : {};
+    const parsed = event.data ? event.data.json() : {};
+    payload = parsed !== null && typeof parsed === 'object' ? parsed : {};
   } catch {
     payload = {};
   }
