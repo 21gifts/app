@@ -1,6 +1,6 @@
 # Screens
 
-Every variant below is captured as four Linux Chromium baselines: desktop light, desktop dark, mobile light, and mobile dark (`scripts/screen-variants.mjs` `BASELINE_COMBOS`). Markdown images are the desktop-light shot (or the first combo listed on the variant, e.g. mobile-nav). The other three PNGs are visual-test baselines only.
+Every variant below is captured in the four Linux Chromium combos (desktop/mobile × light/dark), except UI that cannot exist: the header hamburger (mobile only), the payment QR (desktop only), and the smartphone pay sheet (mobile only). Markdown images are the desktop-light shot, or the first allowed combo when desktop-light does not apply. The other combo PNGs are visual-test baselines only.
 
 ## Screen: /
 

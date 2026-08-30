@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { extractFunctions, extractScreens, sectionBody } from './check-handbook.mjs';
 import {
-  HANDBOOK_COMBO_ID,
+  BASELINE_COMBOS,
   SCREEN_VARIANTS,
   comboSnapshotStem,
   variantComboIds,
@@ -71,7 +71,9 @@ for (const route of [...screens].sort()) {
   const arg = screenArg(route);
   const defaultVariant = SCREEN_VARIANTS.find((v) => v.route === route);
   const comboIds =
-    defaultVariant === undefined ? [HANDBOOK_COMBO_ID] : variantComboIds(defaultVariant);
+    defaultVariant === undefined
+      ? BASELINE_COMBOS.map((combo) => combo.id)
+      : variantComboIds(defaultVariant);
   for (const comboId of comboIds) {
     const stem = comboSnapshotStem(arg, comboId);
     if (!hasSnapshot(snapFiles, stem)) {
