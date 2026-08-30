@@ -89,7 +89,7 @@
 - **Purpose:** Same-origin public proxy of api `GET /view/:viewKey`.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchViewProfile`.
-- **Auth:** None.
+- **Auth:** Public.
 
 ## Endpoint: GET /messages
 
