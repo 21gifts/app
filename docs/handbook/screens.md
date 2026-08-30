@@ -226,6 +226,12 @@ Narrow viewport (375×812). The rules body wraps; **I agree to these rules** sta
 
 ![21.gifts rules setup mobile](images/setup-rules-mobile.png)
 
+### Variant: dark
+
+Same rules-setup chrome under dark preference: background `#0a090c`, white text, orange accent.
+
+![21.gifts rules setup dark](images/setup-rules-dark.png)
+
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.

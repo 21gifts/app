@@ -1533,6 +1533,27 @@ test.describe('dark variant baselines', () => {
     await shotScreen(page, 'state-setup-name-dark');
   });
 
+  test('setup-rules dark', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: null,
+        }),
+      });
+    });
+    await page.goto('/setup/rules');
+    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-dark');
+  });
+
   test('setup-address dark', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

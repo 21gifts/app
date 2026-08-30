@@ -136,6 +136,13 @@ export const SCREEN_VARIANTS = [
     needle: 'setup-rules mobile',
   },
   {
+    route: '/setup/rules',
+    id: 'dark',
+    image: 'setup-rules-dark.png',
+    visual: 'state-setup-rules-dark',
+    needle: 'I agree to these rules',
+  },
+  {
     route: '/welcome',
     id: 'default',
     image: 'welcome.png',

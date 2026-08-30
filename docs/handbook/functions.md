@@ -109,9 +109,9 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login and donate) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, and rules) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
 - **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Globe + Language + chevron; expands in flow under the trigger with endonym rows). Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and the signed-in Menu in `SignedInChrome`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, `/rules`, and the signed-in Menu in `SignedInChrome`.
 
 ## Function: NameForm
 
