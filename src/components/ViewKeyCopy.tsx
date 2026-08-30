@@ -99,7 +99,7 @@ export function ViewKeyCopy({ viewKey }: { viewKey: string }): ReactElement {
       title={ariaName}
       data-copied={copied ? 'true' : undefined}
       className={`inline-flex items-center shrink-0 rounded px-1.5 py-0.5 text-xs leading-none transition ${
-        copied ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-900'
+        copied ? 'text-app-fg' : 'text-app-subtle hover:text-app-fg'
       }`}
     >
       {copied ? (

@@ -274,7 +274,7 @@
 
 - **Purpose:** Icon-only copy control for the signed-in profile view-key link (`origin + /view/ + viewKey`); the URL and key are not rendered next to it. Clipboard API with textarea/`execCommand` fallback; flashes a check icon for ~1200ms.
 - **Inputs:** `viewKey` (64 lowercase hex).
-- **Returns / side effects:** Button named from `profile.viewKeyCopy`; `data-copied="true"` while flashed. Does not log the key. Light/neutral theme (not handbook white-on-dark).
+- **Returns / side effects:** Button named from `profile.viewKeyCopy`; `data-copied="true"` while flashed. Does not log the key. Follows semantic app tokens (same as signed-in profile chrome), not hardcoded light-only neutrals.
 - **Used by:** `ProfileScreen`.
 
 ## Function: fetchViewProfile
