@@ -76,12 +76,14 @@ app/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
+│   │   ├── .well-known/
+│   │   │   └── nostr.json/route.ts  # GET/OPTIONS /.well-known/nostr.json NIP-05 CORS *
 │   │   ├── messages/
 │   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
 │   │   │   └── [id]/
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
-│   │   │       └── [file]/route.ts   # GET /messages/[id]/video.{mp4,webm,mov} same-origin proxy
+│   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -110,8 +112,8 @@ app/
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/feed-mode/pay/laws-dismiss state for /welcome forum
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss state for /welcome forum
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
@@ -128,6 +130,7 @@ app/
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
+│   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 
