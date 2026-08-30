@@ -54,10 +54,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root layout: the `<html>`/`<body>` shell shared by every page.
+ * Root layout: the `<html>`/`<body>` shell shared by every page (locale, theme bootstrap, providers).
  *
  * @param props - Layout children.
- * @returns The document wrapper with negotiated `lang` and locale messages.
+ * @returns The document wrapper with negotiated `lang`, theme bootstrap, and locale messages.
  */
 export default async function RootLayout({
   children,

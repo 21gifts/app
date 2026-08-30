@@ -143,16 +143,16 @@
 
 ## Function: LoginPage
 
-- **Purpose:** Next.js page for `/login` with localized heading and a light language switcher.
+- **Purpose:** Next.js page for `/login` with localized heading, theme switcher, and language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** Renders heading, lead, **Open the forum** link, and `LanguageSwitcher` (light, top-right). No OnboardingGate.
+- **Returns / side effects:** Renders heading, lead, **Open the forum** link, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -384,9 +384,9 @@
 
 ## Function: RulesPage
 
-- **Purpose:** Next.js page for `/rules` with localized heading and a light language switcher.
+- **Purpose:** Next.js page for `/rules` with localized heading, theme switcher, and language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** The rules screen wrapped in the root layout; switcher top-right.
+- **Returns / side effects:** The rules screen wrapped in the root layout; `ThemeSwitcher` and `LanguageSwitcher` top-right.
 - **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
@@ -440,7 +440,7 @@
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), and `LocaleProvider` with the request catalog.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `LocaleProvider` with the request catalog, and `ThemeProvider`.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.

@@ -172,13 +172,13 @@ Same donate chrome under dark preference: background `#0a090c`, white text, oran
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/setup/address`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/address`.
 - **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
+Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
@@ -191,13 +191,13 @@ Same name-setup chrome under dark preference: background `#0a090c`, white text, 
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/setup/rules`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/rules`.
 - **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
+Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
@@ -210,8 +210,8 @@ Same address-setup chrome under dark preference: background `#0a090c`, white tex
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Living room rules**, prompt to read and agree, the full rules body without the public Contact / forum nav, and a full-width **I agree to these rules** button.
-- **Actions:** Read the rules and **I agree to these rules**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After agreement, the visitor is sent to `/welcome`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Living room rules**, prompt to read and agree, the full rules body without the public Contact / forum nav, and a full-width **I agree to these rules** button.
+- **Actions:** Read the rules and **I agree to these rules**; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After agreement, the visitor is sent to `/welcome`.
 - **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`).
 
 ### Variant: default
@@ -430,8 +430,8 @@ Same rules chrome under dark preference: marketing-matching background `#0a090c`
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
-- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
+- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
 - **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
@@ -463,7 +463,7 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, copy the public view-key link via an icon-only control, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
 - **Inputs:** Session account (name + Lightning Address + `viewKey` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
-- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between ₿ and USD; copy the public view URL with the icon-only control (the 64-hex key and `/view/<key>` are not shown on screen).
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between ₿ and USD; copy the public view URL with the icon-only control (the 64-hex key and `/view/<key>` are not shown on screen).
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
