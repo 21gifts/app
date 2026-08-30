@@ -145,6 +145,7 @@ app/
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
+│   ├── view.spec.ts             # /view/[viewKey] public profile + profile view-key copy
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines (single source for handbook images)
 │   └── visual.spec.ts-snapshots/
