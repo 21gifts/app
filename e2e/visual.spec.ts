@@ -1509,6 +1509,9 @@ test.describe('function baselines', () => {
     const count = await headings.count();
     expect(count).toBeGreaterThan(0);
 
+    // One test walks every handbook function clip; count × comparison exceeds Playwright’s 30s default.
+    test.setTimeout(Math.max(90_000, count * 500));
+
     const sections = await headings.evaluateAll((nodes) =>
       nodes.map((node) => {
         const el = node as HTMLElement;
