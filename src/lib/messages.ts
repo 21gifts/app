@@ -281,14 +281,14 @@ const en = {
   'rules.forbiddenQuid4': 'Taking commissions — advice, a logo, homework, “I will do X for you.”',
   'rules.forbiddenQuid5': 'Selling — merch, tokens, a course, “an interesting project.”',
   'rules.forbiddenQuid6':
-    'A deal in disguise — “donate and I will mention you”, “whoever gives most gets …”',
+    'A deal in disguise — “donate and I will mention you,” “whoever gives most gets …”',
   'rules.forbiddenDonorHeading': 'Driving donors away (law 2)',
   'rules.forbiddenDonor1': 'Relentless asking — every day, in series, your address in every line.',
   'rules.forbiddenDonor2':
     'Dramatizing — superlatives, misery as a stage, photos of suffering as leverage.',
-  'rules.forbiddenDonor3': 'Pressure — a countdown, “by tonight”, “or else”.',
+  'rules.forbiddenDonor3': 'Pressure — a countdown, “by tonight,” “or else.”',
   'rules.forbiddenDonor4':
-    'Guilt — “if you really wanted to help”, ranking donors, calling out people who did not give.',
+    'Guilt — “if you really wanted to help,” ranking donors, calling out people who did not give.',
   'rules.forbiddenDonor5': 'Soft extortion — “I will only stop writing when …”',
   'rules.forbiddenOtherHeading': 'Also banned',
   'rules.forbiddenOther1':

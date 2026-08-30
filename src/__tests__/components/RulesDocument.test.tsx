@@ -13,7 +13,7 @@ vi.mock('next/link', () => ({
 afterEach(cleanup);
 
 describe('RulesDocument', () => {
-  it('renders the lead, three laws, and house right', () => {
+  it('renders the lead, three laws, and Our house', () => {
     render(<RulesDocument messages={getCatalog('en')} />);
     expect(
       screen.getByText(/You are a guest in a living room with the windows open/i),
@@ -34,7 +34,7 @@ describe('RulesDocument', () => {
     );
   });
 
-  it('lists wanted, allowed, rather not, and forbidden items', () => {
+  it('lists welcome, allowed, better-not, and forbidden items', () => {
     render(<RulesDocument messages={getCatalog('en')} />);
     expect(screen.getByRole('heading', { name: 'Welcome' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Allowed' })).toBeTruthy();
