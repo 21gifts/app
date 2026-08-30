@@ -7,6 +7,7 @@ import {
   fetchMe,
   fetchMessagePhoto,
   fetchMessages,
+  fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   postContact,
@@ -31,6 +32,7 @@ const account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 /** The subset of `Response` the api client touches. */
@@ -78,6 +80,37 @@ describe('fetchMe', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(fetchMe('sess')).rejects.toThrow();
+  });
+});
+
+describe('fetchViewProfile', () => {
+  const viewKey = 'a'.repeat(64);
+  const profile = {
+    name: 'Ada',
+    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddressVerified: false,
+    createdAt: 1,
+  };
+
+  it('returns the validated profile and hits the same-origin proxy path', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: profile });
+    await expect(fetchViewProfile(viewKey)).resolves.toEqual(profile);
+    expect(fetchMock).toHaveBeenCalledWith(`/view-key/${encodeURIComponent(viewKey)}`);
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchViewProfile(viewKey)).resolves.toBeNull();
+  });
+
+  it('throws on a non-404 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchViewProfile(viewKey)).rejects.toThrow('Failed to fetch view profile: 500');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { name: '' } });
+    await expect(fetchViewProfile(viewKey)).rejects.toThrow();
   });
 });
 

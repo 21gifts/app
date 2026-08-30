@@ -191,6 +191,12 @@ const en = {
   'profile.chartUsd': 'Given and received in USD',
   'profile.legendGiven': 'Given',
   'profile.legendReceived': 'Received',
+  'profile.viewKeyCopy': 'Copy view-key link',
+  'view.unnamed': 'Unnamed',
+  'view.noAddress': 'No Wallet of Satoshi address',
+  'view.missing': 'This profile could not be found.',
+  'view.error': 'Could not load this profile. Please try again.',
+  'view.retry': 'Try again',
 
   'forum.laws1': 'This is a donation platform. Only free gifts — never pay for a promise.',
   'forum.laws2': 'Donors are scarce. No begging, no drama, no pressure.',
@@ -481,6 +487,12 @@ const de = {
   'profile.chartUsd': 'Gegeben und erhalten in USD',
   'profile.legendGiven': 'Gegeben',
   'profile.legendReceived': 'Erhalten',
+  'profile.viewKeyCopy': 'View-Key-Link kopieren',
+  'view.unnamed': 'Unbenannt',
+  'view.noAddress': 'Keine Wallet of Satoshi Adresse',
+  'view.missing': 'Dieses Profil konnte nicht gefunden werden.',
+  'view.error': 'Profil konnte nicht geladen werden. Bitte erneut versuchen.',
+  'view.retry': 'Erneut versuchen',
 
   'forum.laws1':
     'Das ist eine Spendenplattform. Nur freie Geschenke — nie zahlen für ein Versprechen.',
@@ -767,6 +779,12 @@ const es = {
   'profile.chartUsd': 'Donado y recibido en USD',
   'profile.legendGiven': 'Donado',
   'profile.legendReceived': 'Recibido',
+  'profile.viewKeyCopy': 'Copiar enlace de clave de vista',
+  'view.unnamed': 'Sin nombre',
+  'view.noAddress': 'Sin dirección de Wallet of Satoshi',
+  'view.missing': 'No se pudo encontrar este perfil.',
+  'view.error': 'No se pudo cargar este perfil. Inténtalo de nuevo.',
+  'view.retry': 'Intentar de nuevo',
 
   'forum.laws1':
     'Esta es una plataforma de donaciones. Solo regalos libres — nunca pagar por una promesa.',
@@ -1053,6 +1071,12 @@ const fil = {
   'profile.chartUsd': 'Ibinigay at natanggap sa USD',
   'profile.legendGiven': 'Ibinigay',
   'profile.legendReceived': 'Natanggap',
+  'profile.viewKeyCopy': 'Kopyahin ang view-key link',
+  'view.unnamed': 'Walang pangalan',
+  'view.noAddress': 'Walang Wallet of Satoshi address',
+  'view.missing': 'Hindi mahanap ang profile na ito.',
+  'view.error': 'Hindi ma-load ang profile. Subukan ulit.',
+  'view.retry': 'Subukan ulit',
 
   'forum.laws1': 'Ito ay donation platform. Libreng handog lang — huwag magbayad para sa pangako.',
   'forum.laws2': 'Kakaunti ang donor. Walang paghingi, walang drama, walang pressure.',

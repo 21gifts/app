@@ -419,14 +419,14 @@ After a successful send: **Received. We read this in the app.** Form hidden; rul
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card in place of icon+amount totals, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
-- **Inputs:** Session account (name + Lightning Address + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
-- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card, edit name and Wallet of Satoshi address, copy the public view-key link via an icon-only control, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
+- **Inputs:** Session account (name + Lightning Address + `viewKey`) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD; copy the public view URL with the icon-only control (the 64-hex key and `/view/<key>` are not shown on screen).
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, Sat|USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, Sat|USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then an icon-only copy control for the public view URL; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
 
@@ -453,6 +453,37 @@ One receive day (21 sats on **2026-06-01**). Chart draws a horizontal single-poi
 Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
+
+## Screen: /view/[viewKey]
+
+- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received + Sat|USD, name + Wallet of Satoshi address fields) without edit/copy/back/menu/logout. Capability URL `/view/<64-hex>`; key/URL not shown.
+- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); receive series from public `fetchGiftStats(handle)` via `recipientHandleFromAddress` (`GET /gifts/stats?recipient=`). Blank address → empty series, no stats fetch. Stats error → card with empty series.
+- **Actions:** Change language (light switcher top-right). On profile fetch error, **Try again**. Chart Sat|USD is display-only. No write actions.
+- **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`). Shared links copied from `/profile`.
+
+### Variant: default
+
+Valid known key. Heading **Profile**, compact Given/Received chart (legend + Sat|USD + SVG; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, no icon actions, no view-key copy, no back arrow.
+
+![21.gifts public view profile](images/view-viewKey.png)
+
+### Variant: missing
+
+Unknown or malformed key. Copy **This profile could not be found.**
+
+![21.gifts public view missing](images/view-missing.png)
+
+### Variant: loading
+
+Waiting on the profile fetch. Copy **Loading…**
+
+![21.gifts public view loading](images/view-loading.png)
+
+### Variant: error
+
+Profile fetch failed. Copy **Could not load this profile. Please try again.** and **Try again**.
+
+![21.gifts public view error](images/view-error.png)
 
 ## Screen: /handbook
 

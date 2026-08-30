@@ -20,6 +20,7 @@ const baseAccount: Account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 beforeEach(() => {
@@ -71,6 +72,7 @@ describe('RulesSetup', () => {
       ...baseAccount,
       name: 'Stale',
       rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
     });
     renderWithLocale(
       <RulesSetup>
@@ -85,6 +87,7 @@ describe('RulesSetup', () => {
       expect(useAuthStore.getState().account).toEqual({
         ...baseAccount,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       });
     });
   });
@@ -118,6 +121,7 @@ describe('RulesSetup', () => {
       ...baseAccount,
       name: 'Bob',
       rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
     });
   });
 

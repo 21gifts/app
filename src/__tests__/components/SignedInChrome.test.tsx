@@ -107,6 +107,7 @@ beforeEach(() => {
       forumLawsDismissed: false,
       createdAt: 1,
       rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
     },
   });
 });

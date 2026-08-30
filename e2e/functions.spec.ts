@@ -159,6 +159,7 @@ async function seedAdaSession(page: Page): Promise<void> {
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -341,6 +342,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -396,6 +398,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -428,6 +431,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -698,6 +702,7 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -723,6 +728,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -750,6 +756,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1448,6 +1455,7 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1473,6 +1481,7 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1498,6 +1507,7 @@ test('Function: AddressSetupPage — address screen heading is visible', async (
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1523,6 +1533,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1553,6 +1564,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1585,6 +1597,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1617,6 +1630,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1649,6 +1663,7 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1674,6 +1689,7 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1699,6 +1715,7 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1724,6 +1741,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1756,6 +1774,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1800,9 +1819,10 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
-        forumLawsDismissed: false,
+        forumLawsDismissed: true,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1887,6 +1907,7 @@ test('Function: OnboardingGate — name and address without agreement go to rule
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1930,6 +1951,7 @@ test('Function: hasLightningAddress — named account without address stays on a
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -1984,6 +2006,116 @@ test('Function: ProfileScreen — back to forum is visible', async ({ page }) =>
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('link', { name: 'Back to forum' })).toBeVisible();
+});
+
+test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
+  const key = 'a'.repeat(64);
+  await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto('/view/[viewKey]');
+  await page.goto(`/view/${key}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+});
+
+test('Function: ViewProfileLoader — missing key shows not-found copy', async ({ page }) => {
+  const missing = 'b'.repeat(64);
+  await page.route(new RegExp(`/view-key/${missing}$`), async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Not found' }),
+    });
+  });
+  await page.goto(`/view/${missing}`);
+  await expect(page.getByText('This profile could not be found.')).toBeVisible();
+});
+
+test('Function: ViewProfileScreen — public card shows the name', async ({ page }) => {
+  const key = 'a'.repeat(64);
+  await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto(`/view/${key}`);
+  await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByText('Given')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remove Wallet of Satoshi address' })).toHaveCount(
+    0,
+  );
+});
+
+test('Function: ViewKeyCopy — profile shows the copy view-key control', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toBeVisible();
+});
+
+test('Function: fetchViewProfile — public view card loads via the client fetch', async ({
+  page,
+}) => {
+  const key = 'a'.repeat(64);
+  await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto(`/view/${key}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('Ada')).toBeVisible();
+});
+
+test('Function: proxyViewGet — GET /view-key/[viewKey] is reachable', async ({ request }) => {
+  const res = await request.get('/view-key/[viewKey]');
+  expect(res.status()).toBeGreaterThanOrEqual(400);
 });
 
 test('Function: accountTotals — menu shows received sats for alice', async ({ page }) => {

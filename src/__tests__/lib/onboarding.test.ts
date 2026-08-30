@@ -17,6 +17,7 @@ const base: Account = {
   forumLawsDismissed: false,
   createdAt: 1,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 describe('onboarding', () => {
@@ -48,6 +49,7 @@ describe('onboarding', () => {
       name: 'Ada',
       lightningAddress: 'alice@walletofsatoshi.com',
       rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
     };
     expect(hasAgreedToRules(account)).toBe(true);
     expect(nextOnboardingPath(account)).toBe('/welcome');
@@ -58,6 +60,7 @@ describe('onboarding', () => {
       ...base,
       lightningAddress: 'alice@walletofsatoshi.com',
       rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
     };
     expect(nextOnboardingPath(account)).toBe('/setup/name');
   });

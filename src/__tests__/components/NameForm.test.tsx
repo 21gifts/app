@@ -20,6 +20,7 @@ const baseAccount: Account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 const namedAccount: Account = {

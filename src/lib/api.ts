@@ -10,6 +10,7 @@ import {
   messageInvoiceSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  viewProfileSchema,
   type Account,
   type ContactMessage,
   type ForumMessage,
@@ -19,6 +20,7 @@ import {
   type MessageInvoice,
   type PasskeyBegin,
   type PasskeySession,
+  type ViewProfile,
 } from '@/lib/api-types';
 
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
@@ -139,6 +141,20 @@ export async function fetchMe(sessionToken: string): Promise<Account | null> {
     throw new Error(`Failed to fetch account: ${response.status}`);
   }
   return accountSchema.parse(await response.json());
+}
+
+/**
+ * Fetches a public read-only profile by view key via the same-origin proxy.
+ *
+ * @param viewKey - 64 lowercase hex capability key.
+ * @returns The {@link ViewProfile}, or `null` when the key is unknown (404).
+ * @throws Error on any other non-2xx status or a body that fails validation.
+ */
+export async function fetchViewProfile(viewKey: string): Promise<ViewProfile | null> {
+  const response = await fetch(`/view-key/${encodeURIComponent(viewKey)}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Failed to fetch view profile: ${response.status}`);
+  return viewProfileSchema.parse(await response.json());
 }
 
 /**

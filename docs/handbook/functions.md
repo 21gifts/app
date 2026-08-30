@@ -2,8 +2,8 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages` and `/messages/[id]/photo`).
-- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo); none on healthz.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, and `/view-key/[viewKey]`).
+- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
@@ -237,9 +237,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart replacing the former icon+amount totals row, plus name and Wallet of Satoshi address forms; icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
-- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, and address form — all inside one identity card (no second panel).
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
 - **Used by:** `ProfilePage`.
 
 ## Function: AccountActivityChart
@@ -247,12 +247,54 @@
 - **Purpose:** Compact dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
 - **Returns / side effects:** One chrome row (legend left, Sat|USD right) and SVG. Client state for scale only. No network.
+- **Used by:** `ProfileScreen`, `ViewProfileScreen`.
+
+## Function: ViewProfilePage
+
+- **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
+- **Inputs:** Dynamic route params (`viewKey`).
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. Light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Used by:** Route `/view/[viewKey]`.
+
+## Function: ViewProfileLoader
+
+- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then (if address set) filtered gift stats for `spendOverTime`. Does not use `useAuthStore`.
+- **Inputs:** `viewKey` string from the route.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
+- **Used by:** `ViewProfilePage`.
+
+## Function: ViewProfileScreen
+
+- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, name and address rows (labels `name.heading` / `la.heading`) without action buttons.
+- **Inputs:** `{ profile, received }` (`GiftStats['spendOverTime']`).
+- **Returns / side effects:** No menu, logout, back, ViewKeyCopy, or edit forms. Language switcher lives on the page, not in this card.
+- **Used by:** `ViewProfileLoader`.
+
+## Function: ViewKeyCopy
+
+- **Purpose:** Icon-only copy control for the signed-in profile view-key link (`origin + /view/ + viewKey`); the URL and key are not rendered next to it. Clipboard API with textarea/`execCommand` fallback; flashes a check icon for ~1200ms.
+- **Inputs:** `viewKey` (64 lowercase hex).
+- **Returns / side effects:** Button named from `profile.viewKeyCopy`; `data-copied="true"` while flashed. Does not log the key. Light/neutral theme (not handbook white-on-dark).
 - **Used by:** `ProfileScreen`.
+
+## Function: fetchViewProfile
+
+- **Purpose:** Fetches a public read-only profile by view key via the same-origin proxy.
+- **Inputs:** `viewKey` string.
+- **Returns / side effects:** Validated `ViewProfile`, or `null` on 404. Throws on other non-2xx or a body that fails `viewProfileSchema`. Hits `/view-key/${encodeURIComponent(viewKey)}`.
+- **Used by:** `ViewProfileLoader`.
+
+## Function: proxyViewGet
+
+- **Purpose:** Same-origin proxy of api `GET /view/:viewKey` (public; no auth).
+- **Inputs:** Incoming `Request` and `viewKey` path segment.
+- **Returns / side effects:** Proxied upstream `Response` for `/view/${encodeURIComponent(viewKey)}`.
+- **Used by:** App Router `GET` on `/view-key/[viewKey]`.
 
 ## Function: accountTotals
 
 - **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
-- **Inputs:** `GiftStats` and the account Lightning Address (or null).
+- **Inputs:** `GiftStats` and the Lightning Address (or null).
 - **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
 - **Used by:** `useAccountTotals`.
 
@@ -282,7 +324,7 @@
 - **Purpose:** Local-part of a Lightning Address (before the first `@`).
 - **Inputs:** Full address or bare handle string.
 - **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
-- **Used by:** `accountTotals`, `useAccountTotals`.
+- **Used by:** `accountTotals`, `useAccountTotals`, `ViewProfileLoader`.
 
 ## Function: useAccountTotals
 
@@ -415,7 +457,7 @@
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
 - **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`, `useAccountTotals`.
+- **Used by:** `StatsLoader`, `useAccountTotals`, `ViewProfileLoader`.
 
 ## Function: fetchMe
 

@@ -80,7 +80,11 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + address edit
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address + icon-only view-key copy
+│   │   ├── view/
+│   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
+│   │   ├── view-key/
+│   │   │   └── [viewKey]/route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -89,7 +93,10 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + icon-only view-key copy)
+│   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
+│   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
+│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
@@ -138,6 +145,7 @@ app/
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
+│   ├── view.spec.ts             # /view/[viewKey] public profile + profile view-key copy
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines (single source for handbook images)
 │   └── visual.spec.ts-snapshots/

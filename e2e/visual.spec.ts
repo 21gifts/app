@@ -16,6 +16,7 @@ const E2E_ACCOUNT = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
+  viewKey: 'a'.repeat(64),
 };
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
@@ -369,6 +370,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: null,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -391,6 +393,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: null,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -412,6 +415,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -442,12 +446,75 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
     await page.goto('/profile');
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
+  });
+
+  test('screen /view/[viewKey] default', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+        }),
+      });
+    });
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Ada')).toBeVisible();
+    await shotScreen(page, 'screen-view-viewKey');
+  });
+
+  test('screen /view/[viewKey] missing', async ({ page }) => {
+    const missing = 'b'.repeat(64);
+    await page.route(new RegExp(`/view-key/${missing}$`), async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+    });
+    await page.goto(`/view/${missing}`);
+    await expect(page.getByText('This profile could not be found.')).toBeVisible();
+    await shotScreen(page, 'state-view-missing');
+  });
+
+  test('screen /view/[viewKey] loading', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async () => {
+      // never fulfill
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-view-loading');
+  });
+
+  test('screen /view/[viewKey] error', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'boom' }),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-view-error');
   });
 });
 
@@ -578,6 +645,7 @@ test.describe('profile activity chart variants', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -649,6 +717,7 @@ test.describe('welcome forum variants', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -1304,6 +1373,7 @@ test.describe('contact screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -1439,6 +1509,9 @@ test.describe('function baselines', () => {
     const count = await headings.count();
     expect(count).toBeGreaterThan(0);
 
+    // One test walks every handbook function clip; count × comparison exceeds Playwright’s 30s default.
+    test.setTimeout(Math.max(90_000, count * 500));
+
     const sections = await headings.evaluateAll((nodes) =>
       nodes.map((node) => {
         const el = node as HTMLElement;
@@ -1508,6 +1581,7 @@ test.describe('function baselines', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });

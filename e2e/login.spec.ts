@@ -84,6 +84,7 @@ const E2E_ACCOUNT = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
+  viewKey: 'a'.repeat(64),
 };
 
 test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({
@@ -133,6 +134,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
