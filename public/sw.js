@@ -64,8 +64,17 @@ self.addEventListener('notificationclick', (event) => {
           // ignore malformed client urls
         }
       }
+      let openUrl = '/welcome';
+      try {
+        const target = new URL(targetUrl, self.location.origin);
+        if (target.origin === self.location.origin) {
+          openUrl = target.href;
+        }
+      } catch {
+        openUrl = '/welcome';
+      }
       if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
+        return self.clients.openWindow(openUrl);
       }
       return undefined;
     }),
