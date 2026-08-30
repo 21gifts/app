@@ -212,7 +212,7 @@ const en = {
   'view.missing': 'This profile could not be found.',
   'view.error': 'Could not load this profile. Please try again.',
   'view.retry': 'Try again',
-  'view.claim': 'Set up passkey for this profile',
+  'view.claim': 'Set up a passkey for this profile',
   'view.alreadyClaimed': 'This profile already has a passkey. Log in instead.',
   'view.claimError': 'Could not set up a passkey. Please try again.',
 
@@ -236,7 +236,7 @@ const en = {
   'rules.leadTest':
     'Would you say it out loud with the host, their family, and a donor sitting next to you on the sofa? If yes, you are in the right place.',
   'rules.testLabel': 'The test',
-  'rules.lawKicker': 'Law {n}',
+  'rules.lawKicker': 'Rule {n}',
   'rules.law1Title': 'Only free donations',
   'rules.law1Body':
     'A donation is a gift, nothing more. It has no price, no task attached, and no deal behind it. Asking for money in exchange for something — a promise to do, deliver, unlock, or keep going — is not a donation, and it is not allowed here. The only thing a gift may bring back is a thank-you: afterwards, freely given, and never owed.',
@@ -259,10 +259,11 @@ const en = {
   'rules.wanted5': 'Humor and warmth that put no one under pressure.',
   'rules.wanted6':
     'Honoring a note that meant something to you — freely, and without the author asking for it.',
+  'rules.wanted7':
+    'One message a day that shows your situation as it really is — with several photos in it if they help. Nobody here wants a prettier picture: donors come to see reality, unfiltered.',
   'rules.allowedHeading': 'Allowed',
-  'rules.allowedLead': 'Fine, as long as the three laws hold. Allowed is not the same as welcome.',
-  'rules.allowed1':
-    'A short, factual mention of your situation. Once, and without raising the temperature.',
+  'rules.allowedLead': 'Fine, as long as the three rules hold. Allowed is not the same as welcome.',
+  'rules.allowed1': 'Saying plainly what your situation is. Unfiltered is fine — pressure is not.',
   'rules.allowed2':
     'Talking about Bitcoin when it helps someone in the room and pushes no one to pay.',
   'rules.allowed3': 'Other languages. Reading along. Staying silent.',
@@ -274,17 +275,20 @@ const en = {
   'rules.ratherNotLead': 'Not a ban yet. Repeat it or turn up the volume, and it becomes one.',
   'rules.ratherNot1': 'The same request, posted again.',
   'rules.ratherNot2': 'A long story of hardship where one sentence would have done.',
-  'rules.ratherNot3': 'A photo of misery where one sentence would have done.',
+  'rules.ratherNot3':
+    'Photos spread over several messages. Pictures that belong together go into one message, with text.',
   'rules.ratherNot4': 'Price talk, trading tips, showing off your stack.',
   'rules.ratherNot5': 'Orange-pilling someone who is giving — or who cannot give.',
   'rules.ratherNot6': '“Message me privately.”',
   'rules.ratherNot7': 'Correcting beginners.',
   'rules.ratherNot8':
     'Any message that is more about the recipient than about respect for the donor.',
+  'rules.ratherNot9':
+    'Several messages a day about the same situation. Whether more than one is appropriate depends on the context.',
   'rules.forbiddenHeading': 'Forbidden',
   'rules.forbiddenLead':
     'No warning, no debate. These messages are removed and the account is blocked.',
-  'rules.forbiddenQuidHeading': 'Asking for something in return (law 1)',
+  'rules.forbiddenQuidHeading': 'Asking for something in return (rule 1)',
   'rules.forbiddenQuid1': 'Money for a task — “for ₿5,000 I will draw you.”',
   'rules.forbiddenQuid2': 'Money for content — “I keep posting if you donate.”',
   'rules.forbiddenQuid3': 'Money for access — unlocks, subscriptions, files sent after payment.',
@@ -292,10 +296,10 @@ const en = {
   'rules.forbiddenQuid5': 'Selling — merch, tokens, a course, “an interesting project.”',
   'rules.forbiddenQuid6':
     'A deal in disguise — “donate and I will mention you,” “whoever gives most gets …”',
-  'rules.forbiddenDonorHeading': 'Driving donors away (law 2)',
+  'rules.forbiddenDonorHeading': 'Driving donors away (rule 2)',
   'rules.forbiddenDonor1': 'Relentless asking — every day, in series, your address in every line.',
   'rules.forbiddenDonor2':
-    'Dramatizing — superlatives, misery as a stage, photos of suffering as leverage.',
+    'Dramatizing — superlatives and staged scenes instead of the real situation.',
   'rules.forbiddenDonor3': 'Pressure — a countdown, “by tonight,” “or else.”',
   'rules.forbiddenDonor4':
     'Guilt — “if you really wanted to help,” ranking donors, calling out people who did not give.',
@@ -507,9 +511,9 @@ const de = {
   'forum.payInvoiceQr': 'Bitcoin-Zahlungs-QR-Code',
   'forum.payErrorAmount': 'Bitte geben Sie eine ganze Zahl grösser als null ein',
   'forum.payErrorRequest': 'Die Bitcoin-Zahlung konnte nicht gestartet werden',
-  'forum.payErrorAuthorWallet': 'Das Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen',
   'forum.payErrorRateLimit':
     'Zu viele Zahlungen. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
+  'forum.payErrorAuthorWallet': 'Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen',
 
   'forum.payConfirm': '{amount} zahlen',
   'forum.payWaiting': 'Zahlung wird erwartet…',
@@ -535,7 +539,7 @@ const de = {
   'profile.push.enable': 'Benachrichtigungen einschalten',
   'profile.push.disable': 'Benachrichtigungen ausschalten',
   'profile.push.installHint':
-    'Auf dem iPhone: 21.gifts zum Home-Bildschirm, dann kommen Benachrichtigungen.',
+    'Fügen Sie 21.gifts auf dem iPhone zum Home-Bildschirm hinzu, um Benachrichtigungen zu erhalten.',
   'profile.push.unavailable': 'Benachrichtigungen sind in diesem Browser nicht verfügbar.',
   'profile.viewKeyCopy': 'Nur-Lese-Link kopieren',
 
@@ -545,8 +549,8 @@ const de = {
   'view.error': 'Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'view.retry': 'Erneut versuchen',
   'view.claim': 'Passkey für dieses Profil einrichten',
-  'view.alreadyClaimed': 'Dieses Profil hat bereits einen Passkey. Stattdessen anmelden.',
-  'view.claimError': 'Passkey konnte nicht eingerichtet werden. Bitte erneut versuchen.',
+  'view.alreadyClaimed': 'Dieses Profil hat bereits einen Passkey. Melden Sie sich stattdessen an.',
+  'view.claimError': 'Passkey konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut.',
 
   'forum.laws1':
     '21.gifts ist eine Spendenplattform: Geschenke sind frei, und niemand zahlt für ein Versprechen.',
@@ -569,7 +573,7 @@ const de = {
   'rules.leadTest':
     'Würden Sie es auch laut sagen, wenn die Gastgeberin, ihre Familie und ein Spender neben Ihnen auf dem Sofa sässen? Wenn ja, sind Sie hier richtig.',
   'rules.testLabel': 'Die Probe',
-  'rules.lawKicker': 'Gesetz {n}',
+  'rules.lawKicker': 'Regel {n}',
   'rules.law1Title': 'Nur freie Spenden',
   'rules.law1Body':
     'Eine Spende ist ein Geschenk — nicht mehr und nicht weniger. Sie hat keinen Preis, keinen Auftrag im Gepäck und keinen Deal im Hintergrund. Wer Geld gegen ein Versprechen einsammelt — etwas zu tun, zu liefern, freizuschalten oder weiterzumachen —, sammelt keine Spenden, und das ist hier nicht erlaubt. Das Einzige, was ein Geschenk zurückbringen darf, ist ein Dankeschön: im Nachhinein, freiwillig und nie geschuldet.',
@@ -592,11 +596,13 @@ const de = {
   'rules.wanted5': 'Humor und Wärme, die niemanden unter Druck setzen.',
   'rules.wanted6':
     'Eine Nachricht würdigen, die Ihnen etwas bedeutet hat — freiwillig und ohne dass der Autor darum gebeten hätte.',
+  'rules.wanted7':
+    'Eine Nachricht am Tag, die Ihre Situation so zeigt, wie sie wirklich ist — mit mehreren Fotos, wenn sie helfen. Niemand hier will ein geschöntes Bild: Spender kommen, um die Realität zu sehen, ungefiltert.',
   'rules.allowedHeading': 'Erlaubt',
   'rules.allowedLead':
-    'In Ordnung, solange die drei Gesetze gelten. Erlaubt ist nicht dasselbe wie willkommen.',
+    'In Ordnung, solange die drei Regeln gelten. Erlaubt ist nicht dasselbe wie willkommen.',
   'rules.allowed1':
-    'Ein kurzer, sachlicher Hinweis auf Ihre Situation. Einmal, und ohne die Temperatur zu erhöhen.',
+    'Sagen, wie Ihre Situation ist — ungeschönt. Ungefiltert ist in Ordnung, Druck nicht.',
   'rules.allowed2':
     'Über Bitcoin sprechen, wenn es jemandem im Raum hilft und niemanden zum Zahlen drängt.',
   'rules.allowed3': 'Andere Sprachen. Mitlesen. Schweigen.',
@@ -609,17 +615,20 @@ const de = {
     'Noch kein Verbot. Wer es wiederholt oder lauter wird, macht eines daraus.',
   'rules.ratherNot1': 'Dieselbe Bitte noch einmal posten.',
   'rules.ratherNot2': 'Eine lange Leidensgeschichte, wo ein Satz gereicht hätte.',
-  'rules.ratherNot3': 'Ein Foto vom Elend, wo ein Satz gereicht hätte.',
+  'rules.ratherNot3':
+    'Fotos auf mehrere Nachrichten verteilen. Bilder, die zusammengehören, kommen in eine Nachricht — mit Text.',
   'rules.ratherNot4': 'Kursgespräche, Trading-Tipps, mit dem eigenen Stack angeben.',
   'rules.ratherNot5': 'Orange-Pilling bei jemandem, der gerade gibt — oder nicht geben kann.',
   'rules.ratherNot6': '«Schreiben Sie mir privat.»',
   'rules.ratherNot7': 'Anfänger korrigieren.',
   'rules.ratherNot8':
     'Jede Nachricht, in der es mehr um den Empfänger geht als um den Respekt vor dem Spender.',
+  'rules.ratherNot9':
+    'Mehrere Nachrichten am Tag zur selben Situation. Ob mehr als eine angemessen ist, hängt vom Kontext ab.',
   'rules.forbiddenHeading': 'Verboten',
   'rules.forbiddenLead':
     'Keine Warnung, keine Diskussion. Solche Nachrichten werden gelöscht und das Konto wird gesperrt.',
-  'rules.forbiddenQuidHeading': 'Etwas als Gegenleistung verlangen (Gesetz 1)',
+  'rules.forbiddenQuidHeading': 'Etwas als Gegenleistung verlangen (Regel 1)',
   'rules.forbiddenQuid1': 'Geld für eine Aufgabe — «Für ₿5’000 zeichne ich Sie.»',
   'rules.forbiddenQuid2': 'Geld für Inhalte — «Ich poste weiter, wenn Sie spenden.»',
   'rules.forbiddenQuid3': 'Geld für Zugang — Freischaltungen, Abos, Dateien nach Zahlung.',
@@ -628,10 +637,10 @@ const de = {
   'rules.forbiddenQuid5': 'Verkaufen — Merch, Token, ein Kurs, «ein interessantes Projekt».',
   'rules.forbiddenQuid6':
     'Ein Deal in Verkleidung — «Spenden Sie, und ich erwähne Sie», «Wer am meisten gibt, bekommt …»',
-  'rules.forbiddenDonorHeading': 'Spender vertreiben (Gesetz 2)',
+  'rules.forbiddenDonorHeading': 'Spender vertreiben (Regel 2)',
   'rules.forbiddenDonor1': 'Unablässiges Bitten — täglich, in Serie, die Adresse in jeder Zeile.',
   'rules.forbiddenDonor2':
-    'Dramatisieren — Superlative, Elend als Bühne, Fotos von Leid als Hebel.',
+    'Dramatisieren — Superlative und inszenierte Szenen statt der echten Situation.',
   'rules.forbiddenDonor3': 'Druck — ein Countdown, «bis heute Abend», «sonst …».',
   'rules.forbiddenDonor4':
     'Schuldgefühle — «Wenn Sie wirklich helfen wollten», Spender in eine Rangliste stellen, Nichtgebende blossstellen.',
@@ -835,7 +844,7 @@ const es = {
   'forum.payErrorAmount': 'Introduce un número entero mayor que cero',
   'forum.payErrorRequest': 'No se pudo iniciar el pago de Bitcoin',
   'forum.payErrorRateLimit': 'Demasiados pagos. Espera un momento e inténtalo de nuevo.',
-  'forum.payErrorAuthorWallet': 'El wallet del autor no puede recibir este pago de Bitcoin',
+  'forum.payErrorAuthorWallet': 'La wallet del autor no puede recibir este pago en Bitcoin',
   'forum.payConfirm': 'Pagar {amount}',
   'forum.payWaiting': 'Esperando el pago…',
   'forum.attach': 'Añadir una foto',
@@ -869,9 +878,9 @@ const es = {
   'view.missing': 'No se pudo encontrar este perfil.',
   'view.error': 'No se pudo cargar este perfil. Inténtalo de nuevo.',
   'view.retry': 'Intentar de nuevo',
-  'view.claim': 'Configurar passkey para este perfil',
-  'view.alreadyClaimed': 'Este perfil ya tiene un passkey. Inicia sesión.',
-  'view.claimError': 'No se pudo configurar el passkey. Inténtalo de nuevo.',
+  'view.claim': 'Configurar una passkey para este perfil',
+  'view.alreadyClaimed': 'Este perfil ya tiene una passkey. Inicia sesión en su lugar.',
+  'view.claimError': 'No se pudo configurar la passkey. Inténtalo de nuevo.',
 
   'forum.laws1':
     '21.gifts es una plataforma de donaciones: los regalos son libres y nadie paga por una promesa.',
@@ -894,7 +903,7 @@ const es = {
   'rules.leadTest':
     '¿Lo dirías en voz alta con la anfitriona, su familia y un donante sentados a tu lado en el sofá? Si la respuesta es sí, estás en el lugar correcto.',
   'rules.testLabel': 'La prueba',
-  'rules.lawKicker': 'Ley {n}',
+  'rules.lawKicker': 'Regla {n}',
   'rules.law1Title': 'Solo donaciones libres',
   'rules.law1Body':
     'Una donación es un regalo, nada más. No tiene precio, no lleva una tarea adjunta y no esconde ningún trato. Pedir dinero a cambio de algo — la promesa de hacer, entregar, desbloquear o continuar — no es una donación, y aquí no está permitido. Lo único que un regalo puede traer de vuelta es un gracias: después, dado libremente y nunca como deuda.',
@@ -917,11 +926,12 @@ const es = {
   'rules.wanted5': 'Humor y calidez que no presionan a nadie.',
   'rules.wanted6':
     'Reconocer una nota que significó algo para ti — libremente, y sin que el autor lo haya pedido.',
+  'rules.wanted7':
+    'Un mensaje al día que muestre tu situación tal como es — con varias fotos si ayudan. Nadie aquí quiere una imagen embellecida: los donantes vienen a ver la realidad, sin filtros.',
   'rules.allowedHeading': 'Permitido',
   'rules.allowedLead':
-    'Está bien mientras se cumplan las tres leyes. Permitido no es lo mismo que bienvenido.',
-  'rules.allowed1':
-    'Una mención breve y objetiva de tu situación. Una vez, y sin subir la temperatura.',
+    'Está bien mientras se cumplan las tres reglas. Permitido no es lo mismo que bienvenido.',
+  'rules.allowed1': 'Decir claramente cuál es tu situación. Sin filtros está bien — presionar, no.',
   'rules.allowed2':
     'Hablar de Bitcoin cuando ayuda a alguien del salón y no empuja a nadie a pagar.',
   'rules.allowed3': 'Otros idiomas. Leer sin escribir. Guardar silencio.',
@@ -932,16 +942,19 @@ const es = {
   'rules.ratherNotLead': 'Todavía no es una prohibición. Repítelo o sube el volumen, y lo será.',
   'rules.ratherNot1': 'La misma petición, publicada otra vez.',
   'rules.ratherNot2': 'Una larga historia de penurias donde una frase habría bastado.',
-  'rules.ratherNot3': 'Una foto de la miseria donde una frase habría bastado.',
+  'rules.ratherNot3':
+    'Fotos repartidas en varios mensajes. Las imágenes que van juntas van en un solo mensaje, con texto.',
   'rules.ratherNot4': 'Hablar de precios, consejos de trading, presumir de tu stack.',
   'rules.ratherNot5': 'Hacer orange-pilling a alguien que está dando — o que no puede dar.',
   'rules.ratherNot6': '«Escríbeme en privado.»',
   'rules.ratherNot7': 'Corregir a los principiantes.',
   'rules.ratherNot8': 'Cualquier mensaje que hable más del receptor que del respeto al donante.',
+  'rules.ratherNot9':
+    'Varios mensajes al día sobre la misma situación. Que más de uno sea apropiado depende del contexto.',
   'rules.forbiddenHeading': 'Prohibido',
   'rules.forbiddenLead':
     'Sin aviso y sin debate. Estos mensajes se eliminan y la cuenta se bloquea.',
-  'rules.forbiddenQuidHeading': 'Pedir algo a cambio (ley 1)',
+  'rules.forbiddenQuidHeading': 'Pedir algo a cambio (regla 1)',
   'rules.forbiddenQuid1': 'Dinero por una tarea — «por ₿5.000 te dibujo.»',
   'rules.forbiddenQuid2': 'Dinero por contenido — «sigo publicando si donas.»',
   'rules.forbiddenQuid3':
@@ -949,10 +962,10 @@ const es = {
   'rules.forbiddenQuid4': 'Aceptar encargos — consejos, un logo, deberes, «hago X por ti.»',
   'rules.forbiddenQuid5': 'Vender — merch, tokens, un curso, «un proyecto interesante».',
   'rules.forbiddenQuid6': 'Un trato disfrazado — «dona y te menciono», «quien más dé recibe …»',
-  'rules.forbiddenDonorHeading': 'Ahuyentar a los donantes (ley 2)',
+  'rules.forbiddenDonorHeading': 'Ahuyentar a los donantes (regla 2)',
   'rules.forbiddenDonor1': 'Pedir sin descanso — cada día, en serie, tu dirección en cada línea.',
   'rules.forbiddenDonor2':
-    'Dramatizar — superlativos, la miseria como escenario, fotos de sufrimiento como palanca.',
+    'Dramatizar — superlativos y escenas montadas en lugar de la situación real.',
   'rules.forbiddenDonor3': 'Presión — una cuenta atrás, «para esta noche», «o si no».',
   'rules.forbiddenDonor4':
     'Culpa — «si de verdad quisieras ayudar», rankings de donantes, señalar a quien no dio.',
@@ -1217,7 +1230,7 @@ const fil = {
   'rules.leadTest':
     'Sasabihin mo ba ito nang malakas habang nakaupo sa tabi mo sa sofa ang host, ang pamilya niya, at isang donor? Kung oo, nasa tamang lugar ka.',
   'rules.testLabel': 'Ang pagsubok',
-  'rules.lawKicker': 'Batas {n}',
+  'rules.lawKicker': 'Patakaran {n}',
   'rules.law1Title': 'Libreng donasyon lang',
   'rules.law1Body':
     'Ang donasyon ay regalo, wala nang iba. Walang presyo, walang nakakabit na gawain, at walang nakatagong kasunduan. Ang paghingi ng pera kapalit ng isang bagay — pangakong gagawin, ihahatid, bubuksan, o ipagpapatuloy — ay hindi donasyon, at hindi ito pinapayagan dito. Ang tanging maaaring ibalik ng isang regalo ay pasasalamat: pagkatapos, kusang-loob, at hindi kailanman utang.',
@@ -1241,11 +1254,13 @@ const fil = {
   'rules.wanted5': 'Katatawanan at init na walang ipinipilit kaninuman.',
   'rules.wanted6':
     'Pagpapahalaga sa isang mensaheng may saysay sa iyo — kusang-loob, at hindi hiningi ng sumulat.',
+  'rules.wanted7':
+    'Isang mensahe bawat araw na nagpapakita ng totoong sitwasyon mo — may ilang larawan kung nakakatulong. Walang gustong pinagandang larawan dito: pumupunta ang mga donor para makita ang realidad, walang filter.',
   'rules.allowedHeading': 'Pinapayagan',
   'rules.allowedLead':
-    'Ayos lang basta nananatili ang tatlong batas. Ang pinapayagan ay hindi katulad ng malugod na tinatanggap.',
+    'Ayos lang basta nananatili ang tatlong patakaran. Ang pinapayagan ay hindi katulad ng malugod na tinatanggap.',
   'rules.allowed1':
-    'Maikli at makatotohanang pagbanggit ng sitwasyon mo. Minsan lang, at walang pag-iinit.',
+    'Sabihin nang tapat kung ano ang sitwasyon mo. Ayos lang ang walang filter — ang pamimilit, hindi.',
   'rules.allowed2':
     'Pag-uusap tungkol sa Bitcoin kung nakakatulong ito sa isang tao sa living room at hindi nagtutulak kaninuman na magbayad.',
   'rules.allowed3': 'Ibang mga wika. Pagbabasa lang. Pananahimik.',
@@ -1257,16 +1272,19 @@ const fil = {
   'rules.ratherNotLead': 'Hindi pa ito bawal. Ulitin mo o lakasan mo, at magiging bawal na.',
   'rules.ratherNot1': 'Ang parehong hiling, ipinost muli.',
   'rules.ratherNot2': 'Mahabang kuwento ng hirap kung saan sapat na ang isang pangungusap.',
-  'rules.ratherNot3': 'Larawan ng kahirapan kung saan sapat na ang isang pangungusap.',
+  'rules.ratherNot3':
+    'Mga larawang hati-hati sa ilang mensahe. Ang mga larawang magkakasama ay dapat nasa isang mensahe, may kasamang teksto.',
   'rules.ratherNot4': 'Usapang presyo, tips sa trading, pagyayabang ng stack.',
   'rules.ratherNot5': 'Orange-pilling sa taong nagbibigay — o hindi makapagbigay.',
   'rules.ratherNot6': '“Mag-message ka sa akin nang pribado.”',
   'rules.ratherNot7': 'Pagtatama sa mga baguhan.',
   'rules.ratherNot8': 'Anumang mensaheng mas tungkol sa tumatanggap kaysa sa paggalang sa donor.',
+  'rules.ratherNot9':
+    'Ilang mensahe bawat araw tungkol sa parehong sitwasyon. Kung angkop ang higit sa isa, depende sa konteksto.',
   'rules.forbiddenHeading': 'Bawal',
   'rules.forbiddenLead':
     'Walang babala, walang debate. Tinatanggal ang ganitong mga mensahe at bina-block ang account.',
-  'rules.forbiddenQuidHeading': 'Paghingi ng kapalit (batas 1)',
+  'rules.forbiddenQuidHeading': 'Paghingi ng kapalit (patakaran 1)',
   'rules.forbiddenQuid1': 'Pera para sa gawain — “sa ₿5,000 iguguhit kita.”',
   'rules.forbiddenQuid2': 'Pera para sa content — “magpo-post pa ako kung magdo-donate ka.”',
   'rules.forbiddenQuid3':
@@ -1276,11 +1294,11 @@ const fil = {
   'rules.forbiddenQuid5': 'Pagbebenta — merch, token, kurso, “isang interesanteng proyekto”.',
   'rules.forbiddenQuid6':
     'Deal na nakatago — “mag-donate ka at babanggitin kita”, “kung sino ang pinakamalaki ang ibibigay, siya ang makakatanggap ng …”',
-  'rules.forbiddenDonorHeading': 'Pagpapaalis sa mga donor (batas 2)',
+  'rules.forbiddenDonorHeading': 'Pagpapaalis sa mga donor (patakaran 2)',
   'rules.forbiddenDonor1':
     'Walang tigil na paghingi — araw-araw, sunud-sunod, ang address mo sa bawat linya.',
   'rules.forbiddenDonor2':
-    'Pagdadrama — mga superlatibo, kahirapan bilang entablado, mga larawan ng paghihirap bilang pang-udyok.',
+    'Pagdadrama — mga superlatibo at mga inayos na eksena sa halip na totoong sitwasyon.',
   'rules.forbiddenDonor3': 'Pressure — countdown, “bago maggabi”, “kung hindi …”.',
   'rules.forbiddenDonor4':
     'Pagpapadama ng guilt — “kung talagang gusto mong tumulong”, pagraranggo ng mga donor, pagpapahiya sa hindi nagbigay.',

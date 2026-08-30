@@ -65,19 +65,19 @@ describe('ViewProfileClaim', () => {
     hydrateReady.current = false;
     const { container } = renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
     expect(container.querySelector('.animate-spin')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Set up passkey for this profile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Set up a passkey for this profile' })).toBeNull();
   });
 
   it('shows an icon-only claim button when logged out', () => {
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    const button = screen.getByRole('button', { name: 'Set up passkey for this profile' });
+    const button = screen.getByRole('button', { name: 'Set up a passkey for this profile' });
     expect(button).toBeTruthy();
-    expect(screen.queryByText('Set up passkey for this profile')).toBeNull();
+    expect(screen.queryByText('Set up a passkey for this profile')).toBeNull();
   });
 
   it('calls register(viewKey) on click', () => {
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Set up passkey for this profile' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
     expect(registerSpy).toHaveBeenCalledWith(VIEW_KEY);
   });
 
@@ -86,7 +86,7 @@ describe('ViewProfileClaim', () => {
       useAuthStore.setState({ session: 'tok', account });
     });
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Set up passkey for this profile' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
@@ -95,7 +95,7 @@ describe('ViewProfileClaim', () => {
   it('hides the button and does not redirect when already signed in', () => {
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    expect(screen.queryByRole('button', { name: 'Set up passkey for this profile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Set up a passkey for this profile' })).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
 
@@ -106,7 +106,7 @@ describe('ViewProfileClaim', () => {
     mockPasskey('error', 'This profile already has a passkey');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
     expect(screen.getByText('This profile already has a passkey. Log in instead.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Set up passkey for this profile' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
     expect(authenticateSpy).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(useAuthStore.getState().account).not.toBeNull();

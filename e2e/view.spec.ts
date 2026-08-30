@@ -54,7 +54,9 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('Wallet of Satoshi address')).toBeVisible();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
   await expect(page.getByText('Given')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Set up passkey for this profile' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Set up a passkey for this profile' }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);

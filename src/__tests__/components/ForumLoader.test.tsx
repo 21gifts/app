@@ -1387,7 +1387,7 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {

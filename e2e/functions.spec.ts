@@ -2154,7 +2154,9 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
     });
   });
   await page.goto(`/view/${key}`);
-  await expect(page.getByRole('button', { name: 'Set up passkey for this profile' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Set up a passkey for this profile' }),
+  ).toBeVisible();
 });
 
 test('Function: ViewKeyCopy — profile shows the copy view-key control', async ({ page }) => {

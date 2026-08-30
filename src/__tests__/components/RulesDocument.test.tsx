@@ -75,9 +75,9 @@ describe('RulesDocument', () => {
     render(<RulesDocument messages={getCatalog('en')} chapter="forbidden" />);
     expect(screen.getByRole('heading', { name: 'Forbidden' })).toBeTruthy();
     expect(
-      screen.getByRole('heading', { name: 'Asking for something in return (law 1)' }),
+      screen.getByRole('heading', { name: 'Asking for something in return (rule 1)' }),
     ).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Driving donors away (law 2)' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Driving donors away (rule 2)' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Also banned' })).toBeTruthy();
   });
 });
