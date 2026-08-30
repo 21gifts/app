@@ -3,15 +3,16 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ViewProfileScreen } from '@/components/ViewProfileScreen';
-import { accountTotals } from '@/lib/account-totals';
+import { recipientHandleFromAddress } from '@/lib/account-totals';
 import { fetchGiftStats, fetchViewProfile } from '@/lib/api';
-import type { ViewProfile } from '@/lib/api-types';
+import type { GiftStats, ViewProfile } from '@/lib/api-types';
 
 const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 
 /**
  * Client loader for `/view/[viewKey]`: validates the key, fetches the public
- * profile, then gift stats for totals. Does not use `useAuthStore`.
+ * profile, then (if address set) filtered gift stats for `spendOverTime`. Does
+ * not use `useAuthStore`.
  *
  * @param props - Dynamic route `viewKey`.
  * @returns Loading, missing, error, or the read-only profile card.
@@ -22,24 +23,21 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     VIEW_KEY_RE.test(viewKey) ? 'loading' : 'missing',
   );
   const [profile, setProfile] = useState<ViewProfile | null>(null);
-  const [donatedSats, setDonatedSats] = useState(0);
-  const [receivedSats, setReceivedSats] = useState(0);
-  const [loadingTotals, setLoadingTotals] = useState(false);
+  const [received, setReceived] = useState<GiftStats['spendOverTime']>([]);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!VIEW_KEY_RE.test(viewKey)) {
       setStatus('missing');
       setProfile(null);
+      setReceived([]);
       return;
     }
 
     let cancelled = false;
     setStatus('loading');
     setProfile(null);
-    setDonatedSats(0);
-    setReceivedSats(0);
-    setLoadingTotals(false);
+    setReceived([]);
 
     void (async () => {
       try {
@@ -53,25 +51,24 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         }
         setProfile(next);
         setStatus('ready');
-        setLoadingTotals(true);
+        setReceived([]);
+
+        const trimmed = next.lightningAddress?.trim() ?? '';
+        if (trimmed === '') {
+          return;
+        }
+
         try {
-          const stats = await fetchGiftStats();
+          const stats = await fetchGiftStats(recipientHandleFromAddress(trimmed));
           if (cancelled) {
             return;
           }
-          const totals = accountTotals(stats, next.lightningAddress);
-          setDonatedSats(totals.donatedSats);
-          setReceivedSats(totals.receivedSats);
+          setReceived(stats.spendOverTime);
         } catch {
           if (cancelled) {
             return;
           }
-          setDonatedSats(0);
-          setReceivedSats(0);
-        } finally {
-          if (!cancelled) {
-            setLoadingTotals(false);
-          }
+          setReceived([]);
         }
       } catch {
         if (!cancelled) {
@@ -110,12 +107,5 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     );
   }
 
-  return (
-    <ViewProfileScreen
-      profile={profile as ViewProfile}
-      donatedSats={donatedSats}
-      receivedSats={receivedSats}
-      loadingTotals={loadingTotals}
-    />
-  );
+  return <ViewProfileScreen profile={profile as ViewProfile} received={received} />;
 }

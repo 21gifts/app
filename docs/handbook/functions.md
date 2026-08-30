@@ -247,7 +247,7 @@
 - **Purpose:** Compact dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
 - **Returns / side effects:** One chrome row (legend left, Sat|USD right) and SVG. Client state for scale only. No network.
-- **Used by:** `ProfileScreen`.
+- **Used by:** `ProfileScreen`, `ViewProfileScreen`.
 
 ## Function: ViewProfilePage
 
@@ -258,16 +258,16 @@
 
 ## Function: ViewProfileLoader
 
-- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then gift stats for totals. Does not use `useAuthStore`.
+- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then (if address set) filtered gift stats for `spendOverTime`. Does not use `useAuthStore`.
 - **Inputs:** `viewKey` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. Malformed keys (not 64 lowercase hex) → missing without an api call. Stats failure after a successful profile still shows the card with zero totals.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
 - **Used by:** `ViewProfilePage`.
 
 ## Function: ViewProfileScreen
 
-- **Purpose:** Presentational read-only profile card: heading, name or unnamed copy, Wallet of Satoshi address or no-address copy, given/received sat totals.
-- **Inputs:** `{ profile, donatedSats, receivedSats, loadingTotals }`.
-- **Returns / side effects:** No menu, logout, or edit forms. Language switcher lives on the page, not in this card.
+- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, name and address rows (labels `name.heading` / `la.heading`) without action buttons.
+- **Inputs:** `{ profile, received }` (`GiftStats['spendOverTime']`).
+- **Returns / side effects:** No menu, logout, back, ViewKeyCopy, or edit forms. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
 
 ## Function: ViewKeyCopy
@@ -293,10 +293,10 @@
 
 ## Function: accountTotals
 
-- **Purpose:** Derives given/received sat totals for a profile address from public gift stats (signed-in account or a public view profile).
+- **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
 - **Inputs:** `GiftStats` and the Lightning Address (or null).
 - **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
-- **Used by:** `useAccountTotals`, `ViewProfileLoader`.
+- **Used by:** `useAccountTotals`.
 
 ## Function: alignActivitySeries
 
@@ -324,7 +324,7 @@
 - **Purpose:** Local-part of a Lightning Address (before the first `@`).
 - **Inputs:** Full address or bare handle string.
 - **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
-- **Used by:** `accountTotals`, `useAccountTotals`.
+- **Used by:** `accountTotals`, `useAccountTotals`, `ViewProfileLoader`.
 
 ## Function: useAccountTotals
 

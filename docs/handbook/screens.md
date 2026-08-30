@@ -456,14 +456,14 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 
 ## Screen: /view/[viewKey]
 
-- **Purpose:** Public read-only profile opened via the capability URL `/view/<64-hex>`. Shows name, Wallet of Satoshi address, and given/received sat totals. No session as that user; no edit forms, menu, or logout.
-- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); totals from public `fetchGiftStats` + `accountTotals` for the viewed address.
-- **Actions:** Change language (light switcher top-right). On fetch error, **Try again**. No write actions.
+- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received + Sat|USD, name + Wallet of Satoshi address fields) without edit/copy/back/menu/logout. Capability URL `/view/<64-hex>`; key/URL not shown.
+- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); receive series from public `fetchGiftStats(handle)` via `recipientHandleFromAddress` (`GET /gifts/stats?recipient=`). Blank address → empty series, no stats fetch. Stats error → card with empty series.
+- **Actions:** Change language (light switcher top-right). On profile fetch error, **Try again**. Chart Sat|USD is display-only. No write actions.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`). Shared links copied from `/profile`.
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, display name, Wallet of Satoshi address, and sat totals.
+Valid known key. Heading **Profile**, compact Given/Received chart (legend + Sat|USD + SVG; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, no icon actions, no view-key copy, no back arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
 

@@ -83,6 +83,17 @@ describe('ViewProfileLoader', () => {
     fetchProfile.mockResolvedValue(profile);
     fetchStats.mockResolvedValue({
       ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 21,
+          cumulativeSats: 21,
+          btc: '0.00000021',
+          cumulativeBtc: '0.00000021',
+          usd: '0.02',
+          cumulativeUsd: '0.02',
+        },
+      ],
       byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 21, btc: '0.00000021', usd: '0.02' }],
     });
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
@@ -91,9 +102,8 @@ describe('ViewProfileLoader', () => {
     });
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
-    await waitFor(() => {
-      expect(screen.getByLabelText('Received 21 sats')).toBeTruthy();
-    });
+    expect(screen.getByText('Given')).toBeTruthy();
+    expect(fetchStats).toHaveBeenCalledWith('alice');
   });
 
   it('still shows the card when gift stats fail', async () => {
@@ -104,8 +114,28 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
     await waitFor(() => {
-      expect(screen.getByLabelText('Given 0 sats')).toBeTruthy();
+      expect(screen.getByText('Given')).toBeTruthy();
     });
+  });
+
+  it('skips gift stats when lightningAddress is null', async () => {
+    fetchProfile.mockResolvedValue({ ...profile, lightningAddress: null });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(fetchStats).not.toHaveBeenCalled();
+    expect(screen.getByText('Given')).toBeTruthy();
+  });
+
+  it('skips gift stats when lightningAddress is blank', async () => {
+    fetchProfile.mockResolvedValue({ ...profile, name: null, lightningAddress: '   ' });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Unnamed')).toBeTruthy();
+    });
+    expect(fetchStats).not.toHaveBeenCalled();
+    expect(screen.getByText('Given')).toBeTruthy();
   });
 
   it('ignores a stale profile resolve after unmount', async () => {

@@ -40,7 +40,7 @@ test('public view profile default shows name and address', async ({ page }) => {
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route(/\/gifts\/stats$/, async (route) => {
+  await page.route('**/gifts/stats**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -49,8 +49,13 @@ test('public view profile default shows name and address', async ({ page }) => {
   });
   await page.goto(`/view/${KEY}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('Name')).toBeVisible();
   await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByText('Wallet of Satoshi address')).toBeVisible();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
+  await expect(page.getByText('Given')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
 });
 
 test('public view profile missing shows not-found copy', async ({ page }) => {
@@ -91,7 +96,7 @@ test('public view profile error shows Try again and retries', async ({ page }) =
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route(/\/gifts\/stats$/, async (route) => {
+  await page.route('**/gifts/stats**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -127,7 +132,7 @@ test('signed-in profile shows the copy control without the view-key URL', async 
       }),
     });
   });
-  await page.route(/\/gifts\/stats$/, async (route) => {
+  await page.route('**/gifts/stats**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

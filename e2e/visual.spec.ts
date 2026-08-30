@@ -468,7 +468,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(/\/gifts\/stats$/, async (route) => {
+    await page.route('**/gifts/stats**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

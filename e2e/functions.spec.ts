@@ -2022,7 +2022,7 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
       }),
     });
   });
-  await page.route(/\/gifts\/stats$/, async (route) => {
+  await page.route('**/gifts/stats**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2061,7 +2061,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
       }),
     });
   });
-  await page.route(/\/gifts\/stats$/, async (route) => {
+  await page.route('**/gifts/stats**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2070,6 +2070,13 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   });
   await page.goto(`/view/${key}`);
   await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByText('Given')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remove Wallet of Satoshi address' })).toHaveCount(
+    0,
+  );
 });
 
 test('Function: ViewKeyCopy — profile shows the copy view-key control', async ({ page }) => {
@@ -2094,7 +2101,7 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
       }),
     });
   });
-  await page.route(/\/gifts\/stats$/, async (route) => {
+  await page.route('**/gifts/stats**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
