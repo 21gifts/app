@@ -205,6 +205,9 @@ const en = {
   'view.missing': 'This profile could not be found.',
   'view.error': 'Could not load this profile. Please try again.',
   'view.retry': 'Try again',
+  'view.claim': 'Set up passkey for this profile',
+  'view.alreadyClaimed': 'This profile already has a passkey. Log in instead.',
+  'view.claimError': 'Could not set up a passkey. Please try again.',
 
   'forum.laws1': 'This is a donation platform. Only free gifts — never pay for a promise.',
   'forum.laws2': 'Donors are scarce. No begging, no drama, no pressure.',
@@ -509,6 +512,9 @@ const de = {
   'view.missing': 'Dieses Profil konnte nicht gefunden werden.',
   'view.error': 'Profil konnte nicht geladen werden. Bitte erneut versuchen.',
   'view.retry': 'Erneut versuchen',
+  'view.claim': 'Passkey für dieses Profil einrichten',
+  'view.alreadyClaimed': 'Dieses Profil hat bereits einen Passkey. Stattdessen anmelden.',
+  'view.claimError': 'Passkey konnte nicht eingerichtet werden. Bitte erneut versuchen.',
 
   'forum.laws1':
     'Das ist eine Spendenplattform. Nur freie Geschenke — nie zahlen für ein Versprechen.',
@@ -809,6 +815,9 @@ const es = {
   'view.missing': 'No se pudo encontrar este perfil.',
   'view.error': 'No se pudo cargar este perfil. Inténtalo de nuevo.',
   'view.retry': 'Intentar de nuevo',
+  'view.claim': 'Configurar passkey para este perfil',
+  'view.alreadyClaimed': 'Este perfil ya tiene un passkey. Inicia sesión.',
+  'view.claimError': 'No se pudo configurar el passkey. Inténtalo de nuevo.',
 
   'forum.laws1':
     'Esta es una plataforma de donaciones. Solo regalos libres — nunca pagar por una promesa.',
@@ -1109,6 +1118,9 @@ const fil = {
   'view.missing': 'Hindi mahanap ang profile na ito.',
   'view.error': 'Hindi ma-load ang profile. Subukan ulit.',
   'view.retry': 'Subukan ulit',
+  'view.claim': 'I-set up ang passkey para sa profile na ito',
+  'view.alreadyClaimed': 'May passkey na ang profile na ito. Mag-log in na lang.',
+  'view.claimError': 'Hindi ma-set up ang passkey. Subukan ulit.',
 
   'forum.laws1': 'Ito ay donation platform. Libreng handog lang — huwag magbayad para sa pangako.',
   'forum.laws2': 'Kakaunti ang donor. Walang paghingi, walang drama, walang pressure.',

@@ -97,6 +97,7 @@ app/
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + icon-only view-key copy)
 │   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
+│   │   ├── ViewProfileClaim.tsx # Public view passkey claim (icon-only) under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams

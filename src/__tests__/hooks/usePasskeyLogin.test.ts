@@ -66,7 +66,40 @@ describe('usePasskeyLogin', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
+    expect(vi.mocked(startPasskeyRegistration).mock.calls[0]?.[0]).toBeUndefined();
     vi.unstubAllGlobals();
+  });
+
+  it('register(viewKey) forwards the viewKey to startPasskeyRegistration', async () => {
+    const viewKey = 'b'.repeat(64);
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register(viewKey);
+    });
+    expect(startPasskeyRegistration).toHaveBeenCalledWith(viewKey);
+    expect(useAuthStore.getState().session).toBe('tok');
+    vi.unstubAllGlobals();
+  });
+
+  it('retry after register(viewKey) resends the same viewKey', async () => {
+    const viewKey = 'c'.repeat(64);
+    vi.mocked(startPasskeyRegistration).mockRejectedValue(new Error('nope'));
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register(viewKey);
+    });
+    expect(result.current.status).toBe('error');
+    expect(startPasskeyRegistration).toHaveBeenCalledWith(viewKey);
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(startPasskeyRegistration).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(startPasskeyRegistration).mock.calls[1]?.[0]).toBe(viewKey);
   });
 
   it('authenticates with a passkey', async () => {
@@ -373,6 +406,16 @@ describe('usePasskeyLogin', () => {
     });
     expect(useAuthStore.getState().session).toBeNull();
     vi.unstubAllGlobals();
+  });
+
+  it('stores a non-Error rejection as a string', async () => {
+    vi.mocked(startPasskeyRegistration).mockRejectedValue('plain-fail');
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('plain-fail');
   });
 
   it('goes to error when create returns null', async () => {

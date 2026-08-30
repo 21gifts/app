@@ -260,7 +260,7 @@
 
 - **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then (if address set) filtered gift stats for `spendOverTime`. Does not use `useAuthStore`.
 - **Inputs:** `viewKey` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey`). Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
 - **Used by:** `ViewProfilePage`.
 
 ## Function: ViewProfileScreen
@@ -269,6 +269,13 @@
 - **Inputs:** `{ profile, received }` (`GiftStats['spendOverTime']`).
 - **Returns / side effects:** No menu, logout, back, ViewKeyCopy, or edit forms. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
+
+## Function: ViewProfileClaim
+
+- **Purpose:** Public passkey claim control under the `/view/[viewKey]` card. Logged-out visitors bind a passkey to the existing profile (name + Wallet of Satoshi already set).
+- **Inputs:** `viewKey` (64 lowercase hex). Uses `usePasskeyLogin`, `useAuthStore`, `useRouter`.
+- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Hidden when a session account is present. Icon-only Fingerprint (`view.claim`). Click → `register(viewKey)`; success → `router.replace(nextOnboardingPath(account))`. 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()` (no further `register(viewKey)`). In-app / unsupported → `login.inAppHeading`. Other errors → `view.claimError` + **Try again** (`view.retry`).
+- **Used by:** `ViewProfileLoader` (ready state only).
 
 ## Function: ViewKeyCopy
 
@@ -987,16 +994,16 @@
 ## Function: startPasskeyRegistration
 
 - **Purpose:** POST `/auth/passkey/register/begin` and parse options.
-- **Inputs:** None.
-- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
+- **Inputs:** Optional `viewKey` string. When set (non-empty), POSTs JSON `{ viewKey }` with `Content-Type: application/json`; otherwise POSTs with no body and no Content-Type.
+- **Returns / side effects:** `{ challengeId, options }`. On `!ok`, throws the api `{ error }` string when present, otherwise a status fallback.
 - **Used by:** `usePasskeyLogin.register`.
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. `cancel` aborts an in-flight WebAuthn prompt.
+- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. `cancel` aborts an in-flight WebAuthn prompt. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. Login’s register fallback never sends a view key.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
-- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }` with `status` in `idle | starting | error | unsupported`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
-- **Used by:** `OnboardingGate`, `LoginCard`, and `LogoutButton`.
+- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
+- **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
 ## Function: postMessageInvoice
 

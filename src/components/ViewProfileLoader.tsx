@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { ViewProfileScreen } from '@/components/ViewProfileScreen';
 import { recipientHandleFromAddress } from '@/lib/account-totals';
 import { fetchGiftStats, fetchViewProfile } from '@/lib/api';
@@ -15,7 +16,7 @@ const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
  * not use `useAuthStore`.
  *
  * @param props - Dynamic route `viewKey`.
- * @returns Loading, missing, error, or the read-only profile card.
+ * @returns Loading, missing, error, or the read-only profile card with claim control.
  */
 export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElement {
   const { t } = useTranslations();
@@ -107,5 +108,10 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     );
   }
 
-  return <ViewProfileScreen profile={profile as ViewProfile} received={received} />;
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <ViewProfileScreen profile={profile as ViewProfile} received={received} />
+      <ViewProfileClaim viewKey={viewKey} />
+    </div>
+  );
 }

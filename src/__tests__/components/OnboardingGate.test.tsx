@@ -53,6 +53,7 @@ beforeEach(() => {
     authenticate: vi.fn(),
     retry: vi.fn(),
     cancel: vi.fn(),
+    error: null,
   });
   useAuthStore.setState({ session: null, account: null });
 });

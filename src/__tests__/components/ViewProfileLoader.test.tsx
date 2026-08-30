@@ -1,10 +1,19 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
 import type { GiftStats, ViewProfile } from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const VIEW_KEY = 'a'.repeat(64);
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { replace: () => void } => ({ replace: vi.fn() }),
+}));
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: true }),
+}));
 
 const profile: ViewProfile = {
   name: 'Ada',
@@ -40,6 +49,10 @@ import { fetchGiftStats, fetchViewProfile } from '@/lib/api';
 
 const fetchProfile = vi.mocked(fetchViewProfile);
 const fetchStats = vi.mocked(fetchGiftStats);
+
+beforeEach(() => {
+  useAuthStore.setState({ session: null, account: null });
+});
 
 afterEach(() => {
   cleanup();
@@ -103,6 +116,7 @@ describe('ViewProfileLoader', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Set up passkey for this profile' })).toBeTruthy();
     expect(fetchStats).toHaveBeenCalledWith('alice');
   });
 

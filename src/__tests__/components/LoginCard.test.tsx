@@ -42,6 +42,7 @@ function mockPasskey(status: PasskeyStatus = 'idle'): void {
     authenticate: authenticateSpy,
     retry: retrySpy,
     cancel: cancelPasskeySpy,
+    error: null,
   });
 }
 

@@ -29,6 +29,7 @@ beforeEach(() => {
     authenticate: vi.fn(),
     retry: vi.fn(),
     cancel,
+    error: null,
   });
   useAuthStore.setState({
     session: 'tok',

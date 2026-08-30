@@ -771,6 +771,28 @@ describe('startPasskeyRegistration', () => {
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
   });
 
+  it('posts JSON viewKey when provided', async () => {
+    const viewKey = 'a'.repeat(64);
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(viewKey)).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ viewKey }),
+    });
+  });
+
+  it('throws the body error on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'This profile already has a passkey' },
+    });
+    await expect(startPasskeyRegistration('a'.repeat(64))).rejects.toThrow(
+      'This profile already has a passkey',
+    );
+  });
+
   it('throws on a non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(startPasskeyRegistration()).rejects.toThrow(
