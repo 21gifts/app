@@ -171,6 +171,36 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
+const RULES_SETUP_ACCOUNT = {
+  ...E2E_ACCOUNT,
+  name: 'Ada',
+  lightningAddress: 'alice@walletofsatoshi.com',
+  rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
+};
+
+/** Signed-in visitor at `/setup/rules` (name + address saved, rules not agreed). */
+async function openRulesSetup(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(RULES_SETUP_ACCOUNT),
+    });
+  });
+}
+
+/** Advance from the lead chapter; does not POST (stops before the last agree). */
+async function advanceRulesChapters(page: Page, clicks: number): Promise<void> {
+  const agree = page.getByRole('button', { name: 'I agree to these rules' });
+  for (let i = 0; i < clicks; i += 1) {
+    await agree.click();
+  }
+}
+
 /** Newest-first mixed-sats forum fixture for `/welcome` Active / All / Most popular. */
 async function fulfillMixedSatsMessages(page: Page): Promise<void> {
   await page.route(/\/messages$/, async (route) => {
@@ -393,25 +423,75 @@ test.describe('onboarding screens', () => {
   });
 
   test('screen /setup/rules', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: null,
-          viewKey: 'a'.repeat(64),
-        }),
-      });
-    });
+    await openRulesSetup(page);
     await page.goto('/setup/rules');
+    await expect(page.getByText('You are a guest in a living room')).toBeVisible();
     await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
     await shotScreen(page, 'screen-setup-rules');
+  });
+
+  test('setup-rules law1', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 1);
+    await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-law1');
+  });
+
+  test('setup-rules law2', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 2);
+    await expect(page.getByRole('heading', { name: '2. Donors come first' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-law2');
+  });
+
+  test('setup-rules law3', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 3);
+    await expect(page.getByRole('heading', { name: '3. Contact stays in the app' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-law3');
+  });
+
+  test('setup-rules wanted', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 4);
+    await expect(page.getByRole('heading', { name: 'Wanted' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-wanted');
+  });
+
+  test('setup-rules allowed', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 5);
+    await expect(page.getByRole('heading', { name: 'Allowed' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-allowed');
+  });
+
+  test('setup-rules ratherNot', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 6);
+    await expect(page.getByRole('heading', { name: 'Rather not' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-ratherNot');
+  });
+
+  test('setup-rules forbidden', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 7);
+    await expect(page.getByText('Forbidden — hard-blocked')).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-forbidden');
+  });
+
+  test('setup-rules house', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 8);
+    await expect(page.getByRole('heading', { name: 'House right' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-house');
   });
 
   test('screen /welcome', async ({ page }) => {

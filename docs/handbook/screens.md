@@ -204,6 +204,54 @@ Signed in with a name and address and `rulesAgreedAt` still null. First chapter 
 
 ![21.gifts rules setup](images/setup-rules.png)
 
+### Variant: law1
+
+After one agree: law 1 heading **1. Only free donations**. Icon-only back is visible.
+
+![21.gifts rules setup law 1](images/setup-rules-law1.png)
+
+### Variant: law2
+
+Law 2 heading **2. Donors come first**.
+
+![21.gifts rules setup law 2](images/setup-rules-law2.png)
+
+### Variant: law3
+
+Law 3 heading **3. Contact stays in the app**.
+
+![21.gifts rules setup law 3](images/setup-rules-law3.png)
+
+### Variant: wanted
+
+Heading **Wanted** and the wanted list.
+
+![21.gifts rules setup wanted](images/setup-rules-wanted.png)
+
+### Variant: allowed
+
+Heading **Allowed** and the allowed list.
+
+![21.gifts rules setup allowed](images/setup-rules-allowed.png)
+
+### Variant: ratherNot
+
+Heading **Rather not** and the rather-not list.
+
+![21.gifts rules setup rather not](images/setup-rules-rather-not.png)
+
+### Variant: forbidden
+
+Heading **Forbidden — hard-blocked** and the three hard-block groups.
+
+![21.gifts rules setup forbidden](images/setup-rules-forbidden.png)
+
+### Variant: house
+
+Last chapter: heading **House right**. The next **I agree to these rules** POSTs agreement.
+
+![21.gifts rules setup house](images/setup-rules-house.png)
+
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * Fail if a UI screen or exported function lacks a committed Playwright
- * screenshot baseline. Run from the repo root. No extra packages.
+ * Fail if a UI screen, listed variant, or exported function lacks a committed
+ * Playwright screenshot baseline, or if a variant is not shot in
+ * `e2e/visual.spec.ts`. `/setup/rules` must list one variant per
+ * `RULES_CHAPTER_IDS` chapter. Run from the repo root. No extra packages.
  *
  * Snapshot files live next to the visual spec (Playwright default layout):
  *   e2e/visual.spec.ts-snapshots/<arg>-<project>-<platform>.png
@@ -49,6 +51,24 @@ function listPngs(dir) {
 function hasSnapshot(files, stem) {
   const file = `${stem.replaceAll('_', '-')}-linux.png`;
   return files.includes(file);
+}
+
+/**
+ * Chapter ids from `src/lib/rules-chapters.ts` (`lead`, `law1`, …).
+ *
+ * @returns Ordered ids, or `[]` when the export cannot be parsed.
+ */
+function rulesChapterIds() {
+  const srcPath = path.join(ROOT, 'src', 'lib', 'rules-chapters.ts');
+  if (!fs.existsSync(srcPath)) {
+    return [];
+  }
+  const src = fs.readFileSync(srcPath, 'utf8');
+  const block = src.match(/export const RULES_CHAPTER_IDS = \[([\s\S]*?)\]\s+as const/);
+  if (block === null || block[1] === undefined) {
+    return [];
+  }
+  return [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
 }
 
 const missing = [];
@@ -101,6 +121,27 @@ for (const variant of SCREEN_VARIANTS) {
     if (!hasSnapshot(snapFiles, stem)) {
       missing.push(
         `Variant ${variant.route} ${variant.id} ${comboId} has no Playwright Linux baseline ${stem}-linux.png`,
+      );
+    }
+  }
+  if (!visualSrc.includes(`'${variant.visual}'`) && !visualSrc.includes(`"${variant.visual}"`)) {
+    missing.push(
+      `Variant ${variant.route} ${variant.id} has no shotScreen/toHaveScreenshot('${variant.visual}') in e2e/visual.spec.ts`,
+    );
+  }
+}
+
+const chapterIds = rulesChapterIds();
+if (chapterIds.length === 0) {
+  missing.push(
+    'src/lib/rules-chapters.ts has no RULES_CHAPTER_IDS to require /setup/rules variants',
+  );
+} else {
+  for (const chapter of chapterIds) {
+    const id = chapter === 'lead' ? 'default' : chapter;
+    if (!SCREEN_VARIANTS.some((variant) => variant.route === '/setup/rules' && variant.id === id)) {
+      missing.push(
+        `Screen /setup/rules chapter ${chapter} has no screen-variants.mjs entry id=${id}`,
       );
     }
   }
