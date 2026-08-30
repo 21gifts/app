@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 import type { GiftStats } from '@/lib/api-types';
-import { formatBtcTick, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
+import { formatBitcoin, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
 /** Props for {@link StatsDashboard}. */
 export interface StatsDashboardProps {
@@ -71,7 +71,7 @@ function BarScaleToggle({
         className={`px-2 py-1 ${value === 'btc' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
         onClick={() => onChange('btc')}
       >
-        BTC
+        ₿
       </button>
       <button
         type="button"
@@ -86,13 +86,13 @@ function BarScaleToggle({
 }
 
 /**
- * Formats a sat count with grouping separators.
+ * Formats a gift/recipient count with grouping separators (not a bitcoin amount).
  *
- * @param sats - Whole satoshis.
+ * @param n - Whole count.
  * @returns Grouped decimal string.
  */
-function formatSats(sats: number): string {
-  return new Intl.NumberFormat('en-US').format(sats);
+function formatCount(n: number): string {
+  return new Intl.NumberFormat('en-US').format(n);
 }
 
 /**
@@ -272,7 +272,7 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
       role="img"
-      aria-label={scale === 'btc' ? 'Spend by person in BTC' : 'Spend by person in USD'}
+      aria-label={scale === 'btc' ? 'Spend by person in ₿' : 'Spend by person in USD'}
     >
       {rows.map((row, i) => {
         const y = i * rowH;
@@ -293,7 +293,7 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
               fill="rgba(255,255,255,0.6)"
               fontSize="14"
             >
-              {row.btc} ₿ · ${row.usd}
+              {formatBitcoin(row.sats)} · ${row.usd}
             </text>
           </g>
         );
@@ -314,7 +314,7 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
 function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement {
   const width = 800;
   const height = 220;
-  const monthAria = scale === 'btc' ? 'Spend by month in BTC' : 'Spend by month in USD';
+  const monthAria = scale === 'btc' ? 'Spend by month in ₿' : 'Spend by month in USD';
   if (rows.length === 0) {
     return (
       <svg
@@ -364,7 +364,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
               fill="rgba(255,255,255,0.7)"
               fontSize="11"
             >
-              {row.btc} ₿
+              {formatBitcoin(row.sats)}
             </text>
             <text
               x={x + w / 2}
@@ -425,9 +425,9 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
           {overTimeScale === 'btc'
             ? CumulativeOverTimeChart(
                 stats.spendOverTime,
-                (p) => Number(p.cumulativeBtc),
-                formatBtcTick,
-                'Spend over time in BTC',
+                (p) => p.cumulativeSats,
+                formatBitcoin,
+                'Spend over time in ₿',
               )
             : CumulativeOverTimeChart(
                 stats.spendOverTime,
@@ -506,18 +506,17 @@ export function StatsDashboard({
         <div className="rounded-2xl border border-white/10 p-5">
           <dt className="text-sm text-white/60">Total spent</dt>
           <dd className="mt-2">
-            <div className="text-2xl font-semibold">₿ {stats.totalBtc}</div>
+            <div className="text-2xl font-semibold">{formatBitcoin(stats.totalSats)}</div>
             <div className="text-2xl font-semibold">{formatUsdDisplay(stats.totalUsd)}</div>
-            <div className="mt-1 text-sm text-white/60">{formatSats(stats.totalSats)} sats</div>
           </dd>
         </div>
         <div className="rounded-2xl border border-white/10 p-5">
           <dt className="text-sm text-white/60">Gifts</dt>
-          <dd className="mt-2 text-2xl font-semibold">{formatSats(stats.giftCount)}</dd>
+          <dd className="mt-2 text-2xl font-semibold">{formatCount(stats.giftCount)}</dd>
         </div>
         <div className="rounded-2xl border border-white/10 p-5">
           <dt className="text-sm text-white/60">People</dt>
-          <dd className="mt-2 text-2xl font-semibold">{formatSats(stats.recipientCount)}</dd>
+          <dd className="mt-2 text-2xl font-semibold">{formatCount(stats.recipientCount)}</dd>
         </div>
         <div className="rounded-2xl border border-white/10 p-5">
           <dt className="text-sm text-white/60">Period</dt>

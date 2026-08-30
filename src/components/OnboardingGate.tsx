@@ -70,7 +70,7 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
   }, [account, cancel, ready, router, screen]);
 
   if (!ready) {
-    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;
+    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
   if (screen === 'login') {
     return <>{children}</>;
@@ -79,10 +79,10 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     if (account !== null && nextOnboardingPath(account) === '/welcome') {
       return <>{children}</>;
     }
-    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;
+    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
   if (account === null || nextOnboardingPath(account) !== PATH[screen]) {
-    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;
+    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
   return <>{children}</>;
 }

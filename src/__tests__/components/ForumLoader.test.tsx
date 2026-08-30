@@ -232,13 +232,13 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeTruthy();
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
-      expect(screen.getByText('0 sats')).toBeTruthy();
+      expect(screen.getByText('₿0')).toBeTruthy();
     });
   });
 
@@ -281,7 +281,7 @@ describe('ForumLoader', () => {
     ]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     expect(photoMock).not.toHaveBeenCalled();
   });
@@ -301,7 +301,7 @@ describe('ForumLoader', () => {
     ]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     expect(photoMock).not.toHaveBeenCalled();
     await revealAll();
@@ -730,7 +730,7 @@ describe('ForumLoader', () => {
     photoMock.mockRejectedValue(new Error('gone'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1156,7 +1156,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1218,7 +1218,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1313,7 +1313,7 @@ describe('ForumLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1321,13 +1321,13 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
       expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-      expect(screen.getByText('Pay 21 sats')).toBeTruthy();
+      expect(screen.getByText('Pay ₿21')).toBeTruthy();
     });
     expect(
       (screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement).disabled,
@@ -1338,7 +1338,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1346,11 +1346,9 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '0' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('alert').textContent).toBe(
-      'Enter a whole number of sats greater than zero',
-    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
@@ -1359,7 +1357,7 @@ describe('ForumLoader', () => {
     invoiceMock.mockRejectedValue(new Error('Could not start the Bitcoin payment'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1367,7 +1365,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -1379,7 +1377,7 @@ describe('ForumLoader', () => {
     invoiceMock.mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1387,7 +1385,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -1407,14 +1405,14 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
@@ -1434,18 +1432,18 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Active' }));
-    expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
-    expect(screen.queryByLabelText('Amount (sats)')).toBeNull();
+    expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount (₿)')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(invoiceMock).toHaveBeenCalledTimes(1);
     await act(async () => {
@@ -1465,14 +1463,14 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
@@ -1485,7 +1483,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false }]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1706,14 +1704,14 @@ describe('ForumLoader', () => {
     invoiceMock.mockReturnValue(new Promise(() => undefined));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(invoiceMock).toHaveBeenCalledTimes(1);

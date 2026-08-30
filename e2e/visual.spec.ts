@@ -762,7 +762,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount (sats)').fill('21');
+    await page.getByLabel('Amount (₿)').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
@@ -783,9 +783,9 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Most popular' }).click();
     const items = page.getByRole('listitem');
     await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
-    await expect(items.nth(0)).toContainText('21 sats');
+    await expect(items.nth(0)).toContainText('₿21');
     await expect(items.nth(1)).toContainText('Thank you both — that helps.');
-    await expect(items.nth(1)).toContainText('5 sats');
+    await expect(items.nth(1)).toContainText('₿5');
     await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
     await shotScreen(page, 'state-welcome-popular');
   });
@@ -813,7 +813,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages with sats yet.')).toBeVisible();
+    await expect(page.getByText('No messages with Bitcoin yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -1497,6 +1497,128 @@ test.describe('stats variant baselines', () => {
     await page.goto('/stats/2026-06-01');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-stats-day-error');
+  });
+});
+
+test.describe('dark variant baselines', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+  });
+
+  test('login dark', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    await shotScreen(page, 'state-login-dark');
+  });
+
+  test('donate dark', async ({ page }) => {
+    await page.goto('/donate');
+    await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+    await shotScreen(page, 'state-donate-dark');
+  });
+
+  test('setup-name dark', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(E2E_ACCOUNT),
+      });
+    });
+    await page.goto('/setup/name');
+    await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
+    await shotScreen(page, 'state-setup-name-dark');
+  });
+
+  test('setup-address dark', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
+      });
+    });
+    await page.goto('/setup/address');
+    await expect(
+      page.getByRole('heading', { name: 'Your Wallet of Satoshi address' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-setup-address-dark');
+  });
+
+  test('welcome dark', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' }).first()).toBeVisible();
+    await shotScreen(page, 'state-welcome-dark');
+  });
+
+  test('rules dark', async ({ page }) => {
+    await page.goto('/rules');
+    await expect(page.getByText('Only free donations')).toBeVisible();
+    await shotScreen(page, 'state-rules-dark');
+  });
+
+  test('contact dark', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+        }),
+      });
+    });
+    await page.goto('/contact');
+    await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
+    await shotScreen(page, 'state-contact-dark');
+  });
+
+  test('profile dark', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+        }),
+      });
+    });
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await shotScreen(page, 'state-profile-dark');
   });
 });
 

@@ -45,7 +45,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (BTC + USD totals with a sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** has a BTC/USD control (default BTC). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` + USD, no sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** has a ₿ | USD control (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `StatsLoader`.
@@ -73,7 +73,7 @@
 
 ## Function: GiftDayTable
 
-- **Purpose:** Table of individual gifts on one UTC day (time, recipient, sats, BTC, USD), or empty copy.
+- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, USD), or empty copy.
 - **Inputs:** `day: GiftDay`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `DayLoader`.
@@ -223,9 +223,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; LogOut log out).
-- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
+- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
 
 ## Function: ProfilePage
@@ -239,14 +239,14 @@
 
 - **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
 - **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + ₿ | USD + SVG), name form, address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
 - **Used by:** `ProfilePage`.
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD toggle (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
-- **Returns / side effects:** One chrome row (legend left, Sat|USD right) and SVG. Client state for scale only. No network.
+- **Returns / side effects:** One chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`.
 
 ## Function: ViewProfilePage
@@ -349,7 +349,7 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
+- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, ₿ amount with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
 - **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
 - **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
@@ -508,12 +508,12 @@
 - **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
 - **Used by:** `ForumLoader`.
 
-## Function: formatBtcTick
+## Function: formatBitcoin
 
-- **Purpose:** Formats a parsed BTC chart-axis value with up to 8 decimals, trailing zeros trimmed.
-- **Inputs:** `btc` number (layout scale only).
-- **Returns / side effects:** Trimmed decimal string (e.g. `0.015`).
-- **Used by:** `StatsDashboard` BTC-over-time chart.
+- **Purpose:** Formats a whole-sat amount as BIP-177 ₿-only display (leading ₿, locale grouping, no fraction, no “sats” unit).
+- **Inputs:** `sats` non-negative number (API `sats` / `totalSats`; chart mid-ticks may be fractional and are rounded); optional `locale` BCP-47 tag (default `en-US`).
+- **Returns / side effects:** Display string such as `₿1,500` or `₿0`.
+- **Used by:** `ForumBoard`, `SignedInChrome`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`.
 
 ## Function: formatForumTime
 
@@ -543,12 +543,54 @@
 - **Returns / side effects:** Label such as `$1,234`.
 - **Used by:** `StatsDashboard` USD-over-time chart, `AccountActivityChart` USD scale.
 
-## Function: formatSatTick
+## Function: ThemeProvider
 
-- **Purpose:** Formats a sat chart-axis value with en-US grouping and no unit suffix.
-- **Inputs:** `sats` number (layout scale only).
-- **Returns / side effects:** `0` for zero; otherwise grouped digits such as `1,000`.
-- **Used by:** `AccountActivityChart` Sat scale.
+- **Purpose:** Client provider that reads the `theme` cookie and OS `prefers-color-scheme`, exposes preference / resolved theme, and keeps `html.dark` in sync after hydration (does not wipe the bootstrap class on the first paint).
+- **Inputs:** React `children`.
+- **Returns / side effects:** Context value with `preference`, `resolved`, `setPreference`. Writing `light`/`dark` sets the cookie (`Path=/`, `Max-Age=31536000`, `SameSite=Lax`, `Secure` on https); `system` deletes it. Listens to `matchMedia` while preference is `system`.
+- **Used by:** `RootLayout` (wraps the app), `ThemeSwitcher`, `useTheme`.
+
+## Function: ThemeSwitcher
+
+- **Purpose:** System / Light / Dark control using semantic app tokens. Standalone compact pill on unsigned app pages; `embedded` Menu-row disclosure beside language when signed in.
+- **Inputs:** Optional `embedded` boolean.
+- **Returns / side effects:** Listbox UI; selecting an option calls `setPreference`.
+- **Used by:** `/login`, `/donate`, `/rules`, `SignedInChrome`.
+
+## Function: useTheme
+
+- **Purpose:** Reads theme preference and setters from the nearest `ThemeProvider`.
+- **Inputs:** None (React context).
+- **Returns / side effects:** `ThemeContextValue`. Throws when used outside `ThemeProvider`.
+- **Used by:** `ThemeSwitcher` and any client chrome that needs the resolved theme.
+
+## Function: parseThemePreference
+
+- **Purpose:** Parses a cookie / stored theme preference.
+- **Inputs:** Raw cookie value, or `undefined` when missing.
+- **Returns / side effects:** `'light'` / `'dark'` when valid; otherwise `'system'`.
+- **Used by:** `ThemeProvider`, `THEME_BOOTSTRAP_SCRIPT` (inline equivalent).
+
+## Function: resolveTheme
+
+- **Purpose:** Resolves a preference against the OS color-scheme media query.
+- **Inputs:** `preference` (`system` | `light` | `dark`), `prefersDark` boolean.
+- **Returns / side effects:** Concrete `'light'` or `'dark'`.
+- **Used by:** `ThemeProvider`.
+
+## Function: THEME_BOOTSTRAP_SCRIPT
+
+- **Purpose:** Blocking bootstrap IIFE string injected as a raw head script before paint. Reads the theme cookie and `matchMedia('(prefers-color-scheme: dark)')`, toggles `html.dark`, and has no dependencies.
+- **Inputs:** None (constant string).
+- **Returns / side effects:** Non-empty IIFE source mentioning `theme=` and `classList`.
+- **Used by:** `RootLayout` `<head>` script.
+
+## Function: THEME_COOKIE
+
+- **Purpose:** Cookie name for a persisted theme override (`light` | `dark`). Absent means system.
+- **Inputs:** None (constant `'theme'`).
+- **Returns / side effects:** Cookie key string.
+- **Used by:** `ThemeProvider`, theme tests.
 
 ## Function: getApiUrl
 

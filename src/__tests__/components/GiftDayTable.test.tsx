@@ -47,7 +47,7 @@ describe('GiftDayTable', () => {
       />,
     );
     expect(screen.getByText('alice')).toBeTruthy();
-    expect(screen.getByText('500')).toBeTruthy();
+    expect(screen.getByText('₿500')).toBeTruthy();
     expect(screen.getByText('12:00:00 UTC')).toBeTruthy();
   });
 

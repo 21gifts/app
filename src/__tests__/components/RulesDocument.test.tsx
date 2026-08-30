@@ -43,7 +43,7 @@ describe('RulesDocument', () => {
     expect(
       screen.getByText('Thanks. Short, specific, without the next ask attached.'),
     ).toBeTruthy();
-    expect(screen.getByText(/Money for doing — “for 5 000 sats I will draw you.”/)).toBeTruthy();
+    expect(screen.getByText(/Money for doing — “for ₿5,000 I will draw you.”/)).toBeTruthy();
   });
 
   it('omits the public Contact and forum nav when showNav is false', () => {

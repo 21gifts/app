@@ -12,16 +12,16 @@ export function formatUsdDisplay(usd: string): string {
 }
 
 /**
- * Formats a BTC axis tick, trimming trailing zeros (up to 8 dp).
+ * Formats a whole-sat amount as BIP 177 ₿-only display.
  *
- * @param btc - Parsed BTC amount used for chart scale only.
- * @returns Trimmed decimal string (e.g. `0.015`).
+ * @param sats - Non-negative integer (the internal `sats` / `totalSats` field).
+ *   Chart mid-ticks may pass a fractional value; those are rounded to whole sats.
+ * @param locale - BCP-47 tag for grouping (default `'en-US'`). `fil` is valid.
+ * @returns Leading ₿, grouped integer, no space, no fraction. Example: `₿1,500,000`.
  */
-export function formatBtcTick(btc: number): string {
-  if (btc === 0) {
-    return '0';
-  }
-  return btc.toFixed(8).replace(/\.?0+$/, '');
+export function formatBitcoin(sats: number, locale = 'en-US'): string {
+  const whole = Math.round(sats);
+  return `\u20BF${new Intl.NumberFormat(locale).format(whole)}`;
 }
 
 /**
@@ -40,17 +40,4 @@ export function formatUsdTick(usd: number): string {
   return `$${new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 0,
   }).format(Math.round(usd))}`;
-}
-
-/**
- * Formats a sat axis tick with grouping and no unit suffix.
- *
- * @param sats - Sat amount used for chart scale only.
- * @returns Grouped decimal string (e.g. `1,000`); `0` for zero.
- */
-export function formatSatTick(sats: number): string {
-  if (sats === 0) {
-    return '0';
-  }
-  return new Intl.NumberFormat('en-US').format(sats);
 }

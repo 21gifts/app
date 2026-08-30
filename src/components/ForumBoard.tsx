@@ -17,6 +17,7 @@ import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/li
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
+import { formatBitcoin } from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
   isSmartphoneUserAgent,
@@ -187,13 +188,6 @@ export function ForumBoard({
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
 
-  const formatSatsLabel = (sats: number): string => {
-    if (sats === 1) {
-      return t('forum.satsOne');
-    }
-    return t('forum.sats', { n: sats });
-  };
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     onPost();
@@ -214,11 +208,11 @@ export function ForumBoard({
 
   const errorBlock = (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-center text-sm text-neutral-700">{t('forum.error')}</p>
+      <p className="text-center text-sm text-app-fg">{t('forum.error')}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+        className="inline-flex items-center rounded-full border border-app-border-strong px-5 py-2 text-sm font-medium text-app-fg transition hover:bg-app-hover"
       >
         {t('forum.retry')}
       </button>
@@ -229,13 +223,13 @@ export function ForumBoard({
 
   let middle: ReactElement;
   if (loading && messages === null) {
-    middle = <p className="text-center text-sm text-neutral-500">{t('forum.loading')}</p>;
+    middle = <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
   } else if (error && messages === null) {
     middle = errorBlock;
   } else if (messages !== null && messages.length === 0) {
-    middle = <p className="text-center text-sm text-neutral-500">{t('forum.empty')}</p>;
+    middle = <p className="text-center text-sm text-app-muted">{t('forum.empty')}</p>;
   } else if (messages !== null && visible !== null && visible.length === 0) {
-    middle = <p className="text-center text-sm text-neutral-500">{t('forum.emptyPaid')}</p>;
+    middle = <p className="text-center text-sm text-app-muted">{t('forum.emptyPaid')}</p>;
   } else if (messages !== null && visible !== null) {
     const displayed = mode === 'popular' ? visible : visible.slice().reverse();
     middle = (
@@ -269,28 +263,28 @@ export function ForumBoard({
             <li
               key={message.id}
               data-message-id={message.id}
-              className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3"
+              className="rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-neutral-900">{message.name}</span>
+                  <span className="text-sm font-medium text-app-fg">{message.name}</span>
                   {roleKeys !== null ? (
                     <button
                       type="button"
                       aria-expanded={roleHintOpen}
                       onClick={() => setOpenRoleMessageId(roleHintOpen ? null : message.id)}
-                      className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs font-medium text-neutral-600"
+                      className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
                     >
                       {t(roleKeys.label)}
                     </button>
                   ) : null}
                 </div>
-                <time dateTime={message.createdAt} className="text-xs text-neutral-400">
+                <time dateTime={message.createdAt} className="text-xs text-app-subtle">
                   {formatForumTime(message.createdAt, locale)}
                 </time>
               </div>
               {roleHintOpen && roleKeys !== null ? (
-                <p role="status" className="mt-1 text-xs text-neutral-500">
+                <p role="status" className="mt-1 text-xs text-app-muted">
                   {t(roleKeys.hint)}
                 </p>
               ) : null}
@@ -303,11 +297,11 @@ export function ForumBoard({
                 />
               ) : null}
               {message.text !== '' ? (
-                <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{message.text}</p>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
               ) : null}
               <div className="mt-3 flex items-center gap-1.5">
-                <p className="text-xs font-medium text-neutral-500">
-                  {formatSatsLabel(message.sats)}
+                <p className="text-xs font-medium text-app-muted">
+                  {formatBitcoin(message.sats, locale)}
                 </p>
                 {message.payable ? (
                   <button
@@ -315,7 +309,7 @@ export function ForumBoard({
                     aria-label={t('forum.pay')}
                     disabled={payBusy}
                     onClick={() => onPayOpen(message.id)}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-500 transition hover:bg-white hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                   </button>
@@ -325,17 +319,17 @@ export function ForumBoard({
               {sheetOpen && invoiceForCard === null ? (
                 <form
                   onSubmit={handlePaySubmit}
-                  className="relative mt-3 flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-3 pl-11 pt-10"
+                  className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10"
                 >
                   <button
                     type="button"
                     aria-label={t('forum.payBack')}
                     onClick={onPayCancel}
-                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-900"
+                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
                   >
                     <ArrowLeft aria-hidden="true" className="h-4 w-4" />
                   </button>
-                  <label className="flex flex-col gap-1 text-left text-sm text-neutral-700">
+                  <label className="flex flex-col gap-1 text-left text-sm text-app-fg">
                     {t('forum.payAmountLabel')}
                     <input
                       type="text"
@@ -347,7 +341,7 @@ export function ForumBoard({
                       value={payDraft}
                       disabled={payBusy}
                       onChange={(event) => onPayDraftChange(event.target.value)}
-                      className="rounded-xl border border-neutral-300 px-3 py-2 text-neutral-900 outline-none focus:border-neutral-500 disabled:opacity-50"
+                      className="rounded-xl border border-app-border-strong px-3 py-2 text-app-fg outline-none focus:border-app-border-strong disabled:opacity-50"
                     />
                   </label>
                   {payError === 'amount' ? (
@@ -369,7 +363,7 @@ export function ForumBoard({
                     <button
                       type="submit"
                       disabled={payBusy}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
                     >
                       {payBusy ? (
                         <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
@@ -381,17 +375,19 @@ export function ForumBoard({
               ) : null}
 
               {invoiceForCard !== null ? (
-                <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-neutral-200 bg-white p-4">
+                <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
                   <button
                     type="button"
                     aria-label={t('forum.payBack')}
                     onClick={onPayCancel}
-                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-900"
+                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
                   >
                     <ArrowLeft aria-hidden="true" className="h-4 w-4" />
                   </button>
-                  <p className="px-10 text-center text-sm text-neutral-600">
-                    {t('forum.payConfirm', { amount: formatSatsLabel(invoiceForCard.amountSats) })}
+                  <p className="px-10 text-center text-sm text-app-muted">
+                    {t('forum.payConfirm', {
+                      amount: formatBitcoin(invoiceForCard.amountSats, locale),
+                    })}
                   </p>
                   {showPaymentQr ? (
                     <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
@@ -401,7 +397,7 @@ export function ForumBoard({
                     <a
                       href={wosHref}
                       aria-label={t('forum.payOpenWalletAria')}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
                     >
                       <img
                         src="/wos-icon.png"
@@ -417,7 +413,7 @@ export function ForumBoard({
                   {/* v8 ignore stop */}
                   {/* v8 ignore start */}
                   {payWaiting ? (
-                    <p className="text-center text-xs text-neutral-500">{t('forum.payWaiting')}</p>
+                    <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
                   ) : null}
                   {/* v8 ignore stop */}
                 </div>
@@ -428,33 +424,33 @@ export function ForumBoard({
       </ul>
     );
   } else {
-    middle = <p className="text-center text-sm text-neutral-500">{t('forum.loading')}</p>;
+    middle = <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
   }
 
   return (
-    <div className="flex w-full flex-col gap-4 border-t border-neutral-200 pt-6">
-      <h2 className="text-center text-lg font-semibold tracking-tight text-neutral-900">
+    <div className="flex w-full flex-col gap-4 border-t border-app-border pt-6">
+      <h2 className="text-center text-lg font-semibold tracking-tight text-app-fg">
         {t('forum.heading')}
       </h2>
 
       {lawsVisible ? (
-        <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 pr-10">
+        <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
           <button
             type="button"
             aria-label={t('forum.lawsDismiss')}
             onClick={onDismissLaws}
-            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 transition hover:bg-white hover:text-neutral-900"
+            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
           >
             <X aria-hidden="true" className="h-4 w-4" />
           </button>
           <div className="flex flex-col items-center gap-2">
-            <p className="text-center text-sm text-neutral-700">{t('forum.laws1')}</p>
-            <p className="text-center text-sm text-neutral-700">{t('forum.laws2')}</p>
+            <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
+            <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
             <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
-              <Link href="/rules" className="text-neutral-900 underline underline-offset-2">
+              <Link href="/rules" className="text-app-fg underline underline-offset-2">
                 {t('forum.rulesLink')}
               </Link>
-              <Link href="/contact" className="text-neutral-900 underline underline-offset-2">
+              <Link href="/contact" className="text-app-fg underline underline-offset-2">
                 {t('forum.contactLink')}
               </Link>
             </nav>
@@ -465,7 +461,7 @@ export function ForumBoard({
       <div
         role="group"
         aria-label={t('forum.modeLabel')}
-        className="flex w-full rounded-full border border-neutral-200 bg-neutral-50 p-1"
+        className="flex w-full rounded-full border border-app-border bg-app-card-muted p-1"
       >
         {FORUM_FEED_MODES.map((next) => (
           <button
@@ -474,7 +470,7 @@ export function ForumBoard({
             aria-pressed={mode === next}
             onClick={() => onModeChange(next)}
             className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
-              mode === next ? 'bg-neutral-900 text-white' : 'text-neutral-600'
+              mode === next ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
             }`}
           >
             {t(MODE_LABEL_KEY[next])}
@@ -494,7 +490,7 @@ export function ForumBoard({
             onClick={() => {
               fileInputRef.current?.click();
             }}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-neutral-300 leading-none text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-app-border-strong leading-none text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
           </button>
@@ -514,13 +510,13 @@ export function ForumBoard({
             maxLength={FORUM_MESSAGE_MAX_LENGTH}
             rows={2}
             disabled={posting}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={posting}
             aria-label={t('forum.post')}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-900 leading-none text-white transition hover:bg-neutral-700 disabled:opacity-50"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-app-btn leading-none text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
           >
             {posting ? (
               <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
@@ -530,7 +526,7 @@ export function ForumBoard({
           </button>
         </div>
         {photoDraft !== null ? (
-          <div className="flex items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+          <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
             <img
               src={photoDraft.previewUrl}
@@ -542,7 +538,7 @@ export function ForumBoard({
               onClick={onClearPhoto}
               disabled={posting}
               aria-label={t('forum.removePhoto')}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-white disabled:opacity-50"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
             >
               <X aria-hidden="true" className="h-4 w-4" />
             </button>

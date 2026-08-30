@@ -47,20 +47,17 @@ export function ContactScreen({
   };
 
   return (
-    <section className="flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
-      <h1 className="text-center text-2xl font-semibold tracking-tight text-neutral-900">
+    <section className="flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+      <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
         {t('contact.heading')}
       </h1>
-      <p className="text-center text-sm text-neutral-700">{t('contact.lead')}</p>
-      <Link
-        href="/rules"
-        className="text-sm font-medium text-neutral-900 underline underline-offset-2"
-      >
+      <p className="text-center text-sm text-app-fg">{t('contact.lead')}</p>
+      <Link href="/rules" className="text-sm font-medium text-app-fg underline underline-offset-2">
         {t('contact.rulesLink')}
       </Link>
 
       {success ? (
-        <p role="status" className="text-center text-sm text-neutral-900">
+        <p role="status" className="text-center text-sm text-app-fg">
           {t('contact.success')}
         </p>
       ) : (
@@ -73,12 +70,12 @@ export function ContactScreen({
             maxLength={CONTACT_MESSAGE_MAX_LENGTH}
             rows={2}
             disabled={posting}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 px-4 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={posting}
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-neutral-900 px-5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-app-btn px-5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
           >
             {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
             {t('contact.send')}

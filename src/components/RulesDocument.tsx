@@ -76,34 +76,30 @@ export function RulesDocument({ messages, showNav = true }: RulesDocumentProps):
   ] as const;
 
   return (
-    <article className="flex w-full max-w-3xl flex-col gap-10 text-neutral-900">
-      <p className="text-base leading-relaxed text-neutral-700">{t('rules.lead')}</p>
+    <article className="flex w-full max-w-3xl flex-col gap-10 text-app-fg">
+      <p className="text-base leading-relaxed text-app-fg">{t('rules.lead')}</p>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.law1Title')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.law1Body')}</p>
-        <p className="text-sm font-medium leading-relaxed text-neutral-900">
-          {t('rules.law1Test')}
-        </p>
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.law1Body')}</p>
+        <p className="text-sm font-medium leading-relaxed text-app-fg">{t('rules.law1Test')}</p>
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.law2Title')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.law2Body')}</p>
-        <p className="text-sm font-medium leading-relaxed text-neutral-900">
-          {t('rules.law2Test')}
-        </p>
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.law2Body')}</p>
+        <p className="text-sm font-medium leading-relaxed text-app-fg">{t('rules.law2Test')}</p>
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.law3Title')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.law3Body')}</p>
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.law3Body')}</p>
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.wantedHeading')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.wantedLead')}</p>
-        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-neutral-700">
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.wantedLead')}</p>
+        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
           {wanted.map((key) => (
             <li key={key}>{t(key)}</li>
           ))}
@@ -112,8 +108,8 @@ export function RulesDocument({ messages, showNav = true }: RulesDocumentProps):
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.allowedHeading')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.allowedLead')}</p>
-        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-neutral-700">
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.allowedLead')}</p>
+        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
           {allowed.map((key) => (
             <li key={key}>{t(key)}</li>
           ))}
@@ -122,8 +118,8 @@ export function RulesDocument({ messages, showNav = true }: RulesDocumentProps):
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.ratherNotHeading')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.ratherNotLead')}</p>
-        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-neutral-700">
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.ratherNotLead')}</p>
+        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
           {ratherNot.map((key) => (
             <li key={key}>{t(key)}</li>
           ))}
@@ -132,13 +128,13 @@ export function RulesDocument({ messages, showNav = true }: RulesDocumentProps):
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.forbiddenHeading')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.forbiddenLead')}</p>
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.forbiddenLead')}</p>
 
         <div className="flex flex-col gap-2">
           <h3 className="text-base font-semibold tracking-tight">
             {t('rules.forbiddenQuidHeading')}
           </h3>
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-neutral-700">
+          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
             {forbiddenQuid.map((key) => (
               <li key={key}>{t(key)}</li>
             ))}
@@ -149,7 +145,7 @@ export function RulesDocument({ messages, showNav = true }: RulesDocumentProps):
           <h3 className="text-base font-semibold tracking-tight">
             {t('rules.forbiddenDonorHeading')}
           </h3>
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-neutral-700">
+          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
             {forbiddenDonor.map((key) => (
               <li key={key}>{t(key)}</li>
             ))}
@@ -160,7 +156,7 @@ export function RulesDocument({ messages, showNav = true }: RulesDocumentProps):
           <h3 className="text-base font-semibold tracking-tight">
             {t('rules.forbiddenOtherHeading')}
           </h3>
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-neutral-700">
+          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-app-fg">
             {forbiddenOther.map((key) => (
               <li key={key}>{t(key)}</li>
             ))}
@@ -170,20 +166,20 @@ export function RulesDocument({ messages, showNav = true }: RulesDocumentProps):
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold tracking-tight">{t('rules.houseHeading')}</h2>
-        <p className="text-sm leading-relaxed text-neutral-700">{t('rules.houseBody')}</p>
+        <p className="text-sm leading-relaxed text-app-fg">{t('rules.houseBody')}</p>
       </section>
 
       {showNav ? (
         <nav className="flex flex-wrap items-center justify-center gap-4 pb-8 text-sm font-medium">
           <Link
             href="/contact"
-            className="rounded-full bg-neutral-900 px-5 py-2.5 text-white transition hover:bg-neutral-700"
+            className="rounded-full bg-app-btn px-5 py-2.5 text-app-btn-fg transition hover:bg-app-btn-hover"
           >
             {t('rules.contactCta')}
           </Link>
           <Link
             href="/welcome"
-            className="rounded-full border border-neutral-300 px-5 py-2.5 text-neutral-900 transition hover:bg-neutral-50"
+            className="rounded-full border border-app-border-strong px-5 py-2.5 text-app-fg transition hover:bg-app-hover"
           >
             {t('rules.forumCta')}
           </Link>

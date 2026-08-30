@@ -46,6 +46,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'dark',
+    image: 'login-dark.png',
+    visual: 'state-login-dark',
+    needle: "getByRole('button', { name: 'Log in' })",
+  },
+  {
+    route: '/login',
     id: 'starting',
     image: 'login-starting.png',
     visual: 'state-login-starting',
@@ -80,6 +87,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Open the forum',
   },
   {
+    route: '/donate',
+    id: 'dark',
+    image: 'donate-dark.png',
+    visual: 'state-donate-dark',
+    needle: 'Open the forum',
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',
@@ -87,10 +101,24 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Your name' })",
   },
   {
+    route: '/setup/name',
+    id: 'dark',
+    image: 'setup-name-dark.png',
+    visual: 'state-setup-name-dark',
+    needle: "getByRole('heading', { name: 'Your name' })",
+  },
+  {
     route: '/setup/address',
     id: 'default',
     image: 'setup-address.png',
     visual: 'screen-setup-address',
+    needle: "getByRole('heading', { name: 'Your Wallet of Satoshi address' })",
+  },
+  {
+    route: '/setup/address',
+    id: 'dark',
+    image: 'setup-address-dark.png',
+    visual: 'state-setup-address-dark',
     needle: "getByRole('heading', { name: 'Your Wallet of Satoshi address' })",
   },
   {
@@ -116,6 +144,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'dark',
+    image: 'welcome-dark.png',
+    visual: 'state-welcome-dark',
+    needle: 'Send Bitcoin',
+  },
+  {
+    route: '/welcome',
     id: 'all',
     image: 'welcome-all.png',
     visual: 'state-welcome-all',
@@ -133,7 +168,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty-paid',
     image: 'welcome-empty-paid.png',
     visual: 'state-welcome-empty-paid',
-    needle: 'No messages with sats yet.',
+    needle: 'No messages with Bitcoin yet.',
   },
   {
     route: '/welcome',
@@ -311,10 +346,24 @@ export const SCREEN_VARIANTS = [
     needle: 'Only free donations',
   },
   {
+    route: '/rules',
+    id: 'dark',
+    image: 'rules-dark.png',
+    visual: 'state-rules-dark',
+    needle: 'Only free donations',
+  },
+  {
     route: '/contact',
     id: 'default',
     image: 'contact.png',
     visual: 'screen-contact',
+    needle: 'Write to 21.gifts here. There is no email.',
+  },
+  {
+    route: '/contact',
+    id: 'dark',
+    image: 'contact-dark.png',
+    visual: 'state-contact-dark',
     needle: 'Write to 21.gifts here. There is no email.',
   },
   {
@@ -336,6 +385,13 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'profile.png',
     visual: 'screen-profile',
+    needle: "getByRole('heading', { name: 'Profile' })",
+  },
+  {
+    route: '/profile',
+    id: 'dark',
+    image: 'profile-dark.png',
+    visual: 'state-profile-dark',
     needle: "getByRole('heading', { name: 'Profile' })",
   },
   {
