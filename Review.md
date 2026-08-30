@@ -39,7 +39,9 @@ These must be green on the PR. A missing or red gate is rejected:
 - `npm run screenshot:check`
 - `npm run test:coverage`
 - `npm run build`
-- `npm run e2e` (Linux Chromium for visual baselines)
+- `npm run e2e` locally (behavior + four visual combos). CI splits that
+  into `E2E (behavior)` plus `Visual (desktop-light|desktop-dark|mobile-light|mobile-dark)`;
+  all must be green.
 
 ## Other CONTRIBUTING rules
 

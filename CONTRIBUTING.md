@@ -375,7 +375,7 @@ combo projects as parallel jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.
 
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
-`npm run e2e` still runs the behavioral specs. fullPage shots unstick
+`npm run e2e` still runs the behavioral specs. FullPage shots unstick
 `header.sticky` so Playwright does not paint the marketing header into every
 stitch. Regenerate on Linux (`--platform linux/amd64` is required so regen
 matches CI linux/amd64 Chromium):
