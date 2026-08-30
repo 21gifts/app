@@ -75,9 +75,7 @@ function renderChapter(id: RulesChapterId, t: (key: MessageKey) => string): Reac
         <section className="flex flex-col gap-3">
           <h2 className="text-xl font-semibold tracking-tight">{t('rules.law1Title')}</h2>
           <p className="text-sm leading-relaxed text-app-fg">{t('rules.law1Body')}</p>
-          <p className="text-sm font-medium leading-relaxed text-app-fg">
-            {t('rules.law1Test')}
-          </p>
+          <p className="text-sm font-medium leading-relaxed text-app-fg">{t('rules.law1Test')}</p>
         </section>
       );
     case 'law2':
@@ -85,9 +83,7 @@ function renderChapter(id: RulesChapterId, t: (key: MessageKey) => string): Reac
         <section className="flex flex-col gap-3">
           <h2 className="text-xl font-semibold tracking-tight">{t('rules.law2Title')}</h2>
           <p className="text-sm leading-relaxed text-app-fg">{t('rules.law2Body')}</p>
-          <p className="text-sm font-medium leading-relaxed text-app-fg">
-            {t('rules.law2Test')}
-          </p>
+          <p className="text-sm font-medium leading-relaxed text-app-fg">{t('rules.law2Test')}</p>
         </section>
       );
     case 'law3':
