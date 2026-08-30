@@ -7,7 +7,11 @@ async function agreeToLivingRoomRules(page: Page): Promise<void> {
     await expect(
       page.getByText(`${i + 1} of ${RULES_CHAPTER_IDS.length}`, { exact: true }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    if (i < RULES_CHAPTER_IDS.length - 1) {
+      await page.getByRole('button', { name: 'Continue' }).click();
+    } else {
+      await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    }
   }
 }
 
@@ -190,7 +194,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await agreeToLivingRoomRules(page);
 
   await expect(page).toHaveURL(/\/welcome/);

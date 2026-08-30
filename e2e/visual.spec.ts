@@ -205,9 +205,9 @@ async function openRulesSetup(
 
 /** Advance from the lead chapter; does not POST (stops before the last agree). */
 async function advanceRulesChapters(page: Page, clicks: number): Promise<void> {
-  const agree = page.getByRole('button', { name: 'I agree to these rules' });
+  const next = page.getByRole('button', { name: 'Continue' });
   for (let i = 0; i < clicks; i += 1) {
-    await agree.click();
+    await next.click();
   }
 }
 
@@ -436,7 +436,7 @@ test.describe('onboarding screens', () => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
     await expect(page.getByText('You are a guest in a living room')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await shotScreen(page, 'screen-setup-rules');
   });
 
@@ -501,6 +501,7 @@ test.describe('onboarding screens', () => {
     await page.goto('/setup/rules');
     await advanceRulesChapters(page, 8);
     await expect(page.getByRole('heading', { name: 'House right' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
     await shotScreen(page, 'state-setup-rules-house');
   });
 

@@ -119,7 +119,8 @@ const en = {
   'setup.addressTitle': 'Your Wallet of Satoshi address',
   'setup.continue': 'Continue',
   'setup.rulesTitle': 'Living room rules',
-  'setup.rulesPrompt': 'Please read this chapter. You can continue only after you agree.',
+  'setup.rulesPrompt': 'Please read this chapter.',
+  'setup.rulesPromptLast': 'Please read this chapter. You can continue only after you agree.',
   'setup.rulesProgress': '{current} of {total}',
   'setup.rulesBack': 'Back',
   'setup.agree': 'I agree to these rules',
@@ -424,7 +425,8 @@ const de = {
   'setup.addressTitle': 'Ihre Wallet of Satoshi-Adresse',
   'setup.continue': 'Weiter',
   'setup.rulesTitle': 'Wohnzimmerregeln',
-  'setup.rulesPrompt':
+  'setup.rulesPrompt': 'Bitte lesen Sie dieses Kapitel.',
+  'setup.rulesPromptLast':
     'Bitte lesen Sie dieses Kapitel. Sie können erst fortfahren, wenn Sie zustimmen.',
   'setup.rulesProgress': '{current} von {total}',
   'setup.rulesBack': 'Zurück',
@@ -724,7 +726,8 @@ const es = {
   'setup.addressTitle': 'Tu dirección de Wallet of Satoshi',
   'setup.continue': 'Continuar',
   'setup.rulesTitle': 'Reglas del salón',
-  'setup.rulesPrompt': 'Lea este capítulo. Solo puede continuar cuando lo acepte.',
+  'setup.rulesPrompt': 'Lea este capítulo.',
+  'setup.rulesPromptLast': 'Lea este capítulo. Solo puede continuar cuando lo acepte.',
   'setup.rulesProgress': '{current} de {total}',
   'setup.rulesBack': 'Atrás',
   'setup.agree': 'Acepto estas reglas',
@@ -1022,7 +1025,8 @@ const fil = {
   'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
   'setup.continue': 'Magpatuloy',
   'setup.rulesTitle': 'Mga patakaran sa living room',
-  'setup.rulesPrompt':
+  'setup.rulesPrompt': 'Pakibasa ang kabanatang ito.',
+  'setup.rulesPromptLast':
     'Pakibasa ang kabanatang ito. Makakapagpatuloy ka lang kapag sumang-ayon ka.',
   'setup.rulesProgress': '{current} sa {total}',
   'setup.rulesBack': 'Bumalik',

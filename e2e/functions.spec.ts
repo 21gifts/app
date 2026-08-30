@@ -113,7 +113,11 @@ async function agreeToLivingRoomRules(page: Page): Promise<void> {
     await expect(
       page.getByText(`${i + 1} of ${RULES_CHAPTER_IDS.length}`, { exact: true }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    if (i < RULES_CHAPTER_IDS.length - 1) {
+      await page.getByRole('button', { name: 'Continue' }).click();
+    } else {
+      await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    }
   }
   await expect(page).toHaveURL(/\/welcome/);
 }
@@ -713,7 +717,7 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
     });
   });
   await page.goto('/setup/rules');
-  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: RulesDocument — onboarding first chapter is the lead', async ({ page }) => {
@@ -742,7 +746,7 @@ test('Function: RulesDocument — onboarding first chapter is the lead', async (
   await expect(page.getByText(/You are a guest in a living room/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'House right' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Wanted' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'I agree to these rules' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
 });
@@ -799,7 +803,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
   });
   await page.goto('/setup/rules');
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {

@@ -51,16 +51,25 @@ describe('RulesSetup', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('shows the prompt, current chapter, progress, and agree button', () => {
-    renderWithLocale(<RulesSetup chapters={oneChapter} />);
+  it('shows Continue on intermediate chapters and I agree only on the last', () => {
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
     expect(screen.getByRole('heading', { name: 'Living room rules' })).toBeTruthy();
+    expect(screen.getByText('Please read this chapter.')).toBeTruthy();
+    expect(screen.getByText('1 of 2')).toBeTruthy();
+    expect(screen.getByText('chapter-one')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'I agree to these rules' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
     expect(
       screen.getByText('Please read this chapter. You can continue only after you agree.'),
     ).toBeTruthy();
-    expect(screen.getByText('1 of 1')).toBeTruthy();
-    expect(screen.getByText('rules-body')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
   it('advances chapters without posting until the last agree', () => {
@@ -71,7 +80,7 @@ describe('RulesSetup', () => {
     expect(screen.queryByText('chapter-two')).toBeNull();
     expect(screen.getByText('1 of 2')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(agreeToRules).not.toHaveBeenCalled();
     expect(screen.queryByText('chapter-one')).toBeNull();
@@ -93,12 +102,11 @@ describe('RulesSetup', () => {
       />,
     );
 
-    const agree = (): HTMLElement => screen.getByRole('button', { name: 'I agree to these rules' });
     for (let i = 0; i < RULES_CHAPTER_IDS.length - 1; i += 1) {
-      fireEvent.click(agree());
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
       expect(agreeToRules).not.toHaveBeenCalled();
     }
-    fireEvent.click(agree());
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
 
     await waitFor(() => {
       expect(agreeToRules).toHaveBeenCalledTimes(1);
@@ -112,7 +120,7 @@ describe('RulesSetup', () => {
     );
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     const back = screen.getByRole('button', { name: 'Back' });
     expect(back).toBeTruthy();
@@ -134,10 +142,10 @@ describe('RulesSetup', () => {
         ]}
       />,
     );
-    const agree = screen.getByRole('button', { name: 'I agree to these rules' });
+    const next = screen.getByRole('button', { name: 'Continue' });
     act(() => {
-      agree.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      agree.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      next.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      next.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(screen.getByText('chapter-two')).toBeTruthy();
     expect(screen.queryByText('chapter-three')).toBeNull();
@@ -148,7 +156,7 @@ describe('RulesSetup', () => {
     renderWithLocale(
       <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     const back = screen.getByRole('button', { name: 'Back' });
     act(() => {
       back.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -158,7 +166,7 @@ describe('RulesSetup', () => {
     expect(screen.queryByText('chapter-two')).toBeNull();
   });
 
-  it('ignores the second click of a double-click on agree after paint', () => {
+  it('ignores the second click of a double-click on continue after paint', () => {
     renderWithLocale(
       <RulesSetup
         chapters={[
@@ -168,10 +176,10 @@ describe('RulesSetup', () => {
         ]}
       />,
     );
-    const agree = screen.getByRole('button', { name: 'I agree to these rules' });
-    fireEvent.click(agree, { detail: 1 });
+    const next = screen.getByRole('button', { name: 'Continue' });
+    fireEvent.click(next, { detail: 1 });
     expect(screen.getByText('chapter-two')).toBeTruthy();
-    fireEvent.click(agree, { detail: 2 });
+    fireEvent.click(next, { detail: 2 });
     expect(screen.getByText('chapter-two')).toBeTruthy();
     expect(screen.queryByText('chapter-three')).toBeNull();
   });
@@ -186,9 +194,9 @@ describe('RulesSetup', () => {
         ]}
       />,
     );
-    const agree = screen.getByRole('button', { name: 'I agree to these rules' });
-    fireEvent.click(agree, { detail: 1 });
-    fireEvent.click(agree, { detail: 1 });
+    const next = screen.getByRole('button', { name: 'Continue' });
+    fireEvent.click(next, { detail: 1 });
+    fireEvent.click(next, { detail: 1 });
     expect(screen.getByText('chapter-three')).toBeTruthy();
     const back = screen.getByRole('button', { name: 'Back' });
     fireEvent.click(back, { detail: 1 });
@@ -346,7 +354,7 @@ describe('RulesSetup', () => {
     renderWithLocale(
       <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     const back = screen.getByRole('button', { name: 'Back' }) as HTMLButtonElement;
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     expect(back.disabled).toBe(true);

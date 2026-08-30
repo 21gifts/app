@@ -7,11 +7,11 @@ import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Third post-login screen: one living-room rules chapter at a time and an
- * **I agree** control.
+ * Third post-login screen: one living-room rules chapter at a time.
  *
- * Intermediate agrees only advance the chapter index. The last agree POSTs
- * `agreeToRules` and merges only `rulesAgreedAt` into the auth-store account
+ * Intermediate **Continue** clicks only advance the chapter index. The last
+ * chapter’s **I agree to these rules** POSTs `agreeToRules` and merges only
+ * `rulesAgreedAt` into the auth-store account
  * so concurrent name or address writes are not overwritten. Renders nothing
  * without a session token or when `chapters` is empty.
  *
@@ -42,6 +42,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
   }
 
   const lastIndex = chapters.length - 1;
+  const lastChapter = index >= lastIndex;
 
   const handleAgree = (event: MouseEvent<HTMLButtonElement>): void => {
     if (event.detail > 1 || busy || stepLock.current) {
@@ -98,7 +99,9 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         <h1 className="text-center text-2xl font-semibold tracking-tight">
           {t('setup.rulesTitle')}
         </h1>
-        <p className="text-center text-sm text-app-muted">{t('setup.rulesPrompt')}</p>
+        <p className="text-center text-sm text-app-muted">
+          {t(lastChapter ? 'setup.rulesPromptLast' : 'setup.rulesPrompt')}
+        </p>
         <p className="text-center text-sm text-app-muted" aria-live="polite">
           {t('setup.rulesProgress', { current: index + 1, total: chapters.length })}
         </p>
@@ -115,7 +118,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
           className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
         >
           {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-          {t('setup.agree')}
+          {t(lastChapter ? 'setup.agree' : 'setup.continue')}
         </button>
       </section>
     </>
