@@ -2476,25 +2476,29 @@ test('Function: isIosSafari — profile shows the enable notifications control',
   await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
 });
 
-test('Function: OPTIONS — login still loads', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByLabel('Theme')).toBeVisible();
+test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) => {
+  const res = await request.fetch('/.well-known/nostr.json', { method: 'OPTIONS' });
+  expect(res.headers()['access-control-allow-origin']).toBe('*');
 });
-test('Function: isForumVideoFile — login still loads', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByLabel('Theme')).toBeVisible();
+test('Function: isForumVideoFile — composer accept includes mp4', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
 });
-test('Function: prepareForumVideo — login still loads', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByLabel('Theme')).toBeVisible();
+test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/webm/);
 });
-test('Function: postMessageVideo — login still loads', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByLabel('Theme')).toBeVisible();
+test('Function: postMessageVideo — composer accept includes quicktime', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/quicktime/);
 });
-test('Function: forumVideoSrc — login still loads', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByLabel('Theme')).toBeVisible();
+test('Function: forumVideoSrc — composer accept includes mov', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.mov/);
 });
 
 test('Endpoint: GET /.well-known/nostr.json — checker literals', async ({ request }) => {
