@@ -49,21 +49,79 @@ describe('proxyApiRequest', () => {
     expect(headers.get('x-ignored')).toBeNull();
   });
 
-  it('forwards a POST body', async () => {
+  it('forwards a POST body as a stream with duplex half', async () => {
     const fetchMock = stubFetch(new Response('{}', { status: 200 }));
     const body = JSON.stringify({ address: 'a@b.com' });
     const request = new Request('http://localhost/me/lightning-address', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'content-length': String(body.length),
+        'transfer-encoding': 'chunked',
+      },
       body,
     });
+    const originalBody = request.body;
 
     await proxyApiRequest(request, '/me/lightning-address');
 
-    const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit & { duplex?: string }];
     expect(init.method).toBe('POST');
-    expect(init.body).toBeInstanceOf(ArrayBuffer);
-    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
+    expect(init.body).toBe(originalBody);
+    expect(init.duplex).toBe('half');
+    const headers = init.headers as Headers;
+    expect(headers.get('content-length')).toBe(String(body.length));
+    expect(headers.get('transfer-encoding')).toBeNull();
+  });
+
+  it('forwards Range on GET and still drops x-ignored', async () => {
+    const fetchMock = stubFetch(
+      new Response('ab', { status: 206, headers: { 'content-type': 'video/mp4' } }),
+    );
+    const request = new Request('http://localhost/messages/m1/video.mp4', {
+      headers: {
+        Range: 'bytes=0-1',
+        'x-ignored': 'no',
+      },
+    });
+
+    await proxyApiRequest(request, '/messages/m1/video.mp4');
+
+    const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    const headers = init.headers as Headers;
+    expect(headers.get('range')).toBe('bytes=0-1');
+    expect(headers.get('x-ignored')).toBeNull();
+  });
+
+  it('copies range and cache response headers from upstream', async () => {
+    stubFetch(
+      new Response('chunk', {
+        status: 206,
+        headers: {
+          'content-type': 'video/mp4',
+          'content-length': '5',
+          'content-range': 'bytes 0-4/100',
+          'accept-ranges': 'bytes',
+          'cache-control': 'public, max-age=60',
+          'content-disposition': 'inline',
+        },
+      }),
+    );
+
+    const res = await proxyApiRequest(
+      new Request('http://localhost/messages/m1/video.mp4', {
+        headers: { Range: 'bytes=0-4' },
+      }),
+      '/messages/m1/video.mp4',
+    );
+
+    expect(res.status).toBe(206);
+    expect(res.headers.get('content-type')).toBe('video/mp4');
+    expect(res.headers.get('content-length')).toBe('5');
+    expect(res.headers.get('content-range')).toBe('bytes 0-4/100');
+    expect(res.headers.get('accept-ranges')).toBe('bytes');
+    expect(res.headers.get('cache-control')).toBe('public, max-age=60');
+    expect(res.headers.get('content-disposition')).toBe('inline');
   });
 
   it('returns 502 JSON when the api URL is missing', async () => {

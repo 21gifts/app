@@ -15,6 +15,7 @@ import {
   postContact,
   postMessage,
   postMessageInvoice,
+  postMessageVideo,
   postPushSubscription,
   agreeToRules,
   setLightningAddress,
@@ -522,7 +523,7 @@ describe('fetchMessages', () => {
       body: { messages: [forumMessageWithoutRole] },
     });
     await expect(fetchMessages('sess')).resolves.toEqual([
-      { ...forumMessageWithoutRole, role: 'basis' },
+      { ...forumMessageWithoutRole, role: 'basis', hasVideo: false, videoContentType: null },
     ]);
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       headers: { Authorization: 'Bearer sess' },
@@ -601,10 +602,18 @@ describe('postMessageInvoice', () => {
   });
 });
 
+const parsedForumMessage = {
+  ...forumMessage,
+  hasVideo: false,
+  videoContentType: null,
+};
+
 describe('postMessage', () => {
   it('posts the text and returns the validated message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
-    await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(forumMessage);
+    await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(
+      parsedForumMessage,
+    );
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       method: 'POST',
       headers: {
@@ -619,7 +628,11 @@ describe('postMessage', () => {
     const withPhoto = { ...forumMessage, text: '', hasPhoto: true };
     const fetchMock = stubFetch({ ok: true, status: 200, body: withPhoto });
     const photo = { contentType: 'image/jpeg', data: 'abc' };
-    await expect(postMessage('sess', { text: '', photo })).resolves.toEqual(withPhoto);
+    await expect(postMessage('sess', { text: '', photo })).resolves.toEqual({
+      ...withPhoto,
+      hasVideo: false,
+      videoContentType: null,
+    });
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       method: 'POST',
       headers: {
@@ -634,7 +647,11 @@ describe('postMessage', () => {
     const withBoth = { ...forumMessage, hasPhoto: true };
     const fetchMock = stubFetch({ ok: true, status: 200, body: withBoth });
     const photo = { contentType: 'image/jpeg', data: 'abc' };
-    await expect(postMessage('sess', { text: 'Hello from Ada', photo })).resolves.toEqual(withBoth);
+    await expect(postMessage('sess', { text: 'Hello from Ada', photo })).resolves.toEqual({
+      ...withBoth,
+      hasVideo: false,
+      videoContentType: null,
+    });
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       method: 'POST',
       headers: {
@@ -658,6 +675,77 @@ describe('postMessage', () => {
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
+  });
+});
+
+describe('postMessageVideo', () => {
+  it('posts multipart video and optional poster and returns the validated message', async () => {
+    const created = {
+      ...forumMessage,
+      hasPhoto: true,
+      hasVideo: true,
+      videoContentType: 'video/mp4' as const,
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: created });
+    const video = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    await expect(postMessageVideo('sess', { text: 'clip', video, poster })).resolves.toEqual(
+      created,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/messages');
+    expect(init.method).toBe('POST');
+    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer sess');
+    expect(init.body).toBeInstanceOf(FormData);
+    const form = init.body as FormData;
+    expect(form.get('text')).toBe('clip');
+    expect(form.get('video')).toBe(video);
+    expect(form.get('poster')).toBeInstanceOf(Blob);
+  });
+
+  it('omits poster when not provided', async () => {
+    const created = {
+      ...forumMessage,
+      hasVideo: true,
+      videoContentType: 'video/webm' as const,
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: created });
+    const video = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' });
+    await expect(postMessageVideo('sess', { text: 'clip', video })).resolves.toEqual(created);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const form = init.body as FormData;
+    expect(form.get('poster')).toBeNull();
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Video too large' } });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow('Video too large');
+  });
+
+  it('throws the api error message on a 429', async () => {
+    stubFetch({ ok: false, status: 429, body: { error: 'Too many messages' } });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
+      'Too many messages',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
+      'Could not post your message',
+    );
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
+      'Could not post your message',
+    );
   });
 });
 

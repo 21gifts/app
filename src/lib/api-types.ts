@@ -221,6 +221,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  *
  * `sats` is the validated payment total for the note (always present, including 0).
  * `payable` is true when a signed-in member can request an invoice for that note.
+ * `hasVideo` / `videoContentType` default when an older api omits them.
  * `role` is optional with default `basis` so a rolling api deploy without the
  * field still parses and the board stays lit.
  */
@@ -233,9 +234,15 @@ export const forumMessageSchema = z
     sats: z.number().int().nonnegative(),
     payable: z.boolean(),
     hasPhoto: z.boolean(),
+    hasVideo: z.boolean().optional().default(false),
+    videoContentType: z
+      .enum(['video/mp4', 'video/webm', 'video/quicktime'])
+      .nullable()
+      .optional()
+      .default(null),
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
   })
-  .refine((message) => message.text !== '' || message.hasPhoto);
+  .refine((message) => message.text !== '' || message.hasPhoto || message.hasVideo);
 
 /**
  * Runtime schema for the payload of `GET /messages`.

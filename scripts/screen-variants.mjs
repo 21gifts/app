@@ -271,7 +271,7 @@ export const SCREEN_VARIANTS = [
     id: 'validation-error',
     image: 'welcome-validation-error.png',
     visual: 'state-welcome-validation-error',
-    needle: 'Enter a message or add a photo',
+    needle: 'Enter a message or add a photo or video',
   },
   {
     route: '/welcome',
@@ -307,6 +307,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-composer-photo-and-text.png',
     visual: 'state-welcome-composer-photo-and-text',
     needle: 'Caption with selected photo.',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-video',
+    image: 'welcome-composer-video.png',
+    visual: 'state-welcome-composer-video',
+    needle: 'welcome composer-video',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-video-and-text',
+    image: 'welcome-composer-video-and-text.png',
+    visual: 'state-welcome-composer-video-and-text',
+    needle: 'Caption with selected video.',
   },
   {
     route: '/welcome',
@@ -348,7 +362,7 @@ export const SCREEN_VARIANTS = [
     id: 'error-unsupported',
     image: 'welcome-error-unsupported.png',
     visual: 'state-welcome-error-unsupported',
-    needle: 'Use a JPEG, PNG, or WebP photo',
+    needle: 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
   },
   {
     route: '/welcome',
@@ -362,7 +376,7 @@ export const SCREEN_VARIANTS = [
     id: 'error-too-large',
     image: 'welcome-error-too-large.png',
     visual: 'state-welcome-error-too-large',
-    needle: 'Keep the photo under 1 MB',
+    needle: 'Keep photos under 1 MB and videos under 32 MB',
   },
   {
     route: '/welcome',
