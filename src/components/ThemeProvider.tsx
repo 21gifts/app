@@ -54,11 +54,11 @@ function readThemeCookie(): string | undefined {
  * @param next - Preference to persist; `'system'` clears the cookie.
  */
 function writeThemeCookie(next: ThemePreference): void {
+  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
   if (next === 'system') {
-    document.cookie = `${THEME_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+    document.cookie = `${THEME_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
     return;
   }
-  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
   document.cookie = `${THEME_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
 }
 

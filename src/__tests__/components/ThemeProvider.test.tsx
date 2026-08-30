@@ -200,6 +200,39 @@ describe('ThemeProvider', () => {
     }
   });
 
+  it('deletes the cookie with Secure on https when preference is system', async () => {
+    stubMatchMedia(false);
+    const cookieSet = vi.fn();
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => `${THEME_COOKIE}=dark`,
+      set: cookieSet,
+    });
+    vi.stubGlobal('location', { protocol: 'https:' });
+    try {
+      render(
+        <ThemeProvider>
+          <Probe />
+        </ThemeProvider>,
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId('preference').textContent).toBe('dark');
+      });
+      act(() => {
+        screen.getByRole('button', { name: 'set-system' }).click();
+      });
+      expect(cookieSet).toHaveBeenCalledWith(
+        `${THEME_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`,
+      );
+      expect(screen.getByTestId('preference').textContent).toBe('system');
+    } finally {
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
+
   it('listens to matchMedia change when preference is system', async () => {
     const { addEventListener } = stubMatchMedia(false);
     render(
