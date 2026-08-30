@@ -19,26 +19,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: '/legal.html', destination: '/legal', permanent: true }];
   },
-  async rewrites() {
-    const api = process.env.NEXT_PUBLIC_API_URL;
-    if (api === undefined || api === '') {
-      return [];
-    }
-    return [
-      {
-        source: '/messages/:id/video.mp4',
-        destination: `${api}/messages/:id/video.mp4`,
-      },
-      {
-        source: '/messages/:id/video.webm',
-        destination: `${api}/messages/:id/video.webm`,
-      },
-      {
-        source: '/messages/:id/video.mov',
-        destination: `${api}/messages/:id/video.mov`,
-      },
-    ];
-  },
   async headers() {
     return [
       {

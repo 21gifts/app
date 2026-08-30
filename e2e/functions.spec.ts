@@ -334,6 +334,12 @@ test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without beare
   expect((await request.get('/messages/m1/photo')).status()).toBe(401);
 });
 
+test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a file is 404', async ({
+  request,
+}) => {
+  expect((await request.get('/messages/m1/video.mp4')).status()).toBe(404);
+});
+
 test('Function: fetchMessagePhoto — photo-only row shows the image alt', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

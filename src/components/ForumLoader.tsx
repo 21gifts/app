@@ -475,12 +475,20 @@ export function ForumLoader(): ReactElement | null {
           });
         }
         if (created.hasVideo && pendingVideo !== null) {
-          setVideoUrls((prev) => {
-            if (prev[created.id] !== undefined) {
-              return prev;
-            }
-            return { ...prev, [created.id]: pendingVideo.previewUrl };
-          });
+          if (videoUrlsRef.current[created.id] !== undefined) {
+            revokeObjectUrlIfPresent(pendingVideo.previewUrl);
+          } else {
+            setVideoUrls((prev) => {
+              /* v8 ignore start -- race if the same id was filled while posting */
+              if (prev[created.id] !== undefined) {
+                return prev;
+              }
+              /* v8 ignore stop */
+              return { ...prev, [created.id]: pendingVideo.previewUrl };
+            });
+          }
+        } else if (pendingVideo !== null) {
+          revokeObjectUrlIfPresent(pendingVideo.previewUrl);
         }
         setDraft('');
         setPhotoDraft(null);

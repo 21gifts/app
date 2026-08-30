@@ -80,7 +80,8 @@ app/
 │   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
 │   │   │   └── [id]/
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
-│   │   │       └── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
+│   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
+│   │   │       └── [file]/route.ts   # GET /messages/[id]/video.{mp4,webm,mov} same-origin proxy
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/

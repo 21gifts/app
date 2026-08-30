@@ -2,9 +2,9 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, `/view-key/[viewKey]`, and `/push/vapid-public`).
-- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo and view-key); none on healthz.
-- **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, and `/push/vapid-public`).
+- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz.
+- **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls. `GET /.well-known/nostr.json` proxies NIP-05.
 
 ## Function: OPTIONS
@@ -1025,6 +1025,13 @@
 - **Inputs:** Incoming `Request` with Bearer session, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/messages/[id]/photo`.
+
+## Function: proxyMessagesVideoGet
+
+- **Purpose:** Same-origin proxy GET `/messages/:id/video.{mp4,webm,mov}` to the 21.gifts api (raw forum video bytes). Public; no bearer required. Runtime `getApiUrl()` via `proxyApiRequest` (not next.config rewrites).
+- **Inputs:** Incoming `Request`, message `id` from the route, and `ext` `'mp4' | 'webm' | 'mov'`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/messages/[id]/[file]` when `file` is `video.mp4` | `video.webm` | `video.mov`.
 
 ## Function: proxyMeLightningAddressDelete
 

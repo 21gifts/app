@@ -41,7 +41,6 @@ async function capturePoster(file: File): Promise<Blob | null> {
     const video = document.createElement('video');
     video.muted = true;
     video.playsInline = true;
-    video.src = url;
     await new Promise<void>((resolve, reject) => {
       const fail = window.setTimeout(() => {
         reject(new Error('Could not decode video'));
@@ -54,6 +53,7 @@ async function capturePoster(file: File): Promise<Blob | null> {
         window.clearTimeout(fail);
         reject(new Error('Could not decode video'));
       };
+      video.src = url;
     });
     await new Promise<void>((resolve, reject) => {
       const finish = (): void => {
@@ -72,9 +72,12 @@ async function capturePoster(file: File): Promise<Blob | null> {
       }
       video.currentTime = 0;
     });
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      return null;
+    }
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 360;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     if (ctx === null) {
       return null;

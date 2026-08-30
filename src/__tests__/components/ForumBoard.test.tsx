@@ -779,7 +779,10 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:v');
+    const preview = document.querySelector('form video');
+    expect(preview?.getAttribute('src')).toBe('blob:v');
+    expect(preview?.hasAttribute('playsinline')).toBe(true);
+    expect(preview?.getAttribute('preload')).toBe('metadata');
     const remove = screen.getByRole('button', { name: 'Remove video' });
     expect(remove.textContent?.trim()).toBe('');
     expect(screen.queryByText('Remove video')).toBeNull();

@@ -1420,11 +1420,51 @@ describe('ForumLoader', () => {
       expect(prepareVideoMock).toHaveBeenCalledTimes(1);
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
+    const revoke = vi.mocked(URL.revokeObjectURL);
+    revoke.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postVideoMock).toHaveBeenCalledTimes(2);
     });
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:video-first');
+    expect(revoke).toHaveBeenCalledWith('blob:video-second');
+  });
+
+  it('revokes a pending video preview when the created message has no video', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:video-unused' },
+    });
+    postVideoMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'vid-novideo',
+      text: 'clip',
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(prepareVideoMock).toHaveBeenCalledWith(file);
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
+    const revoke = vi.mocked(URL.revokeObjectURL);
+    revoke.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postVideoMock).toHaveBeenCalled();
+      expect(screen.queryByLabelText('Remove video')).toBeNull();
+    });
+    expect(revoke).toHaveBeenCalledWith('blob:video-unused');
   });
 
   it('prepends a post when the list has not loaded yet', async () => {

@@ -556,6 +556,8 @@ export function ForumBoard({
               src={videoDraft.previewUrl}
               className="h-20 w-20 rounded-lg object-cover"
               muted
+              playsInline
+              preload="metadata"
             />
             <button
               type="button"
