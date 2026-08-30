@@ -18,10 +18,11 @@ export type PrepareForumVideoResult =
   { ok: true; video: ForumVideoPayload } | { ok: false; error: 'unsupported' | 'tooLarge' };
 
 /**
- * True when `file.type` is MP4, WebM, or QuickTime.
+ * True when `file.type` is MP4, WebM, or QuickTime, or the name ends in
+ * `.mp4`, `.webm`, or `.mov`.
  *
  * @param file - Browser file from a file input.
- * @returns Whether the mime type is accepted for forum videos.
+ * @returns Whether the mime type or filename is accepted for forum videos.
  */
 export function isForumVideoFile(file: File): boolean {
   return FORUM_VIDEO_TYPES.has(file.type) || /\.(mp4|webm|mov)$/i.test(file.name);
