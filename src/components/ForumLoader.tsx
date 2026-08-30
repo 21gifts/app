@@ -11,6 +11,7 @@ import {
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
+  fetchReplies,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -125,6 +126,14 @@ export function ForumLoader(): ReactElement | null {
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [repliesError, setRepliesError] = useState(false);
+  const [repliesAttempt, setRepliesAttempt] = useState(0);
+  const [replyDraft, setReplyDraft] = useState('');
+  const [replyPosting, setReplyPosting] = useState(false);
+  const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
   const payPollGeneration = useRef(0);
   const payablePollGeneration = useRef(0);
   const messagesRef = useRef(messages);
@@ -283,6 +292,35 @@ export function ForumLoader(): ReactElement | null {
       revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
     };
   }, []);
+
+  useEffect(() => {
+    if (session === null || expandedId === null) {
+      return;
+    }
+    let cancelled = false;
+    setRepliesLoading(true);
+    setRepliesError(false);
+    setReplies(null);
+    void (async () => {
+      try {
+        const next = await fetchReplies(session, expandedId);
+        if (!cancelled) {
+          setReplies(next);
+        }
+      } catch {
+        if (!cancelled) {
+          setRepliesError(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setRepliesLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, expandedId, repliesAttempt]);
 
   const lawsVisible = account?.forumLawsDismissed !== true;
 
@@ -575,6 +613,70 @@ export function ForumLoader(): ReactElement | null {
     setFeedMode(next);
   };
 
+  const onToggleExpand = (messageId: string): void => {
+    if (expandedId === messageId) {
+      setExpandedId(null);
+      setReplies(null);
+      setRepliesError(false);
+      setRepliesLoading(false);
+      setReplyDraft('');
+      setReplyFormError(null);
+      return;
+    }
+    setExpandedId(messageId);
+    setReplyDraft('');
+    setReplyFormError(null);
+    setRepliesAttempt((n) => n + 1);
+  };
+
+  const onReplyPost = (): void => {
+    /* v8 ignore next 3 -- reply composer only mounts when expanded */
+    if (expandedId === null || replyPosting) {
+      return;
+    }
+    const trimmed = replyDraft.trim();
+    if (trimmed === '') {
+      setReplyFormError('empty');
+      return;
+    }
+    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    const parentId = expandedId;
+    setReplyPosting(true);
+    setReplyFormError(null);
+    void (async () => {
+      try {
+        const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
+        setReplies((prev) => {
+          if (prev === null) {
+            return [created];
+          }
+          if (prev.some((message) => message.id === created.id)) {
+            return prev;
+          }
+          return [...prev, created];
+        });
+        setMessages((prev) => {
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) =>
+            message.id === parentId
+              ? { ...message, replyCount: message.replyCount + 1 }
+              : message,
+          );
+        });
+        setReplyDraft('');
+      } catch (err) {
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      } finally {
+        setReplyPosting(false);
+      }
+    })();
+  };
+
   return (
     <ForumBoard
       messages={messages}
@@ -628,6 +730,22 @@ export function ForumLoader(): ReactElement | null {
       onModeChange={onModeChange}
       lawsVisible={lawsVisible}
       onDismissLaws={onDismissLaws}
+      expandedId={expandedId}
+      onToggleExpand={onToggleExpand}
+      replies={expandedId === null ? null : replies}
+      repliesLoading={expandedId !== null && repliesLoading}
+      repliesError={expandedId !== null && repliesError}
+      onRetryReplies={() => {
+        setRepliesAttempt((n) => n + 1);
+      }}
+      replyDraft={replyDraft}
+      onReplyDraftChange={(value) => {
+        setReplyDraft(value);
+        setReplyFormError(null);
+      }}
+      onReplyPost={onReplyPost}
+      replyPosting={replyPosting}
+      replyFormError={replyFormError}
     />
   );
 }

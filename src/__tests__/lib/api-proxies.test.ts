@@ -21,7 +21,9 @@ import {
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
+  proxyMessagesRepliesGet,
   proxyMessagesVideoGet,
+  proxyPublicMessageGet,
   proxyPushVapidPublicGet,
   proxyViewGet,
 } from '@/lib/api-proxies';
@@ -130,6 +132,21 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
+  });
+
+  it('proxyMessagesRepliesGet hits /messages/:id/replies', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepliesGet(
+      new Request('http://localhost/forum/messages/m1/replies'),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/replies');
+  });
+
+  it('proxyPublicMessageGet hits /messages/:id', async () => {
+    const fetchMock = stubApi();
+    await proxyPublicMessageGet(new Request('http://localhost/public-messages/m1'), 'm1');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1');
   });
 
   it('proxyContactPost hits POST /contact', async () => {

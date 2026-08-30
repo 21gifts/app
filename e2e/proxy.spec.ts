@@ -7,8 +7,10 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/push/vapid-public')).status()).toBe(401);
   expect((await request.post('/me/push-subscriptions')).status()).toBe(401);
   expect((await request.delete('/me/push-subscriptions')).status()).toBe(401);
-  expect((await request.get('/messages')).status()).toBe(401);
-  expect((await request.post('/messages')).status()).toBe(401);
+  expect((await request.get('/forum/messages')).status()).toBe(401);
+  expect((await request.post('/forum/messages')).status()).toBe(401);
+  expect((await request.get('/forum/messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
+  expect((await request.get('/public-messages/[id]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/messages/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/contact/submit')).status()).toBe(401);
   expect((await request.get('/messages/[id]/photo')).status()).toBe(401);

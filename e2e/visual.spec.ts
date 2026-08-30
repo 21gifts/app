@@ -555,6 +555,60 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-welcome');
   });
 
+  test('state /welcome expanded', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ replies: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByText('Write a reply')).toBeVisible();
+    await shotScreen(page, 'state-welcome-expanded');
+  });
+
+  test('state /welcome copy', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'Copy link to this note' }).first()).toBeVisible();
+    await shotScreen(page, 'state-welcome-copy');
+  });
+
   test('screen /profile', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -575,6 +629,60 @@ test.describe('onboarding screens', () => {
     await page.goto('/profile');
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
+  });
+
+  test('screen /messages/[id] default', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Hello from Ada',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await shotScreen(page, 'screen-messages-id');
+  });
+
+  test('state /messages/[id] missing', async ({ page }) => {
+    await page.goto('/messages/not-a-uuid');
+    await expect(page.getByText('This profile could not be found.')).toBeVisible();
+    await shotScreen(page, 'state-messages-id-missing');
+  });
+
+  test('state /messages/[id] loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async () => {
+      /* hang */
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-messages-id-loading');
+  });
+
+  test('state /messages/[id] error', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'boom' }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-error');
   });
 
   test('screen /view/[viewKey] default', async ({ page }) => {

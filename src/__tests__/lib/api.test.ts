@@ -8,10 +8,14 @@ import {
   fetchMe,
   fetchMessagePhoto,
   fetchMessages,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchReplies,
   fetchVapidPublicKey,
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   postContact,
   postMessage,
   postMessageInvoice,
@@ -240,6 +244,17 @@ describe('setLightningAddress', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setLightningAddress('sess', 'x')).rejects.toThrow();
+  });
+
+  it('throws the exact not-zap English string without rewriting', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: LIGHTNING_ADDRESS_NOT_ZAP_ERROR },
+    });
+    await expect(setLightningAddress('sess', 'nozap@walletofsatoshi.com')).rejects.toThrow(
+      LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+    );
   });
 });
 
@@ -504,7 +519,10 @@ const forumMessage = {
   sats: 0,
   payable: false,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis' as const,
+  replyCount: 0,
 };
 
 describe('fetchMessages', () => {
@@ -524,9 +542,15 @@ describe('fetchMessages', () => {
       body: { messages: [forumMessageWithoutRole] },
     });
     await expect(fetchMessages('sess')).resolves.toEqual([
-      { ...forumMessageWithoutRole, role: 'basis', hasVideo: false, videoContentType: null },
+      {
+        ...forumMessageWithoutRole,
+        role: 'basis',
+        hasVideo: false,
+        videoContentType: null,
+        replyCount: 0,
+      },
     ]);
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       headers: { Authorization: 'Bearer sess' },
     });
   });
@@ -615,13 +639,34 @@ describe('postMessage', () => {
     await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(
       parsedForumMessage,
     );
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text: 'Hello from Ada' }),
+    });
+  });
+
+  it('includes inReplyTo when provided', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada', inReplyTo: 'parent' });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada', inReplyTo: 'parent' }),
+    });
+  });
+
+  it('omits inReplyTo when absent', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada' });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
     });
   });
 
@@ -634,7 +679,7 @@ describe('postMessage', () => {
       hasVideo: false,
       videoContentType: null,
     });
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -653,7 +698,7 @@ describe('postMessage', () => {
       hasVideo: false,
       videoContentType: null,
     });
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -810,6 +855,110 @@ describe('fetchMessagePhoto', () => {
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchPublicMessage', () => {
+  it('GETs /public-messages/:id and returns the message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(fetchPublicMessage('uuid')).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid');
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchPublicMessage('uuid')).resolves.toBeNull();
+  });
+
+  it('throws visitor copy on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchPublicMessage('uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPublicMessage('uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'm1' } });
+    await expect(fetchPublicMessage('uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchPublicMessagePhoto', () => {
+  it('returns the blob without Authorization', async () => {
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchPublicMessagePhoto('m1')).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchPublicMessagePhoto('m1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchPublicMessagePhoto('m1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPublicMessagePhoto('m1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchReplies', () => {
+  it('GETs /forum/messages/:id/replies with bearer and parses replies', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { replies: [forumMessage] },
+    });
+    await expect(fetchReplies('sess', 'parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/parent/replies', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchReplies('sess', 'parent')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
   });

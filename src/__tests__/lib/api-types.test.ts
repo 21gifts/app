@@ -103,6 +103,7 @@ describe('forumMessageSchema', () => {
       ...base,
       hasVideo: false,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 
@@ -112,6 +113,7 @@ describe('forumMessageSchema', () => {
       ...photoOnly,
       hasVideo: false,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 
@@ -120,6 +122,7 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse(videoOnly)).toEqual({
       ...videoOnly,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 
@@ -296,6 +299,7 @@ describe('forumMessageSchema', () => {
       role: 'basis',
       hasVideo: false,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 

@@ -389,6 +389,55 @@
 - **Returns / side effects:** One chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`.
 
+## Function: Button
+
+- **Purpose:** Labeled app button with primary (filled) or secondary (bordered) weight using semantic `app-btn` tokens.
+- **Inputs:** Native button props plus optional `variant` (default `primary`), optional leading `icon`, and `children` label. Default `type="button"`.
+- **Returns / side effects:** A `<button>` element. No network. Used across login, forum retry, public note retry, and forms.
+- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, setup and contact screens.
+
+## Function: IconButton
+
+- **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`).
+- **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
+- **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
+- **Used by:** `ForumBoard`, `SignedInChrome`, profile and copy controls.
+
+## Function: Card
+
+- **Purpose:** Primary app content panel using semantic card tokens (`bg-app-card`, border, shadow) with optional max-width (`sm` / `md` / `xl`).
+- **Inputs:** `children`, optional `className`, optional `maxWidth` (default `sm`).
+- **Returns / side effects:** A `<section>` wrapper. No network. Shared shell for login, public note, and profile-style panels.
+- **Used by:** `PublicMessageLoader`, `LoginCard`, profile and setup screens.
+
+## Function: Field
+
+- **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted.
+- **Inputs:** `label`, optional `id` / `className`, `multiline` (textarea when true), plus native input or textarea attributes.
+- **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
+- **Used by:** Login, name, address, contact, and forum-related forms.
+
+## Function: PageChrome
+
+- **Purpose:** Full-height app page shell (`min-h-screen` centered column) with an optional absolute top-right slot for language/theme chrome.
+- **Inputs:** `children`, optional `topRight`, optional `className` on the outer `<main>`.
+- **Returns / side effects:** Layout only. No network. Used by login and the public message page (light `LanguageSwitcher` in `topRight`).
+- **Used by:** `LoginPage`, `PublicMessagePage`, and other signed-out/setup shells.
+
+## Function: PublicMessagePage
+
+- **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
+- **Inputs:** Dynamic route params (`id`).
+- **Returns / side effects:** `PageChrome` with light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Used by:** Route `/messages/[id]`.
+
+## Function: PublicMessageLoader
+
+- **Purpose:** Client loader for the public note page: validates UUID, fetches via `fetchPublicMessage` / `fetchPublicMessagePhoto`, shows missing/error/retry/loading, and a Log in or Back to the forum link from `useHydrateSession`.
+- **Inputs:** `id` string from the route.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready `Card`. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. No pay or composer.
+- **Used by:** `PublicMessagePage`.
+
 ## Function: ViewProfilePage
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
@@ -615,9 +664,30 @@
 
 ## Function: fetchMessages
 
-- **Purpose:** GET `/messages` with the bearer session, parse `forumListSchema`, and return the messages array newest-first.
+- **Purpose:** GET `/forum/messages` with the bearer session, parse `forumListSchema`, and return the messages array newest-first (including defaulted `replyCount`).
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure.
+- **Used by:** `ForumLoader`.
+
+## Function: fetchPublicMessage
+
+- **Purpose:** GET `/public-messages/:id` without a session, parse `forumMessageSchema`, and return one public forum note for the HTML note page.
+- **Inputs:** Forum message `id` (UUID string).
+- **Returns / side effects:** `ForumMessage`, or `null` on 404. Throws visitor copy (`Could not load messages. Please try again.`) on other non-ok, network, or zod failures.
+- **Used by:** `PublicMessageLoader`.
+
+## Function: fetchPublicMessagePhoto
+
+- **Purpose:** GET `/messages/:id/photo` without Authorization and return raw image bytes as a `Blob` for `URL.createObjectURL` on the public note page.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load messages. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
+- **Used by:** `PublicMessageLoader`.
+
+## Function: fetchReplies
+
+- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session, parse `forumRepliesSchema`, and return oldest-first replies for one note.
+- **Inputs:** `sessionToken`, parent message `id`.
+- **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure. Damus authors may omit `role` (schema defaults to `basis`).
 - **Used by:** `ForumLoader`.
 
 ## Function: fetchMessagePhoto
@@ -629,9 +699,9 @@
 
 ## Function: postMessage
 
-- **Purpose:** POST `/messages` with bearer + `{ text, photo? }`, parse `forumMessageSchema`, and return the created message (text and/or photo).
-- **Inputs:** `sessionToken`, `input` with `text` and optional `{ contentType, data }` photo.
-- **Returns / side effects:** `ForumMessage`. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
+- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, inReplyTo? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or photo).
+- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, and optional `inReplyTo` parent id (thread composer only).
+- **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` from the JSON body when absent. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
 - **Used by:** `ForumLoader`.
 
 ## Function: postContact
@@ -1007,17 +1077,31 @@
 
 ## Function: proxyMessagesGet
 
-- **Purpose:** Bearer proxy GET `/messages` to the 21.gifts api (public forum list).
+- **Purpose:** Bearer proxy GET `/messages` to the 21.gifts api (public forum list). App route is GET `/forum/messages`.
 - **Inputs:** Incoming `Request` with Bearer session.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
-- **Used by:** Route GET `/messages`.
+- **Used by:** Route GET `/forum/messages`.
 
 ## Function: proxyMessagesPost
 
-- **Purpose:** Bearer proxy POST `/messages` to the 21.gifts api (create a public forum message).
+- **Purpose:** Bearer proxy POST `/messages` to the 21.gifts api (create a public forum message or reply). App route is POST `/forum/messages`.
 - **Inputs:** Incoming `Request` with Bearer session and JSON body.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
-- **Used by:** Route POST `/messages`.
+- **Used by:** Route POST `/forum/messages`.
+
+## Function: proxyMessagesRepliesGet
+
+- **Purpose:** Bearer proxy GET `/messages/:id/replies` to the 21.gifts api (oldest-first replies). App route is GET `/forum/messages/[id]/replies`.
+- **Inputs:** Incoming `Request` with Bearer session, plus parent message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/forum/messages/[id]/replies`.
+
+## Function: proxyPublicMessageGet
+
+- **Purpose:** Public proxy GET `/messages/:id` to the 21.gifts api (one note as JSON, no auth). App path is `/public-messages/[id]` so `/messages/[id]` can serve HTML.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/public-messages/[id]`.
 
 ## Function: proxyContactPost
 

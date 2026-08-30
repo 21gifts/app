@@ -314,12 +314,28 @@ test('Function: proxyApiRequest — POST passkey register begin is 200', async (
   expect(res.status()).toBe(200);
 });
 
-test('Function: proxyMessagesGet — GET /messages without bearer is 401', async ({ request }) => {
-  expect((await request.get('/messages')).status()).toBe(401);
+test('Function: proxyMessagesGet — GET /forum/messages without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/messages')).status()).toBe(401);
 });
 
-test('Function: proxyMessagesPost — POST /messages without bearer is 401', async ({ request }) => {
-  expect((await request.post('/messages', { data: { text: 'hi' } })).status()).toBe(401);
+test('Function: proxyMessagesPost — POST /forum/messages without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/messages', { data: { text: 'hi' } })).status()).toBe(401);
+});
+
+test('Function: proxyMessagesRepliesGet — GET /forum/messages/[id]/replies without bearer', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: proxyPublicMessageGet — GET /public-messages/[id] is reachable', async ({
+  request,
+}) => {
+  expect((await request.get('/public-messages/[id]')).status()).toBeGreaterThanOrEqual(400);
 });
 
 test('Function: proxyContactPost — POST /contact/submit without bearer is 401', async ({
@@ -2074,6 +2090,179 @@ test('Function: ProfileScreen — back to forum is visible', async ({ page }) =>
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: Button — login shows the Log in button', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Post' })).toBeVisible();
+});
+
+test('Function: Card — login card is visible', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Log in to 21.gifts' })).toBeVisible();
+});
+
+test('Function: Field — login has no bare text field; welcome composer does', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByLabel('Your message')).toBeVisible();
+});
+
+test('Function: PageChrome — login shows language switcher chrome', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Language' })).toBeVisible();
+});
+
+test('Function: PublicMessagePage — public note shows Hello from Ada', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
+});
+
+test('Function: PublicMessageLoader — invalid id shows not-found copy', async ({ page }) => {
+  await page.goto('/messages/not-a-uuid');
+  await expect(page.getByText('This profile could not be found.')).toBeVisible();
+});
+
+test('Function: fetchPublicMessage — public note loads via the client fetch', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByText('Ada')).toBeVisible();
+});
+
+test('Function: fetchPublicMessagePhoto — public note with photo shows alt', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/messages/${id}/photo`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+});
+
+test('Function: fetchReplies — expanding a welcome note loads replies', async ({ page }) => {
+  await seedAdaSession(page);
+  const id = 'm-expand';
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id,
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        replies: [
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Show replies' }).click();
+  await expect(page.getByText('Write a reply')).toBeVisible();
 });
 
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {

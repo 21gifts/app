@@ -16,25 +16,25 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   LanguageSwitcher: () => <div data-testid="language-switcher" />,
 }));
 
-vi.mock('@/lib/request-locale', () => ({
-  getRequestLocale: vi.fn(async () => 'en' as const),
+vi.mock('@/components/ThemeSwitcher', () => ({
+  ThemeSwitcher: () => <div data-testid="theme-switcher" />,
 }));
 
 afterEach(cleanup);
 
 describe('LoginPage', () => {
-  it('renders the page heading', async () => {
-    renderWithLocale(await LoginPage());
-    expect(screen.getByRole('heading', { name: 'Log in to 21.gifts' })).toBeTruthy();
-  });
-
-  it('renders the login card', async () => {
-    renderWithLocale(await LoginPage());
+  it('renders the login card', () => {
+    renderWithLocale(<LoginPage />);
     expect(screen.getByTestId('login-card')).toBeTruthy();
   });
 
-  it('renders the language switcher', async () => {
-    renderWithLocale(await LoginPage());
+  it('renders the language switcher', () => {
+    renderWithLocale(<LoginPage />);
     expect(screen.getByTestId('language-switcher')).toBeTruthy();
+  });
+
+  it('renders the theme switcher', () => {
+    renderWithLocale(<LoginPage />);
+    expect(screen.getByTestId('theme-switcher')).toBeTruthy();
   });
 });

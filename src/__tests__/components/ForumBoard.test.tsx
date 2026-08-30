@@ -42,6 +42,7 @@ const SAMPLE: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const MULTILINE: ForumMessage = {
@@ -55,6 +56,7 @@ const MULTILINE: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const FIVE_SATS: ForumMessage = {
@@ -68,6 +70,7 @@ const FIVE_SATS: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const PHOTO: ForumPhotoPayload = {
@@ -101,6 +104,17 @@ const idleProps: Pick<
   | 'onClearPhoto'
   | 'photoUrls'
   | 'videoUrls'
+  | 'expandedId'
+  | 'onToggleExpand'
+  | 'replies'
+  | 'repliesLoading'
+  | 'repliesError'
+  | 'onRetryReplies'
+  | 'replyDraft'
+  | 'onReplyDraftChange'
+  | 'onReplyPost'
+  | 'replyPosting'
+  | 'replyFormError'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -119,6 +133,17 @@ const idleProps: Pick<
   onClearPhoto: () => undefined,
   photoUrls: {},
   videoUrls: {},
+  expandedId: null,
+  onToggleExpand: () => undefined,
+  replies: null,
+  repliesLoading: false,
+  repliesError: false,
+  onRetryReplies: () => undefined,
+  replyDraft: '',
+  onReplyDraftChange: () => undefined,
+  onReplyPost: () => undefined,
+  replyPosting: false,
+  replyFormError: null,
 };
 
 function modeProps(
@@ -595,6 +620,7 @@ describe('ForumBoard', () => {
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
+            replyCount: 0,
           },
         ]}
         error={false}
@@ -630,6 +656,7 @@ describe('ForumBoard', () => {
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
+            replyCount: 0,
           },
         ]}
         error={false}
@@ -665,6 +692,7 @@ describe('ForumBoard', () => {
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
+            replyCount: 0,
           },
         ]}
         error={false}
@@ -1490,5 +1518,142 @@ describe('ForumBoard', () => {
       />,
     );
     expect(document.querySelector('video')?.getAttribute('poster')).toBe('blob:poster');
+  });
+
+  it('shows the replyCount text for zero and non-zero counts', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('0 replies')).toBeTruthy();
+
+    rerender(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 2 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('2 replies')).toBeTruthy();
+  });
+
+  it('expands and collapses via the card aria-label, not pay/role/copy', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, role: 'verified' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('copies the public note URL and sets data-copied', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/m1`);
+      expect(
+        screen.getByRole('button', { name: 'Copy link to this note' }).getAttribute('data-copied'),
+      ).toBe('true');
+    });
+  });
+
+  it('shows the reply composer only when expanded', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByPlaceholderText('Write a reply')).toBeNull();
+
+    rerender(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hide replies' })).toBeTruthy();
   });
 });

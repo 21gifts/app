@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bitcoin, ImagePlus, Loader2, Send, X } from 'lucide-react';
+import { ArrowLeft, Bitcoin, Check, ImagePlus, Link2, Loader2, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import {
   useEffect,
@@ -8,10 +8,12 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
+  type MouseEvent,
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
+import { Button, Field, IconButton } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
@@ -42,6 +44,8 @@ const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageK
   moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
+
+const COPY_RESET_MS = 1200;
 
 /** Active pay invoice shown under a forum card. */
 export interface ForumPayInvoice {
@@ -113,6 +117,28 @@ export interface ForumBoardProps {
   photoUrls: Readonly<Record<string, string>>;
   /** Message id → blob/object URL for a just-posted video (local preview). */
   videoUrls?: Readonly<Record<string, string>>;
+  /** Expanded note id, or `null` when all cards are collapsed. */
+  expandedId: string | null;
+  /** Opens or closes the in-card thread for a note. */
+  onToggleExpand: (messageId: string) => void;
+  /** Replies for the expanded note (oldest-first), or `null` when not ready. */
+  replies: ForumMessage[] | null;
+  /** True while replies are loading for the expanded note. */
+  repliesLoading: boolean;
+  /** True when the latest replies fetch failed. */
+  repliesError: boolean;
+  /** Retry handler for a failed replies fetch. */
+  onRetryReplies: () => void;
+  /** Reply composer draft. */
+  replyDraft: string;
+  /** Called when the reply draft changes. */
+  onReplyDraftChange: (value: string) => void;
+  /** Called when the reply form is submitted. */
+  onReplyPost: () => void;
+  /** True while a reply post is in flight. */
+  replyPosting: boolean;
+  /** Reply composer validation or request failure. */
+  replyFormError: ForumFormError;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -125,27 +151,37 @@ const MODE_LABEL_KEY: Record<
 };
 
 /**
- * Presentational public forum: heading, optional dismissible living-room laws
- * hint box with links to `/rules` and `/contact`, Active/All/Most popular
- * selector, list or empty/loading/error, composer (attach photo or video +
- * textarea + Send icon), per-card ₿ amount with a Bitcoin pay icon when the
- * note is payable, optional Founder / Moderator / Verified role pills with
- * click-to-explain, pay-on-note sheet (amount → desktop QR + Pay button with
- * Wallet of Satoshi icon; smartphone deep link only, no QR; top-left back
- * control cancels), optional inline photos (caption below the photo), and
- * optional inline videos.
+ * Copy `text` via a hidden textarea and `document.execCommand('copy')`.
  *
- * This is a messenger-group thread (oldest top, newest bottom above the
- * composer), not a social feed. Props stay newest-first; Active and All reverse
- * the filtered list for the DOM. Most popular keeps sats-desc order.
+ * @param text - Absolute URL to put on the clipboard.
+ * @returns Whether the browser reported a successful copy.
+ */
+function fallbackCopy(text: string): boolean {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('aria-hidden', 'true');
+  ta.className = 'fixed opacity-0';
+  ta.readOnly = true;
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch {
+    ok = false;
+  }
+  ta.remove();
+  return ok;
+}
+
+/**
+ * Presentational public forum: optional dismissible living-room laws hint,
+ * Active/All/Most popular selector, list or empty/loading/error, board-bottom
+ * composer (new notes only, photo or video attach), per-card expand for replies
+ * + reply composer, copy-link control, pay-on-note sheet, optional inline
+ * photos, and optional inline videos.
  *
- * Always shows the heading, mode selector, and composer so validation errors
- * can surface even when the list is empty. Uses semantic app tokens
- * (`bg-app-*` / `text-app-*`) to follow the resolved theme, matching
- * {@link WelcomeScreen}. Photos render from {@link ForumBoardProps.photoUrls}
- * blob URLs — never from an unauthenticated `<img src="/messages/.../photo">`.
- *
- * @param props - Messages payload plus loading/error/composer/pay/mode/photo/laws state.
+ * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -178,6 +214,17 @@ export function ForumBoard({
   onClearPhoto,
   photoUrls,
   videoUrls = {},
+  expandedId,
+  onToggleExpand,
+  replies,
+  repliesLoading,
+  repliesError,
+  onRetryReplies,
+  replyDraft,
+  onReplyDraftChange,
+  onReplyPost,
+  replyPosting,
+  replyFormError,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const composerRef = useRef<HTMLFormElement>(null);
@@ -185,6 +232,9 @@ export function ForumBoard({
   const newestId = messages?.[0]?.id ?? null;
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyMounted = useRef(true);
 
   useEffect(() => {
     if (newestId === null) {
@@ -197,6 +247,16 @@ export function ForumBoard({
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
 
+  useEffect(() => {
+    copyMounted.current = true;
+    return () => {
+      copyMounted.current = false;
+      if (copyTimer.current !== null) {
+        clearTimeout(copyTimer.current);
+      }
+    };
+  }, []);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     onPost();
@@ -207,6 +267,11 @@ export function ForumBoard({
     onPaySubmit();
   };
 
+  const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    onReplyPost();
+  };
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     if (file !== undefined) {
@@ -215,16 +280,44 @@ export function ForumBoard({
     event.target.value = '';
   };
 
+  const flashCopied = (messageId: string): void => {
+    setCopiedId(messageId);
+    if (copyTimer.current !== null) {
+      clearTimeout(copyTimer.current);
+    }
+    copyTimer.current = setTimeout(() => {
+      setCopiedId(null);
+      copyTimer.current = null;
+    }, COPY_RESET_MS);
+  };
+
+  const copyMessageLink = async (messageId: string): Promise<void> => {
+    const url = `${window.location.origin}/messages/${messageId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      if (!copyMounted.current) {
+        return;
+      }
+      flashCopied(messageId);
+      return;
+    } catch {
+      if (!copyMounted.current) {
+        return;
+      }
+      if (fallbackCopy(url)) {
+        flashCopied(messageId);
+        return;
+      }
+      console.error('Copy link failed');
+    }
+  };
+
   const errorBlock = (
     <div className="flex flex-col items-center gap-3">
       <p className="text-center text-sm text-app-fg">{t('forum.error')}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="inline-flex items-center rounded-full border border-app-border-strong px-5 py-2 text-sm font-medium text-app-fg transition hover:bg-app-hover"
-      >
+      <Button type="button" variant="secondary" onClick={onRetry}>
         {t('forum.retry')}
-      </button>
+      </Button>
     </div>
   );
 
@@ -270,6 +363,12 @@ export function ForumBoard({
               : null;
           const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
           const roleHintOpen = openRoleMessageId === message.id;
+          const expanded = expandedId === message.id;
+          const copied = copiedId === message.id;
+
+          const stopCardToggle = (event: MouseEvent): void => {
+            event.stopPropagation();
+          };
 
           return (
             <li
@@ -277,94 +376,139 @@ export function ForumBoard({
               data-message-id={message.id}
               className="rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
             >
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-app-fg">{message.name}</span>
-                  {roleKeys !== null ? (
-                    <button
-                      type="button"
-                      aria-expanded={roleHintOpen}
-                      onClick={() => setOpenRoleMessageId(roleHintOpen ? null : message.id)}
-                      className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                    >
-                      {t(roleKeys.label)}
-                    </button>
-                  ) : null}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={expanded}
+                aria-label={expanded ? t('forum.collapse') : t('forum.expand')}
+                onClick={() => {
+                  onToggleExpand(message.id);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onToggleExpand(message.id);
+                  }
+                }}
+                className="cursor-pointer text-left"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                    {roleKeys !== null ? (
+                      <button
+                        type="button"
+                        aria-expanded={roleHintOpen}
+                        onClick={(event) => {
+                          stopCardToggle(event);
+                          setOpenRoleMessageId(roleHintOpen ? null : message.id);
+                        }}
+                        className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                      >
+                        {t(roleKeys.label)}
+                      </button>
+                    ) : null}
+                  </div>
+                  <time dateTime={message.createdAt} className="text-xs text-app-subtle">
+                    {formatForumTime(message.createdAt, locale)}
+                  </time>
                 </div>
-                <time dateTime={message.createdAt} className="text-xs text-app-subtle">
-                  {formatForumTime(message.createdAt, locale)}
-                </time>
-              </div>
-              {roleHintOpen && roleKeys !== null ? (
-                <p role="status" className="mt-1 text-xs text-app-muted">
-                  {t(roleKeys.hint)}
-                </p>
-              ) : null}
-              {videoSrc !== undefined ? (
-                <video
-                  src={videoSrc}
-                  poster={photoUrl}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="mt-2 max-h-80 w-full rounded-xl bg-black"
-                />
-              ) : photoUrl !== undefined ? (
-                /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
-                <img
-                  src={photoUrl}
-                  alt={t('forum.photoAlt', { name: message.name })}
-                  className="mt-2 max-h-80 w-full rounded-xl object-contain"
-                />
-              ) : null}
-              {message.text !== '' ? (
-                <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
-              ) : null}
-              <div className="mt-3 flex items-center gap-1.5">
-                <p className="text-xs font-medium text-app-muted">
-                  {formatBitcoin(message.sats, locale)}
-                </p>
-                {message.payable ? (
-                  <button
-                    type="button"
-                    aria-label={t('forum.pay')}
-                    disabled={payBusy}
-                    onClick={() => onPayOpen(message.id)}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                  </button>
+                {roleHintOpen && roleKeys !== null ? (
+                  <p role="status" className="mt-1 text-xs text-app-muted">
+                    {t(roleKeys.hint)}
+                  </p>
                 ) : null}
+                {videoSrc !== undefined ? (
+                  <video
+                    src={videoSrc}
+                    poster={photoUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="mt-2 max-h-80 w-full rounded-xl bg-black"
+                  />
+                ) : photoUrl !== undefined ? (
+                  /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
+                  <img
+                    src={photoUrl}
+                    alt={t('forum.photoAlt', { name: message.name })}
+                    className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                  />
+                ) : null}
+                {message.text !== '' ? (
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
+                ) : null}
+                <div className="mt-3 flex items-center gap-1.5">
+                  <p className="text-xs font-medium text-app-muted">
+                    {formatBitcoin(message.sats, locale)}
+                  </p>
+                  {message.payable ? (
+                    <IconButton
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      aria-label={t('forum.pay')}
+                      disabled={payBusy}
+                      onClick={(event) => {
+                        stopCardToggle(event);
+                        onPayOpen(message.id);
+                      }}
+                    >
+                      <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    </IconButton>
+                  ) : null}
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t('forum.copyLink')}
+                    title={t('forum.copyLink')}
+                    data-copied={copied ? 'true' : undefined}
+                    onClick={(event) => {
+                      stopCardToggle(event);
+                      void copyMessageLink(message.id);
+                    }}
+                  >
+                    {copied ? (
+                      <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                    ) : (
+                      <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                    )}
+                  </IconButton>
+                  <span className="ml-auto text-xs text-app-subtle">
+                    {t('forum.replyCount', { count: String(message.replyCount) })}
+                  </span>
+                </div>
               </div>
 
               {sheetOpen && invoiceForCard === null ? (
                 <form
                   onSubmit={handlePaySubmit}
+                  onClick={stopCardToggle}
                   className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10"
                 >
-                  <button
+                  <IconButton
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     aria-label={t('forum.payBack')}
                     onClick={onPayCancel}
-                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
+                    className="absolute left-2 top-2"
                   >
                     <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-                  </button>
-                  <label className="flex flex-col gap-1 text-left text-sm text-app-fg">
-                    {t('forum.payAmountLabel')}
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      placeholder={t('forum.payAmountPlaceholder')}
-                      value={payDraft}
-                      disabled={payBusy}
-                      onChange={(event) => onPayDraftChange(event.target.value)}
-                      className="rounded-xl border border-app-border-strong px-3 py-2 text-app-fg outline-none focus:border-app-border-strong disabled:opacity-50"
-                    />
-                  </label>
+                  </IconButton>
+                  <Field
+                    label={t('forum.payAmountLabel')}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    placeholder={t('forum.payAmountPlaceholder')}
+                    value={payDraft}
+                    disabled={payBusy}
+                    onChange={(event) => onPayDraftChange(event.target.value)}
+                  />
                   {payError === 'amount' ? (
                     <p role="alert" className="text-sm text-red-600">
                       {t('forum.payErrorAmount')}
@@ -385,31 +529,29 @@ export function ForumBoard({
                       {t('forum.payErrorAuthorWallet')}
                     </p>
                   ) : null}
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="submit"
-                      disabled={payBusy}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
-                    >
-                      {payBusy ? (
-                        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                      ) : null}
-                      {t('forum.payContinue')}
-                    </button>
-                  </div>
+                  <Button type="submit" disabled={payBusy} icon={payBusy ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : undefined}>
+                    {t('forum.payContinue')}
+                  </Button>
                 </form>
               ) : null}
 
               {invoiceForCard !== null ? (
-                <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
-                  <button
+                <div
+                  onClick={stopCardToggle}
+                  className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
+                >
+                  <IconButton
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     aria-label={t('forum.payBack')}
                     onClick={onPayCancel}
-                    className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
+                    className="absolute left-2 top-2"
                   >
                     <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-                  </button>
+                  </IconButton>
                   <p className="px-10 text-center text-sm text-app-muted">
                     {t('forum.payConfirm', {
                       amount: formatBitcoin(invoiceForCard.amountSats, locale),
@@ -444,6 +586,95 @@ export function ForumBoard({
                   {/* v8 ignore stop */}
                 </div>
               ) : null}
+
+              {expanded ? (
+                <div
+                  onClick={stopCardToggle}
+                  className="mt-3 flex flex-col gap-3 border-t border-app-border pt-3"
+                >
+                  {repliesLoading ? (
+                    <p className="text-center text-sm text-app-muted">{t('forum.repliesLoading')}</p>
+                  ) : null}
+                  {repliesError ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-center text-sm text-app-muted">{t('forum.repliesError')}</p>
+                      <Button type="button" variant="secondary" onClick={onRetryReplies}>
+                        {t('forum.retry')}
+                      </Button>
+                    </div>
+                  ) : null}
+                  {replies !== null && !repliesLoading && !repliesError ? (
+                    <ul className="flex flex-col gap-3">
+                      {replies.map((reply) => (
+                        <li
+                          key={reply.id}
+                          data-reply-id={reply.id}
+                          className="rounded-xl border border-app-border bg-app-card px-3 py-2"
+                        >
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <span className="text-sm font-medium text-app-fg">{reply.name}</span>
+                            <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
+                              {formatForumTime(reply.createdAt, locale)}
+                            </time>
+                          </div>
+                          {reply.text !== '' ? (
+                            <p className="mt-1 whitespace-pre-wrap text-sm text-app-fg">
+                              {reply.text}
+                            </p>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
+                    <div className="flex items-end gap-2">
+                      <textarea
+                        aria-label={t('forum.replyComposerLabel')}
+                        placeholder={t('forum.replyPlaceholder')}
+                        value={replyDraft}
+                        onChange={(event) => onReplyDraftChange(event.target.value)}
+                        maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                        rows={2}
+                        disabled={replyPosting}
+                        className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+                      />
+                      <IconButton
+                        type="submit"
+                        size="lg"
+                        variant="primary"
+                        disabled={replyPosting}
+                        aria-label={t('forum.post')}
+                      >
+                        {replyPosting ? (
+                          <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+                        ) : (
+                          <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                        )}
+                      </IconButton>
+                    </div>
+                    {replyFormError === 'empty' ? (
+                      <p role="alert" className="text-center text-sm text-red-600">
+                        {t('forum.errorEmpty')}
+                      </p>
+                    ) : null}
+                    {replyFormError === 'tooLong' ? (
+                      <p role="alert" className="text-center text-sm text-red-600">
+                        {t('forum.errorTooLong')}
+                      </p>
+                    ) : null}
+                    {replyFormError === 'request' ? (
+                      <p role="alert" className="text-center text-sm text-red-600">
+                        {t('forum.errorRequest')}
+                      </p>
+                    ) : null}
+                    {replyFormError === 'rateLimit' ? (
+                      <p role="alert" className="text-center text-sm text-red-600">
+                        {t('forum.errorRateLimit')}
+                      </p>
+                    ) : null}
+                  </form>
+                </div>
+              ) : null}
             </li>
           );
         })}
@@ -455,20 +686,18 @@ export function ForumBoard({
 
   return (
     <div className="flex w-full flex-col gap-4 border-t border-app-border pt-6">
-      <h2 className="text-center text-lg font-semibold tracking-tight text-app-fg">
-        {t('forum.heading')}
-      </h2>
-
       {lawsVisible ? (
         <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
-          <button
+          <IconButton
             type="button"
+            size="sm"
+            variant="ghost"
             aria-label={t('forum.lawsDismiss')}
             onClick={onDismissLaws}
-            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
+            className="absolute right-2 top-2"
           >
             <X aria-hidden="true" className="h-4 w-4" />
-          </button>
+          </IconButton>
           <div className="flex flex-col items-center gap-2">
             <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
             <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
@@ -509,17 +738,18 @@ export function ForumBoard({
 
       <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <button
+          <IconButton
             type="button"
+            size="lg"
+            variant="secondary"
             aria-label={t('forum.attach')}
             disabled={posting}
             onClick={() => {
               fileInputRef.current?.click();
             }}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-app-border-strong leading-none text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-          </button>
+          </IconButton>
           <input
             ref={fileInputRef}
             type="file"
@@ -538,18 +768,19 @@ export function ForumBoard({
             disabled={posting}
             className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
           />
-          <button
+          <IconButton
             type="submit"
+            size="lg"
+            variant="primary"
             disabled={posting}
             aria-label={t('forum.post')}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-app-btn leading-none text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
           >
             {posting ? (
               <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
             ) : (
               <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
             )}
-          </button>
+          </IconButton>
         </div>
         {videoDraft !== null ? (
           <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
@@ -560,15 +791,16 @@ export function ForumBoard({
               playsInline
               preload="metadata"
             />
-            <button
+            <IconButton
               type="button"
+              size="sm"
+              variant="secondary"
               onClick={onClearPhoto}
               disabled={posting}
               aria-label={t('forum.removeVideo')}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
             >
               <X aria-hidden="true" className="h-4 w-4" />
-            </button>
+            </IconButton>
           </div>
         ) : null}
         {photoDraft !== null ? (
@@ -579,15 +811,16 @@ export function ForumBoard({
               alt={t('forum.previewAlt')}
               className="h-20 w-20 rounded-lg object-cover"
             />
-            <button
+            <IconButton
               type="button"
+              size="sm"
+              variant="secondary"
               onClick={onClearPhoto}
               disabled={posting}
               aria-label={t('forum.removePhoto')}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
             >
               <X aria-hidden="true" className="h-4 w-4" />
-            </button>
+            </IconButton>
           </div>
         ) : null}
       </form>

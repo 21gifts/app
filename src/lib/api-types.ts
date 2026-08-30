@@ -228,6 +228,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `hasVideo` / `videoContentType` default when an older api omits them.
  * `role` is optional with default `basis` so a rolling api deploy without the
  * field still parses and the board stays lit.
+ * `replyCount` defaults to 0 so mixed deploys without the field still parse.
  */
 export const forumMessageSchema = z
   .object({
@@ -245,14 +246,22 @@ export const forumMessageSchema = z
       .optional()
       .default(null),
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
+    replyCount: z.number().int().nonnegative().default(0),
   })
   .refine((message) => message.text !== '' || message.hasPhoto || message.hasVideo);
 
 /**
- * Runtime schema for the payload of `GET /messages`.
+ * Runtime schema for the payload of `GET /messages` (top-level notes).
  */
 export const forumListSchema = z.object({
   messages: z.array(forumMessageSchema),
+});
+
+/**
+ * Runtime schema for `GET /messages/:id/replies` (oldest-first).
+ */
+export const forumRepliesSchema = z.object({
+  replies: z.array(forumMessageSchema),
 });
 
 /**

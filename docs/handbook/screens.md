@@ -267,9 +267,9 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video, ₿ amount always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `visibleForumMessages`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video, ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply**). Pay control / Send Bitcoin only when the note is payable; board-bottom composer with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, expand a note to load replies and post a reply, copy a note link to `/messages/<uuid>`, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`.
 
 ### Variant: default
 
@@ -315,9 +315,21 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
+Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 500 characters (same as `POST /forum/messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
+
+### Variant: expanded
+
+On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply**.
+
+![21.gifts welcome expanded](images/welcome-expanded.png)
+
+### Variant: copy
+
+Click **Copy link to this note** — control sets `data-copied` after writing `origin/messages/<uuid>` to the clipboard.
+
+![21.gifts welcome copy](images/welcome-copy.png)
 
 ### Variant: photo
 
@@ -539,6 +551,37 @@ One receive day (₿21 on **2026-06-01**). Chart draws a horizontal single-point
 Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
+
+## Screen: /messages/[id]
+
+- **Purpose:** Public read-only HTML note by forum message UUID. Language switcher (light) top-right via `PageChrome`. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
+- **Inputs:** Dynamic route `id` (UUID). Message from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch.
+- **Actions:** Change language. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
+- **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
+
+### Variant: default
+
+Valid known UUID. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo. Auth CTA below the card.
+
+![21.gifts public message](images/messages-id.png)
+
+### Variant: missing
+
+Unknown or malformed id. Copy **This profile could not be found.**
+
+![21.gifts public message missing](images/messages-id-missing.png)
+
+### Variant: loading
+
+Waiting on the public message fetch. Copy **Loading…**
+
+![21.gifts public message loading](images/messages-id-loading.png)
+
+### Variant: error
+
+Public message fetch failed. Copy **Could not load this profile. Please try again.** and **Try again**.
+
+![21.gifts public message error](images/messages-id-error.png)
 
 ## Screen: /view/[viewKey]
 

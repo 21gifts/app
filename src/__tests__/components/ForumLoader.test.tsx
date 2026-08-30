@@ -19,6 +19,7 @@ vi.mock('@/lib/api', () => ({
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchReplies: vi.fn(),
 }));
 
 vi.mock('@/lib/forum-photo', () => ({
@@ -34,6 +35,7 @@ import {
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
+  fetchReplies,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -46,6 +48,7 @@ const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
 const photoMock = vi.mocked(fetchMessagePhoto);
+const repliesMock = vi.mocked(fetchReplies);
 const prepareMock = vi.mocked(prepareForumPhoto);
 const isVideoMock = vi.mocked(isForumVideoFile);
 const prepareVideoMock = vi.mocked(prepareForumVideo);
@@ -75,6 +78,7 @@ const SAMPLE: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
@@ -112,6 +116,7 @@ afterEach(() => {
   invoiceMock.mockReset();
   dismissLawsMock.mockReset();
   photoMock.mockReset();
+  repliesMock.mockReset();
   prepareMock.mockReset();
   vi.restoreAllMocks();
 });
@@ -275,6 +280,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     const view = renderWithLocale(<ForumLoader />);
@@ -301,6 +307,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -323,6 +330,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -350,6 +358,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient'));
@@ -373,6 +382,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     let resolvePhoto: ((blob: Blob) => void) | undefined;
     photoMock.mockImplementationOnce(
@@ -1053,6 +1063,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     photoMock.mockRejectedValue(new Error('gone'));
@@ -1082,6 +1093,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -1113,6 +1125,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
@@ -1144,6 +1157,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
       {
         id: 'm2',
@@ -1156,6 +1170,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -1188,6 +1203,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -1231,6 +1247,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1270,6 +1287,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1308,6 +1326,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1348,6 +1367,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     fetchMock.mockResolvedValue([created]);
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:existing');
@@ -1480,6 +1500,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1512,6 +1533,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     const fromServer: ForumMessage = {
       id: 'm1',
@@ -1524,6 +1546,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1563,6 +1586,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1596,6 +1620,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     fetchMock.mockResolvedValue([created]);
     postMock.mockResolvedValue(created);
@@ -1630,6 +1655,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1663,6 +1689,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -1749,6 +1776,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
+      replyCount: 0,
       });
     });
 
@@ -1981,6 +2009,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);
@@ -2021,6 +2050,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);
@@ -2095,6 +2125,7 @@ describe('ForumLoader', () => {
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
+      replyCount: 0,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce([]);
@@ -2196,5 +2227,33 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(invoiceMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads replies via fetchReplies when a row is expanded', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([
+      {
+        id: 'r1',
+        name: 'Bob',
+        text: 'A reply',
+        createdAt: '2026-08-28T12:30:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(repliesMock).toHaveBeenCalledWith('sess', 'm1');
+      expect(screen.getByText('A reply')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    });
   });
 });

@@ -3,23 +3,30 @@
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { setLightningAddress, unlinkLightningAddress } from '@/lib/api';
+import { Button, IconButton } from '@/components/ui';
+import { LIGHTNING_ADDRESS_NOT_ZAP_ERROR, setLightningAddress, unlinkLightningAddress } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { hasLightningAddress } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the Lightning Address form. */
-type LightningAddressError = { type: 'empty' } | { type: 'request' } | { type: 'notFound' };
+type LightningAddressError =
+  | { type: 'empty' }
+  | { type: 'request' }
+  | { type: 'notFound' }
+  | { type: 'notZap' };
 
 /** Catalog key for a Lightning Address form alert. */
 function lightningAddressErrorKey(
   error: LightningAddressError,
-): 'la.errorEmpty' | 'la.errorNotFound' | 'la.errorRequest' {
+): 'la.errorEmpty' | 'la.errorNotFound' | 'la.errorRequest' | 'la.errorNotZap' {
   switch (error.type) {
     case 'empty':
       return 'la.errorEmpty';
     case 'notFound':
       return 'la.errorNotFound';
+    case 'notZap':
+      return 'la.errorNotZap';
     case 'request':
       return 'la.errorRequest';
   }
@@ -28,14 +35,6 @@ function lightningAddressErrorKey(
 /**
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
  * receives their gifts.
- *
- * Reads the current account and session token from the auth store and merges
- * the saved Lightning Address fields into that account so a concurrent name
- * write is not overwritten. Renders nothing when no account — or, defensively,
- * no session token — is present, since it is only mounted inside the logged-in view.
- *
- * Treats a missing or whitespace-only address the same as `hasLightningAddress`:
- * the link prompt stays up until a non-empty trimmed address is saved.
  *
  * @param props - `onboarding` shows the field at the top and **Continue** at
  *   the bottom of the screen; `profile` uses icon actions to the right of the
@@ -53,6 +52,7 @@ export function LightningAddressForm(
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<LightningAddressError | null>(null);
+  const [blockedAddress, setBlockedAddress] = useState<string | null>(null);
 
   if (account === null || session === null) {
     return null;
@@ -61,6 +61,8 @@ export function LightningAddressForm(
   const address = account.lightningAddress;
   const linked = hasLightningAddress(account);
   const variant = props.variant ?? (linked ? 'profile' : 'onboarding');
+  const continueDisabled =
+    busy || (error?.type === 'notZap' && blockedAddress !== null && draft.trim() === blockedAddress);
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
@@ -77,18 +79,21 @@ export function LightningAddressForm(
     setError(null);
     try {
       const result = await action(session);
-      // Drop the result if the session changed while the request was in flight
-      // (e.g. the user logged out): a late write would otherwise revive the
-      // signed-in view with an already-cleared session.
       if (useAuthStore.getState().session !== session) {
         return;
       }
       onFresh(result);
+      setBlockedAddress(null);
     } catch (err) {
-      if (err instanceof Error && /could not be found/i.test(err.message)) {
+      if (err instanceof Error && err.message === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
+        setError({ type: 'notZap' });
+        setBlockedAddress(draft.trim());
+      } else if (err instanceof Error && /could not be found/i.test(err.message)) {
         setError({ type: 'notFound' });
+        setBlockedAddress(null);
       } else {
         setError({ type: 'request' });
+        setBlockedAddress(null);
       }
     } finally {
       setBusy(false);
@@ -106,8 +111,6 @@ export function LightningAddressForm(
       if (current === null) {
         return;
       }
-      // Keep fields this form does not own so a concurrent name save is not
-      // overwritten by a stale full-account response.
       setAccount({
         ...current,
         lightningAddress: updated.lightningAddress,
@@ -127,6 +130,9 @@ export function LightningAddressForm(
       setError({ type: 'empty' });
       return;
     }
+    if (error?.type === 'notZap' && blockedAddress === trimmed) {
+      return;
+    }
     void run((token) => setLightningAddress(token, trimmed));
   };
 
@@ -135,6 +141,9 @@ export function LightningAddressForm(
   ) : (
     <Check aria-hidden="true" className="h-4 w-4" />
   );
+
+  const inputClass =
+    'w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50';
 
   if (variant === 'onboarding') {
     return (
@@ -151,23 +160,28 @@ export function LightningAddressForm(
           placeholder="you@walletofsatoshi.com"
           aria-label={t('la.aria')}
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            if (error?.type === 'notZap') {
+              setError(null);
+            }
+          }}
           disabled={busy}
-          className="w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+          className={inputClass}
         />
         {error !== null ? (
           <p role="alert" className="text-center text-sm text-red-600">
             {t(lightningAddressErrorKey(error))}
           </p>
         ) : null}
-        <button
+        <Button
           type="submit"
-          disabled={busy}
-          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
+          disabled={continueDisabled}
+          className="mt-auto w-full"
+          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
         >
-          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t('setup.continue')}
-        </button>
+        </Button>
       </form>
     );
   }
@@ -190,62 +204,69 @@ export function LightningAddressForm(
               placeholder="you@walletofsatoshi.com"
               aria-label={t('la.aria')}
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                if (error?.type === 'notZap') {
+                  setError(null);
+                }
+              }}
               disabled={busy}
-              className="min-w-0 flex-1 rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+              className={`min-w-0 flex-1 ${inputClass}`}
             />
-            <button
+            <IconButton
               type="submit"
-              disabled={busy}
+              variant="primary"
+              disabled={continueDisabled}
               aria-label={editing ? t('la.save') : t('la.link')}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-app-btn text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
             >
               {submitIcon}
-            </button>
+            </IconButton>
             {editing ? (
-              <button
+              <IconButton
                 type="button"
+                variant="secondary"
                 onClick={() => {
                   setEditing(false);
                   setError(null);
+                  setBlockedAddress(null);
                 }}
                 disabled={busy}
                 aria-label={t('la.cancel')}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
               >
                 <X aria-hidden="true" className="h-4 w-4" />
-              </button>
+              </IconButton>
             ) : null}
           </div>
         </form>
       ) : (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate font-mono text-sm text-app-fg">{address}</p>
-          <button
+          <IconButton
             type="button"
+            variant="secondary"
             onClick={() => {
               /* v8 ignore next — display branch only mounts when hasLightningAddress; address is non-null */
               setDraft(address ?? '');
               setEditing(true);
               setError(null);
+              setBlockedAddress(null);
             }}
             disabled={busy}
             aria-label={t('la.edit')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <Pencil aria-hidden="true" className="h-4 w-4" />
-          </button>
-          <button
+          </IconButton>
+          <IconButton
             type="button"
+            variant="secondary"
             onClick={() => {
               void run(unlinkLightningAddress);
             }}
             disabled={busy}
             aria-label={t('la.unlink')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <Trash2 aria-hidden="true" className="h-4 w-4" />
-          </button>
+          </IconButton>
         </div>
       )}
 

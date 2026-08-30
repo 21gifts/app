@@ -4,6 +4,7 @@ import {
   contactSchema,
   forumListSchema,
   forumMessageSchema,
+  forumRepliesSchema,
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
@@ -24,6 +25,13 @@ import {
   type PasskeySession,
   type ViewProfile,
 } from '@/lib/api-types';
+
+/**
+ * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
+ * Matched literally (English) before visitor-facing rewrite.
+ */
+export const LIGHTNING_ADDRESS_NOT_ZAP_ERROR =
+  'This Wallet of Satoshi address cannot receive these Bitcoin payments';
 
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
@@ -180,6 +188,9 @@ export async function setLightningAddress(sessionToken: string, address: string)
   });
   if (response.status === 400) {
     const raw = await readApiError(response);
+    if (raw === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
+      throw new Error(LIGHTNING_ADDRESS_NOT_ZAP_ERROR);
+    }
     throw new Error(
       raw === null ? 'Could not save your Wallet of Satoshi address' : toUserFacingError(raw),
     );
@@ -310,7 +321,7 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
 }
 
 /**
- * Fetches every public forum message (newest first).
+ * Fetches every public top-level forum message (newest first).
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The message list.
@@ -319,7 +330,7 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
  */
 export async function fetchMessages(sessionToken: string): Promise<ForumMessage[]> {
   try {
-    const response = await fetch('/messages', {
+    const response = await fetch('/forum/messages', {
       headers: { Authorization: `Bearer ${sessionToken}` },
     });
     if (!response.ok) {
@@ -332,11 +343,61 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
 }
 
 /**
- * Posts a new public forum message (text and/or one photo).
+ * Fetches one public forum message without a session (HTML note page).
+ *
+ * @param id - Forum message UUID.
+ * @returns The {@link ForumMessage}, or `null` when the id is unknown (404).
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchPublicMessage(id: string): Promise<ForumMessage | null> {
+  try {
+    const response = await fetch(`/public-messages/${encodeURIComponent(id)}`);
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return forumMessageSchema.parse(await response.json());
+  } catch (err) {
+    if (err instanceof Error && err.message === 'Could not load messages. Please try again.') {
+      throw err;
+    }
+    /* Zod / network */
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches replies for one forum note (oldest first).
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param input - Trimmed text (may be empty when a photo is included) and an
- * optional JPEG photo payload (`contentType` + raw base64 `data`).
+ * @param id - Parent forum message UUID.
+ * @returns Reply list (Damus authors may omit role; schema defaults to basis).
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link forumRepliesSchema}.
+ */
+export async function fetchReplies(sessionToken: string, id: string): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch(`/forum/messages/${encodeURIComponent(id)}/replies`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return forumRepliesSchema.parse(await response.json()).replies;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Posts a new public forum message (text and/or one photo), or a reply.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param input - Trimmed text (may be empty when a photo is included), an
+ * optional JPEG photo payload (`contentType` + raw base64 `data`), and optional
+ * `inReplyTo` parent id (thread composer only; omit for top-level notes).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400 or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
@@ -344,9 +405,13 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
  */
 export async function postMessage(
   sessionToken: string,
-  input: { text: string; photo?: { contentType: string; data: string } },
+  input: {
+    text: string;
+    photo?: { contentType: string; data: string };
+    inReplyTo?: string;
+  },
 ): Promise<ForumMessage> {
-  const response = await fetch('/messages', {
+  const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
@@ -355,6 +420,9 @@ export async function postMessage(
     body: JSON.stringify({
       text: input.text,
       ...(input.photo ? { photo: input.photo } : {}),
+      ...(input.inReplyTo !== undefined && input.inReplyTo !== ''
+        ? { inReplyTo: input.inReplyTo }
+        : {}),
     }),
   });
   if (response.status === 400 || response.status === 429) {
@@ -491,6 +559,32 @@ export async function fetchMessagePhoto(sessionToken: string, id: string): Promi
     const response = await fetch(`/messages/${encodeURIComponent(id)}/photo`, {
       headers: { Authorization: `Bearer ${sessionToken}` },
     });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return blob;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches a forum message photo without a session (public note page).
+ *
+ * Api `GET /messages/:id/photo` is public; the same-origin proxy forwards
+ * without Authorization. Callers must use a blob URL, not a bare `<img src>`.
+ *
+ * @param id - Forum message id.
+ * @returns The photo body as a `Blob`.
+ * @throws Error with visitor-facing copy when the api is unavailable or empty.
+ */
+export async function fetchPublicMessagePhoto(id: string): Promise<Blob> {
+  try {
+    const response = await fetch(`/messages/${encodeURIComponent(id)}/photo`);
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }

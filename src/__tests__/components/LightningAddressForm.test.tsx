@@ -159,6 +159,26 @@ describe('LightningAddressForm', () => {
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
   });
 
+  it('shows the not-zap message when the address cannot receive these payments', async () => {
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error(
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+      ),
+    );
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe(
+      'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+    );
+    expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
+  });
+
   it('stringifies a non-Error rejection', async () => {
     vi.mocked(setLightningAddress).mockRejectedValue('boom');
     renderWithLocale(<LightningAddressForm />);
