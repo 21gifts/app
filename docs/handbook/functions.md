@@ -337,7 +337,7 @@
 
 - **Purpose:** Next.js `MetadataRoute.Manifest` for installable 21.gifts (`/manifest.webmanifest`).
 - **Inputs:** None.
-- **Returns / side effects:** Manifest with name/short_name `21.gifts`, start_url `/welcome`, display `standalone`, theme/background colors, and apple-touch-icon listed at 180/192/512.
+- **Returns / side effects:** Manifest with name/short_name `21.gifts`, start_url `/welcome`, display `standalone`, theme/background colors, apple-touch-icon at 180×180, plus `icon-192.png` and `icon-512.png`.
 - **Used by:** App Router manifest route.
 
 ## Function: AccountActivityChart
