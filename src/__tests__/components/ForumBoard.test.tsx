@@ -863,6 +863,29 @@ describe('ForumBoard', () => {
     );
   });
 
+  it('shows pay author-wallet error', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payError="authorWallet"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
   it('shows the invoice QR and wallet link', async () => {
     const onPayCancel = vi.fn();
     renderWithLocale(

@@ -30,7 +30,7 @@ export type ForumFormError =
   'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | null;
 
 /** Pay-sheet validation or request failure. */
-export type ForumPayError = 'amount' | 'request' | 'rateLimit' | null;
+export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | null;
 
 /** Roles that show a clickable tag beside the author name. */
 type ForumTaggedRole = 'founder' | 'moderator' | 'verified';
@@ -358,6 +358,11 @@ export function ForumBoard({
                   {payError === 'rateLimit' ? (
                     <p role="alert" className="text-sm text-red-600">
                       {t('forum.payErrorRateLimit')}
+                    </p>
+                  ) : null}
+                  {payError === 'authorWallet' ? (
+                    <p role="alert" className="text-sm text-red-600">
+                      {t('forum.payErrorAuthorWallet')}
                     </p>
                   ) : null}
                   <div className="flex flex-wrap gap-2">
