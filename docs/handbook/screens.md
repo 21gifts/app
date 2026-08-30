@@ -200,55 +200,55 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 
 ### Variant: default
 
-Signed in with a name and address and `rulesAgreedAt` still null. First chapter (lead) and **Continue** visible.
+Signed in with a name and address and `rulesAgreedAt` still null. First chapter (lead paragraph plus the accent-bordered **The test** callout) and **Continue** visible.
 
 ![21.gifts rules setup](images/setup-rules.png)
 
 ### Variant: law1
 
-After one agree: law 1 heading **1. Only free donations**. Icon-only back is visible.
+After one Continue: law card with kicker **Law 1**, heading **Only free donations**, body, and **The test** callout. Icon-only back is visible.
 
 ![21.gifts rules setup law 1](images/setup-rules-law1.png)
 
 ### Variant: law2
 
-Law 2 heading **2. Donors come first**.
+Law card **Law 2** / **Donors come first** with body and **The test** callout.
 
 ![21.gifts rules setup law 2](images/setup-rules-law2.png)
 
 ### Variant: law3
 
-Law 3 heading **3. Contact stays in the app**.
+Law card **Law 3** / **Contact stays in the app** with body (no test callout).
 
 ![21.gifts rules setup law 3](images/setup-rules-law3.png)
 
 ### Variant: wanted
 
-Heading **Wanted** and the wanted list.
+Heading **Welcome**, muted lead, and the welcome list (accent check glyphs).
 
 ![21.gifts rules setup wanted](images/setup-rules-wanted.png)
 
 ### Variant: allowed
 
-Heading **Allowed** and the allowed list.
+Heading **Allowed**, muted lead, and the allowed list (muted check glyphs).
 
 ![21.gifts rules setup allowed](images/setup-rules-allowed.png)
 
 ### Variant: ratherNot
 
-Heading **Rather not** and the rather-not list.
+Heading **Better not**, muted lead, and the better-not list (minus glyphs).
 
 ![21.gifts rules setup rather not](images/setup-rules-rather-not.png)
 
 ### Variant: forbidden
 
-Heading **Forbidden — hard-blocked** and the three hard-block groups.
+Heading **Forbidden**, muted lead, and the three forbidden groups (red cross glyphs).
 
 ![21.gifts rules setup forbidden](images/setup-rules-forbidden.png)
 
 ### Variant: house
 
-Last chapter: heading **House right** and **I agree to these rules**. That click POSTs agreement.
+Last chapter: muted **Our house** block (body plus emphasised closing paragraph) and **I agree to these rules**. That click POSTs agreement.
 
 ![21.gifts rules setup house](images/setup-rules-house.png)
 
@@ -260,7 +260,7 @@ Last-chapter POST failed. Alert **Could not save your agreement**.
 
 ### Variant: busy
 
-Last-chapter POST in flight. Agree disabled with a spinner; **House right** still visible.
+Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still visible.
 
 ![21.gifts rules setup busy](images/setup-rules-busy.png)
 
@@ -448,14 +448,14 @@ Carol's **Verified** tag clicked; the explanation under that card header is visi
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate.
-- **What the user sees:** Light language switcher and theme switcher top-right. Page heading **Living room rules**, then lead, three laws (title + body + test where present), Wanted / Allowed / Rather not / Forbidden (three forbidden subheads + lists), House right, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
+- **What the user sees:** Light language switcher and theme switcher top-right. Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three law cards (kicker **Law n**, title, body, and a **The test** callout on laws 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
 - **Actions:** Change language or theme. Read the rules. Open contact or the forum.
 - **Calls:** `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `ThemeSwitcher`.
 - **Auth:** None.
 
 ### Variant: default
 
-Full rules body with law **1. Only free donations** visible.
+Full rules body with law card **Only free donations** visible.
 
 ![21.gifts living room rules](images/rules.png)
 

@@ -744,11 +744,11 @@ test('Function: RulesDocument — onboarding first chapter is the lead', async (
   });
   await page.goto('/setup/rules');
   await expect(page.getByText(/You are a guest in a living room/)).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'House right' })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Wanted' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Our house' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Welcome' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Only free donations' })).toBeVisible();
 });
 
 test('Function: RulesSetupPage — rules setup heading is visible', async ({ page }) => {
@@ -1154,7 +1154,7 @@ test('Function: RulesPage — rules heading is visible', async ({ page }) => {
 
 test('Function: RulesDocument — only free donations law is visible', async ({ page }) => {
   await page.goto('/rules');
-  await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Only free donations' })).toBeVisible();
 });
 
 test('Function: ForumLoader — welcome forum is the pay surface', async ({ page, request }) => {
