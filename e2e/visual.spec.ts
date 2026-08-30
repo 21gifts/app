@@ -1125,6 +1125,11 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   }
 
+  async function attachTinyMp4(page: Page): Promise<void> {
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+    await expect(page.locator('form video')).toBeVisible({ timeout: 10_000 });
+  }
+
   async function hangCreateImageBitmap(page: Page): Promise<void> {
     await page.addInitScript(() => {
       window.createImageBitmap = () => new Promise(() => undefined);
@@ -1171,6 +1176,29 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByAltText('Selected photo')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected photo.');
     await shotScreen(page, 'state-welcome-composer-photo-and-text');
+  });
+
+  test('welcome composer-video', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await attachTinyMp4(page);
+    await expect(page.getByLabel('Your message')).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Remove video' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-video');
+  });
+
+  test('welcome composer-video-and-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with selected video.');
+    await attachTinyMp4(page);
+    await expect(page.locator('form video')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected video.');
+    await shotScreen(page, 'state-welcome-composer-video-and-text');
   });
 
   test('welcome composer-text-after-remove', async ({ page }) => {

@@ -310,6 +310,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-video',
+    image: 'welcome-composer-video.png',
+    visual: 'state-welcome-composer-video',
+    needle: 'welcome composer-video',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-video-and-text',
+    image: 'welcome-composer-video-and-text.png',
+    visual: 'state-welcome-composer-video-and-text',
+    needle: 'Caption with selected video.',
+  },
+  {
+    route: '/welcome',
     id: 'composer-text-after-remove',
     image: 'welcome-composer-text-after-remove.png',
     visual: 'state-welcome-composer-text-after-remove',

@@ -349,6 +349,18 @@ Preview plus caption **Caption with selected photo.**, ready to Post.
 
 ![21.gifts welcome composer photo and text](images/welcome-composer-photo-and-text.png)
 
+### Variant: composer-video
+
+MP4 preview in the composer and **Remove video**; textarea empty.
+
+![21.gifts welcome composer video](images/welcome-composer-video.png)
+
+### Variant: composer-video-and-text
+
+Video preview plus caption **Caption with selected video.**, ready to Post.
+
+![21.gifts welcome composer video and text](images/welcome-composer-video-and-text.png)
+
 ### Variant: composer-text-after-remove
 
 After **Remove photo**, caption **Caption kept after removing photo.** remains; preview gone.
