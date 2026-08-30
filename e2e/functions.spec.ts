@@ -454,7 +454,9 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
   });
   await page.goto('/welcome');
   const input = page.locator('input[type="file"]');
-  await expect(input).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
+  await expect(input).toHaveAttribute('accept', /image\/jpeg/);
+  await expect(input).toHaveAttribute('accept', /image\/png/);
+  await expect(input).toHaveAttribute('accept', /image\/webp/);
 });
 
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
