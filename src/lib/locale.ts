@@ -13,7 +13,7 @@ export const LOCALE_COOKIE = 'locale';
 /**
  * Returns `value` if it is exactly one of {@link LOCALES}; otherwise `null`.
  *
- * @param value - Raw cookie or `<select>` value, or undefined when absent.
+ * @param value - Raw cookie or option value, or undefined when absent.
  * @returns A supported locale, or null when invalid/missing.
  */
 export function parseSupportedLocale(value: string | undefined): Locale | null {

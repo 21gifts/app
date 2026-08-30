@@ -1,13 +1,18 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  dismissForumLaws,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
+  fetchMessagePhoto,
   fetchMessages,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  postContact,
   postMessage,
+  postMessageInvoice,
+  agreeToRules,
   setLightningAddress,
   setName,
   resolveLightningAddress,
@@ -23,7 +28,9 @@ const account = {
   name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null,
 };
 
 /** The subset of `Response` the api client touches. */
@@ -146,6 +153,17 @@ describe('setLightningAddress', () => {
     );
   });
 
+  it('throws the not-found message when the address could not be resolved', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'Lightning Address could not be resolved' },
+    });
+    await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
+      'That Wallet of Satoshi address could not be found',
+    );
+  });
+
   it('rewrites remaining Lightning jargon in a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Lightning Address is taken' } });
     await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
@@ -208,6 +226,54 @@ describe('unlinkLightningAddress', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(unlinkLightningAddress('sess')).rejects.toThrow();
+  });
+});
+
+describe('dismissForumLaws', () => {
+  it('posts and returns the validated account', async () => {
+    const dismissed = { ...account, forumLawsDismissed: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: dismissed });
+
+    await expect(dismissForumLaws('sess')).resolves.toEqual(dismissed);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/forum-laws-dismissed`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(dismissForumLaws('sess')).rejects.toThrow(
+      'Could not dismiss the living-room hint',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(dismissForumLaws('sess')).rejects.toThrow();
+  });
+});
+
+describe('agreeToRules', () => {
+  it('posts agreement and returns the validated account', async () => {
+    const agreed = { ...account, rulesAgreedAt: 1_700_000_001 };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: agreed });
+
+    await expect(agreeToRules('sess')).resolves.toEqual(agreed);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/rules-agreement`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(agreeToRules('sess')).rejects.toThrow('Could not save your agreement');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(agreeToRules('sess')).rejects.toThrow();
   });
 });
 
@@ -352,6 +418,30 @@ describe('fetchGiftStats', () => {
     expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
   });
 
+  it('appends recipient when the handle is non-empty after trim', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('alice')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats?recipient=alice');
+  });
+
+  it('trims recipient spaces before appending', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('  alice  ')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats?recipient=alice');
+  });
+
+  it('URL-encodes special characters in recipient', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('a b/c')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith(`/gifts/stats?recipient=${encodeURIComponent('a b/c')}`);
+  });
+
+  it('omits recipient when blank after trim', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchGiftStats('   ')).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
+  });
+
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'Gift stats are unavailable' } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
@@ -373,16 +463,31 @@ const forumMessage = {
   name: 'Ada',
   text: 'Hello from Ada',
   createdAt: '2026-08-28T12:00:00.000Z',
+  sats: 0,
+  payable: false,
+  hasPhoto: false,
+  role: 'basis' as const,
 };
 
 describe('fetchMessages', () => {
   it('returns the validated messages and sends the bearer header', async () => {
+    const forumMessageWithoutRole = {
+      id: forumMessage.id,
+      name: forumMessage.name,
+      text: forumMessage.text,
+      createdAt: forumMessage.createdAt,
+      sats: forumMessage.sats,
+      payable: forumMessage.payable,
+      hasPhoto: forumMessage.hasPhoto,
+    };
     const fetchMock = stubFetch({
       ok: true,
       status: 200,
-      body: { messages: [forumMessage] },
+      body: { messages: [forumMessageWithoutRole] },
     });
-    await expect(fetchMessages('sess')).resolves.toEqual([forumMessage]);
+    await expect(fetchMessages('sess')).resolves.toEqual([
+      { ...forumMessageWithoutRole, role: 'basis' },
+    ]);
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
       headers: { Authorization: 'Bearer sess' },
     });
@@ -410,11 +515,193 @@ describe('fetchMessages', () => {
   });
 });
 
+describe('postMessageInvoice', () => {
+  it('returns pr and amountSats', async () => {
+    stubFetch({ ok: true, status: 200, body: { pr: 'lnbc21n1test', amountSats: 21 } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).resolves.toEqual({
+      pr: 'lnbc21n1test',
+      amountSats: 21,
+    });
+  });
+
+  it('throws on 429', async () => {
+    stubFetch({ ok: false, status: 429, body: { error: 'Too many payments' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow('Too many payments');
+  });
+
+  it('falls back when a 429 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 429, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'This message cannot be paid yet' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'This message cannot be paid yet',
+    );
+  });
+
+  it('throws on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on other non-ok statuses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+});
+
 describe('postMessage', () => {
   it('posts the text and returns the validated message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
-    await expect(postMessage('sess', 'Hello from Ada')).resolves.toEqual(forumMessage);
+    await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(forumMessage);
     expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada' }),
+    });
+  });
+
+  it('includes a photo payload when provided', async () => {
+    const withPhoto = { ...forumMessage, text: '', hasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: withPhoto });
+    const photo = { contentType: 'image/jpeg', data: 'abc' };
+    await expect(postMessage('sess', { text: '', photo })).resolves.toEqual(withPhoto);
+    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: '', photo }),
+    });
+  });
+
+  it('posts text together with a photo payload', async () => {
+    const withBoth = { ...forumMessage, hasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: withBoth });
+    const photo = { contentType: 'image/jpeg', data: 'abc' };
+    await expect(postMessage('sess', { text: 'Hello from Ada', photo })).resolves.toEqual(withBoth);
+    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada', photo }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Message too long' } });
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Message too long');
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
+  });
+});
+
+describe('fetchMessagePhoto', () => {
+  it('returns the blob and sends the bearer header', async () => {
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchMessagePhoto('sess', 'm1')).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('encodes the message id in the path', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchMessagePhoto('sess', 'a/b');
+    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+const contactMessage = {
+  id: 'c1',
+  name: 'Ada',
+  text: 'Hello from Ada',
+  createdAt: '2026-08-28T12:00:00.000Z',
+};
+
+describe('postContact', () => {
+  it('posts the text and returns the validated message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: contactMessage });
+    await expect(postContact('sess', 'Hello from Ada')).resolves.toEqual(contactMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/contact/submit', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -426,17 +713,17 @@ describe('postMessage', () => {
 
   it('throws the api error message on a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Message too long' } });
-    await expect(postMessage('sess', 'x')).rejects.toThrow('Message too long');
+    await expect(postContact('sess', 'x')).rejects.toThrow('Message too long');
   });
 
   it('falls back when a 400 body is not an error envelope', async () => {
     stubFetch({ ok: false, status: 400, body: {} });
-    await expect(postMessage('sess', 'x')).rejects.toThrow('Could not post your message');
+    await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
   });
 
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
-    await expect(postMessage('sess', 'x')).rejects.toThrow('Could not post your message');
+    await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
   });
 });
 

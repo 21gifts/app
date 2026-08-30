@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Loader2, Pencil, User } from 'lucide-react';
+import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { setName } from '@/lib/api';
@@ -22,9 +22,12 @@ type NameError = { type: 'empty' } | { type: 'request' };
  * Treats a missing or whitespace-only name the same as `hasDisplayName`: the
  * prompt and input stay up until a non-empty trimmed name is saved.
  *
+ * @param props - `onboarding` shows the field at the top and **Continue** at
+ *   the bottom of the screen; `profile` uses icon actions to the right of the
+ *   field. Defaults from whether a name is already saved.
  * @returns The name section, or `null` when there is nothing to show.
  */
-export function NameForm(): ReactElement | null {
+export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
@@ -40,6 +43,7 @@ export function NameForm(): ReactElement | null {
 
   const name = account.name;
   const named = hasDisplayName(account);
+  const variant = props.variant ?? (named ? 'profile' : 'onboarding');
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
@@ -89,18 +93,50 @@ export function NameForm(): ReactElement | null {
     );
   };
 
-  let submitIcon: ReactElement;
-  if (busy) {
-    submitIcon = <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />;
-  } else if (editing) {
-    submitIcon = <Check aria-hidden="true" className="h-4 w-4" />;
-  } else {
-    submitIcon = <User aria-hidden="true" className="h-4 w-4" />;
+  const submitIcon = busy ? (
+    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+  ) : (
+    <Check aria-hidden="true" className="h-4 w-4" />
+  );
+
+  if (variant === 'onboarding') {
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="mt-6 flex w-full flex-1 flex-col items-stretch gap-3"
+      >
+        <p className="text-center text-sm text-neutral-500">{t('name.prompt')}</p>
+        <input
+          type="text"
+          autoComplete="name"
+          spellCheck={false}
+          placeholder={t('name.placeholder')}
+          aria-label={t('name.aria')}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          disabled={busy}
+          className="w-full rounded-2xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+        />
+        {error !== null ? (
+          <p role="alert" className="text-center text-sm text-red-600">
+            {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+        >
+          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
+          {t('setup.continue')}
+        </button>
+      </form>
+    );
   }
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-neutral-200 pt-6">
-      <p className="text-center text-xs uppercase tracking-widest text-neutral-400">
+      <p className="text-center text-xs tracking-widest text-neutral-400 uppercase">
         {t('name.heading')}
       </p>
 
@@ -109,25 +145,25 @@ export function NameForm(): ReactElement | null {
           {!named ? (
             <p className="text-center text-sm text-neutral-500">{t('name.prompt')}</p>
           ) : null}
-          <input
-            type="text"
-            autoComplete="name"
-            spellCheck={false}
-            placeholder={t('name.placeholder')}
-            aria-label={t('name.aria')}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            disabled={busy}
-            className="w-full rounded-2xl border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
-          />
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              autoComplete="name"
+              spellCheck={false}
+              placeholder={t('name.placeholder')}
+              aria-label={t('name.aria')}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              disabled={busy}
+              className="min-w-0 flex-1 rounded-2xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+            />
             <button
               type="submit"
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+              aria-label={editing ? t('name.save') : t('name.saveName')}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-900 text-white transition hover:bg-neutral-700 disabled:opacity-50"
             >
               {submitIcon}
-              {editing ? t('name.save') : t('name.saveName')}
             </button>
             {editing ? (
               <button
@@ -137,16 +173,17 @@ export function NameForm(): ReactElement | null {
                   setError(null);
                 }}
                 disabled={busy}
-                className="inline-flex items-center rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+                aria-label={t('name.cancel')}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
               >
-                {t('name.cancel')}
+                <X aria-hidden="true" className="h-4 w-4" />
               </button>
             ) : null}
           </div>
         </form>
       ) : (
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-sm text-neutral-900">{name}</p>
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 flex-1 truncate text-sm text-neutral-900">{name}</p>
           <button
             type="button"
             onClick={() => {
@@ -156,10 +193,10 @@ export function NameForm(): ReactElement | null {
               setError(null);
             }}
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+            aria-label={t('name.edit')}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
           >
             <Pencil aria-hidden="true" className="h-4 w-4" />
-            {t('name.edit')}
           </button>
         </div>
       )}

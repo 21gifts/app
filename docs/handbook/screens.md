@@ -4,7 +4,7 @@
 
 - **URL:** `/` — public marketing landing (no auth gate).
 - **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`).
-- **Actions:** Read the pitch, change language, open login or donate, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **Actions:** Read the pitch, change language, open login, open Send help, jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -19,11 +19,17 @@ Narrow viewport: header shows the Menu button. Open it to reveal the same links 
 
 ![21.gifts home mobile nav](images/root-mobile-nav.png)
 
+### Variant: language-open
+
+Open the language switcher in the marketing header. Custom listbox (rounded panel, endonym rows with a check on the current locale) — not OS chrome.
+
+![21.gifts home language](images/root-language.png)
+
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland, info@21.gifts) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; login on this origin). Legal body copy stays English.
-- **Actions:** Change language. Read the legal body. Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie; session in localStorage; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **Actions:** Change language. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -104,7 +110,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, or `/welcome`.
+- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
@@ -132,48 +138,104 @@ Telegram or another in-app WebView detected. Heading **Open this page in your br
 
 ![21.gifts login in-app](images/login-in-app.png)
 
+### Variant: language-open
+
+Open the light language switcher top-right. Custom listbox with endonym rows (English / Deutsch / Español / Filipino) — not a native OS select.
+
+![21.gifts login language](images/login-language.png)
+
+## Screen: /donate
+
+- **URL:** `/donate` — public, no auth gate.
+- **What the user sees:** Light language switcher top-right (not marketing header). Heading **Send help**, short lead about picking a forum message then sending Bitcoin, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **Actions:** Change language. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
+- **Calls:** `DonatePage`, `LanguageSwitcher`.
+
+### Variant: default
+
+The only state. Heading **Send help**, explainer lead, **Open the forum**.
+
+![21.gifts donate](images/donate.png)
+
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Heading **Your name**, name form. No Wallet of Satoshi form.
-- **Actions:** Save a name, log out, change language. After save, the visitor is sent to `/setup/address`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/setup/address`.
 - **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name**, **Save name**. Language and **Log out** as matching icon+text top-right, not on the card.
+Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Link an address, log out, change language. After save, the visitor is sent to `/welcome`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After save, the visitor is sent to `/setup/rules`.
 - **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address**, **Link address**. Language and **Log out** as matching icon+text top-right, not on the card.
+Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
-## Screen: /welcome
+## Screen: /setup/rules
 
-- **URL:** `/welcome` — third screen after login, when name and address are both saved.
-- **What the user sees:** Language and **Log out** as matching icon+text top-right, not on the card. Gift icon, **Welcome, {name}**, public forum (message name, text, timestamp, composer textarea with **Post** to the right). No name or address form. No donate CTA.
-- **Actions:** Post a message, retry a failed load, log out, change language.
-- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`.
+- **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Living room rules**, prompt to read and agree, the full rules body without the public Contact / forum nav, and a full-width **I agree to these rules** button.
+- **Actions:** Read the rules and **I agree to these rules**; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**. After agreement, the visitor is sent to `/welcome`.
+- **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`).
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with posts from more than one person (Bob, Carol, Ada — name, text, timestamp), composer. Language and **Log out** as matching icon+text top-right, not on the card.
+Signed in with a name and address and `rulesAgreedAt` still null. Rules body and **I agree to these rules** visible.
+
+![21.gifts rules setup](images/setup-rules.png)
+
+### Variant: mobile
+
+Narrow viewport (375×812). The rules body wraps; **I agree to these rules** stays full-width after the document.
+
+![21.gifts rules setup mobile](images/setup-rules-mobile.png)
+
+## Screen: /welcome
+
+- **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, sat total always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, and optional photo preview with **Remove photo** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo message, attach/remove a photo draft, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `fetchMessagePhoto`, `visibleForumMessages`.
+
+### Variant: default
+
+Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol 21 sats then Ada 5 sats); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. Founder / Moderator / Verified pills beside the name when `role` is one of those three; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: all
+
+Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) is visible with Ada and Carol.
+
+![21.gifts welcome all](images/welcome-all.png)
+
+### Variant: popular
+
+Click **Most popular** — paid notes ordered by sats (Carol 21, then Ada 5). Unpaid Bob is hidden.
+
+![21.gifts welcome popular](images/welcome-popular.png)
+
+### Variant: empty-paid
+
+Copy **No messages with sats yet.** Active selected, unpaid notes hidden, composer visible.
+
+![21.gifts welcome empty paid](images/welcome-empty-paid.png)
+
 ### Variant: empty
 
-Empty copy **No messages yet. Be the first to write.** plus composer.
+Empty copy **No messages yet. Be the first to write.** plus composer (attach + textarea + Post).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -191,46 +253,206 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer → **Enter a message**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
+Click **Post** with an empty composer and no photo → **Enter a message or add a photo**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
 
-## Screen: /donate
+### Variant: photo
 
-- **URL:** `/donate` — guest Bitcoin gift. No login required.
-- **What the user sees:** Light language switcher top-right on the page (not the marketing header). Page heading **Send a gift**, form heading **Send Bitcoin**, Wallet of Satoshi address field, sat amount (no comment), **Continue**, then a QR and **Open Wallet of Satoshi** — or a validation/range error on the form.
-- **Actions:** Change language. Enter a Wallet of Satoshi address and amount, continue, pay with Wallet of Satoshi.
-- **Calls:** `DonateForm`, `resolveLightningAddress`, `requestDonateInvoice`, `satsToMsat`, `QrCode`, `isAndroidUserAgent`, `walletOfSatoshiHref`, `walletOfSatoshiIntentHref`, `LanguageSwitcher`.
+On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.
 
-### Variant: form
+![21.gifts welcome photo](images/welcome-photo.png)
 
-Empty/idle form, submit enabled.
+### Variant: photo-and-text
 
-![21.gifts donate form](images/donate.png)
+After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + textarea + Post).
 
-### Variant: busy
+![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
 
-Payment request in flight: spinner on **Continue**, extra **Cancel** button.
+### Variant: composer-text
 
-![21.gifts donate busy](images/donate-busy.png)
+Typed caption **Caption before attaching a photo.** in the composer; no preview yet; attach + Post idle.
+
+![21.gifts welcome composer text](images/welcome-composer-text.png)
+
+### Variant: composer-photo
+
+JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.
+
+![21.gifts welcome composer photo](images/welcome-composer-photo.png)
+
+### Variant: composer-photo-and-text
+
+Preview plus caption **Caption with selected photo.**, ready to Post.
+
+![21.gifts welcome composer photo and text](images/welcome-composer-photo-and-text.png)
+
+### Variant: composer-text-after-remove
+
+After **Remove photo**, caption **Caption kept after removing photo.** remains; preview gone.
+
+![21.gifts welcome composer text after remove](images/welcome-composer-text-after-remove.png)
+
+### Variant: preparing-photo
+
+Attach in flight (Post disabled + spinner, no preview yet). Native file picker is OS chrome and is not a variant.
+
+![21.gifts welcome preparing photo](images/welcome-preparing-photo.png)
+
+### Variant: preparing-photo-and-text
+
+Same spinner, caption **Caption while the photo is preparing.** already in the textarea.
+
+![21.gifts welcome preparing photo and text](images/welcome-preparing-photo-and-text.png)
+
+### Variant: posting-photo-and-text
+
+Post in flight: spinner on **Post**, composer disabled, preview and caption **Caption while the post is in flight.** still shown.
+
+![21.gifts welcome posting photo and text](images/welcome-posting-photo-and-text.png)
+
+### Variant: photo-loading
+
+Forum row for Ada with caption **Caption waiting for the photo to load.** and `hasPhoto`, image bytes not yet loaded so no `<img>`. A failed photo fetch looks the same (text-only row) — not a separate variant.
+
+![21.gifts welcome photo loading](images/welcome-photo-loading.png)
+
+### Variant: error-unsupported
+
+Attach a GIF → **Use a JPEG, PNG, or WebP photo**.
+
+![21.gifts welcome error unsupported](images/welcome-error-unsupported.png)
+
+### Variant: error-unsupported-with-text
+
+Same alert with caption **Caption with an unsupported photo.** still in the composer.
+
+![21.gifts welcome error unsupported with text](images/welcome-error-unsupported-with-text.png)
+
+### Variant: error-too-large
+
+Encoded JPEG over 1 MB → **Keep the photo under 1 MB**.
+
+![21.gifts welcome error too large](images/welcome-error-too-large.png)
+
+### Variant: error-too-large-with-text
+
+Same alert with caption **Caption with a photo that is too large.** still in the composer.
+
+![21.gifts welcome error too large with text](images/welcome-error-too-large-with-text.png)
+
+### Variant: error-request-photo-and-text
+
+POST fails after caption+JPEG → **Could not post your message**; preview and caption remain.
+
+![21.gifts welcome error request photo and text](images/welcome-error-request-photo-and-text.png)
+
+### Variant: menu-open
+
+Open **Menu** top-right only (do not click Language) → Profile is one line (User icon + Profile + sat totals on the right), Living room rules and Contact each have an icon, Language (Globe + label + chevron), Log out. Accessible names unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
+
+![21.gifts welcome menu](images/welcome-menu.png)
+
+### Variant: menu-language-open
+
+After **Menu**, click **Language** → the four endonym rows (English / Deutsch / Español / Filipino) expand in flow under the Language trigger with a check on the current locale. The Menu grows; this is not an absolute popover.
+
+![21.gifts welcome menu language](images/welcome-menu-language.png)
+
+### Variant: pay-qr
+
+Payable note, amount submitted. On a computer the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon.
+
+![21.gifts welcome pay QR](images/welcome-pay-qr.png)
+
+### Variant: pay-smartphone
+
+Same pay sheet on a smartphone user-agent: **Pay** button with the Wallet of Satoshi icon only, no QR, plus the top-left back control.
+
+![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
+
+### Variant: role-hint
+
+Carol's **Verified** tag clicked; the explanation under that card header is visible (**A moderator met this person in real life and confirmed they are a real human.**). Bob stays without a pill; Ada still shows **Moderator**.
+
+![21.gifts welcome role hint](images/welcome-role-hint.png)
+
+## Screen: /rules
+
+- **URL:** `/rules` — public living-room rules. Light chrome (not the dark marketing shell). No auth gate.
+- **What the user sees:** Light language switcher top-right. Page heading **Living room rules**, then lead, three laws (title + body + test where present), Wanted / Allowed / Rather not / Forbidden (three forbidden subheads + lists), House right, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
+- **Actions:** Change language. Read the rules. Open contact or the forum.
+- **Calls:** `RulesPage`, `RulesDocument`, `LanguageSwitcher`.
+- **Auth:** None.
+
+### Variant: default
+
+Full rules body with law **1. Only free donations** visible.
+
+![21.gifts living room rules](images/rules.png)
+
+## Screen: /contact
+
+- **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
+- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, or **Log out**.
+- **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
+
+### Variant: default
+
+Idle composer with lead and rules link.
+
+![21.gifts contact](images/contact.png)
 
 ### Variant: validation-error
 
-Submit with a blank address (or invalid amount). An alert explains what to fix; no payment QR yet.
+Click **Send** with an empty composer → **Enter a message**.
 
-![21.gifts donate validation error](images/donate-validation-error.png)
+![21.gifts contact validation error](images/contact-validation-error.png)
 
-### Variant: invoice
+### Variant: success
 
-Successful create: **Pay N sats to address**, Bitcoin payment QR, **Open Wallet of Satoshi**.
+After a successful send: **Received. We read this in the app.** Form hidden; rules link remains.
 
-![21.gifts donate invoice](images/donate-invoice.png)
+![21.gifts contact success](images/contact-success.png)
 
-### Variant: invoice-android
+## Screen: /profile
 
-Same payment card, but **Open Wallet of Satoshi** is an Android Intent that pins package `com.livingroomofsatoshi.wallet`. The pixels match the desktop invoice variant.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (Sat|USD) inside the identity card in place of icon+amount totals, edit name and Wallet of Satoshi address, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
+- **Inputs:** Session account (name + Lightning Address + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, or **Log out**; icon-only back (top-left) to the forum; save name; link or change address; toggle the activity chart between Sat and USD.
+- **Used by:** Route `/profile` (`ProfilePage`).
 
-![21.gifts donate invoice Android](images/donate-invoice-android.png)
+### Variant: default
+
+Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, Sat|USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash). No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
+
+![21.gifts profile](images/profile.png)
+
+### Variant: receive
+
+Filtered receive series with three UTC days (including a zero-gap day) and received total 1500 sats. Chart shows day ticks such as **2026-06-01**; Given stays flat at zero with a visible legend.
+
+![21.gifts profile receive](images/profile-receive.png)
+
+### Variant: usd-scale
+
+Same receive stub as **receive**, with the chart scale switched to **USD** (`Given and received in USD`).
+
+![21.gifts profile USD scale](images/profile-usd-scale.png)
+
+### Variant: single-day
+
+One receive day (21 sats on **2026-06-01**). Chart draws a horizontal single-point line.
+
+![21.gifts profile single day](images/profile-single-day.png)
+
+### Variant: large-usd
+
+Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
+
+![21.gifts profile large USD](images/profile-large-usd.png)
 
 ## Screen: /handbook
 

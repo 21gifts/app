@@ -28,6 +28,26 @@ export function isAndroidUserAgent(userAgent: string): boolean {
 }
 
 /**
+ * Whether `userAgent` is a smartphone (not a desktop and not a tablet).
+ *
+ * iPhone and iPod are phones. Android is a phone only when the UA also
+ * contains `Mobile` (Android tablets typically omit it). iPad is not a
+ * smartphone. Viewport width is irrelevant.
+ *
+ * @param userAgent - `navigator.userAgent`.
+ * @returns `true` iff this UA is a smartphone.
+ */
+export function isSmartphoneUserAgent(userAgent: string): boolean {
+  if (/iPhone|iPod/i.test(userAgent)) {
+    return true;
+  }
+  if (/Android/i.test(userAgent) && /Mobile/i.test(userAgent)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Uppercases a bech32 payload (LNURL or BOLT11).
  *
  * @param lnurl - Bech32 LNURL or BOLT11 payment request (any casing).

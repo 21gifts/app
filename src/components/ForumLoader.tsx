@@ -1,29 +1,147 @@
 'use client';
 
-import { useEffect, useState, type ReactElement } from 'react';
-import { ForumBoard } from '@/components/ForumBoard';
-import { fetchMessages, postMessage } from '@/lib/api';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  ForumBoard,
+  type ForumFormError,
+  type ForumPayError,
+  type ForumPayInvoice,
+} from '@/components/ForumBoard';
+import {
+  dismissForumLaws,
+  fetchMessagePhoto,
+  fetchMessages,
+  postMessage,
+  postMessageInvoice,
+} from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import {
+  DEFAULT_FORUM_FEED_MODE,
+  type ForumFeedMode,
+  visibleForumMessages,
+} from '@/lib/forum-feed';
+import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** How many times to poll `GET /messages` for pay confirmation or payable status. */
+const PAY_POLL_ATTEMPTS = 8;
+
+/** Delay between `GET /messages` polls (ms). */
+const PAY_POLL_MS = 2000;
+
+/**
+ * True when a thrown value is the api rate-limit copy for posts or payments.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message looks like a rate-limit error.
+ */
+function isRateLimitError(err: unknown): boolean {
+  /* v8 ignore next 3 */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /too many (messages|payments)/i.test(err.message);
+}
+
+/**
+ * Merges a fresh list into local state, keeping optimistic posts the server
+ * has not echoed yet.
+ *
+ * @param prev - Current list, or `null` before the first successful load.
+ * @param next - Fresh list from the api.
+ * @returns Merged newest-first list.
+ */
+function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): ForumMessage[] {
+  if (prev === null) {
+    return next;
+  }
+  const ids = new Set(next.map((message) => message.id));
+  const extra = prev.filter((message) => !ids.has(message.id));
+  return [...extra, ...next];
+}
 
 /**
  * Client loader for the public forum on `/welcome`.
  *
- * Reads the session from the auth store, fetches messages with a cancelled-flag
- * pattern matching {@link StatsLoader}, and owns composer draft/post state.
- * Renders nothing when there is no session.
+ * Reads the session and account from the auth store, fetches messages with a
+ * cancelled-flag pattern matching {@link StatsLoader}, loads photos via Bearer
+ * + blob URLs, owns composer draft/photo/post state, the Active/All/Most
+ * popular feed mode, pay-on-note invoice + sats-poll state, and persists
+ * dismiss of the living-room laws hint on the account. Also polls until
+ * unsigned notes become payable. Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
+  const account = useAuthStore((state) => state.account);
+  const setAccount = useAuthStore((state) => state.setAccount);
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
+  const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const photoUrlsRef = useRef(photoUrls);
+  photoUrlsRef.current = photoUrls;
+  const pickGeneration = useRef(0);
   const [posting, setPosting] = useState(false);
-  const [formError, setFormError] = useState<'empty' | 'tooLong' | 'request' | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [formError, setFormError] = useState<ForumFormError>(null);
+  const [feedMode, setFeedMode] = useState<ForumFeedMode>(DEFAULT_FORUM_FEED_MODE);
+  const [payMessageId, setPayMessageId] = useState<string | null>(null);
+  const [payDraft, setPayDraft] = useState('');
+  const [payBusy, setPayBusy] = useState(false);
+  const [payError, setPayError] = useState<ForumPayError>(null);
+  const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
+  const [payWaiting, setPayWaiting] = useState(false);
+  const payPollGeneration = useRef(0);
+  const payablePollGeneration = useRef(0);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  const photoIdsKey =
+    messages === null
+      ? ''
+      : visibleForumMessages(messages, feedMode)
+          .filter((message) => message.hasPhoto)
+          .map((message) => message.id)
+          .sort()
+          .join('\0');
+
+  /**
+   * Polls `GET /messages` until every merged row is payable or attempts run out.
+   * Stop uses `messagesRef` + merge outside setState (empty GET keeps local unsigned extras);
+   * store update is `setMessages((prev) => mergeMessages(prev, next))`.
+   *
+   * @param activeSession - Session token for the fetch.
+   */
+  const startPayablePoll = (activeSession: string): void => {
+    const generation = ++payablePollGeneration.current;
+    void (async () => {
+      for (let i = 0; i < PAY_POLL_ATTEMPTS; i += 1) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, PAY_POLL_MS);
+        });
+        if (generation !== payablePollGeneration.current) {
+          return;
+        }
+        try {
+          const next = await fetchMessages(activeSession);
+          if (generation !== payablePollGeneration.current) {
+            return;
+          }
+          const merged = mergeMessages(messagesRef.current, next);
+          setMessages((prev) => mergeMessages(prev, next));
+          if (merged.length > 0 && merged.every((message) => message.payable)) {
+            return;
+          }
+        } catch {
+          // Keep polling until attempts are exhausted; do not set board error.
+        }
+      }
+    })();
+  };
 
   useEffect(() => {
     if (session === null) {
@@ -36,14 +154,10 @@ export function ForumLoader(): ReactElement | null {
       try {
         const next = await fetchMessages(session);
         if (!cancelled) {
-          setMessages((prev) => {
-            if (prev === null) {
-              return next;
-            }
-            const ids = new Set(next.map((message) => message.id));
-            const extra = prev.filter((message) => !ids.has(message.id));
-            return [...extra, ...next];
-          });
+          setMessages((prev) => mergeMessages(prev, next));
+          if (next.some((message) => message.payable === false)) {
+            startPayablePoll(session);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -60,13 +174,204 @@ export function ForumLoader(): ReactElement | null {
     };
   }, [attempt, session]);
 
+  useEffect(() => {
+    if (session === null || photoIdsKey === '') {
+      return;
+    }
+    const listed = messagesRef.current;
+    /* v8 ignore start -- photoIdsKey is empty when messages is null */
+    if (listed === null) {
+      return;
+    }
+    /* v8 ignore stop */
+    let cancelled = false;
+    const visible = visibleForumMessages(listed, feedMode);
+    const missing = visible.filter(
+      (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
+    );
+    if (missing.length === 0) {
+      return;
+    }
+    void (async () => {
+      for (const message of missing) {
+        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
+        if (photoUrlsRef.current[message.id] !== undefined) {
+          continue;
+        }
+        /* v8 ignore stop */
+        let blob: Blob;
+        try {
+          blob = await fetchMessagePhoto(session, message.id);
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          try {
+            blob = await fetchMessagePhoto(session, message.id);
+          } catch {
+            if (cancelled) {
+              return;
+            }
+            // Leave the row text-only when the photo cannot load.
+            continue;
+          }
+        }
+        if (cancelled) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        setPhotoUrls((prev) => {
+          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
+          if (prev[message.id] !== undefined) {
+            URL.revokeObjectURL(url);
+            return prev;
+          }
+          /* v8 ignore stop */
+          return { ...prev, [message.id]: url };
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [photoIdsKey, session]);
+
+  useEffect(() => {
+    return () => {
+      payPollGeneration.current += 1;
+      payablePollGeneration.current += 1;
+      pickGeneration.current += 1;
+      for (const url of Object.values(photoUrlsRef.current)) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, []);
+
+  const lawsVisible = account?.forumLawsDismissed !== true;
+
+  const onDismissLaws = (): void => {
+    const snapshot = useAuthStore.getState();
+    /* v8 ignore next 3 -- ForumLoader returns null without a session */
+    if (snapshot.session === null || snapshot.account === null) {
+      return;
+    }
+    /* v8 ignore next 3 -- dismiss control is hidden when already dismissed */
+    if (snapshot.account.forumLawsDismissed === true) {
+      return;
+    }
+    const token = snapshot.session;
+    const previousDismissed = snapshot.account.forumLawsDismissed;
+    setAccount({ ...snapshot.account, forumLawsDismissed: true });
+    void (async () => {
+      try {
+        const updated = await dismissForumLaws(token);
+        const current = useAuthStore.getState();
+        if (current.session !== token || current.account === null) {
+          return;
+        }
+        setAccount({ ...current.account, forumLawsDismissed: updated.forumLawsDismissed });
+      } catch {
+        const current = useAuthStore.getState();
+        if (current.session !== token || current.account === null) {
+          return;
+        }
+        setAccount({ ...current.account, forumLawsDismissed: previousDismissed });
+      }
+    })();
+  };
+
   if (session === null) {
     return null;
   }
 
+  /* v8 ignore start -- pay-sheet reset */
+  const clearPaySheet = (): void => {
+    payPollGeneration.current += 1;
+    setPayMessageId(null);
+    setPayDraft('');
+    setPayBusy(false);
+    setPayError(null);
+    setPayInvoice(null);
+    setPayWaiting(false);
+  };
+  /* v8 ignore stop */
+
+  /* v8 ignore start -- poll after wallet return */
+  const startPayPoll = (messageId: string, baselineSats: number): void => {
+    const generation = ++payPollGeneration.current;
+    setPayWaiting(true);
+    void (async () => {
+      for (let i = 0; i < PAY_POLL_ATTEMPTS; i += 1) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, PAY_POLL_MS);
+        });
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+        try {
+          const next = await fetchMessages(session);
+          if (generation !== payPollGeneration.current) {
+            return;
+          }
+          setMessages((prev) => mergeMessages(prev, next));
+          const updated = next.find((message) => message.id === messageId);
+          if (updated !== undefined && updated.sats > baselineSats) {
+            setPayWaiting(false);
+            setPayInvoice(null);
+            setPayMessageId(null);
+            setPayDraft('');
+            setPayError(null);
+            return;
+          }
+        } catch {
+          // Keep polling until attempts are exhausted; generic retry is the board load path.
+        }
+      }
+      if (generation === payPollGeneration.current) {
+        setPayWaiting(false);
+      }
+    })();
+  };
+  /* v8 ignore stop */
+
+  const onPickPhoto = (file: File): void => {
+    const generation = pickGeneration.current + 1;
+    pickGeneration.current = generation;
+    setPreparing(true);
+    void (async () => {
+      try {
+        const result = await prepareForumPhoto(file);
+        if (generation !== pickGeneration.current) {
+          return;
+        }
+        if (!result.ok) {
+          setPhotoDraft(null);
+          setFormError(result.error);
+          return;
+        }
+        setPhotoDraft(result.photo);
+        setFormError(null);
+      } catch {
+        if (generation !== pickGeneration.current) {
+          return;
+        }
+        setPhotoDraft(null);
+        setFormError('unsupported');
+      } finally {
+        if (generation === pickGeneration.current) {
+          setPreparing(false);
+        }
+      }
+    })();
+  };
+
   const onPost = (): void => {
     const trimmed = draft.trim();
-    if (trimmed === '') {
+    if (trimmed === '' && photoDraft === null) {
       setFormError('empty');
       return;
     }
@@ -74,11 +379,18 @@ export function ForumLoader(): ReactElement | null {
       setFormError('tooLong');
       return;
     }
+    pickGeneration.current += 1;
     setPosting(true);
     setFormError(null);
+    const pendingPhoto = photoDraft;
     void (async () => {
       try {
-        const created = await postMessage(session, trimmed);
+        const created = await postMessage(session, {
+          text: trimmed,
+          ...(pendingPhoto === null
+            ? {}
+            : { photo: { contentType: pendingPhoto.contentType, data: pendingPhoto.data } }),
+        });
         setMessages((prev) => {
           if (prev === null) {
             return [created];
@@ -88,13 +400,93 @@ export function ForumLoader(): ReactElement | null {
           }
           return [created, ...prev];
         });
+        if (created.sats === 0) {
+          setFeedMode('all');
+        }
+        if (created.hasPhoto && pendingPhoto !== null) {
+          setPhotoUrls((prev) => {
+            if (prev[created.id] !== undefined) {
+              return prev;
+            }
+            return { ...prev, [created.id]: pendingPhoto.previewUrl };
+          });
+        }
         setDraft('');
-      } catch {
-        setFormError('request');
+        setPhotoDraft(null);
+        startPayablePoll(session);
+      } catch (err) {
+        setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       } finally {
         setPosting(false);
       }
     })();
+  };
+
+  const onPaySubmit = (): void => {
+    /* v8 ignore next 3 -- button is disabled when no sheet is open */
+    if (payMessageId === null || payBusy) {
+      return;
+    }
+    const listed = messages?.find((message) => message.id === payMessageId);
+    /* v8 ignore next 3 -- sheet only opens on a payable row */
+    if (listed === undefined || listed.payable !== true) {
+      return;
+    }
+    const rawAmount = payDraft.trim();
+    /* v8 ignore start */
+    if (rawAmount === '' || !/^\d+$/.test(rawAmount)) {
+      setPayError('amount');
+      return;
+    }
+    /* v8 ignore stop */
+    const sats = Number.parseInt(rawAmount, 10);
+    /* v8 ignore next 4 */
+    if (sats <= 0 || !Number.isSafeInteger(sats)) {
+      setPayError('amount');
+      return;
+    }
+    const messageId = payMessageId;
+    const baseline = listed.sats;
+    const generation = payPollGeneration.current;
+    setPayBusy(true);
+    setPayError(null);
+    void (async () => {
+      try {
+        const invoice = await postMessageInvoice(session, messageId, sats);
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+        setPayInvoice({
+          messageId,
+          pr: invoice.pr,
+          amountSats: invoice.amountSats,
+        });
+        setPayBusy(false);
+        startPayPoll(messageId, baseline);
+      } catch (err) {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+        setPayError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      } finally {
+        if (generation === payPollGeneration.current) {
+          setPayBusy(false);
+        }
+      }
+    })();
+  };
+
+  const onModeChange = (next: ForumFeedMode): void => {
+    if (
+      payMessageId !== null &&
+      messages !== null &&
+      !visibleForumMessages(messages, next).some((message) => message.id === payMessageId)
+    ) {
+      clearPaySheet();
+      setFeedMode(next);
+      return;
+    }
+    setFeedMode(next);
   };
 
   return (
@@ -102,7 +494,7 @@ export function ForumLoader(): ReactElement | null {
       messages={messages}
       error={error}
       loading={loading}
-      posting={posting}
+      posting={posting || preparing}
       draft={draft}
       onDraftChange={(value) => {
         setDraft(value);
@@ -113,6 +505,39 @@ export function ForumLoader(): ReactElement | null {
         setAttempt((n) => n + 1);
       }}
       formError={formError}
+      photoDraft={photoDraft}
+      onPickPhoto={onPickPhoto}
+      onClearPhoto={() => {
+        pickGeneration.current += 1;
+        setPhotoDraft(null);
+        setFormError(null);
+      }}
+      photoUrls={photoUrls}
+      payMessageId={payMessageId}
+      payDraft={payDraft}
+      payBusy={payBusy}
+      payError={payError}
+      payInvoice={payInvoice}
+      payWaiting={payWaiting}
+      onPayOpen={(messageId) => {
+        payPollGeneration.current += 1;
+        setPayMessageId(messageId);
+        setPayDraft('');
+        setPayError(null);
+        setPayInvoice(null);
+        setPayWaiting(false);
+        setPayBusy(false);
+      }}
+      onPayDraftChange={(value) => {
+        setPayDraft(value);
+        setPayError(null);
+      }}
+      onPaySubmit={onPaySubmit}
+      onPayCancel={clearPaySheet}
+      mode={feedMode}
+      onModeChange={onModeChange}
+      lawsVisible={lawsVisible}
+      onDismissLaws={onDismissLaws}
     />
   );
 }

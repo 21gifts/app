@@ -1,24 +1,10 @@
 # Functions
 
-## Function: DonateForm
-
-- **Purpose:** Renders the guest donate form (Wallet of Satoshi address and sat amount only; no comment) and, after success, the Bitcoin payment QR. All visitor-facing copy goes through `useTranslations`.
-- **Inputs:** Form state: address and whole-sat amount. Validation and request failures are typed keys (`address` / `amount` / `range` / `request`) so `useTranslations` re-renders them after a locale change.
-- **Returns / side effects:** React element. Side effects: HTTP to the api then GET the payee LNURL-pay callback.
-- **Used by:** Screen `/donate`.
-
-## Function: DonatePage
-
-- **Purpose:** Next.js page for `/donate` with localized heading and a light language switcher.
-- **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** The donate screen wrapped in the root layout; switcher top-right.
-- **Used by:** Route `/donate`.
-
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET`.
-- **Inputs:** Incoming `Request` on proxy routes; none on healthz.
-- **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages` and `/messages/[id]/photo`).
+- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo); none on healthz.
+- **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
 ## Function: HandbookCopyLink
@@ -115,31 +101,31 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` and `/donate`, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
 
 ## Function: LanguageSwitcher
 
-- **Purpose:** Native language `<select>` that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login/donate) and optional `embedded` (globe+text action in `SignedInChrome`). Reads current locale via `useTranslations`.
-- **Returns / side effects:** Select with native option labels (English/Deutsch/Español/Filipino). On change writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and `SignedInChrome`.
+- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login and donate) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
+- **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Globe + Language + chevron; expands in flow under the trigger with endonym rows). Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and the signed-in Menu in `SignedInChrome`.
 
 ## Function: NameForm
 
-- **Purpose:** Logged-in form to set or edit a display name.
+- **Purpose:** Logged-in form to set or edit a display name. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil).
 - **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
-- **Used by:** `NameSetup` on screen `/setup/name` (not on `/` or `/login`).
+- **Used by:** `NameSetup` on screen `/setup/name` and `ProfileScreen` on `/profile`.
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address.
-- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil, trash).
+- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, and request failures are typed keys so they re-render after a locale change.
 - **Returns / side effects:** React element or `null` when logged out.
-- **Used by:** `AddressSetup` on screen `/setup/address` (not on `/` or `/login`).
+- **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
 
 ## Function: LocaleProvider
 
@@ -159,14 +145,24 @@
 
 - **Purpose:** Next.js page for `/login` with localized heading and a light language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, or `/welcome`.
+- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
+
+## Function: DonatePage
+
+- **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
+- **Inputs:** None. Calls `getRequestLocale()` for localized copy.
+- **Returns / side effects:** Renders heading, lead, **Open the forum** link, and `LanguageSwitcher` (light, top-right). No OnboardingGate.
+- **Used by:**
+  - **Route `/donate`**
+  - **Home CTA `home.ctaSend`**
+  - **LanguageSwitcher on `/donate`**
 
 ## Function: AddressSetup
 
-- **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved. No `LogoutButton` on the card.
+- **Purpose:** Second post-login screen: Wallet of Satoshi address form after the name is saved. No `LogoutButton`.
 - **Inputs:** Reads `account.name` from `useAuthStore` for the greeting.
-- **Returns / side effects:** Card with heading **Your Wallet of Satoshi address** and `LightningAddressForm`. No `LogoutButton`.
+- **Returns / side effects:** Heading **Your Wallet of Satoshi address** at the top and `LightningAddressForm` (`variant="onboarding"`) with **Continue** at the bottom of the screen. No `LogoutButton`.
 - **Used by:** Screen `/setup/address`.
 
 ## Function: AddressSetupPage
@@ -176,18 +172,32 @@
 - **Returns / side effects:** `OnboardingGate` around `AddressSetup` with `SignedInChrome`.
 - **Used by:** Route `/setup/address`.
 
+## Function: RulesSetup
+
+- **Purpose:** Third post-login screen: living-room rules body and an **I agree** control. Merges only `rulesAgreedAt` into the auth-store account.
+- **Inputs:** `children` — server-rendered `RulesDocument` (with `showNav={false}`).
+- **Returns / side effects:** Heading, prompt, children, error alert, full-width **I agree** button. POSTs `/me/rules-agreement` via `agreeToRules`. Renders `null` without a session.
+- **Used by:** Screen `/setup/rules`.
+
+## Function: RulesSetupPage
+
+- **Purpose:** Next.js page for `/setup/rules`.
+- **Inputs:** None. Calls `getRequestLocale()` / `getCatalog` for the rules body.
+- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RulesDocument showNav={false}` as children. `min-h-svh` for the long rules body.
+- **Used by:** Route `/setup/rules`.
+
 ## Function: LogoutButton
 
-- **Purpose:** Matching icon+text log-out in `SignedInChrome` (top-right page chrome, not on the card); clears the session and returns the visitor to `/login`.
+- **Purpose:** Matching icon+text log-out inside the signed-in Menu dropdown (not a free top-right action); clears the session and returns the visitor to `/login`.
 - **Inputs:** `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`.
-- **Returns / side effects:** Icon+text button. Clears the session and `router.replace('/login')`.
-- **Used by:** `SignedInChrome`.
+- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Language). Clears the session and `router.replace('/login')`.
+- **Used by:** `SignedInChrome` Menu dropdown.
 
 ## Function: NameSetup
 
 - **Purpose:** First post-login screen: display name form.
 - **Inputs:** None besides `NameForm` store reads.
-- **Returns / side effects:** Card with heading **Your name** and `NameForm`. No `LogoutButton` on the card.
+- **Returns / side effects:** Heading **Your name** at the top and `NameForm` (`variant="onboarding"`) with **Continue** at the bottom of the screen. No `LogoutButton`.
 - **Used by:** Screen `/setup/name`.
 
 ## Function: NameSetupPage
@@ -206,17 +216,80 @@
 
 ## Function: OnboardingGate
 
-- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen.
-- **Inputs:** `screen` (`login` / `name` / `address` / `welcome`) and `children`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, or `/welcome`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/welcome`.
+- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`).
+- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile still requires `next === '/welcome'`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/contact`.
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: language and **Log out** as matching icon+text actions, not on the card.
-- **Inputs:** None. Composes `LanguageSwitcher` (`tone="light"`, `embedded`) and `LogoutButton`.
-- **Returns / side effects:** Absolutely positioned chrome with a globe+language select and a matching log-out icon+text control.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `WelcomePage`.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; LogOut log out).
+- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
+
+## Function: ProfilePage
+
+- **Purpose:** Next.js page for `/profile`.
+- **Inputs:** None.
+- **Returns / side effects:** `OnboardingGate` around `ProfileScreen` with `SignedInChrome`.
+- **Used by:** Route `/profile`.
+
+## Function: ProfileScreen
+
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart replacing the former icon+amount totals row, plus name and Wallet of Satoshi address forms; icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; catalog via `useTranslations`.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, and address form — all inside one identity card (no second panel).
+- **Used by:** `ProfilePage`.
+
+## Function: AccountActivityChart
+
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
+- **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
+- **Returns / side effects:** One chrome row (legend left, Sat|USD right) and SVG. Client state for scale only. No network.
+- **Used by:** `ProfileScreen`.
+
+## Function: accountTotals
+
+- **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
+- **Inputs:** `GiftStats` and the account Lightning Address (or null).
+- **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
+- **Used by:** `useAccountTotals`.
+
+## Function: alignActivitySeries
+
+- **Purpose:** Align receive and donate cumulative `spendOverTime` series onto one sorted UTC-day axis for the profile chart.
+- **Inputs:** `received` and `donated` arrays from `GiftStats.spendOverTime`.
+- **Returns / side effects:** `ActivityPoint[]`. Empty+empty → `[]`. Empty donated → zero Given on each received day. Non-empty both → day union with step-hold carry-forward.
+- **Used by:** `AccountActivityChart`.
+
+## Function: activityValue
+
+- **Purpose:** Read one cumulative chart value from an aligned activity point.
+- **Inputs:** `point`, `series` (`donated` | `received`), `scale` (`sat` | `usd`).
+- **Returns / side effects:** Number used to place the polyline.
+- **Used by:** `AccountActivityChart`, `activityMaxY`.
+
+## Function: activityMaxY
+
+- **Purpose:** Y-axis max for the dual-line chart: max of both series at the active scale, or `1` when empty/all zeros.
+- **Inputs:** `points`, `scale`.
+- **Returns / side effects:** Positive number for SVG scale.
+- **Used by:** `AccountActivityChart`.
+
+## Function: recipientHandleFromAddress
+
+- **Purpose:** Local-part of a Lightning Address (before the first `@`).
+- **Inputs:** Full address or bare handle string.
+- **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
+- **Used by:** `accountTotals`, `useAccountTotals`.
+
+## Function: useAccountTotals
+
+- **Purpose:** Fetches gift stats filtered by the signed-in Lightning Address handle and derives given/received sats plus the receive time series.
+- **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats(handle)` and `accountTotals`. Skips the fetch when the address is null/blank.
+- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. On each fetch start (including address change) totals and series reset to zeros/empty; the chart SVG remains mounted on empty series. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
+- **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
 
@@ -227,23 +300,58 @@
 
 ## Function: WelcomeScreen
 
-- **Purpose:** Third post-login screen after name and address are saved. Embeds `ForumLoader` (forum list + composer) below the heading; card is `max-w-xl`.
+- **Purpose:** Fourth post-login screen after name, address, and living-room rules agreement are saved. Embeds `ForumLoader` (forum list + composer) below the heading; card is `max-w-xl`.
 - **Inputs:** Reads `account.name` from `useAuthStore`.
 - **Returns / side effects:** Gift icon, **Welcome, {name}**, forum board. No name or address form. No donate CTA. No `LogoutButton` on the card.
 - **Used by:** Screen `/welcome`.
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, list of every post (name, text, timestamp) or empty/loading/error, and a messenger-style composer (textarea with **Post** to the right, `maxLength` 500).
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request`).
-- **Returns / side effects:** React element. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. No network.
+- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
+- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
+
+## Function: ContactLoader
+
+- **Purpose:** Client loader for in-app contact on `/contact`. Session from `useAuthStore`; returns null without a session. Posts via `postContact`. No inbox fetch.
+- **Inputs:** None (reads session from the auth store).
+- **Returns / side effects:** React element wrapping `ContactScreen`, or `null`. Owns draft/posting/formError/success state. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postContact`. On success clears the draft and sets `success` so the form is hidden.
+- **Used by:** Screen `/contact`.
+
+## Function: ContactPage
+
+- **Purpose:** Next.js page for `/contact`.
+- **Inputs:** None.
+- **Returns / side effects:** `OnboardingGate` around `ContactLoader` with `SignedInChrome`.
+- **Used by:** Route `/contact`.
+
+## Function: ContactScreen
+
+- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and either a messenger-style composer (textarea with **Send**, `maxLength` 500) or success copy. No message list.
+- **Inputs:** `ContactScreenProps` — `posting`, `draft`, `onDraftChange`, `onPost`, `formError` (`empty` / `tooLong` / `request`), `success`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `ContactLoader`.
+
+## Function: RulesDocument
+
+- **Purpose:** Presentational living-room rules body from catalog keys (lead, three laws, wanted/allowed/rather-not/forbidden, house right, optional CTAs to `/contact` and `/welcome`).
+- **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`). When `showNav` is `false`, the public Contact / forum nav is omitted.
+- **Returns / side effects:** React element. Server component — uses `translate`, not `useTranslations`. No network.
+- **Used by:** `RulesPage`, `RulesSetupPage`.
+
+## Function: RulesPage
+
+- **Purpose:** Next.js page for `/rules` with localized heading and a light language switcher.
+- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
+- **Returns / side effects:** The rules screen wrapped in the root layout; switcher top-right.
+- **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
 
-- **Purpose:** Client loader for the public forum on `/welcome`. Session from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, posts via `postMessage`, cancelled-flag fetch like `StatsLoader`.
-- **Inputs:** None (reads session from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/posting/formError state and retry attempts. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage`. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Does not pass `Error.message` to the board.
+- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo), prepares picks via `prepareForumPhoto`, pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present).
+- **Inputs:** None (reads session and account from the auth store).
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/photoUrls/posting/formError/feedMode/pay state and retry attempts. Empty text without a photo sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage`. Photo-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Revokes blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -260,9 +368,16 @@
 - **Returns / side effects:** Boolean. No side effects.
 - **Used by:** `nextOnboardingPath`, `LightningAddressForm`.
 
+## Function: hasAgreedToRules
+
+- **Purpose:** True when the account has a non-null `rulesAgreedAt` timestamp (epoch ms of first living-room rules agreement).
+- **Inputs:** `account`.
+- **Returns / side effects:** Boolean. No side effects.
+- **Used by:** `nextOnboardingPath`.
+
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/setup/name`, `/setup/address`, or `/welcome` from the account.
+- **Purpose:** Picks `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` from the account (name → address → rules agreement → welcome).
 - **Inputs:** `account`.
 - **Returns / side effects:** Path string. No side effects.
 - **Used by:** `OnboardingGate`.
@@ -279,7 +394,7 @@
 - **Purpose:** SVG QR for a string (LNURL or bolt11).
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated).
 - **Returns / side effects:** React element.
-- **Used by:** `DonateForm`.
+- **Used by:** `ForumBoard` only when the UA is not a smartphone.
 
 ## Function: RootLayout
 
@@ -297,10 +412,10 @@
 
 ## Function: fetchGiftStats
 
-- **Purpose:** GET `/gifts/stats` and parse the public gift totals payload.
-- **Inputs:** None.
+- **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
+- **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`.
+- **Used by:** `StatsLoader`, `useAccountTotals`.
 
 ## Function: fetchMe
 
@@ -316,11 +431,39 @@
 - **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure.
 - **Used by:** `ForumLoader`.
 
+## Function: fetchMessagePhoto
+
+- **Purpose:** GET `/messages/:id/photo` with the bearer session and return the raw image bytes as a `Blob` for `URL.createObjectURL` rendering.
+- **Inputs:** `sessionToken`, message `id`.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load messages. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
+- **Used by:** `ForumLoader`.
+
 ## Function: postMessage
 
-- **Purpose:** POST `/messages` with bearer + `{ text }`, parse `forumMessageSchema`, and return the created message.
+- **Purpose:** POST `/messages` with bearer + `{ text, photo? }`, parse `forumMessageSchema`, and return the created message (text and/or photo).
+- **Inputs:** `sessionToken`, `input` with `text` and optional `{ contentType, data }` photo.
+- **Returns / side effects:** `ForumMessage`. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
+- **Used by:** `ForumLoader`.
+
+## Function: postContact
+
+- **Purpose:** POST `/contact/submit` with bearer + `{ text }`, parse `contactSchema`, and return the created message.
 - **Inputs:** `sessionToken`, `text`.
-- **Returns / side effects:** `ForumMessage`. On 400 uses the api error string when present; otherwise throws `Could not post your message`.
+- **Returns / side effects:** `ContactMessage`. On 400 uses the api error string when present; otherwise throws `Could not send your message`.
+- **Used by:** `ContactLoader`.
+
+## Function: isForumPhotoFile
+
+- **Purpose:** True when a browser `File` has mime type JPEG, PNG, or WebP for the forum attach control.
+- **Inputs:** `file` from `<input type="file">`.
+- **Returns / side effects:** Boolean. No side effects.
+- **Used by:** `prepareForumPhoto`.
+
+## Function: prepareForumPhoto
+
+- **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL.
+- **Inputs:** `file` accepted by `isForumPhotoFile`.
+- **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
 - **Used by:** `ForumLoader`.
 
 ## Function: formatBtcTick
@@ -337,12 +480,12 @@
 - **Returns / side effects:** Display string. Always uses `timeZone: 'UTC'` so screenshots are host-independent.
 - **Used by:** `ForumBoard`.
 
-## Function: formatMsatAsSats
+## Function: visibleForumMessages
 
-- **Purpose:** Formats millisatoshis as an English sat string (`1 sat` / `{n} sats`).
-- **Inputs:** `msat` number.
-- **Returns / side effects:** Decimal string in sats.
-- **Used by:** Unit tests (`lnurl-pay.test.ts`). The donate UI formats amounts via catalog keys `donate.satOne` / `donate.sats` instead.
+- **Purpose:** Client-side filter and sort of the already-loaded forum thread for the Active / All / Most popular selector. Does not call the api; ranking is among the messages the loader already holds.
+- **Inputs:** `messages` (newest-first list from the api / loader merge) and `mode` (`active` | `all` | `popular`).
+- **Returns / side effects:** A new array. `all` keeps input order including unpaid (`sats === 0`) notes. `active` keeps only paid notes (`sats > 0`) in newest-first order. `popular` keeps only paid notes, ordered by sats descending, then `createdAt` descending, then `id` descending. Never mutates the input array.
+- **Used by:** `ForumBoard`, `ForumLoader`.
 
 ## Function: formatUsdDisplay
 
@@ -356,7 +499,14 @@
 - **Purpose:** Formats a parsed USD chart-axis value as a grouped dollar label.
 - **Inputs:** `usd` number (layout scale only).
 - **Returns / side effects:** Label such as `$1,234`.
-- **Used by:** `StatsDashboard` USD-over-time chart.
+- **Used by:** `StatsDashboard` USD-over-time chart, `AccountActivityChart` USD scale.
+
+## Function: formatSatTick
+
+- **Purpose:** Formats a sat chart-axis value with en-US grouping and no unit suffix.
+- **Inputs:** `sats` number (layout scale only).
+- **Returns / side effects:** `0` for zero; otherwise grouped digits such as `1,000`.
+- **Used by:** `AccountActivityChart` Sat scale.
 
 ## Function: getApiUrl
 
@@ -370,21 +520,28 @@
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
 - **Inputs:** `locale` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** The `Messages` object for that locale. Exhaustive switch over `Locale`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, `HandbookPage`, and the `renderWithLocale` test helper.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, `RulesPage`, `RulesSetupPage`, and the `renderWithLocale` test helper.
 
 ## Function: getRequestLocale
 
 - **Purpose:** Resolve the UI locale for the current request without writing cookies.
 - **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
 - **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `/donate`, `NotFound`, `MarketingFooter`, and `HandbookPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, `RulesPage`, and `RulesSetupPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: isAndroidUserAgent
 
 - **Purpose:** Detects Android so the WoS CTA can use an Intent URL.
 - **Inputs:** `userAgent` string.
 - **Returns / side effects:** `true` iff `/Android/i` matches.
-- **Used by:** `DonateForm`.
+- **Used by:** `ForumBoard`.
+
+## Function: isSmartphoneUserAgent
+
+- **Purpose:** Detects a smartphone so the pay sheet can hide the payment QR. True for iPhone, iPod, and Android with `Mobile`; false for iPad, Android tablet (no `Mobile`), and desktop. Viewport width is irrelevant.
+- **Inputs:** `userAgent` string (`navigator.userAgent`).
+- **Returns / side effects:** `true` iff the UA is a smartphone. No side effects.
+- **Used by:** `ForumBoard` to hide the payment QR.
 
 ## Function: isInAppBrowser
 
@@ -424,30 +581,16 @@
 ## Function: parseSupportedLocale
 
 - **Purpose:** Accept a string only when it is exactly one of `en` / `de` / `es` / `fil`.
-- **Inputs:** Raw cookie or `<select>` value, or `undefined`.
+- **Inputs:** Raw cookie or option value, or `undefined`.
 - **Returns / side effects:** That locale, or `null`. Pure function — no I/O.
-- **Used by:** `getRequestLocale` (cookie) and `LanguageSwitcher` (option value).
-
-## Function: requestDonateInvoice
-
-- **Purpose:** GET an LNURL-pay callback with `amount` millisatoshis and return the bolt11 string.
-- **Inputs:** `{ callback, amountMsat, fetchImpl? }`. Does not resolve a Lightning Address.
-- **Returns / side effects:** bolt11 `string`, or throws.
-- **Used by:** `DonateForm`.
+- **Used by:** `getRequestLocale` (cookie).
 
 ## Function: resolveLightningAddress
 
 - **Purpose:** GET `/lightning-address?address=` on the 21.gifts api.
 - **Inputs:** `address`.
 - **Returns / side effects:** Resolved LNURL-pay metadata (callback, min/max).
-- **Used by:** `DonateForm` before paying.
-
-## Function: satsToMsat
-
-- **Purpose:** Converts whole sats to millisatoshis.
-- **Inputs:** `sats` number.
-- **Returns / side effects:** `sats * 1000`.
-- **Used by:** `DonateForm` (converts sats before calling `requestDonateInvoice`).
+- **Used by:** Unit tests and any remaining LUD-16 resolve.
 
 ## Function: saveSession
 
@@ -463,6 +606,20 @@
 - **Returns / side effects:** Updated `Account`.
 - **Used by:** `NameForm`.
 
+## Function: dismissForumLaws
+
+- **Purpose:** POST `/me/forum-laws-dismissed` to permanently dismiss the welcome-forum living-room laws hint.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** Updated `Account` with `forumLawsDismissed: true`. No request body.
+- **Used by:** `ForumLoader`.
+
+## Function: agreeToRules
+
+- **Purpose:** POST `/me/rules-agreement` with Bearer and no JSON body.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** Updated `Account` with `rulesAgreedAt` set. Throws `'Could not save your agreement'` on a non-ok response.
+- **Used by:** `RulesSetup`.
+
 ## Function: setLightningAddress
 
 - **Purpose:** POST `/me/lightning-address`.
@@ -475,7 +632,7 @@
 - **Purpose:** Look up a catalog key and replace `{name}` placeholders from `vars`.
 - **Inputs:** `catalog` (`Messages`), `key` (`MessageKey`), optional `vars` map of string/number values.
 - **Returns / side effects:** Interpolated string. Throws on a missing key or missing `{name}` — no silent English fallback.
-- **Used by:** Server pages (`Home`, login/donate headings, `NotFound`, `MarketingFooter`, `HandbookPage`) and the `t` helper from `LocaleProvider` / `useTranslations`.
+- **Used by:** Server pages (`Home`, login headings, `NotFound`, `MarketingFooter`, `HandbookPage`) and the `t` helper from `LocaleProvider` / `useTranslations`.
 
 ## Function: unlinkLightningAddress
 
@@ -489,35 +646,35 @@
 - **Purpose:** Uppercases a bech32 LNURL or BOLT11 payment request.
 - **Inputs:** `lnurl` string.
 - **Returns / side effects:** Uppercase string.
-- **Used by:** `walletOfSatoshiHref` and `walletOfSatoshiIntentHref` (`DonateForm`).
+- **Used by:** `walletOfSatoshiHref` and `walletOfSatoshiIntentHref` (`ForumBoard`).
 
 ## Function: useAuthStore
 
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
 - **Returns / side effects:** Auth state object.
-- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
+- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
 
 ## Function: useTranslations
 
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `DonateForm`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `WelcomeScreen`, `LogoutButton`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`.
 
 ## Function: walletOfSatoshiHref
 
 - **Purpose:** iOS/desktop WoS deep link.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `walletofsatoshi:lightning:` + uppercase payload.
-- **Used by:** `DonateForm` when not Android.
+- **Used by:** `ForumBoard` when not Android.
 
 ## Function: walletOfSatoshiIntentHref
 
 - **Purpose:** Android Chrome Intent pinning the WoS package.
 - **Inputs:** Bech32 LNURL or BOLT11 payment request.
 - **Returns / side effects:** `intent:lightning:…#Intent;scheme=walletofsatoshi;package=com.livingroomofsatoshi.wallet;…;end`.
-- **Used by:** `DonateForm` on Android.
+- **Used by:** `ForumBoard` on Android.
 
 ## Function: DELETE
 
@@ -528,14 +685,14 @@
 
 ## Function: LegalPage
 
-- **Purpose:** Next.js page for `/legal` (imprint and privacy).
+- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`.
 - **Inputs:** None.
-- **Returns / side effects:** The legal screen.
+- **Returns / side effects:** The legal screen with links to `/contact`.
 - **Used by:** Route `/legal`.
 
 ## Function: MarketingFooter
 
-- **Purpose:** Footer for marketing pages: wordmark, localized section links, legal, GitHub.
+- **Purpose:** Footer for marketing pages: wordmark, localized section links, legal, living-room rules, GitHub.
 - **Inputs:** None. Resolves locale via `getRequestLocale` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** Footer element.
 - **Used by:** `MarketingLayout`, `NotFound`.
@@ -563,10 +720,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, address link, passkey begin/finish, and forum message create (`POST /messages`).
+- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 
@@ -577,8 +734,8 @@
 
 ## Function: proxyGiftsStatsGet
 
-- **Purpose:** Same-origin proxy helper for api `GET /gifts/stats`.
-- **Inputs:** Incoming `Request`.
+- **Purpose:** Same-origin proxy helper for api `GET /gifts/stats` (forwards `recipient` query).
+- **Inputs:** Incoming `Request` (optional `recipient` search param).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/gifts/stats`.
 
@@ -595,6 +752,20 @@
 - **Inputs:** `Request` with JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/name`.
+
+## Function: proxyMeForumLawsDismissedPost
+
+- **Purpose:** Proxies POST `/me/forum-laws-dismissed`.
+- **Inputs:** `Request` with Bearer session (no body).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/forum-laws-dismissed`.
+
+## Function: proxyMeRulesAgreementPost
+
+- **Purpose:** Proxies POST `/me/rules-agreement`.
+- **Inputs:** Incoming `Request` with Bearer session (no JSON body required by the client).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/me/rules-agreement`.
 
 ## Function: proxyMeGet
 
@@ -616,6 +787,20 @@
 - **Inputs:** Incoming `Request` with Bearer session and JSON body.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route POST `/messages`.
+
+## Function: proxyContactPost
+
+- **Purpose:** Bearer proxy POST `/contact` to the 21.gifts api (create an in-app contact message). Same-origin path is `/contact/submit` so it does not collide with the `/contact` page.
+- **Inputs:** Incoming `Request` with Bearer session and JSON body.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/contact/submit`.
+
+## Function: proxyMessagesPhotoGet
+
+- **Purpose:** Bearer proxy GET `/messages/:id/photo` to the 21.gifts api (raw forum photo bytes).
+- **Inputs:** Incoming `Request` with Bearer session, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/messages/[id]/photo`.
 
 ## Function: proxyMeLightningAddressDelete
 
@@ -728,3 +913,17 @@
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }` with `status` in `idle | starting | error | unsupported`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
 - **Used by:** `OnboardingGate`, `LoginCard`, and `LogoutButton`.
+
+## Function: postMessageInvoice
+
+- **Purpose:** POST `/messages/:id/invoice` with `{ sats }`.
+- **Inputs:** session token, message id, sats.
+- **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy.
+- **Used by:** `ForumLoader`.
+
+## Function: proxyMessagesInvoicePost
+
+- **Purpose:** Same-origin proxy for `POST /messages/:id/invoice`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/messages/[id]/invoice/route.ts`.

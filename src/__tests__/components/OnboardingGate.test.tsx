@@ -29,7 +29,16 @@ const account = {
   name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1,
+  rulesAgreedAt: null as number | null,
+};
+
+const complete = {
+  ...account,
+  name: 'Ada',
+  lightningAddress: 'alice@walletofsatoshi.com',
+  rulesAgreedAt: 1_700_000_001,
 };
 
 beforeEach(() => {
@@ -114,7 +123,7 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('sends a complete account from the address screen to welcome', async () => {
+  it('sends name+address without agreement from the address screen to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
@@ -125,11 +134,11 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/welcome');
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
   });
 
-  it('renders welcome children when name and address are both saved', async () => {
+  it('sends name+address without agreement from welcome to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
@@ -139,8 +148,93 @@ describe('OnboardingGate', () => {
         <p>welcome-ui</p>
       </OnboardingGate>,
     );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('sends name+address without agreement from profile to rules', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('renders rules children when name and address are saved but agreement is missing', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="rules">
+        <p>rules-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('rules-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('renders welcome children when name, address, and agreement are saved', async () => {
+    useAuthStore.setState({ session: 'tok', account: complete });
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
     expect(await screen.findByText('welcome-ui')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('renders profile children when name, address, and agreement are saved', async () => {
+    useAuthStore.setState({ session: 'tok', account: complete });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('profile-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a logged-out visitor from profile to login', () => {
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('sends a named account without an address from profile to the address screen', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/address');
+    });
+  });
+
+  it('sends an unnamed account from profile to the name screen', async () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/name');
+    });
   });
 
   it('does not bounce a name screen to login while a stored token is hydrating', () => {

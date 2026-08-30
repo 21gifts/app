@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { hasDisplayName, hasLightningAddress, nextOnboardingPath } from '@/lib/onboarding';
+import {
+  hasAgreedToRules,
+  hasDisplayName,
+  hasLightningAddress,
+  nextOnboardingPath,
+} from '@/lib/onboarding';
 import type { Account } from '@/lib/api-types';
 
 const base: Account = {
@@ -9,7 +14,9 @@ const base: Account = {
   name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1,
+  rulesAgreedAt: null,
 };
 
 describe('onboarding', () => {
@@ -25,14 +32,34 @@ describe('onboarding', () => {
     expect(nextOnboardingPath(account)).toBe('/setup/address');
   });
 
-  it('sends a complete account to welcome', () => {
+  it('sends name+address without agreement to the rules screen', () => {
     const account = {
       ...base,
       name: 'Ada',
       lightningAddress: 'alice@walletofsatoshi.com',
     };
-    expect(hasLightningAddress(account)).toBe(true);
+    expect(hasAgreedToRules(account)).toBe(false);
+    expect(nextOnboardingPath(account)).toBe('/setup/rules');
+  });
+
+  it('sends a complete account with agreement to welcome', () => {
+    const account = {
+      ...base,
+      name: 'Ada',
+      lightningAddress: 'alice@walletofsatoshi.com',
+      rulesAgreedAt: 1,
+    };
+    expect(hasAgreedToRules(account)).toBe(true);
     expect(nextOnboardingPath(account)).toBe('/welcome');
+  });
+
+  it('sends agreement without a name to the name screen', () => {
+    const account = {
+      ...base,
+      lightningAddress: 'alice@walletofsatoshi.com',
+      rulesAgreedAt: 1,
+    };
+    expect(nextOnboardingPath(account)).toBe('/setup/name');
   });
 
   it('treats a missing name as incomplete even when an address exists', () => {

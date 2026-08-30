@@ -13,6 +13,11 @@ test.describe('Accept-Language de', () => {
     ).toBeVisible();
   });
 
+  test('home Send help is German', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Hilfe senden' })).toBeVisible();
+  });
+
   test('login button is German', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Anmelden' })).toBeVisible();
@@ -24,11 +29,6 @@ test.describe('Accept-Language es', () => {
   test.use({
     locale: 'es-ES',
     extraHTTPHeaders: { 'Accept-Language': 'es' },
-  });
-
-  test('donate button is Spanish', async ({ page }) => {
-    await page.goto('/donate');
-    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible();
   });
 
   test('login button is Spanish', async ({ page }) => {
@@ -74,7 +74,8 @@ test.describe('language switcher cookie', () => {
 
   test('selecting Español sets locale cookie and refreshes UI', async ({ page, context }) => {
     await page.goto('/');
-    await page.getByLabel('Language').selectOption('es');
+    await page.getByLabel('Language').click();
+    await page.getByRole('option', { name: 'Español' }).click();
     await expect(
       page.getByRole('heading', { name: /Regalos directos de persona a persona/ }),
     ).toBeVisible();

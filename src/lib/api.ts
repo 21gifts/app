@@ -1,18 +1,22 @@
 import { z } from 'zod';
 import {
   accountSchema,
+  contactSchema,
   forumListSchema,
   forumMessageSchema,
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
+  messageInvoiceSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
   type Account,
+  type ContactMessage,
   type ForumMessage,
   type GiftDay,
   type GiftStats,
   type LnAddressResolved,
+  type MessageInvoice,
   type PasskeyBegin,
   type PasskeySession,
 } from '@/lib/api-types';
@@ -188,6 +192,44 @@ export async function unlinkLightningAddress(sessionToken: string): Promise<Acco
 }
 
 /**
+ * Permanently dismisses the welcome-forum living-room laws hint for the account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link Account}, with `forumLawsDismissed` set to `true`.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function dismissForumLaws(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/forum-laws-dismissed', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not dismiss the living-room hint');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Records agreement to the living-room rules on the signed-in account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link Account}, with `rulesAgreedAt` set.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function agreeToRules(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/rules-agreement', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not save your agreement');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Resolves a Lightning Address to LNURL-pay metadata via the api cache.
  *
  * @param address - The `name@domain` address to look up.
@@ -226,15 +268,20 @@ export async function fetchGiftDay(day: string): Promise<GiftDay> {
 }
 
 /**
- * Fetches aggregated outbound gift statistics.
+ * Fetches aggregated outbound gift statistics, optionally filtered by recipient.
  *
+ * @param recipient - Optional recipient handle; appended as `?recipient=` when
+ * non-empty after trim (caller may pass a handle already stripped of `@domain`).
  * @returns The {@link GiftStats} payload.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link giftStatsSchema}.
  */
-export async function fetchGiftStats(): Promise<GiftStats> {
+export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
   try {
-    const response = await fetch('/gifts/stats');
+    const trimmed = recipient?.trim() ?? '';
+    const path =
+      trimmed === '' ? '/gifts/stats' : `/gifts/stats?recipient=${encodeURIComponent(trimmed)}`;
+    const response = await fetch(path);
     if (!response.ok) {
       throw new Error('Could not load gift stats. Please try again.');
     }
@@ -267,17 +314,95 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
 }
 
 /**
- * Posts a new public forum message.
+ * Posts a new public forum message (text and/or one photo).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param input - Trimmed text (may be empty when a photo is included) and an
+ * optional JPEG photo payload (`contentType` + raw base64 `data`).
+ * @returns The created {@link ForumMessage}.
+ * @throws Error when the api rejects the body (400 or 429) — the api error
+ * string when present, otherwise a fallback — on any other non-2xx status, or
+ * when the body fails {@link forumMessageSchema} validation.
+ */
+export async function postMessage(
+  sessionToken: string,
+  input: { text: string; photo?: { contentType: string; data: string } },
+): Promise<ForumMessage> {
+  const response = await fetch('/messages', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text: input.text,
+      ...(input.photo ? { photo: input.photo } : {}),
+    }),
+  });
+  if (response.status === 400 || response.status === 429) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not post your message');
+  }
+  return forumMessageSchema.parse(await response.json());
+}
+
+/**
+ * Requests a BOLT11 invoice to pay a public forum message.
+ *
+ * Does not increment the message `sats` total — that updates only after the
+ * payment is confirmed on the api.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param messageId - Forum message UUID from the public JSON.
+ * @param sats - Whole satoshis to pay (≥ 1).
+ * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
+ * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
+ * non-2xx), or when the body fails {@link messageInvoiceSchema}.
+ */
+export async function postMessageInvoice(
+  sessionToken: string,
+  messageId: string,
+  sats: number,
+): Promise<MessageInvoice> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/invoice`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sats }),
+  });
+  if (response.status === 400 || response.status === 429) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  if (response.status === 404) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (response.status === 503) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (!response.ok) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return messageInvoiceSchema.parse(await response.json());
+}
+
+/**
+ * Posts an in-app contact message to 21.gifts.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param text - Message body as typed (api trims and validates length).
- * @returns The created {@link ForumMessage}.
+ * @returns The created {@link ContactMessage}.
  * @throws Error when the api rejects the text (400) — the api error string
  * when present, otherwise a fallback — on any other non-2xx status, or when
- * the body fails {@link forumMessageSchema} validation.
+ * the body fails {@link contactSchema} validation.
  */
-export async function postMessage(sessionToken: string, text: string): Promise<ForumMessage> {
-  const response = await fetch('/messages', {
+export async function postContact(sessionToken: string, text: string): Promise<ContactMessage> {
+  const response = await fetch('/contact/submit', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
@@ -287,12 +412,43 @@ export async function postMessage(sessionToken: string, text: string): Promise<F
   });
   if (response.status === 400) {
     const raw = await readApiError(response);
-    throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
+    throw new Error(raw === null ? 'Could not send your message' : toUserFacingError(raw));
   }
   if (!response.ok) {
-    throw new Error('Could not post your message');
+    throw new Error('Could not send your message');
   }
-  return forumMessageSchema.parse(await response.json());
+  return contactSchema.parse(await response.json());
+}
+
+/**
+ * Fetches the JPEG/PNG/WebP bytes for one forum message photo.
+ *
+ * Auth is a Bearer token in JS memory, so callers must use the returned blob
+ * (for example via `URL.createObjectURL`) instead of an `<img src>` to the
+ * same-origin photo path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Forum message id.
+ * @returns The photo body as a `Blob`.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * response is empty — same family as {@link fetchMessages}; does not leak status.
+ */
+export async function fetchMessagePhoto(sessionToken: string, id: string): Promise<Blob> {
+  try {
+    const response = await fetch(`/messages/${encodeURIComponent(id)}/photo`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return blob;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
 }
 
 /**

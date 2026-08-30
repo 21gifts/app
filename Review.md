@@ -20,6 +20,14 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
+## Payment QR vs deep links
+
+Reject the PR when a pay sheet (or any Bitcoin payment UI) renders a QR
+on a smartphone user-agent. Smartphones pay only via Wallet of Satoshi
+deep links. Desktop shows QR and deep link. Detection is
+`isSmartphoneUserAgent`, not viewport width. See CONTRIBUTING.md
+“Payment QR vs deep links”.
+
 ## Completeness gates
 
 These must be green on the PR. A missing or red gate is rejected:
@@ -37,4 +45,6 @@ These must be green on the PR. A missing or red gate is rejected:
 
 Named exports, explicit return types, no `any`, no `console.log`, Tailwind
 only, server components by default, TSDoc on exports, handbook / e2e /
-screenshot sections in the same PR as the new screen or export.
+screenshot sections in the same PR as the new screen or export. New action
+buttons are lucide icons with a catalog `aria-label` (no visible text);
+see CONTRIBUTING **Icon controls**.

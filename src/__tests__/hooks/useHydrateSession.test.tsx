@@ -23,7 +23,9 @@ const account = {
   name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null as number | null,
 };
 
 /** Mounts the hydration hook. */

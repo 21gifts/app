@@ -50,38 +50,65 @@ app/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`, `/stats/[day]`
-│   │   ├── donate/
-│   │   │   └── page.tsx         # GET /donate — guest LNURL-pay gift
+│   │   ├── rules/
+│   │   │   └── page.tsx         # GET /rules — public living-room rules
+│   │   ├── setup/
+│   │   │   ├── name/page.tsx    # GET /setup/name — first onboarding step
+│   │   │   ├── address/page.tsx # GET /setup/address — second onboarding step
+│   │   │   └── rules/page.tsx   # GET /setup/rules — agree to living-room rules
+│   │   ├── me/
+│   │   │   ├── route.ts         # GET /me same-origin proxy
+│   │   │   ├── name/route.ts    # POST /me/name
+│   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
+│   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
+│   │   │   └── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   ├── contact/
+│   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
+│   │   │   └── submit/
+│   │   │       └── route.ts     # POST /contact/submit → api POST /contact
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
 │   │   ├── messages/
-│   │   │   └── route.ts         # GET/POST /messages same-origin proxy
+│   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
+│   │   │   └── [id]/
+│   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
+│   │   │       └── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
+│   │   ├── donate/
+│   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
+│   │   ├── profile/
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address edit
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
-│   │   ├── DonateForm.tsx       # Guest donate form (QR + lightning: invoice)
 │   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + composer
-│   │   └── ForumLoader.tsx      # Fetch/post state for /welcome forum
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/feed-mode/pay/laws-dismiss state for /welcome forum
+│   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
+│   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
+│   │   ├── ContactScreen.tsx    # In-app contact heading + composer
+│   │   └── ContactLoader.tsx    # Post state for /contact
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
-│   │   ├── lnurl-pay.ts         # Browser LNURL-pay invoice fetch
+│   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
-│   │   └── forum-time.ts        # UTC display timestamps for forum rows
+│   │   ├── forum-time.ts        # UTC display timestamps for forum rows
+│   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
+│   │   └── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   ├── types/
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file
@@ -104,8 +131,10 @@ app/
 │   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
-│   ├── donate.spec.ts           # /donate form heading + submit button
+│   ├── rules.spec.ts            # /rules living-room laws + CTAs
+│   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
+│   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
@@ -147,7 +176,7 @@ English, concise, describe _what_ changed.
 ```
 # Good
 Add /healthz route handler
-Wire donate button to LNURL-pay flow
+Wire pay-on-note invoice sheet
 Fix wordmark scaling on small screens
 
 # Bad
@@ -215,7 +244,47 @@ chapter-navigation labels (English), product tokens such as
 document/social metadata (`title`, `description`, Open Graph alt text —
 English).
 
+### Icon controls (hard requirement)
+
+**New action buttons default to icon-only:** a lucide glyph plus a catalog
+`aria-label`, no visible text. Tests locate icon **buttons** with
+`getByRole('button', { name })` against that label and assert
+`queryByText` for the catalog string is `null`. Icon **links** use
+`getByRole('link', { name })`. Non-interactive indicators (given/received
+arrows) use `aria-label` on the glyph, not a button role.
+
+Already icon-only: composer attach, send (**Post**), remove-photo, and the
+Bitcoin pay control. Profile back is an icon **link**. Given/received totals
+are icon indicators.
+
+Existing hybrid or text controls stay until converted: the signed-in **Menu**
+disclosure (icon plus visible Menu word), **Log out**, **Link address**,
+**Continue**, **I agree to these rules** (onboarding consent must be readable
+as an agreement, not an icon), **Try again**, **Cancel**, and sentence-length
+links such as **Open Wallet of Satoshi**. A **new** text button for an action
+control is an undeclared deviation and is rejected.
+
 Reviewers follow `Review.md`.
+
+### Payment QR vs deep links (hard requirement)
+
+Desktop computers (MacBook and other non-phone devices) show a Bitcoin
+payment QR **and** the Wallet of Satoshi deep-link CTA. The QR exists so
+a different device can scan it.
+
+Smartphones must **never** render a payment QR. On a phone the pay sheet
+uses Wallet of Satoshi deep links only (`walletofsatoshi:` on iOS,
+Android Intent on Android). A QR on the same screen the visitor would
+need to scan it with is forbidden.
+
+Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
+(iPhone, iPod, or Android **with** `Mobile`). Do **not** use viewport
+width: a narrow MacBook window is still a desktop and still shows the QR.
+iPad is not a smartphone.
+
+`ForumBoard` is the current pay sheet. Any new pay UI follows the same
+split. Mounting `QrCode` (or any payment QR) on a smartphone UA is an
+undeclared deviation and is rejected. Reviewers follow `Review.md`.
 
 ### Handbook (hard requirement)
 
@@ -261,7 +330,7 @@ and **fails the PR** if a screen has no matching `goto`, a variant has no
 `needle`, an endpoint has no matching `request.<verb>` call, or a function has
 no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
-is an undeclared deviation and is rejected. CI runs `e2e:check` then `e2e`.
+is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check job and `e2e` in the parallel E2E job.
 
 ### Screenshot baselines (hard requirement)
 
@@ -330,12 +399,12 @@ paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL
 
 ## CI / CD
 
-| Workflow               | Trigger               | Action                                                                                                                            |
-| ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts) | Typecheck + lint + handbook + e2e-check + screenshots + test (100% coverage) + build + e2e (Playwright `v1.61.1-noble` container) |
-| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                    |
-| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                  |
-| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                         |
+| Workflow               | Trigger               | Action                                                                                                                                                    |
+| ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts) | Two parallel jobs: Check (typecheck, lint, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) and E2E (Playwright `v1.61.1-noble`) |
+| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                                            |
+| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                                          |
+| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                                                 |
 
 Images target `linux/arm64`.
 

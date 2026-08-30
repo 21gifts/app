@@ -2,8 +2,7 @@
 /**
  * In-process 21.gifts api stub for Playwright. Speaks the public HTTP
  * protocol so Next.js same-origin proxies succeed. Not a Lightning node:
- * callbacks accept any signature, and LNURL-pay metadata points at a
- * dummy HTTPS callback that donate e2e intercepts in the browser.
+ * callbacks accept any signature. Pay-on-note uses POST /messages/:id/invoice.
  */
 import http from 'node:http';
 import { randomBytes } from 'node:crypto';
@@ -17,8 +16,12 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
+/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string }>} */
 const forumMessages = [];
+/** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
+const contactMessages = [];
+/** @type {Map<string, Buffer>} */
+const forumPhotos = new Map();
 
 function hex(bytes) {
   return Buffer.from(bytes).toString('hex');
@@ -68,7 +71,9 @@ function newAccount(linkingKey) {
     name: null,
     lightningAddress: null,
     lightningAddressVerified: false,
+    forumLawsDismissed: false,
     createdAt: Date.now(),
+    rulesAgreedAt: null,
   };
 }
 
@@ -122,6 +127,93 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
     }
+    const hasPhoto =
+      parsed?.photo !== undefined &&
+      parsed?.photo !== null &&
+      typeof parsed.photo.data === 'string' &&
+      parsed.photo.data.length > 0;
+    const rawText = typeof parsed?.text === 'string' ? parsed.text : hasPhoto ? '' : null;
+    if (rawText === null) {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
+    const text = rawText.trim();
+    if ((text.length < 1 && !hasPhoto) || text.length > 500) {
+      json(res, 400, {
+        error: 'Text must be 1–500 characters or include a photo',
+      });
+      return;
+    }
+    const created = {
+      id: `msg_${hex(randomBytes(8))}`,
+      name,
+      text,
+      createdAt: new Date().toISOString(),
+      sats: 0,
+      payable: false,
+      hasPhoto,
+      role: account.role,
+    };
+    if (hasPhoto) {
+      forumPhotos.set(created.id, Buffer.from(parsed.photo.data, 'base64'));
+    }
+    forumMessages.unshift(created);
+    json(res, 200, created);
+    return;
+  }
+
+  const invoiceMatch = pathName.match(/^\/messages\/([^/]+)\/invoice$/);
+  if (method === 'POST' && invoiceMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const row = forumMessages.find((message) => message.id === invoiceMatch[1]);
+    if (row === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (row.payable !== true) {
+      json(res, 400, { error: 'This note cannot be paid yet' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
+      return;
+    }
+    const sats = parsed?.sats;
+    if (!Number.isInteger(sats) || sats < 1) {
+      json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
+      return;
+    }
+    json(res, 200, { pr: `lnbc${sats}n1test`, amountSats: sats });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/contact') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const name = typeof account.name === 'string' ? account.name.trim() : '';
+    if (name === '') {
+      json(res, 400, { error: 'Set a name before posting' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
     if (typeof parsed?.text !== 'string') {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
@@ -132,13 +224,37 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const created = {
-      id: `msg_${hex(randomBytes(8))}`,
+      id: `contact_${hex(randomBytes(8))}`,
       name,
       text,
       createdAt: new Date().toISOString(),
     };
-    forumMessages.unshift(created);
+    contactMessages.unshift(created);
     json(res, 200, created);
+    return;
+  }
+
+  const photoMatch = pathName.match(/^\/messages\/([^/]+)\/photo$/);
+  if (method === 'GET' && photoMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const id = decodeURIComponent(photoMatch[1]);
+    const bytes = forumPhotos.get(id);
+    if (bytes === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, content-type, user-agent',
+      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    });
+    res.end(bytes);
     return;
   }
 
@@ -148,6 +264,20 @@ const server = http.createServer(async (req, res) => {
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
       return;
+    }
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/rules-agreement') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.rulesAgreedAt === null) {
+      account.rulesAgreedAt = Date.now();
     }
     json(res, 200, account);
     return;
@@ -177,6 +307,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     account.name = trimmed;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/forum-laws-dismissed') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.forumLawsDismissed = true;
     json(res, 200, account);
     return;
   }

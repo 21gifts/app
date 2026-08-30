@@ -9,10 +9,15 @@ import {
   proxyGiftsGet,
   proxyGiftsStatsGet,
   proxyMeGet,
+  proxyMeForumLawsDismissedPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeNamePost,
+  proxyMeRulesAgreementPost,
+  proxyContactPost,
   proxyMessagesGet,
+  proxyMessagesInvoicePost,
+  proxyMessagesPhotoGet,
   proxyMessagesPost,
 } from '@/lib/api-proxies';
 
@@ -43,6 +48,15 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/name');
   });
 
+  it('proxyMeForumLawsDismissedPost hits POST /me/forum-laws-dismissed', async () => {
+    const fetchMock = stubApi();
+    await proxyMeForumLawsDismissedPost(
+      new Request('http://localhost/me/forum-laws-dismissed', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/forum-laws-dismissed');
+  });
+
   it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {
     const fetchMock = stubApi();
     await proxyMeLightningAddressPost(
@@ -59,6 +73,15 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
   });
 
+  it('proxyMeRulesAgreementPost hits POST /me/rules-agreement', async () => {
+    const fetchMock = stubApi();
+    await proxyMeRulesAgreementPost(
+      new Request('http://localhost/me/rules-agreement', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/rules-agreement');
+  });
+
   it('proxyLightningAddressGet hits /lightning-address', async () => {
     const fetchMock = stubApi();
     await proxyLightningAddressGet(
@@ -71,6 +94,14 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/gifts/stats');
+  });
+
+  it('proxyGiftsStatsGet forwards recipient', async () => {
+    const fetchMock = stubApi();
+    await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats?recipient=alice'));
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toBe('/gifts/stats');
+    expect(url.searchParams.get('recipient')).toBe('alice');
   });
 
   it('proxyGiftsGet hits /gifts and forwards day', async () => {
@@ -94,6 +125,27 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
+  });
+
+  it('proxyContactPost hits POST /contact', async () => {
+    const fetchMock = stubApi();
+    await proxyContactPost(
+      new Request('http://localhost/contact/submit', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/contact');
+  });
+
+  it('proxyMessagesPhotoGet hits /messages/:id/photo', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoGet(new Request('http://localhost/messages/m1/photo'), 'm1');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/photo');
+  });
+
+  it('proxyMessagesPhotoGet encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoGet(new Request('http://localhost/messages/a%2Fb/photo'), 'a/b');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/photo');
   });
 
   it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {
@@ -134,5 +186,14 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
       '/auth/passkey/authenticate/finish',
     );
+  });
+
+  it('proxyMessagesInvoicePost hits POST /messages/:id/invoice', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesInvoicePost(
+      new Request('http://localhost/messages/m1/invoice', { method: 'POST', body: '{}' }),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/invoice');
   });
 });

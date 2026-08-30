@@ -1,12 +1,12 @@
+import Link from 'next/link';
 import type { ReactElement } from 'react';
-import { DonateForm } from '@/components/DonateForm';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
 
 /**
- * `/donate` — guest LNURL-pay gift flow.
+ * `/donate` — Send help explainer: pick a forum message, then send Bitcoin.
  *
  * @returns The donate screen.
  */
@@ -18,10 +18,18 @@ export default async function DonatePage(): Promise<ReactElement> {
       <div className="absolute top-4 right-5">
         <LanguageSwitcher tone="light" />
       </div>
-      <h1 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
-        {translate(messages, 'donate.pageTitle')}
-      </h1>
-      <DonateForm />
+      <div className="flex w-full max-w-md flex-col items-center gap-6">
+        <h1 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
+          {translate(messages, 'donate.pageTitle')}
+        </h1>
+        <p className="text-center text-neutral-600">{translate(messages, 'donate.lead')}</p>
+        <Link
+          href="/welcome"
+          className="rounded-full bg-[#f7931a] px-6 py-3 font-medium text-[#0a090c] no-underline"
+        >
+          {translate(messages, 'donate.continue')}
+        </Link>
+      </div>
     </main>
   );
 }

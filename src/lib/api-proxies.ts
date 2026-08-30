@@ -61,6 +61,16 @@ export async function proxyMeNamePost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/forum-laws-dismissed to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeForumLawsDismissedPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/forum-laws-dismissed');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -81,6 +91,16 @@ export async function proxyMeLightningAddressDelete(request: Request): Promise<R
 }
 
 /**
+ * Proxies POST /me/rules-agreement to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session, no body).
+ * @returns The upstream response.
+ */
+export async function proxyMeRulesAgreementPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/rules-agreement');
+}
+
+/**
  * Proxies GET /lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (`address` query param).
@@ -91,7 +111,7 @@ export async function proxyLightningAddressGet(request: Request): Promise<Respon
 }
 
 /**
- * Proxies GET /gifts/stats to the 21.gifts api.
+ * Proxies GET /gifts/stats to the 21.gifts api (forwards `recipient` query).
  *
  * @param request - Incoming App Router request.
  * @returns The upstream response.
@@ -128,4 +148,39 @@ export async function proxyMessagesGet(request: Request): Promise<Response> {
  */
 export async function proxyMessagesPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/messages');
+}
+
+/**
+ * Proxies POST /messages/:id/invoice to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @param messageId - Forum message UUID from the public JSON.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesInvoicePost(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/invoice`);
+}
+
+/**
+ * Proxies POST /contact to the 21.gifts api (same-origin path `/contact/submit`).
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyContactPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/contact');
+}
+
+/**
+ * Proxies GET /messages/:id/photo to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param id - Forum message id from the dynamic route segment.
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyMessagesPhotoGet(request: Request, id: string): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(id)}/photo`);
 }

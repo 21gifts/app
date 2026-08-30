@@ -81,7 +81,9 @@ const E2E_ACCOUNT = {
   name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null as number | null,
 };
 
 test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({
@@ -122,6 +124,18 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
     }
     await route.continue();
   });
+  await page.route(/\/me\/rules-agreement$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+      }),
+    });
+  });
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -149,8 +163,8 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
     page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
   ).toHaveCount(0);
 
-  await page.getByLabel('Name').fill('Ada');
-  await page.getByRole('button', { name: 'Save name' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
   await expect(page.getByText('Hi, Ada')).toBeVisible();
@@ -160,7 +174,11 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toHaveCount(0);
 
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Link address' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await page.getByRole('button', { name: 'I agree to these rules' }).click();
 
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
@@ -170,6 +188,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /verify/i })).toHaveCount(0);
 
+  await page.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });

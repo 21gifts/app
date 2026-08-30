@@ -2,7 +2,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   accountSchema,
+  CONTACT_MESSAGE_MAX_LENGTH,
+  contactSchema,
   FORUM_MESSAGE_MAX_LENGTH,
+  forumMessageSchema,
   lnAddressResolvedSchema,
   giftStatsSchema,
   passkeyBeginSchema,
@@ -16,12 +19,80 @@ const account = {
   name: null,
   lightningAddress: null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null,
 };
 
 describe('FORUM_MESSAGE_MAX_LENGTH', () => {
   it('matches the api POST /messages cap', () => {
     expect(FORUM_MESSAGE_MAX_LENGTH).toBe(500);
+  });
+});
+
+describe('CONTACT_MESSAGE_MAX_LENGTH', () => {
+  it('matches the api POST /contact cap', () => {
+    expect(CONTACT_MESSAGE_MAX_LENGTH).toBe(500);
+  });
+});
+
+describe('contactSchema', () => {
+  it('accepts a well-formed contact message', () => {
+    const message = {
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(contactSchema.parse(message)).toEqual(message);
+  });
+
+  it('rejects an empty text', () => {
+    expect(() =>
+      contactSchema.parse({
+        id: 'c1',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+      }),
+    ).toThrow();
+  });
+});
+
+describe('forumMessageSchema', () => {
+  const base = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis' as const,
+  };
+
+  it('accepts text with no photo', () => {
+    expect(forumMessageSchema.parse(base)).toEqual(base);
+  });
+
+  it('accepts an empty text when hasPhoto is true', () => {
+    const photoOnly = { ...base, text: '', hasPhoto: true };
+    expect(forumMessageSchema.parse(photoOnly)).toEqual(photoOnly);
+  });
+
+  it('rejects an empty text when hasPhoto is false', () => {
+    expect(() => forumMessageSchema.parse({ ...base, text: '', hasPhoto: false })).toThrow();
+  });
+
+  it('rejects a missing hasPhoto flag', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        id: base.id,
+        name: base.name,
+        text: base.text,
+        createdAt: base.createdAt,
+      }),
+    ).toThrow();
   });
 });
 
@@ -52,6 +123,11 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
   });
 
+  it('accepts founder and verified roles', () => {
+    expect(accountSchema.parse({ ...account, role: 'founder' }).role).toBe('founder');
+    expect(accountSchema.parse({ ...account, role: 'verified' }).role).toBe('verified');
+  });
+
   it('rejects an unknown role', () => {
     expect(() => accountSchema.parse({ ...account, role: 'admin' })).toThrow();
   });
@@ -60,8 +136,68 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, lightningAddressVerified: 'yes' })).toThrow();
   });
 
+  it('accepts forumLawsDismissed true and false', () => {
+    expect(accountSchema.parse({ ...account, forumLawsDismissed: false }).forumLawsDismissed).toBe(
+      false,
+    );
+    expect(accountSchema.parse({ ...account, forumLawsDismissed: true }).forumLawsDismissed).toBe(
+      true,
+    );
+  });
+
+  it('rejects a non-boolean forumLawsDismissed flag', () => {
+    expect(() => accountSchema.parse({ ...account, forumLawsDismissed: 'yes' })).toThrow();
+  });
+
   it('accepts a null linkingKey for passkey accounts', () => {
     expect(accountSchema.parse({ ...account, linkingKey: null }).linkingKey).toBeNull();
+  });
+
+  it('accepts a null rulesAgreedAt', () => {
+    expect(accountSchema.parse(account).rulesAgreedAt).toBeNull();
+  });
+
+  it('accepts a positive rulesAgreedAt timestamp', () => {
+    const agreed = { ...account, rulesAgreedAt: 1_700_000_001 };
+    expect(accountSchema.parse(agreed).rulesAgreedAt).toBe(1_700_000_001);
+  });
+
+  it('rejects a missing rulesAgreedAt field', () => {
+    expect(() =>
+      accountSchema.parse(
+        Object.fromEntries(Object.entries(account).filter(([key]) => key !== 'rulesAgreedAt')),
+      ),
+    ).toThrow();
+  });
+
+  it('rejects a string rulesAgreedAt timestamp', () => {
+    expect(() => accountSchema.parse({ ...account, rulesAgreedAt: '1700000001' })).toThrow();
+  });
+});
+
+describe('forumMessageSchema', () => {
+  const message = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+  };
+
+  it('defaults a missing role to basis', () => {
+    expect(forumMessageSchema.parse(message)).toEqual({ ...message, role: 'basis' });
+  });
+
+  it('accepts founder, verified, and moderator roles', () => {
+    expect(forumMessageSchema.parse({ ...message, role: 'founder' }).role).toBe('founder');
+    expect(forumMessageSchema.parse({ ...message, role: 'verified' }).role).toBe('verified');
+    expect(forumMessageSchema.parse({ ...message, role: 'moderator' }).role).toBe('moderator');
+  });
+
+  it('rejects an unknown role', () => {
+    expect(() => forumMessageSchema.parse({ ...message, role: 'admin' })).toThrow();
   });
 });
 

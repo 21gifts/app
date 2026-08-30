@@ -9,24 +9,31 @@ import { z } from 'zod';
 export const accountSchema = z.object({
   id: z.string(),
   linkingKey: z.string().nullable(),
-  role: z.enum(['basis', 'moderator']),
+  role: z.enum(['basis', 'verified', 'moderator', 'founder']),
   name: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
+  forumLawsDismissed: z.boolean(),
   createdAt: z.number(),
+  /** Epoch ms of the first living-room rules agreement, or `null` if not yet agreed. */
+  rulesAgreedAt: z.number().nullable(),
 });
 
 /**
  * An authenticated 21.gifts account.
  *
- * `role` gates capabilities (`basis` for ordinary givers, `moderator` for
- * elevated review actions); `linkingKey` is a leftover wallet public key from
- * the retired LNURL-auth login, or `null` for passkey-created accounts.
+ * `role` is the live membership tier (`basis`, `verified`, `moderator`, or
+ * `founder`); `linkingKey` is a leftover wallet public key from the retired
+ * LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
  * control flag) but unused in the UI — live verification payments are not
- * configured on the api.
+ * configured on the api. `forumLawsDismissed` is true after the user dismissed
+ * the welcome-forum living-room laws hint; false for new accounts and until
+ * they click the X. Forum role tags use `role`, not this flag.
+ * `rulesAgreedAt` is the epoch ms of the first agreement to the living-room
+ * rules, or `null` until the giver agrees.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -192,13 +199,24 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
 
 /**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.
+ *
+ * `sats` is the validated payment total for the note (always present, including 0).
+ * `payable` is true when a signed-in member can request an invoice for that note.
+ * `role` is optional with default `basis` so a rolling api deploy without the
+ * field still parses and the board stays lit.
  */
-export const forumMessageSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  text: z.string().min(1),
-  createdAt: z.string().datetime({ offset: true }),
-});
+export const forumMessageSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    text: z.string(), // may be '' when hasPhoto
+    createdAt: z.string().datetime({ offset: true }),
+    sats: z.number().int().nonnegative(),
+    payable: z.boolean(),
+    hasPhoto: z.boolean(),
+    role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
+  })
+  .refine((message) => message.text !== '' || message.hasPhoto);
 
 /**
  * Runtime schema for the payload of `GET /messages`.
@@ -211,3 +229,36 @@ export const forumListSchema = z.object({
  * One public forum message from the api.
  */
 export type ForumMessage = z.infer<typeof forumMessageSchema>;
+
+/**
+ * Runtime schema for `POST /messages/:id/invoice` success body.
+ */
+export const messageInvoiceSchema = z.object({
+  pr: z.string().min(1),
+  amountSats: z.number().int().positive(),
+});
+
+/**
+ * BOLT11 invoice issued for paying a forum message.
+ */
+export type MessageInvoice = z.infer<typeof messageInvoiceSchema>;
+
+/**
+ * Trimmed contact body length accepted by `POST /contact` (api `MESSAGE_MAX_LENGTH`).
+ */
+export const CONTACT_MESSAGE_MAX_LENGTH = 500;
+
+/**
+ * Runtime schema for one in-app contact message from `POST /contact`.
+ */
+export const contactSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * One in-app contact message from the api.
+ */
+export type ContactMessage = z.infer<typeof contactSchema>;

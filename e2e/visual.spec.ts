@@ -13,7 +13,9 @@ const E2E_ACCOUNT = {
   name: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
+  forumLawsDismissed: false,
   createdAt: 1_700_000_000,
+  rulesAgreedAt: null as number | null,
 };
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
@@ -140,24 +142,46 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
-async function fulfillLnurlPay(page: Page): Promise<void> {
-  await page.route(/\/lightning-address\?/, async (route) => {
+/** Newest-first mixed-sats forum fixture for `/welcome` Active / All / Most popular. */
+async function fulfillMixedSatsMessages(page: Page): Promise<void> {
+  await page.route(/\/messages$/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        address: 'alice@example.com',
-        callback: 'https://ln.example.com/pay',
-        minSendable: 1000,
-        maxSendable: 1_000_000_000,
+        messages: [
+          {
+            id: 'm3',
+            name: 'Ada',
+            text: 'Thank you both — that helps.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+          {
+            id: 'm2',
+            name: 'Carol',
+            text: 'I can send a small gift tomorrow.',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+          },
+          {
+            id: 'm1',
+            name: 'Bob',
+            text: 'Does anyone have spare sats this week?',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
       }),
-    });
-  });
-  await page.route('https://ln.example.com/pay**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ pr: 'lnbc21n1exampleinvoice' }),
     });
   });
 }
@@ -177,6 +201,13 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-mobile-nav');
   });
 
+  test('state / language-open', async ({ page }) => {
+    await page.goto('/');
+    await page.getByLabel('Language').click();
+    await expect(page.getByRole('option', { name: 'Español' })).toBeVisible();
+    await shotScreen(page, 'state-root-language');
+  });
+
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
@@ -187,6 +218,12 @@ test.describe('screen baselines', () => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
     await shotScreen(page, 'screen-login');
+  });
+
+  test('screen /donate', async ({ page }) => {
+    await page.goto('/donate');
+    await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+    await shotScreen(page, 'screen-donate');
   });
 
   test('screen /stats', async ({ page }) => {
@@ -208,10 +245,10 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-stats-day');
   });
 
-  test('screen /donate', async ({ page }) => {
-    await page.goto('/donate');
-    await expect(page.getByRole('heading', { name: 'Send a gift', level: 1 })).toBeVisible();
-    await shotScreen(page, 'screen-donate');
+  test('screen /rules', async ({ page }) => {
+    await page.goto('/rules');
+    await expect(page.getByText('Only free donations')).toBeVisible();
+    await shotScreen(page, 'screen-rules');
   });
 
   test('screen /404', async ({ page }) => {
@@ -275,6 +312,13 @@ test.describe('login variant baselines', () => {
     ).toBeVisible();
     await shotScreen(page, 'state-login-in-app');
   });
+
+  test('login language-open', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Language').click();
+    await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
+    await shotScreen(page, 'state-login-language');
+  });
 });
 
 test.describe('onboarding screens', () => {
@@ -312,6 +356,49 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-setup-address');
   });
 
+  test('screen /setup/rules', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: null,
+        }),
+      });
+    });
+    await page.goto('/setup/rules');
+    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+    await shotScreen(page, 'screen-setup-rules');
+  });
+
+  test('setup-rules mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: null,
+        }),
+      });
+    });
+    await page.goto('/setup/rules');
+    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-mobile');
+  });
+
   test('screen /welcome', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -324,42 +411,227 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
-    await page.route(/\/messages$/, async (route) => {
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
+    await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' }).first()).toBeVisible();
+    await shotScreen(page, 'screen-welcome');
+  });
+
+  test('screen /profile', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          messages: [
-            {
-              id: 'm3',
-              name: 'Ada',
-              text: 'Thank you both — that helps.',
-              createdAt: '2026-08-28T12:00:00.000Z',
-            },
-            {
-              id: 'm2',
-              name: 'Carol',
-              text: 'I can send a small gift tomorrow.',
-              createdAt: '2026-08-28T11:00:00.000Z',
-            },
-            {
-              id: 'm1',
-              name: 'Bob',
-              text: 'Does anyone have spare sats this week?',
-              createdAt: '2026-08-28T10:00:00.000Z',
-            },
-          ],
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
-    await page.goto('/welcome');
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
-    await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
-    await shotScreen(page, 'screen-welcome');
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await shotScreen(page, 'screen-profile');
+  });
+});
+
+const PROFILE_RECEIVE_STATS = {
+  totalSats: 1500,
+  totalBtc: '0.00001500',
+  totalUsd: '1.43',
+  giftCount: 2,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-03T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 500,
+      cumulativeSats: 500,
+      btc: '0.00000500',
+      cumulativeBtc: '0.00000500',
+      usd: '0.48',
+      cumulativeUsd: '0.48',
+    },
+    {
+      day: '2026-06-02',
+      sats: 0,
+      cumulativeSats: 500,
+      btc: '0.00000000',
+      cumulativeBtc: '0.00000500',
+      usd: '0.00',
+      cumulativeUsd: '0.48',
+    },
+    {
+      day: '2026-06-03',
+      sats: 1000,
+      cumulativeSats: 1500,
+      btc: '0.00001000',
+      cumulativeBtc: '0.00001500',
+      usd: '0.95',
+      cumulativeUsd: '1.43',
+    },
+  ],
+  byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+const PROFILE_SINGLE_DAY_STATS = {
+  totalSats: 21,
+  totalBtc: '0.00000021',
+  totalUsd: '0.02',
+  giftCount: 1,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-01T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 21,
+      cumulativeSats: 21,
+      btc: '0.00000021',
+      cumulativeBtc: '0.00000021',
+      usd: '0.02',
+      cumulativeUsd: '0.02',
+    },
+  ],
+  byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 21, btc: '0.00000021', usd: '0.02' }],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+const PROFILE_LARGE_USD_STATS = {
+  totalSats: 1_500_000,
+  totalBtc: '0.01500000',
+  totalUsd: '1425.00',
+  giftCount: 2,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-02T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 500_000,
+      cumulativeSats: 500_000,
+      btc: '0.00500000',
+      cumulativeBtc: '0.00500000',
+      usd: '475.00',
+      cumulativeUsd: '475.00',
+    },
+    {
+      day: '2026-06-02',
+      sats: 1_000_000,
+      cumulativeSats: 1_500_000,
+      btc: '0.01000000',
+      cumulativeBtc: '0.01500000',
+      usd: '950.00',
+      cumulativeUsd: '1425.00',
+    },
+  ],
+  byRecipient: [
+    { recipient: 'alice', giftCount: 2, sats: 1_500_000, btc: '0.01500000', usd: '1425.00' },
+  ],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+test.describe('profile activity chart variants', () => {
+  async function seedAdaProfile(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+        }),
+      });
+    });
+  }
+
+  async function stubProfileStats(page: Page, body: unknown): Promise<void> {
+    await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+  }
+
+  test('profile receive', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_RECEIVE_STATS);
+    await page.goto('/profile');
+    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await shotScreen(page, 'state-profile-receive');
+  });
+
+  test('profile usd-scale', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_RECEIVE_STATS);
+    await page.goto('/profile');
+    await page
+      .getByRole('group', { name: 'Chart scale' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+    await shotScreen(page, 'state-profile-usd-scale');
+  });
+
+  test('profile single-day', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_SINGLE_DAY_STATS);
+    await page.goto('/profile');
+    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await shotScreen(page, 'state-profile-single-day');
+  });
+
+  test('profile large-usd', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, PROFILE_LARGE_USD_STATS);
+    await page.goto('/profile');
+    await page
+      .getByRole('group', { name: 'Chart scale' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+    await expect(page.getByText('$1,425')).toBeVisible();
+    await shotScreen(page, 'state-profile-large-usd');
   });
 });
 
@@ -376,10 +648,110 @@ test.describe('welcome forum variants', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });
   }
+
+  async function stubPayInvoice(page: Page): Promise<void> {
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-pay',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-pay/invoice', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1exampleinvoice', amountSats: 21 }),
+      });
+    });
+  }
+
+  async function openPaySheet(page: Page): Promise<void> {
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'All' }).click();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount (sats)').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  }
+
+  test('welcome all', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
+    await shotScreen(page, 'state-welcome-all');
+  });
+
+  test('welcome popular', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Most popular' }).click();
+    const items = page.getByRole('listitem');
+    await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
+    await expect(items.nth(0)).toContainText('21 sats');
+    await expect(items.nth(1)).toContainText('Thank you both — that helps.');
+    await expect(items.nth(1)).toContainText('5 sats');
+    await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
+    await shotScreen(page, 'state-welcome-popular');
+  });
+
+  test('welcome empty-paid', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages with sats yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
+    await shotScreen(page, 'state-welcome-empty-paid');
+  });
 
   test('welcome empty', async ({ page }) => {
     await seedAda(page);
@@ -433,65 +805,548 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
     await page.getByRole('button', { name: 'Post' }).click();
-    await expect(page.getByText('Enter a message')).toBeVisible();
+    await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
     await shotScreen(page, 'state-welcome-validation-error');
   });
-});
 
-test.describe('donate variant baselines', () => {
-  test('donate busy', async ({ page }) => {
+  test('welcome photo', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-photo',
+              name: 'Ada',
+              text: '',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: true,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        // 1×1 JPEG
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-photo');
+  });
+
+  test('welcome photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        const parsed = route.request().postDataJSON() as {
+          text?: string;
+          photo?: { data?: string };
+        };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'm-both',
+            name: 'Ada',
+            text: typeof parsed.text === 'string' ? parsed.text.trim() : '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: Boolean(parsed.photo?.data),
+            role: 'basis',
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello with this photo.');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Post' }).click();
+    const row = page.locator('li[data-message-id="m-both"]');
+    await expect(row).toContainText('Hello with this photo.');
+    const photo = row.getByRole('img', { name: 'Photo from Ada' });
+    await expect(photo).toBeVisible({ timeout: 10_000 });
+    await expect
+      .poll(async () =>
+        row.evaluate((el) => {
+          const img = el.querySelector('img');
+          const caption = el.querySelector('p');
+          if (img === null || caption === null) {
+            return false;
+          }
+          return Boolean(img.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING);
+        }),
+      )
+      .toBe(true);
+    await expect(page.getByLabel('Your message')).toHaveValue('');
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-photo-and-text');
+  });
+
+  async function emptyForum(page: Page): Promise<void> {
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+  }
+
+  const TINY_GIF = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64',
+  );
+
+  async function attachGif(page: Page): Promise<void> {
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'tiny.gif',
+      mimeType: 'image/gif',
+      buffer: TINY_GIF,
+    });
+  }
+
+  async function attachTinyJpeg(page: Page): Promise<void> {
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  }
+
+  async function hangCreateImageBitmap(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+  }
+
+  async function stubTooLargeJpeg(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+  }
+
+  test('welcome composer-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption before attaching a photo.');
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption before attaching a photo.');
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-composer-text');
+  });
+
+  test('welcome composer-photo', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await attachTinyJpeg(page);
+    await expect(page.getByLabel('Your message')).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-photo');
+  });
+
+  test('welcome composer-photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with selected photo.');
+    await attachTinyJpeg(page);
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected photo.');
+    await shotScreen(page, 'state-welcome-composer-photo-and-text');
+  });
+
+  test('welcome composer-text-after-remove', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption kept after removing photo.');
+    await attachTinyJpeg(page);
+    await page.getByRole('button', { name: 'Remove photo' }).click();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption kept after removing photo.');
+    await shotScreen(page, 'state-welcome-composer-text-after-remove');
+  });
+
+  test('welcome preparing-photo', async ({ page }) => {
+    await seedAda(page);
+    await hangCreateImageBitmap(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-preparing-photo');
+  });
+
+  test('welcome preparing-photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await hangCreateImageBitmap(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption while the photo is preparing.');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByLabel('Your message')).toHaveValue(
+      'Caption while the photo is preparing.',
+    );
+    await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-preparing-photo-and-text');
+  });
+
+  test('welcome posting-photo-and-text', async ({ page }) => {
+    await seedAda(page);
     let release: () => void = () => undefined;
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route(/\/lightning-address\?/, async (route) => {
-      await held;
-      await route.abort();
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await held;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'm-posting',
+            name: 'Ada',
+            text: 'Caption while the post is in flight.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+            role: 'basis',
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
     });
-    await page.goto('/donate');
-    await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
-    await shotScreen(page, 'state-donate-busy');
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption while the post is in flight.');
+    await attachTinyJpeg(page);
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue(
+      'Caption while the post is in flight.',
+    );
+    await shotScreen(page, 'state-welcome-posting-photo-and-text');
     release();
   });
 
-  test('donate validation-error', async ({ page }) => {
-    await page.goto('/donate');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText('Enter a Wallet of Satoshi address')).toBeVisible();
-    await shotScreen(page, 'state-donate-validation-error');
-  });
-
-  test('donate invoice', async ({ page }) => {
-    await fulfillLnurlPay(page);
-    await page.goto('/donate');
-    await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-    await shotScreen(page, 'state-donate-invoice');
-  });
-
-  test('donate invoice-android', async ({ page }) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'userAgent', {
-        value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
-        configurable: true,
+  test('welcome photo-loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-loading',
+              name: 'Ada',
+              text: 'Caption waiting for the photo to load.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: true,
+              role: 'basis',
+            },
+          ],
+        }),
       });
     });
-    await fulfillLnurlPay(page);
-    await page.goto('/donate');
-    await page.getByLabel('Wallet of Satoshi address').fill('alice@example.com');
-    await page.getByLabel('Amount (sats)').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('link', { name: 'Open Wallet of Satoshi' })).toHaveAttribute(
-      'href',
-      /intent:lightning:LNBC21N1EXAMPLEINVOICE/,
+    await page.route(/\/messages\/m-loading\/photo$/, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByText('Caption waiting for the photo to load.')).toBeVisible();
+    await expect(page.getByAltText('Photo from Ada')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-photo-loading');
+    release();
+  });
+
+  test('welcome error-unsupported', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await attachGif(page);
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-unsupported');
+  });
+
+  test('welcome error-unsupported-with-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with an unsupported photo.');
+    await attachGif(page);
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption with an unsupported photo.');
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-unsupported-with-text');
+  });
+
+  test('welcome error-too-large', async ({ page }) => {
+    await seedAda(page);
+    await stubTooLargeJpeg(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-too-large');
+  });
+
+  test('welcome error-too-large-with-text', async ({ page }) => {
+    await seedAda(page);
+    await stubTooLargeJpeg(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with a photo that is too large.');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue(
+      'Caption with a photo that is too large.',
     );
-    await shotScreen(page, 'state-donate-invoice-android');
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-error-too-large-with-text');
+  });
+
+  test('welcome error-request-photo-and-text', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption when posting fails.');
+    await attachTinyJpeg(page);
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByText('Could not post your message')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption when posting fails.');
+    await shotScreen(page, 'state-welcome-error-request-photo-and-text');
+  });
+
+  test('welcome menu-open', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu');
+  });
+
+  test('welcome menu-language-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByLabel('Language').click();
+    await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-language');
+  });
+
+  test('welcome pay-qr', async ({ page }) => {
+    await seedAda(page);
+    await stubPayInvoice(page);
+    await openPaySheet(page);
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-pay-qr');
+  });
+
+  test('welcome pay-smartphone', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await seedAda(page);
+    await stubPayInvoice(page);
+    await openPaySheet(page);
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-pay-smartphone');
+  });
+
+  test('welcome role-hint', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+            {
+              id: 'm2',
+              name: 'Carol',
+              text: 'I can send a small gift tomorrow.',
+              createdAt: '2026-08-28T11:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+            },
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'All' }).click();
+    await page.getByRole('button', { name: 'Verified' }).click();
+    await expect(
+      page.getByText(
+        'A moderator met this person in real life and confirmed they are a real human.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-role-hint');
+  });
+});
+
+test.describe('contact screens', () => {
+  async function seedAda(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+        }),
+      });
+    });
+  }
+
+  test('screen /contact', async ({ page }) => {
+    await seedAda(page);
+    await page.goto('/contact');
+    await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
+    await shotScreen(page, 'screen-contact');
+  });
+
+  test('contact validation-error', async ({ page }) => {
+    await seedAda(page);
+    await page.goto('/contact');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.getByText('Enter a message')).toBeVisible();
+    await shotScreen(page, 'state-contact-validation-error');
+  });
+
+  test('contact success', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/contact\/submit$/, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'c1',
+          name: 'Ada',
+          text: 'Hello',
+          createdAt: '2026-08-28T12:00:00.000Z',
+        }),
+      });
+    });
+    await page.goto('/contact');
+    await page.getByLabel('Your message').fill('Hello');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
+    await shotScreen(page, 'state-contact-success');
   });
 });
 
@@ -629,7 +1484,7 @@ test.describe('function baselines', () => {
         };
       }, section.id);
       expect(clip).not.toBeNull();
-      await expect(page).toHaveScreenshot(`function-${section.name}.png`, {
+      await expect.soft(page).toHaveScreenshot(`function-${section.name}.png`, {
         clip: clip as { x: number; y: number; width: number; height: number },
         fullPage: true,
         // Function clips sit below handbook screen PNGs; those images changing
@@ -652,6 +1507,7 @@ test.describe('function baselines', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
         }),
       });
     });

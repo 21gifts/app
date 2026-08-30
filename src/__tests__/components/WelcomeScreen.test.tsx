@@ -1,12 +1,20 @@
 import { cleanup, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('next/link', () => ({
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn().mockResolvedValue([]),
   postMessage: vi.fn(),
+  fetchMessagePhoto: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -19,7 +27,9 @@ beforeEach(() => {
       name: 'Ada',
       lightningAddress: 'alice@walletofsatoshi.com',
       lightningAddressVerified: false,
+      forumLawsDismissed: false,
       createdAt: 1,
+      rulesAgreedAt: 1_700_000_001,
     },
   });
 });
@@ -51,7 +61,9 @@ describe('WelcomeScreen', () => {
         name: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
+        forumLawsDismissed: false,
         createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
       },
     });
     renderWithLocale(<WelcomeScreen />);

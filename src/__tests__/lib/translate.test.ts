@@ -4,19 +4,19 @@ import { translate } from '@/lib/translate';
 
 describe('translate', () => {
   it('interpolates named placeholders', () => {
-    expect(
-      translate(getCatalog('en'), 'donate.pay', { amount: '21 sats', address: 'a@b.com' }),
-    ).toBe('Pay 21 sats to a@b.com');
+    expect(translate(getCatalog('en'), 'forum.payConfirm', { amount: '21 sats' })).toBe(
+      'Pay 21 sats',
+    );
   });
 
   it('throws when a placeholder is missing', () => {
-    expect(() => translate(getCatalog('en'), 'donate.pay', { amount: '1' })).toThrow(
-      /Missing placeholder \{address\}/,
+    expect(() => translate(getCatalog('en'), 'forum.payConfirm', {})).toThrow(
+      /Missing placeholder \{amount\}/,
     );
   });
 
   it('throws when vars are omitted but placeholders exist', () => {
-    expect(() => translate(getCatalog('en'), 'donate.sats')).toThrow(/Missing placeholder \{n\}/);
+    expect(() => translate(getCatalog('en'), 'forum.sats')).toThrow(/Missing placeholder \{n\}/);
   });
 
   it('throws when the key is missing from the catalog', () => {
@@ -27,7 +27,7 @@ describe('translate', () => {
 
   it('throws when a placeholder value is undefined', () => {
     expect(() =>
-      translate(getCatalog('en'), 'donate.sats', {
+      translate(getCatalog('en'), 'forum.sats', {
         n: undefined as unknown as number,
       }),
     ).toThrow(/Missing placeholder \{n\}/);

@@ -25,12 +25,16 @@ describe('getCatalog', () => {
   });
 
   it('keeps product tokens untranslated in every locale', () => {
+    expect(getCatalog('en')['forum.payOpenWallet']).toBe('Pay');
+    expect(getCatalog('de')['forum.payOpenWallet']).toBe('Zahlen');
+    expect(getCatalog('es')['forum.payOpenWallet']).toBe('Pagar');
+    expect(getCatalog('fil')['forum.payOpenWallet']).toBe('Magbayad');
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
       expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
-      expect(catalog['donate.addressLabel']).toBe('Wallet of Satoshi address');
       expect(catalog['la.aria']).toBe('Wallet of Satoshi address');
-      expect(catalog['donate.errorAddress']).toContain('Wallet of Satoshi');
+      expect(catalog['forum.payOpenWalletAria']).toContain('Wallet of Satoshi');
+      expect(catalog['forum.payOpenWalletAria'].trim().length).toBeGreaterThan(0);
       expect(catalog['aria.github']).toBe('GitHub');
       for (const [key, value] of Object.entries(catalog)) {
         expect(value, `${locale}.${key}`).not.toMatch(/Wallet-of-Satoshi/);

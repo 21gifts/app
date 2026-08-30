@@ -4,7 +4,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 
 /**
- * `/welcome` — shown when name and Wallet of Satoshi address are both saved.
+ * `/welcome` — shown when name, address, and living-room rules agreement are saved.
  *
  * @returns The welcome screen.
  */
