@@ -63,6 +63,7 @@ export function PushToggle(): ReactElement | null {
   }, []);
 
   const onToggle = useCallback(async (): Promise<void> => {
+    /* v8 ignore next 3 -- the button is unmounted without a session */
     if (session === null || busy) {
       return;
     }
