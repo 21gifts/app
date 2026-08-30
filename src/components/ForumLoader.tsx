@@ -45,6 +45,13 @@ function isRateLimitError(err: unknown): boolean {
   return /too many (messages|payments)/i.test(err.message);
 }
 
+/** Revokes a blob object URL when present; no-op for undefined or empty. */
+function revokeObjectUrlIfPresent(url: string | undefined): void {
+  if (url !== undefined && url !== '') {
+    URL.revokeObjectURL(url);
+  }
+}
+
 /**
  * True when a thrown value is the api author's-wallet rejection for payments.
  *
@@ -99,10 +106,14 @@ export function ForumLoader(): ReactElement | null {
   const [draft, setDraft] = useState('');
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
   const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
+  const videoDraftRef = useRef(videoDraft);
+  videoDraftRef.current = videoDraft;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
+  const videoUrlsRef = useRef(videoUrls);
+  videoUrlsRef.current = videoUrls;
   const pickGeneration = useRef(0);
   const [posting, setPosting] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -266,6 +277,10 @@ export function ForumLoader(): ReactElement | null {
       for (const url of Object.values(photoUrlsRef.current)) {
         URL.revokeObjectURL(url);
       }
+      for (const url of Object.values(videoUrlsRef.current)) {
+        URL.revokeObjectURL(url);
+      }
+      revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
     };
   }, []);
 
@@ -365,13 +380,18 @@ export function ForumLoader(): ReactElement | null {
         if (isForumVideoFile(file)) {
           const result = await prepareForumVideo(file);
           if (generation !== pickGeneration.current) {
+            if (result.ok) {
+              revokeObjectUrlIfPresent(result.video.previewUrl);
+            }
             return;
           }
           if (!result.ok) {
+            revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
             setVideoDraft(null);
             setFormError(result.error);
             return;
           }
+          revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
           setPhotoDraft(null);
           setVideoDraft(result.video);
           setFormError(null);
@@ -386,6 +406,7 @@ export function ForumLoader(): ReactElement | null {
           setFormError(result.error);
           return;
         }
+        revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
         setVideoDraft(null);
         setPhotoDraft(result.photo);
         setFormError(null);
@@ -566,6 +587,7 @@ export function ForumLoader(): ReactElement | null {
       videoDraft={videoDraft}
       onPickPhoto={onPickPhoto}
       onClearPhoto={() => {
+        revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
         pickGeneration.current += 1;
         setPhotoDraft(null);
         setVideoDraft(null);

@@ -2486,6 +2486,20 @@ test('Function: isForumVideoFile — composer accept includes mp4', async ({ pag
   await seedAdaSession(page);
   await page.goto('/welcome');
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await expect
+    .poll(
+      async () => {
+        const previewCount = await page.locator('form video').count();
+        const formatError = await page
+          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
+          .isVisible()
+          .catch(() => false);
+        return previewCount === 1 || formatError;
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
 });
 test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
   await seedAdaSession(page);
@@ -2594,13 +2608,7 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
     )
     .toBe(true);
 
-  const hasPreview = (await page.locator('form video').count()) === 1;
-  if (!hasPreview) {
-    await expect(
-      page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'),
-    ).toBeVisible();
-    return;
-  }
+  await expect(page.locator('form video')).toHaveCount(1);
 
   let sawMultipart = false;
   await page.route(/\/messages$/, async (route) => {

@@ -54,7 +54,11 @@ describe('proxyApiRequest', () => {
     const body = JSON.stringify({ address: 'a@b.com' });
     const request = new Request('http://localhost/me/lightning-address', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'content-length': String(body.length),
+        'transfer-encoding': 'chunked',
+      },
       body,
     });
     const originalBody = request.body;
@@ -65,6 +69,9 @@ describe('proxyApiRequest', () => {
     expect(init.method).toBe('POST');
     expect(init.body).toBe(originalBody);
     expect(init.duplex).toBe('half');
+    const headers = init.headers as Headers;
+    expect(headers.get('content-length')).toBe(String(body.length));
+    expect(headers.get('transfer-encoding')).toBeNull();
   });
 
   it('forwards Range on GET and still drops x-ignored', async () => {

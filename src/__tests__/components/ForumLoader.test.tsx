@@ -580,6 +580,179 @@ describe('ForumLoader', () => {
     });
     await Promise.resolve();
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:second');
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:first');
+  });
+
+  it('revokes a video draft preview when Remove video is clicked', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:video' },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Remove video' }));
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:video');
+    expect(document.querySelector('form video')).toBeNull();
+  });
+
+  it('revokes the previous video draft when a later pick fails', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    prepareVideoMock
+      .mockResolvedValueOnce({
+        ok: true,
+        video: { file, poster, previewUrl: 'blob:video' },
+      })
+      .mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([], 'bad.mp4', { type: 'video/mp4' })] },
+    });
+    await waitFor(() => {
+      expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:video');
+    });
+  });
+
+  it('revokes the previous video draft when a new clip prepares', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const first = new File([new Uint8Array([1])], 'a.mp4', { type: 'video/mp4' });
+    const second = new File([new Uint8Array([2])], 'b.mp4', { type: 'video/mp4' });
+    prepareVideoMock
+      .mockResolvedValueOnce({
+        ok: true,
+        video: { file: first, poster, previewUrl: 'blob:first' },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        video: { file: second, poster, previewUrl: 'blob:second' },
+      });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [first] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:first');
+    });
+    fireEvent.change(input, { target: { files: [second] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:second');
+    });
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:first');
+  });
+
+  it('revokes a video draft when a photo is picked instead', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValueOnce(true).mockReturnValueOnce(false);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const clip = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    const jpeg = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file: clip, poster, previewUrl: 'blob:video' },
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [clip] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
+    });
+    fireEvent.change(input, { target: { files: [jpeg] } });
+    await waitFor(() => {
+      expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:video');
+    });
+  });
+
+  it('revokes a video draft preview on unmount', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:video' },
+    });
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
+    });
+    view.unmount();
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:video');
+  });
+
+  it('revokes a posted video preview on unmount but not at post time', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:video' },
+    });
+    postVideoMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'vid1',
+      text: 'clip',
+      hasPhoto: true,
+      hasVideo: true,
+      videoContentType: 'video/mp4',
+    });
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(prepareVideoMock).toHaveBeenCalledWith(file);
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
+    const revoke = vi.mocked(URL.revokeObjectURL);
+    revoke.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postVideoMock).toHaveBeenCalled();
+      expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:video');
+    });
+    expect(revoke).not.toHaveBeenCalledWith('blob:video');
+    view.unmount();
+    expect(revoke).toHaveBeenCalledWith('blob:video');
   });
 
   it('sets formError when prepareForumVideo rejects as unsupported', async () => {

@@ -373,6 +373,9 @@ export async function postMessage(
  * @param sessionToken - Bearer session.
  * @param input - Text, video file, optional JPEG poster.
  * @returns The created {@link ForumMessage}.
+ * @throws Error when the api rejects the body (400 or 429) — the api error
+ * string when present, otherwise a fallback — on any other non-2xx status, or
+ * when the body fails {@link forumMessageSchema} validation.
  */
 export async function postMessageVideo(
   sessionToken: string,
