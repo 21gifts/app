@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
@@ -108,7 +109,16 @@ async function stubPayableNote(page: Page): Promise<void> {
 
 async function agreeToLivingRoomRules(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await page.getByRole('button', { name: 'I agree to these rules' }).click();
+  for (let i = 0; i < RULES_CHAPTER_IDS.length; i += 1) {
+    await expect(
+      page.getByText(`${i + 1} of ${RULES_CHAPTER_IDS.length}`, { exact: true }),
+    ).toBeVisible();
+    if (i < RULES_CHAPTER_IDS.length - 1) {
+      await page.getByRole('button', { name: 'Continue' }).click();
+    } else {
+      await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    }
+  }
   await expect(page).toHaveURL(/\/welcome/);
 }
 
@@ -707,7 +717,38 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
     });
   });
   await page.goto('/setup/rules');
-  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('Function: RulesDocument — onboarding first chapter is the lead', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.goto('/setup/rules');
+  await expect(page.getByText(/You are a guest in a living room/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'House right' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Wanted' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
 });
 
 test('Function: RulesSetupPage — rules setup heading is visible', async ({ page }) => {
@@ -762,7 +803,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
   });
   await page.goto('/setup/rules');
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {

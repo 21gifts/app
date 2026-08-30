@@ -119,8 +119,10 @@ const en = {
   'setup.addressTitle': 'Your Wallet of Satoshi address',
   'setup.continue': 'Continue',
   'setup.rulesTitle': 'Living room rules',
-  'setup.rulesPrompt':
-    'Please read these living-room rules. You can continue only after you agree.',
+  'setup.rulesPrompt': 'Please read this chapter.',
+  'setup.rulesPromptLast': 'Please read this chapter. You can continue only after you agree.',
+  'setup.rulesProgress': '{current} of {total}',
+  'setup.rulesBack': 'Back',
   'setup.agree': 'I agree to these rules',
   'setup.rulesErrorRequest': 'Could not save your agreement',
 
@@ -423,8 +425,11 @@ const de = {
   'setup.addressTitle': 'Ihre Wallet of Satoshi-Adresse',
   'setup.continue': 'Weiter',
   'setup.rulesTitle': 'Wohnzimmerregeln',
-  'setup.rulesPrompt':
-    'Bitte lesen Sie diese Wohnzimmerregeln. Sie können erst fortfahren, wenn Sie zustimmen.',
+  'setup.rulesPrompt': 'Bitte lesen Sie dieses Kapitel.',
+  'setup.rulesPromptLast':
+    'Bitte lesen Sie dieses Kapitel. Sie können erst fortfahren, wenn Sie zustimmen.',
+  'setup.rulesProgress': '{current} von {total}',
+  'setup.rulesBack': 'Zurück',
   'setup.agree': 'Ich stimme diesen Regeln zu',
   'setup.rulesErrorRequest': 'Zustimmung konnte nicht gespeichert werden',
   'name.heading': 'Name',
@@ -721,7 +726,10 @@ const es = {
   'setup.addressTitle': 'Tu dirección de Wallet of Satoshi',
   'setup.continue': 'Continuar',
   'setup.rulesTitle': 'Reglas del salón',
-  'setup.rulesPrompt': 'Lea estas reglas del salón. Solo puede continuar cuando las acepte.',
+  'setup.rulesPrompt': 'Lea este capítulo.',
+  'setup.rulesPromptLast': 'Lea este capítulo. Solo puede continuar cuando lo acepte.',
+  'setup.rulesProgress': '{current} de {total}',
+  'setup.rulesBack': 'Atrás',
   'setup.agree': 'Acepto estas reglas',
   'setup.rulesErrorRequest': 'No se pudo guardar su aceptación',
   'name.heading': 'Nombre',
@@ -1017,8 +1025,11 @@ const fil = {
   'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
   'setup.continue': 'Magpatuloy',
   'setup.rulesTitle': 'Mga patakaran sa living room',
-  'setup.rulesPrompt':
-    'Pakibasa ang mga living-room rules na ito. Makakapagpatuloy ka lang kapag sumang-ayon ka.',
+  'setup.rulesPrompt': 'Pakibasa ang kabanatang ito.',
+  'setup.rulesPromptLast':
+    'Pakibasa ang kabanatang ito. Makakapagpatuloy ka lang kapag sumang-ayon ka.',
+  'setup.rulesProgress': '{current} sa {total}',
+  'setup.rulesBack': 'Bumalik',
   'setup.agree': 'Sumasang-ayon ako sa mga patakarang ito',
   'setup.rulesErrorRequest': 'Hindi ma-save ang pagsang-ayon mo',
   'name.heading': 'Pangalan',

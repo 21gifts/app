@@ -174,16 +174,16 @@
 
 ## Function: RulesSetup
 
-- **Purpose:** Third post-login screen: living-room rules body and an **I agree** control. Merges only `rulesAgreedAt` into the auth-store account.
-- **Inputs:** `children` — server-rendered `RulesDocument` (with `showNav={false}`).
-- **Returns / side effects:** Heading, prompt, children, error alert, full-width **I agree** button. POSTs `/me/rules-agreement` via `agreeToRules`. Renders `null` without a session.
+- **Purpose:** Third post-login screen: one living-room rules chapter at a time. Intermediate **Continue** clicks only advance the chapter. The last **I agree to these rules** POSTs and merges only `rulesAgreedAt` into the auth-store account.
+- **Inputs:** `chapters` — ordered server-rendered `RulesDocument` elements (one per `RULES_CHAPTER_IDS` id).
+- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules**, icon-only back after the first chapter. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
 - **Used by:** Screen `/setup/rules`.
 
 ## Function: RulesSetupPage
 
 - **Purpose:** Next.js page for `/setup/rules`.
 - **Inputs:** None. Calls `getRequestLocale()` / `getCatalog` for the rules body.
-- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RulesDocument showNav={false}` as children. `min-h-svh` for the long rules body.
+- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters (`showNav={false}`, `chapter={id}`). `min-h-svh`.
 - **Used by:** Route `/setup/rules`.
 
 ## Function: LogoutButton
@@ -378,7 +378,7 @@
 ## Function: RulesDocument
 
 - **Purpose:** Presentational living-room rules body from catalog keys (lead, three laws, wanted/allowed/rather-not/forbidden, house right, optional CTAs to `/contact` and `/welcome`).
-- **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`). When `showNav` is `false`, the public Contact / forum nav is omitted.
+- **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`); optional `chapter` (`RulesChapterId`). When `chapter` is set, only that chapter is rendered and the public nav is omitted (`showNav` ignored). When `showNav` is `false` and `chapter` is omitted, the public Contact / forum nav is omitted.
 - **Returns / side effects:** React element. Server component — uses `translate`, not `useTranslations`. No network.
 - **Used by:** `RulesPage`, `RulesSetupPage`.
 

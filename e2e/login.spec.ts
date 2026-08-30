@@ -1,4 +1,19 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
+
+async function agreeToLivingRoomRules(page: Page): Promise<void> {
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  for (let i = 0; i < RULES_CHAPTER_IDS.length; i += 1) {
+    await expect(
+      page.getByText(`${i + 1} of ${RULES_CHAPTER_IDS.length}`, { exact: true }),
+    ).toBeVisible();
+    if (i < RULES_CHAPTER_IDS.length - 1) {
+      await page.getByRole('button', { name: 'Continue' }).click();
+    } else {
+      await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    }
+  }
+}
 
 test('login page renders a single Log in button', async ({ page }) => {
   await page.goto('/login');
@@ -179,8 +194,8 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
-  await page.getByRole('button', { name: 'I agree to these rules' }).click();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await agreeToLivingRoomRules(page);
 
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
