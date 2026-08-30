@@ -269,7 +269,7 @@ function renderChapter(id: RulesChapterId, t: Translate): ReactElement {
 
 /**
  * Presentational living-room rules body: lead with the sofa test, three law
- * cards (each with its own test callout), welcome / allowed / better-not /
+ * cards (test callout on laws 1 and 2), welcome / allowed / better-not /
  * forbidden lists with glyphs, the closing "Our house" block, and optional
  * CTAs to `/contact` and `/welcome`.
  *

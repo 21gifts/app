@@ -540,33 +540,33 @@ const de = {
   'rules.pageTitle': 'Wohnzimmerregeln',
   'rules.heading': 'Wohnzimmerregeln',
   'rules.lead':
-    'Sie sind zu Gast in einem Wohnzimmer, dessen Fenster offen stehen. Alles, was Sie hier schreiben, ist öffentlich – und wer draussen vorbeigeht, liest mit.',
+    'Sie sind zu Gast in einem Wohnzimmer, dessen Fenster offen stehen. Alles, was Sie hier schreiben, ist öffentlich — und wer draussen vorbeigeht, liest mit.',
   'rules.leadTest':
     'Würden Sie es auch laut sagen, wenn die Gastgeberin, ihre Familie und ein Spender neben Ihnen auf dem Sofa sässen? Wenn ja, sind Sie hier richtig.',
   'rules.testLabel': 'Die Probe',
   'rules.lawKicker': 'Gesetz {n}',
   'rules.law1Title': 'Nur freie Spenden',
   'rules.law1Body':
-    'Eine Spende ist ein Geschenk – nicht mehr und nicht weniger. Sie hat keinen Preis, keinen Auftrag im Gepäck und keinen Deal im Hintergrund. Wer Geld gegen ein Versprechen einsammelt – etwas zu tun, zu liefern, freizuschalten oder weiterzumachen –, sammelt keine Spenden, und das ist hier nicht erlaubt. Das Einzige, was ein Geschenk zurückbringen darf, ist ein Dankeschön: im Nachhinein, freiwillig und nie geschuldet.',
+    'Eine Spende ist ein Geschenk — nicht mehr und nicht weniger. Sie hat keinen Preis, keinen Auftrag im Gepäck und keinen Deal im Hintergrund. Wer Geld gegen ein Versprechen einsammelt — etwas zu tun, zu liefern, freizuschalten oder weiterzumachen —, sammelt keine Spenden, und das ist hier nicht erlaubt. Das Einzige, was ein Geschenk zurückbringen darf, ist ein Dankeschön: im Nachhinein, freiwillig und nie geschuldet.',
   'rules.law1Test':
-    'Bekäme die zahlende Person etwas, das sie ohne Zahlung nicht bekommen hätte? Dann ist es ein Verkauf und keine Spende – und gehört nicht hierher.',
+    'Bekäme die zahlende Person etwas, das sie ohne Zahlung nicht bekommen hätte? Dann ist es ein Verkauf und keine Spende — und gehört nicht hierher.',
   'rules.law2Title': 'Spender kommen zuerst',
   'rules.law2Body':
-    'Viele Menschen möchten gern etwas bekommen. Deutlich weniger sind bereit, etwas zu geben. Dieser Raum ist für die Gebenden eingerichtet, deshalb zählt zuerst, dass sie sich wohlfühlen. Was einen Spender zum Gehen bringen würde, ist nicht bloss ungeschickt – es verstösst gegen die Regeln.',
+    'Viele Menschen möchten gern etwas bekommen. Deutlich weniger sind bereit, etwas zu geben. Dieser Raum ist für die Gebenden eingerichtet, deshalb zählt zuerst, dass sie sich wohlfühlen. Was einen Spender zum Gehen bringen würde, ist nicht bloss ungeschickt — es verstösst gegen die Regeln.',
   'rules.law2Test':
     'Würde ein Spender nach Ihrer Nachricht lieber gehen als bleiben? Dann gehört die Nachricht nicht hierher.',
   'rules.law3Title': 'Kontakt nur in der App',
   'rules.law3Body':
-    'Es gibt keine öffentliche E-Mail-Adresse, keine Telegram-Gruppe und keinen privaten Nebenkanal. Wer 21.gifts oder jemanden aus diesem Raum erreichen möchte, tut das hier in der App – nirgendwo sonst.',
+    'Es gibt keine öffentliche E-Mail-Adresse, keine Telegram-Gruppe und keinen privaten Nebenkanal. Wer 21.gifts oder jemanden aus diesem Raum erreichen möchte, tut das hier in der App — nirgendwo sonst.',
   'rules.wantedHeading': 'Willkommen',
   'rules.wantedLead': 'Was Spender gern bleiben lässt.',
   'rules.wanted1': 'Ein Dankeschön: kurz, konkret und ohne die nächste Bitte im Schlepptau.',
   'rules.wanted2': 'Eine ruhige, ehrliche Nachricht, die das Geben leicht macht statt schwer.',
-  'rules.wanted3': 'Ein gelassener Ton – ohne Steigerung, ohne Countdown, ohne Publikum.',
+  'rules.wanted3': 'Ein gelassener Ton — ohne Steigerung, ohne Countdown, ohne Publikum.',
   'rules.wanted4': 'Fragen, wie Schenken hier funktioniert, und geduldige Antworten darauf.',
   'rules.wanted5': 'Humor und Wärme, die niemanden unter Druck setzen.',
   'rules.wanted6':
-    'Eine Nachricht würdigen, die Ihnen etwas bedeutet hat – freiwillig und ohne dass der Autor darum gebeten hätte.',
+    'Eine Nachricht würdigen, die Ihnen etwas bedeutet hat — freiwillig und ohne dass der Autor darum gebeten hätte.',
   'rules.allowedHeading': 'Erlaubt',
   'rules.allowedLead':
     'In Ordnung, solange die drei Gesetze gelten. Erlaubt ist nicht dasselbe wie willkommen.',
@@ -576,7 +576,7 @@ const de = {
     'Über Bitcoin sprechen, wenn es jemandem im Raum hilft und niemanden zum Zahlen drängt.',
   'rules.allowed3': 'Andere Sprachen. Mitlesen. Schweigen.',
   'rules.allowed4':
-    'Ihr Name und Ihre Wallet of Satoshi-Adresse im Profil – nicht in jeder Nachricht wiederholt.',
+    'Ihr Name und Ihre Wallet of Satoshi-Adresse im Profil — nicht in jeder Nachricht wiederholt.',
   'rules.allowed5':
     '«Ich kann gerade nichts geben.» Das ist ein vollständiger Satz und braucht keine Erklärung.',
   'rules.ratherNotHeading': 'Lieber nicht',
@@ -586,7 +586,7 @@ const de = {
   'rules.ratherNot2': 'Eine lange Leidensgeschichte, wo ein Satz gereicht hätte.',
   'rules.ratherNot3': 'Ein Foto vom Elend, wo ein Satz gereicht hätte.',
   'rules.ratherNot4': 'Kursgespräche, Trading-Tipps, mit dem eigenen Stack angeben.',
-  'rules.ratherNot5': 'Orange-Pilling bei jemandem, der gerade gibt – oder nicht geben kann.',
+  'rules.ratherNot5': 'Orange-Pilling bei jemandem, der gerade gibt — oder nicht geben kann.',
   'rules.ratherNot6': '«Schreiben Sie mir privat.»',
   'rules.ratherNot7': 'Anfänger korrigieren.',
   'rules.ratherNot8':
@@ -595,22 +595,22 @@ const de = {
   'rules.forbiddenLead':
     'Keine Warnung, keine Diskussion. Solche Nachrichten werden gelöscht und das Konto wird gesperrt.',
   'rules.forbiddenQuidHeading': 'Etwas als Gegenleistung verlangen (Gesetz 1)',
-  'rules.forbiddenQuid1': 'Geld für eine Aufgabe – «Für ₿5’000 zeichne ich Sie.»',
-  'rules.forbiddenQuid2': 'Geld für Inhalte – «Ich poste weiter, wenn ihr spendet.»',
-  'rules.forbiddenQuid3': 'Geld für Zugang – Freischaltungen, Abos, Dateien nach Zahlung.',
+  'rules.forbiddenQuid1': 'Geld für eine Aufgabe — «Für ₿5’000 zeichne ich Sie.»',
+  'rules.forbiddenQuid2': 'Geld für Inhalte — «Ich poste weiter, wenn Sie spenden.»',
+  'rules.forbiddenQuid3': 'Geld für Zugang — Freischaltungen, Abos, Dateien nach Zahlung.',
   'rules.forbiddenQuid4':
-    'Aufträge annehmen – Beratung, ein Logo, Hausaufgaben, «Ich erledige X für Sie.»',
-  'rules.forbiddenQuid5': 'Verkaufen – Merch, Token, ein Kurs, «ein interessantes Projekt».',
+    'Aufträge annehmen — Beratung, ein Logo, Hausaufgaben, «Ich erledige X für Sie.»',
+  'rules.forbiddenQuid5': 'Verkaufen — Merch, Token, ein Kurs, «ein interessantes Projekt».',
   'rules.forbiddenQuid6':
-    'Ein Deal in Verkleidung – «Spenden Sie, und ich erwähne Sie», «Wer am meisten gibt, bekommt …»',
+    'Ein Deal in Verkleidung — «Spenden Sie, und ich erwähne Sie», «Wer am meisten gibt, bekommt …»',
   'rules.forbiddenDonorHeading': 'Spender vertreiben (Gesetz 2)',
-  'rules.forbiddenDonor1': 'Unablässiges Bitten – täglich, in Serie, die Adresse in jeder Zeile.',
+  'rules.forbiddenDonor1': 'Unablässiges Bitten — täglich, in Serie, die Adresse in jeder Zeile.',
   'rules.forbiddenDonor2':
-    'Dramatisieren – Superlative, Elend als Bühne, Fotos von Leid als Hebel.',
-  'rules.forbiddenDonor3': 'Druck – ein Countdown, «bis heute Abend», «sonst …».',
+    'Dramatisieren — Superlative, Elend als Bühne, Fotos von Leid als Hebel.',
+  'rules.forbiddenDonor3': 'Druck — ein Countdown, «bis heute Abend», «sonst …».',
   'rules.forbiddenDonor4':
-    'Schuldgefühle – «Wenn ihr wirklich helfen wolltet», Spender in eine Rangliste stellen, Nichtgebende blossstellen.',
-  'rules.forbiddenDonor5': 'Sanfte Erpressung – «Ich höre erst auf zu schreiben, wenn …»',
+    'Schuldgefühle — «Wenn Sie wirklich helfen wollten», Spender in eine Rangliste stellen, Nichtgebende blossstellen.',
+  'rules.forbiddenDonor5': 'Sanfte Erpressung — «Ich höre erst auf zu schreiben, wenn …»',
   'rules.forbiddenOtherHeading': 'Ebenfalls verboten',
   'rules.forbiddenOther1':
     'Betrug, gefälschte Wallets, falsche Identitäten, nach einer Seed-Phrase, einem Schlüssel oder einem Code fragen.',
@@ -622,7 +622,7 @@ const de = {
     'Sich als 21.gifts-Team ausgeben. Der Support schreibt Ihnen nie im Forum.',
   'rules.houseHeading': 'Unser Haus',
   'rules.houseBody':
-    'Diesen Raum gibt es, weil Spender bleiben möchten. Empfänger sind Gäste in einem Raum, der für die Gebenden eingerichtet wurde – nicht umgekehrt. Wir löschen Nachrichten und sperren Konten ohne Verhandlung und ohne Diskussion über den Ton. Wer uns erreichen möchte, kontaktiert 21.gifts in der App.',
+    'Diesen Raum gibt es, weil Spender bleiben möchten. Empfänger sind Gäste in einem Raum, der für die Gebenden eingerichtet wurde — nicht umgekehrt. Wir löschen Nachrichten und sperren Konten ohne Verhandlung und ohne Diskussion über den Ton. Wer uns erreichen möchte, kontaktiert 21.gifts in der App.',
   'rules.houseClosing':
     'Diese Regeln sind keine AGB und kein Gesetzbuch. Sie sagen nur, was 21.gifts ist: eine Spendenplattform. Wer daraus einen Laden, eine Jobbörse oder eine Bettelbühne macht, hat nicht den falschen Ton getroffen, sondern das falsche Haus.',
   'rules.contactCta': '21.gifts kontaktieren',
