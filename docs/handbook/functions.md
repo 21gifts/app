@@ -2,8 +2,8 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages` and `/messages/[id]/photo`).
-- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo); none on healthz.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, and `/view-key/[viewKey]`).
+- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
@@ -293,10 +293,10 @@
 
 ## Function: accountTotals
 
-- **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
-- **Inputs:** `GiftStats` and the account Lightning Address (or null).
+- **Purpose:** Derives given/received sat totals for a profile address from public gift stats (signed-in account or a public view profile).
+- **Inputs:** `GiftStats` and the Lightning Address (or null).
 - **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
-- **Used by:** `useAccountTotals`.
+- **Used by:** `useAccountTotals`, `ViewProfileLoader`.
 
 ## Function: alignActivitySeries
 
@@ -457,7 +457,7 @@
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
 - **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`, `useAccountTotals`.
+- **Used by:** `StatsLoader`, `useAccountTotals`, `ViewProfileLoader`.
 
 ## Function: fetchMe
 
