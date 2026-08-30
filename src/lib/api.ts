@@ -368,6 +368,41 @@ export async function postMessage(
 }
 
 /**
+ * Posts a forum message with a video file (multipart) and optional poster.
+ *
+ * @param sessionToken - Bearer session.
+ * @param input - Text, video file, optional JPEG poster.
+ * @returns The created {@link ForumMessage}.
+ * @throws Error when the api rejects the body (400 or 429) — the api error
+ * string when present, otherwise a fallback — on any other non-2xx status, or
+ * when the body fails {@link forumMessageSchema} validation.
+ */
+export async function postMessageVideo(
+  sessionToken: string,
+  input: { text: string; video: File; poster?: Blob },
+): Promise<ForumMessage> {
+  const form = new FormData();
+  form.set('text', input.text);
+  form.set('video', input.video);
+  if (input.poster !== undefined) {
+    form.set('poster', input.poster, 'poster.jpg');
+  }
+  const response = await fetch('/messages', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+    body: form,
+  });
+  if (response.status === 400 || response.status === 429) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not post your message');
+  }
+  return forumMessageSchema.parse(await response.json());
+}
+
+/**
  * Requests a BOLT11 invoice to pay a public forum message.
  *
  * Does not increment the message `sats` total — that updates only after the

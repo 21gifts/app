@@ -21,6 +21,7 @@ import {
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
+  proxyMessagesVideoGet,
   proxyPushVapidPublicGet,
   proxyViewGet,
 } from '@/lib/api-proxies';
@@ -150,6 +151,34 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMessagesPhotoGet(new Request('http://localhost/messages/a%2Fb/photo'), 'a/b');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/photo');
+  });
+
+  it('proxyMessagesVideoGet hits /messages/m1/video.mp4', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesVideoGet(new Request('http://localhost/messages/m1/video.mp4'), 'm1', 'mp4');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/video.mp4');
+  });
+
+  it('proxyMessagesVideoGet encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesVideoGet(
+      new Request('http://localhost/messages/a%2Fb/video.mp4'),
+      'a/b',
+      'mp4',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/video.mp4');
+  });
+
+  it('proxyMessagesVideoGet hits webm and mov pathnames', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesVideoGet(
+      new Request('http://localhost/messages/m1/video.webm'),
+      'm1',
+      'webm',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/video.webm');
+    await proxyMessagesVideoGet(new Request('http://localhost/messages/m1/video.mov'), 'm1', 'mov');
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/messages/m1/video.mov');
   });
 
   it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {

@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: '/legal.html', destination: '/legal', permanent: true }];
   },
+  async headers() {
+    return [
+      {
+        source: '/.well-known/nostr.json',
+        headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

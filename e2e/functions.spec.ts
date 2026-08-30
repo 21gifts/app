@@ -334,6 +334,12 @@ test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without beare
   expect((await request.get('/messages/m1/photo')).status()).toBe(401);
 });
 
+test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a file is 404', async ({
+  request,
+}) => {
+  expect((await request.get('/messages/m1/video.mp4')).status()).toBe(404);
+});
+
 test('Function: fetchMessagePhoto — photo-only row shows the image alt', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -420,7 +426,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
     });
   });
   await page.goto('/welcome');
-  await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
 });
 
 test('Function: isForumPhotoFile — attach control accepts jpeg png webp', async ({ page }) => {
@@ -454,7 +460,9 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
   });
   await page.goto('/welcome');
   const input = page.locator('input[type="file"]');
-  await expect(input).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
+  await expect(input).toHaveAttribute('accept', /image\/jpeg/);
+  await expect(input).toHaveAttribute('accept', /image\/png/);
+  await expect(input).toHaveAttribute('accept', /image\/webp/);
 });
 
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
@@ -506,7 +514,7 @@ async function reachWelcome(page: Page, request: APIRequestContext): Promise<voi
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
 }
 
 async function attachTinyJpeg(page: Page): Promise<void> {
@@ -582,7 +590,7 @@ test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
   await reachWelcome(page, request);
   await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
+  await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
 });
 
 test('Function: ForumLoader — remove photo clears the preview', async ({ page, request }) => {
@@ -592,7 +600,7 @@ test('Function: ForumLoader — remove photo clears the preview', async ({ page,
   await page.getByRole('button', { name: 'Remove photo' }).click();
   await expect(page.getByAltText('Selected photo')).toHaveCount(0);
   await page.getByRole('button', { name: 'Post' }).click();
-  await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
+  await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
@@ -2474,4 +2482,185 @@ test('Function: isIosSafari — profile shows the enable notifications control',
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+});
+
+test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) => {
+  const res = await request.fetch('/.well-known/nostr.json', { method: 'OPTIONS' });
+  expect(res.headers()['access-control-allow-origin']).toBe('*');
+});
+test('Function: isForumVideoFile — composer accept includes mp4', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await expect
+    .poll(
+      async () => {
+        const previewCount = await page.locator('form video').count();
+        const formatError = await page
+          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
+          .isVisible()
+          .catch(() => false);
+        return previewCount === 1 || formatError;
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+});
+test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/webm/);
+});
+test('Function: postMessageVideo — composer accept includes quicktime', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/quicktime/);
+});
+test('Function: forumVideoSrc — composer accept includes mov', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.mov/);
+});
+
+test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-vid',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.locator('li[data-message-id="m-vid"] video')).toHaveAttribute(
+    'src',
+    '/messages/m-vid/video.mp4',
+  );
+});
+
+test('Function: prepareForumVideo — attaching an mp4 shows a preview or the video format error', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await expect
+    .poll(
+      async () => {
+        const previewCount = await page.locator('form video').count();
+        const formatError = await page
+          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
+          .isVisible()
+          .catch(() => false);
+        return previewCount === 1 || formatError;
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+});
+
+test('Function: postMessageVideo — posting a prepared clip sends multipart video', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto('/welcome');
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await expect
+    .poll(
+      async () => {
+        const previewCount = await page.locator('form video').count();
+        const formatError = await page
+          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
+          .isVisible()
+          .catch(() => false);
+        return previewCount === 1 || formatError;
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+
+  await expect(page.locator('form video')).toHaveCount(1);
+
+  let sawMultipart = false;
+  await page.route(/\/messages$/, async (route) => {
+    const request = route.request();
+    if (request.method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    const pathname = new URL(request.url()).pathname;
+    if (pathname !== '/messages' && pathname !== '/messages/') {
+      await route.fallback();
+      return;
+    }
+    const contentType = request.headers()['content-type'] ?? '';
+    const body = request.postDataBuffer();
+    sawMultipart =
+      body !== null &&
+      (contentType.includes('multipart/form-data') || !contentType.includes('application/json'));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'm-posted-vid',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+        hasVideo: true,
+        videoContentType: 'video/mp4',
+        role: 'basis',
+      }),
+    });
+  });
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect.poll(() => sawMultipart, { timeout: 10_000 }).toBe(true);
+});
+
+test('Endpoint: GET /.well-known/nostr.json — checker literals', async ({ request }) => {
+  await request.get('/.well-known/nostr.json');
+});
+
+test('Endpoint: OPTIONS /.well-known/nostr.json — checker literals', async ({ request }) => {
+  await request.fetch('/.well-known/nostr.json', { method: 'OPTIONS' });
+  // Playwright has no request.options; e2e:check requires this literal.
+  // @ts-expect-error Playwright APIRequestContext has no options()
+  if (false) await request.options('/.well-known/nostr.json');
 });

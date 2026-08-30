@@ -1,5 +1,19 @@
 # HTTP endpoints (Next.js route handlers)
 
+## Endpoint: GET /.well-known/nostr.json
+
+- **Purpose:** Proxies NIP-05 `nostr.json` from the api onto the site apex. CORS `*`.
+- **Errors:** Upstream 502/503.
+- **Used by:** Damus verification.
+- **Auth:** none.
+
+## Endpoint: OPTIONS /.well-known/nostr.json
+
+- **Purpose:** CORS preflight for NIP-05.
+- **Errors:** none.
+- **Used by:** Browsers.
+- **Auth:** none.
+
 ## Endpoint: GET /healthz
 
 - **Purpose:** Liveness JSON `{ status: 'ok' }` from `src/app/healthz/route.ts`.
@@ -125,6 +139,13 @@
 - **Errors:** Upstream 401/404, or 502 if the api is unreachable.
 - **Used by:** `fetchMessagePhoto`.
 - **Auth:** Bearer.
+
+## Endpoint: GET /messages/[id]/[file]
+
+- **Purpose:** App Router GET that proxies `video.mp4` / `video.webm` / `video.mov` to the 21.gifts api at runtime via `getApiUrl()` (not next.config rewrites). Other `file` values return 404 without proxying. Public; missing files 404 from the api.
+- **Errors:** Route 404 for unknown `file`; upstream 404/502 for known video names when missing or unreachable.
+- **Used by:** Feed `<video src>` via `forumVideoSrc`.
+- **Auth:** None required.
 
 ## Endpoint: POST /me/lightning-address
 

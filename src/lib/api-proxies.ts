@@ -186,6 +186,22 @@ export async function proxyMessagesPhotoGet(request: Request, id: string): Promi
 }
 
 /**
+ * Proxies GET /messages/:id/video.mp4, video.webm, or video.mov to the 21.gifts api (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @param id - Forum message id from the dynamic route segment.
+ * @param ext - Video file extension (`mp4` | `webm` | `mov`).
+ * @returns The upstream response (raw video bytes).
+ */
+export async function proxyMessagesVideoGet(
+  request: Request,
+  id: string,
+  ext: 'mp4' | 'webm' | 'mov',
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(id)}/video.${ext}`);
+}
+
+/**
  * Proxies GET /view/:viewKey to the 21.gifts api (public; no auth).
  *
  * @param request - Incoming App Router request.
