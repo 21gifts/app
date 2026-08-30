@@ -19,7 +19,7 @@ export function AddressSetup(): ReactElement {
         {t('setup.addressTitle')}
       </h1>
       {name !== null && name !== undefined && name.trim() !== '' ? (
-        <p className="mt-3 text-center text-sm text-neutral-500">
+        <p className="mt-3 text-center text-sm text-app-muted">
           {t('login.helloName', { name: name.trim() })}
         </p>
       ) : null}

@@ -1,17 +1,21 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  deletePushSubscription,
   dismissForumLaws,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
   fetchMessagePhoto,
   fetchMessages,
+  fetchVapidPublicKey,
+  fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   postContact,
   postMessage,
   postMessageInvoice,
+  postPushSubscription,
   agreeToRules,
   setLightningAddress,
   setName,
@@ -31,6 +35,7 @@ const account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 /** The subset of `Response` the api client touches. */
@@ -78,6 +83,37 @@ describe('fetchMe', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(fetchMe('sess')).rejects.toThrow();
+  });
+});
+
+describe('fetchViewProfile', () => {
+  const viewKey = 'a'.repeat(64);
+  const profile = {
+    name: 'Ada',
+    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddressVerified: false,
+    createdAt: 1,
+  };
+
+  it('returns the validated profile and hits the same-origin proxy path', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: profile });
+    await expect(fetchViewProfile(viewKey)).resolves.toEqual(profile);
+    expect(fetchMock).toHaveBeenCalledWith(`/view-key/${encodeURIComponent(viewKey)}`);
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchViewProfile(viewKey)).resolves.toBeNull();
+  });
+
+  it('throws on a non-404 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchViewProfile(viewKey)).rejects.toThrow('Failed to fetch view profile: 500');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { name: '' } });
+    await expect(fetchViewProfile(viewKey)).rejects.toThrow();
   });
 });
 
@@ -727,6 +763,117 @@ describe('postContact', () => {
   });
 });
 
+describe('fetchVapidPublicKey', () => {
+  it('returns the public key and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { publicKey: 'BAAAA' } });
+    await expect(fetchVapidPublicKey('sess')).resolves.toBe('BAAAA');
+    expect(fetchMock).toHaveBeenCalledWith('/push/vapid-public', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws when push is not configured', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Push is not configured' } });
+    await expect(fetchVapidPublicKey('sess')).rejects.toThrow('Push is not configured');
+  });
+
+  it('throws on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchVapidPublicKey('sess')).rejects.toThrow(
+      'Failed to fetch VAPID public key: 401',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { publicKey: '' } });
+    await expect(fetchVapidPublicKey('sess')).rejects.toThrow();
+  });
+});
+
+describe('postPushSubscription', () => {
+  const sub = {
+    endpoint: 'https://push.example/sub',
+    keys: { p256dh: 'p256', auth: 'auth' },
+  };
+
+  it('posts the subscription and validates the response', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { endpoint: sub.endpoint, createdAt: '2026-08-30T00:00:00.000Z' },
+    });
+    await expect(postPushSubscription('sess', sub)).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/me/push-subscriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(sub),
+    });
+  });
+
+  it('throws when push is not configured', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Push is not configured' } });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow('Push is not configured');
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Invalid subscription' } });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow('Invalid subscription');
+  });
+
+  it('throws a fallback when a 400 body has no error string', async () => {
+    stubFetch({ ok: false, status: 400, body: { nope: true } });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow('Invalid subscription');
+  });
+
+  it('throws on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postPushSubscription('sess', sub)).rejects.toThrow(
+      'Could not save push subscription',
+    );
+  });
+});
+
+describe('deletePushSubscription', () => {
+  it('deletes the endpoint', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+    await expect(
+      deletePushSubscription('sess', 'https://push.example/sub'),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/me/push-subscriptions', {
+      method: 'DELETE',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
+    });
+  });
+
+  it('treats 404 as success', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(
+      deletePushSubscription('sess', 'https://push.example/sub'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('throws when push is not configured', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Push is not configured' } });
+    await expect(deletePushSubscription('sess', 'https://push.example/sub')).rejects.toThrow(
+      'Push is not configured',
+    );
+  });
+
+  it('throws on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(deletePushSubscription('sess', 'https://push.example/sub')).rejects.toThrow(
+      'Could not remove push subscription',
+    );
+  });
+});
+
 const passkeyAccount = { ...account, linkingKey: null };
 const passkeyBegin = { challengeId: 'ch'.repeat(16), options: { challenge: 'aa' } };
 const passkeySession = { token: 'tok', account: passkeyAccount };
@@ -736,6 +883,28 @@ describe('startPasskeyRegistration', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyRegistration()).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+  });
+
+  it('posts JSON viewKey when provided', async () => {
+    const viewKey = 'a'.repeat(64);
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(viewKey)).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ viewKey }),
+    });
+  });
+
+  it('throws the body error on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'This profile already has a passkey' },
+    });
+    await expect(startPasskeyRegistration('a'.repeat(64))).rejects.toThrow(
+      'This profile already has a passkey',
+    );
   });
 
   it('throws on a non-ok response', async () => {

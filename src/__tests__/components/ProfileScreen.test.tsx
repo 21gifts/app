@@ -45,11 +45,22 @@ vi.mock('@/lib/api', () => ({
   unlinkLightningAddress: vi.fn(),
 }));
 
+vi.mock('@/lib/push', () => ({
+  enablePush: vi.fn(),
+  disablePush: vi.fn(),
+  isIosSafari: vi.fn().mockReturnValue(false),
+  isStandaloneDisplay: vi.fn().mockReturnValue(false),
+  registerPushWorker: vi.fn(),
+  vapidPublicKeyToBytes: vi.fn(),
+}));
+
 const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
   source: 'coinbase-exchange-daily-close' as const,
 };
+
+const VIEW_KEY = 'a'.repeat(64);
 
 beforeEach(() => {
   vi.mocked(fetchGiftStats).mockReset();
@@ -78,6 +89,7 @@ beforeEach(() => {
       forumLawsDismissed: false,
       createdAt: 1,
       rulesAgreedAt: 1_700_000_001,
+      viewKey: VIEW_KEY,
     },
   });
 });
@@ -96,7 +108,7 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText('Back to forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -109,11 +121,11 @@ describe('ProfileScreen', () => {
     vi.mocked(fetchGiftStats).mockReturnValue(new Promise<GiftStats>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
-    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
-    expect(screen.queryByLabelText('Given 0 sats')).toBeNull();
+    expect(screen.queryByLabelText('Given ₿0')).toBeNull();
   });
 
   it('shows a series day tick after filtered stats load', async () => {
@@ -165,6 +177,23 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
     });
-    expect(screen.queryByLabelText('Received 1500 sats')).toBeNull();
+    expect(screen.queryByLabelText('Received ₿1,500')).toBeNull();
+  });
+
+  it('shows the icon-only view-key copy control without the URL or key', async () => {
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByRole('button', { name: 'Copy view-key link' })).toBeTruthy();
+    expect(screen.queryByText('Copy view-key link')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
+    expect(screen.queryByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeNull();
+    expect(screen.queryByText(VIEW_KEY)).toBeNull();
+    expect(screen.queryByText(`/view/${VIEW_KEY}`)).toBeNull();
+  });
+
+  it('hides the view-key section when account is null', () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy view-key link' })).toBeNull();
   });
 });

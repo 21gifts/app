@@ -29,6 +29,7 @@ beforeEach(() => {
     authenticate: vi.fn(),
     retry: vi.fn(),
     cancel,
+    error: null,
   });
   useAuthStore.setState({
     session: 'tok',
@@ -42,6 +43,7 @@ beforeEach(() => {
       forumLawsDismissed: false,
       createdAt: 1,
       rulesAgreedAt: null,
+      viewKey: 'a'.repeat(64),
     },
   });
 });

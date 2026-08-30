@@ -1,6 +1,6 @@
 import type { GiftStats } from '@/lib/api-types';
 
-/** Given/received sat totals for the signed-in profile. */
+/** Given/received sat totals for a profile address. */
 export interface AccountTotals {
   donatedSats: number;
   receivedSats: number;
@@ -21,7 +21,7 @@ export function recipientHandleFromAddress(address: string): string {
 }
 
 /**
- * Derives given/received sat totals for a signed-in account from public gift stats.
+ * Derives given/received sat totals for a profile address from public gift stats.
  *
  * Given is always `0` in v1 (payments are not attributed to the signed-in account). Received
  * is the first `byRecipient` row whose `recipient` matches the address handle

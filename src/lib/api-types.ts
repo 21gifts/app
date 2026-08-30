@@ -17,6 +17,7 @@ export const accountSchema = z.object({
   createdAt: z.number(),
   /** Epoch ms of the first living-room rules agreement, or `null` if not yet agreed. */
   rulesAgreedAt: z.number().nullable(),
+  viewKey: z.string().regex(/^[0-9a-f]{64}$/),
 });
 
 /**
@@ -33,9 +34,27 @@ export const accountSchema = z.object({
  * the welcome-forum living-room laws hint; false for new accounts and until
  * they click the X. Forum role tags use `role`, not this flag.
  * `rulesAgreedAt` is the epoch ms of the first agreement to the living-room
- * rules, or `null` until the giver agrees.
+ * rules, or `null` until the giver agrees. `viewKey` is a 64-character
+ * lowercase hex capability key for the public read-only profile URL
+ * `/view/<viewKey>` (owner `/me` only; never shown on the public view payload;
+ * never rendered as visible text in the signed-in profile UI).
  */
 export type Account = z.infer<typeof accountSchema>;
+
+/**
+ * Runtime schema for a public read-only profile from `GET /view/:viewKey`.
+ */
+export const viewProfileSchema = z.object({
+  name: z.string().min(1).nullable(),
+  lightningAddress: z.string().nullable(),
+  lightningAddressVerified: z.boolean(),
+  createdAt: z.number(),
+});
+
+/**
+ * Public profile fields returned by the view-key endpoint (no id, linkingKey, role, or viewKey).
+ */
+export type ViewProfile = z.infer<typeof viewProfileSchema>;
 
 /**
  * Runtime schema for the payload of `GET /lightning-address`.
@@ -262,3 +281,28 @@ export const contactSchema = z.object({
  * One in-app contact message from the api.
  */
 export type ContactMessage = z.infer<typeof contactSchema>;
+
+/**
+ * Runtime schema for `GET /push/vapid-public` success body.
+ */
+export const vapidPublicSchema = z.object({
+  publicKey: z.string().min(1),
+});
+
+/**
+ * VAPID application server public key from the api.
+ */
+export type VapidPublic = z.infer<typeof vapidPublicSchema>;
+
+/**
+ * Runtime schema for `POST /me/push-subscriptions` success body.
+ */
+export const pushSubscriptionResponseSchema = z.object({
+  endpoint: z.string(),
+  createdAt: z.string(),
+});
+
+/**
+ * Confirmed push subscription row from the api.
+ */
+export type PushSubscriptionResponse = z.infer<typeof pushSubscriptionResponseSchema>;

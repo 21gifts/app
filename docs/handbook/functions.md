@@ -2,8 +2,8 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages` and `/messages/[id]/photo`).
-- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo); none on healthz.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, `/view-key/[viewKey]`, and `/push/vapid-public`).
+- **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls.
 
@@ -45,7 +45,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (BTC + USD totals with a sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** has a BTC/USD control (default BTC). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` + USD, no sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** has a ₿ | USD control (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `StatsLoader`.
@@ -73,7 +73,7 @@
 
 ## Function: GiftDayTable
 
-- **Purpose:** Table of individual gifts on one UTC day (time, recipient, sats, BTC, USD), or empty copy.
+- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, USD), or empty copy.
 - **Inputs:** `day: GiftDay`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `DayLoader`.
@@ -109,9 +109,9 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login and donate) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, and rules) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
 - **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Globe + Language + chevron; expands in flow under the trigger with endonym rows). Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, and the signed-in Menu in `SignedInChrome`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, `/rules`, and the signed-in Menu in `SignedInChrome`.
 
 ## Function: NameForm
 
@@ -143,16 +143,16 @@
 
 ## Function: LoginPage
 
-- **Purpose:** Next.js page for `/login` with localized heading and a light language switcher.
+- **Purpose:** Next.js page for `/login` with localized heading, theme switcher, and language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** Renders heading, lead, **Open the forum** link, and `LanguageSwitcher` (light, top-right). No OnboardingGate.
+- **Returns / side effects:** Renders heading, lead, **Open the forum** link, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -174,16 +174,16 @@
 
 ## Function: RulesSetup
 
-- **Purpose:** Third post-login screen: living-room rules body and an **I agree** control. Merges only `rulesAgreedAt` into the auth-store account.
-- **Inputs:** `children` — server-rendered `RulesDocument` (with `showNav={false}`).
-- **Returns / side effects:** Heading, prompt, children, error alert, full-width **I agree** button. POSTs `/me/rules-agreement` via `agreeToRules`. Renders `null` without a session.
+- **Purpose:** Third post-login screen: one living-room rules chapter at a time. Intermediate **Continue** clicks only advance the chapter. The last **I agree to these rules** POSTs and merges only `rulesAgreedAt` into the auth-store account.
+- **Inputs:** `chapters` — ordered server-rendered `RulesDocument` elements (one per `RULES_CHAPTER_IDS` id).
+- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules**, icon-only back after the first chapter. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
 - **Used by:** Screen `/setup/rules`.
 
 ## Function: RulesSetupPage
 
 - **Purpose:** Next.js page for `/setup/rules`.
 - **Inputs:** None. Calls `getRequestLocale()` / `getCatalog` for the rules body.
-- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RulesDocument showNav={false}` as children. `min-h-svh` for the long rules body.
+- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters (`showNav={false}`, `chapter={id}`). `min-h-svh`.
 - **Used by:** Route `/setup/rules`.
 
 ## Function: LogoutButton
@@ -223,9 +223,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; LogOut log out).
-- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), and log out. Escape closes and restores focus to Menu.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
+- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
 
 ## Function: ProfilePage
@@ -237,22 +237,169 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart replacing the former icon+amount totals row, plus name and Wallet of Satoshi address forms; icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
-- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + Sat|USD + SVG), name form, and address form — all inside one identity card (no second panel).
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `PushToggle`; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + ₿ | USD + SVG), name form, address form, push bell under the address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
 - **Used by:** `ProfilePage`.
+
+## Function: PushToggle
+
+- **Purpose:** Icon-only Bell control to enable or disable Web Push for the signed-in member. Renders nothing without a session or when `serviceWorker` / `PushManager` are missing. On iPhone Safari outside standalone, shows `profile.push.installHint` above the button.
+- **Inputs:** Session from `useAuthStore`; catalog via `useTranslations`; `enablePush` / `disablePush` / `isIosSafari` / `isStandaloneDisplay`.
+- **Returns / side effects:** Icon-only button named from `profile.push.enable` or `profile.push.disable` (`aria-pressed` when subscribed). User gesture calls enable/disable; may show `profile.push.unavailable` on failure.
+- **Used by:** `ProfileScreen`.
+
+## Function: vapidPublicKeyToBytes
+
+- **Purpose:** Decode a VAPID application server public key (url-safe base64) to bytes for `pushManager.subscribe`.
+- **Inputs:** Url-safe base64 public key string.
+- **Returns / side effects:** `Uint8Array`. No network.
+- **Used by:** `enablePush`.
+
+## Function: registerPushWorker
+
+- **Purpose:** Register the push-only service worker at `/sw.js` (scope `/`) and wait until ready.
+- **Inputs:** None (uses `navigator.serviceWorker`).
+- **Returns / side effects:** `ServiceWorkerRegistration`.
+- **Used by:** `enablePush`, `disablePush`.
+
+## Function: isStandaloneDisplay
+
+- **Purpose:** Detect installed / standalone display mode (`display-mode: standalone` or iOS `navigator.standalone`).
+- **Inputs:** None (reads `window` / `navigator`).
+- **Returns / side effects:** `boolean`. No network.
+- **Used by:** `PushToggle`.
+
+## Function: isIosSafari
+
+- **Purpose:** Detect iPhone/iPod stock Safari (Safari in UA, not CriOS/FxiOS).
+- **Inputs:** None (reads `navigator.userAgent`).
+- **Returns / side effects:** `boolean`. No network.
+- **Used by:** `PushToggle`.
+
+## Function: enablePush
+
+- **Purpose:** Register the worker, fetch the VAPID key, request notification permission, subscribe, and POST the subscription to the api.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `void`. Throws `Notification permission denied` or `Push is not configured` (and other api errors).
+- **Used by:** `PushToggle`.
+
+## Function: disablePush
+
+- **Purpose:** When a local push subscription exists, DELETE its endpoint on the api then `unsubscribe()` locally.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `void`. No-op when there is no subscription.
+- **Used by:** `PushToggle`.
+
+## Function: fetchVapidPublicKey
+
+- **Purpose:** GET `/push/vapid-public` with the bearer session and return the VAPID public key string.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `string`. Throws `Push is not configured` on 503; other non-2xx throw with status.
+- **Used by:** `enablePush`.
+
+## Function: postPushSubscription
+
+- **Purpose:** POST `/me/push-subscriptions` with bearer + `{ endpoint, keys }` and validate the response.
+- **Inputs:** `sessionToken`, subscription endpoint + p256dh/auth keys.
+- **Returns / side effects:** `void`. Throws `Push is not configured` on 503; 400 uses api error when present.
+- **Used by:** `enablePush`.
+
+## Function: deletePushSubscription
+
+- **Purpose:** DELETE `/me/push-subscriptions` with bearer + `{ endpoint }`.
+- **Inputs:** `sessionToken`, `endpoint`.
+- **Returns / side effects:** `void`. 404 is success (already gone). Throws `Push is not configured` on 503.
+- **Used by:** `disablePush`.
+
+## Function: proxyPushVapidPublicGet
+
+- **Purpose:** Bearer proxy GET `/push/vapid-public` to the 21.gifts api.
+- **Inputs:** Incoming `Request` with Bearer session.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/push/vapid-public`.
+
+## Function: proxyMePushSubscriptionsPost
+
+- **Purpose:** Bearer proxy POST `/me/push-subscriptions` to the 21.gifts api.
+- **Inputs:** Incoming `Request` with Bearer session and JSON body.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/me/push-subscriptions`.
+
+## Function: proxyMePushSubscriptionsDelete
+
+- **Purpose:** Bearer proxy DELETE `/me/push-subscriptions` to the 21.gifts api.
+- **Inputs:** Incoming `Request` with Bearer session and JSON body.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route DELETE `/me/push-subscriptions`.
+
+## Function: manifest
+
+- **Purpose:** Next.js `MetadataRoute.Manifest` for installable 21.gifts (`/manifest.webmanifest`).
+- **Inputs:** None.
+- **Returns / side effects:** Manifest with name/short_name `21.gifts`, start_url `/welcome`, display `standalone`, theme/background colors, apple-touch-icon at 180×180, plus `icon-192.png` and `icon-512.png`.
+- **Used by:** App Router manifest route.
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a Sat|USD toggle and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD toggle (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
-- **Returns / side effects:** One chrome row (legend left, Sat|USD right) and SVG. Client state for scale only. No network.
+- **Returns / side effects:** One chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
+- **Used by:** `ProfileScreen`, `ViewProfileScreen`.
+
+## Function: ViewProfilePage
+
+- **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
+- **Inputs:** Dynamic route params (`viewKey`).
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. Light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Used by:** Route `/view/[viewKey]`.
+
+## Function: ViewProfileLoader
+
+- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then (if address set) filtered gift stats for `spendOverTime`. Does not use `useAuthStore`.
+- **Inputs:** `viewKey` string from the route.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey`). Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
+- **Used by:** `ViewProfilePage`.
+
+## Function: ViewProfileScreen
+
+- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, name and address rows (labels `name.heading` / `la.heading`) without action buttons.
+- **Inputs:** `{ profile, received }` (`GiftStats['spendOverTime']`).
+- **Returns / side effects:** No menu, logout, back, ViewKeyCopy, or edit forms. Language switcher lives on the page, not in this card.
+- **Used by:** `ViewProfileLoader`.
+
+## Function: ViewProfileClaim
+
+- **Purpose:** Public passkey claim control under the `/view/[viewKey]` card. Logged-out visitors bind a passkey to the existing profile (name + Wallet of Satoshi already set).
+- **Inputs:** `viewKey` (64 lowercase hex). Uses `usePasskeyLogin`, `useAuthStore`, `useRouter`.
+- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Hidden when a session account is present. Icon-only Fingerprint (`view.claim`). Click → `register(viewKey)`; success → `router.replace(nextOnboardingPath(account))`. 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()` (no further `register(viewKey)`). In-app / unsupported → `login.inAppHeading`. Other errors → `view.claimError` + **Try again** (`view.retry`).
+- **Used by:** `ViewProfileLoader` (ready state only).
+
+## Function: ViewKeyCopy
+
+- **Purpose:** Icon-only copy control for the signed-in profile view-key link (`origin + /view/ + viewKey`); the URL and key are not rendered next to it. Clipboard API with textarea/`execCommand` fallback; flashes a check icon for ~1200ms.
+- **Inputs:** `viewKey` (64 lowercase hex).
+- **Returns / side effects:** Button named from `profile.viewKeyCopy`; `data-copied="true"` while flashed. Does not log the key. Follows semantic app tokens (same as signed-in profile chrome), not hardcoded light-only neutrals.
 - **Used by:** `ProfileScreen`.
+
+## Function: fetchViewProfile
+
+- **Purpose:** Fetches a public read-only profile by view key via the same-origin proxy.
+- **Inputs:** `viewKey` string.
+- **Returns / side effects:** Validated `ViewProfile`, or `null` on 404. Throws on other non-2xx or a body that fails `viewProfileSchema`. Hits `/view-key/${encodeURIComponent(viewKey)}`.
+- **Used by:** `ViewProfileLoader`.
+
+## Function: proxyViewGet
+
+- **Purpose:** Same-origin proxy of api `GET /view/:viewKey` (public; no auth).
+- **Inputs:** Incoming `Request` and `viewKey` path segment.
+- **Returns / side effects:** Proxied upstream `Response` for `/view/${encodeURIComponent(viewKey)}`.
+- **Used by:** App Router `GET` on `/view-key/[viewKey]`.
 
 ## Function: accountTotals
 
 - **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
-- **Inputs:** `GiftStats` and the account Lightning Address (or null).
+- **Inputs:** `GiftStats` and the Lightning Address (or null).
 - **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
 - **Used by:** `useAccountTotals`.
 
@@ -282,7 +429,7 @@
 - **Purpose:** Local-part of a Lightning Address (before the first `@`).
 - **Inputs:** Full address or bare handle string.
 - **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
-- **Used by:** `accountTotals`, `useAccountTotals`.
+- **Used by:** `accountTotals`, `useAccountTotals`, `ViewProfileLoader`.
 
 ## Function: useAccountTotals
 
@@ -307,8 +454,8 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, sat total with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError`, `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
+- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, ₿ amount with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`).
 - **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
 
@@ -335,23 +482,23 @@
 
 ## Function: RulesDocument
 
-- **Purpose:** Presentational living-room rules body from catalog keys (lead, three laws, wanted/allowed/rather-not/forbidden, house right, optional CTAs to `/contact` and `/welcome`).
-- **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`). When `showNav` is `false`, the public Contact / forum nav is omitted.
+- **Purpose:** Presentational living-room rules body from catalog keys: lead with the **The test** callout, three law cards (`rules.lawKicker` with `{n}`, title, body, optional test callout), welcome / allowed / better-not / forbidden lists rendered as bordered cards with lucide glyphs (`Check` accent, `Check` muted, `Minus`, `X` red), the **Our house** closing block (`rules.houseBody` + `rules.houseClosing`), and optional CTAs to `/contact` and `/welcome`.
+- **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`); optional `chapter` (`RulesChapterId`). When `chapter` is set, only that chapter is rendered and the public nav is omitted (`showNav` ignored). When `showNav` is `false` and `chapter` is omitted, the public Contact / forum nav is omitted.
 - **Returns / side effects:** React element. Server component — uses `translate`, not `useTranslations`. No network.
 - **Used by:** `RulesPage`, `RulesSetupPage`.
 
 ## Function: RulesPage
 
-- **Purpose:** Next.js page for `/rules` with localized heading and a light language switcher.
+- **Purpose:** Next.js page for `/rules` with localized heading, theme switcher, and language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** The rules screen wrapped in the root layout; switcher top-right.
+- **Returns / side effects:** The rules screen wrapped in the root layout; `ThemeSwitcher` and `LanguageSwitcher` top-right.
 - **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
 
 - **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo), prepares picks via `prepareForumPhoto`, pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present).
 - **Inputs:** None (reads session and account from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/photoUrls/posting/formError/feedMode/pay state and retry attempts. Empty text without a photo sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage`. Photo-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Revokes blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/photoUrls/posting/formError/feedMode/pay state and retry attempts. Empty text without a photo sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage`. Photo-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -398,7 +545,7 @@
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), and `LocaleProvider` with the request catalog.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `LocaleProvider` with the request catalog, and `ThemeProvider`.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
@@ -415,7 +562,7 @@
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
 - **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`, `useAccountTotals`.
+- **Used by:** `StatsLoader`, `useAccountTotals`, `ViewProfileLoader`.
 
 ## Function: fetchMe
 
@@ -466,12 +613,12 @@
 - **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
 - **Used by:** `ForumLoader`.
 
-## Function: formatBtcTick
+## Function: formatBitcoin
 
-- **Purpose:** Formats a parsed BTC chart-axis value with up to 8 decimals, trailing zeros trimmed.
-- **Inputs:** `btc` number (layout scale only).
-- **Returns / side effects:** Trimmed decimal string (e.g. `0.015`).
-- **Used by:** `StatsDashboard` BTC-over-time chart.
+- **Purpose:** Formats a whole-sat amount as BIP-177 ₿-only display (leading ₿, locale grouping, no fraction, no “sats” unit).
+- **Inputs:** `sats` non-negative number (API `sats` / `totalSats`; chart mid-ticks may be fractional and are rounded); optional `locale` BCP-47 tag (default `en-US`).
+- **Returns / side effects:** Display string such as `₿1,500` or `₿0`.
+- **Used by:** `ForumBoard`, `SignedInChrome`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`.
 
 ## Function: formatForumTime
 
@@ -501,12 +648,54 @@
 - **Returns / side effects:** Label such as `$1,234`.
 - **Used by:** `StatsDashboard` USD-over-time chart, `AccountActivityChart` USD scale.
 
-## Function: formatSatTick
+## Function: ThemeProvider
 
-- **Purpose:** Formats a sat chart-axis value with en-US grouping and no unit suffix.
-- **Inputs:** `sats` number (layout scale only).
-- **Returns / side effects:** `0` for zero; otherwise grouped digits such as `1,000`.
-- **Used by:** `AccountActivityChart` Sat scale.
+- **Purpose:** Client provider that reads the `theme` cookie and OS `prefers-color-scheme`, exposes preference / resolved theme, and keeps `html.dark` in sync after hydration (does not wipe the bootstrap class on the first paint).
+- **Inputs:** React `children`.
+- **Returns / side effects:** Context value with `preference`, `resolved`, `setPreference`. Writing `light`/`dark` sets the cookie (`Path=/`, `Max-Age=31536000`, `SameSite=Lax`, `Secure` on https); `system` deletes it. Listens to `matchMedia` while preference is `system`.
+- **Used by:** `RootLayout` (wraps the app), `ThemeSwitcher`, `useTheme`.
+
+## Function: ThemeSwitcher
+
+- **Purpose:** System / Light / Dark control using semantic app tokens. Standalone compact pill on unsigned app pages; `embedded` Menu-row disclosure beside language when signed in.
+- **Inputs:** Optional `embedded` boolean.
+- **Returns / side effects:** Listbox UI; selecting an option calls `setPreference`.
+- **Used by:** `/login`, `/donate`, `/rules`, `SignedInChrome`.
+
+## Function: useTheme
+
+- **Purpose:** Reads theme preference and setters from the nearest `ThemeProvider`.
+- **Inputs:** None (React context).
+- **Returns / side effects:** `ThemeContextValue`. Throws when used outside `ThemeProvider`.
+- **Used by:** `ThemeSwitcher` and any client chrome that needs the resolved theme.
+
+## Function: parseThemePreference
+
+- **Purpose:** Parses a cookie / stored theme preference.
+- **Inputs:** Raw cookie value, or `undefined` when missing.
+- **Returns / side effects:** `'light'` / `'dark'` when valid; otherwise `'system'`.
+- **Used by:** `ThemeProvider`, `THEME_BOOTSTRAP_SCRIPT` (inline equivalent).
+
+## Function: resolveTheme
+
+- **Purpose:** Resolves a preference against the OS color-scheme media query.
+- **Inputs:** `preference` (`system` | `light` | `dark`), `prefersDark` boolean.
+- **Returns / side effects:** Concrete `'light'` or `'dark'`.
+- **Used by:** `ThemeProvider`.
+
+## Function: THEME_BOOTSTRAP_SCRIPT
+
+- **Purpose:** Blocking bootstrap IIFE string injected as a raw head script before paint. Reads the theme cookie and `matchMedia('(prefers-color-scheme: dark)')`, toggles `html.dark`, and has no dependencies.
+- **Inputs:** None (constant string).
+- **Returns / side effects:** Non-empty IIFE source mentioning `theme=` and `classList`.
+- **Used by:** `RootLayout` `<head>` script.
+
+## Function: THEME_COOKIE
+
+- **Purpose:** Cookie name for a persisted theme override (`light` | `dark`). Absent means system.
+- **Inputs:** None (constant `'theme'`).
+- **Returns / side effects:** Cookie key string.
+- **Used by:** `ThemeProvider`, theme tests.
 
 ## Function: getApiUrl
 
@@ -678,10 +867,10 @@
 
 ## Function: DELETE
 
-- **Purpose:** App Router DELETE export on `/me/lightning-address` (re-export of `proxyMeLightningAddressDelete`).
+- **Purpose:** Shared App Router DELETE export name. `/me/lightning-address` re-exports `proxyMeLightningAddressDelete`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsDelete`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin `unlinkLightningAddress`.
+- **Used by:** Same-origin `unlinkLightningAddress` and `deletePushSubscription` / `disablePush`.
 
 ## Function: LegalPage
 
@@ -720,10 +909,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
+- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 
@@ -903,16 +1092,16 @@
 ## Function: startPasskeyRegistration
 
 - **Purpose:** POST `/auth/passkey/register/begin` and parse options.
-- **Inputs:** None.
-- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
+- **Inputs:** Optional `viewKey` string. When set (non-empty), POSTs JSON `{ viewKey }` with `Content-Type: application/json`; otherwise POSTs with no body and no Content-Type.
+- **Returns / side effects:** `{ challengeId, options }`. On `!ok`, throws the api `{ error }` string when present, otherwise a status fallback.
 - **Used by:** `usePasskeyLogin.register`.
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. `cancel` aborts an in-flight WebAuthn prompt.
+- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. `cancel` aborts an in-flight WebAuthn prompt. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. Login’s register fallback never sends a view key.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
-- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel }` with `status` in `idle | starting | error | unsupported`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
-- **Used by:** `OnboardingGate`, `LoginCard`, and `LogoutButton`.
+- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
+- **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
 ## Function: postMessageInvoice
 

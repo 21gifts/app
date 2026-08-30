@@ -10,6 +10,9 @@ import {
   giftStatsSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  pushSubscriptionResponseSchema,
+  vapidPublicSchema,
+  viewProfileSchema,
 } from '@/lib/api-types';
 
 const account = {
@@ -22,6 +25,7 @@ const account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
 };
 
 describe('FORUM_MESSAGE_MAX_LENGTH', () => {
@@ -55,6 +59,29 @@ describe('contactSchema', () => {
         text: '',
         createdAt: '2026-08-28T12:00:00.000Z',
       }),
+    ).toThrow();
+  });
+});
+
+describe('vapidPublicSchema', () => {
+  it('accepts a non-empty public key', () => {
+    expect(vapidPublicSchema.parse({ publicKey: 'BAAAA' })).toEqual({ publicKey: 'BAAAA' });
+  });
+
+  it('rejects an empty public key', () => {
+    expect(() => vapidPublicSchema.parse({ publicKey: '' })).toThrow();
+  });
+});
+
+describe('pushSubscriptionResponseSchema', () => {
+  it('accepts endpoint plus createdAt', () => {
+    const body = { endpoint: 'https://push.example/sub', createdAt: '2026-08-30T00:00:00.000Z' };
+    expect(pushSubscriptionResponseSchema.parse(body)).toEqual(body);
+  });
+
+  it('rejects a missing endpoint', () => {
+    expect(() =>
+      pushSubscriptionResponseSchema.parse({ createdAt: '2026-08-30T00:00:00.000Z' }),
     ).toThrow();
   });
 });
@@ -172,6 +199,42 @@ describe('accountSchema', () => {
 
   it('rejects a string rulesAgreedAt timestamp', () => {
     expect(() => accountSchema.parse({ ...account, rulesAgreedAt: '1700000001' })).toThrow();
+  });
+
+  it('rejects a missing viewKey', () => {
+    const without: Record<string, unknown> = { ...account };
+    delete without['viewKey'];
+    expect(() => accountSchema.parse(without)).toThrow();
+  });
+
+  it('rejects an uppercase viewKey', () => {
+    expect(() => accountSchema.parse({ ...account, viewKey: 'A'.repeat(64) })).toThrow();
+  });
+
+  it('rejects a viewKey with the wrong length', () => {
+    expect(() => accountSchema.parse({ ...account, viewKey: 'a'.repeat(63) })).toThrow();
+  });
+});
+
+describe('viewProfileSchema', () => {
+  const profile = {
+    name: 'Ada',
+    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddressVerified: false,
+    createdAt: 1_700_000_000,
+  };
+
+  it('accepts a well-formed named profile', () => {
+    expect(viewProfileSchema.parse(profile)).toEqual(profile);
+  });
+
+  it('accepts null name and null lightningAddress', () => {
+    const bare = { ...profile, name: null, lightningAddress: null };
+    expect(viewProfileSchema.parse(bare)).toEqual(bare);
+  });
+
+  it('rejects an empty name', () => {
+    expect(() => viewProfileSchema.parse({ ...profile, name: '' })).toThrow();
   });
 });
 

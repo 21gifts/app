@@ -3,6 +3,8 @@ import type { ReactElement, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RootLayout, { metadata } from '@/app/layout';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 
 vi.mock('@/lib/request-locale', () => ({
   getRequestLocale: vi.fn(async () => 'en' as const),
@@ -40,6 +42,15 @@ describe('metadata', () => {
     expect(icons.apple.map((entry) => entry.url)).toContain('/apple-touch-icon.png');
   });
 
+  it('declares the web app manifest and apple web app metadata', () => {
+    expect(metadata.manifest).toBe('/manifest.webmanifest');
+    expect(metadata.appleWebApp).toEqual({
+      capable: true,
+      title: '21.gifts',
+      statusBarStyle: 'default',
+    });
+  });
+
   it('exposes Open Graph website preview metadata', () => {
     const openGraph = metadata.openGraph as NonNullable<Metadata['openGraph']> & {
       type: string;
@@ -69,27 +80,51 @@ describe('metadata', () => {
 describe('RootLayout', () => {
   // Rendering a nested <html> element inside the jsdom document triggers DOM
   // nesting warnings, so the layout is asserted on its returned element tree.
-  it('renders an English <html> document', async () => {
+  it('renders an English <html> document with suppressHydrationWarning', async () => {
     const tree = await RootLayout({ children: 'content' });
-    const props = tree.props as { lang: string; children: ReactNode };
+    const props = tree.props as {
+      lang: string;
+      suppressHydrationWarning?: boolean;
+      children: ReactNode;
+    };
 
     expect(tree.type).toBe('html');
     expect(props.lang).toBe('en');
+    expect(props.suppressHydrationWarning).toBe(true);
   });
 
-  it('wraps the children in LocaleProvider inside the <body>', async () => {
+  it('injects THEME_BOOTSTRAP_SCRIPT as a raw head script', async () => {
     const tree = await RootLayout({ children: 'content' });
     const htmlProps = tree.props as {
-      children: {
-        type: string;
-        props: { children: ReactElement };
-      };
+      children: ReactElement[];
     };
-    const body = htmlProps.children;
-    const provider = body.props.children as ReactElement<{ children: ReactNode }>;
+    const children = Array.isArray(htmlProps.children) ? htmlProps.children : [htmlProps.children];
+    const head = children.find((child) => child.type === 'head') as ReactElement<{
+      children: ReactElement<{ dangerouslySetInnerHTML: { __html: string } }>;
+    }>;
+    const script = head.props.children;
+    expect(script.type).toBe('script');
+    expect(script.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
+  });
+
+  it('wraps children LocaleProvider → ThemeProvider and uses bg-app-bg on body', async () => {
+    const tree = await RootLayout({ children: 'content' });
+    const htmlProps = tree.props as {
+      children: ReactElement[];
+    };
+    const children = Array.isArray(htmlProps.children) ? htmlProps.children : [htmlProps.children];
+    const body = children.find((child) => child.type === 'body') as ReactElement<{
+      className: string;
+      children: ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
+    }>;
 
     expect(body.type).toBe('body');
-    expect(provider.type).toBe(LocaleProvider);
-    expect(provider.props.children).toBe('content');
+    expect(body.props.className).toContain('bg-app-bg');
+    expect(body.props.className).not.toContain('bg-white');
+    const localeProvider = body.props.children;
+    expect(localeProvider.type).toBe(LocaleProvider);
+    const themeProvider = localeProvider.props.children;
+    expect(themeProvider.type).toBe(ThemeProvider);
+    expect(themeProvider.props.children).toBe('content');
   });
 });

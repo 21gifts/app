@@ -18,6 +18,7 @@ const account = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
+  viewKey: 'a'.repeat(64),
 };
 
 beforeEach(() => {

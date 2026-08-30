@@ -10,6 +10,9 @@ import {
   messageInvoiceSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  pushSubscriptionResponseSchema,
+  vapidPublicSchema,
+  viewProfileSchema,
   type Account,
   type ContactMessage,
   type ForumMessage,
@@ -19,6 +22,7 @@ import {
   type MessageInvoice,
   type PasskeyBegin,
   type PasskeySession,
+  type ViewProfile,
 } from '@/lib/api-types';
 
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
@@ -139,6 +143,20 @@ export async function fetchMe(sessionToken: string): Promise<Account | null> {
     throw new Error(`Failed to fetch account: ${response.status}`);
   }
   return accountSchema.parse(await response.json());
+}
+
+/**
+ * Fetches a public read-only profile by view key via the same-origin proxy.
+ *
+ * @param viewKey - 64 lowercase hex capability key.
+ * @returns The {@link ViewProfile}, or `null` when the key is unknown (404).
+ * @throws Error on any other non-2xx status or a body that fails validation.
+ */
+export async function fetchViewProfile(viewKey: string): Promise<ViewProfile | null> {
+  const response = await fetch(`/view-key/${encodeURIComponent(viewKey)}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Failed to fetch view profile: ${response.status}`);
+  return viewProfileSchema.parse(await response.json());
 }
 
 /**
@@ -452,15 +470,114 @@ export async function fetchMessagePhoto(sessionToken: string, id: string): Promi
 }
 
 /**
+ * Fetches the VAPID application server public key for Web Push subscribe.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The url-safe base64 public key string.
+ * @throws Error with message `Push is not configured` on 503, on any other
+ * non-2xx status, or when the body fails {@link vapidPublicSchema} validation.
+ */
+export async function fetchVapidPublicKey(sessionToken: string): Promise<string> {
+  const response = await fetch('/push/vapid-public', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 503) {
+    throw new Error('Push is not configured');
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch VAPID public key: ${response.status}`);
+  }
+  return vapidPublicSchema.parse(await response.json()).publicKey;
+}
+
+/**
+ * Registers a Web Push subscription for the signed-in account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param sub - Browser subscription endpoint plus p256dh/auth keys.
+ * @throws Error with message `Push is not configured` on 503, when the api
+ * rejects the body (400) — the api error string when present — on any other
+ * non-2xx status, or when the body fails {@link pushSubscriptionResponseSchema}.
+ */
+export async function postPushSubscription(
+  sessionToken: string,
+  sub: { endpoint: string; keys: { p256dh: string; auth: string } },
+): Promise<void> {
+  const response = await fetch('/me/push-subscriptions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(sub),
+  });
+  if (response.status === 503) {
+    throw new Error('Push is not configured');
+  }
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Invalid subscription' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not save push subscription');
+  }
+  pushSubscriptionResponseSchema.parse(await response.json());
+}
+
+/**
+ * Removes a Web Push subscription for the signed-in account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param endpoint - The Push API endpoint URL to delete.
+ * @throws Error with message `Push is not configured` on 503, or on any other
+ * non-2xx status other than 404 (already gone is treated as success).
+ */
+export async function deletePushSubscription(
+  sessionToken: string,
+  endpoint: string,
+): Promise<void> {
+  const response = await fetch('/me/push-subscriptions', {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ endpoint }),
+  });
+  if (response.status === 404) {
+    return;
+  }
+  if (response.status === 503) {
+    throw new Error('Push is not configured');
+  }
+  if (!response.ok) {
+    throw new Error('Could not remove push subscription');
+  }
+}
+
+/**
  * Starts a passkey registration ceremony.
  *
+ * @param viewKey - Optional 64-hex public view key to claim an existing profile.
+ * When set (non-empty), POSTs JSON `{ viewKey }`; otherwise POSTs with no body.
  * @returns Challenge id plus WebAuthn creation options JSON.
- * @throws Error on a non-2xx status or a body that fails validation.
+ * @throws Error with the api `{ error }` string when present on non-2xx, otherwise
+ * a status fallback; or when the body fails validation.
  */
-export async function startPasskeyRegistration(): Promise<PasskeyBegin> {
-  const response = await fetch('/auth/passkey/register/begin', { method: 'POST' });
+export async function startPasskeyRegistration(viewKey?: string): Promise<PasskeyBegin> {
+  const response =
+    viewKey !== undefined && viewKey !== ''
+      ? await fetch('/auth/passkey/register/begin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ viewKey }),
+        })
+      : await fetch('/auth/passkey/register/begin', { method: 'POST' });
   if (!response.ok) {
-    throw new Error(`Failed to start passkey registration: ${response.status}`);
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === null ? `Failed to start passkey registration: ${response.status}` : raw,
+    );
   }
   return passkeyBeginSchema.parse(await response.json());
 }

@@ -122,6 +122,10 @@ export default async function Home(): Promise<ReactElement> {
             <summary className="cursor-pointer font-medium">{t('home.faq7Q')}</summary>
             <p className="mt-3 text-white/60">{t('home.faq7A')}</p>
           </details>
+          <details className="border-b border-white/10 py-4">
+            <summary className="cursor-pointer font-medium">{t('home.faq8Q')}</summary>
+            <p className="mt-3 text-white/60">{t('home.faq8A')}</p>
+          </details>
         </div>
       </section>
     </main>

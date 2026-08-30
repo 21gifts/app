@@ -35,11 +35,13 @@ npm run dev    # → http://localhost:3000
 | `npm test`                     | Vitest unit tests, single run                                                                                                                 |
 | `npm run test:watch`           | Vitest in watch mode                                                                                                                          |
 | `npm run test:coverage`        | Vitest with the 100% coverage gate                                                                                                            |
-| `npm run e2e`                  | Playwright against the mock api (:3001) plus the production standalone server (:3000)                                                         |
+| `npm run e2e`                  | Playwright all projects (behavior + four visual combos) against mock api (:3001) + standalone (:3000)                                         |
+| `npm run e2e:behavior`         | Playwright chromium project only (behavioral specs; ignores `visual.spec.ts`)                                                                 |
+| `npm run e2e:visual`           | Playwright `e2e/visual.spec.ts` (pass `--project=<combo>` to run one visual combo)                                                            |
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
-| `npm run screenshot:check`     | Fail if a screen or export lacks a Playwright PNG baseline                                                                                    |
+| `npm run screenshot:check`     | Fail if a screen, variant, or export lacks a Playwright PNG, or a variant has no shot in `e2e/visual.spec.ts`                                 |
 | `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
 ## Project structure
@@ -61,8 +63,12 @@ app/
 │   │   │   ├── name/route.ts    # POST /me/name
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
+│   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   └── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   ├── push/
+│   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
 │   │   ├── contact/
+
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
 │   │   │   └── submit/
 │   │   │       └── route.ts     # POST /contact/submit → api POST /contact
@@ -80,7 +86,13 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + address edit
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address + push bell + icon-only view-key copy
+│   │   ├── manifest.ts          # Web App Manifest (MetadataRoute.Manifest default export)
+│   │   ├── view/
+
+│   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
+│   │   ├── view-key/
+│   │   │   └── [viewKey]/route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -89,7 +101,12 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell + icon-only view-key copy)
+│   │   ├── PushToggle.tsx       # Icon-only Bell Web Push enable/disable on profile
+│   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
+│   │   ├── ViewProfileClaim.tsx # Public view passkey claim (icon-only) under the card
+│   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
+│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo icon composer + pay-on-note
@@ -103,13 +120,16 @@ app/
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
+│   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
-│   │   └── forum-photo.ts       # Client resize/JPEG encode for forum photos
+│   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
+│   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
+
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
 │   └── __tests__/               # Mirror tree; one *.test.ts(x) per source file
 │       ├── app/
@@ -125,10 +145,10 @@ app/
 │   └── images/                  # Markdown still references images/<file>.png; PNGs are not committed
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
-│   ├── screen-variants.mjs      # Every UI state of every screen (handbook + e2e needles + visual args)
+│   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
-│   └── check-screenshots.mjs    # CI gate: missing screen/function Playwright PNG baseline → exit 1
+│   └── check-screenshots.mjs    # CI gate: missing screen/variant/function PNG or visual.spec.ts shot → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
@@ -138,10 +158,12 @@ app/
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
+│   ├── view.spec.ts             # /view/[viewKey] public profile + profile view-key copy
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines (single source for handbook images)
 │   └── visual.spec.ts-snapshots/
 ├── public/                      # Static assets served from /
+│   ├── sw.js                    # Push-only service worker (no cache/offline in v1)
 │   └── handbook-images/         # Built from visual baselines (gitignored *.png; keep .gitkeep)
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold
@@ -253,7 +275,8 @@ English).
 `getByRole('link', { name })`. Non-interactive indicators (given/received
 arrows) use `aria-label` on the glyph, not a button role.
 
-Already icon-only: composer attach, send (**Post**), remove-photo, and the
+Already icon-only: composer attach, send (**Post**), remove-photo, profile push
+bell (`PushToggle`), and the
 Bitcoin pay control. Profile back is an icon **link**. Given/received totals
 are icon indicators.
 
@@ -293,7 +316,9 @@ exported function/class in `src/`, and every HTTP endpoint **must** have a
 complete section:
 
 - Screens: `## Screen: /path` (one per `src/app/**/page.tsx`, plus `/404` from `not-found.tsx`)
-- Screen variants: `### Variant: id` (one per UI state in `scripts/screen-variants.mjs`)
+- Screen variants: `### Variant: id` (one per **distinct UI state** of that
+  screen; the list in `scripts/screen-variants.mjs` is the source of truth.
+  Omitting a state from the list is an undeclared deviation)
 - Functions: `## Function: name` (one per `export function`,
   `export default function`, exported callable const, or `export class`)
 - Endpoints: `## Endpoint: METHOD /path` (one per `src/app/**/route.ts` HTTP export)
@@ -330,32 +355,63 @@ and **fails the PR** if a screen has no matching `goto`, a variant has no
 `needle`, an endpoint has no matching `request.<verb>` call, or a function has
 no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
-is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check job and `e2e` in the parallel E2E job.
+is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check
+job, behavioral specs in the parallel E2E (behavior) job (`chromium` project),
+and pixel compare in four parallel visual combo jobs.
 
 ### Screenshot baselines (hard requirement)
 
 There is **one** source for screen images: Playwright Linux Chromium baselines
-under `e2e/visual.spec.ts-snapshots/`. Every UI screen **must** have a
+under `e2e/visual.spec.ts-snapshots/`.
+
+Every public UI screen (`src/app/**/page.tsx`, plus `/404`) **must** have a
 `toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`.
-Handbook Markdown keeps `images/<name>.png` references; those bytes are filled
-into `public/handbook-images/` by `npm run handbook:images` / `prebuild` /
-`predev` from the matching baseline (`variant.visual` → `variant.image`). Do
-not commit PNGs under `docs/handbook/images/` or `public/handbook-images/`.
+Visual specs run in four projects (`desktop-light`, `desktop-dark`,
+`mobile-light`, `mobile-dark`) so each shot is stored as
+`${arg}-${combo}-linux.png`. Handbook Markdown keeps `images/<name>.png`
+references; those bytes are filled into `public/handbook-images/` by
+`npm run handbook:images` / `prebuild` / `predev` from the desktop-light
+baseline when that combo is allowed for the variant, otherwise from the
+variant’s first listed combo. Do not commit PNGs under
+`docs/handbook/images/` or `public/handbook-images/`.
 
-Every **variant** in `scripts/screen-variants.mjs` **must** have a Playwright
-Linux baseline `${visual}-chromium-linux.png`. Default screen shots use the
-`screen-…` args; extra states use `state-…` args.
+Every **distinct UI state** of every screen **must** be listed in
+`scripts/screen-variants.mjs`. Omitting a state from that list is an undeclared
+deviation and is rejected. `/setup/rules` is one screen with **one state per
+living-room rules chapter** (`RULES_CHAPTER_IDS` in `src/lib/rules-chapters.ts`);
+each chapter is a variant. Viewport and theme are combo shots of those
+variants, not a substitute for a missing chapter.
 
-Every exported function **must** have a Playwright baseline
-`function-<Name>.png` (the handbook section on `/handbook`, clipped). Adding a
-screen or export without updating the baselines in the **same PR** is rejected.
-`npm run screenshot:check` (and CI) fails when a PNG is missing.
+Every listed variant **must** have, in the **same PR**:
+
+- a handbook `### Variant: id` with `![…](images/<image>)`
+- its `needle` string in `e2e/`
+- `shotScreen` / `toHaveScreenshot('<visual>')` in `e2e/visual.spec.ts`
+- a Playwright Linux baseline for **each** combo in `BASELINE_COMBOS` (or the
+  variant’s `combos` list): `${visual}-${combo.id}-linux.png`
+
+Default screen shots use the `screen-…` args; extra states use `state-…` args.
+Restrict `combos` only when the UI cannot exist (hamburger nav on desktop,
+payment QR on a smartphone, smartphone pay sheet on desktop).
+
+Every exported function **must** have four Playwright baselines
+`function-<Name>-${combo}-linux.png` (the handbook section on `/handbook`,
+clipped, in each combo project). Adding a screen, UI state, or export without
+updating the baselines in the **same PR** is rejected.
+`npm run screenshot:check` (and CI) fails when a PNG is missing or a variant
+has no matching shot in `e2e/visual.spec.ts`.
+`screenshot:check` still runs in the Check job. CI also runs the four visual
+combo projects as parallel jobs on every PR (each with a 10-minute budget) so
+pixel compare remains a gate.
 
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
-`npm run e2e` still runs the behavioral specs. Regenerate on Linux:
+`npm run e2e` still runs the behavioral specs. FullPage shots unstick
+`header.sticky` so Playwright does not paint the marketing header into every
+stitch. Regenerate on Linux (`--platform linux/amd64` is required so regen
+matches CI linux/amd64 Chromium):
 
 ```bash
-docker run --rm -v "$PWD":/work -w /work \
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
   mcr.microsoft.com/playwright:v1.61.1-noble \
   bash -lc 'npm ci && npm run e2e:update-snapshots'
 ```
@@ -399,12 +455,12 @@ paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL
 
 ## CI / CD
 
-| Workflow               | Trigger               | Action                                                                                                                                                    |
-| ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts) | Two parallel jobs: Check (typecheck, lint, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) and E2E (Playwright `v1.61.1-noble`) |
-| `deploy-dev.yaml`      | push to `develop`     | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                                            |
-| `deploy-prd.yaml`      | push to `main`        | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                                          |
-| `auto-release-pr.yaml` | push to `develop`     | Auto-create Release PR (`develop → main`)                                                                                                                 |
+| Workflow               | Trigger                                    | Action                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts); `workflow_dispatch` | Check (typecheck, lint, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
+| `deploy-dev.yaml`      | push to `develop`                          | Docker build → push `21gifts/app:beta` → notify infrastructure                                                                                                                               |
+| `deploy-prd.yaml`      | push to `main`                             | Docker build → push `21gifts/app:latest` → notify infrastructure                                                                                                                             |
+| `auto-release-pr.yaml` | push to `develop`                          | Auto-create Release PR (`develop → main`)                                                                                                                                                    |
 
 Images target `linux/arm64`.
 

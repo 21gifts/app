@@ -30,7 +30,7 @@ const MULTI_DAY: SpendPoint[] = [
 describe('AccountActivityChart', () => {
   it('renders a reserved sat chart with no day labels when empty', () => {
     const { container } = renderWithLocale(<AccountActivityChart received={[]} />);
-    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
     expect(container.textContent).not.toMatch(/20\d{2}-\d{2}-\d{2}/);
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
@@ -38,12 +38,13 @@ describe('AccountActivityChart', () => {
     expect(screen.getByRole('group', { name: 'Given and received' })).toBeTruthy();
   });
 
-  it('draws the received polyline and keeps Sat pressed', () => {
+  it('draws the received polyline and keeps ₿ pressed with grouped ticks', () => {
     const { container } = renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
     const polylines = [...container.querySelectorAll('polyline')];
     expect(polylines.some((line) => line.getAttribute('stroke') === '#f7931a')).toBe(true);
     expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sat' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('₿1,500')).toBeTruthy();
     expect(screen.getByText('2026-06-01')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
   });
@@ -82,11 +83,11 @@ describe('AccountActivityChart', () => {
     expect(screen.getByText(formatUsdTick(0))).toBeTruthy();
   });
 
-  it('switches back to sat aria when Sat is pressed after USD', () => {
+  it('switches back to ₿ aria when ₿ is pressed after USD', () => {
     renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
     fireEvent.click(screen.getByRole('button', { name: 'USD' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Sat' }));
-    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sat' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
   });
 });

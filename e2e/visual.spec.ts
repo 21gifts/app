@@ -16,6 +16,7 @@ const E2E_ACCOUNT = {
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
+  viewKey: 'a'.repeat(64),
 };
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
@@ -133,13 +134,81 @@ const STATS_EMPTY = {
   },
 };
 
+/**
+ * True when this visual run is a mobile combo project.
+ *
+ * @param testInfo - Playwright test info (project name is the combo id).
+ * @returns Whether the project id starts with `mobile-`.
+ */
+function isMobileProject(testInfo: { project: { name: string } }): boolean {
+  return testInfo.project.name.startsWith('mobile-');
+}
+
+test.beforeEach(async ({ page }, testInfo) => {
+  const theme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
+  await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
+});
+
+/**
+ * Playwright fullPage stitches viewport chunks; sticky chrome is painted
+ * into every chunk. Force document flow so each header appears once.
+ *
+ * @param page - Page under test.
+ */
+async function unstickStickyChrome(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: 'header.sticky { position: static !important; }',
+  });
+}
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  await unstickStickyChrome(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage,
     // The handbook viewport embeds other screen PNGs; variant shots shift a few percent.
     maxDiffPixelRatio: arg === 'screen-handbook' ? 0.05 : 0,
     ...SHOT,
   });
+}
+
+const RULES_SETUP_ACCOUNT = {
+  ...E2E_ACCOUNT,
+  name: 'Ada',
+  lightningAddress: 'alice@walletofsatoshi.com',
+  rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
+};
+
+/** Signed-in visitor at `/setup/rules` (name + address saved, rules not agreed). */
+async function openRulesSetup(
+  page: Page,
+  agreement: 'none' | 'fail' | 'hang' = 'none',
+): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(RULES_SETUP_ACCOUNT),
+    });
+  });
+  if (agreement === 'fail') {
+    await page.route(/\/me\/rules-agreement$/, async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+  } else if (agreement === 'hang') {
+    await page.route(/\/me\/rules-agreement$/, () => undefined);
+  }
+}
+
+/** Advance from the lead chapter; does not POST (stops before the last agree). */
+async function advanceRulesChapters(page: Page, clicks: number): Promise<void> {
+  const next = page.getByRole('button', { name: 'Continue' });
+  for (let i = 0; i < clicks; i += 1) {
+    await next.click();
+  }
 }
 
 /** Newest-first mixed-sats forum fixture for `/welcome` Active / All / Most popular. */
@@ -193,8 +262,8 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-root');
   });
 
-  test('state / mobile-nav', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('state / mobile-nav', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo), 'hamburger nav is md:hidden on desktop');
     await page.goto('/');
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByLabel('Primary').getByRole('link', { name: 'Handbook' })).toBeVisible();
@@ -319,6 +388,13 @@ test.describe('login variant baselines', () => {
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-login-language');
   });
+
+  test('login theme-open', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Theme').click();
+    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
+    await shotScreen(page, 'state-login-theme');
+  });
 });
 
 test.describe('onboarding screens', () => {
@@ -357,46 +433,95 @@ test.describe('onboarding screens', () => {
   });
 
   test('screen /setup/rules', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: null,
-        }),
-      });
-    });
+    await openRulesSetup(page);
     await page.goto('/setup/rules');
-    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+    await expect(page.getByText('You are a guest in a living room')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await shotScreen(page, 'screen-setup-rules');
   });
 
-  test('setup-rules mobile', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: null,
-        }),
-      });
-    });
+  test('setup-rules law1', async ({ page }) => {
+    await openRulesSetup(page);
     await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 1);
+    await expect(page.getByRole('heading', { name: 'Only free donations' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-law1');
+  });
+
+  test('setup-rules law2', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 2);
+    await expect(page.getByRole('heading', { name: 'Donors come first' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-law2');
+  });
+
+  test('setup-rules law3', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 3);
+    await expect(page.getByRole('heading', { name: 'Contact stays in the app' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-law3');
+  });
+
+  test('setup-rules wanted', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 4);
+    await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-wanted');
+  });
+
+  test('setup-rules allowed', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 5);
+    await expect(page.getByRole('heading', { name: 'Allowed' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-allowed');
+  });
+
+  test('setup-rules ratherNot', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 6);
+    await expect(page.getByRole('heading', { name: 'Better not' })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-ratherNot');
+  });
+
+  test('setup-rules forbidden', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 7);
+    await expect(page.getByRole('heading', { name: 'Forbidden', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-forbidden');
+  });
+
+  test('setup-rules house', async ({ page }) => {
+    await openRulesSetup(page);
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 8);
+    await expect(page.getByRole('heading', { name: 'Our house' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
-    await shotScreen(page, 'state-setup-rules-mobile');
+    await shotScreen(page, 'state-setup-rules-house');
+  });
+
+  test('setup-rules error', async ({ page }) => {
+    await openRulesSetup(page, 'fail');
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 8);
+    await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    await expect(page.getByText('Could not save your agreement')).toBeVisible();
+    await shotScreen(page, 'state-setup-rules-error');
+  });
+
+  test('setup-rules busy', async ({ page }) => {
+    await openRulesSetup(page, 'hang');
+    await page.goto('/setup/rules');
+    await advanceRulesChapters(page, 8);
+    await expect(page.getByRole('heading', { name: 'Our house' })).toBeVisible();
+    await page.getByRole('button', { name: 'I agree to these rules' }).click();
+    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeDisabled();
+    await shotScreen(page, 'state-setup-rules-busy');
   });
 
   test('screen /welcome', async ({ page }) => {
@@ -412,6 +537,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -442,12 +568,75 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
     await page.goto('/profile');
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
+  });
+
+  test('screen /view/[viewKey] default', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+        }),
+      });
+    });
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Ada')).toBeVisible();
+    await shotScreen(page, 'screen-view-viewKey');
+  });
+
+  test('screen /view/[viewKey] missing', async ({ page }) => {
+    const missing = 'b'.repeat(64);
+    await page.route(new RegExp(`/view-key/${missing}$`), async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+    });
+    await page.goto(`/view/${missing}`);
+    await expect(page.getByText('This profile could not be found.')).toBeVisible();
+    await shotScreen(page, 'state-view-missing');
+  });
+
+  test('screen /view/[viewKey] loading', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async () => {
+      // never fulfill
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-view-loading');
+  });
+
+  test('screen /view/[viewKey] error', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'boom' }),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-view-error');
   });
 });
 
@@ -578,6 +767,7 @@ test.describe('profile activity chart variants', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -649,6 +839,7 @@ test.describe('welcome forum variants', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -693,7 +884,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount (sats)').fill('21');
+    await page.getByLabel('Amount (₿)').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
@@ -714,9 +905,9 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Most popular' }).click();
     const items = page.getByRole('listitem');
     await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
-    await expect(items.nth(0)).toContainText('21 sats');
+    await expect(items.nth(0)).toContainText('₿21');
     await expect(items.nth(1)).toContainText('Thank you both — that helps.');
-    await expect(items.nth(1)).toContainText('5 sats');
+    await expect(items.nth(1)).toContainText('₿5');
     await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
     await shotScreen(page, 'state-welcome-popular');
   });
@@ -744,7 +935,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages with sats yet.')).toBeVisible();
+    await expect(page.getByText('No messages with Bitcoin yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -1211,7 +1402,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-language');
   });
 
-  test('welcome pay-qr', async ({ page }) => {
+  test('welcome menu-theme-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByLabel('Theme').click();
+    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-theme');
+  });
+
+  test('welcome pay-qr', async ({ page }, testInfo) => {
+    test.skip(isMobileProject(testInfo), 'payment QR is desktop-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
@@ -1219,20 +1427,63 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-pay-qr');
   });
 
-  test('welcome pay-smartphone', async ({ page }) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'userAgent', {
-        get: () =>
-          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-      });
-    });
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('welcome pay-smartphone', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo), 'smartphone pay sheet is mobile-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-smartphone');
+  });
+
+  test('welcome pay-author-wallet', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-pay',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-pay/invoice', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: "The author's wallet cannot receive this Bitcoin payment",
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'All' }).click();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount (₿)').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-pay-author-wallet');
   });
 
   test('welcome role-hint', async ({ page }) => {
@@ -1304,6 +1555,7 @@ test.describe('contact screens', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });
@@ -1431,13 +1683,20 @@ test.describe('stats variant baselines', () => {
 });
 
 test.describe('function baselines', () => {
+  // ~140 Function: clips × 4 combo projects; 30s timed out, 120s is tight on mobile workers.
+  test.describe.configure({ timeout: 180_000 });
+
   test('every handbook function section', async ({ page }) => {
     await page.goto('/handbook');
     await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
+    await unstickStickyChrome(page);
 
     const headings = page.locator('#functions h2[id^="functions-function-"]');
     const count = await headings.count();
     expect(count).toBeGreaterThan(0);
+
+    // One test walks every handbook function clip; count × comparison exceeds Playwright’s 30s default.
+    test.setTimeout(Math.max(90_000, count * 500));
 
     const sections = await headings.evaluateAll((nodes) =>
       nodes.map((node) => {
@@ -1508,6 +1767,7 @@ test.describe('function baselines', () => {
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
         }),
       });
     });

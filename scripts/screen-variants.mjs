@@ -4,10 +4,49 @@
  * is how coverage silently drops.
  *
  * `needle` must appear in e2e/*.spec.ts (the behavioral assertion for that state).
- * `image` is the handbook filename (URL `/handbook-images/<image>`).
- * `visual` is the Playwright baseline arg
- * (`e2e/visual.spec.ts-snapshots/${visual}-chromium-linux.png`).
+ * `image` is the handbook filename (URL `/handbook-images/<file>`), filled from
+ * the desktop-light baseline (or the first combo listed on the variant).
+ * `visual` is the Playwright screenshot arg. Each variant is captured in every
+ * {@link BASELINE_COMBOS} entry unless `combos` restricts it:
+ *   e2e/visual.spec.ts-snapshots/${visual}-${combo.id}-linux.png
+ * `combos` is optional; omit it for all four desktop/mobile × light/dark shots.
  */
+
+/** One required visual baseline combo: viewport × theme. */
+export const BASELINE_COMBOS = [
+  { id: 'desktop-light', viewport: 'desktop', theme: 'light' },
+  { id: 'desktop-dark', viewport: 'desktop', theme: 'dark' },
+  { id: 'mobile-light', viewport: 'mobile', theme: 'light' },
+  { id: 'mobile-dark', viewport: 'mobile', theme: 'dark' },
+];
+
+/** Combo used for handbook Markdown images. */
+export const HANDBOOK_COMBO_ID = 'desktop-light';
+
+/**
+ * Combo ids a variant must have PNG baselines for.
+ *
+ * @param variant - Screen variant row.
+ * @returns Combo ids.
+ */
+export function variantComboIds(variant) {
+  if (Array.isArray(variant.combos) && variant.combos.length > 0) {
+    return variant.combos;
+  }
+  return BASELINE_COMBOS.map((combo) => combo.id);
+}
+
+/**
+ * Playwright snapshot stem for a visual arg and combo (`-linux.png` is added by Playwright).
+ *
+ * @param visual - Variant `visual` or `function-${name}`.
+ * @param comboId - Combo id.
+ * @returns Snapshot arg Playwright stores as `${stem}-linux.png`.
+ */
+export function comboSnapshotStem(visual, comboId) {
+  return `${visual}-${comboId}`;
+}
+
 export const SCREEN_VARIANTS = [
   {
     route: '/',
@@ -22,6 +61,7 @@ export const SCREEN_VARIANTS = [
     image: 'root-mobile-nav.png',
     visual: 'state-root-mobile-nav',
     needle: "getByRole('button', { name: 'Menu' })",
+    combos: ['mobile-light', 'mobile-dark'],
   },
   {
     route: '/',
@@ -73,6 +113,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Deutsch' })",
   },
   {
+    route: '/login',
+    id: 'theme-open',
+    image: 'login-theme.png',
+    visual: 'state-login-theme',
+    needle: "getByRole('option', { name: 'Dark' })",
+  },
+  {
     route: '/donate',
     id: 'default',
     image: 'donate.png',
@@ -98,14 +145,77 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'setup-rules.png',
     visual: 'screen-setup-rules',
-    needle: 'I agree to these rules',
+    needle: 'You are a guest in a living room',
   },
   {
     route: '/setup/rules',
-    id: 'mobile',
-    image: 'setup-rules-mobile.png',
-    visual: 'state-setup-rules-mobile',
-    needle: 'setup-rules mobile',
+    id: 'law1',
+    image: 'setup-rules-law1.png',
+    visual: 'state-setup-rules-law1',
+    needle: "getByRole('heading', { name: 'Only free donations' })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'law2',
+    image: 'setup-rules-law2.png',
+    visual: 'state-setup-rules-law2',
+    needle: "getByRole('heading', { name: 'Donors come first' })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'law3',
+    image: 'setup-rules-law3.png',
+    visual: 'state-setup-rules-law3',
+    needle: "getByRole('heading', { name: 'Contact stays in the app' })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'wanted',
+    image: 'setup-rules-wanted.png',
+    visual: 'state-setup-rules-wanted',
+    needle: "getByRole('heading', { name: 'Welcome' })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'allowed',
+    image: 'setup-rules-allowed.png',
+    visual: 'state-setup-rules-allowed',
+    needle: "getByRole('heading', { name: 'Allowed' })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'ratherNot',
+    image: 'setup-rules-rather-not.png',
+    visual: 'state-setup-rules-ratherNot',
+    needle: "getByRole('heading', { name: 'Better not' })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'forbidden',
+    image: 'setup-rules-forbidden.png',
+    visual: 'state-setup-rules-forbidden',
+    needle: "getByRole('heading', { name: 'Forbidden', exact: true })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'house',
+    image: 'setup-rules-house.png',
+    visual: 'state-setup-rules-house',
+    needle: "getByRole('heading', { name: 'Our house' })",
+  },
+  {
+    route: '/setup/rules',
+    id: 'error',
+    image: 'setup-rules-error.png',
+    visual: 'state-setup-rules-error',
+    needle: 'Could not save your agreement',
+  },
+  {
+    route: '/setup/rules',
+    id: 'busy',
+    image: 'setup-rules-busy.png',
+    visual: 'state-setup-rules-busy',
+    needle: "getByRole('button', { name: 'I agree to these rules' })).toBeDisabled()",
   },
   {
     route: '/welcome',
@@ -133,7 +243,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty-paid',
     image: 'welcome-empty-paid.png',
     visual: 'state-welcome-empty-paid',
-    needle: 'No messages with sats yet.',
+    needle: 'No messages with Bitcoin yet.',
   },
   {
     route: '/welcome',
@@ -284,10 +394,18 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-theme-open',
+    image: 'welcome-menu-theme.png',
+    visual: 'state-welcome-menu-theme',
+    needle: "getByRole('option', { name: 'Dark' })",
+  },
+  {
+    route: '/welcome',
     id: 'pay-qr',
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
     needle: 'Bitcoin payment QR code',
+    combos: ['desktop-light', 'desktop-dark'],
   },
   {
     route: '/welcome',
@@ -295,6 +413,14 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-pay-smartphone.png',
     visual: 'state-welcome-pay-smartphone',
     needle: 'iPhone pay sheet has no QR',
+    combos: ['mobile-light', 'mobile-dark'],
+  },
+  {
+    route: '/welcome',
+    id: 'pay-author-wallet',
+    image: 'welcome-pay-author-wallet.png',
+    visual: 'state-welcome-pay-author-wallet',
+    needle: "The author's wallet cannot receive this Bitcoin payment",
   },
   {
     route: '/welcome',
@@ -365,6 +491,34 @@ export const SCREEN_VARIANTS = [
     image: 'profile-large-usd.png',
     visual: 'state-profile-large-usd',
     needle: '$1,425',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'default',
+    image: 'view-viewKey.png',
+    visual: 'screen-view-viewKey',
+    needle: "getByRole('heading', { name: 'Profile' })",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'missing',
+    image: 'view-missing.png',
+    visual: 'state-view-missing',
+    needle: 'This profile could not be found.',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'loading',
+    image: 'view-loading.png',
+    visual: 'state-view-loading',
+    needle: 'Loading…',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'error',
+    image: 'view-error.png',
+    visual: 'state-view-error',
+    needle: 'Try again',
   },
   {
     route: '/stats',

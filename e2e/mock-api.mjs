@@ -74,6 +74,7 @@ function newAccount(linkingKey) {
     forumLawsDismissed: false,
     createdAt: Date.now(),
     rulesAgreedAt: null,
+    viewKey: hex(randomBytes(32)),
   };
 }
 
@@ -269,6 +270,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/push/vapid-public') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { publicKey: `B${'A'.repeat(86)}` });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/push-subscriptions') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Invalid subscription' });
+      return;
+    }
+    const endpoint = typeof parsed?.endpoint === 'string' ? parsed.endpoint : '';
+    if (endpoint === '') {
+      json(res, 400, { error: 'Invalid subscription' });
+      return;
+    }
+    json(res, 200, { endpoint, createdAt: new Date().toISOString() });
+    return;
+  }
+
+  if (method === 'DELETE' && pathName === '/me/push-subscriptions') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { ok: true });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/rules-agreement') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -280,6 +323,29 @@ const server = http.createServer(async (req, res) => {
       account.rulesAgreedAt = Date.now();
     }
     json(res, 200, account);
+    return;
+  }
+
+  const viewMatch = pathName.match(/^\/view\/([^/]+)$/);
+  if (method === 'GET' && viewMatch) {
+    const key = viewMatch[1];
+    let found;
+    for (const account of byToken.values()) {
+      if (account.viewKey === key) {
+        found = account;
+        break;
+      }
+    }
+    if (!found) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    json(res, 200, {
+      name: found.name,
+      lightningAddress: found.lightningAddress,
+      lightningAddressVerified: found.lightningAddressVerified,
+      createdAt: found.createdAt,
+    });
     return;
   }
 

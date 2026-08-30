@@ -5,6 +5,7 @@ import { RulesSetup } from '@/components/RulesSetup';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
+import { RULES_CHAPTER_IDS } from '@/lib/rules-chapters';
 
 /**
  * `/setup/rules` — agree to the living-room rules after name and address.
@@ -18,9 +19,11 @@ export default async function RulesSetupPage(): Promise<ReactElement> {
     <main className="relative flex min-h-svh flex-col items-center px-6">
       <SignedInChrome />
       <OnboardingGate screen="rules">
-        <RulesSetup>
-          <RulesDocument messages={messages} showNav={false} />
-        </RulesSetup>
+        <RulesSetup
+          chapters={RULES_CHAPTER_IDS.map((id) => (
+            <RulesDocument key={id} messages={messages} showNav={false} chapter={id} />
+          ))}
+        />
       </OnboardingGate>
     </main>
   );

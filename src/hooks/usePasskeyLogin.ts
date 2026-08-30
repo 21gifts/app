@@ -24,14 +24,19 @@ export interface UsePasskeyLogin {
   status: PasskeyStatus;
   /** One-tap login: existing passkey, or create when the browser has none. */
   login: () => void;
-  /** Create a new discoverable passkey and sign in. */
-  register: () => void;
+  /**
+   * Create a new discoverable passkey and sign in.
+   * Optional `viewKey` claims an existing public profile during registration.
+   */
+  register: (viewKey?: string) => void;
   /** Sign in with an existing passkey. */
   authenticate: () => void;
   /** Repeats the originating flow after an error. The single-button path restarts login. */
   retry: () => void;
   /** Aborts an in-flight WebAuthn prompt. */
   cancel: () => void;
+  /** Last `Error.message` when `status === 'error'`, otherwise `null`. */
+  error: string | null;
 }
 
 /**
@@ -66,13 +71,15 @@ class SupersededError extends Error {
 /**
  * Drives passkey register / authenticate. A run id ignores superseded clicks.
  *
- * @returns Status plus login, register, authenticate, retry, and cancel.
+ * @returns Status plus login, register, authenticate, retry, cancel, and error.
  */
 export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
+  const [lastError, setLastError] = useState<string | null>(null);
   const runIdRef = useRef(0);
   const lastKindRef = useRef<'register' | 'authenticate'>('authenticate');
   const entryKindRef = useRef<'login' | 'register' | 'authenticate'>('login');
+  const lastViewKeyRef = useRef<string | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -86,6 +93,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     runIdRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
+    setLastError(null);
     setStatus('idle');
   }, []);
 
@@ -101,6 +109,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       const controller = new AbortController();
       abortRef.current = controller;
       const runId = ++runIdRef.current;
+      setLastError(null);
       setStatus('starting');
       return { runId, controller };
     },
@@ -108,9 +117,9 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   );
 
   const completeRegistration = useCallback(
-    async (runId: number, controller: AbortController): Promise<void> => {
+    async (runId: number, controller: AbortController, viewKey?: string): Promise<void> => {
       guard(runId);
-      const begin = await startPasskeyRegistration();
+      const begin = await startPasskeyRegistration(viewKey);
       guard(runId);
       const credential = await navigator.credentials.create({
         publicKey: creationOptionsFromJSON(begin.options),
@@ -126,6 +135,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       );
       guard(runId);
       setAuth(session.token, session.account);
+      setLastError(null);
       setStatus('idle');
     },
     [guard, setAuth],
@@ -150,6 +160,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       );
       guard(runId);
       setAuth(session.token, session.account);
+      setLastError(null);
       setStatus('idle');
     },
     [guard, setAuth],
@@ -159,20 +170,30 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     if (error instanceof SupersededError || runId !== runIdRef.current) {
       return;
     }
-    setStatus(isUserCancel(error) ? 'idle' : 'error');
-  }, []);
-
-  const register = useCallback((): void => {
-    if (isInAppBrowser()) {
-      setStatus('unsupported');
+    if (isUserCancel(error)) {
+      setLastError(null);
+      setStatus('idle');
       return;
     }
-    entryKindRef.current = 'register';
-    const { runId, controller } = beginRun('register');
-    void completeRegistration(runId, controller).catch((error: unknown) => {
-      finishWithError(runId, error);
-    });
-  }, [beginRun, completeRegistration, finishWithError]);
+    setLastError(error instanceof Error ? error.message : String(error));
+    setStatus('error');
+  }, []);
+
+  const register = useCallback(
+    (viewKey?: string): void => {
+      if (isInAppBrowser()) {
+        setStatus('unsupported');
+        return;
+      }
+      entryKindRef.current = 'register';
+      lastViewKeyRef.current = viewKey;
+      const { runId, controller } = beginRun('register');
+      void completeRegistration(runId, controller, viewKey).catch((error: unknown) => {
+        finishWithError(runId, error);
+      });
+    },
+    [beginRun, completeRegistration, finishWithError],
+  );
 
   const authenticate = useCallback((): void => {
     if (isInAppBrowser()) {
@@ -210,6 +231,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
           return;
         }
         lastKindRef.current = 'register';
+        lastViewKeyRef.current = undefined;
         const createController = new AbortController();
         abortRef.current = createController;
         try {
@@ -230,7 +252,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       authenticate();
       return;
     }
-    register();
+    register(lastViewKeyRef.current);
   }, [authenticate, login, register]);
 
   useEffect(() => {
@@ -241,5 +263,13 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     };
   }, []);
 
-  return { status, login, register, authenticate, retry, cancel };
+  return {
+    status,
+    login,
+    register,
+    authenticate,
+    retry,
+    cancel,
+    error: status === 'error' ? lastError : null,
+  };
 }

@@ -4,9 +4,7 @@ import { translate } from '@/lib/translate';
 
 describe('translate', () => {
   it('interpolates named placeholders', () => {
-    expect(translate(getCatalog('en'), 'forum.payConfirm', { amount: '21 sats' })).toBe(
-      'Pay 21 sats',
-    );
+    expect(translate(getCatalog('en'), 'forum.payConfirm', { amount: '₿21' })).toBe('Pay ₿21');
   });
 
   it('throws when a placeholder is missing', () => {
@@ -16,7 +14,9 @@ describe('translate', () => {
   });
 
   it('throws when vars are omitted but placeholders exist', () => {
-    expect(() => translate(getCatalog('en'), 'forum.sats')).toThrow(/Missing placeholder \{n\}/);
+    expect(() => translate(getCatalog('en'), 'forum.payConfirm')).toThrow(
+      /Missing placeholder \{amount\}/,
+    );
   });
 
   it('throws when the key is missing from the catalog', () => {
@@ -27,10 +27,10 @@ describe('translate', () => {
 
   it('throws when a placeholder value is undefined', () => {
     expect(() =>
-      translate(getCatalog('en'), 'forum.sats', {
-        n: undefined as unknown as number,
+      translate(getCatalog('en'), 'forum.payConfirm', {
+        amount: undefined as unknown as string,
       }),
-    ).toThrow(/Missing placeholder \{n\}/);
+    ).toThrow(/Missing placeholder \{amount\}/);
   });
 });
 

@@ -142,7 +142,7 @@ export function LightningAddressForm(
         onSubmit={handleSubmit}
         className="mt-6 flex w-full flex-1 flex-col items-stretch gap-3"
       >
-        <p className="text-center text-sm text-neutral-500">{t('la.prompt')}</p>
+        <p className="text-center text-sm text-app-muted">{t('la.prompt')}</p>
         <input
           type="email"
           inputMode="email"
@@ -153,7 +153,7 @@ export function LightningAddressForm(
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={busy}
-          className="w-full rounded-2xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+          className="w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
         />
         {error !== null ? (
           <p role="alert" className="text-center text-sm text-red-600">
@@ -163,7 +163,7 @@ export function LightningAddressForm(
         <button
           type="submit"
           disabled={busy}
-          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
         >
           {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t('setup.continue')}
@@ -173,16 +173,14 @@ export function LightningAddressForm(
   }
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-3 border-t border-neutral-200 pt-6">
-      <p className="text-center text-xs tracking-widest text-neutral-400 uppercase">
+    <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('la.heading')}
       </p>
 
       {!linked || editing ? (
         <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
-          {!linked ? (
-            <p className="text-center text-sm text-neutral-500">{t('la.prompt')}</p>
-          ) : null}
+          {!linked ? <p className="text-center text-sm text-app-muted">{t('la.prompt')}</p> : null}
           <div className="flex items-center gap-2">
             <input
               type="email"
@@ -194,13 +192,13 @@ export function LightningAddressForm(
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               disabled={busy}
-              className="min-w-0 flex-1 rounded-2xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 disabled:opacity-50"
+              className="min-w-0 flex-1 rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={busy}
               aria-label={editing ? t('la.save') : t('la.link')}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-900 text-white transition hover:bg-neutral-700 disabled:opacity-50"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-app-btn text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
             >
               {submitIcon}
             </button>
@@ -213,7 +211,7 @@ export function LightningAddressForm(
                 }}
                 disabled={busy}
                 aria-label={t('la.cancel')}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </button>
@@ -222,7 +220,7 @@ export function LightningAddressForm(
         </form>
       ) : (
         <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate font-mono text-sm text-neutral-900">{address}</p>
+          <p className="min-w-0 flex-1 truncate font-mono text-sm text-app-fg">{address}</p>
           <button
             type="button"
             onClick={() => {
@@ -233,7 +231,7 @@ export function LightningAddressForm(
             }}
             disabled={busy}
             aria-label={t('la.edit')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <Pencil aria-hidden="true" className="h-4 w-4" />
           </button>
@@ -244,7 +242,7 @@ export function LightningAddressForm(
             }}
             disabled={busy}
             aria-label={t('la.unlink')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-300 text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <Trash2 aria-hidden="true" className="h-4 w-4" />
           </button>

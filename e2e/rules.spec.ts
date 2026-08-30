@@ -4,9 +4,9 @@ test('rules page shows living-room laws and CTAs', async ({ page }) => {
   await page.goto('/rules');
   await expect(page.getByRole('heading', { name: 'Living room rules', level: 1 })).toBeVisible();
   await expect(page.getByText('Only free donations')).toBeVisible();
-  await expect(page.getByRole('heading', { name: '1. Only free donations' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '2. Donors come first' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '3. Contact stays in the app' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Only free donations' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Donors come first' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Contact stays in the app' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Contact 21.gifts' })).toHaveAttribute(
     'href',
     '/contact',
@@ -35,6 +35,7 @@ test('welcome forum shows the two laws and links to rules and contact', async ({
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -78,6 +79,7 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -95,6 +97,7 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
         forumLawsDismissed: true,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });
@@ -134,6 +137,7 @@ test('welcome forum hides laws when already dismissed on the account', async ({ 
         forumLawsDismissed: true,
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
       }),
     });
   });

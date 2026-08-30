@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { GiftDayTable } from '@/components/GiftDayTable';
 import { fetchGiftDay } from '@/lib/api';
 import type { GiftDay } from '@/lib/api-types';
+import { formatBitcoin } from '@/lib/stats-money';
 import { isUtcDay } from '@/lib/utc-day';
 
 /** Props for {@link DayLoader}. */
@@ -89,8 +90,8 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8">
           <p className="mb-4 text-white/60">
-            {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} · {payload.totalSats} sats
-            · {payload.totalBtc} BTC · {payload.totalUsd} USD
+            {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
+            {formatBitcoin(payload.totalSats)} · {payload.totalUsd} USD
           </p>
           <GiftDayTable day={payload} />
         </div>

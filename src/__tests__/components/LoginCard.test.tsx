@@ -42,6 +42,7 @@ function mockPasskey(status: PasskeyStatus = 'idle'): void {
     authenticate: authenticateSpy,
     retry: retrySpy,
     cancel: cancelPasskeySpy,
+    error: null,
   });
 }
 
@@ -96,6 +97,7 @@ describe('LoginCard', () => {
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
       },
     });
     renderWithLocale(<LoginCard />);

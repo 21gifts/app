@@ -23,6 +23,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
+    "e2e:behavior": "playwright test --project=chromium",
+    "e2e:visual": "playwright test e2e/visual.spec.ts",
     "e2e:update-snapshots": "playwright test e2e/visual.spec.ts --update-snapshots",
     "handbook:images": "node scripts/sync-handbook-images.mjs",
     "handbook:check": "node scripts/check-handbook.mjs",

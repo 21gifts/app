@@ -32,6 +32,7 @@ const account = {
   forumLawsDismissed: false,
   createdAt: 1,
   rulesAgreedAt: null as number | null,
+  viewKey: 'a'.repeat(64),
 };
 
 const complete = {
@@ -39,6 +40,7 @@ const complete = {
   name: 'Ada',
   lightningAddress: 'alice@walletofsatoshi.com',
   rulesAgreedAt: 1_700_000_001,
+  viewKey: 'a'.repeat(64),
 };
 
 beforeEach(() => {
@@ -51,6 +53,7 @@ beforeEach(() => {
     authenticate: vi.fn(),
     retry: vi.fn(),
     cancel: vi.fn(),
+    error: null,
   });
   useAuthStore.setState({ session: null, account: null });
 });

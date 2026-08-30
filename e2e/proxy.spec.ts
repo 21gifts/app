@@ -4,6 +4,9 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/auth/lnurl')).status()).toBe(404);
   expect((await request.get('/auth/session')).status()).toBe(404);
   expect((await request.get('/me')).status()).toBe(401);
+  expect((await request.get('/push/vapid-public')).status()).toBe(401);
+  expect((await request.post('/me/push-subscriptions')).status()).toBe(401);
+  expect((await request.delete('/me/push-subscriptions')).status()).toBe(401);
   expect((await request.get('/messages')).status()).toBe(401);
   expect((await request.post('/messages')).status()).toBe(401);
   expect((await request.post('/messages/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);
@@ -21,4 +24,6 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/auth/passkey/register/finish')).status()).toBe(400);
   expect((await request.post('/auth/passkey/authenticate/begin')).status()).toBe(200);
   expect((await request.post('/auth/passkey/authenticate/finish')).status()).toBe(400);
+  expect((await request.get('/view-key/[viewKey]')).status()).toBeGreaterThanOrEqual(400);
+  expect((await request.get(`/view-key/${'a'.repeat(64)}`)).status()).toBe(404);
 });

@@ -1,20 +1,11 @@
 import type { ReactElement } from 'react';
 import type { GiftDay } from '@/lib/api-types';
+import { formatBitcoin } from '@/lib/stats-money';
 
 /** Props for {@link GiftDayTable}. */
 export interface GiftDayTableProps {
   /** Per-day payload from `GET /gifts`. */
   day: GiftDay;
-}
-
-/**
- * Formats a sat count with grouping separators.
- *
- * @param sats - Whole satoshis.
- * @returns Grouped decimal string.
- */
-function formatSats(sats: number): string {
-  return new Intl.NumberFormat('en-US').format(sats);
 }
 
 /**
@@ -53,8 +44,7 @@ export function GiftDayTable({ day }: GiftDayTableProps): ReactElement {
           <tr className="border-b border-white/15 text-white/50">
             <th className="py-2 pr-4 font-medium">Time</th>
             <th className="py-2 pr-4 font-medium">Recipient</th>
-            <th className="py-2 pr-4 font-medium">Sats</th>
-            <th className="py-2 pr-4 font-medium">BTC</th>
+            <th className="py-2 pr-4 font-medium">₿</th>
             <th className="py-2 font-medium">USD</th>
           </tr>
         </thead>
@@ -68,8 +58,7 @@ export function GiftDayTable({ day }: GiftDayTableProps): ReactElement {
                 <time dateTime={gift.paidAt}>{formatUtcTime(gift.paidAt)}</time>
               </td>
               <td className="py-2 pr-4 font-medium">{gift.recipient}</td>
-              <td className="py-2 pr-4 tabular-nums">{formatSats(gift.amountSats)}</td>
-              <td className="py-2 pr-4 tabular-nums text-white/80">{gift.amountBtc}</td>
+              <td className="py-2 pr-4 tabular-nums">{formatBitcoin(gift.amountSats)}</td>
               <td className="py-2 tabular-nums text-white/80">{gift.amountUsd}</td>
             </tr>
           ))}

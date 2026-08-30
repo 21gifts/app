@@ -184,3 +184,44 @@ export async function proxyContactPost(request: Request): Promise<Response> {
 export async function proxyMessagesPhotoGet(request: Request, id: string): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(id)}/photo`);
 }
+
+/**
+ * Proxies GET /view/:viewKey to the 21.gifts api (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @param viewKey - 64-hex view key from the URL.
+ * @returns The upstream response.
+ */
+export async function proxyViewGet(request: Request, viewKey: string): Promise<Response> {
+  return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}`);
+}
+
+/**
+ * Proxies GET /push/vapid-public to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyPushVapidPublicGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/push/vapid-public');
+}
+
+/**
+ * Proxies POST /me/push-subscriptions to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyMePushSubscriptionsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/push-subscriptions');
+}
+
+/**
+ * Proxies DELETE /me/push-subscriptions to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyMePushSubscriptionsDelete(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/push-subscriptions');
+}
