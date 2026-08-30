@@ -50,9 +50,7 @@ test('contact empty send shows Enter a message', async ({ page }) => {
   await expect(page.getByText('Enter a message')).toBeVisible();
 });
 
-test('contact success shows Received — thank you. We read every message here in the app.', async ({
-  page,
-}) => {
+test('contact success opens the official thread with Hello team', async ({ page }) => {
   await seedSignedIn(page);
   await page.route(/\/contact\/submit$/, async (route) => {
     if (route.request().method() !== 'POST') {
@@ -70,11 +68,45 @@ test('contact success shows Received — thank you. We read every message here i
       }),
     });
   });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'c1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        ],
+      }),
+    });
+  });
   await page.goto('/contact');
   await page.getByLabel('Your message').fill('Hello team');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(
-    page.getByText('Received — thank you. We read every message here in the app.'),
-  ).toBeVisible();
-  await expect(page.getByLabel('Your message')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/messages\?c=conv-21/);
+  await expect(page.getByText('Hello team')).toBeVisible();
 });

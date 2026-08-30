@@ -51,7 +51,7 @@ app/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
-│   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`, `/stats/[day]`
+│   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
 │   │   ├── rules/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
 │   │   ├── setup/
@@ -79,11 +79,21 @@ app/
 │   │   ├── .well-known/
 │   │   │   └── nostr.json/route.ts  # GET/OPTIONS /.well-known/nostr.json NIP-05 CORS *
 │   │   ├── messages/
-│   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
+│   │   │   ├── page.tsx         # GET /messages — signed-in PN inbox
 │   │   │   └── [id]/
+│   │   │       ├── page.tsx     # GET /messages/[id] — public forum note
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
 │   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
+│   │   ├── public-messages/
+│   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
+│   │   ├── conversations/
+│   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
+│   │   │   └── [id]/route.ts    # GET/POST /conversations/[id]
+│   │   ├── forum/
+│   │   │   └── messages/
+│   │   │       ├── route.ts     # GET/POST /forum/messages same-origin proxy
+│   │   │       └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/

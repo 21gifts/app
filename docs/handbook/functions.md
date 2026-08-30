@@ -48,14 +48,14 @@
 - **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`).
 - **Visible UI:** Idle `Link2` icon; copied `Check` icon. No visible "Copy link" or "Copied" text (`title` and `aria-label` keep the accessible name).
 - **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
-- **Used by:** `HandbookPage` (page title and chapter nav) and `HandbookMarkdown` (every heading).
+- **Used by:** `HandbookPage` (page title) and `HandbookMarkdown` (every heading).
 
 ## Function: HandbookMarkdown
 
 - **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images. Every heading has a sibling `HandbookCopyLink`.
 - **Inputs:** `markdown` string and `idPrefix` for heading ids.
 - **Returns / side effects:** React fragment. No network.
-- **Used by:** `HandbookPage` for each handbook document.
+- **Used by:** `HandbookFunctionsPage` and `HandbookEndpointsPage`.
 
 ## Function: HandbookIntro
 
@@ -66,9 +66,9 @@
 
 ## Function: HandbookPage
 
-- **Purpose:** Async Next.js page for `/handbook`. Resolves locale via `getRequestLocale`, loads the four app handbook files from disk, and renders them with a link to the api handbook. Title copy-link uses `handbook.title`; chapter copy-links use `handbook.chapterLabel` with `{ title }`; intro chrome via already-translated props on `HandbookIntro`; markdown bodies stay English.
-- **Inputs:** None (calls `getRequestLocale()`; reads `docs/handbook/` from disk at request time; the standalone image copies that tree).
-- **Returns / side effects:** The handbook screen inside `MarketingLayout`.
+- **Purpose:** Async Next.js hub for `/handbook`. Resolves locale via `getRequestLocale` and links to `/handbook/screens`, `/handbook/functions`, and `/handbook/endpoints` without dumping those markdown files. Title copy-link uses `handbook.title`; intro chrome via already-translated props on `HandbookIntro`.
+- **Inputs:** None (calls `getRequestLocale()`).
+- **Returns / side effects:** The handbook hub inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
 ## Function: StatsLoader
@@ -1249,3 +1249,143 @@
 - **Inputs:** App Router `Request`.
 - **Returns / side effects:** Forwards to the api.
 - **Used by:** `src/app/messages/[id]/invoice/route.ts`.
+
+## Function: MessagesPage
+
+- **Purpose:** Next.js page for `/messages` (signed-in PN inbox). Wraps `InboxLoader` in `OnboardingGate` and `SignedInChrome`.
+- **Inputs:** None.
+- **Returns / side effects:** The inbox screen. Conversation HTTP is under `/conversations`.
+- **Used by:** Route `/messages`.
+
+## Function: InboxLoader
+
+- **Purpose:** Client loader for `/messages`. Fetches `GET /conversations`, opens `?c=`, posts replies.
+- **Inputs:** None (session from the auth store; `useSearchParams`).
+- **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **Used by:** `MessagesPage`.
+
+## Function: InboxScreen
+
+- **Purpose:** Presentational inbox: conversation list or one open thread with a 500-character composer.
+- **Inputs:** List/thread/composer state from `InboxLoader`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `InboxLoader`.
+
+## Function: fetchConversations
+
+- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`.
+- **Inputs:** Session token.
+- **Returns / side effects:** Conversation list, or throws visitor copy.
+- **Used by:** `InboxLoader`, `ContactLoader`.
+
+## Function: fetchConversation
+
+- **Purpose:** GET `/conversations/:id` with Bearer and parse `{ messages }`.
+- **Inputs:** Session token and conversation id.
+- **Returns / side effects:** Oldest-first messages, or throws visitor copy.
+- **Used by:** `InboxLoader`.
+
+## Function: postConversationMessage
+
+- **Purpose:** POST `/conversations/:id` with `{ text }`.
+- **Inputs:** Session token, conversation id, text.
+- **Returns / side effects:** Created message, or throws api/visitor copy.
+- **Used by:** `InboxLoader`.
+
+## Function: openConversation
+
+- **Purpose:** POST `/conversations` with `{ forumMessageId }`.
+- **Inputs:** Session token and forum note/reply id.
+- **Returns / side effects:** Conversation row, or throws on 400/404/other.
+- **Used by:** `ForumLoader` PM control.
+
+## Function: proxyConversationsGet
+
+- **Purpose:** Same-origin proxy for api GET `/conversations`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/route.ts`.
+
+## Function: proxyConversationsPost
+
+- **Purpose:** Same-origin proxy for api POST `/conversations`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/route.ts`.
+
+## Function: proxyConversationGet
+
+- **Purpose:** Same-origin proxy for api GET `/conversations/:id`.
+- **Inputs:** App Router `Request` and conversation id.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/[id]/route.ts`.
+
+## Function: proxyConversationPost
+
+- **Purpose:** Same-origin proxy for api POST `/conversations/:id`.
+- **Inputs:** App Router `Request` and conversation id.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/[id]/route.ts`.
+
+## Function: HandbookScreensPage
+
+- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics and renders `HandbookImageViewer`.
+- **Inputs:** None.
+- **Returns / side effects:** The screens handbook screen inside `MarketingLayout`.
+- **Used by:** Route `/handbook/screens`.
+
+## Function: HandbookFunctionsPage
+
+- **Purpose:** Next.js page for `/handbook/functions`. Viewer plus functions markdown (id prefix `functions` for visual clips).
+- **Inputs:** None.
+- **Returns / side effects:** The functions handbook screen.
+- **Used by:** Route `/handbook/functions`.
+
+## Function: HandbookEndpointsPage
+
+- **Purpose:** Next.js page for `/handbook/endpoints`. Markdown only; no image switches.
+- **Inputs:** None.
+- **Returns / side effects:** The endpoints handbook screen.
+- **Used by:** Route `/handbook/endpoints`.
+
+## Function: HandbookImageViewer
+
+- **Purpose:** Client one-topic baseline viewer. Desktop/Mobile and Light/Dark switches only when those combo files exist.
+- **Inputs:** `topics` (`HandbookTopic[]`).
+- **Returns / side effects:** React element or `null` when `topics` is empty. No network.
+- **Used by:** `HandbookScreensPage`, `HandbookFunctionsPage`.
+
+## Function: topicImageSrc
+
+- **Purpose:** Public URL for one topic combo PNG under `/handbook-images/`.
+- **Inputs:** Topic and combo id.
+- **Returns / side effects:** Path string. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: comboViewport
+
+- **Purpose:** Viewport half of a combo id.
+- **Inputs:** Combo id.
+- **Returns / side effects:** `'desktop'` or `'mobile'`.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: comboTheme
+
+- **Purpose:** Theme half of a combo id.
+- **Inputs:** Combo id.
+- **Returns / side effects:** `'light'` or `'dark'`.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: makeCombo
+
+- **Purpose:** Build a combo id from viewport and theme.
+- **Inputs:** Viewport and theme.
+- **Returns / side effects:** Combo id.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: defaultCombo
+
+- **Purpose:** First combo to show (`desktop-light` when present, else the first listed, else `null`).
+- **Inputs:** Combo id list.
+- **Returns / side effects:** Combo id or `null`.
+- **Used by:** `HandbookImageViewer`.

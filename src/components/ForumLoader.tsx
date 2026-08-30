@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ForumBoard,
@@ -12,6 +13,7 @@ import {
   fetchMessagePhoto,
   fetchMessages,
   fetchReplies,
+  openConversation,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -99,6 +101,7 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
 export function ForumLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const router = useRouter();
   const setAccount = useAuthStore((state) => state.setAccount);
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
@@ -133,6 +136,7 @@ export function ForumLoader(): ReactElement | null {
   const [repliesAttempt, setRepliesAttempt] = useState(0);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
+  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
   const payPollGeneration = useRef(0);
   const payablePollGeneration = useRef(0);
@@ -744,6 +748,22 @@ export function ForumLoader(): ReactElement | null {
       onReplyPost={onReplyPost}
       replyPosting={replyPosting}
       replyFormError={replyFormError}
+      ownName={account?.name ?? null}
+      pmBusyId={pmBusyId}
+      onPm={(messageId) => {
+        if (pmBusyId !== null) {
+          return;
+        }
+        setPmBusyId(messageId);
+        void (async () => {
+          try {
+            const thread = await openConversation(session, messageId);
+            router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
+          } catch {
+            setPmBusyId(null);
+          }
+        })();
+      }}
     />
   );
 }

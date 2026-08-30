@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { HandbookIntro } from '@/components/HandbookIntro';
-import { loadHandbookDocuments } from '@/lib/handbook';
-import { HandbookMarkdown } from '@/lib/handbook-markdown';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
@@ -17,20 +15,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * Async app handbook page at `/handbook`: screens, functions, and HTTP endpoints.
- * Uses `getRequestLocale` for localized title/intro chrome; every chapter and
- * markdown heading has a copy-link button.
+ * Async handbook hub at `/handbook`: describes and links the three parts.
+ * Does not dump screens, functions, or endpoints markdown.
  *
- * Not `force-static`: the root layout reads cookies/Accept-Language for
- * `html lang` and the intro chrome. Markdown is loaded from `docs/handbook`
- * at request time (copied into the standalone server).
- *
- * @returns The handbook screen.
+ * @returns The handbook hub screen.
  */
 export default async function HandbookPage(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
-  const documents = loadHandbookDocuments();
+  const screensTitle = translate(messages, 'handbook.screensTitle');
+  const functionsTitle = translate(messages, 'handbook.functionsTitle');
+  const endpointsTitle = translate(messages, 'handbook.endpointsTitle');
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
       <HandbookIntro
@@ -42,23 +37,48 @@ export default async function HandbookPage(): Promise<ReactElement> {
           <HandbookCopyLink targetId="handbook" label={translate(messages, 'handbook.title')} />
         }
       >
-        {documents.map((doc) => (
-          <span key={doc.id} className="inline-flex items-baseline gap-1">
-            <a href={`#${doc.id}`} className="text-[#f7931a] underline underline-offset-2">
-              {doc.title}
-            </a>
-            <HandbookCopyLink
-              targetId={doc.id}
-              label={translate(messages, 'handbook.chapterLabel', { title: doc.title })}
-            />
-          </span>
-        ))}
+        <a href="/handbook/screens" className="text-[#f7931a] underline underline-offset-2">
+          {screensTitle}
+        </a>
+        <a href="/handbook/functions" className="text-[#f7931a] underline underline-offset-2">
+          {functionsTitle}
+        </a>
+        <a href="/handbook/endpoints" className="text-[#f7931a] underline underline-offset-2">
+          {endpointsTitle}
+        </a>
       </HandbookIntro>
-      {documents.map((doc) => (
-        <section key={doc.id} id={doc.id} className="mt-12">
-          <HandbookMarkdown markdown={doc.markdown} idPrefix={doc.id} />
-        </section>
-      ))}
+      <ul className="mt-12 flex flex-col gap-8">
+        <li>
+          <h2 className="text-xl font-semibold text-[#f7931a]">{screensTitle}</h2>
+          <p className="mt-2 text-white/60">{translate(messages, 'handbook.screensLead')}</p>
+          <a
+            href="/handbook/screens"
+            className="mt-2 inline-block text-[#f7931a] underline underline-offset-2"
+          >
+            {screensTitle}
+          </a>
+        </li>
+        <li>
+          <h2 className="text-xl font-semibold text-[#f7931a]">{functionsTitle}</h2>
+          <p className="mt-2 text-white/60">{translate(messages, 'handbook.functionsLead')}</p>
+          <a
+            href="/handbook/functions"
+            className="mt-2 inline-block text-[#f7931a] underline underline-offset-2"
+          >
+            {functionsTitle}
+          </a>
+        </li>
+        <li>
+          <h2 className="text-xl font-semibold text-[#f7931a]">{endpointsTitle}</h2>
+          <p className="mt-2 text-white/60">{translate(messages, 'handbook.endpointsLead')}</p>
+          <a
+            href="/handbook/endpoints"
+            className="mt-2 inline-block text-[#f7931a] underline underline-offset-2"
+          >
+            {endpointsTitle}
+          </a>
+        </li>
+      </ul>
     </main>
   );
 }

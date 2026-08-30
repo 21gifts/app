@@ -12,6 +12,12 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+const push = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push } => ({ push }),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
   postMessage: vi.fn(),
@@ -20,6 +26,7 @@ vi.mock('@/lib/api', () => ({
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
+  openConversation: vi.fn(),
 }));
 
 vi.mock('@/lib/forum-photo', () => ({
@@ -36,6 +43,7 @@ import {
   fetchMessagePhoto,
   fetchMessages,
   fetchReplies,
+  openConversation,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -49,6 +57,7 @@ const invoiceMock = vi.mocked(postMessageInvoice);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
 const photoMock = vi.mocked(fetchMessagePhoto);
 const repliesMock = vi.mocked(fetchReplies);
+const openConversationMock = vi.mocked(openConversation);
 const prepareMock = vi.mocked(prepareForumPhoto);
 const isVideoMock = vi.mocked(isForumVideoFile);
 const prepareVideoMock = vi.mocked(prepareForumVideo);
@@ -90,6 +99,7 @@ async function revealAll(): Promise<void> {
 beforeEach(() => {
   vi.clearAllMocks();
   isVideoMock.mockReturnValue(false);
+  push.mockReset();
   HTMLElement.prototype.scrollIntoView = vi.fn();
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
@@ -2255,5 +2265,66 @@ describe('ForumLoader', () => {
       expect(screen.getByText('A reply')).toBeTruthy();
       expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
     });
+  });
+
+  it("opens a private thread from another person's note", async () => {
+    fetchMock.mockResolvedValue([
+      SAMPLE,
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    openConversationMock.mockResolvedValue({
+      id: 'conv-bob',
+      name: 'Bob',
+      lastText: '',
+      lastAt: '2026-08-28T11:00:00.000Z',
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    await waitFor(() => {
+      expect(openConversationMock).toHaveBeenCalledWith('sess', 'm-bob');
+      expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
+    });
+  });
+
+  it('leaves the board in place when opening a PM fails', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    openConversationMock.mockRejectedValue(new Error('Cannot message yourself'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    await waitFor(() => {
+      expect(openConversationMock).toHaveBeenCalled();
+    });
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByText('Hello from Bob')).toBeTruthy();
   });
 });

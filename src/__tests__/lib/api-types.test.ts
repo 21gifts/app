@@ -4,6 +4,10 @@ import {
   accountSchema,
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
+  conversationListSchema,
+  conversationMessageSchema,
+  conversationSchema,
+  conversationThreadSchema,
   FORUM_MESSAGE_MAX_LENGTH,
   forumMessageSchema,
   lnAddressResolvedSchema,
@@ -60,6 +64,32 @@ describe('contactSchema', () => {
         createdAt: '2026-08-28T12:00:00.000Z',
       }),
     ).toThrow();
+  });
+});
+
+describe('conversationSchema', () => {
+  it('accepts an empty lastText', () => {
+    const row = {
+      id: 'c1',
+      name: 'Bob',
+      lastText: '',
+      lastAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(conversationSchema.parse(row)).toEqual(row);
+    expect(conversationListSchema.parse({ conversations: [row] }).conversations).toHaveLength(1);
+  });
+});
+
+describe('conversationMessageSchema', () => {
+  it('accepts a well-formed message', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(conversationMessageSchema.parse(message)).toEqual(message);
+    expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
   });
 });
 

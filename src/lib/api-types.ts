@@ -303,6 +303,53 @@ export const contactSchema = z.object({
 export type ContactMessage = z.infer<typeof contactSchema>;
 
 /**
+ * Runtime schema for one conversation list row from `GET /conversations`.
+ *
+ * `lastText` may be empty when the thread was opened from a forum note and
+ * has no messages yet.
+ */
+export const conversationSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  lastText: z.string(),
+  lastAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * Runtime schema for `GET /conversations`.
+ */
+export const conversationListSchema = z.object({
+  conversations: z.array(conversationSchema),
+});
+
+/**
+ * One private-message thread from the api.
+ */
+export type Conversation = z.infer<typeof conversationSchema>;
+
+/**
+ * Runtime schema for one message in `GET /conversations/:id`.
+ */
+export const conversationMessageSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * Runtime schema for `GET /conversations/:id`.
+ */
+export const conversationThreadSchema = z.object({
+  messages: z.array(conversationMessageSchema),
+});
+
+/**
+ * One private message from the api.
+ */
+export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
+
+/**
  * Runtime schema for `GET /push/vapid-public` success body.
  */
 export const vapidPublicSchema = z.object({

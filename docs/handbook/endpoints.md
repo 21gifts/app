@@ -189,6 +189,34 @@
 - **Used by:** `postPushSubscription` via `enablePush` on `/profile`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /conversations
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (private threads the session may see).
+- **Errors:** Upstream 401/503, or 502 if the api is unreachable.
+- **Used by:** `fetchConversations` on `/messages`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /conversations
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author.
+- **Errors:** Upstream 400 (self), 404 (unknown note), 401/503, or 502 if the api is unreachable.
+- **Used by:** `openConversation` from the forum PM control.
+- **Auth:** Bearer.
+
+## Endpoint: GET /conversations/[id]
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages).
+- **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
+- **Used by:** `fetchConversation` on `/messages?c=`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /conversations/[id]
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters). Staff replies on official threads send as the platform account.
+- **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
+- **Used by:** `postConversationMessage` in the inbox composer.
+- **Auth:** Bearer.
+
 ## Endpoint: DELETE /me/push-subscriptions
 
 - **Purpose:** Same-origin Bearer proxy of api DELETE `/me/push-subscriptions` (remove a browser push subscription by `{ endpoint }`).

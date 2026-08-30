@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   deletePushSubscription,
   dismissForumLaws,
+  fetchConversation,
+  fetchConversations,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
@@ -16,7 +18,9 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  openConversation,
   postContact,
+  postConversationMessage,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -998,6 +1002,130 @@ describe('postContact', () => {
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
+  });
+});
+
+const conversation = {
+  id: 'conv-1',
+  name: '21.gifts',
+  lastText: 'Hello',
+  lastAt: '2026-08-28T12:00:00.000Z',
+};
+
+const conversationMessage = {
+  id: 'cm1',
+  name: 'Ada',
+  text: 'Hello',
+  createdAt: '2026-08-28T12:00:00.000Z',
+};
+
+describe('fetchConversations', () => {
+  it('returns the list and sends the bearer header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { conversations: [conversation] },
+    });
+    await expect(fetchConversations('sess')).resolves.toEqual([conversation]);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Platform account is not configured' } });
+    await expect(fetchConversations('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchConversation', () => {
+  it('returns messages and encodes the id', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [conversationMessage] },
+    });
+    await expect(fetchConversation('sess', 'a/b')).resolves.toEqual([conversationMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/a%2Fb', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchConversation('sess', 'c1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('postConversationMessage', () => {
+  it('posts the text and returns the message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: conversationMessage });
+    await expect(postConversationMessage('sess', 'conv-1', 'Hello')).resolves.toEqual(
+      conversationMessage,
+    );
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/conv-1', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello' }),
+    });
+  });
+
+  it('throws the api error on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Text must be 1–500 characters' } });
+    await expect(postConversationMessage('sess', 'c1', '')).rejects.toThrow(
+      'Text must be 1–500 characters',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(postConversationMessage('sess', 'c1', 'x')).rejects.toThrow(
+      'Could not send your message',
+    );
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postConversationMessage('sess', 'c1', 'x')).rejects.toThrow(
+      'Could not send your message',
+    );
+  });
+});
+
+describe('openConversation', () => {
+  it('posts forumMessageId and returns the thread', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: conversation });
+    await expect(openConversation('sess', 'note-1')).resolves.toEqual(conversation);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ forumMessageId: 'note-1' }),
+    });
+  });
+
+  it('throws the api error on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Cannot message yourself' } });
+    await expect(openConversation('sess', 'note-1')).rejects.toThrow('Cannot message yourself');
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(openConversation('sess', 'note-1')).rejects.toThrow('Could not send your message');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(openConversation('sess', 'note-1')).rejects.toThrow('Could not send your message');
   });
 });
 

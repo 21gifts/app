@@ -135,6 +135,7 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
+    expect(screen.getByRole('link', { name: 'Messages' }).getAttribute('href')).toBe('/messages');
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByLabelText('Theme')).toBeTruthy();

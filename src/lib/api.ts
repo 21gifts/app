@@ -2,6 +2,10 @@ import { z } from 'zod';
 import {
   accountSchema,
   contactSchema,
+  conversationListSchema,
+  conversationMessageSchema,
+  conversationSchema,
+  conversationThreadSchema,
   forumListSchema,
   forumMessageSchema,
   forumRepliesSchema,
@@ -16,6 +20,8 @@ import {
   viewProfileSchema,
   type Account,
   type ContactMessage,
+  type Conversation,
+  type ConversationMessage,
   type ForumMessage,
   type GiftDay,
   type GiftStats,
@@ -539,6 +545,121 @@ export async function postContact(sessionToken: string, text: string): Promise<C
     throw new Error('Could not send your message');
   }
   return contactSchema.parse(await response.json());
+}
+
+/**
+ * Fetches private-message threads the session may see (own threads, plus
+ * official 21.gifts threads when the account is founder or moderator).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns Threads newest-last-message first.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link conversationListSchema}.
+ */
+export async function fetchConversations(sessionToken: string): Promise<Conversation[]> {
+  try {
+    const response = await fetch('/conversations', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return conversationListSchema.parse(await response.json()).conversations;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches messages in one private thread (oldest first).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Conversation UUID.
+ * @returns Message list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * thread is missing, or the body fails {@link conversationThreadSchema}.
+ */
+export async function fetchConversation(
+  sessionToken: string,
+  id: string,
+): Promise<ConversationMessage[]> {
+  try {
+    const response = await fetch(`/conversations/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return conversationThreadSchema.parse(await response.json()).messages;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Appends a private message to an existing thread.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Conversation UUID.
+ * @param text - Message body as typed (api trims and validates length).
+ * @returns The created {@link ConversationMessage}.
+ * @throws Error when the api rejects the text (400) — the api error string
+ * when present, otherwise a fallback — on any other non-2xx status, or when
+ * the body fails {@link conversationMessageSchema} validation.
+ */
+export async function postConversationMessage(
+  sessionToken: string,
+  id: string,
+  text: string,
+): Promise<ConversationMessage> {
+  const response = await fetch(`/conversations/${encodeURIComponent(id)}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not send your message' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not send your message');
+  }
+  return conversationMessageSchema.parse(await response.json());
+}
+
+/**
+ * Opens or returns the private thread with a forum note's author.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param forumMessageId - Forum note or reply UUID.
+ * @returns The {@link Conversation} list row for that thread.
+ * @throws Error when the note is unknown (404), the author is the session
+ * account (400), on any other non-2xx, or when the body fails
+ * {@link conversationSchema}.
+ */
+export async function openConversation(
+  sessionToken: string,
+  forumMessageId: string,
+): Promise<Conversation> {
+  const response = await fetch('/conversations', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ forumMessageId }),
+  });
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not send your message' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not send your message');
+  }
+  return conversationSchema.parse(await response.json());
 }
 
 /**

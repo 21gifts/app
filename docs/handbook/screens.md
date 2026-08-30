@@ -331,6 +331,12 @@ Click **Copy link to this note** — control sets `data-copied` after writing `o
 
 ![21.gifts welcome copy](images/welcome-copy.png)
 
+### Variant: pm
+
+**Send a private message** control on another person's note (not on own notes). Does not expand the card.
+
+![21.gifts welcome pm](images/welcome-pm.png)
+
 ### Variant: photo
 
 On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.
@@ -492,9 +498,9 @@ Full rules body with rule card **Only free donations** visible.
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
-- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with **Send**. A successful send opens the official 21.gifts thread in `/messages`.
+- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
+- **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -511,7 +517,7 @@ Click **Send** with an empty composer → **Enter a message**.
 
 ### Variant: success
 
-After a successful send: **Received — thank you. We read every message here in the app.** Form hidden; rules link remains.
+After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence).
 
 ![21.gifts contact success](images/contact-success.png)
 
@@ -551,6 +557,44 @@ One receive day (₿21 on **2026-06-01**). Chart draws a horizontal single-point
 Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
+
+## Screen: /messages
+
+- **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
+- **What the user sees:** One **Menu** top-right (includes **Messages**). Heading **Messages**, a conversation list (counterpart name, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. Founder/moderator also see official 21.gifts threads.
+- **Actions:** Open a thread, send a reply, return via **All conversations**. Open **Menu**. Forum PM and `/contact` send land here.
+- **Calls:** `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
+
+### Variant: default
+
+Loaded list with at least one thread (counterpart **21.gifts**).
+
+![21.gifts inbox](images/messages.png)
+
+### Variant: empty
+
+No threads. Copy **No private messages yet.**
+
+![21.gifts inbox empty](images/messages-empty.png)
+
+### Variant: loading
+
+Waiting on `GET /conversations`. Copy **Loading…**
+
+![21.gifts inbox loading](images/messages-loading.png)
+
+### Variant: error
+
+List fetch failed. Button **Try again**.
+
+![21.gifts inbox error](images/messages-error.png)
+
+### Variant: thread
+
+Open official thread. Heading **21.gifts**, message body **Hello team**, composer visible.
+
+![21.gifts inbox thread](images/messages-thread.png)
 
 ## Screen: /messages/[id]
 
@@ -628,22 +672,85 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 
 ## Screen: /handbook
 
-- **URL:** `/handbook` — public app handbook (no auth gate).
-- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints) each with a link icon, then the four `docs/handbook/` markdown files rendered as HTML (English bodies). Every markdown heading has a sibling link icon.
-- **Actions:** Change language, read the docs, jump via the section nav, copy a chapter or heading URL (click the link icon → check icon for 1.2s, hash updates), follow the api handbook link, follow in-page markdown links.
-- **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`), `LanguageSwitcher`.
+- **URL:** `/handbook` — public app handbook hub (no auth gate). Header **Handbook** stays here.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
+- **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
+- **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`.
 
 ### Variant: default
 
-Idle copy buttons: every heading and chapter shows the link icon.
+Hub with heading **Handbook** and links to the three parts.
 
 ![21.gifts handbook](images/handbook.png)
 
 ### Variant: copied
 
-After tapping the link icon on a heading or chapter, that button shows the check icon and `data-copied`, and `location.hash` is that id. Other copy buttons stay idle link icons.
+After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
 
 ![21.gifts handbook copied](images/handbook-copied.png)
+
+## Screen: /handbook/screens
+
+- **URL:** `/handbook/screens` — public screens handbook (no auth gate).
+- **What the user sees:** Heading **Screens**, a one-topic baseline viewer (`HandbookImageViewer`) with a topic picker. **Desktop** / **Mobile** and **Light** / **Dark** switches appear only when those baselines exist for the selected topic. One image at a time.
+- **Actions:** Pick a topic, switch viewport/theme when available, return to the hub.
+- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookIntro`, `HandbookCopyLink`.
+
+### Variant: default
+
+First topic, desktop-light image, **Desktop** and **Light** selected when those combos exist.
+
+![21.gifts handbook screens](images/handbook-screens.png)
+
+### Variant: mobile
+
+**Mobile** selected on a topic that has both viewports.
+
+![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
+
+### Variant: dark
+
+**Dark** selected on a topic that has both themes.
+
+![21.gifts handbook screens dark](images/handbook-screens-dark.png)
+
+## Screen: /handbook/functions
+
+- **URL:** `/handbook/functions` — public functions handbook (no auth gate).
+- **What the user sees:** Heading **Functions**, the same one-topic viewer for function clips, then the functions markdown (`## Function: name`) used by visual clips.
+- **Actions:** Pick a function, switch viewport/theme when available, read the markdown, return to the hub.
+- **Calls:** `HandbookFunctionsPage`, `HandbookImageViewer`, `HandbookMarkdown`, `loadHandbookDocuments`.
+
+### Variant: default
+
+Viewer plus function headings. **Desktop** / **Light** selected.
+
+![21.gifts handbook functions](images/handbook-functions.png)
+
+### Variant: mobile
+
+**Mobile** selected.
+
+![21.gifts handbook functions mobile](images/handbook-functions-mobile.png)
+
+### Variant: dark
+
+**Dark** selected.
+
+![21.gifts handbook functions dark](images/handbook-functions-dark.png)
+
+## Screen: /handbook/endpoints
+
+- **URL:** `/handbook/endpoints` — public endpoints handbook (no auth gate).
+- **What the user sees:** Heading **Endpoints** and the endpoints markdown only. No image switches.
+- **Actions:** Read the markdown, return to the hub.
+- **Calls:** `HandbookEndpointsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
+
+### Variant: default
+
+Markdown list of `## Endpoint:` headings.
+
+![21.gifts handbook endpoints](images/handbook-endpoints.png)
 
 ## Screen: /404
 

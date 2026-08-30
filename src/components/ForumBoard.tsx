@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bitcoin, Check, ImagePlus, Link2, Loader2, Send, X } from 'lucide-react';
+import { ArrowLeft, Bitcoin, Check, ImagePlus, Link2, Loader2, Mail, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import {
   useEffect,
@@ -139,6 +139,12 @@ export interface ForumBoardProps {
   replyPosting: boolean;
   /** Reply composer validation or request failure. */
   replyFormError: ForumFormError;
+  /** Signed-in display name, used to hide PM on own notes and replies. */
+  ownName: string | null;
+  /** Opens a private thread with the note or reply author. */
+  onPm: (messageId: string) => void;
+  /** Forum message id whose PM request is in flight, or `null`. */
+  pmBusyId: string | null;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -178,8 +184,8 @@ function fallbackCopy(text: string): boolean {
  * Presentational public forum: optional dismissible living-room laws hint,
  * Active/All/Most popular selector, list or empty/loading/error, board-bottom
  * composer (new notes only, photo or video attach), per-card expand for replies
- * + reply composer, copy-link control, pay-on-note sheet, optional inline
- * photos, and optional inline videos.
+ * + reply composer, copy-link control, PM control on other people's notes,
+ * pay-on-note sheet, optional inline photos, and optional inline videos.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
@@ -225,6 +231,9 @@ export function ForumBoard({
   onReplyPost,
   replyPosting,
   replyFormError,
+  ownName,
+  onPm,
+  pmBusyId,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const composerRef = useRef<HTMLFormElement>(null);
@@ -475,6 +484,26 @@ export function ForumBoard({
                       <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                     )}
                   </IconButton>
+                  {ownName === null || message.name !== ownName ? (
+                    <IconButton
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      aria-label={t('forum.pm')}
+                      title={t('forum.pm')}
+                      disabled={pmBusyId !== null}
+                      onClick={(event) => {
+                        stopCardToggle(event);
+                        onPm(message.id);
+                      }}
+                    >
+                      {pmBusyId === message.id ? (
+                        <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Mail aria-hidden="true" className="h-3.5 w-3.5" />
+                      )}
+                    </IconButton>
+                  ) : null}
                   <span className="ml-auto text-xs text-app-subtle">
                     {t('forum.replyCount', { count: String(message.replyCount) })}
                   </span>
@@ -631,6 +660,30 @@ export function ForumBoard({
                             <p className="mt-1 whitespace-pre-wrap text-sm text-app-fg">
                               {reply.text}
                             </p>
+                          ) : null}
+                          {ownName === null || reply.name !== ownName ? (
+                            <div className="mt-2">
+                              <IconButton
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                aria-label={t('forum.pm')}
+                                title={t('forum.pm')}
+                                disabled={pmBusyId !== null}
+                                onClick={() => {
+                                  onPm(reply.id);
+                                }}
+                              >
+                                {pmBusyId === reply.id ? (
+                                  <Loader2
+                                    aria-hidden="true"
+                                    className="h-3.5 w-3.5 animate-spin"
+                                  />
+                                ) : (
+                                  <Mail aria-hidden="true" className="h-3.5 w-3.5" />
+                                )}
+                              </IconButton>
+                            </div>
                           ) : null}
                         </li>
                       ))}

@@ -118,6 +118,9 @@ const idleProps: Pick<
   | 'onReplyPost'
   | 'replyPosting'
   | 'replyFormError'
+  | 'ownName'
+  | 'onPm'
+  | 'pmBusyId'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -147,6 +150,9 @@ const idleProps: Pick<
   onReplyPost: () => undefined,
   replyPosting: false,
   replyFormError: null,
+  ownName: 'Ada',
+  onPm: () => undefined,
+  pmBusyId: null,
 };
 
 function modeProps(
@@ -1594,6 +1600,55 @@ describe('ForumBoard', () => {
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
+  it("shows PM on other people's notes, not own, and does not expand", () => {
+    const onPm = vi.fn();
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE, MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onPm={onPm}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const pm = screen.getByRole('button', { name: 'Send a private message' });
+    expect(pm).toBeTruthy();
+    fireEvent.click(pm);
+    expect(onPm).toHaveBeenCalledWith('m2');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('spins the PM control while a request is in flight', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        pmBusyId="m2"
+        {...modeProps('all')}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Send a private message' }).querySelector('.animate-spin'),
+    ).toBeTruthy();
+  });
+
   it('copies the public note URL and sets data-copied', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -1665,5 +1720,77 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Hide replies' })).toBeTruthy();
+  });
+
+  it("shows PM on other people's replies", () => {
+    const onPm = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onPm={onPm}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    expect(onPm).toHaveBeenCalledWith('r1');
+  });
+
+  it('spins the reply PM control while a request is in flight', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        pmBusyId="r1"
+        {...modeProps('all')}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Send a private message' }).querySelector('.animate-spin'),
+    ).toBeTruthy();
   });
 });

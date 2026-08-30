@@ -39,6 +39,15 @@ describe('HandbookIntro', () => {
     expect(screen.getByRole('heading', { name: 'Handbuch' })).toBeTruthy();
   });
 
+  it('omits the api handbook link when introAfter is empty', () => {
+    render(
+      <HandbookIntro {...en} introAfter="" headingAction={null}>
+        nav
+      </HandbookIntro>,
+    );
+    expect(screen.queryByRole('link', { name: '21gifts/api' })).toBeNull();
+  });
+
   it('localizes the section nav aria-label', () => {
     render(
       <HandbookIntro {...de} headingAction={null}>

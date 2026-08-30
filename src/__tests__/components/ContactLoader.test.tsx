@@ -12,13 +12,21 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-vi.mock('@/lib/api', () => ({
-  postContact: vi.fn(),
+const push = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push } => ({ push }),
 }));
 
-import { postContact } from '@/lib/api';
+vi.mock('@/lib/api', () => ({
+  postContact: vi.fn(),
+  fetchConversations: vi.fn(),
+}));
+
+import { fetchConversations, postContact } from '@/lib/api';
 
 const postMock = vi.mocked(postContact);
+const conversationsMock = vi.mocked(fetchConversations);
 
 const account: Account = {
   id: 'acc_1',
@@ -35,6 +43,7 @@ const account: Account = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  push.mockReset();
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -81,7 +90,7 @@ describe('ContactLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
-  it('posts a trimmed message, clears the draft, and shows success', async () => {
+  it('posts a trimmed message and opens the official thread', async () => {
     const created: ContactMessage = {
       id: 'c1',
       name: 'Ada',
@@ -89,18 +98,62 @@ describe('ContactLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
     };
     postMock.mockResolvedValue(created);
+    conversationsMock.mockResolvedValue([
+      {
+        id: 'conv-21',
+        name: '21.gifts',
+        lastText: 'Hello',
+        lastAt: '2026-08-28T14:00:00.000Z',
+      },
+    ]);
     renderWithLocale(<ContactLoader />);
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText('Received — thank you. We read every message here in the app.'),
-      ).toBeTruthy();
+      expect(push).toHaveBeenCalledWith('/messages?c=conv-21');
     });
     expect(postMock).toHaveBeenCalledWith('sess', 'Hello');
-    expect(screen.queryByLabelText('Your message')).toBeNull();
+  });
+
+  it('opens the first thread when no 21.gifts name is present', async () => {
+    postMock.mockResolvedValue({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hi',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockResolvedValue([
+      {
+        id: 'conv-bob',
+        name: 'Bob',
+        lastText: 'Hi',
+        lastAt: '2026-08-28T14:00:00.000Z',
+      },
+    ]);
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
+    });
+  });
+
+  it('opens /messages when the conversation list cannot be loaded', async () => {
+    postMock.mockResolvedValue({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hi',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages');
+    });
   });
 
   it('shows a post error when posting fails', async () => {
@@ -129,6 +182,7 @@ describe('ContactLoader', () => {
     expect(button.disabled).toBe(true);
     expect(button.querySelector('.animate-spin')).toBeTruthy();
 
+    conversationsMock.mockResolvedValue([]);
     resolvePost({
       id: 'c1',
       name: 'Ada',
@@ -136,9 +190,7 @@ describe('ContactLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
     });
     await waitFor(() => {
-      expect(
-        screen.getByText('Received — thank you. We read every message here in the app.'),
-      ).toBeTruthy();
+      expect(push).toHaveBeenCalledWith('/messages');
     });
   });
 });
