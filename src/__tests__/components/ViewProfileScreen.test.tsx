@@ -22,7 +22,7 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
   });
 
   it('shows view.unnamed when name is null', () => {

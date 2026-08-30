@@ -69,7 +69,7 @@ export function LoginCard(): ReactElement {
   }
 
   return (
-    <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
+    <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
       {body}
     </section>
   );
@@ -91,12 +91,12 @@ function StartView({ onLogin }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
-      <Fingerprint aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <h2 className="text-center text-lg font-medium text-neutral-900">{t('login.heading')}</h2>
+      <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      <h2 className="text-center text-lg font-medium text-app-fg">{t('login.heading')}</h2>
       <button
         type="button"
         onClick={onLogin}
-        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+        className="inline-flex items-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
       >
         <Fingerprint aria-hidden="true" className="h-4 w-4" />
         {t('login.submit')}
@@ -164,13 +164,11 @@ function InAppBrowserView(): ReactElement {
 
   return (
     <>
-      <ExternalLink aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <h2 className="text-center text-lg font-medium text-neutral-900">
-        {t('login.inAppHeading')}
-      </h2>
-      <p className="text-center text-sm text-neutral-500">{t('login.inAppBody')}</p>
+      <ExternalLink aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      <h2 className="text-center text-lg font-medium text-app-fg">{t('login.inAppHeading')}</h2>
+      <p className="text-center text-sm text-app-muted">{t('login.inAppBody')}</p>
       {showIosHint ? (
-        <p className="text-center text-sm text-neutral-500">{t('login.inAppIosHint')}</p>
+        <p className="text-center text-sm text-app-muted">{t('login.inAppIosHint')}</p>
       ) : null}
       <div className="flex flex-col items-center gap-3">
         <button
@@ -178,7 +176,7 @@ function InAppBrowserView(): ReactElement {
           onClick={() => {
             openInSystemBrowser(loginUrl());
           }}
-          className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+          className="inline-flex items-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
         >
           {t('login.openInBrowser')}
         </button>
@@ -188,7 +186,7 @@ function InAppBrowserView(): ReactElement {
             void copyLink();
           }}
           data-copied={copied ? 'true' : undefined}
-          className="rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-medium text-neutral-900"
+          className="rounded-full border border-app-border-strong bg-app-card px-6 py-3 text-sm font-medium text-app-fg"
         >
           {copied ? t('login.linkCopied') : t('login.copyLink')}
         </button>
@@ -206,8 +204,8 @@ function StartingView(): ReactElement {
   const { t } = useTranslations();
   return (
     <>
-      <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
-      <p className="text-sm text-neutral-500">{t('login.preparing')}</p>
+      <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
+      <p className="text-sm text-app-muted">{t('login.preparing')}</p>
     </>
   );
 }
@@ -228,12 +226,12 @@ function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
-      <AlertTriangle aria-hidden="true" className="h-8 w-8 text-neutral-400" />
-      <p className="text-center text-sm text-neutral-500">{t('login.error')}</p>
+      <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      <p className="text-center text-sm text-app-muted">{t('login.error')}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+        className="inline-flex items-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
       >
         {t('login.retry')}
       </button>

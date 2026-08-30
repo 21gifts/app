@@ -6,34 +6,19 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-
-/**
- * Formats a sat count with the donate catalog keys (never hard-coded English).
- *
- * @param t - Bound translator from {@link useTranslations}.
- * @param sats - Whole-sat amount.
- * @returns Localized amount string.
- */
-function formatSatsAmount(
-  t: (key: 'forum.satsOne' | 'forum.sats', vars?: { n: string }) => string,
-  sats: number,
-): string {
-  if (sats === 1) {
-    return t('forum.satsOne');
-  }
-  return t('forum.sats', { n: String(sats) });
-}
+import { formatBitcoin } from '@/lib/stats-money';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Profile with same-line given/received totals, living-room rules,
- * contact, language, and log out).
+ * contact, language, theme, and log out).
  *
  * @returns The signed-in Menu chrome.
  */
 export function SignedInChrome(): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -70,8 +55,8 @@ export function SignedInChrome(): ReactElement {
     };
   }, [open]);
 
-  const givenAmount = formatSatsAmount(t, donatedSats);
-  const receivedAmount = formatSatsAmount(t, receivedSats);
+  const givenAmount = formatBitcoin(donatedSats, locale);
+  const receivedAmount = formatBitcoin(receivedSats, locale);
 
   return (
     <div ref={rootRef} className="absolute top-4 right-5">
@@ -85,7 +70,7 @@ export function SignedInChrome(): ReactElement {
         onClick={() => {
           setOpen((current) => !current);
         }}
-        className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition hover:text-neutral-900"
+        className="inline-flex items-center gap-1.5 text-sm text-app-muted transition hover:text-app-fg"
       >
         <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         {t('aria.menu')}
@@ -93,18 +78,18 @@ export function SignedInChrome(): ReactElement {
       {open ? (
         <div
           id="signed-in-menu"
-          className="absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-neutral-200 bg-white p-2 shadow-lg"
+          className="absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
         >
           <Link
             href="/profile"
             onClick={() => {
               setOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-neutral-900 no-underline transition hover:bg-neutral-50"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-app-fg no-underline transition hover:bg-app-hover"
           >
             <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             <span className="font-medium">{t('profile.title')}</span>
-            <span className="ml-auto flex items-center gap-2 text-neutral-500">
+            <span className="ml-auto flex items-center gap-2 text-app-muted">
               {loading ? (
                 t('forum.loading')
               ) : (
@@ -135,7 +120,7 @@ export function SignedInChrome(): ReactElement {
             onClick={() => {
               setOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-neutral-900 no-underline transition hover:bg-neutral-50"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
           >
             <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {t('nav.rules')}
@@ -145,12 +130,13 @@ export function SignedInChrome(): ReactElement {
             onClick={() => {
               setOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-neutral-900 no-underline transition hover:bg-neutral-50"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
           >
             <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {t('nav.contact')}
           </Link>
           <LanguageSwitcher tone="light" embedded />
+          <ThemeSwitcher embedded />
           <LogoutButton />
         </div>
       ) : null}

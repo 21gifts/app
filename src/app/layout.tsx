@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
+import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
 const description =
@@ -52,10 +54,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root layout: the `<html>`/`<body>` shell shared by every page.
+ * Root layout: the `<html>`/`<body>` shell shared by every page (locale, theme bootstrap, providers).
  *
  * @param props - Layout children.
- * @returns The document wrapper with negotiated `lang` and locale messages.
+ * @returns The document wrapper with negotiated `lang`, theme bootstrap, and locale messages.
  */
 export default async function RootLayout({
   children,
@@ -64,10 +66,13 @@ export default async function RootLayout({
 }): Promise<ReactElement> {
   const locale = await getRequestLocale();
   return (
-    <html lang={locale}>
-      <body className="bg-white text-neutral-900 antialiased">
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
+      <body className="bg-app-bg text-app-fg antialiased">
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
-          {children}
+          <ThemeProvider>{children}</ThemeProvider>
         </LocaleProvider>
       </body>
     </html>

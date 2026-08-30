@@ -1,1 +1,40 @@
 @import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-app-bg: #ffffff;
+  --color-app-fg: #171717;
+  --color-app-muted: #737373;
+  --color-app-subtle: #a3a3a3;
+  --color-app-border: #e5e5e5;
+  --color-app-border-strong: #d4d4d4;
+  --color-app-card: #ffffff;
+  --color-app-card-muted: #fafafa;
+  --color-app-btn: #171717;
+  --color-app-btn-fg: #ffffff;
+  --color-app-btn-hover: #404040;
+  --color-app-hover: #fafafa;
+  --color-app-accent: #f7931a;
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+  --color-app-bg: #0a090c;
+  --color-app-fg: #ffffff;
+  --color-app-muted: #a3a3a3;
+  --color-app-subtle: #737373;
+  --color-app-border: rgb(255 255 255 / 0.2);
+  --color-app-border-strong: rgb(255 255 255 / 0.3);
+  --color-app-card: #121116;
+  --color-app-card-muted: #1a191e;
+  --color-app-btn: #ffffff;
+  --color-app-btn-fg: #0a090c;
+  --color-app-btn-hover: #e5e5e5;
+  --color-app-hover: rgb(255 255 255 / 0.1);
+  --color-app-accent: #f7931a;
+}

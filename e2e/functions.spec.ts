@@ -122,7 +122,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await page.getByLabel('Amount (sats)').fill('21');
+  await page.getByLabel('Amount (₿)').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 }
@@ -1202,7 +1202,7 @@ test('Function: StatsDashboard — empty stats hide the spend chart heading', as
 test('Function: StatsDashboard — a spend day on the chart opens /stats/{day}', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
-  await page.getByLabel('Spend over time in BTC').getByRole('link', { name: '2026-06-01' }).click();
+  await page.getByLabel('Spend over time in ₿').getByRole('link', { name: '2026-06-01' }).click();
   await expect(page).toHaveURL(/\/stats\/2026-06-01$/);
   await expect(page.getByText('alice')).toBeVisible();
 });
@@ -1235,11 +1235,11 @@ test('Function: formatUsdDisplay — empty stats hero shows $0.00', async ({ pag
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: formatBtcTick — populated stats draw the BTC chart', async ({ page }) => {
+test('Function: formatBitcoin — populated stats draw the ₿ chart', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
-  await expect(page.getByLabel('Spend over time in BTC')).toBeVisible();
-  await expect(page.getByLabel('Spend over time in BTC').getByText('0.000015')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in ₿')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in ₿').getByText('₿1,500')).toBeVisible();
 });
 
 test('Function: formatUsdTick — populated stats draw the USD chart', async ({ page }) => {
@@ -1874,9 +1874,9 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
   await page.getByRole('button', { name: 'Most popular' }).click();
   const items = page.getByRole('listitem');
   await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
-  await expect(items.nth(0)).toContainText('21 sats');
+  await expect(items.nth(0)).toContainText('₿21');
   await expect(items.nth(1)).toContainText('Thank you both — that helps.');
-  await expect(items.nth(1)).toContainText('5 sats');
+  await expect(items.nth(1)).toContainText('₿5');
 });
 
 test('Function: OnboardingGate — login sends a new account to the name screen', async ({
@@ -2126,7 +2126,7 @@ test('Function: accountTotals — menu shows received sats for alice', async ({ 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received 1000 sats/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
 });
 
 test('Function: recipientHandleFromAddress — alice handle matches stats row', async ({ page }) => {
@@ -2137,7 +2137,7 @@ test('Function: recipientHandleFromAddress — alice handle matches stats row', 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received 1000 sats/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
 });
 
 test('Function: useAccountTotals — profile totals load from gift stats', async ({ page }) => {
@@ -2148,17 +2148,17 @@ test('Function: useAccountTotals — profile totals load from gift stats', async
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received 1000 sats/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
 });
 
-test('Function: AccountActivityChart — profile shows Given legend and sat chart', async ({
+test('Function: AccountActivityChart — profile shows Given legend and ₿ chart', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
   await expect(page.getByText('Given', { exact: true })).toBeVisible();
-  await expect(page.getByLabel('Given and received in sats')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Given and received' })).toHaveCount(0);
 });
 
@@ -2207,12 +2207,12 @@ test('Function: activityMaxY — empty profile chart still reserves the SVG box'
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
-  const chart = page.getByLabel('Given and received in sats');
+  const chart = page.getByLabel('Given and received in ₿');
   await expect(chart).toBeVisible();
   await expect(chart).toHaveAttribute('viewBox', '0 0 400 110');
 });
 
-test('Function: formatSatTick — populated profile chart shows grouped sat ticks', async ({
+test('Function: formatBitcoin — populated profile chart shows grouped ₿ ticks', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -2225,5 +2225,59 @@ test('Function: formatSatTick — populated profile chart shows grouped sat tick
     byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
   });
   await page.goto('/profile');
-  await expect(page.getByLabel('Given and received in sats').getByText('1,500')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿').getByText('₿1,500')).toBeVisible();
+});
+
+test('Function: ThemeProvider — picking Dark sets html.dark on /login', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Theme').click();
+  await page.getByRole('option', { name: /Dark/ }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+});
+
+test('Function: ThemeSwitcher — System Light Dark options on /login', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Theme').click();
+  await expect(page.getByRole('option', { name: /System/ })).toBeVisible();
+  await expect(page.getByRole('option', { name: /Light/ })).toBeVisible();
+  await expect(page.getByRole('option', { name: /Dark/ })).toBeVisible();
+});
+
+test('Function: useTheme — ThemeSwitcher on /login reads provider context', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByLabel('Theme')).toBeVisible();
+});
+
+test('Function: THEME_COOKIE — Dark option persists theme=dark', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Theme').click();
+  await page.getByRole('option', { name: /Dark/ }).click();
+  expect(await page.context().cookies()).toEqual(
+    expect.arrayContaining([expect.objectContaining({ name: 'theme', value: 'dark' })]),
+  );
+});
+
+test('Function: parseThemePreference — Light cookie resolves without dark class', async ({
+  page,
+}) => {
+  await page
+    .context()
+    .addCookies([{ name: 'theme', value: 'light', url: 'http://localhost:3000' }]);
+  await page.goto('/login');
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+});
+
+test('Function: resolveTheme — Dark cookie forces html.dark', async ({ page }) => {
+  await page.context().addCookies([{ name: 'theme', value: 'dark', url: 'http://localhost:3000' }]);
+  await page.goto('/login');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+});
+
+test('Function: THEME_BOOTSTRAP_SCRIPT — dark cookie paints html.dark before interaction', async ({
+  page,
+}) => {
+  await page.context().addCookies([{ name: 'theme', value: 'dark', url: 'http://localhost:3000' }]);
+  await page.goto('/login');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.getByLabel('Theme')).toBeVisible();
 });

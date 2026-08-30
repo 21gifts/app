@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { formatBtcTick, formatSatTick, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
+import { formatBitcoin, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
 describe('formatUsdDisplay', () => {
   it('formats a two-decimal API string as en-US currency', () => {
@@ -12,14 +12,21 @@ describe('formatUsdDisplay', () => {
   });
 });
 
-describe('formatBtcTick', () => {
-  it('returns 0 for zero', () => {
-    expect(formatBtcTick(0)).toBe('0');
+describe('formatBitcoin', () => {
+  it('formats zero', () => {
+    expect(formatBitcoin(0)).toBe('₿0');
   });
 
-  it('trims trailing zeros up to 8 dp', () => {
-    expect(formatBtcTick(0.015)).toBe('0.015');
-    expect(formatBtcTick(0.0000001)).toBe('0.0000001');
+  it('formats one', () => {
+    expect(formatBitcoin(1)).toBe('₿1');
+  });
+
+  it('groups with en-US', () => {
+    expect(formatBitcoin(1500, 'en-US')).toBe('₿1,500');
+  });
+
+  it('groups with de-DE via Intl', () => {
+    expect(formatBitcoin(1500, 'de-DE')).toBe(`₿${new Intl.NumberFormat('de-DE').format(1500)}`);
   });
 });
 
@@ -35,16 +42,5 @@ describe('formatUsdTick', () => {
   it('keeps cents when the scale is under ten dollars', () => {
     expect(formatUsdTick(0)).toBe('$0');
     expect(formatUsdTick(1.43)).toBe('$1.43');
-  });
-});
-
-describe('formatSatTick', () => {
-  it('returns 0 for zero', () => {
-    expect(formatSatTick(0)).toBe('0');
-  });
-
-  it('groups integers with en-US and no unit suffix', () => {
-    expect(formatSatTick(1000)).toBe('1,000');
-    expect(formatSatTick(1500)).toBe('1,500');
   });
 });

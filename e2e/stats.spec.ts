@@ -90,9 +90,9 @@ test('stats page shows total spend over time', async ({ page }) => {
   });
   await page.goto('/stats');
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
-  await expect(page.getByText('₿ 0.00001500')).toBeVisible();
+  await expect(page.locator('dl').getByText('₿1,500')).toBeVisible();
   await expect(page.locator('dl').getByText('$1.43')).toBeVisible();
-  const chart = page.getByLabel('Spend over time in BTC');
+  const chart = page.getByLabel('Spend over time in ₿');
   await expect(chart.getByRole('link', { name: '2026-06-01' })).toHaveAttribute(
     'href',
     '/stats/2026-06-01',

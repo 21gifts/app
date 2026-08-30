@@ -134,7 +134,35 @@ const STATS_EMPTY = {
   },
 };
 
+/**
+ * True when this visual run is a mobile combo project.
+ *
+ * @param testInfo - Playwright test info (project name is the combo id).
+ * @returns Whether the project id starts with `mobile-`.
+ */
+function isMobileProject(testInfo: { project: { name: string } }): boolean {
+  return testInfo.project.name.startsWith('mobile-');
+}
+
+test.beforeEach(async ({ page }, testInfo) => {
+  const theme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
+  await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
+});
+
+/**
+ * Playwright fullPage stitches viewport chunks; sticky chrome is painted
+ * into every chunk. Force document flow so each header appears once.
+ *
+ * @param page - Page under test.
+ */
+async function unstickStickyChrome(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: 'header.sticky { position: static !important; }',
+  });
+}
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  await unstickStickyChrome(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage,
     // The handbook viewport embeds other screen PNGs; variant shots shift a few percent.
@@ -194,8 +222,8 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-root');
   });
 
-  test('state / mobile-nav', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('state / mobile-nav', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo), 'hamburger nav is md:hidden on desktop');
     await page.goto('/');
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByLabel('Primary').getByRole('link', { name: 'Handbook' })).toBeVisible();
@@ -320,6 +348,13 @@ test.describe('login variant baselines', () => {
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-login-language');
   });
+
+  test('login theme-open', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Theme').click();
+    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
+    await shotScreen(page, 'state-login-theme');
+  });
 });
 
 test.describe('onboarding screens', () => {
@@ -377,29 +412,6 @@ test.describe('onboarding screens', () => {
     await page.goto('/setup/rules');
     await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
     await shotScreen(page, 'screen-setup-rules');
-  });
-
-  test('setup-rules mobile', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: null,
-          viewKey: 'a'.repeat(64),
-        }),
-      });
-    });
-    await page.goto('/setup/rules');
-    await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
-    await shotScreen(page, 'state-setup-rules-mobile');
   });
 
   test('screen /welcome', async ({ page }) => {
@@ -762,7 +774,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount (sats)').fill('21');
+    await page.getByLabel('Amount (₿)').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
@@ -783,9 +795,9 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Most popular' }).click();
     const items = page.getByRole('listitem');
     await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
-    await expect(items.nth(0)).toContainText('21 sats');
+    await expect(items.nth(0)).toContainText('₿21');
     await expect(items.nth(1)).toContainText('Thank you both — that helps.');
-    await expect(items.nth(1)).toContainText('5 sats');
+    await expect(items.nth(1)).toContainText('₿5');
     await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
     await shotScreen(page, 'state-welcome-popular');
   });
@@ -813,7 +825,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages with sats yet.')).toBeVisible();
+    await expect(page.getByText('No messages with Bitcoin yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -1280,7 +1292,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-language');
   });
 
-  test('welcome pay-qr', async ({ page }) => {
+  test('welcome menu-theme-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByLabel('Theme').click();
+    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-theme');
+  });
+
+  test('welcome pay-qr', async ({ page }, testInfo) => {
+    test.skip(isMobileProject(testInfo), 'payment QR is desktop-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
@@ -1288,14 +1317,8 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-pay-qr');
   });
 
-  test('welcome pay-smartphone', async ({ page }) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'userAgent', {
-        get: () =>
-          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-      });
-    });
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('welcome pay-smartphone', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo), 'smartphone pay sheet is mobile-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
@@ -1501,9 +1524,13 @@ test.describe('stats variant baselines', () => {
 });
 
 test.describe('function baselines', () => {
+  // ~140 Function: clips × 4 combo projects; 30s timed out, 120s is tight on mobile workers.
+  test.describe.configure({ timeout: 180_000 });
+
   test('every handbook function section', async ({ page }) => {
     await page.goto('/handbook');
     await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
+    await unstickStickyChrome(page);
 
     const headings = page.locator('#functions h2[id^="functions-function-"]');
     const count = await headings.count();

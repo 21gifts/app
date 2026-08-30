@@ -13,6 +13,7 @@ describe('MarketingLayout', () => {
 
     expect(tree.type).toBe('div');
     expect(props.className).toContain('bg-[#0a090c]');
+    expect(props.className).toContain('[color-scheme:dark]');
   });
 
   it('renders three children: header, page, footer', async () => {

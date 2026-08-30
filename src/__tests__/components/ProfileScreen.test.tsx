@@ -99,7 +99,7 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText('Back to forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -112,11 +112,11 @@ describe('ProfileScreen', () => {
     vi.mocked(fetchGiftStats).mockReturnValue(new Promise<GiftStats>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
-    expect(screen.getByRole('img', { name: 'Given and received in sats' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
-    expect(screen.queryByLabelText('Given 0 sats')).toBeNull();
+    expect(screen.queryByLabelText('Given ₿0')).toBeNull();
   });
 
   it('shows a series day tick after filtered stats load', async () => {
@@ -168,7 +168,7 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
     });
-    expect(screen.queryByLabelText('Received 1500 sats')).toBeNull();
+    expect(screen.queryByLabelText('Received ₿1,500')).toBeNull();
   });
 
   it('shows the icon-only view-key copy control without the URL or key', async () => {

@@ -27,9 +27,13 @@ describe('LegalPage', () => {
     expect(screen.queryByText(/Cloudflare Pages/i)).toBeNull();
   });
 
-  it('documents the optional locale cookie', () => {
+  it('documents the optional locale and theme cookies', () => {
     render(<LegalPage />);
-    expect(screen.getByText(/sets no cookies unless you choose a language/i)).toBeTruthy();
+    expect(
+      screen.getByText(/sets no cookies unless you choose a language or a light\/dark appearance/i),
+    ).toBeTruthy();
+    expect(screen.getAllByText('locale').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('theme').length).toBeGreaterThan(0);
   });
 
   it('has no published email and points contact to the in-app form', () => {

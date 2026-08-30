@@ -84,7 +84,10 @@ function persistLocale(next: Locale, current: Locale, refresh: () => void): void
  * Standalone (`embedded` false): Globe pill trigger + absolute popover listbox.
  * Embedded: Menu-row disclosure; locale options appear only after clicking Language.
  *
- * @param props - Visual tone for marketing (`dark`) or login/signed-in chrome (`light`),
+ * Marketing passes `tone="dark"` (hardcoded). App pages pass `tone="light"` so
+ * chrome follows semantic theme tokens.
+ *
+ * @param props - Visual tone for marketing (`dark`) or app chrome (`light`),
  *   and optional `embedded` when shown inside the signed-in Menu dropdown.
  * @returns The language switcher element.
  */
@@ -196,13 +199,13 @@ export function LanguageSwitcher(props: {
   const optionRowClass =
     tone === 'dark'
       ? 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10'
-      : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50';
+      : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
 
   const checkClass =
-    tone === 'dark' ? 'h-4 w-4 shrink-0 text-[#f7931a]' : 'h-4 w-4 shrink-0 text-neutral-900';
+    tone === 'dark' ? 'h-4 w-4 shrink-0 text-[#f7931a]' : 'h-4 w-4 shrink-0 text-app-fg';
 
   const embeddedOptionRowClass =
-    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50';
+    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
 
   const listboxOptions = (rowClass: string, check: string): ReactElement => (
     <>
@@ -250,7 +253,7 @@ export function LanguageSwitcher(props: {
           {...(open
             ? { role: 'combobox' as const, 'aria-activedescendant': optionId(highlight) }
             : {})}
-          className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+          className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted hover:bg-app-hover hover:text-app-fg"
           onClick={onTriggerClick}
           onKeyDown={onTriggerKeyDown}
         >
@@ -266,7 +269,7 @@ export function LanguageSwitcher(props: {
             aria-activedescendant={optionId(highlight)}
             className="flex flex-col"
           >
-            {listboxOptions(embeddedOptionRowClass, 'h-4 w-4 shrink-0 text-neutral-900')}
+            {listboxOptions(embeddedOptionRowClass, 'h-4 w-4 shrink-0 text-app-fg')}
           </div>
         ) : null}
       </div>
@@ -276,12 +279,12 @@ export function LanguageSwitcher(props: {
   const triggerClass =
     tone === 'dark'
       ? 'inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-white/10'
-      : 'inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 hover:bg-neutral-50';
+      : 'inline-flex items-center gap-1.5 rounded-full border border-app-border-strong px-3 py-1.5 text-sm text-app-fg hover:bg-app-hover';
 
   const panelClass =
     tone === 'dark'
       ? 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-white/10 bg-[#0a090c] p-2 shadow-lg'
-      : 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-neutral-200 bg-white p-2 shadow-lg';
+      : 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg';
 
   return (
     <div ref={rootRef} className="relative inline-flex">

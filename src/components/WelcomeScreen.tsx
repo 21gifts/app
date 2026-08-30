@@ -20,8 +20,8 @@ export function WelcomeScreen(): ReactElement {
   const name = storedName === null || storedName === undefined ? '' : storedName.trim();
 
   return (
-    <section className="flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
-      <Gift aria-hidden="true" className="h-12 w-12 text-neutral-900" />
+    <section className="flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+      <Gift aria-hidden="true" className="h-12 w-12 text-app-fg" />
       <h1 className="text-center text-2xl font-semibold tracking-tight">
         {t('login.welcomeHeading', { name })}
       </h1>

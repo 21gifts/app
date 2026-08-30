@@ -52,7 +52,7 @@ export function RulesSetup({ children }: { children: ReactNode }): ReactElement 
   return (
     <section className="flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8 pt-24">
       <h1 className="text-center text-2xl font-semibold tracking-tight">{t('setup.rulesTitle')}</h1>
-      <p className="text-center text-sm text-neutral-500">{t('setup.rulesPrompt')}</p>
+      <p className="text-center text-sm text-app-muted">{t('setup.rulesPrompt')}</p>
       {children}
       {error ? (
         <p role="alert" className="text-center text-sm text-red-600">
@@ -63,7 +63,7 @@ export function RulesSetup({ children }: { children: ReactNode }): ReactElement 
         type="button"
         onClick={handleAgree}
         disabled={busy}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
       >
         {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
         {t('setup.agree')}

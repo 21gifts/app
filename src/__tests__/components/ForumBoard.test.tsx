@@ -351,7 +351,7 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
-    expect(screen.queryByText('No messages with sats yet.')).toBeNull();
+    expect(screen.queryByText('No messages with Bitcoin yet.')).toBeNull();
     expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
   });
 
@@ -393,7 +393,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByText('No messages with sats yet.')).toBeTruthy();
+    expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
     expect(screen.queryByText('No messages yet. Be the first to write.')).toBeNull();
   });
 
@@ -417,8 +417,8 @@ describe('ForumBoard', () => {
     expect(list).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
-    expect(screen.getByText('0 sats')).toBeTruthy();
-    expect(screen.getByText('21 sats')).toBeTruthy();
+    expect(screen.getByText('₿0')).toBeTruthy();
+    expect(screen.getByText('₿21')).toBeTruthy();
     expect(screen.getByText(formatForumTime(SAMPLE.createdAt, 'en'))).toBeTruthy();
     const preWrap = screen.getByText(
       (content) => content.includes('Line one') && content.includes('Line two'),
@@ -473,9 +473,9 @@ describe('ForumBoard', () => {
     );
     const items = screen.getAllByRole('listitem');
     expect(items[0]?.textContent).toContain('Line one');
-    expect(items[0]?.textContent).toContain('21 sats');
+    expect(items[0]?.textContent).toContain('₿21');
     expect(items[1]?.textContent).toContain('Five sats note');
-    expect(items[1]?.textContent).toContain('5 sats');
+    expect(items[1]?.textContent).toContain('₿5');
   });
 
   it('does not scroll the composer when messages are empty', () => {
@@ -542,7 +542,7 @@ describe('ForumBoard', () => {
     expect(onModeChange).toHaveBeenCalledWith('all');
   });
 
-  it('shows 1 sat for a single sat total', () => {
+  it('shows ₿1 for a single sat total', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, sats: 1 }]}
@@ -558,7 +558,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByText('1 sat')).toBeTruthy();
+    expect(screen.getByText('₿1')).toBeTruthy();
   });
 
   it('renders an inline photo and hides an empty text paragraph', () => {
@@ -788,8 +788,8 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByLabelText('Amount (sats)')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Amount (sats)'), { target: { value: '42' } });
+    expect(screen.getByLabelText('Amount (₿)')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '42' } });
     expect(onPayDraftChange).toHaveBeenCalledWith('42');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
@@ -816,9 +816,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe(
-      'Enter a whole number of sats greater than zero',
-    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
   });
 
   it('shows pay request error', () => {
@@ -886,7 +884,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Pay 21 sats')).toBeTruthy();
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
     const walletLink = screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' });
     expect(walletLink.textContent).toContain('Pay');

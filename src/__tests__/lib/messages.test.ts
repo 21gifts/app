@@ -57,4 +57,17 @@ describe('getCatalog', () => {
       expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
     }
   });
+
+  it('contains no visitor-facing sats unit except Wallet of Satoshi and home.faq8A', () => {
+    for (const locale of LOCALES) {
+      const catalog = getCatalog(locale);
+      for (const [key, value] of Object.entries(catalog)) {
+        if (key === 'home.faq8A') {
+          continue;
+        }
+        const withoutProduct = value.replaceAll('Wallet of Satoshi', '');
+        expect(withoutProduct, `${locale}.${key}`).not.toMatch(/\b[Ss]ats?\b/);
+      }
+    }
+  });
 });

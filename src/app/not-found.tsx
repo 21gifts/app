@@ -18,7 +18,7 @@ export default async function NotFound(): Promise<ReactElement> {
   const footer = await MarketingFooter();
 
   return (
-    <div className="min-h-screen bg-[#0a090c] text-white">
+    <div className="min-h-screen bg-[#0a090c] text-white [color-scheme:dark]">
       <MarketingHeader />
       <main className="mx-auto flex max-w-[1100px] flex-col items-start px-5 py-28">
         <h1 className="text-5xl font-semibold">404</h1>

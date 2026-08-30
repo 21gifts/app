@@ -83,23 +83,23 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
   }, [viewKey, attempt]);
 
   if (status === 'loading') {
-    return <p className="text-center text-sm text-neutral-500">{t('forum.loading')}</p>;
+    return <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
   }
 
   if (status === 'missing') {
-    return <p className="text-center text-sm text-neutral-500">{t('view.missing')}</p>;
+    return <p className="text-center text-sm text-app-muted">{t('view.missing')}</p>;
   }
 
   if (status === 'error') {
     return (
       <div className="flex flex-col items-center gap-4">
-        <p className="text-center text-sm text-neutral-500">{t('view.error')}</p>
+        <p className="text-center text-sm text-app-muted">{t('view.error')}</p>
         <button
           type="button"
           onClick={() => {
             setAttempt((n) => n + 1);
           }}
-          className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
+          className="rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
         >
           {t('view.retry')}
         </button>

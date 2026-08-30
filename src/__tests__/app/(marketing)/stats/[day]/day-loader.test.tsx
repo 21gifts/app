@@ -115,7 +115,7 @@ describe('DayLoader', () => {
     });
     render(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
-      expect(screen.getByText('1 gift · 500 sats · 0.00000500 BTC · 0.48 USD')).toBeTruthy();
+      expect(screen.getByText('1 gift · ₿500 · 0.48 USD')).toBeTruthy();
     });
   });
 
