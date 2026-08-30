@@ -96,9 +96,9 @@ export function PushToggle(): ReactElement | null {
   return (
     <div className="flex w-full flex-col items-stretch gap-2">
       {showInstallHint ? (
-        <p className="text-sm text-neutral-500">{t('profile.push.installHint')}</p>
+        <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
       ) : null}
-      {errorKey !== null ? <p className="text-sm text-neutral-500">{t(errorKey)}</p> : null}
+      {errorKey !== null ? <p className="text-sm text-app-muted">{t(errorKey)}</p> : null}
       <div className="flex w-full justify-end">
         <button
           type="button"
@@ -109,7 +109,7 @@ export function PushToggle(): ReactElement | null {
           aria-label={ariaName}
           title={ariaName}
           aria-pressed={subscribed}
-          className="inline-flex items-center shrink-0 rounded px-1.5 py-0.5 text-xs leading-none text-neutral-400 transition hover:text-neutral-900 disabled:opacity-50"
+          className="inline-flex items-center shrink-0 rounded p-2 text-app-subtle transition hover:text-app-fg disabled:opacity-50"
         >
           <Bell aria-hidden="true" className="h-4 w-4" />
         </button>
