@@ -11,8 +11,7 @@ import { formatForumTime } from '@/lib/forum-time';
 import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
-const MESSAGE_ID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Client loader for `/messages/[id]`: validates the UUID, fetches the public

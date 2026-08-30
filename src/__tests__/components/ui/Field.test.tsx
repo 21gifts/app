@@ -20,9 +20,7 @@ describe('Field', () => {
 
   it('renders a multiline textarea when multiline is true', () => {
     const onChange = vi.fn();
-    renderWithLocale(
-      <Field label="Message" multiline value="hi" onChange={onChange} />,
-    );
+    renderWithLocale(<Field label="Message" multiline value="hi" onChange={onChange} />);
     const control = screen.getByLabelText('Message');
     expect(control.tagName).toBe('TEXTAREA');
     fireEvent.change(control, { target: { value: 'hello' } });
@@ -30,9 +28,7 @@ describe('Field', () => {
   });
 
   it('applies className on the label wrapper and ignores empty className', () => {
-    const { rerender } = renderWithLocale(
-      <Field label="Tagged" className="wrap" />,
-    );
+    const { rerender } = renderWithLocale(<Field label="Tagged" className="wrap" />);
     expect(screen.getByText('Tagged').className).toContain('wrap');
 
     rerender(<Field label="Plain" className="" />);

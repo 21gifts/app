@@ -136,10 +136,7 @@ describe('api proxy wrappers', () => {
 
   it('proxyMessagesRepliesGet hits /messages/:id/replies', async () => {
     const fetchMock = stubApi();
-    await proxyMessagesRepliesGet(
-      new Request('http://localhost/forum/messages/m1/replies'),
-      'm1',
-    );
+    await proxyMessagesRepliesGet(new Request('http://localhost/forum/messages/m1/replies'), 'm1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/replies');
   });
 

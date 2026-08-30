@@ -28,7 +28,7 @@ test('public message default shows Hello from Ada', async ({ page }) => {
   });
   await page.goto(`/messages/${ID}`);
   await expect(page.getByText('Hello from Ada')).toBeVisible();
-  await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByText('Ada', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
 });
 

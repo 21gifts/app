@@ -4,17 +4,18 @@ import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
-import { LIGHTNING_ADDRESS_NOT_ZAP_ERROR, setLightningAddress, unlinkLightningAddress } from '@/lib/api';
+import {
+  LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  setLightningAddress,
+  unlinkLightningAddress,
+} from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { hasLightningAddress } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the Lightning Address form. */
 type LightningAddressError =
-  | { type: 'empty' }
-  | { type: 'request' }
-  | { type: 'notFound' }
-  | { type: 'notZap' };
+  { type: 'empty' } | { type: 'request' } | { type: 'notFound' } | { type: 'notZap' };
 
 /** Catalog key for a Lightning Address form alert. */
 function lightningAddressErrorKey(
@@ -62,7 +63,8 @@ export function LightningAddressForm(
   const linked = hasLightningAddress(account);
   const variant = props.variant ?? (linked ? 'profile' : 'onboarding');
   const continueDisabled =
-    busy || (error?.type === 'notZap' && blockedAddress !== null && draft.trim() === blockedAddress);
+    busy ||
+    (error?.type === 'notZap' && blockedAddress !== null && draft.trim() === blockedAddress);
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.

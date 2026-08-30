@@ -161,9 +161,7 @@ describe('LightningAddressForm', () => {
 
   it('shows the not-zap message when the address cannot receive these payments', async () => {
     vi.mocked(setLightningAddress).mockRejectedValue(
-      new Error(
-        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
-      ),
+      new Error('This Wallet of Satoshi address cannot receive these Bitcoin payments'),
     );
     renderWithLocale(<LightningAddressForm />);
 

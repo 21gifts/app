@@ -93,6 +93,8 @@ async function stubPayableNote(page: Page): Promise<void> {
             sats: 0,
             payable: true,
             hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
           },
         ],
       }),
@@ -132,7 +134,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await page.getByLabel('Amount (₿)').fill('21');
+  await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 }
@@ -487,7 +489,7 @@ test('Function: fetchMessages — welcome shows the empty forum', async ({ page,
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
   await expect(page.getByLabel('Your message')).toBeVisible();
@@ -1017,7 +1019,7 @@ test('Function: NotFound — unknown path is 404', async ({ page }) => {
 
 test('Function: LoginPage — login heading is visible', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Log in to 21.gifts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
 });
 
 test('Function: DonatePage — send-help explainer renders', async ({ page }) => {
@@ -1722,7 +1724,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
     });
   });
   await page.goto('/welcome');
-  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
 test('Function: ContactPage — contact heading is visible', async ({ page }) => {
@@ -2112,7 +2114,7 @@ test('Function: IconButton — welcome composer shows the Post icon control', as
 
 test('Function: Card — login card is visible', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Log in to 21.gifts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
 });
 
 test('Function: Field — login has no bare text field; welcome composer does', async ({ page }) => {
@@ -2130,7 +2132,7 @@ test('Function: Field — login has no bare text field; welcome composer does', 
 
 test('Function: PageChrome — login shows language switcher chrome', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Language' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
 test('Function: PublicMessagePage — public note shows Hello from Ada', async ({ page }) => {
@@ -2181,7 +2183,7 @@ test('Function: fetchPublicMessage — public note loads via the client fetch', 
     });
   });
   await page.goto(`/messages/${id}`);
-  await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByText('Ada', { exact: true })).toBeVisible();
 });
 
 test('Function: fetchPublicMessagePhoto — public note with photo shows alt', async ({ page }) => {

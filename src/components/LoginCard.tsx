@@ -66,7 +66,11 @@ function StartView({ onLogin }: StartViewProps): ReactElement {
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
       <h1 className="text-center text-lg font-medium text-app-fg">{t('login.heading')}</h1>
-      <Button type="button" onClick={onLogin} icon={<Fingerprint aria-hidden="true" className="h-4 w-4" />}>
+      <Button
+        type="button"
+        onClick={onLogin}
+        icon={<Fingerprint aria-hidden="true" className="h-4 w-4" />}
+      >
         {t('login.submit')}
       </Button>
     </>

@@ -663,9 +663,7 @@ export function ForumLoader(): ReactElement | null {
             return prev;
           }
           return prev.map((message) =>
-            message.id === parentId
-              ? { ...message, replyCount: message.replyCount + 1 }
-              : message,
+            message.id === parentId ? { ...message, replyCount: message.replyCount + 1 } : message,
           );
         });
         setReplyDraft('');

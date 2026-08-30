@@ -48,14 +48,21 @@ export function Field(props: FieldProps): ReactElement {
   if (multiline === true) {
     const textareaProps = rest as TextareaHTMLAttributes<HTMLTextAreaElement>;
     control = (
-      <textarea id={fieldId} className={`${CONTROL_CLASS} min-h-11 resize-none`} {...textareaProps} />
+      <textarea
+        id={fieldId}
+        className={`${CONTROL_CLASS} min-h-11 resize-none`}
+        {...textareaProps}
+      />
     );
   } else {
     const inputProps = rest as InputHTMLAttributes<HTMLInputElement>;
     control = <input id={fieldId} className={CONTROL_CLASS} {...inputProps} />;
   }
   return (
-    <label htmlFor={fieldId} className={`flex flex-col gap-1 text-left text-sm text-app-fg${extra}`}>
+    <label
+      htmlFor={fieldId}
+      className={`flex flex-col gap-1 text-left text-sm text-app-fg${extra}`}
+    >
       {label}
       {control}
     </label>

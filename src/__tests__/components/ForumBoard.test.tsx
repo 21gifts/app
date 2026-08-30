@@ -170,7 +170,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
+    expect(screen.getByText('Thank you both — that helps.')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -242,7 +242,7 @@ describe('ForumBoard', () => {
         lawsVisible={false}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
+    expect(screen.getByText('Thank you both — that helps.')).toBeTruthy();
     expect(
       screen.queryByText(
         '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
@@ -871,8 +871,8 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByLabelText('Amount (₿)')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '42' } });
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '42' } });
     expect(onPayDraftChange).toHaveBeenCalledWith('42');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);

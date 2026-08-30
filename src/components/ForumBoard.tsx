@@ -529,9 +529,15 @@ export function ForumBoard({
                       {t('forum.payErrorAuthorWallet')}
                     </p>
                   ) : null}
-                  <Button type="submit" disabled={payBusy} icon={payBusy ? (
-                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                  ) : undefined}>
+                  <Button
+                    type="submit"
+                    disabled={payBusy}
+                    icon={
+                      payBusy ? (
+                        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                      ) : undefined
+                    }
+                  >
                     {t('forum.payContinue')}
                   </Button>
                 </form>
@@ -593,11 +599,15 @@ export function ForumBoard({
                   className="mt-3 flex flex-col gap-3 border-t border-app-border pt-3"
                 >
                   {repliesLoading ? (
-                    <p className="text-center text-sm text-app-muted">{t('forum.repliesLoading')}</p>
+                    <p className="text-center text-sm text-app-muted">
+                      {t('forum.repliesLoading')}
+                    </p>
                   ) : null}
                   {repliesError ? (
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-center text-sm text-app-muted">{t('forum.repliesError')}</p>
+                      <p className="text-center text-sm text-app-muted">
+                        {t('forum.repliesError')}
+                      </p>
                       <Button type="button" variant="secondary" onClick={onRetryReplies}>
                         {t('forum.retry')}
                       </Button>
@@ -646,7 +656,10 @@ export function ForumBoard({
                         aria-label={t('forum.post')}
                       >
                         {replyPosting ? (
-                          <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+                          <Loader2
+                            aria-hidden="true"
+                            className="block h-5 w-5 shrink-0 animate-spin"
+                          />
                         ) : (
                           <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
                         )}

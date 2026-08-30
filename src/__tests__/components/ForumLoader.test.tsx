@@ -280,7 +280,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     const view = renderWithLocale(<ForumLoader />);
@@ -307,7 +307,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -330,7 +330,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -358,7 +358,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient'));
@@ -1063,7 +1063,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     photoMock.mockRejectedValue(new Error('gone'));
@@ -1093,7 +1093,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -1125,7 +1125,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
@@ -1157,7 +1157,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
       {
         id: 'm2',
@@ -1170,7 +1170,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -1203,7 +1203,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       },
     ]);
     photoMock.mockImplementationOnce(
@@ -1776,7 +1776,7 @@ describe('ForumLoader', () => {
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
-      replyCount: 0,
+        replyCount: 0,
       });
     });
 
@@ -1800,7 +1800,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => {
@@ -1825,7 +1825,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '0' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
     expect(invoiceMock).not.toHaveBeenCalled();
@@ -1844,7 +1844,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -1866,7 +1866,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -1888,7 +1888,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -1915,7 +1915,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
@@ -1942,11 +1942,11 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
-    expect(screen.queryByLabelText('Amount (₿)')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(invoiceMock).toHaveBeenCalledTimes(1);
     await act(async () => {
@@ -1973,7 +1973,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
@@ -2223,7 +2223,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(invoiceMock).toHaveBeenCalledTimes(1);

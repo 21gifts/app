@@ -38,9 +38,7 @@ describe('Button', () => {
   });
 
   it('renders an optional leading icon', () => {
-    renderWithLocale(
-      <Button icon={<span data-testid="icon">*</span>}>Labeled</Button>,
-    );
+    renderWithLocale(<Button icon={<span data-testid="icon">*</span>}>Labeled</Button>);
     expect(screen.getByTestId('icon')).toBeTruthy();
     expect(screen.getByRole('button', { name: '* Labeled' })).toBeTruthy();
   });

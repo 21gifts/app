@@ -605,7 +605,9 @@ test.describe('onboarding screens', () => {
     });
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await expect(page.getByRole('button', { name: 'Copy link to this note' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Copy link to this note' }).first(),
+    ).toBeVisible();
     await shotScreen(page, 'state-welcome-copy');
   });
 
@@ -1056,7 +1058,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount (₿)').fill('21');
+    await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
@@ -1680,7 +1682,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount (₿)').fill('21');
+    await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
