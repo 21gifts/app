@@ -54,8 +54,11 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('Wallet of Satoshi address')).toBeVisible();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
   await expect(page.getByText('Given')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Set up passkey for this profile' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Set up a passkey for this profile' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
+
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
 });
 
@@ -141,7 +144,7 @@ test('signed-in profile shows the copy control without the view-key URL', async 
     });
   });
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Copy view-key link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'View key' })).toHaveCount(0);
   await expect(page.getByText(new RegExp(`/view/${KEY}`))).toHaveCount(0);
   await expect(page.getByText(KEY)).toHaveCount(0);

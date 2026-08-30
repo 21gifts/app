@@ -100,7 +100,7 @@ test.describe('locale cookie overrides Accept-Language', () => {
     ]);
     await page.goto('/');
     await expect(
-      page.getByRole('heading', { name: /Direktang handog mula tao patungo sa tao/ }),
+      page.getByRole('heading', { name: /Direktang regalo mula sa tao patungo sa tao/ }),
     ).toBeVisible();
   });
 });

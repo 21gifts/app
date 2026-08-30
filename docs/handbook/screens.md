@@ -118,7 +118,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 
 ### Variant: idle
 
-Logged out. Heading **Sign in to 21.gifts**, one **Log in** button.
+Logged out. Heading **Log in with your device**, one **Log in** button.
 
 ![21.gifts login idle](images/login.png)
 
@@ -206,19 +206,19 @@ Signed in with a name and address and `rulesAgreedAt` still null. First chapter 
 
 ### Variant: law1
 
-After one Continue: law card with kicker **Law 1**, heading **Only free donations**, body, and **The test** callout. Icon-only back is visible.
+After one Continue: rule card with kicker **Rule 1**, heading **Only free donations**, body, and **The test** callout. Icon-only back is visible.
 
 ![21.gifts rules setup law 1](images/setup-rules-law1.png)
 
 ### Variant: law2
 
-Law card **Law 2** / **Donors come first** with body and **The test** callout.
+Rule card **Rule 2** / **Donors come first** with body and **The test** callout.
 
 ![21.gifts rules setup law 2](images/setup-rules-law2.png)
 
 ### Variant: law3
 
-Law card **Law 3** / **Contact stays in the app** with body (no test callout).
+Rule card **Rule 3** / **Contact stays in the app** with body (no test callout).
 
 ![21.gifts rules setup law 3](images/setup-rules-law3.png)
 
@@ -291,13 +291,13 @@ Click **Most popular** — paid notes ordered by sats (Carol ₿21, then Ada ₿
 
 ### Variant: empty-paid
 
-Copy **No messages with Bitcoin yet.** Active selected, unpaid notes hidden, composer visible.
+Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidden, composer visible.
 
 ![21.gifts welcome empty paid](images/welcome-empty-paid.png)
 
 ### Variant: empty
 
-Empty copy **No messages yet. Be the first to write.** plus composer (attach + textarea + Post).
+Empty copy **No messages yet — be the first to write one.** plus composer (attach + textarea + Post).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -447,28 +447,28 @@ Payable note, amount submitted, but the author's wallet cannot mint a zap invoic
 
 ### Variant: role-hint
 
-Carol's **Verified** tag clicked; the explanation under that card header is visible (**A moderator met this person in real life and confirmed they are a real human.**). Bob stays without a pill; Ada still shows **Moderator**.
+Carol's **Verified** tag clicked; the explanation under that card header is visible (**A moderator has met this person in real life and confirmed they are real.**). Bob stays without a pill; Ada still shows **Moderator**.
 
 ![21.gifts welcome role hint](images/welcome-role-hint.png)
 
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate.
-- **What the user sees:** Light language switcher and theme switcher top-right. Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three law cards (kicker **Law n**, title, body, and a **The test** callout on laws 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
+- **What the user sees:** Light language switcher and theme switcher top-right. Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
 - **Actions:** Change language or theme. Read the rules. Open contact or the forum.
 - **Calls:** `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `ThemeSwitcher`.
 - **Auth:** None.
 
 ### Variant: default
 
-Full rules body with law card **Only free donations** visible.
+Full rules body with rule card **Only free donations** visible.
 
 ![21.gifts living room rules](images/rules.png)
 
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here. There is no email.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
 - **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
 - **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
@@ -487,7 +487,7 @@ Click **Send** with an empty composer → **Enter a message**.
 
 ### Variant: success
 
-After a successful send: **Received. We read this in the app.** Form hidden; rules link remains.
+After a successful send: **Received — thank you. We read every message here in the app.** Form hidden; rules link remains.
 
 ![21.gifts contact success](images/contact-success.png)
 
@@ -532,12 +532,12 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received + ₿ | USD, name + Wallet of Satoshi address fields) without edit/copy/back/menu/logout. Capability URL `/view/<64-hex>`; key/URL not shown. No `OnboardingGate` on this route.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); receive series from public `fetchGiftStats(handle)` via `recipientHandleFromAddress` (`GET /gifts/stats?recipient=`). Blank address → empty series, no stats fetch. Stats error → card with empty series.
-- **Actions:** Change language (light switcher top-right). On profile fetch error, **Try again**. Chart ₿ | USD is display-only. When logged out and the card is ready: **Set up passkey** (icon-only Fingerprint, `view.claim`) under the card via `ViewProfileClaim`. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
+- **Actions:** Change language (light switcher top-right). On profile fetch error, **Try again**. Chart ₿ | USD is display-only. When logged out and the card is ready: **Set up a passkey for this profile** (icon-only Fingerprint, `view.claim`) under the card via `ViewProfileClaim`. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`). Shared links copied from `/profile`.
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, compact Given/Received chart (legend + ₿ | USD + SVG; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, icon-only **Set up passkey** claim control under the card when logged out, no view-key copy, no back arrow.
+Valid known key. Heading **Profile**, compact Given/Received chart (legend + ₿ | USD + SVG; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, icon-only **Set up a passkey for this profile** claim control under the card when logged out, no view-key copy, no back arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
 

@@ -50,8 +50,8 @@ describe('ViewKeyCopy', () => {
     Object.assign(navigator, { clipboard: { writeText } });
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
 
-    const button = screen.getByRole('button', { name: 'Copy view-key link' });
-    expect(screen.queryByText('Copy view-key link')).toBeNull();
+    const button = screen.getByRole('button', { name: 'Copy view-only link' });
+    expect(screen.queryByText('Copy view-only link')).toBeNull();
     expectIdleIcon(button);
     fireEvent.click(button);
     await act(async () => {
@@ -71,9 +71,9 @@ describe('ViewKeyCopy', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     await waitFor(() => {
-      const button = screen.getByRole('button', { name: 'Copy view-key link' });
+      const button = screen.getByRole('button', { name: 'Copy view-only link' });
       expectCopiedIcon(button);
       expect(button.textContent).not.toContain('Copied');
     });
@@ -84,9 +84,9 @@ describe('ViewKeyCopy', () => {
     Object.assign(navigator, { clipboard: { writeText } });
     const exec = stubExecCommand(() => true);
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     await waitFor(() => {
-      expectCopiedIcon(screen.getByRole('button', { name: 'Copy view-key link' }));
+      expectCopiedIcon(screen.getByRole('button', { name: 'Copy view-only link' }));
     });
     expect(exec).toHaveBeenCalledWith('copy');
   });
@@ -95,9 +95,9 @@ describe('ViewKeyCopy', () => {
     Object.assign(navigator, { clipboard: undefined });
     const exec = stubExecCommand(() => true);
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     await waitFor(() => {
-      expectCopiedIcon(screen.getByRole('button', { name: 'Copy view-key link' }));
+      expectCopiedIcon(screen.getByRole('button', { name: 'Copy view-only link' }));
     });
     expect(exec).toHaveBeenCalledWith('copy');
   });
@@ -108,11 +108,11 @@ describe('ViewKeyCopy', () => {
     stubExecCommand(() => false);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalled();
     });
-    expectIdleIcon(screen.getByRole('button', { name: 'Copy view-key link' }));
+    expectIdleIcon(screen.getByRole('button', { name: 'Copy view-only link' }));
   });
 
   it('stays idle when execCommand throws', async () => {
@@ -123,11 +123,11 @@ describe('ViewKeyCopy', () => {
     });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalled();
     });
-    expectIdleIcon(screen.getByRole('button', { name: 'Copy view-key link' }));
+    expectIdleIcon(screen.getByRole('button', { name: 'Copy view-only link' }));
   });
 
   it('unmounts without a pending timer', () => {
@@ -145,7 +145,7 @@ describe('ViewKeyCopy', () => {
     );
     Object.assign(navigator, { clipboard: { writeText } });
     const { unmount } = renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     unmount();
     await act(async () => {
       resolveWrite?.();
@@ -164,7 +164,7 @@ describe('ViewKeyCopy', () => {
     Object.assign(navigator, { clipboard: { writeText } });
     const exec = stubExecCommand(() => true);
     const { unmount } = renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     unmount();
     await act(async () => {
       rejectWrite?.(new Error('denied'));
@@ -178,7 +178,7 @@ describe('ViewKeyCopy', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     const { unmount } = renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy view-key link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy view-only link' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -193,7 +193,7 @@ describe('ViewKeyCopy', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     renderWithLocale(<ViewKeyCopy viewKey={VIEW_KEY} />);
-    const button = screen.getByRole('button', { name: 'Copy view-key link' });
+    const button = screen.getByRole('button', { name: 'Copy view-only link' });
     fireEvent.click(button);
     await act(async () => {
       await Promise.resolve();

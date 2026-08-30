@@ -935,7 +935,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages with Bitcoin yet.')).toBeVisible();
+    await expect(page.getByText('No message has received Bitcoin yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -954,7 +954,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await shotScreen(page, 'state-welcome-empty');
   });
 
@@ -994,7 +994,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByRole('button', { name: 'Post' }).click();
     await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
     await shotScreen(page, 'state-welcome-validation-error');
@@ -1071,7 +1071,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Hello with this photo.');
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
@@ -1143,7 +1143,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption before attaching a photo.');
     await expect(page.getByLabel('Your message')).toHaveValue('Caption before attaching a photo.');
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
@@ -1154,7 +1154,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await attachTinyJpeg(page);
     await expect(page.getByLabel('Your message')).toHaveValue('');
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
@@ -1165,7 +1165,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption with selected photo.');
     await attachTinyJpeg(page);
     await expect(page.getByAltText('Selected photo')).toBeVisible();
@@ -1177,7 +1177,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption kept after removing photo.');
     await attachTinyJpeg(page);
     await page.getByRole('button', { name: 'Remove photo' }).click();
@@ -1191,7 +1191,7 @@ test.describe('welcome forum variants', () => {
     await hangCreateImageBitmap(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
@@ -1203,7 +1203,7 @@ test.describe('welcome forum variants', () => {
     await hangCreateImageBitmap(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption while the photo is preparing.');
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByLabel('Your message')).toHaveValue(
@@ -1246,7 +1246,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption while the post is in flight.');
     await attachTinyJpeg(page);
     await page.getByRole('button', { name: 'Post' }).click();
@@ -1301,7 +1301,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await attachGif(page);
     await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
@@ -1312,7 +1312,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption with an unsupported photo.');
     await attachGif(page);
     await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
@@ -1326,7 +1326,7 @@ test.describe('welcome forum variants', () => {
     await stubTooLargeJpeg(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
@@ -1338,7 +1338,7 @@ test.describe('welcome forum variants', () => {
     await stubTooLargeJpeg(page);
     await emptyForum(page);
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption with a photo that is too large.');
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
@@ -1367,7 +1367,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByText('No messages yet. Be the first to write.')).toBeVisible();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption when posting fails.');
     await attachTinyJpeg(page);
     await page.getByRole('button', { name: 'Post' }).click();
@@ -1533,9 +1533,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Verified' }).click();
     await expect(
-      page.getByText(
-        'A moderator met this person in real life and confirmed they are a real human.',
-      ),
+      page.getByText('A moderator has met this person in real life and confirmed they are real.'),
     ).toBeVisible();
     await shotScreen(page, 'state-welcome-role-hint');
   });
@@ -1564,7 +1562,11 @@ test.describe('contact screens', () => {
   test('screen /contact', async ({ page }) => {
     await seedAda(page);
     await page.goto('/contact');
-    await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
+    await expect(
+      page.getByText(
+        'Write to 21.gifts here — there is no email address. This is the only way to reach us.',
+      ),
+    ).toBeVisible();
     await shotScreen(page, 'screen-contact');
   });
 
@@ -1597,7 +1599,9 @@ test.describe('contact screens', () => {
     await page.goto('/contact');
     await page.getByLabel('Your message').fill('Hello');
     await page.getByRole('button', { name: 'Send' }).click();
-    await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
+    await expect(
+      page.getByText('Received — thank you. We read every message here in the app.'),
+    ).toBeVisible();
     await shotScreen(page, 'state-contact-success');
   });
 });

@@ -95,7 +95,9 @@ describe('ContactLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Received. We read this in the app.')).toBeTruthy();
+      expect(
+        screen.getByText('Received — thank you. We read every message here in the app.'),
+      ).toBeTruthy();
     });
     expect(postMock).toHaveBeenCalledWith('sess', 'Hello');
     expect(screen.queryByLabelText('Your message')).toBeNull();
@@ -134,7 +136,9 @@ describe('ContactLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
     });
     await waitFor(() => {
-      expect(screen.getByText('Received. We read this in the app.')).toBeTruthy();
+      expect(
+        screen.getByText('Received — thank you. We read every message here in the app.'),
+      ).toBeTruthy();
     });
   });
 });
