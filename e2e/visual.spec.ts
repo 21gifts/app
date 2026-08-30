@@ -1667,6 +1667,9 @@ test.describe('dark variant baselines', () => {
 });
 
 test.describe('function baselines', () => {
+  // ~140 Function: clips; CI's default 30s timed out after the theme/BIP-177 sections were added.
+  test.describe.configure({ timeout: 120_000 });
+
   test('every handbook function section', async ({ page }) => {
     await page.goto('/handbook');
     await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
