@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RulesSetup } from '@/components/RulesSetup';
 import { agreeToRules } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
+import { RULES_CHAPTER_IDS } from '@/lib/rules-chapters';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -23,6 +24,8 @@ const baseAccount: Account = {
   viewKey: 'a'.repeat(64),
 };
 
+const oneChapter = [<p key="body">rules-body</p>];
+
 beforeEach(() => {
   vi.clearAllMocks();
   useAuthStore.setState({ session: 'sess', account: baseAccount });
@@ -33,38 +36,92 @@ afterEach(cleanup);
 describe('RulesSetup', () => {
   it('renders nothing when there is no account', () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    const { container } = renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    const { container } = renderWithLocale(<RulesSetup chapters={oneChapter} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders nothing when the session token is absent', () => {
     useAuthStore.setState({ session: null, account: baseAccount });
-    const { container } = renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    const { container } = renderWithLocale(<RulesSetup chapters={oneChapter} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('shows the prompt, children, and agree button', () => {
-    renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+  it('renders nothing when chapters is empty', () => {
+    const { container } = renderWithLocale(<RulesSetup chapters={[]} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('shows the prompt, current chapter, progress, and agree button', () => {
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
     expect(screen.getByRole('heading', { name: 'Living room rules' })).toBeTruthy();
     expect(
-      screen.getByText(
-        'Please read these living-room rules. You can continue only after you agree.',
-      ),
+      screen.getByText('Please read this chapter. You can continue only after you agree.'),
     ).toBeTruthy();
+    expect(screen.getByText('1 of 1')).toBeTruthy();
     expect(screen.getByText('rules-body')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it('advances chapters without posting until the last agree', () => {
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
+    expect(screen.getByText('chapter-one')).toBeTruthy();
+    expect(screen.queryByText('chapter-two')).toBeNull();
+    expect(screen.getByText('1 of 2')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+
+    expect(agreeToRules).not.toHaveBeenCalled();
+    expect(screen.queryByText('chapter-one')).toBeNull();
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    expect(screen.getByText('2 of 2')).toBeTruthy();
+  });
+
+  it('posts agreement only on the last chapter', async () => {
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...baseAccount,
+      rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
+    });
+    renderWithLocale(
+      <RulesSetup
+        chapters={RULES_CHAPTER_IDS.map((id) => (
+          <p key={id}>{id}</p>
+        ))}
+      />,
+    );
+
+    const agree = (): HTMLElement => screen.getByRole('button', { name: 'I agree to these rules' });
+    for (let i = 0; i < RULES_CHAPTER_IDS.length - 1; i += 1) {
+      fireEvent.click(agree());
+      expect(agreeToRules).not.toHaveBeenCalled();
+    }
+    fireEvent.click(agree());
+
+    await waitFor(() => {
+      expect(agreeToRules).toHaveBeenCalledTimes(1);
+      expect(agreeToRules).toHaveBeenCalledWith('sess');
+    });
+  });
+
+  it('shows an icon-only back control after the first chapter', () => {
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+
+    const back = screen.getByRole('button', { name: 'Back' });
+    expect(back).toBeTruthy();
+    expect(screen.queryByText('Back')).toBeNull();
+
+    fireEvent.click(back);
+    expect(agreeToRules).not.toHaveBeenCalled();
+    expect(screen.getByText('chapter-one')).toBeTruthy();
+    expect(screen.queryByText('chapter-two')).toBeNull();
   });
 
   it('posts agreement and merges only rulesAgreedAt into the store', async () => {
@@ -74,11 +131,7 @@ describe('RulesSetup', () => {
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
     });
-    renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
 
@@ -98,11 +151,7 @@ describe('RulesSetup', () => {
       resolve = r;
     });
     vi.mocked(agreeToRules).mockReturnValue(pending);
-    renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
 
@@ -127,11 +176,7 @@ describe('RulesSetup', () => {
 
   it('shows the request error when agreement fails', async () => {
     vi.mocked(agreeToRules).mockRejectedValue(new Error('nope'));
-    renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
 
@@ -144,11 +189,7 @@ describe('RulesSetup', () => {
       resolve = r;
     });
     vi.mocked(agreeToRules).mockReturnValue(pending);
-    renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
 
@@ -170,11 +211,7 @@ describe('RulesSetup', () => {
       resolve = r;
     });
     vi.mocked(agreeToRules).mockReturnValue(pending);
-    renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
 
@@ -195,11 +232,7 @@ describe('RulesSetup', () => {
       resolve = r;
     });
     vi.mocked(agreeToRules).mockReturnValue(pending);
-    renderWithLocale(
-      <RulesSetup>
-        <p>rules-body</p>
-      </RulesSetup>,
-    );
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
 

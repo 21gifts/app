@@ -52,4 +52,30 @@ describe('RulesDocument', () => {
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
     expect(screen.getByRole('heading', { name: '1. Only free donations' })).toBeTruthy();
   });
+
+  it('renders only law 1 when chapter is law1', () => {
+    render(<RulesDocument messages={getCatalog('en')} chapter="law1" />);
+    expect(screen.getByRole('heading', { name: '1. Only free donations' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: '2. Donors come first' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Wanted' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'House right' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Contact 21.gifts' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+  });
+
+  it('renders only the lead when chapter is lead', () => {
+    render(<RulesDocument messages={getCatalog('en')} chapter="lead" />);
+    expect(
+      screen.getByText(/You are a guest in a living room with the windows open/i),
+    ).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: '1. Only free donations' })).toBeNull();
+  });
+
+  it('renders all three forbidden groups when chapter is forbidden', () => {
+    render(<RulesDocument messages={getCatalog('en')} chapter="forbidden" />);
+    expect(screen.getByRole('heading', { name: 'Forbidden — hard-blocked' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Against a return (law 1)' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Driving donors away (law 2)' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Also banned' })).toBeTruthy();
+  });
 });

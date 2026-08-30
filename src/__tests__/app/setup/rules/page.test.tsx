@@ -2,11 +2,12 @@ import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import RulesSetupPage from '@/app/setup/rules/page';
+import { RULES_CHAPTER_IDS } from '@/lib/rules-chapters';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/components/RulesSetup', () => ({
-  RulesSetup: ({ children }: { children: ReactNode }) => (
-    <div data-testid="rules-setup">{children}</div>
+  RulesSetup: ({ chapters }: { chapters: ReactNode[] }) => (
+    <div data-testid="rules-setup">{chapters}</div>
   ),
 }));
 
@@ -33,6 +34,6 @@ describe('RulesSetupPage', () => {
     renderWithLocale(await RulesSetupPage());
     expect(screen.getByTestId('rules-setup')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
-    expect(screen.getByTestId('rules-document')).toBeTruthy();
+    expect(screen.getAllByTestId('rules-document')).toHaveLength(RULES_CHAPTER_IDS.length);
   });
 });

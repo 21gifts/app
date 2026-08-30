@@ -194,13 +194,13 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Living room rules**, prompt to read and agree, the full rules body without the public Contact / forum nav, and a full-width **I agree to these rules** button.
-- **Actions:** Read the rules and **I agree to these rules**; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After agreement, the visitor is sent to `/welcome`.
-- **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`).
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **I agree to these rules** button. After the first chapter, an icon-only back control (top-left) returns to the previous chapter.
+- **Actions:** Read the current chapter and **I agree to these rules** to advance; icon-only back after the first chapter. The last **I agree** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
+- **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
 
-Signed in with a name and address and `rulesAgreedAt` still null. Rules body and **I agree to these rules** visible.
+Signed in with a name and address and `rulesAgreedAt` still null. First chapter (lead) and **I agree to these rules** visible.
 
 ![21.gifts rules setup](images/setup-rules.png)
 
