@@ -349,9 +349,10 @@ Visual specs run in four projects (`desktop-light`, `desktop-dark`,
 `mobile-light`, `mobile-dark`) so each shot is stored as
 `${arg}-${combo}-linux.png`. Handbook Markdown keeps `images/<name>.png`
 references; those bytes are filled into `public/handbook-images/` by
-`npm run handbook:images` / `prebuild` / `predev` from the **desktop-light**
-baseline (`variant.visual` + `HANDBOOK_COMBO_ID` → `variant.image`). Do
-not commit PNGs under `docs/handbook/images/` or `public/handbook-images/`.
+`npm run handbook:images` / `prebuild` / `predev` from the desktop-light
+baseline when that combo is allowed for the variant, otherwise from the
+variant’s first listed combo. Do not commit PNGs under
+`docs/handbook/images/` or `public/handbook-images/`.
 
 Every **variant** in `scripts/screen-variants.mjs` **must** have a Playwright
 Linux baseline for **each** combo in `BASELINE_COMBOS` (or the variant’s
@@ -367,10 +368,13 @@ the baselines in the **same PR** is rejected.
 `npm run screenshot:check` (and CI) fails when a PNG is missing.
 
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
-`npm run e2e` still runs the behavioral specs. Regenerate on Linux:
+`npm run e2e` still runs the behavioral specs. fullPage shots unstick
+`header.sticky` so Playwright does not paint the marketing header into every
+stitch. Regenerate on Linux (`--platform linux/amd64` is required so regen
+matches CI linux/amd64 Chromium):
 
 ```bash
-docker run --rm -v "$PWD":/work -w /work \
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
   mcr.microsoft.com/playwright:v1.61.1-noble \
   bash -lc 'npm ci && npm run e2e:update-snapshots'
 ```

@@ -13,12 +13,15 @@ is a stub.
 Do not merge a PR that adds a screen, export, or endpoint without updating this
 handbook in the same PR. Undeclared gaps are rejected, not discussed.
 
-Every screen **variant** and every exported **function** needs four Playwright
-Linux Chromium baselines (desktop/mobile × light/dark), named
-`${visual}-${combo.id}-linux.png`. Markdown keeps `images/<file>.png`
-references; those bytes are copied to `public/handbook-images/` by
-`npm run handbook:images` / `prebuild` / `predev` from the desktop-light
-baseline (or the variant’s first listed combo). Do not commit PNGs under
+Every screen **variant** needs Playwright Linux Chromium baselines for each
+combo in `BASELINE_COMBOS` (desktop/mobile × light/dark), named
+`${visual}-${combo.id}-linux.png`, except UI that cannot exist (header
+hamburger on desktop, payment QR on a smartphone, smartphone pay sheet on
+desktop). Every exported **function** needs all four combos. Markdown keeps
+`images/<file>.png` references; those bytes are copied to
+`public/handbook-images/` by `npm run handbook:images` / `prebuild` /
+`predev` from the desktop-light baseline, or the variant’s first listed combo
+when desktop-light is not allowed. Do not commit PNGs under
 `docs/handbook/images/`.
 `npm run screenshot:check` fails the PR when a baseline is missing.
 

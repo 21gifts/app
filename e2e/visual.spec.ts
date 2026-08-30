@@ -149,7 +149,20 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
 });
 
+/**
+ * Playwright fullPage stitches viewport chunks; sticky chrome is painted
+ * into every chunk. Force document flow so each header appears once.
+ *
+ * @param page - Page under test.
+ */
+async function unstickStickyChrome(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: 'header.sticky { position: static !important; }',
+  });
+}
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  await unstickStickyChrome(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage,
     // The handbook viewport embeds other screen PNGs; variant shots shift a few percent.
@@ -1517,6 +1530,7 @@ test.describe('function baselines', () => {
   test('every handbook function section', async ({ page }) => {
     await page.goto('/handbook');
     await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
+    await unstickStickyChrome(page);
 
     const headings = page.locator('#functions h2[id^="functions-function-"]');
     const count = await headings.count();
