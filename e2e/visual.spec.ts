@@ -1437,6 +1437,53 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-pay-smartphone');
   });
 
+  test('welcome pay-author-wallet', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-pay',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-pay/invoice', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: "The author's wallet cannot receive this Bitcoin payment",
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'All' }).click();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount (₿)').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('alert')).toHaveText(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+    await shotScreen(page, 'state-welcome-pay-author-wallet');
+  });
+
   test('welcome role-hint', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {

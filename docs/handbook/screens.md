@@ -439,6 +439,12 @@ Same pay sheet on a smartphone user-agent: **Pay** button with the Wallet of Sat
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
+### Variant: pay-author-wallet
+
+Payable note, amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. No QR and no Pay button.
+
+![21.gifts welcome pay author wallet](images/welcome-pay-author-wallet.png)
+
 ### Variant: role-hint
 
 Carol's **Verified** tag clicked; the explanation under that card header is visible (**A moderator met this person in real life and confirmed they are a real human.**). Bob stays without a pill; Ada still shows **Moderator**.

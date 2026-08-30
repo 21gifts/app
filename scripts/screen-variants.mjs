@@ -417,6 +417,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-author-wallet',
+    image: 'welcome-pay-author-wallet.png',
+    visual: 'state-welcome-pay-author-wallet',
+    needle: "The author's wallet cannot receive this Bitcoin payment",
+  },
+  {
+    route: '/welcome',
     id: 'role-hint',
     image: 'welcome-role-hint.png',
     visual: 'state-welcome-role-hint',
