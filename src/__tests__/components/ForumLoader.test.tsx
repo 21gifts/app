@@ -526,7 +526,7 @@ describe('ForumLoader', () => {
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
@@ -566,7 +566,7 @@ describe('ForumLoader', () => {
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [first] } });
@@ -588,7 +588,7 @@ describe('ForumLoader', () => {
     prepareVideoMock.mockResolvedValue({ ok: false, error: 'unsupported' });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -607,7 +607,7 @@ describe('ForumLoader', () => {
     prepareVideoMock.mockResolvedValue({ ok: false, error: 'tooLarge' });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -1225,7 +1225,7 @@ describe('ForumLoader', () => {
     postVideoMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
