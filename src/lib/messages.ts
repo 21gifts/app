@@ -601,7 +601,7 @@ const de = {
     'Über Bitcoin sprechen, wenn es jemandem im Raum hilft und niemanden zum Zahlen drängt.',
   'rules.allowed3': 'Andere Sprachen. Mitlesen. Schweigen.',
   'rules.allowed4':
-    'Ihr Name und Ihre Wallet of Satoshi-Adresse im Profil — nicht in jeder Nachricht wiederholt.',
+    'Ihr Name und Ihre Wallet of Satoshi address im Profil — nicht in jeder Nachricht wiederholt.',
   'rules.allowed5':
     '«Ich kann gerade nichts geben.» Das ist ein vollständiger Satz und braucht keine Erklärung.',
   'rules.ratherNotHeading': 'Lieber nicht',
@@ -926,7 +926,7 @@ const es = {
     'Hablar de Bitcoin cuando ayuda a alguien del salón y no empuja a nadie a pagar.',
   'rules.allowed3': 'Otros idiomas. Leer sin escribir. Guardar silencio.',
   'rules.allowed4':
-    'Tu nombre y tu dirección de Wallet of Satoshi en tu perfil — no repetidos en cada mensaje.',
+    'Tu nombre y tu Wallet of Satoshi address en tu perfil — no repetidos en cada mensaje.',
   'rules.allowed5': '«Ahora mismo no puedo dar.» Es una frase completa y no necesita explicación.',
   'rules.ratherNotHeading': 'Mejor no',
   'rules.ratherNotLead': 'Todavía no es una prohibición. Repítelo o sube el volumen, y lo será.',
