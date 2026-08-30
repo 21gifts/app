@@ -38,6 +38,8 @@ const sample: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis',
   replyCount: 0,
 };
