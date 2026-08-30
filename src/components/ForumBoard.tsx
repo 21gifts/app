@@ -561,7 +561,7 @@ export function ForumBoard({
               type="button"
               onClick={onClearPhoto}
               disabled={posting}
-              aria-label={t('forum.removePhoto')}
+              aria-label={t('forum.removeVideo')}
               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
             >
               <X aria-hidden="true" className="h-4 w-4" />

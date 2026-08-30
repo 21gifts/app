@@ -996,7 +996,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByRole('button', { name: 'Post' }).click();
-    await expect(page.getByText('Enter a message or add a photo')).toBeVisible();
+    await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
     await shotScreen(page, 'state-welcome-validation-error');
   });
 
@@ -1036,7 +1036,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'All' }).click();
     await expect(page.getByAltText('Photo from Ada')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photo');
   });
 
@@ -1303,7 +1303,9 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await attachGif(page);
-    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(
+      page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'),
+    ).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-error-unsupported');
   });
@@ -1315,7 +1317,9 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption with an unsupported photo.');
     await attachGif(page);
-    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(
+      page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'),
+    ).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with an unsupported photo.');
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-error-unsupported-with-text');
@@ -1328,7 +1332,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
+    await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-error-too-large');
   });
@@ -1341,7 +1345,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Caption with a photo that is too large.');
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByText('Keep the photo under 1 MB')).toBeVisible();
+    await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveValue(
       'Caption with a photo that is too large.',
     );

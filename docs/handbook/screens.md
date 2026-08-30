@@ -267,9 +267,9 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, ₿ amount always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, and optional photo preview with **Remove photo** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo message, attach/remove a photo draft, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `fetchMessagePhoto`, `visibleForumMessages`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video, ₿ amount always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `visibleForumMessages`.
 
 ### Variant: default
 
@@ -315,7 +315,7 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer and no photo → **Enter a message or add a photo**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
+Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
 
@@ -381,7 +381,7 @@ Forum row for Ada with caption **Caption waiting for the photo to load.** and `h
 
 ### Variant: error-unsupported
 
-Attach a GIF → **Use a JPEG, PNG, or WebP photo**.
+Attach a GIF → **Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video**.
 
 ![21.gifts welcome error unsupported](images/welcome-error-unsupported.png)
 
@@ -393,7 +393,7 @@ Same alert with caption **Caption with an unsupported photo.** still in the comp
 
 ### Variant: error-too-large
 
-Encoded JPEG over 1 MB → **Keep the photo under 1 MB**.
+Encoded JPEG over 1 MB → **Keep photos under 1 MB and videos under 32 MB**.
 
 ![21.gifts welcome error too large](images/welcome-error-too-large.png)
 

@@ -480,12 +480,12 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
     expect(postMock).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
     expect(postMock).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
@@ -595,7 +595,9 @@ describe('ForumLoader', () => {
       target: { files: [new File([], 'a.mp4', { type: 'video/mp4' })] },
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
     });
   });
 
@@ -612,7 +614,9 @@ describe('ForumLoader', () => {
       target: { files: [new File([new Uint8Array([1])], 'a.mp4', { type: 'video/mp4' })] },
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Keep photos under 1 MB and videos under 32 MB',
+      );
     });
   });
 
@@ -628,7 +632,9 @@ describe('ForumLoader', () => {
       target: { files: [new File([], 'a.gif', { type: 'image/gif' })] },
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
     });
   });
 
@@ -644,7 +650,9 @@ describe('ForumLoader', () => {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
     });
   });
 
@@ -787,7 +795,9 @@ describe('ForumLoader', () => {
       target: { files: [new File([new Uint8Array([1])], 'big.jpg', { type: 'image/jpeg' })] },
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Keep the photo under 1 MB');
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Keep photos under 1 MB and videos under 32 MB',
+      );
     });
     expect(screen.queryByAltText('Selected photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
@@ -848,7 +858,9 @@ describe('ForumLoader', () => {
       target: { files: [new File([new Uint8Array([1])], 'b.jpg', { type: 'image/jpeg' })] },
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
     });
     expect(screen.queryByAltText('Selected photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));

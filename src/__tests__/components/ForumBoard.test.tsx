@@ -6,6 +6,7 @@ import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import type { ForumFeedMode } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
+import type { ForumVideoPayload } from '@/lib/forum-video';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
@@ -73,6 +74,12 @@ const PHOTO: ForumPhotoPayload = {
   contentType: 'image/jpeg',
   data: 'abc',
   previewUrl: 'data:image/jpeg;base64,abc',
+};
+
+const VIDEO: ForumVideoPayload = {
+  file: new File([], 'c.mp4'),
+  poster: new Blob(),
+  previewUrl: 'blob:v',
 };
 
 const idleProps: Pick<
@@ -154,18 +161,18 @@ describe('ForumBoard', () => {
       '/rules',
     );
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
-    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
-    expect(screen.queryByText('Add a photo')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a photo or video' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo or video')).toBeNull();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     const field = screen.getByLabelText('Your message');
     const button = screen.getByRole('button', { name: 'Post' });
     expect(button).toBeTruthy();
     expect(button.textContent?.trim()).toBe('');
-    expect(screen.getByLabelText('Add a photo').textContent?.trim()).toBe('');
+    expect(screen.getByLabelText('Add a photo or video').textContent?.trim()).toBe('');
     expect(field.nextElementSibling).toBe(button);
     expect(field.previousElementSibling?.previousElementSibling).toBe(
-      screen.getByLabelText('Add a photo'),
+      screen.getByLabelText('Add a photo or video'),
     );
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
@@ -753,6 +760,33 @@ describe('ForumBoard', () => {
     expect(onClearPhoto).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a video draft preview and clear control', () => {
+    const onClearPhoto = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        videoDraft={VIDEO}
+        onClearPhoto={onClearPhoto}
+        {...modeProps('active')}
+      />,
+    );
+    expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:v');
+    const remove = screen.getByRole('button', { name: 'Remove video' });
+    expect(remove.textContent?.trim()).toBe('');
+    expect(screen.queryByText('Remove video')).toBeNull();
+    fireEvent.click(remove);
+    expect(onClearPhoto).toHaveBeenCalledTimes(1);
+  });
+
   it('calls onPickPhoto when a file is chosen', () => {
     const onPickPhoto = vi.fn();
     renderWithLocale(
@@ -773,7 +807,7 @@ describe('ForumBoard', () => {
     );
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
-    fireEvent.click(screen.getByLabelText('Add a photo'));
+    fireEvent.click(screen.getByLabelText('Add a photo or video'));
     expect(clickSpy).toHaveBeenCalled();
     const file = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
     fireEvent.change(input, { target: { files: [file] } });
@@ -1039,7 +1073,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
   });
 
   it('shows formError tooLong alert', () => {
@@ -1117,7 +1151,9 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+    );
   });
 
   it('shows formError tooLarge alert', () => {
@@ -1136,7 +1172,9 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep the photo under 1 MB');
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Keep photos under 1 MB and videos under 32 MB',
+    );
   });
 
   it('disables submit and shows a spinner while posting', () => {
