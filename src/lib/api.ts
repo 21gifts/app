@@ -470,13 +470,26 @@ export async function fetchMessagePhoto(sessionToken: string, id: string): Promi
 /**
  * Starts a passkey registration ceremony.
  *
+ * @param viewKey - Optional 64-hex public view key to claim an existing profile.
+ * When set (non-empty), POSTs JSON `{ viewKey }`; otherwise POSTs with no body.
  * @returns Challenge id plus WebAuthn creation options JSON.
- * @throws Error on a non-2xx status or a body that fails validation.
+ * @throws Error with the api `{ error }` string when present on non-2xx, otherwise
+ * a status fallback; or when the body fails validation.
  */
-export async function startPasskeyRegistration(): Promise<PasskeyBegin> {
-  const response = await fetch('/auth/passkey/register/begin', { method: 'POST' });
+export async function startPasskeyRegistration(viewKey?: string): Promise<PasskeyBegin> {
+  const response =
+    viewKey !== undefined && viewKey !== ''
+      ? await fetch('/auth/passkey/register/begin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ viewKey }),
+        })
+      : await fetch('/auth/passkey/register/begin', { method: 'POST' });
   if (!response.ok) {
-    throw new Error(`Failed to start passkey registration: ${response.status}`);
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === null ? `Failed to start passkey registration: ${response.status}` : raw,
+    );
   }
   return passkeyBeginSchema.parse(await response.json());
 }

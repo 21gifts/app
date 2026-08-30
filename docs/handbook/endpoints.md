@@ -23,8 +23,8 @@
 
 ## Endpoint: POST /auth/passkey/register/begin
 
-- **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`. Optional JSON body `{ viewKey }` (64 hex) claims an existing public profile; omit the body for a new registration.
+- **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable.
 - **Used by:** `startPasskeyRegistration`.
 - **Auth:** Public.
 

@@ -2120,6 +2120,33 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   );
 });
 
+test('Function: ViewProfileClaim — public view shows the passkey claim control', async ({
+  page,
+}) => {
+  const key = 'a'.repeat(64);
+  await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+      }),
+    });
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto(`/view/${key}`);
+  await expect(page.getByRole('button', { name: 'Set up passkey for this profile' })).toBeVisible();
+});
+
 test('Function: ViewKeyCopy — profile shows the copy view-key control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
