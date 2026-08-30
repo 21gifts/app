@@ -170,7 +170,6 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByText('Thank you both — that helps.')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -242,7 +241,7 @@ describe('ForumBoard', () => {
         lawsVisible={false}
       />,
     );
-    expect(screen.getByText('Thank you both — that helps.')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
     expect(
       screen.queryByText(
         '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',

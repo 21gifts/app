@@ -9,6 +9,8 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('@/lib/api', () => ({
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
+  LIGHTNING_ADDRESS_NOT_ZAP_ERROR:
+    'This Wallet of Satoshi address cannot receive these Bitcoin payments',
 }));
 
 const baseAccount: Account = {

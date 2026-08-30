@@ -96,6 +96,7 @@ describe('forumMessageSchema', () => {
     payable: false,
     hasPhoto: false,
     role: 'basis' as const,
+    replyCount: 0,
   };
 
   it('accepts text with no photo', () => {
