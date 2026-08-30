@@ -1,7 +1,10 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { InboxScreen } from '@/components/InboxScreen';
 import type { Conversation, ConversationMessage } from '@/lib/api-types';
+import { getCatalog } from '@/lib/messages';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(cleanup);
@@ -210,24 +213,28 @@ describe('InboxScreen', () => {
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
     rerender(
-      <InboxScreen
-        conversations={[THREAD]}
-        error={false}
-        loading={false}
-        onRetry={() => undefined}
-        openId="conv-1"
-        onOpen={() => undefined}
-        onBack={() => undefined}
-        messages={null}
-        messagesLoading={true}
-        messagesError={false}
-        onRetryMessages={() => undefined}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        posting={false}
-        formError="request"
-      />,
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <InboxScreen
+            conversations={[THREAD]}
+            error={false}
+            loading={false}
+            onRetry={() => undefined}
+            openId="conv-1"
+            onOpen={() => undefined}
+            onBack={() => undefined}
+            messages={null}
+            messagesLoading={true}
+            messagesError={false}
+            onRetryMessages={() => undefined}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            posting={false}
+            formError="request"
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
     );
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');

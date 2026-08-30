@@ -10,6 +10,10 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('@/lib/request-locale', () => ({
+  getRequestLocale: vi.fn(async () => 'en' as const),
+}));
+
 afterEach(cleanup);
 
 describe('HandbookEndpointsPage', () => {

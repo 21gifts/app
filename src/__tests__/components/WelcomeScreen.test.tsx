@@ -11,10 +11,18 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: (href: string) => void } => ({ push: vi.fn() }),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn().mockResolvedValue([]),
   postMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchReplies: vi.fn(),
+  openConversation: vi.fn(),
+  postMessageInvoice: vi.fn(),
+  dismissForumLaws: vi.fn(),
 }));
 
 beforeEach(() => {
