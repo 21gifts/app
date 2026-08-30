@@ -51,7 +51,7 @@ export default function LegalPage(): ReactElement {
           language or a light/dark appearance; then a <code>locale</code> cookie and/or a{' '}
           <code>theme</code> cookie store those choices so the next visit can honour them. Choosing
           System appearance removes the <code>theme</code> cookie. The application stores a session
-          token in <code>localStorage</code> after you sign in so a returning visitor stays signed
+          token in <code>localStorage</code> after you log in so a returning visitor stays logged
           in.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
@@ -70,7 +70,7 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Data in the app</h3>
         <p className="text-white/70">
-          The application on this same origin lets you sign in and uses Wallet of Satoshi to receive
+          The application on this same origin lets you log in and uses Wallet of Satoshi to receive
           Bitcoin. It does not hold funds. Bitcoin payments go directly from the donor&apos;s Wallet
           of Satoshi to the receiver&apos;s Wallet of Satoshi address.
         </p>

@@ -24,7 +24,7 @@ describe('Home', () => {
   it('states what the product is', async () => {
     render(await Home());
     expect(
-      screen.getByText(/Ask for help, or send help, without an organization in the middle/i),
+      screen.getByText(/Ask for help or send help, with no organization in the middle/i),
     ).toBeTruthy();
   });
 

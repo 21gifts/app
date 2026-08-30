@@ -113,7 +113,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
   });
 
@@ -122,7 +122,9 @@ describe('ForumLoader', () => {
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(
-        screen.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+        screen.getByText(
+          '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+        ),
       ).toBeTruthy();
     });
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
@@ -136,10 +138,12 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     expect(
-      screen.queryByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+      screen.queryByText(
+        '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+      ),
     ).toBeNull();
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
   });
@@ -155,7 +159,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(
         screen.queryByText(
-          'This is a donation platform. Only free gifts — never pay for a promise.',
+          '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
         ),
       ).toBeNull();
     });
@@ -176,7 +180,9 @@ describe('ForumLoader', () => {
     });
     await waitFor(() => {
       expect(
-        screen.getByText('This is a donation platform. Only free gifts — never pay for a promise.'),
+        screen.getByText(
+          '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+        ),
       ).toBeTruthy();
     });
     expect(useAuthStore.getState().account?.forumLawsDismissed).toBe(false);
@@ -232,7 +238,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -281,7 +287,7 @@ describe('ForumLoader', () => {
     ]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     expect(photoMock).not.toHaveBeenCalled();
   });
@@ -301,7 +307,7 @@ describe('ForumLoader', () => {
     ]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     expect(photoMock).not.toHaveBeenCalled();
     await revealAll();
@@ -377,7 +383,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -404,7 +410,9 @@ describe('ForumLoader', () => {
     renderWithLocale(<ForumLoader />, 'de');
     await waitFor(() => {
       expect(
-        screen.getByText('Nachrichten konnten nicht geladen werden. Bitte erneut versuchen.'),
+        screen.getByText(
+          'Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+        ),
       ).toBeTruthy();
     });
     expect(screen.queryByText('SECRET internals')).toBeNull();
@@ -444,7 +452,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
@@ -464,7 +472,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), {
@@ -480,7 +488,7 @@ describe('ForumLoader', () => {
     prepareMock.mockResolvedValue({ ok: false, error: 'unsupported' });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -496,7 +504,7 @@ describe('ForumLoader', () => {
     prepareMock.mockRejectedValueOnce(new Error('Could not decode image'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -526,7 +534,7 @@ describe('ForumLoader', () => {
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -569,7 +577,7 @@ describe('ForumLoader', () => {
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -598,7 +606,7 @@ describe('ForumLoader', () => {
     );
     const view = renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -633,7 +641,7 @@ describe('ForumLoader', () => {
       .mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -665,7 +673,7 @@ describe('ForumLoader', () => {
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -694,7 +702,7 @@ describe('ForumLoader', () => {
       .mockRejectedValueOnce(new Error('Could not decode image'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -730,7 +738,7 @@ describe('ForumLoader', () => {
     photoMock.mockRejectedValue(new Error('gone'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -895,7 +903,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -932,7 +940,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -968,7 +976,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -1156,7 +1164,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1187,7 +1195,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
@@ -1218,7 +1226,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1242,7 +1250,7 @@ describe('ForumLoader', () => {
     postMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
@@ -1257,7 +1265,7 @@ describe('ForumLoader', () => {
     postMock.mockRejectedValue(new Error('Too many messages'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
@@ -1278,7 +1286,7 @@ describe('ForumLoader', () => {
     postMock.mockReturnValue(pending);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
@@ -1313,7 +1321,7 @@ describe('ForumLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1338,7 +1346,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1357,7 +1365,7 @@ describe('ForumLoader', () => {
     invoiceMock.mockRejectedValue(new Error('Could not start the Bitcoin payment'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1379,7 +1387,7 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1401,7 +1409,7 @@ describe('ForumLoader', () => {
     invoiceMock.mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1429,7 +1437,7 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1456,7 +1464,7 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1466,7 +1474,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Active' }));
-    expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+    expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     expect(screen.queryByLabelText('Amount (₿)')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(invoiceMock).toHaveBeenCalledTimes(1);
@@ -1487,7 +1495,7 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1507,7 +1515,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false }]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {
@@ -1538,7 +1546,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
@@ -1577,7 +1585,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByText('No messages yet. Be the first to write.')).toBeTruthy();
+    expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
@@ -1728,7 +1736,7 @@ describe('ForumLoader', () => {
     invoiceMock.mockReturnValue(new Promise(() => undefined));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No messages with Bitcoin yet.')).toBeTruthy();
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     await revealAll();
     await waitFor(() => {

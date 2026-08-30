@@ -31,6 +31,7 @@ const WANTED = [
   'rules.wanted4',
   'rules.wanted5',
   'rules.wanted6',
+  'rules.wanted7',
 ] as const;
 const ALLOWED = [
   'rules.allowed1',
@@ -48,6 +49,7 @@ const RATHER_NOT = [
   'rules.ratherNot6',
   'rules.ratherNot7',
   'rules.ratherNot8',
+  'rules.ratherNot9',
 ] as const;
 const FORBIDDEN_QUID = [
   'rules.forbiddenQuid1',
@@ -268,8 +270,8 @@ function renderChapter(id: RulesChapterId, t: Translate): ReactElement {
 }
 
 /**
- * Presentational living-room rules body: lead with the sofa test, three law
- * cards (test callout on laws 1 and 2), welcome / allowed / better-not /
+ * Presentational living-room rules body: lead with the sofa test, three rule
+ * cards (test callout on rules 1 and 2), welcome / allowed / better-not /
  * forbidden lists with glyphs, the closing "Our house" block, and optional
  * CTAs to `/contact` and `/welcome`.
  *

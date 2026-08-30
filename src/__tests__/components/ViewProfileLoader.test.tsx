@@ -116,7 +116,7 @@ describe('ViewProfileLoader', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Set up passkey for this profile' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Set up a passkey for this profile' })).toBeTruthy();
     expect(fetchStats).toHaveBeenCalledWith('alice');
   });
 

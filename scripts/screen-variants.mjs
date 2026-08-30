@@ -243,14 +243,14 @@ export const SCREEN_VARIANTS = [
     id: 'empty-paid',
     image: 'welcome-empty-paid.png',
     visual: 'state-welcome-empty-paid',
-    needle: 'No messages with Bitcoin yet.',
+    needle: 'No message has received Bitcoin yet.',
   },
   {
     route: '/welcome',
     id: 'empty',
     image: 'welcome-empty.png',
     visual: 'state-welcome-empty',
-    needle: 'No messages yet. Be the first to write.',
+    needle: 'No messages yet — be the first to write one.',
   },
   {
     route: '/welcome',
@@ -427,7 +427,7 @@ export const SCREEN_VARIANTS = [
     id: 'role-hint',
     image: 'welcome-role-hint.png',
     visual: 'state-welcome-role-hint',
-    needle: 'A moderator met this person in real life and confirmed they are a real human.',
+    needle: 'A moderator has met this person in real life and confirmed they are real.',
   },
   {
     route: '/rules',
@@ -441,7 +441,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'contact.png',
     visual: 'screen-contact',
-    needle: 'Write to 21.gifts here. There is no email.',
+    needle: 'Write to 21.gifts here — there is no email address. This is the only way to reach us.',
   },
   {
     route: '/contact',
@@ -455,7 +455,7 @@ export const SCREEN_VARIANTS = [
     id: 'success',
     image: 'contact-success.png',
     visual: 'state-contact-success',
-    needle: 'Received. We read this in the app.',
+    needle: 'Received — thank you. We read every message here in the app.',
   },
   {
     route: '/profile',

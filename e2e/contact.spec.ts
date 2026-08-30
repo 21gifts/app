@@ -30,7 +30,11 @@ test('contact page shows the lead and composer', async ({ page }) => {
   await seedSignedIn(page);
   await page.goto('/contact');
   await expect(page.getByRole('heading', { name: 'Contact' })).toBeVisible();
-  await expect(page.getByText('Write to 21.gifts here. There is no email.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Write to 21.gifts here — there is no email address. This is the only way to reach us.',
+    ),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
     'href',
     '/rules',
@@ -46,7 +50,9 @@ test('contact empty send shows Enter a message', async ({ page }) => {
   await expect(page.getByText('Enter a message')).toBeVisible();
 });
 
-test('contact success shows Received. We read this in the app.', async ({ page }) => {
+test('contact success shows Received — thank you. We read every message here in the app.', async ({
+  page,
+}) => {
   await seedSignedIn(page);
   await page.route(/\/contact\/submit$/, async (route) => {
     if (route.request().method() !== 'POST') {
@@ -67,6 +73,8 @@ test('contact success shows Received. We read this in the app.', async ({ page }
   await page.goto('/contact');
   await page.getByLabel('Your message').fill('Hello team');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByText('Received. We read this in the app.')).toBeVisible();
+  await expect(
+    page.getByText('Received — thank you. We read every message here in the app.'),
+  ).toBeVisible();
   await expect(page.getByLabel('Your message')).toHaveCount(0);
 });
