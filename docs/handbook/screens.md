@@ -150,6 +150,12 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 
 ![21.gifts login language](images/login-language.png)
 
+### Variant: theme-open
+
+Open the theme switcher top-right. Custom listbox with System / Light / Dark — not a native OS select.
+
+![21.gifts login theme](images/login-theme.png)
+
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
@@ -394,6 +400,12 @@ Open **Menu** top-right only (do not click Language or Theme) → Profile is one
 After **Menu**, click **Language** → the four endonym rows (English / Deutsch / Español / Filipino) expand in flow under the Language trigger with a check on the current locale. The Menu grows; this is not an absolute popover.
 
 ![21.gifts welcome menu language](images/welcome-menu-language.png)
+
+### Variant: menu-theme-open
+
+After **Menu**, click **Theme** → System / Light / Dark expand in flow under the Theme trigger with a check on the current preference. The Menu grows; this is not an absolute popover.
+
+![21.gifts welcome menu theme](images/welcome-menu-theme.png)
 
 ### Variant: pay-qr
 

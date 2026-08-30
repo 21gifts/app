@@ -43,12 +43,12 @@ function preferenceAt(index: number): ThemePreference {
 }
 
 /**
- * Lucide icon for a preference row.
+ * Lucide glyph for a preference (inline helper, not a second component).
  *
  * @param preference - Theme preference.
  * @returns Icon element.
  */
-function PreferenceIcon({ preference }: { preference: ThemePreference }): ReactElement {
+function preferenceIcon(preference: ThemePreference): ReactElement {
   const className = 'h-3.5 w-3.5 shrink-0';
   switch (preference) {
     case 'system':
@@ -215,7 +215,7 @@ export function ThemeSwitcher(props: { embedded?: boolean }): ReactElement {
             <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
               {selected ? <Check className={check} aria-hidden="true" /> : null}
             </span>
-            <PreferenceIcon preference={code} />
+            {preferenceIcon(code)}
             {preferenceLabel(code, t)}
           </button>
         );
@@ -240,7 +240,7 @@ export function ThemeSwitcher(props: { embedded?: boolean }): ReactElement {
           onClick={onTriggerClick}
           onKeyDown={onTriggerKeyDown}
         >
-          <PreferenceIcon preference={preference} />
+          {preferenceIcon(preference)}
           {label}
           <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         </button>
@@ -277,7 +277,7 @@ export function ThemeSwitcher(props: { embedded?: boolean }): ReactElement {
         onClick={onTriggerClick}
         onKeyDown={onTriggerKeyDown}
       >
-        <PreferenceIcon preference={preference} />
+        {preferenceIcon(preference)}
         {preferenceLabel(preference, t)}
         <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
       </button>

@@ -42,4 +42,4 @@ export function resolveTheme(preference: ThemePreference, prefersDark: boolean):
  * `html.dark`, and has no dependencies. Injected as a raw head script before paint.
  */
 export const THEME_BOOTSTRAP_SCRIPT =
-  "(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var raw=m?decodeURIComponent(m[1]):'';var pref=raw==='light'||raw==='dark'?raw:'system';var dark=pref==='dark'||(pref!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(dark){r.classList.add('dark');}else{r.classList.remove('dark');}}catch(e){}})();";
+  "(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var raw='';if(m){try{raw=decodeURIComponent(m[1]);}catch(d){raw='';}}var pref=raw==='light'||raw==='dark'?raw:'system';var dark=pref==='dark'||(pref!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(dark){r.classList.add('dark');}else{r.classList.remove('dark');}}catch(e){}})();";

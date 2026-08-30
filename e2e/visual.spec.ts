@@ -320,6 +320,13 @@ test.describe('login variant baselines', () => {
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-login-language');
   });
+
+  test('login theme-open', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Theme').click();
+    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
+    await shotScreen(page, 'state-login-theme');
+  });
 });
 
 test.describe('onboarding screens', () => {
@@ -1278,6 +1285,22 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Language').click();
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu-language');
+  });
+
+  test('welcome menu-theme-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByLabel('Theme').click();
+    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-theme');
   });
 
   test('welcome pay-qr', async ({ page }) => {

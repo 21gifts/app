@@ -45,7 +45,11 @@ function readThemeCookie(): string | undefined {
   if (match === null || match[1] === undefined) {
     return undefined;
   }
-  return decodeURIComponent(match[1]);
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return undefined;
+  }
 }
 
 /**

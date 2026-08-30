@@ -64,6 +64,32 @@ function Probe(): ReactElement {
 }
 
 describe('ThemeProvider', () => {
+  it('treats a malformed theme cookie as system', async () => {
+    stubMatchMedia(true);
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => `${THEME_COOKIE}=%`,
+      set: () => undefined,
+    });
+    try {
+      render(
+        <ThemeProvider>
+          <Probe />
+        </ThemeProvider>,
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId('preference').textContent).toBe('system');
+        expect(screen.getByTestId('resolved').textContent).toBe('dark');
+        expect(document.documentElement.classList.contains('dark')).toBe(true);
+      });
+    } finally {
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
+
   it('sets html.dark when the theme cookie is dark', async () => {
     stubMatchMedia(false);
     document.cookie = `${THEME_COOKIE}=dark; Path=/`;

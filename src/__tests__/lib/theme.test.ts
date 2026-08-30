@@ -43,5 +43,7 @@ describe('THEME_BOOTSTRAP_SCRIPT', () => {
     expect(THEME_BOOTSTRAP_SCRIPT).toContain('theme=');
     expect(THEME_BOOTSTRAP_SCRIPT).toContain('prefers-color-scheme');
     expect(THEME_BOOTSTRAP_SCRIPT).toContain('classList');
+    expect(THEME_BOOTSTRAP_SCRIPT).toContain('decodeURIComponent');
+    expect(THEME_BOOTSTRAP_SCRIPT).toContain("catch(d){raw='';}");
   });
 });
