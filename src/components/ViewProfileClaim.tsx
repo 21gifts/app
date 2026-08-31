@@ -2,10 +2,12 @@
 
 import { Fingerprint, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -21,12 +23,12 @@ function isAlreadyClaimedError(message: string | null): boolean {
 
 /**
  * Public passkey claim control under the `/view/[viewKey]` profile card.
- * Visible only while logged out and `hasPasskey` is false; binds a passkey to
- * the existing profile, then `nextOnboardingPath` (rules, if name and address
- * are already set).
+ * Unclaimed profiles (`hasPasskey` false) show the yellow Activate banner in a
+ * real browser even when another session is signed in. In Telegram or another
+ * in-app browser, shows the shared escape card on mount instead.
  *
  * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
- * @returns Yellow activate banner, spinner, error copy, or `null` when signed in or already claimed.
+ * @returns Yellow activate banner, in-app escape card, spinner, error copy, or `null` when claimed.
  */
 export function ViewProfileClaim({
   viewKey,
@@ -39,8 +41,14 @@ export function ViewProfileClaim({
   const router = useRouter();
   const { ready } = useHydrateSession();
   const account = useAuthStore((state) => state.account);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const passkey = usePasskeyLogin();
   const claimAttemptedRef = useRef(false);
+  const [inApp, setInApp] = useState(false);
+
+  useEffect(() => {
+    setInApp(isInAppBrowser());
+  }, []);
 
   useEffect(() => {
     if (claimAttemptedRef.current && account !== null) {
@@ -52,17 +60,15 @@ export function ViewProfileClaim({
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;
   }
 
-  if (account !== null) {
-    return null;
-  }
-
   if (hasPasskey) {
     return null;
   }
 
-  if (passkey.status === 'unsupported') {
+  if (inApp || passkey.status === 'unsupported') {
     return (
-      <p className="max-w-sm text-center text-sm text-neutral-500">{t('login.inAppHeading')}</p>
+      <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+        <InAppBrowserView />
+      </section>
     );
   }
 
@@ -120,6 +126,10 @@ export function ViewProfileClaim({
         type="button"
         onClick={() => {
           claimAttemptedRef.current = true;
+          if (useAuthStore.getState().account !== null) {
+            passkey.cancel();
+            clearAuth();
+          }
           passkey.register(viewKey);
         }}
         className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"

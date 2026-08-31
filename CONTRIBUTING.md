@@ -107,7 +107,8 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell + icon-only view-key copy)
 │   │   ├── PushToggle.tsx       # Icon-only Bell Web Push enable/disable on profile
 │   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
-│   │   ├── ViewProfileClaim.tsx # Public view activation banner + labeled Activate under the card
+│   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
+│   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams

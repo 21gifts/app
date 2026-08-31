@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -21,6 +22,11 @@ vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 const hydrateReady = { current: true };
 vi.mock('@/hooks/useHydrateSession', () => ({
   useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady.current }),
+}));
+
+vi.mock('@/lib/in-app-browser', () => ({
+  isInAppBrowser: vi.fn(() => false),
+  openInSystemBrowser: vi.fn(),
 }));
 
 const account = {
@@ -53,6 +59,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   hydrateReady.current = true;
   useAuthStore.setState({ session: null, account: null });
+  vi.mocked(isInAppBrowser).mockReturnValue(false);
   mockPasskey('idle');
 });
 
@@ -88,6 +95,24 @@ describe('ViewProfileClaim', () => {
     expect(screen.queryByText('Action required, the account must be activated')).toBeNull();
   });
 
+  it('hides everything when claimed even if signed in', () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={true} />);
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Open this page in your browser' })).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('hides everything when claimed even in an in-app browser', async () => {
+    vi.mocked(isInAppBrowser).mockReturnValue(true);
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={true} />);
+    await waitFor(() => {
+      expect(isInAppBrowser).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Open this page in your browser' })).toBeNull();
+  });
+
   it('replaces to /setup/rules after a successful claim', async () => {
     registerSpy.mockImplementation(() => {
       useAuthStore.setState({ session: 'tok', account });
@@ -99,11 +124,22 @@ describe('ViewProfileClaim', () => {
     });
   });
 
-  it('hides the button and does not redirect when already signed in', () => {
+  it('shows Activate when signed in on an unclaimed profile and does not redirect on mount', () => {
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
-    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Activate' })).toBeTruthy();
+    expect(screen.getByText('Action required, the account must be activated')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('clears the signed-in session then register(viewKey) when Activate is clicked', () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Activate' }));
+    expect(cancelSpy).toHaveBeenCalled();
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(registerSpy).toHaveBeenCalledWith(VIEW_KEY);
   });
 
   it('shows already-claimed copy on 409', async () => {
@@ -121,10 +157,22 @@ describe('ViewProfileClaim', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('shows in-app copy when passkeys are unsupported', () => {
+  it('shows the in-app escape card when passkeys are unsupported', () => {
     mockPasskey('unsupported');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
-    expect(screen.getByText('Open this page in your browser')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Open this page in your browser' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open in browser' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+  });
+
+  it('shows the in-app escape card on mount when isInAppBrowser is true', async () => {
+    vi.mocked(isInAppBrowser).mockReturnValue(true);
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Open this page in your browser' })).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'Open in browser' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
   });
 
   it('shows a spinner while the ceremony is starting', () => {
@@ -141,5 +189,13 @@ describe('ViewProfileClaim', () => {
     expect(screen.getByText('Could not set up a passkey. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(retrySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows claimError when signed in on an unclaimed profile', () => {
+    useAuthStore.setState({ session: 'tok', account });
+    mockPasskey('error', 'network down');
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.getByText('Could not set up a passkey. Please try again.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
   });
 });

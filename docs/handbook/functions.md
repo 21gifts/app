@@ -169,10 +169,17 @@
 - **Returns / side effects:** React provider element. No network; does not write cookies.
 - **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` (see that function).
 
+## Function: InAppBrowserView
+
+- **Purpose:** Shared escape UI when a passkey ceremony cannot run inside Telegram or another in-app browser: heading **Open this page in your browser**, body copy, optional iOS hint, **Open in browser**, and **Copy link**.
+- **Inputs:** None. Uses `useTranslations`, `openInSystemBrowser`, and `origin + pathname` as the URL to open or copy (so on `/view/<key>` the invite URL is used).
+- **Returns / side effects:** Fragment with the escape controls. No WebAuthn. Clipboard via `execCommand('copy')` fallback then `navigator.clipboard`.
+- **Used by:** `LoginCard` (in-app / unsupported branch) and `ViewProfileClaim` (same branch under the public view card).
+
 ## Function: LoginCard
 
-- **Purpose:** Login UI: one **Log in** button (existing login, or create when the browser has none), preparing, error, or an in-app browser escape card (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`.
-- **Inputs:** Uses `usePasskeyLogin`, `useAuthStore`, `isInAppBrowser`, and `openInSystemBrowser`.
+- **Purpose:** Login UI: one **Log in** button (existing login, or create when the browser has none), preparing, error, or an in-app browser escape card via `InAppBrowserView` (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`.
+- **Inputs:** Uses `usePasskeyLogin`, `useAuthStore`, `isInAppBrowser`, and `InAppBrowserView`.
 - **Returns / side effects:** React element covering idle/starting/error/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card.
 - **Used by:** Screen `/login`.
 
@@ -247,7 +254,7 @@
 - **Purpose:** Best-effort handoff from an in-app WebView to the system browser so the visitor can complete a passkey login in Safari or Chrome.
 - **Inputs:** Absolute `https` login `url`, and optional `SystemBrowserHost` (`win`; defaults to `globalThis.window`). Missing window is a no-op.
 - **Returns / side effects:** On Android, sets `location.href` to a Chrome Intent URL with an encoded fallback. Else if `Telegram.WebApp.openLink` is a function, calls it. Else on iOS Telegram (JS bridges or UA `Telegram`), sets `location.href` to `x-safari-` + `url`. Otherwise calls `host.open(url, '_blank', 'noopener,noreferrer')`. No network of its own.
-- **Used by:** `LoginCard` **Open in browser** button on the in-app escape card, the `/login` in-app e2e flow, and handbook coverage for the in-app login variant.
+- **Used by:** `InAppBrowserView` **Open in browser** (via `LoginCard` and `ViewProfileClaim`), the `/login` and `/view/[viewKey]` in-app e2e flows, and handbook coverage for those in-app variants.
 
 ## Function: OnboardingGate
 
@@ -405,9 +412,9 @@
 
 ## Function: ViewProfileClaim
 
-- **Purpose:** Public passkey claim control under the `/view/[viewKey]` card. Logged-out visitors bind a passkey to the existing profile (name + Wallet of Satoshi already set).
-- **Inputs:** `viewKey` (64 lowercase hex) and `hasPasskey` from the public profile. Uses `usePasskeyLogin`, `useAuthStore`, `useRouter`.
-- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Hidden when a session account is present, or when `hasPasskey` is true. When logged out and unclaimed: yellow banner with `view.activationRequired` and **Activate** (`view.activate`); click → `register(viewKey)`; success → `router.replace(nextOnboardingPath(account))`. 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()` (no further `register(viewKey)`). In-app / unsupported → `login.inAppHeading`. Other errors → `view.claimError` + **Try again** (`view.retry`).
+- **Purpose:** Public passkey claim control under the `/view/[viewKey]` card. Unclaimed invites (`hasPasskey` false) bind a passkey to the existing profile (name + Wallet of Satoshi already set), including when another 21.gifts session is already signed in.
+- **Inputs:** `viewKey` (64 lowercase hex) and `hasPasskey` from the public profile. Uses `usePasskeyLogin`, `useAuthStore`, `useRouter`, `isInAppBrowser`, and `InAppBrowserView`.
+- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Claimed (`hasPasskey` true) → `null` (even in Telegram, even if signed in). In-app on mount or `unsupported` → same card chrome as login wrapping `InAppBrowserView` (no yellow **Activate**). Else in a real browser: yellow banner with `view.activationRequired` and **Activate** (`view.activate`) even when `account !== null`; click sets a claim-attempted flag, `cancel` + `clearAuth` when a session exists, then `register(viewKey)` (stays on the view page). Success → `router.replace(nextOnboardingPath(account))` only when that claim was attempted (pre-existing sessions do not redirect on mount). 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()`. Other errors / starting stay visible even with a session → `view.claimError` + **Try again** (`view.retry`) or spinner.
 - **Used by:** `ViewProfileLoader` (ready state only).
 
 ## Function: ViewKeyCopy
@@ -772,7 +779,7 @@
 - **Purpose:** Detects Telegram and other in-app WebViews where a WebAuthn passkey ceremony cannot complete, so `/login` can show an escape card instead of starting `navigator.credentials.get()`.
 - **Inputs:** Optional `InAppBrowserHost` (`win`); defaults to `globalThis.window` when present. Missing window (SSR) is treated as not in-app.
 - **Returns / side effects:** `true` when a Telegram JS bridge is present (`TelegramWebviewProxy`, `TelegramWebview`, or `Telegram.WebApp`) or the UA matches a known in-app token list; otherwise `false`. No network and no DOM writes.
-- **Used by:** `LoginCard` (chooses the in-app escape card after mount), `usePasskeyLogin` (safety net: `NotAllowedError` during authenticate → `unsupported`, no register fallback), and the `/login` in-app handbook / e2e variant.
+- **Used by:** `LoginCard` and `ViewProfileClaim` (choose the in-app escape card after mount), `usePasskeyLogin` (safety net: `NotAllowedError` during authenticate → `unsupported`, no register fallback), and the `/login` / `/view/[viewKey]` in-app handbook / e2e variants.
 
 ## Function: loadHandbookDocuments
 

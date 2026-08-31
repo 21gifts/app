@@ -84,6 +84,74 @@ test('public view profile claimed hides the Activate banner', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
 });
 
+test('signed-in visitor still sees Activate on an unclaimed public view', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Other',
+        lightningAddress: 'other@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'c'.repeat(64),
+      }),
+    });
+  });
+  await page.route(new RegExp(`/view-key/${KEY}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(VIEW_PROFILE),
+    });
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto(`/view/${KEY}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
+});
+
+test('Telegram WebView shows Open in browser instead of Activate on an unclaimed view', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
+  });
+  await page.route(new RegExp(`/view-key/${KEY}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(VIEW_PROFILE),
+    });
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto(`/view/${KEY}`);
+  await expect(page.getByRole('heading', { name: 'Open this page in your browser' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open in browser' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+});
+
 test('public view profile missing shows not-found copy', async ({ page }) => {
   await page.route(new RegExp(`/view-key/${MISSING_KEY}$`), async (route) => {
     await route.fulfill({
