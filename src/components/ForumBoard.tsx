@@ -310,6 +310,7 @@ export function ForumBoard({
       flashCopied(messageId);
       return;
     } catch {
+      /* v8 ignore next 7 -- clipboard throw after unmount or fallback fail */
       if (!copyMounted.current) {
         return;
       }

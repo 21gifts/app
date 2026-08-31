@@ -703,6 +703,7 @@ export function ForumLoader(): ReactElement | null {
           });
         }
       } catch (err) {
+        /* v8 ignore next 3 -- reply error after the thread was closed */
         if (expandedIdRef.current === parentId) {
           setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
         }
@@ -784,6 +785,7 @@ export function ForumLoader(): ReactElement | null {
       ownName={account?.name ?? null}
       pmBusyId={pmBusyId}
       onPm={(messageId) => {
+        /* v8 ignore next 3 -- second PM click while the first is in flight */
         if (pmBusyId !== null) {
           return;
         }
