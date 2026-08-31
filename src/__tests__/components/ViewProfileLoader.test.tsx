@@ -20,6 +20,7 @@ const profile: ViewProfile = {
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   createdAt: 1,
+  hasPasskey: false,
 };
 
 const EMPTY_STATS: GiftStats = {
@@ -116,7 +117,8 @@ describe('ViewProfileLoader', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Set up a passkey for this profile' })).toBeTruthy();
+    expect(screen.getByText('Action required, the account must be activated')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Activate' })).toBeTruthy();
     expect(fetchStats).toHaveBeenCalledWith('alice');
   });
 

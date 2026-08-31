@@ -393,7 +393,7 @@
 
 - **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then (if address set) filtered gift stats for `spendOverTime`. Does not use `useAuthStore`.
 - **Inputs:** `viewKey` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey`). Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey` and `hasPasskey` from the fetched profile). Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
 - **Used by:** `ViewProfilePage`.
 
 ## Function: ViewProfileScreen
@@ -406,8 +406,8 @@
 ## Function: ViewProfileClaim
 
 - **Purpose:** Public passkey claim control under the `/view/[viewKey]` card. Logged-out visitors bind a passkey to the existing profile (name + Wallet of Satoshi already set).
-- **Inputs:** `viewKey` (64 lowercase hex). Uses `usePasskeyLogin`, `useAuthStore`, `useRouter`.
-- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Hidden when a session account is present. Icon-only Fingerprint (`view.claim`). Click → `register(viewKey)`; success → `router.replace(nextOnboardingPath(account))`. 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()` (no further `register(viewKey)`). In-app / unsupported → `login.inAppHeading`. Other errors → `view.claimError` + **Try again** (`view.retry`).
+- **Inputs:** `viewKey` (64 lowercase hex) and `hasPasskey` from the public profile. Uses `usePasskeyLogin`, `useAuthStore`, `useRouter`.
+- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Hidden when a session account is present, or when `hasPasskey` is true. When logged out and unclaimed: yellow banner with `view.activationRequired` and **Activate** (`view.activate`); click → `register(viewKey)`; success → `router.replace(nextOnboardingPath(account))`. 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()` (no further `register(viewKey)`). In-app / unsupported → `login.inAppHeading`. Other errors → `view.claimError` + **Try again** (`view.retry`).
 - **Used by:** `ViewProfileLoader` (ready state only).
 
 ## Function: ViewKeyCopy

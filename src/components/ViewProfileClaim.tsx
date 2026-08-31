@@ -21,13 +21,20 @@ function isAlreadyClaimedError(message: string | null): boolean {
 
 /**
  * Public passkey claim control under the `/view/[viewKey]` profile card.
- * Visible only while logged out; binds a passkey to the existing profile, then
- * then `nextOnboardingPath` (rules, if name and address are already set).
+ * Visible only while logged out and `hasPasskey` is false; binds a passkey to
+ * the existing profile, then `nextOnboardingPath` (rules, if name and address
+ * are already set).
  *
- * @param props - Dynamic route `viewKey` (64 lowercase hex).
- * @returns Icon-only claim control, spinner, error copy, or `null` when signed in.
+ * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
+ * @returns Yellow activate banner, spinner, error copy, or `null` when signed in or already claimed.
  */
-export function ViewProfileClaim({ viewKey }: { viewKey: string }): ReactElement | null {
+export function ViewProfileClaim({
+  viewKey,
+  hasPasskey,
+}: {
+  viewKey: string;
+  hasPasskey: boolean;
+}): ReactElement | null {
   const { t } = useTranslations();
   const router = useRouter();
   const { ready } = useHydrateSession();
@@ -46,6 +53,10 @@ export function ViewProfileClaim({ viewKey }: { viewKey: string }): ReactElement
   }
 
   if (account !== null) {
+    return null;
+  }
+
+  if (hasPasskey) {
     return null;
   }
 
@@ -103,17 +114,18 @@ export function ViewProfileClaim({ viewKey }: { viewKey: string }): ReactElement
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        claimAttemptedRef.current = true;
-        passkey.register(viewKey);
-      }}
-      aria-label={claimLabel}
-      title={claimLabel}
-      className="inline-flex items-center justify-center rounded-full bg-neutral-900 p-3 text-white transition hover:bg-neutral-700"
-    >
-      <Fingerprint aria-hidden="true" className="h-5 w-5" />
-    </button>
+    <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl bg-yellow-200 px-4 py-4 text-neutral-900">
+      <p className="text-center text-sm font-medium">{t('view.activationRequired')}</p>
+      <button
+        type="button"
+        onClick={() => {
+          claimAttemptedRef.current = true;
+          passkey.register(viewKey);
+        }}
+        className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
+      >
+        {t('view.activate')}
+      </button>
+    </div>
   );
 }

@@ -213,6 +213,8 @@ const en = {
   'view.error': 'Could not load this profile. Please try again.',
   'view.retry': 'Try again',
   'view.claim': 'Set up a passkey for this profile',
+  'view.activationRequired': 'Action required, the account must be activated',
+  'view.activate': 'Activate',
   'view.alreadyClaimed': 'This profile already has a passkey. Log in instead.',
   'view.claimError': 'Could not set up a passkey. Please try again.',
 
@@ -549,6 +551,8 @@ const de = {
   'view.error': 'Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'view.retry': 'Erneut versuchen',
   'view.claim': 'Passkey für dieses Profil einrichten',
+  'view.activationRequired': 'Aktion erforderlich, der Account muss aktiviert werden',
+  'view.activate': 'Aktivieren',
   'view.alreadyClaimed': 'Dieses Profil hat bereits einen Passkey. Melden Sie sich stattdessen an.',
   'view.claimError': 'Passkey konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut.',
 
@@ -879,6 +883,8 @@ const es = {
   'view.error': 'No se pudo cargar este perfil. Inténtalo de nuevo.',
   'view.retry': 'Intentar de nuevo',
   'view.claim': 'Configurar una passkey para este perfil',
+  'view.activationRequired': 'Acción requerida, la cuenta debe activarse',
+  'view.activate': 'Activar',
   'view.alreadyClaimed': 'Este perfil ya tiene una passkey. Inicia sesión en su lugar.',
   'view.claimError': 'No se pudo configurar la passkey. Inténtalo de nuevo.',
 
@@ -1206,6 +1212,8 @@ const fil = {
   'view.error': 'Hindi ma-load ang profile. Subukan ulit.',
   'view.retry': 'Subukan ulit',
   'view.claim': 'I-set up ang passkey para sa profile na ito',
+  'view.activationRequired': 'Kailangan ng aksyon, kailangang i-activate ang account',
+  'view.activate': 'I-activate',
   'view.alreadyClaimed': 'May passkey na ang profile na ito. Mag-log in na lang.',
   'view.claimError': 'Hindi ma-set up ang passkey. Subukan ulit.',
 

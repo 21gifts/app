@@ -94,6 +94,7 @@ describe('fetchViewProfile', () => {
     lightningAddress: 'alice@walletofsatoshi.com',
     lightningAddressVerified: false,
     createdAt: 1,
+    hasPasskey: false,
   };
 
   it('returns the validated profile and hits the same-origin proxy path', async () => {

@@ -16,7 +16,7 @@ const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
  * not use `useAuthStore`.
  *
  * @param props - Dynamic route `viewKey`.
- * @returns Loading, missing, error, or the read-only profile card with claim control.
+ * @returns Loading, missing, error, or the read-only profile card with activate/claim control.
  */
 export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElement {
   const { t } = useTranslations();
@@ -108,10 +108,12 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     );
   }
 
+  const readyProfile = profile as ViewProfile;
+
   return (
     <div className="flex flex-col items-center gap-4">
-      <ViewProfileScreen profile={profile as ViewProfile} received={received} />
-      <ViewProfileClaim viewKey={viewKey} />
+      <ViewProfileScreen profile={readyProfile} received={received} />
+      <ViewProfileClaim viewKey={viewKey} hasPasskey={readyProfile.hasPasskey} />
     </div>
   );
 }
