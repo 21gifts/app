@@ -685,8 +685,9 @@ export function ForumLoader(): ReactElement | null {
     }
     /* v8 ignore stop */
     const parentId = expandedId;
-    const parentBaseline =
-      messagesRef.current?.find((message) => message.id === parentId)?.replyCount ?? 0;
+    const parentRow = messagesRef.current?.find((message) => message.id === parentId);
+    /* v8 ignore next -- expanded parent is always in the loaded list */
+    const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
     setReplyPosting(true);
     setReplyFormError(null);
     void (async () => {
