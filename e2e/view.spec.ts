@@ -8,6 +8,7 @@ const VIEW_PROFILE = {
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   createdAt: 1,
+  hasPasskey: false,
 };
 
 const EMPTY_STATS = {
@@ -54,9 +55,8 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('Wallet of Satoshi address')).toBeVisible();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
   await expect(page.getByText('Given')).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Set up a passkey for this profile' }),
-  ).toBeVisible();
+  await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);

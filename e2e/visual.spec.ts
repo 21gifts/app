@@ -587,6 +587,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
+          hasPasskey: false,
         }),
       });
     });
@@ -600,6 +601,8 @@ test.describe('onboarding screens', () => {
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('Ada')).toBeVisible();
+    await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
     await shotScreen(page, 'screen-view-viewKey');
   });
 

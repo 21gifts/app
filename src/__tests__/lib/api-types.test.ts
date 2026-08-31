@@ -262,6 +262,7 @@ describe('viewProfileSchema', () => {
     lightningAddress: 'alice@walletofsatoshi.com',
     lightningAddressVerified: false,
     createdAt: 1_700_000_000,
+    hasPasskey: false,
   };
 
   it('accepts a well-formed named profile', () => {

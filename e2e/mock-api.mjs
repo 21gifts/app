@@ -340,11 +340,19 @@ const server = http.createServer(async (req, res) => {
       json(res, 404, { error: 'Not found' });
       return;
     }
+    let hasPasskey = false;
+    for (const bound of byPasskeyCredential.values()) {
+      if (bound === found) {
+        hasPasskey = true;
+        break;
+      }
+    }
     json(res, 200, {
       name: found.name,
       lightningAddress: found.lightningAddress,
       lightningAddressVerified: found.lightningAddressVerified,
       createdAt: found.createdAt,
+      hasPasskey,
     });
     return;
   }
