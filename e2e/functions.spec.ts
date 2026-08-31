@@ -2505,19 +2505,7 @@ test('Function: isForumVideoFile — composer accept includes mp4', async ({ pag
   await page.goto('/welcome');
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
-  await expect
-    .poll(
-      async () => {
-        const previewCount = await page.locator('form video').count();
-        const formatError = await page
-          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
-          .isVisible()
-          .catch(() => false);
-        return previewCount === 1 || formatError;
-      },
-      { timeout: 10_000 },
-    )
-    .toBe(true);
+  await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
 test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
   await seedAdaSession(page);
@@ -2533,6 +2521,16 @@ test('Function: forumVideoSrc — composer accept includes mov', async ({ page }
   await seedAdaSession(page);
   await page.goto('/welcome');
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.mov/);
+});
+test('Function: isForumVideoFile — composer accept includes m4v', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/x-m4v/);
+});
+test('Function: prepareForumVideo — composer accept includes m4v extension', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.m4v/);
 });
 
 test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ page }) => {
@@ -2567,9 +2565,7 @@ test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ pa
   );
 });
 
-test('Function: prepareForumVideo — attaching an mp4 shows a preview or the video format error', async ({
-  page,
-}) => {
+test('Function: prepareForumVideo — attaching an mp4 shows a preview', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages$/, async (route) => {
     await route.fulfill({
@@ -2580,19 +2576,7 @@ test('Function: prepareForumVideo — attaching an mp4 shows a preview or the vi
   });
   await page.goto('/welcome');
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
-  await expect
-    .poll(
-      async () => {
-        const previewCount = await page.locator('form video').count();
-        const formatError = await page
-          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
-          .isVisible()
-          .catch(() => false);
-        return previewCount === 1 || formatError;
-      },
-      { timeout: 10_000 },
-    )
-    .toBe(true);
+  await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
 
 test('Function: postMessageVideo — posting a prepared clip sends multipart video', async ({

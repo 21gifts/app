@@ -7,7 +7,7 @@ const FORUM_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime',
 export type ForumVideoPayload = {
   /** Original file. */
   file: File;
-  /** First-frame JPEG for the API `poster` field. */
+  /** First-frame JPEG when capture succeeds, otherwise the fallback JPEG for the API `poster` field. */
   poster: Blob;
   /** Object URL for a local `<video>` preview. */
   previewUrl: string;
@@ -114,10 +114,14 @@ function fallbackForumVideoPoster(): Blob {
 }
 
 /**
- * Validate size/type and capture a poster for a forum video.
+ * Validate size and type, then capture a first-frame JPEG when the browser
+ * can decode the file. On capture failure still returns `{ ok: true, video }`
+ * with a fallback JPEG poster. Returns `{ ok: false }` only for an unsupported
+ * type or name (`unsupported`) or an oversized file (`tooLarge`).
  *
  * @param file - Browser file.
- * @returns Payload or an error code.
+ * @returns `{ ok: true, video }` with a JPEG poster, or `{ ok: false }` with
+ *   `unsupported` or `tooLarge`.
  */
 export async function prepareForumVideo(file: File): Promise<PrepareForumVideoResult> {
   if (!isForumVideoFile(file)) {
