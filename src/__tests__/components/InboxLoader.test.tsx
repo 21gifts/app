@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InboxLoader } from '@/components/InboxLoader';
 import type { Account, Conversation, ConversationMessage } from '@/lib/api-types';
@@ -92,7 +92,40 @@ describe('InboxLoader', () => {
 
   it('opens a thread from ?c= and posts a reply', async () => {
     searchParams.set('c', 'conv-1');
-    listMock.mockResolvedValue([THREAD]);
+    const older: Conversation = {
+      id: 'conv-2',
+      name: 'Bob',
+      lastText: 'Older',
+      lastAt: '2026-08-27T12:00:00.000Z',
+    };
+    listMock.mockResolvedValue([THREAD, older]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    postMock.mockResolvedValue({
+      id: 'm2',
+      name: 'Ada',
+      text: 'Follow up',
+      createdAt: '2026-08-28T13:00:00.000Z',
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Follow up  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
+      expect(screen.getByText('Follow up')).toBeTruthy();
+    });
+  });
+
+  it('posts when the opened id is not in the conversation list', async () => {
+    searchParams.set('c', 'missing');
+    let resolveList: ((value: Conversation[]) => void) | undefined;
+    listMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
+    );
     threadMock.mockResolvedValue([MESSAGE]);
     postMock.mockResolvedValue({
       id: 'm2',
@@ -102,10 +135,14 @@ describe('InboxLoader', () => {
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Follow up  ' } });
+    resolveList?.([THREAD]);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
+      expect(postMock).toHaveBeenCalledWith('sess', 'missing', 'Follow up');
       expect(screen.getByText('Follow up')).toBeTruthy();
     });
   });

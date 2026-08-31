@@ -127,6 +127,71 @@ describe('InboxScreen', () => {
     expect(onOpen).toHaveBeenCalledWith('conv-1');
   });
 
+  it('lists several conversations', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <InboxScreen
+        conversations={[
+          THREAD,
+          {
+            id: 'conv-2',
+            name: 'Bob',
+            lastText: 'Later',
+            lastAt: '2026-08-28T13:00:00.000Z',
+          },
+        ]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={onOpen}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+      />,
+    );
+    const list = screen.getByRole('list', { name: 'Conversations' });
+    expect(list.textContent).toContain('21.gifts');
+    expect(list.textContent).toContain('Hello team');
+    expect(list.textContent).toContain('Bob');
+    expect(list.textContent).toContain('Later');
+    fireEvent.click(screen.getByRole('button', { name: /Bob/ }));
+    expect(onOpen).toHaveBeenCalledWith('conv-2');
+  });
+
+  it('uses the inbox heading when openId is not in the conversation list', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[THREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="missing"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'All conversations' })).toBeTruthy();
+    expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
+  });
+
   it('lists a thread with empty lastText', () => {
     const onOpen = vi.fn();
     renderWithLocale(

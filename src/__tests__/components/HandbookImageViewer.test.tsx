@@ -41,6 +41,10 @@ describe('HandbookImageViewer', () => {
     expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-light.png');
     fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
     expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-dark.png');
+    fireEvent.click(screen.getByRole('button', { name: 'Desktop' }));
+    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-dark.png');
+    fireEvent.click(screen.getByRole('button', { name: 'Light' }));
+    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
   });
 
   it('hides the theme switch when only one combo exists', () => {

@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumLoader } from '@/components/ForumLoader';
-import type { Account, ForumMessage } from '@/lib/api-types';
+import type { Account, Conversation, ForumMessage } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -2332,5 +2332,69 @@ describe('ForumLoader', () => {
     });
     expect(push).not.toHaveBeenCalled();
     expect(screen.getByText('Hello from Bob')).toBeTruthy();
+  });
+
+  it('updates the reply draft from the expanded composer', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'A reply draft' } });
+    expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).value).toBe(
+      'A reply draft',
+    );
+  });
+
+  it('ignores a second PM click while a request is in flight', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    let resolveOpen: ((value: Conversation) => void) | undefined;
+    openConversationMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveOpen = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    const pm = screen.getByRole('button', { name: 'Send a private message' });
+    fireEvent.click(pm);
+    await waitFor(() => {
+      expect(pm.querySelector('.animate-spin')).toBeTruthy();
+    });
+    fireEvent.click(pm);
+    expect(openConversationMock).toHaveBeenCalledTimes(1);
+    resolveOpen?.({
+      id: 'conv-bob',
+      name: 'Bob',
+      lastText: '',
+      lastAt: '2026-08-28T11:00:00.000Z',
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
+    });
   });
 });

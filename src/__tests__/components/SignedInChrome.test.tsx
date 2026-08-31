@@ -252,4 +252,11 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Contact' }));
     expect(screen.queryByLabelText('Language')).toBeNull();
   });
+
+  it('closes the menu when Messages is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Messages' }));
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
 });

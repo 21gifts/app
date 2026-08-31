@@ -1797,4 +1797,100 @@ describe('ForumBoard', () => {
       screen.getByRole('button', { name: 'Send a private message' }).querySelector('.animate-spin'),
     ).toBeTruthy();
   });
+
+  it('shows replyFormError tooLong, request, and rateLimit when expanded', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyFormError="empty"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="tooLong"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="request"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="rateLimit"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Too many messages. Please wait a moment and try again.',
+    );
+  });
 });
