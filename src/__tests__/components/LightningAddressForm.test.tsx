@@ -243,6 +243,28 @@ describe('LightningAddressForm', () => {
     expect(setLightningAddress).not.toHaveBeenCalled();
   });
 
+  it('keeps not-zap locked when only whitespace around the blocked address changes', async () => {
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error('This Wallet of Satoshi address cannot receive these Bitcoin payments'),
+    );
+    renderWithLocale(<LightningAddressForm />);
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    vi.mocked(setLightningAddress).mockClear();
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com ' },
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(setLightningAddress).not.toHaveBeenCalled();
+  });
+
   it('stringifies a non-Error rejection', async () => {
     vi.mocked(setLightningAddress).mockRejectedValue('boom');
     renderWithLocale(<LightningAddressForm />);
