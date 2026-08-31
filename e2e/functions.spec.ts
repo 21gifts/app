@@ -2488,17 +2488,13 @@ test('Function: Card — login card is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
 });
 
-test('Function: Field — login has no bare text field; welcome composer does', async ({ page }) => {
+test('Function: Field — pay amount uses Field', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
+  await stubPayableNote(page);
   await page.goto('/welcome');
-  await expect(page.getByLabel('Your message')).toBeVisible();
+  await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(page.getByLabel('Amount')).toBeVisible();
 });
 
 test('Function: PageChrome — login shows language switcher chrome', async ({ page }) => {

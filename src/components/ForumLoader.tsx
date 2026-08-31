@@ -644,6 +644,9 @@ export function ForumLoader(): ReactElement | null {
 
   const onToggleExpand = (messageId: string): void => {
     /* v8 ignore start -- expand/collapse is covered via ForumBoard */
+    if (replyPosting) {
+      return;
+    }
     if (expandedId === messageId) {
       setExpandedId(null);
       setReplies(null);
