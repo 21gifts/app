@@ -69,4 +69,15 @@ describe('HandbookImageViewer', () => {
       '/handbook-images/state-root-mobile-nav-mobile-light.png',
     );
   });
+
+  it('falls back to desktop-light when a topic has no combos', () => {
+    const EMPTY: HandbookTopic = {
+      id: 'empty',
+      label: 'Empty',
+      visual: 'function-Empty',
+      combos: [],
+    };
+    renderWithLocale(<HandbookImageViewer topics={[EMPTY]} />);
+    expect(screen.getByLabelText('Topic')).toBeTruthy();
+  });
 });

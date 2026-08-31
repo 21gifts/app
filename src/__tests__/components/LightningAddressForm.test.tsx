@@ -179,6 +179,54 @@ describe('LightningAddressForm', () => {
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
   });
 
+  it('clears the not-zap alert on change and re-enables continue', async () => {
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error('This Wallet of Satoshi address cannot receive these Bitcoin payments'),
+    );
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap2@walletofsatoshi.com' },
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('clears the not-zap alert on change while editing a linked address', async () => {
+    useAuthStore.setState({ session: 'sess', account: linkedAccount });
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error('This Wallet of Satoshi address cannot receive these Bitcoin payments'),
+    );
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap2@walletofsatoshi.com' },
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('stringifies a non-Error rejection', async () => {
     vi.mocked(setLightningAddress).mockRejectedValue('boom');
     renderWithLocale(<LightningAddressForm />);
