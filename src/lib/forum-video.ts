@@ -140,11 +140,11 @@ export async function prepareForumVideo(file: File): Promise<PrepareForumVideoRe
   }
   const captured = await capturePoster(file);
   let poster = fallbackForumVideoPoster();
+  /* v8 ignore start -- captured is non-null only with a real video decoder */
   if (captured !== null) {
-    /* v8 ignore start -- non-null only when the browser decoded a frame */
     poster = captured;
-    /* v8 ignore stop */
   }
+  /* v8 ignore stop */
   return {
     ok: true,
     video: {
