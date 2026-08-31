@@ -2451,11 +2451,12 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalled();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    expect(screen.getByLabelText('Your reply')).toBeTruthy();
     await act(async () => {
       rejectPost?.(new Error('boom'));
     });
-    expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByText('Loading replies…')).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('Loading replies…')).toBeNull();
   });
 
   it('does not increment replyCount when the posted reply is already listed', async () => {
