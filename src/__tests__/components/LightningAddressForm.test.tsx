@@ -263,6 +263,29 @@ describe('LightningAddressForm', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(setLightningAddress).not.toHaveBeenCalled();
+    fireEvent.submit(screen.getByPlaceholderText(PLACEHOLDER).closest('form')!);
+    expect(setLightningAddress).not.toHaveBeenCalled();
+  });
+
+  it('keeps not-zap locked on the profile editor when only whitespace changes', async () => {
+    useAuthStore.setState({ session: 'sess', account: linkedAccount });
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error('This Wallet of Satoshi address cannot receive these Bitcoin payments'),
+    );
+    renderWithLocale(<LightningAddressForm />);
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    vi.mocked(setLightningAddress).mockClear();
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com ' },
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
+    fireEvent.submit(screen.getByPlaceholderText(PLACEHOLDER).closest('form')!);
+    expect(setLightningAddress).not.toHaveBeenCalled();
   });
 
   it('stringifies a non-Error rejection', async () => {
