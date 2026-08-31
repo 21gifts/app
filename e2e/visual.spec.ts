@@ -670,6 +670,38 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
     await shotScreen(page, 'state-view-claimed');
   });
+
+  test('screen /view/[viewKey] in-app', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
+    });
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+        }),
+      });
+    });
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(
+      page.getByRole('heading', { name: 'Open this page in your browser' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+    await shotScreen(page, 'state-view-in-app');
+  });
 });
 
 const PROFILE_RECEIVE_STATS = {

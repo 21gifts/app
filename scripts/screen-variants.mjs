@@ -542,6 +542,13 @@ export const SCREEN_VARIANTS = [
     needle: 'hasPasskey: true',
   },
   {
+    route: '/view/[viewKey]',
+    id: 'in-app',
+    image: 'view-in-app.png',
+    visual: 'state-view-in-app',
+    needle: 'Open this page in your browser',
+  },
+  {
     route: '/stats',
     id: 'default',
     image: 'stats.png',
