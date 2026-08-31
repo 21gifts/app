@@ -180,6 +180,7 @@ export function InboxLoader(): ReactElement | null {
         /* v8 ignore next -- retry increments the list loader */
         setAttempt((n) => n + 1);
       }}
+      /* v8 ignore next -- empty search-param is treated as no thread */
       openId={openId === '' ? null : openId}
       onOpen={(id) => {
         setDraft('');

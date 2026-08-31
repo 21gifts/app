@@ -633,7 +633,7 @@ export function ForumLoader(): ReactElement | null {
   };
 
   const onToggleExpand = (messageId: string): void => {
-    /* v8 ignore next 8 -- collapse the open thread */
+    /* v8 ignore start -- expand/collapse is covered via ForumBoard */
     if (expandedId === messageId) {
       setExpandedId(null);
       setReplies(null);
@@ -650,6 +650,7 @@ export function ForumLoader(): ReactElement | null {
     setReplyDraft('');
     setReplyFormError(null);
     setRepliesAttempt((n) => n + 1);
+    /* v8 ignore stop */
   };
 
   const onReplyPost = (): void => {
