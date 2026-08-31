@@ -12,7 +12,8 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * Reads the session from the auth store and owns composer draft/post state.
  * After a successful send, opens the official 21.gifts thread in the inbox
- * (`/messages?c=`). Renders nothing when there is no session.
+ * (`/messages?c=`) and keeps Send disabled until unmount. A failed post
+ * clears `posting` so Send can retry. Renders nothing when there is no session.
  *
  * @returns The contact screen, or `null` without a session.
  */
@@ -56,7 +57,6 @@ export function ContactLoader(): ReactElement | null {
         router.push(href);
       } catch {
         setFormError('request');
-      } finally {
         setPosting(false);
       }
     })();

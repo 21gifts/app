@@ -39,7 +39,10 @@ function lightningAddressErrorKey(
  *
  * @param props - `onboarding` shows the field at the top and **Continue** at
  *   the bottom of the screen; `profile` uses icon actions to the right of the
- *   field. Defaults from whether an address is already linked.
+ *   field. Defaults from whether an address is already linked. After `notZap`,
+ *   Continue/Save stay disabled while the trimmed draft equals the blocked
+ *   address; changing the draft clears the alert and re-enables; restoring the
+ *   blocked address re-locks.
  * @returns The Lightning Address section, or `null` when there is nothing to show.
  */
 export function LightningAddressForm(

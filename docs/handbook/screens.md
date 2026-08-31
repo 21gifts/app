@@ -114,7 +114,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 - **URL:** `/login` — login only.
 - **What the user sees:** Light language switcher and theme switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language or theme. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
-- **Calls:** `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
+- **Calls:** `PageChrome`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
 ### Variant: idle
 

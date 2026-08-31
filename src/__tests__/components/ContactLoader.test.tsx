@@ -165,6 +165,9 @@ describe('ContactLoader', () => {
 
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('disables Send and shows a spinner while posting', async () => {
