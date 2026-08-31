@@ -414,6 +414,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:claimed",
+    "label": "/view/[viewKey] claimed",
+    "visual": "state-view-claimed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:in-app",
+    "label": "/view/[viewKey] in-app",
+    "visual": "state-view-in-app",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/stats:default",
     "label": "/stats default",
     "visual": "screen-stats",
