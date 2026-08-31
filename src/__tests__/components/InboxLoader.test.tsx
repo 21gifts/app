@@ -1,7 +1,10 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InboxLoader } from '@/components/InboxLoader';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Account, Conversation, ConversationMessage } from '@/lib/api-types';
+import { getCatalog } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -43,6 +46,13 @@ const THREAD: Conversation = {
   name: '21.gifts',
   lastText: 'Hello',
   lastAt: '2026-08-28T12:00:00.000Z',
+};
+
+const OLDER: Conversation = {
+  id: 'conv-2',
+  name: 'Bob',
+  lastText: 'Older',
+  lastAt: '2026-08-27T12:00:00.000Z',
 };
 
 const MESSAGE: ConversationMessage = {
@@ -92,13 +102,7 @@ describe('InboxLoader', () => {
 
   it('opens a thread from ?c= and posts a reply', async () => {
     searchParams.set('c', 'conv-1');
-    const older: Conversation = {
-      id: 'conv-2',
-      name: 'Bob',
-      lastText: 'Older',
-      lastAt: '2026-08-27T12:00:00.000Z',
-    };
-    listMock.mockResolvedValue([THREAD, older]);
+    listMock.mockResolvedValue([THREAD, OLDER]);
     threadMock.mockResolvedValue([MESSAGE]);
     postMock.mockResolvedValue({
       id: 'm2',
@@ -184,5 +188,101 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
     expect(push).toHaveBeenCalledWith('/messages');
+  });
+
+  it('clears stale messages immediately when opening another conversation', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock
+      .mockResolvedValueOnce([MESSAGE])
+      .mockImplementationOnce(() => new Promise(() => undefined));
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    searchParams.set('c', 'conv-2');
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <InboxLoader />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByText('Hello')).toBeNull();
+    expect(screen.getByText('Loading…')).toBeTruthy();
+  });
+
+  it('does not apply a posted message after switching conversations', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock
+      .mockResolvedValueOnce([MESSAGE])
+      .mockImplementationOnce(() => new Promise(() => undefined));
+    let resolvePost: ((value: ConversationMessage) => void) | undefined;
+    postMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
+    });
+    searchParams.set('c', 'conv-2');
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <InboxLoader />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByText('Hello')).toBeNull();
+    await act(async () => {
+      resolvePost?.({
+        id: 'm2',
+        name: 'Ada',
+        text: 'Follow up',
+        createdAt: '2026-08-28T13:00:00.000Z',
+      });
+    });
+    expect(screen.queryByText('Follow up')).toBeNull();
+    expect(screen.queryByText('Hello')).toBeNull();
+  });
+
+  it('does not apply a post error after switching conversations', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock
+      .mockResolvedValueOnce([MESSAGE])
+      .mockImplementationOnce(() => new Promise(() => undefined));
+    let rejectPost: ((reason: Error) => void) | undefined;
+    postMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectPost = reject;
+        }),
+    );
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    searchParams.set('c', 'conv-2');
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <InboxLoader />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    await act(async () => {
+      rejectPost?.(new Error('boom'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Hello')).toBeNull();
   });
 });

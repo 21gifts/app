@@ -2316,6 +2316,118 @@ describe('ForumLoader', () => {
     expect(screen.getByText('Loading replies…')).toBeTruthy();
   });
 
+  it('does not apply a posted reply after expanding a different note', async () => {
+    fetchMock.mockResolvedValue([
+      SAMPLE,
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    repliesMock.mockResolvedValueOnce([]);
+    repliesMock.mockImplementationOnce(() => new Promise(() => undefined));
+    let resolvePost: ((value: ForumMessage) => void) | undefined;
+    postMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Ada reply' } });
+    const postButtons = screen.getAllByRole('button', { name: 'Post' });
+    fireEvent.click(postButtons[postButtons.length - 1]!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Ada reply', inReplyTo: 'm1' });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    expect(screen.queryByText('Ada reply')).toBeNull();
+    expect(screen.getByText('Loading replies…')).toBeTruthy();
+    await act(async () => {
+      resolvePost?.({
+        id: 'r-ada',
+        name: 'Ada',
+        text: 'Ada reply',
+        createdAt: '2026-08-28T12:45:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      });
+    });
+    expect(screen.queryByText('Ada reply')).toBeNull();
+    expect(screen.getByText('1 replies')).toBeTruthy();
+  });
+
+  it('does not apply a reply error after expanding a different note', async () => {
+    fetchMock.mockResolvedValue([
+      SAMPLE,
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    repliesMock.mockResolvedValueOnce([]);
+    repliesMock.mockImplementationOnce(() => new Promise(() => undefined));
+    let rejectPost: ((reason: Error) => void) | undefined;
+    postMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectPost = reject;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Ada reply' } });
+    const postButtons = screen.getAllByRole('button', { name: 'Post' });
+    fireEvent.click(postButtons[postButtons.length - 1]!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await act(async () => {
+      rejectPost?.(new Error('boom'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('Loading replies…')).toBeTruthy();
+  });
+
   it('does not increment replyCount when the posted reply is already listed', async () => {
     const reply: ForumMessage = {
       id: 'r1',

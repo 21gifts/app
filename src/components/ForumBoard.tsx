@@ -599,10 +599,12 @@ export function ForumBoard({
                   ) : null}
                   {/* v8 ignore start -- wosHref is set whenever an invoice is shown */}
                   {wosHref !== null ? (
-                    <a
-                      href={wosHref}
+                    <Button
+                      type="button"
                       aria-label={t('forum.payOpenWalletAria')}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
+                      onClick={() => {
+                        window.open(wosHref, '_blank', 'noopener,noreferrer');
+                      }}
                     >
                       <img
                         src="/wos-icon.png"
@@ -613,7 +615,7 @@ export function ForumBoard({
                         className="h-5 w-5 rounded-md ring-1 ring-white/30"
                       />
                       {t('forum.payOpenWallet')}
-                    </a>
+                    </Button>
                   ) : null}
                   {/* v8 ignore stop */}
                   {/* v8 ignore start */}

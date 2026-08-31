@@ -209,6 +209,7 @@ describe('ForumBoard', () => {
     );
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+    expect(screen.queryByText('Dismiss')).toBeNull();
   });
 
   it('calls onDismissLaws when the Dismiss button is clicked', () => {

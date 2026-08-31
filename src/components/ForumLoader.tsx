@@ -130,6 +130,8 @@ export function ForumLoader(): ReactElement | null {
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const expandedIdRef = useRef(expandedId);
+  expandedIdRef.current = expandedId;
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
@@ -658,18 +660,23 @@ export function ForumLoader(): ReactElement | null {
     void (async () => {
       try {
         const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
-        const alreadyListed =
-          repliesRef.current !== null &&
-          repliesRef.current.some((message) => message.id === created.id);
-        setReplies((prev) => {
-          if (prev === null) {
-            return [created];
-          }
-          if (prev.some((message) => message.id === created.id)) {
-            return prev;
-          }
-          return [...prev, created];
-        });
+        const stillParent = expandedIdRef.current === parentId;
+        let alreadyListed = false;
+        if (stillParent) {
+          alreadyListed =
+            repliesRef.current !== null &&
+            repliesRef.current.some((message) => message.id === created.id);
+          setReplies((prev) => {
+            if (prev === null) {
+              return [created];
+            }
+            if (prev.some((message) => message.id === created.id)) {
+              return prev;
+            }
+            return [...prev, created];
+          });
+          setReplyDraft('');
+        }
         if (!alreadyListed) {
           setMessages((prev) => {
             if (prev === null) {
@@ -682,9 +689,10 @@ export function ForumLoader(): ReactElement | null {
             );
           });
         }
-        setReplyDraft('');
       } catch (err) {
-        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+        if (expandedIdRef.current === parentId) {
+          setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+        }
       } finally {
         setReplyPosting(false);
       }

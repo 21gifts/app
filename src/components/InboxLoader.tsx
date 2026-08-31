@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
 import { fetchConversation, fetchConversations, postConversationMessage } from '@/lib/api';
 import {
@@ -35,6 +35,16 @@ export function InboxLoader(): ReactElement | null {
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
   const [formError, setFormError] = useState<InboxFormError>(null);
+  const openIdRef = useRef(openId);
+  if (openIdRef.current !== openId) {
+    // Same render as ?c= so the previous thread is not painted and a late post cannot attach.
+    setMessages(null);
+    setMessagesError(false);
+    setMessagesLoading(openId !== null && openId !== '');
+    setDraft('');
+    setFormError(null);
+  }
+  openIdRef.current = openId;
 
   useEffect(() => {
     if (session === null) {
@@ -75,6 +85,7 @@ export function InboxLoader(): ReactElement | null {
       return;
     }
     let cancelled = false;
+    setMessages(null);
     setMessagesLoading(true);
     setMessagesError(false);
     void (async () => {
@@ -118,28 +129,35 @@ export function InboxLoader(): ReactElement | null {
       setFormError('tooLong');
       return;
     }
+    const conversationId = openId;
     setPosting(true);
     setFormError(null);
     void (async () => {
       try {
-        const created = await postConversationMessage(session, openId, trimmed);
-        setMessages((prev) => (prev === null ? [created] : [...prev, created]));
+        const created = await postConversationMessage(session, conversationId, trimmed);
+        if (openIdRef.current === conversationId) {
+          setMessages((prev) => (prev === null ? [created] : [...prev, created]));
+          setDraft('');
+        }
         setConversations((prev) => {
           if (prev === null) {
             return prev;
           }
           const next = prev.map((row) =>
-            row.id === openId ? { ...row, lastText: created.text, lastAt: created.createdAt } : row,
+            row.id === conversationId
+              ? { ...row, lastText: created.text, lastAt: created.createdAt }
+              : row,
           );
-          const opened = next.find((row) => row.id === openId);
+          const opened = next.find((row) => row.id === conversationId);
           if (opened === undefined) {
             return next;
           }
-          return [opened, ...next.filter((row) => row.id !== openId)];
+          return [opened, ...next.filter((row) => row.id !== conversationId)];
         });
-        setDraft('');
       } catch {
-        setFormError('request');
+        if (openIdRef.current === conversationId) {
+          setFormError('request');
+        }
       } finally {
         setPosting(false);
       }

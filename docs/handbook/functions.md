@@ -415,7 +415,7 @@
 - **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted.
 - **Inputs:** `label`, optional `id` / `className`, `multiline` (textarea when true), plus native input or textarea attributes.
 - **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
-- **Used by:** Login, name, address, contact, and forum-related forms.
+- **Used by:** Login, name, address, and forum-related forms.
 
 ## Function: PageChrome
 
