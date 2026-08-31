@@ -241,6 +241,20 @@ describe('LightningAddressForm', () => {
     vi.mocked(setLightningAddress).mockClear();
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(setLightningAddress).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'other@walletofsatoshi.com' },
+    });
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'nozap@walletofsatoshi.com' },
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('keeps not-zap locked when only whitespace around the blocked address changes', async () => {
