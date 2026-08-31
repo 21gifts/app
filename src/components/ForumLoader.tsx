@@ -685,6 +685,8 @@ export function ForumLoader(): ReactElement | null {
     }
     /* v8 ignore stop */
     const parentId = expandedId;
+    const parentBaseline =
+      messagesRef.current?.find((message) => message.id === parentId)?.replyCount ?? 0;
     setReplyPosting(true);
     setReplyFormError(null);
     void (async () => {
@@ -724,7 +726,10 @@ export function ForumLoader(): ReactElement | null {
             }
             return prev.map((message) =>
               message.id === parentId
-                ? { ...message, replyCount: message.replyCount + 1 }
+                ? {
+                    ...message,
+                    replyCount: Math.max(message.replyCount, parentBaseline + 1),
+                  }
                 : message,
             );
           });
