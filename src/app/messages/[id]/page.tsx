@@ -20,7 +20,7 @@ export default async function PublicMessagePage({
   const { id } = await params;
   return (
     <PageChrome topRight={<LanguageSwitcher tone="light" />}>
-      <PublicMessageLoader id={id} />
+      <PublicMessageLoader key={id} id={id} />
     </PageChrome>
   );
 }
