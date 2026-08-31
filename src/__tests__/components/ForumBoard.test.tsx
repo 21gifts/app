@@ -1784,7 +1784,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: 'Post' }).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 

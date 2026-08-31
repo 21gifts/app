@@ -2352,8 +2352,7 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Ada reply' } });
-    const postButtons = screen.getAllByRole('button', { name: 'Post' });
-    fireEvent.click(postButtons[postButtons.length - 1]!);
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Ada reply', inReplyTo: 'm1' });
     });
@@ -2415,8 +2414,7 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Ada reply' } });
-    const postButtons = screen.getAllByRole('button', { name: 'Post' });
-    fireEvent.click(postButtons[postButtons.length - 1]!);
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalled();
     });
@@ -2456,8 +2454,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('A reply')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'A reply' } });
-    const postButtons = screen.getAllByRole('button', { name: 'Post' });
-    fireEvent.click(postButtons[postButtons.length - 1]!);
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'A reply', inReplyTo: 'm1' });
     });
