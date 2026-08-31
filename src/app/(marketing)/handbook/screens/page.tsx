@@ -1,11 +1,10 @@
-import { pathToFileURL } from 'node:url';
-import path from 'node:path';
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { HandbookImageViewer } from '@/components/HandbookImageViewer';
 import { HandbookIntro } from '@/components/HandbookIntro';
 import { HANDBOOK_COMBOS, type HandbookComboId, type HandbookTopic } from '@/lib/handbook-topics';
+import screenVariantCatalog from '@/lib/screen-variant-catalog.json';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
@@ -27,7 +26,7 @@ export const metadata: Metadata = {
 export default async function HandbookScreensPage(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
-  const topics = await loadScreenTopics();
+  const topics = loadScreenTopics();
   const title = translate(messages, 'handbook.screensTitle');
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
@@ -54,28 +53,18 @@ export default async function HandbookScreensPage(): Promise<ReactElement> {
 }
 
 /**
- * Load screen-variant topics from `scripts/screen-variants.mjs`.
+ * Screen-variant topics from the catalog written by `sync-handbook-images.mjs`.
  *
  * @returns Topics with existing combo ids.
  */
-async function loadScreenTopics(): Promise<HandbookTopic[]> {
-  const href = pathToFileURL(path.join(process.cwd(), 'scripts', 'screen-variants.mjs')).href;
-  const mod = (await import(href)) as {
-    SCREEN_VARIANTS: Array<{
-      route: string;
-      id: string;
-      visual: string;
-      combos?: string[];
-    }>;
-    variantComboIds: (variant: { combos?: string[] }) => string[];
-  };
+function loadScreenTopics(): HandbookTopic[] {
   const allowed = new Set<string>(HANDBOOK_COMBOS);
-  return mod.SCREEN_VARIANTS.map((variant) => ({
-    id: `${variant.route}:${variant.id}`,
-    label: `${variant.route} ${variant.id}`,
-    visual: variant.visual,
-    combos: mod
-      .variantComboIds(variant)
-      .filter((combo): combo is HandbookComboId => allowed.has(combo)),
-  })).filter((topic) => topic.combos.length > 0);
+  return screenVariantCatalog
+    .map((row) => ({
+      id: row.id,
+      label: row.label,
+      visual: row.visual,
+      combos: row.combos.filter((combo): combo is HandbookComboId => allowed.has(combo)),
+    }))
+    .filter((topic) => topic.combos.length > 0);
 }

@@ -1,0 +1,1096 @@
+[
+  {
+    "id": "/:default",
+    "label": "/ default",
+    "visual": "screen-root",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/:mobile-nav",
+    "label": "/ mobile-nav",
+    "visual": "state-root-mobile-nav",
+    "combos": [
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/:language-open",
+    "label": "/ language-open",
+    "visual": "state-root-language",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/legal:default",
+    "label": "/legal default",
+    "visual": "screen-legal",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/login:idle",
+    "label": "/login idle",
+    "visual": "screen-login",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/login:starting",
+    "label": "/login starting",
+    "visual": "state-login-starting",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/login:error",
+    "label": "/login error",
+    "visual": "state-login-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/login:in-app",
+    "label": "/login in-app",
+    "visual": "state-login-in-app",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/login:language-open",
+    "label": "/login language-open",
+    "visual": "state-login-language",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/login:theme-open",
+    "label": "/login theme-open",
+    "visual": "state-login-theme",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/donate:default",
+    "label": "/donate default",
+    "visual": "screen-donate",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/name:default",
+    "label": "/setup/name default",
+    "visual": "screen-setup-name",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/address:default",
+    "label": "/setup/address default",
+    "visual": "screen-setup-address",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:default",
+    "label": "/setup/rules default",
+    "visual": "screen-setup-rules",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:law1",
+    "label": "/setup/rules law1",
+    "visual": "state-setup-rules-law1",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:law2",
+    "label": "/setup/rules law2",
+    "visual": "state-setup-rules-law2",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:law3",
+    "label": "/setup/rules law3",
+    "visual": "state-setup-rules-law3",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:wanted",
+    "label": "/setup/rules wanted",
+    "visual": "state-setup-rules-wanted",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:allowed",
+    "label": "/setup/rules allowed",
+    "visual": "state-setup-rules-allowed",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:ratherNot",
+    "label": "/setup/rules ratherNot",
+    "visual": "state-setup-rules-ratherNot",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:forbidden",
+    "label": "/setup/rules forbidden",
+    "visual": "state-setup-rules-forbidden",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:house",
+    "label": "/setup/rules house",
+    "visual": "state-setup-rules-house",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:error",
+    "label": "/setup/rules error",
+    "visual": "state-setup-rules-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/setup/rules:busy",
+    "label": "/setup/rules busy",
+    "visual": "state-setup-rules-busy",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:default",
+    "label": "/welcome default",
+    "visual": "screen-welcome",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:all",
+    "label": "/welcome all",
+    "visual": "state-welcome-all",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:popular",
+    "label": "/welcome popular",
+    "visual": "state-welcome-popular",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:empty-paid",
+    "label": "/welcome empty-paid",
+    "visual": "state-welcome-empty-paid",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:empty",
+    "label": "/welcome empty",
+    "visual": "state-welcome-empty",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:loading",
+    "label": "/welcome loading",
+    "visual": "state-welcome-loading",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:error",
+    "label": "/welcome error",
+    "visual": "state-welcome-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:validation-error",
+    "label": "/welcome validation-error",
+    "visual": "state-welcome-validation-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:photo",
+    "label": "/welcome photo",
+    "visual": "state-welcome-photo",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:photo-and-text",
+    "label": "/welcome photo-and-text",
+    "visual": "state-welcome-photo-and-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:composer-text",
+    "label": "/welcome composer-text",
+    "visual": "state-welcome-composer-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:composer-photo",
+    "label": "/welcome composer-photo",
+    "visual": "state-welcome-composer-photo",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:composer-photo-and-text",
+    "label": "/welcome composer-photo-and-text",
+    "visual": "state-welcome-composer-photo-and-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:composer-video",
+    "label": "/welcome composer-video",
+    "visual": "state-welcome-composer-video",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:composer-video-and-text",
+    "label": "/welcome composer-video-and-text",
+    "visual": "state-welcome-composer-video-and-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:composer-text-after-remove",
+    "label": "/welcome composer-text-after-remove",
+    "visual": "state-welcome-composer-text-after-remove",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:preparing-photo",
+    "label": "/welcome preparing-photo",
+    "visual": "state-welcome-preparing-photo",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:preparing-photo-and-text",
+    "label": "/welcome preparing-photo-and-text",
+    "visual": "state-welcome-preparing-photo-and-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:posting-photo-and-text",
+    "label": "/welcome posting-photo-and-text",
+    "visual": "state-welcome-posting-photo-and-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:photo-loading",
+    "label": "/welcome photo-loading",
+    "visual": "state-welcome-photo-loading",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:error-unsupported",
+    "label": "/welcome error-unsupported",
+    "visual": "state-welcome-error-unsupported",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:error-unsupported-with-text",
+    "label": "/welcome error-unsupported-with-text",
+    "visual": "state-welcome-error-unsupported-with-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:error-too-large",
+    "label": "/welcome error-too-large",
+    "visual": "state-welcome-error-too-large",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:error-too-large-with-text",
+    "label": "/welcome error-too-large-with-text",
+    "visual": "state-welcome-error-too-large-with-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:error-request-photo-and-text",
+    "label": "/welcome error-request-photo-and-text",
+    "visual": "state-welcome-error-request-photo-and-text",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:menu-open",
+    "label": "/welcome menu-open",
+    "visual": "state-welcome-menu",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:menu-language-open",
+    "label": "/welcome menu-language-open",
+    "visual": "state-welcome-menu-language",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:menu-theme-open",
+    "label": "/welcome menu-theme-open",
+    "visual": "state-welcome-menu-theme",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:pay-qr",
+    "label": "/welcome pay-qr",
+    "visual": "state-welcome-pay-qr",
+    "combos": [
+      "desktop-light",
+      "desktop-dark"
+    ]
+  },
+  {
+    "id": "/welcome:pay-smartphone",
+    "label": "/welcome pay-smartphone",
+    "visual": "state-welcome-pay-smartphone",
+    "combos": [
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:pay-author-wallet",
+    "label": "/welcome pay-author-wallet",
+    "visual": "state-welcome-pay-author-wallet",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:role-hint",
+    "label": "/welcome role-hint",
+    "visual": "state-welcome-role-hint",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/rules:default",
+    "label": "/rules default",
+    "visual": "screen-rules",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/contact:default",
+    "label": "/contact default",
+    "visual": "screen-contact",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/contact:validation-error",
+    "label": "/contact validation-error",
+    "visual": "state-contact-validation-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/contact:success",
+    "label": "/contact success",
+    "visual": "state-contact-success",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/profile:default",
+    "label": "/profile default",
+    "visual": "screen-profile",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/profile:receive",
+    "label": "/profile receive",
+    "visual": "state-profile-receive",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/profile:usd-scale",
+    "label": "/profile usd-scale",
+    "visual": "state-profile-usd-scale",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/profile:single-day",
+    "label": "/profile single-day",
+    "visual": "state-profile-single-day",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/profile:large-usd",
+    "label": "/profile large-usd",
+    "visual": "state-profile-large-usd",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/view/[viewKey]:default",
+    "label": "/view/[viewKey] default",
+    "visual": "screen-view-viewKey",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/view/[viewKey]:missing",
+    "label": "/view/[viewKey] missing",
+    "visual": "state-view-missing",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/view/[viewKey]:loading",
+    "label": "/view/[viewKey] loading",
+    "visual": "state-view-loading",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/view/[viewKey]:error",
+    "label": "/view/[viewKey] error",
+    "visual": "state-view-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats:default",
+    "label": "/stats default",
+    "visual": "screen-stats",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats:usd-scale",
+    "label": "/stats usd-scale",
+    "visual": "state-stats-usd-scale",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats:empty",
+    "label": "/stats empty",
+    "visual": "state-stats-empty",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats:loading",
+    "label": "/stats loading",
+    "visual": "state-stats-loading",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats:error",
+    "label": "/stats error",
+    "visual": "state-stats-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats/[day]:default",
+    "label": "/stats/[day] default",
+    "visual": "screen-stats-day",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats/[day]:empty",
+    "label": "/stats/[day] empty",
+    "visual": "state-stats-day-empty",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats/[day]:loading",
+    "label": "/stats/[day] loading",
+    "visual": "state-stats-day-loading",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/stats/[day]:error",
+    "label": "/stats/[day] error",
+    "visual": "state-stats-day-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook:default",
+    "label": "/handbook default",
+    "visual": "screen-handbook",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook:copied",
+    "label": "/handbook copied",
+    "visual": "state-handbook-copied",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook/screens:default",
+    "label": "/handbook/screens default",
+    "visual": "screen-handbook-screens",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook/screens:mobile",
+    "label": "/handbook/screens mobile",
+    "visual": "state-handbook-screens-mobile",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook/screens:dark",
+    "label": "/handbook/screens dark",
+    "visual": "state-handbook-screens-dark",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook/functions:default",
+    "label": "/handbook/functions default",
+    "visual": "screen-handbook-functions",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook/functions:mobile",
+    "label": "/handbook/functions mobile",
+    "visual": "state-handbook-functions-mobile",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook/functions:dark",
+    "label": "/handbook/functions dark",
+    "visual": "state-handbook-functions-dark",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/handbook/endpoints:default",
+    "label": "/handbook/endpoints default",
+    "visual": "screen-handbook-endpoints",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages:default",
+    "label": "/messages default",
+    "visual": "screen-messages",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages:empty",
+    "label": "/messages empty",
+    "visual": "state-messages-empty",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages:loading",
+    "label": "/messages loading",
+    "visual": "state-messages-loading",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages:error",
+    "label": "/messages error",
+    "visual": "state-messages-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages:thread",
+    "label": "/messages thread",
+    "visual": "state-messages-thread",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/404:default",
+    "label": "/404 default",
+    "visual": "screen-404",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages/[id]:default",
+    "label": "/messages/[id] default",
+    "visual": "screen-messages-id",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages/[id]:missing",
+    "label": "/messages/[id] missing",
+    "visual": "state-messages-id-missing",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages/[id]:loading",
+    "label": "/messages/[id] loading",
+    "visual": "state-messages-id-loading",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/messages/[id]:error",
+    "label": "/messages/[id] error",
+    "visual": "state-messages-id-error",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:expanded",
+    "label": "/welcome expanded",
+    "visual": "state-welcome-expanded",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:copy",
+    "label": "/welcome copy",
+    "visual": "state-welcome-copy",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:pm",
+    "label": "/welcome pm",
+    "visual": "state-welcome-pm",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  }
+]

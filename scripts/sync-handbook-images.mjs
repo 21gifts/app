@@ -79,6 +79,17 @@ if (fs.existsSync(functionsMd)) {
   }
 }
 
+const catalog = SCREEN_VARIANTS.map((variant) => ({
+  id: `${variant.route}:${variant.id}`,
+  label: `${variant.route} ${variant.id}`,
+  visual: variant.visual,
+  combos: variantComboIds(variant),
+}));
+fs.writeFileSync(
+  path.join(ROOT, 'src', 'lib', 'screen-variant-catalog.json'),
+  `${JSON.stringify(catalog, null, 2)}\n`,
+);
+
 if (missing.length > 0) {
   console.error('Handbook image sync failed — missing visual baselines:');
   for (const line of missing) {
