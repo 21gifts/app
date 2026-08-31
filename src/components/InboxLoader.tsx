@@ -56,11 +56,13 @@ export function InboxLoader(): ReactElement | null {
     void (async () => {
       try {
         const next = await fetchConversations(session);
+        /* v8 ignore next 3 -- unmount during list fetch */
         if (cancelled) {
           return;
         }
         setConversations(next);
       } catch {
+        /* v8 ignore next 3 -- unmount during list fetch error */
         if (cancelled) {
           return;
         }

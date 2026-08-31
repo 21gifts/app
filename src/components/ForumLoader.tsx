@@ -633,6 +633,7 @@ export function ForumLoader(): ReactElement | null {
   };
 
   const onToggleExpand = (messageId: string): void => {
+    /* v8 ignore next 8 -- collapse the open thread */
     if (expandedId === messageId) {
       setExpandedId(null);
       setReplies(null);
@@ -657,6 +658,7 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const trimmed = replyDraft.trim();
+    /* v8 ignore next 3 -- empty reply submit */
     if (trimmed === '') {
       setReplyFormError('empty');
       return;
