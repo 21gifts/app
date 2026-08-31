@@ -158,7 +158,7 @@
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil, trash).
-- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, and request failures are typed keys so they re-render after a locale change.
+- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, request, and `notZap` failures are typed keys (`la.errorEmpty`, `la.errorNotFound`, `la.errorRequest`, `la.errorNotZap`) so they re-render after a locale change. After `notZap`, Continue/Save stays disabled while the draft still equals the blocked address.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
 
@@ -401,7 +401,7 @@
 - **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`).
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
-- **Used by:** `ForumBoard` and profile copy controls.
+- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, and `HandbookImageViewer`.
 
 ## Function: Card
 
@@ -422,7 +422,7 @@
 - **Purpose:** Full-height app page shell (`min-h-screen` centered column) with an optional absolute top-right slot for language/theme chrome.
 - **Inputs:** `children`, optional `topRight`, optional `className` on the outer `<main>`.
 - **Returns / side effects:** Layout only. No network. Used by login and the public message page (light `LanguageSwitcher` in `topRight`).
-- **Used by:** `LoginPage`, `PublicMessagePage`, and other signed-out/setup shells.
+- **Used by:** `LoginPage` and `PublicMessagePage`.
 
 ## Function: PublicMessagePage
 
@@ -925,7 +925,7 @@
 
 - **Purpose:** POST `/me/lightning-address`.
 - **Inputs:** `sessionToken`, `address`.
-- **Returns / side effects:** Updated `Account`.
+- **Returns / side effects:** Updated `Account`. HTTP 400 whose body is `LIGHTNING_ADDRESS_NOT_ZAP_ERROR` is thrown unchanged; any other 400 is rewritten to a visitor-facing save error. Other non-ok statuses throw `'Could not save your Wallet of Satoshi address'`.
 - **Used by:** `LightningAddressForm`.
 
 ## Function: translate

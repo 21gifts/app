@@ -58,6 +58,7 @@ describe('LightningAddressForm', () => {
   it('uses icon actions beside the field on the profile variant without an address', () => {
     renderWithLocale(<LightningAddressForm variant="profile" />);
     expect(screen.getByRole('button', { name: /link address/i })).toBeTruthy();
+    expect(screen.queryByText('Link address')).toBeNull();
     expect(screen.queryByRole('button', { name: /continue/i })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /link address/i }));
     expect(screen.getByRole('alert').textContent).toBe('Enter your Wallet of Satoshi address');
@@ -261,6 +262,8 @@ describe('LightningAddressForm', () => {
     expect(screen.getByText('me@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByRole('button', { name: /edit/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /unlink/i })).toBeTruthy();
+    expect(screen.queryByText('Edit')).toBeNull();
+    expect(screen.queryByText('Unlink')).toBeNull();
     expect(screen.queryByRole('button', { name: /verify/i })).toBeNull();
     expect(screen.queryByText(/not yet verified/i)).toBeNull();
     expect(screen.queryByText('Verified')).toBeNull();
@@ -277,6 +280,7 @@ describe('LightningAddressForm', () => {
     expect(input.value).toBe('me@walletofsatoshi.com');
 
     fireEvent.change(input, { target: { value: 'new@walletofsatoshi.com' } });
+    expect(screen.queryByText('Save')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(await screen.findByText('new@walletofsatoshi.com')).toBeTruthy();
@@ -290,6 +294,7 @@ describe('LightningAddressForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /edit/i }));
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
 
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(screen.queryByPlaceholderText(PLACEHOLDER)).toBeNull();
     expect(screen.getByRole('button', { name: /edit/i })).toBeTruthy();
