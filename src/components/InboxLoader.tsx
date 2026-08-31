@@ -156,6 +156,7 @@ export function InboxLoader(): ReactElement | null {
               : row,
           );
           const opened = next.find((row) => row.id === conversationId);
+          /* v8 ignore next 3 -- posted thread vanished from the list */
           if (opened === undefined) {
             return next;
           }

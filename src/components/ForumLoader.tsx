@@ -659,16 +659,16 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const trimmed = replyDraft.trim();
-    /* v8 ignore next 3 -- empty reply submit */
+    /* v8 ignore start -- empty or over-long reply */
     if (trimmed === '') {
       setReplyFormError('empty');
       return;
     }
-    /* v8 ignore next 4 -- over-long reply */
     if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
     }
+    /* v8 ignore stop */
     const parentId = expandedId;
     setReplyPosting(true);
     setReplyFormError(null);
