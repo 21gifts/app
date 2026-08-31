@@ -605,7 +605,7 @@ Open official thread. Heading **21.gifts**, message body **Hello team**, compose
 
 ### Variant: default
 
-Valid known UUID. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo. Auth CTA below the card.
+Valid known UUID. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 

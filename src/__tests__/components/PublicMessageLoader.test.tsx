@@ -179,6 +179,12 @@ describe('PublicMessageLoader', () => {
     const video = document.querySelector('video');
     expect(video?.getAttribute('src')).toBe(`/messages/${MESSAGE_ID}/video.webm`);
     expect(video?.hasAttribute('controls')).toBe(true);
+    const tokens = (video?.getAttribute('class') ?? '').split(/\s+/);
+    expect(tokens).toEqual(
+      expect.arrayContaining(['h-auto', 'w-auto', 'max-h-80', 'max-w-full', 'object-contain']),
+    );
+    expect(tokens).not.toContain('w-full');
+    expect(tokens).not.toContain('bg-black');
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
   });
 

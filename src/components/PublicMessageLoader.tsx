@@ -142,7 +142,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             controls
             playsInline
             preload="metadata"
-            className="max-h-80 w-full rounded-2xl bg-black"
+            className="mx-auto block h-auto w-auto max-h-80 max-w-full rounded-2xl object-contain"
           />
         ) : photoUrl !== null ? (
           /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */

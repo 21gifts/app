@@ -435,7 +435,7 @@
 
 - **Purpose:** Client loader for the public note page: validates UUID, fetches via `fetchPublicMessage` / `fetchPublicMessagePhoto`, shows missing/error/retry/loading, and a Log in or Back to the forum link from `useHydrateSession`.
 - **Inputs:** `id` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready `Card`. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. No pay or composer.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready `Card`. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). No pay or composer.
 - **Used by:** `PublicMessagePage`.
 
 ## Function: ViewProfilePage
