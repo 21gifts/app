@@ -132,9 +132,6 @@ export function LightningAddressForm(
       setError({ type: 'empty' });
       return;
     }
-    if (error?.type === 'notZap' && blockedAddress === trimmed) {
-      return;
-    }
     void run((token) => setLightningAddress(token, trimmed));
   };
 
