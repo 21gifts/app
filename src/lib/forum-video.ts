@@ -64,7 +64,15 @@ async function capturePoster(file: File): Promise<Blob | null> {
       video.src = url;
       video.load();
     });
-    await video.play().catch(() => undefined);
+    await Promise.race([
+      video.play().catch(() => undefined),
+      new Promise<void>((resolve) => {
+        window.setTimeout(() => {
+          video.pause();
+          resolve();
+        }, 2000);
+      }),
+    ]);
     video.pause();
     if (video.videoWidth === 0 || video.videoHeight === 0) {
       return null;

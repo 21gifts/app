@@ -20,6 +20,18 @@ function stubUrlObjectMethods(): void {
   });
 }
 
+/** jsdom load/play never fire error; invoke onerror so capturePoster fails immediately. */
+function stubMediaElementLoadError(): void {
+  vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(function (
+    this: HTMLMediaElement,
+  ) {
+    const fail = this.onerror;
+    if (typeof fail === 'function') {
+      fail.call(this, new Event('error'));
+    }
+  });
+}
+
 describe('forum-video', () => {
   it('accepts mp4 webm mov m4v by type or name', () => {
     expect(isForumVideoFile(new File([], 'a.mp4', { type: 'video/mp4' }))).toBe(true);
@@ -38,6 +50,7 @@ describe('forum-video', () => {
 
   it('returns a fallback jpeg poster when the browser cannot decode a small mp4', async () => {
     stubUrlObjectMethods();
+    stubMediaElementLoadError();
     const file = new File([new Uint8Array([1, 2, 3])], 'a.mp4', { type: 'video/mp4' });
     const result = await prepareForumVideo(file);
     expect(result.ok).toBe(true);
@@ -54,6 +67,7 @@ describe('forum-video', () => {
 
   it('returns a fallback jpeg poster for a small quicktime mov', async () => {
     stubUrlObjectMethods();
+    stubMediaElementLoadError();
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mov', { type: 'video/quicktime' });
     const result = await prepareForumVideo(file);
     expect(result.ok).toBe(true);
