@@ -391,7 +391,7 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }
-    return forumRepliesSchema.parse(await response.json()).replies;
+    return forumRepliesSchema.parse(await response.json()).messages;
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
