@@ -700,14 +700,14 @@ export function ForumBoard({
                         onChange={(event) => onReplyDraftChange(event.target.value)}
                         maxLength={FORUM_MESSAGE_MAX_LENGTH}
                         rows={2}
-                        disabled={replyPosting}
+                        disabled={replyPosting || repliesLoading}
                         className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
                       />
                       <IconButton
                         type="submit"
                         size="lg"
                         variant="primary"
-                        disabled={replyPosting}
+                        disabled={replyPosting || repliesLoading}
                         aria-label={t('forum.post')}
                       >
                         {replyPosting ? (

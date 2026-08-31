@@ -30,7 +30,7 @@
 
 ## Function: postMessageVideo
 
-- **Purpose:** Multipart `POST /messages` with `video` + optional `poster`.
+- **Purpose:** Multipart `POST /forum/messages` with `video` + optional `poster`.
 - **Inputs:** session token, `{ text, video, poster? }`.
 - **Returns / side effects:** `ForumMessage`.
 - **Used by:** `ForumLoader` submit.
@@ -401,7 +401,7 @@
 - **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`).
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
-- **Used by:** `ForumBoard`, `SignedInChrome`, profile and copy controls.
+- **Used by:** `ForumBoard` and profile copy controls.
 
 ## Function: Card
 
@@ -415,7 +415,7 @@
 - **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted.
 - **Inputs:** `label`, optional `id` / `className`, `multiline` (textarea when true), plus native input or textarea attributes.
 - **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
-- **Used by:** Login, name, address, and forum-related forms.
+- **Used by:** `ForumBoard`.
 
 ## Function: PageChrome
 

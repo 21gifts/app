@@ -81,9 +81,20 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
   if (prev === null) {
     return next;
   }
+  const prevById = new Map(prev.map((message) => [message.id, message]));
+  const mergedNext = next.map((message) => {
+    const prior = prevById.get(message.id);
+    if (prior === undefined) {
+      return message;
+    }
+    return {
+      ...message,
+      replyCount: Math.max(prior.replyCount, message.replyCount),
+    };
+  });
   const ids = new Set(next.map((message) => message.id));
   const extra = prev.filter((message) => !ids.has(message.id));
-  return [...extra, ...next];
+  return [...extra, ...mergedNext];
 }
 
 /**
@@ -666,6 +677,8 @@ export function ForumLoader(): ReactElement | null {
           alreadyListed =
             repliesRef.current !== null &&
             repliesRef.current.some((message) => message.id === created.id);
+          setRepliesError(false);
+          setRepliesLoading(false);
           setReplies((prev) => {
             if (prev === null) {
               return [created];
