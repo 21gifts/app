@@ -64,6 +64,15 @@ export function LightningAddressForm(
   const variant = props.variant ?? (linked ? 'profile' : 'onboarding');
   const continueDisabled = busy || (blockedAddress !== null && draft.trim() === blockedAddress);
 
+  const onDraftChange = (next: string): void => {
+    setDraft(next);
+    if (blockedAddress !== null && next.trim() === blockedAddress) {
+      setError({ type: 'notZap' });
+    } else {
+      setError(null);
+    }
+  };
+
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
    *
@@ -162,13 +171,7 @@ export function LightningAddressForm(
           aria-label={t('la.aria')}
           value={draft}
           onChange={(event) => {
-            const next = event.target.value;
-            setDraft(next);
-            if (blockedAddress !== null && next.trim() === blockedAddress) {
-              setError({ type: 'notZap' });
-            } else {
-              setError(null);
-            }
+            onDraftChange(event.target.value);
           }}
           disabled={busy}
           className={inputClass}
@@ -209,13 +212,7 @@ export function LightningAddressForm(
               aria-label={t('la.aria')}
               value={draft}
               onChange={(event) => {
-                const next = event.target.value;
-                setDraft(next);
-                if (blockedAddress !== null && next.trim() === blockedAddress) {
-                  setError({ type: 'notZap' });
-                } else {
-                  setError(null);
-                }
+                onDraftChange(event.target.value);
               }}
               disabled={busy}
               className={`min-w-0 flex-1 ${inputClass}`}
