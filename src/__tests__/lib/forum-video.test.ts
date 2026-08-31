@@ -61,7 +61,22 @@ describe('forum-video', () => {
     expect(result.video.poster.type).toBe('image/jpeg');
     expect(result.video.poster.size).toBeGreaterThan(0);
     expect(result.video.previewUrl).toBe('blob:preview');
-    const bytes = new Uint8Array(await result.video.poster.arrayBuffer());
+    const bytes = new Uint8Array(
+      await new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (reader.result instanceof ArrayBuffer) {
+            resolve(reader.result);
+            return;
+          }
+          reject(new Error('expected ArrayBuffer'));
+        };
+        reader.onerror = () => {
+          reject(reader.error ?? new Error('read failed'));
+        };
+        reader.readAsArrayBuffer(result.video.poster);
+      }),
+    );
     expect([...bytes.slice(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
   });
 
