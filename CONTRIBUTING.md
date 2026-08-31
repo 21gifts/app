@@ -124,7 +124,7 @@ app/
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss state for /welcome forum
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/PM state for /welcome forum
 │   │   ├── HandbookImageViewer.tsx # handbook baseline image picker (viewport/theme)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
@@ -165,12 +165,14 @@ app/
 │       │   ├── page.test.tsx
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
-├── docs/handbook/               # Mandatory: every screen + exported function + endpoint
-│   ├── README.md
-│   ├── screens.md
-│   ├── functions.md
-│   ├── endpoints.md
-│   └── images/                  # Markdown still references images/<file>.png; PNGs are not committed
+├── docs/
+│   ├── ui.md                    # Shared UI primitives (Button, IconButton, Field, Card, PageChrome)
+│   └── handbook/                # Mandatory: every screen + exported function + endpoint
+│       ├── README.md
+│       ├── screens.md
+│       ├── functions.md
+│       ├── endpoints.md
+│       └── images/              # Markdown still references images/<file>.png; PNGs are not committed
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
 │   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
@@ -185,6 +187,7 @@ app/
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
+│   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile + profile view-key copy
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

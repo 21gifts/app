@@ -103,9 +103,11 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * Reads the session and account from the auth store, fetches messages with a
  * cancelled-flag pattern matching {@link StatsLoader}, loads photos via Bearer
  * + blob URLs, owns composer draft/photo/video/post state, the Active/All/Most
- * popular feed mode, pay-on-note invoice + sats-poll state, and persists
- * dismiss of the living-room laws hint on the account. Also polls until
- * unsigned notes become payable. Renders nothing when there is no session.
+ * popular feed mode, pay-on-note invoice + sats-poll state, expand/replies
+ * (`fetchReplies`, reply composer via `postMessage` with `inReplyTo`), PM
+ * (`openConversation` → `/messages?c=`), and persists dismiss of the
+ * living-room laws hint on the account. Also polls until unsigned notes
+ * become payable. Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
