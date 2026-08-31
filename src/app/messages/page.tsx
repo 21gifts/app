@@ -5,7 +5,7 @@ import { OnboardingGate } from '@/components/OnboardingGate';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/messages` — signed-in private-message inbox (intern #11).
+ * `/messages` — signed-in private-message inbox.
  *
  * Requires name + address + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`, same as `/contact`. Public

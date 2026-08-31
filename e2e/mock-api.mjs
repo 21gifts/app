@@ -378,12 +378,6 @@ const server = http.createServer(async (req, res) => {
 
   const photoMatch = pathName.match(/^\/messages\/([^/]+)\/photo$/);
   if (method === 'GET' && photoMatch) {
-    const token = bearer(req);
-    const account = token === null ? undefined : byToken.get(token);
-    if (!account) {
-      json(res, 401, { error: 'Unauthorized' });
-      return;
-    }
     const id = decodeURIComponent(photoMatch[1]);
     const bytes = forumPhotos.get(id);
     if (bytes === undefined) {
@@ -397,6 +391,18 @@ const server = http.createServer(async (req, res) => {
       'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
     });
     res.end(bytes);
+    return;
+  }
+
+  const publicMessageMatch = pathName.match(/^\/messages\/([^/]+)$/);
+  if (method === 'GET' && publicMessageMatch) {
+    const id = decodeURIComponent(publicMessageMatch[1]);
+    const row = forumMessages.find((message) => message.id === id);
+    if (row === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    json(res, 200, row);
     return;
   }
 

@@ -17,8 +17,8 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/conversations')).status()).toBe(401);
   expect((await request.get('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);
-  expect((await request.get('/messages/[id]/photo')).status()).toBe(401);
-  expect((await request.get('/messages/m1/photo')).status()).toBe(401);
+  expect((await request.get('/messages/[id]/photo')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo')).status()).toBe(404);
   expect((await request.get('/messages/[id]/[file]')).status()).toBe(404);
   expect((await request.get('/messages/m1/video.mp4')).status()).toBe(404);
   expect((await request.post('/me/name')).status()).toBe(401);

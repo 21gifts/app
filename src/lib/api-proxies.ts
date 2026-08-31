@@ -253,9 +253,9 @@ export async function proxyConversationPost(
 }
 
 /**
- * Proxies GET /messages/:id/photo to the 21.gifts api.
+ * Proxies GET /messages/:id/photo to the 21.gifts api (public; no auth).
  *
- * @param request - Incoming App Router request (Bearer session).
+ * @param request - Incoming App Router request.
  * @param id - Forum message id from the dynamic route segment.
  * @returns The upstream response (raw image bytes).
  */

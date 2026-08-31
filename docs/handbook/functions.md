@@ -1112,8 +1112,8 @@
 
 ## Function: proxyMessagesPhotoGet
 
-- **Purpose:** Bearer proxy GET `/messages/:id/photo` to the 21.gifts api (raw forum photo bytes).
-- **Inputs:** Incoming `Request` with Bearer session, plus message `id` from the App Router segment.
+- **Purpose:** Same-origin proxy GET `/messages/:id/photo` to the 21.gifts api (raw forum photo bytes). Public; no bearer required (api photo is public; proxy forwards Authorization if present but does not require it). Runtime `getApiUrl()` via `proxyApiRequest` (not next.config rewrites).
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/messages/[id]/photo`.
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton } from '@/components/ui';
@@ -146,15 +146,22 @@ export function InboxScreen({
             disabled={posting || messagesLoading}
             className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
           />
-          <Button
+          <IconButton
             type="submit"
+            size="lg"
+            variant="primary"
             disabled={posting || messagesLoading}
-            icon={
-              posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-            }
+            aria-label={t('inbox.send')}
           >
-            {t('inbox.send')}
-          </Button>
+            {posting ? (
+              <Loader2
+                aria-hidden="true"
+                className="block h-5 w-5 shrink-0 animate-spin"
+              />
+            ) : (
+              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+            )}
+          </IconButton>
         </form>
         {formError === 'empty' ? (
           <p role="alert" className="text-center text-sm text-red-600">

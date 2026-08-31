@@ -374,10 +374,10 @@ test('Function: proxyConversationPost — POST /conversations/[id] without beare
   ).toBeGreaterThanOrEqual(400);
 });
 
-test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without bearer is 401', async ({
+test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without a file is 404', async ({
   request,
 }) => {
-  expect((await request.get('/messages/m1/photo')).status()).toBe(401);
+  expect((await request.get('/messages/m1/photo')).status()).toBe(404);
 });
 
 test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a file is 404', async ({

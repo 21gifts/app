@@ -251,6 +251,7 @@ describe('InboxScreen', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Next' } });
     expect(onDraftChange).toHaveBeenCalledWith('Next');
+    expect(screen.queryByText('Send')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(onPost).toHaveBeenCalledTimes(1);
   });
@@ -277,6 +278,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.queryByText('Send')).toBeNull();
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
