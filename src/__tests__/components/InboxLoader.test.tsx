@@ -107,13 +107,7 @@ describe('InboxLoader', () => {
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
     searchParams.set('c', 'conv-2');
-    view.rerender(
-      <LocaleProvider locale="en" messages={getCatalog('en')}>
-        <ThemeProvider>
-          <InboxLoader />
-        </ThemeProvider>
-      </LocaleProvider>,
-    );
+    view.rerender(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
   });
 
