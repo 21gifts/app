@@ -117,7 +117,7 @@ describe('ContactLoader', () => {
     expect(postMock).toHaveBeenCalledWith('sess', 'Hello');
   });
 
-  it('opens the first thread when no 21.gifts name is present', async () => {
+  it('opens the inbox list when no 21.gifts thread is present', async () => {
     postMock.mockResolvedValue({
       id: 'c1',
       name: 'Ada',
@@ -136,7 +136,7 @@ describe('ContactLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
+      expect(push).toHaveBeenCalledWith('/messages');
     });
   });
 
