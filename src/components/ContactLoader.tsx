@@ -56,6 +56,7 @@ export function ContactLoader(): ReactElement | null {
         router.push(href);
       } catch {
         setFormError('request');
+      } finally {
         setPosting(false);
       }
     })();

@@ -62,7 +62,7 @@
 - **Purpose:** Server-presentational chrome for the `/handbook` title, intro sentence, and section-nav `aria-label` (already-translated copy).
 - **Inputs:** `title`, `introBefore`, `introAfter`, `navAria` (already-translated strings), `headingAction` (node beside the h1, e.g. copy-link), and `children` (the section links).
 - **Returns / side effects:** Heading, intro with the api-handbook GitHub link, and a nav whose accessible name comes from `navAria`. No network.
-- **Used by:** `HandbookPage`.
+- **Used by:** `HandbookPage`, `HandbookScreensPage`, `HandbookFunctionsPage`, `HandbookEndpointsPage`.
 
 ## Function: HandbookPage
 
@@ -185,9 +185,9 @@
 
 ## Function: LoginPage
 
-- **Purpose:** Next.js page for `/login` with localized heading, theme switcher, and language switcher.
-- **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
+- **Inputs:** None.
+- **Returns / side effects:** `PageChrome` with `ThemeSwitcher` and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
