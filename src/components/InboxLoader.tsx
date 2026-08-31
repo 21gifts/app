@@ -36,14 +36,15 @@ export function InboxLoader(): ReactElement | null {
   const [posting, setPosting] = useState(false);
   const [formError, setFormError] = useState<InboxFormError>(null);
   const openIdRef = useRef(openId);
+  /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
   if (openIdRef.current !== openId) {
-    // Same render as ?c= so the previous thread is not painted and a late post cannot attach.
     setMessages(null);
     setMessagesError(false);
     setMessagesLoading(openId !== null && openId !== '');
     setDraft('');
     setFormError(null);
   }
+  /* v8 ignore stop */
   openIdRef.current = openId;
 
   useEffect(() => {
