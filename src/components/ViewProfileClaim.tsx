@@ -44,6 +44,7 @@ export function ViewProfileClaim({
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const passkey = usePasskeyLogin();
   const claimAttemptedRef = useRef(false);
+  const claimedLoginRef = useRef(false);
   const [inApp, setInApp] = useState(false);
 
   useEffect(() => {
@@ -61,6 +62,10 @@ export function ViewProfileClaim({
   }
 
   if (hasPasskey) {
+    return null;
+  }
+
+  if (claimedLoginRef.current && account !== null) {
     return null;
   }
 
@@ -89,6 +94,7 @@ export function ViewProfileClaim({
         <button
           type="button"
           onClick={() => {
+            claimedLoginRef.current = true;
             claimAttemptedRef.current = false;
             passkey.authenticate();
           }}

@@ -147,7 +147,9 @@ describe('ViewProfileClaim', () => {
       useAuthStore.setState({ session: 'tok', account });
     });
     mockPasskey('error', 'This profile already has a passkey');
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    const { rerender } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
     expect(screen.getByText('This profile already has a passkey. Log in instead.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
     expect(authenticateSpy).toHaveBeenCalledTimes(1);
@@ -155,6 +157,10 @@ describe('ViewProfileClaim', () => {
       expect(useAuthStore.getState().account).not.toBeNull();
     });
     expect(replace).not.toHaveBeenCalled();
+    mockPasskey('idle');
+    rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    expect(screen.queryByText('Action required, the account must be activated')).toBeNull();
   });
 
   it('shows the in-app escape card when passkeys are unsupported', () => {
