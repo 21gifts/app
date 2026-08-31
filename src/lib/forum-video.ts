@@ -139,10 +139,8 @@ export async function prepareForumVideo(file: File): Promise<PrepareForumVideoRe
     return { ok: false, error: 'tooLarge' };
   }
   const captured = await capturePoster(file);
-  let poster: Blob;
-  if (captured === null) {
-    poster = fallbackForumVideoPoster();
-  } else {
+  let poster = fallbackForumVideoPoster();
+  if (captured !== null) {
     /* v8 ignore start -- non-null only when the browser decoded a frame */
     poster = captured;
     /* v8 ignore stop */
