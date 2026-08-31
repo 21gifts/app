@@ -57,6 +57,12 @@ function mockPasskey(status: PasskeyStatus = 'idle', error: string | null = null
 
 beforeEach(() => {
   vi.clearAllMocks();
+  registerSpy.mockReset();
+  authenticateSpy.mockReset();
+  retrySpy.mockReset();
+  cancelSpy.mockReset();
+  loginSpy.mockReset();
+  replace.mockReset();
   hydrateReady.current = true;
   useAuthStore.setState({ session: null, account: null });
   vi.mocked(isInAppBrowser).mockReturnValue(false);
