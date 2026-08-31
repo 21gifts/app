@@ -1799,6 +1799,63 @@ describe('ForumBoard', () => {
     expect(onRetryReplies).toHaveBeenCalledTimes(1);
   });
 
+  it('does not post a reply while the thread failed to load or is still empty', () => {
+    const onReplyPost = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={null}
+        repliesLoading={false}
+        repliesError={true}
+        onReplyPost={onReplyPost}
+        {...modeProps('all')}
+      />,
+    );
+    const form = screen.getByPlaceholderText('Write a reply').closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form as HTMLFormElement);
+    expect(onReplyPost).not.toHaveBeenCalled();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={null}
+            repliesLoading={false}
+            repliesError={false}
+            onReplyPost={onReplyPost}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const pending = screen.getByPlaceholderText('Write a reply').closest('form');
+    expect(pending).not.toBeNull();
+    fireEvent.submit(pending as HTMLFormElement);
+    expect(onReplyPost).not.toHaveBeenCalled();
+  });
+
   it('spins the reply post button while posting and hides PM on own replies', () => {
     renderWithLocale(
       <ForumBoard
