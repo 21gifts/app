@@ -1722,6 +1722,30 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('button', { name: 'Hide replies' })).toBeTruthy();
   });
 
+  it('spins the reply post button while posting and hides PM on own replies', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r-own', name: 'Ada', text: '', sats: 0, payable: false }]}
+        replyPosting={true}
+        ownName="Ada"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
+  });
+
   it("shows PM on other people's replies", () => {
     const onPm = vi.fn();
     renderWithLocale(

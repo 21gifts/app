@@ -2639,7 +2639,7 @@ test('Function: fetchReplies — expanding a welcome note loads replies', async 
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Show replies' }).click();
-  await expect(page.getByText('Write a reply')).toBeVisible();
+  await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
 });
 
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
