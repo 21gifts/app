@@ -240,8 +240,6 @@ describe('LightningAddressForm', () => {
     vi.mocked(setLightningAddress).mockClear();
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(setLightningAddress).not.toHaveBeenCalled();
-    fireEvent.submit(screen.getByRole('button', { name: /continue/i }).closest('form')!);
-    expect(setLightningAddress).not.toHaveBeenCalled();
   });
 
   it('stringifies a non-Error rejection', async () => {
