@@ -793,10 +793,11 @@ export function ForumLoader(): ReactElement | null {
       repliesLoading={expandedId !== null && repliesLoading}
       repliesError={expandedId !== null && repliesError}
       onRetryReplies={() => {
-        /* v8 ignore next 3 -- replyPosting cannot overlap repliesError (submit is a no-op) */
+        /* v8 ignore start -- replyPosting cannot overlap repliesError (submit is a no-op) */
         if (replyPosting) {
           return;
         }
+        /* v8 ignore stop */
         setRepliesAttempt((n) => n + 1);
       }}
       replyDraft={replyDraft}
