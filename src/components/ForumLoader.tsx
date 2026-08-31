@@ -315,9 +315,7 @@ export function ForumLoader(): ReactElement | null {
 
   useEffect(() => {
     if (session === null || expandedId === null) {
-      if (expandedId === null) {
-        prevExpandedIdRef.current = null;
-      }
+      prevExpandedIdRef.current = null;
       return;
     }
     const expandedChanged = prevExpandedIdRef.current !== expandedId;
