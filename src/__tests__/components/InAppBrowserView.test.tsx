@@ -95,7 +95,9 @@ describe('InAppBrowserView', () => {
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalledTimes(1);
     });
-    expect(screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied'),
+    ).toBeNull();
   });
 
   it('stays idle and logs when execCommand throws then clipboard rejects', async () => {
@@ -111,7 +113,9 @@ describe('InAppBrowserView', () => {
       expect(errorSpy).toHaveBeenCalled();
     });
     expect(writeText).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied'),
+    ).toBeNull();
   });
 
   it('shows the iOS hint when the user agent is an iPhone', () => {
@@ -216,7 +220,9 @@ describe('InAppBrowserView', () => {
     act(() => {
       vi.advanceTimersByTime(400);
     });
-    expect(screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied'),
+    ).toBeNull();
   });
 
   it('restores Copy link after the copied timer elapses', async () => {
@@ -233,6 +239,8 @@ describe('InAppBrowserView', () => {
     act(() => {
       vi.advanceTimersByTime(1200);
     });
-    expect(screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied'),
+    ).toBeNull();
   });
 });
