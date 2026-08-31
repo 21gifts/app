@@ -1,5 +1,5 @@
 import { render, type RenderResult } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Locale } from '@/lib/locale';
@@ -30,9 +30,12 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
  * @returns Testing Library render result.
  */
 export function renderWithLocale(ui: ReactElement, locale: Locale = 'en'): RenderResult {
-  return render(
-    <LocaleProvider locale={locale} messages={getCatalog(locale)}>
-      <ThemeProvider>{ui}</ThemeProvider>
-    </LocaleProvider>,
-  );
+  function Wrapper({ children }: { children: ReactNode }): ReactElement {
+    return (
+      <LocaleProvider locale={locale} messages={getCatalog(locale)}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </LocaleProvider>
+    );
+  }
+  return render(ui, { wrapper: Wrapper });
 }

@@ -1015,6 +1015,15 @@ test('Function: LoginCard — a single Log in button is visible', async ({ page 
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
 });
 
+test('Function: InAppBrowserView — Telegram WebView shows Open in browser', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Open this page in your browser' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open in browser' })).toBeVisible();
+});
+
 test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page }) => {
   await page.addInitScript(() => {
     Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
