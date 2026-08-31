@@ -663,7 +663,7 @@ export function ForumLoader(): ReactElement | null {
 
   const onReplyPost = (): void => {
     /* v8 ignore next 3 -- reply composer only mounts when expanded */
-    if (expandedId === null || replyPosting || repliesError || replies === null) {
+    if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
       return;
     }
     const trimmed = replyDraft.trim();

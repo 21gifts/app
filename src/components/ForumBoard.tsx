@@ -305,7 +305,7 @@ export function ForumBoard({
 
   const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    if (repliesError || replies === null) {
+    if (replyPosting || repliesLoading || repliesError || replies === null) {
       return;
     }
     onReplyPost();

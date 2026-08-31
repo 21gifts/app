@@ -1896,6 +1896,35 @@ describe('ForumBoard', () => {
     expect(pending).not.toBeNull();
     fireEvent.submit(pending as HTMLFormElement);
     expect(onReplyPost).not.toHaveBeenCalled();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            repliesLoading={true}
+            repliesError={false}
+            onReplyPost={onReplyPost}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const loading = screen.getByPlaceholderText('Write a reply').closest('form');
+    expect(loading).not.toBeNull();
+    fireEvent.submit(loading as HTMLFormElement);
+    expect(onReplyPost).not.toHaveBeenCalled();
   });
 
   it('spins the reply post button while posting and hides PM on own replies', () => {
