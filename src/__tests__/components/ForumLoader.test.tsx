@@ -138,6 +138,15 @@ describe('ForumLoader', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('renders the board when the session has no account yet', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+  });
+
   it('shows empty copy when fetch resolves to an empty list', async () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
