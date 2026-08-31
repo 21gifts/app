@@ -100,6 +100,23 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('21.gifts')).toBeTruthy();
   });
 
+  it('clears thread state when ?c= changes', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
+    searchParams.set('c', 'conv-2');
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <InboxLoader />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+  });
+
   it('opens a thread from ?c= and posts a reply', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
