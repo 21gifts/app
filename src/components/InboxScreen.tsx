@@ -154,10 +154,7 @@ export function InboxScreen({
             aria-label={t('inbox.send')}
           >
             {posting ? (
-              <Loader2
-                aria-hidden="true"
-                className="block h-5 w-5 shrink-0 animate-spin"
-              />
+              <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
             ) : (
               <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
             )}
