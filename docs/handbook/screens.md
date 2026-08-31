@@ -571,6 +571,12 @@ Profile fetch failed. Copy **Could not load this profile. Please try again.** an
 
 ![21.gifts public view error](images/view-error.png)
 
+### Variant: claimed
+
+Valid known key whose profile already has a passkey (`hasPasskey: true`). Same read-only card as default, no yellow activation banner, no **Activate** button.
+
+![21.gifts public view claimed](images/view-claimed.png)
+
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook (no auth gate).

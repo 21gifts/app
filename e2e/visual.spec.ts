@@ -641,6 +641,35 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-view-error');
   });
+
+  test('screen /view/[viewKey] claimed', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: true,
+        }),
+      });
+    });
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Ada')).toBeVisible();
+    await expect(page.getByText('Action required, the account must be activated')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+    await shotScreen(page, 'state-view-claimed');
+  });
 });
 
 const PROFILE_RECEIVE_STATS = {

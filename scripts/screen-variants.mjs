@@ -535,6 +535,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Try again',
   },
   {
+    route: '/view/[viewKey]',
+    id: 'claimed',
+    image: 'view-claimed.png',
+    visual: 'state-view-claimed',
+    needle: 'hasPasskey: true',
+  },
+  {
     route: '/stats',
     id: 'default',
     image: 'stats.png',

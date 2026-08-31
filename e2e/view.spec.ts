@@ -62,6 +62,28 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
 });
 
+test('public view profile claimed hides the Activate banner', async ({ page }) => {
+  await page.route(new RegExp(`/view-key/${KEY}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...VIEW_PROFILE, hasPasskey: true }),
+    });
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_STATS),
+    });
+  });
+  await page.goto(`/view/${KEY}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('Ada')).toBeVisible();
+  await expect(page.getByText('Action required, the account must be activated')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+});
+
 test('public view profile missing shows not-found copy', async ({ page }) => {
   await page.route(new RegExp(`/view-key/${MISSING_KEY}$`), async (route) => {
     await route.fulfill({
