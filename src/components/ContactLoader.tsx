@@ -46,7 +46,7 @@ export function ContactLoader(): ReactElement | null {
         let href = '/messages';
         try {
           const threads = await fetchConversations(session);
-          const official = threads.find((row) => row.name === '21.gifts') ?? threads[0];
+          const official = threads.find((row) => row.name === '21.gifts');
           if (official !== undefined) {
             href = `/messages?c=${encodeURIComponent(official.id)}`;
           }
