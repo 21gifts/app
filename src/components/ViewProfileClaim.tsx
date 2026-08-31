@@ -41,7 +41,6 @@ export function ViewProfileClaim({
   const router = useRouter();
   const { ready } = useHydrateSession();
   const account = useAuthStore((state) => state.account);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
   const passkey = usePasskeyLogin();
   const claimAttemptedRef = useRef(false);
   const claimedLoginRef = useRef(false);
@@ -164,7 +163,7 @@ export function ViewProfileClaim({
           claimAttemptedRef.current = true;
           if (useAuthStore.getState().account !== null) {
             passkey.cancel();
-            clearAuth();
+            useAuthStore.getState().clearAuth();
           }
           passkey.register(viewKey);
         }}

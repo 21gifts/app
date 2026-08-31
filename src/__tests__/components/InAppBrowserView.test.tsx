@@ -23,6 +23,14 @@ function stubExecCommand(impl: (commandId: string) => boolean): ReturnType<typeo
   return fn;
 }
 
+function stubClipboard(writeText: () => Promise<void>): void {
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    writable: true,
+    value: { writeText },
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -30,14 +38,13 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  Object.assign(navigator, { clipboard: originalClipboard });
   Object.defineProperty(document, 'execCommand', {
     configurable: true,
     writable: true,
     value: originalExecCommand,
-  });
-  Object.defineProperty(navigator, 'clipboard', {
-    configurable: true,
-    value: originalClipboard,
   });
   Object.defineProperty(navigator, 'userAgent', {
     configurable: true,
@@ -58,7 +65,7 @@ describe('InAppBrowserView', () => {
   it('marks Copy link as copied after clipboard succeeds when fallback fails', async () => {
     stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     renderWithLocale(<InAppBrowserView />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     await waitFor(() => {
@@ -76,7 +83,7 @@ describe('InAppBrowserView', () => {
           /* never settles */
         }),
     );
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     const exec = stubExecCommand(() => true);
     renderWithLocale(<InAppBrowserView />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
@@ -87,7 +94,7 @@ describe('InAppBrowserView', () => {
 
   it('stays idle and logs once when clipboard and fallback both fail', async () => {
     const writeText = vi.fn().mockRejectedValue(new Error('denied'));
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     stubExecCommand(() => false);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     renderWithLocale(<InAppBrowserView />);
@@ -102,7 +109,7 @@ describe('InAppBrowserView', () => {
 
   it('stays idle and logs when execCommand throws then clipboard rejects', async () => {
     const writeText = vi.fn().mockRejectedValue(new Error('denied'));
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     stubExecCommand(() => {
       throw new Error('no exec');
     });
@@ -144,7 +151,7 @@ describe('InAppBrowserView', () => {
           resolveWrite = resolve;
         }),
     );
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     const { unmount } = renderWithLocale(<InAppBrowserView />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     expect(writeText).toHaveBeenCalled();
@@ -165,7 +172,7 @@ describe('InAppBrowserView', () => {
           rejectWrite = reject;
         }),
     );
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { unmount } = renderWithLocale(<InAppBrowserView />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
@@ -184,7 +191,7 @@ describe('InAppBrowserView', () => {
     vi.useFakeTimers();
     stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     const { unmount } = renderWithLocale(<InAppBrowserView />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     await act(async () => {
@@ -200,7 +207,7 @@ describe('InAppBrowserView', () => {
     vi.useFakeTimers();
     stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     renderWithLocale(<InAppBrowserView />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     await act(async () => {
@@ -229,7 +236,7 @@ describe('InAppBrowserView', () => {
     vi.useFakeTimers();
     stubExecCommand(() => false);
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+    stubClipboard(writeText);
     renderWithLocale(<InAppBrowserView />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     await act(async () => {
