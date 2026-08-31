@@ -41,7 +41,7 @@ const PAY_POLL_MS = 2000;
  * @returns Whether the message looks like a rate-limit error.
  */
 function isRateLimitError(err: unknown): boolean {
-  /* v8 ignore next 3 */
+  /* v8 ignore next 3 -- non-Error throw is defensive; callers always reject with Error */
   if (!(err instanceof Error)) {
     return false;
   }
@@ -62,7 +62,7 @@ function revokeObjectUrlIfPresent(url: string | undefined): void {
  * @returns Whether the message looks like an author's-wallet error.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 */
+  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
   if (!(err instanceof Error)) {
     return false;
   }
