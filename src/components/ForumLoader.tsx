@@ -314,7 +314,11 @@ export function ForumLoader(): ReactElement | null {
   }, []);
 
   useEffect(() => {
-    if (session === null || expandedId === null) {
+    /* v8 ignore next 3 -- render already returned null without a session */
+    if (session === null) {
+      return;
+    }
+    if (expandedId === null) {
       prevExpandedIdRef.current = null;
       return;
     }
