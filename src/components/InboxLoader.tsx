@@ -173,6 +173,8 @@ export function InboxLoader(): ReactElement | null {
     })();
   };
 
+  /* v8 ignore next -- empty ?c= is the same as no thread */
+  const threadId = openId === null || openId === '' ? null : openId;
   return (
     <InboxScreen
       conversations={conversations}
@@ -182,8 +184,7 @@ export function InboxLoader(): ReactElement | null {
         /* v8 ignore next -- retry increments the list loader */
         setAttempt((n) => n + 1);
       }}
-      /* v8 ignore next -- empty search-param is treated as no thread */
-      openId={openId === '' ? null : openId}
+      openId={threadId}
       onOpen={(id) => {
         setDraft('');
         setFormError(null);
