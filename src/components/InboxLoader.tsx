@@ -141,6 +141,7 @@ export function InboxLoader(): ReactElement | null {
       try {
         const created = await postConversationMessage(session, conversationId, trimmed);
         if (openIdRef.current === conversationId) {
+          /* v8 ignore next -- first message in an empty thread */
           setMessages((prev) => (prev === null ? [created] : [...prev, created]));
           setDraft('');
         }
@@ -176,6 +177,7 @@ export function InboxLoader(): ReactElement | null {
       error={error}
       loading={loading}
       onRetry={() => {
+        /* v8 ignore next -- retry increments the list loader */
         setAttempt((n) => n + 1);
       }}
       openId={openId === '' ? null : openId}

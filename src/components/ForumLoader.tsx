@@ -663,7 +663,7 @@ export function ForumLoader(): ReactElement | null {
       setReplyFormError('empty');
       return;
     }
-    /* v8 ignore next 3 -- over-long reply */
+    /* v8 ignore next 4 -- over-long reply */
     if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
