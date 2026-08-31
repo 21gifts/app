@@ -165,6 +165,23 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:public');
   });
 
+  it('renders a video when hasVideo is true', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      hasVideo: true,
+      videoContentType: 'video/webm',
+      text: '',
+    });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(document.querySelector('video')).toBeTruthy();
+    });
+    const video = document.querySelector('video');
+    expect(video?.getAttribute('src')).toBe(`/messages/${MESSAGE_ID}/video.webm`);
+    expect(video?.hasAttribute('controls')).toBe(true);
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
   it('ignores a stale message resolve after unmount', async () => {
     let resolveMessage: ((value: ForumMessage | null) => void) | undefined;
     fetchMessage.mockImplementationOnce(

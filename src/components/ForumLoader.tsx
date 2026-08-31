@@ -131,6 +131,8 @@ export function ForumLoader(): ReactElement | null {
   const [payWaiting, setPayWaiting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const repliesRef = useRef(replies);
+  repliesRef.current = replies;
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
   const [repliesAttempt, setRepliesAttempt] = useState(0);
@@ -628,6 +630,9 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     setExpandedId(messageId);
+    setReplies(null);
+    setRepliesLoading(true);
+    setRepliesError(false);
     setReplyDraft('');
     setReplyFormError(null);
     setRepliesAttempt((n) => n + 1);
@@ -653,6 +658,9 @@ export function ForumLoader(): ReactElement | null {
     void (async () => {
       try {
         const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
+        const alreadyListed =
+          repliesRef.current !== null &&
+          repliesRef.current.some((message) => message.id === created.id);
         setReplies((prev) => {
           if (prev === null) {
             return [created];
@@ -662,14 +670,18 @@ export function ForumLoader(): ReactElement | null {
           }
           return [...prev, created];
         });
-        setMessages((prev) => {
-          if (prev === null) {
-            return prev;
-          }
-          return prev.map((message) =>
-            message.id === parentId ? { ...message, replyCount: message.replyCount + 1 } : message,
-          );
-        });
+        if (!alreadyListed) {
+          setMessages((prev) => {
+            if (prev === null) {
+              return prev;
+            }
+            return prev.map((message) =>
+              message.id === parentId
+                ? { ...message, replyCount: message.replyCount + 1 }
+                : message,
+            );
+          });
+        }
         setReplyDraft('');
       } catch (err) {
         setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');

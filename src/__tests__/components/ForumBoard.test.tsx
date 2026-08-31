@@ -1596,7 +1596,47 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
     expect(onToggleExpand).not.toHaveBeenCalled();
 
+    expect(screen.queryByText('Copy link to this note')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('does not expand when clicking the video or the photo', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-click',
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+          },
+          {
+            ...SAMPLE,
+            id: 'img-click',
+            name: 'Bob',
+            text: '',
+            hasPhoto: true,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'img-click': 'blob:photo' }}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(document.querySelector('video') as HTMLVideoElement);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByAltText('Photo from Bob'));
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
@@ -1620,6 +1660,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
+    expect(screen.queryByText('Send a private message')).toBeNull();
     const pm = screen.getByRole('button', { name: 'Send a private message' });
     expect(pm).toBeTruthy();
     fireEvent.click(pm);

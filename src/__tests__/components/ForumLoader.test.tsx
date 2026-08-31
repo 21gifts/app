@@ -2269,6 +2269,90 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('clears stale replies immediately when expanding a different note', async () => {
+    fetchMock.mockResolvedValue([
+      SAMPLE,
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    repliesMock.mockResolvedValueOnce([
+      {
+        id: 'r1',
+        name: 'Bob',
+        text: 'A reply',
+        createdAt: '2026-08-28T12:30:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    repliesMock.mockImplementationOnce(() => new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    await waitFor(() => {
+      expect(screen.getByText('A reply')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    expect(screen.queryByText('A reply')).toBeNull();
+    expect(screen.getByText('Loading replies…')).toBeTruthy();
+  });
+
+  it('does not increment replyCount when the posted reply is already listed', async () => {
+    const reply: ForumMessage = {
+      id: 'r1',
+      name: 'Bob',
+      text: 'A reply',
+      createdAt: '2026-08-28T12:30:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    repliesMock.mockResolvedValue([reply]);
+    postMock.mockResolvedValue(reply);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('1 replies')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByText('A reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'A reply' } });
+    const postButtons = screen.getAllByRole('button', { name: 'Post' });
+    fireEvent.click(postButtons[postButtons.length - 1]!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'A reply', inReplyTo: 'm1' });
+    });
+    expect(screen.getByText('1 replies')).toBeTruthy();
+    expect(screen.getAllByText('A reply')).toHaveLength(1);
+  });
+
   it("opens a private thread from another person's note", async () => {
     fetchMock.mockResolvedValue([
       SAMPLE,

@@ -461,7 +461,7 @@ export async function postMessageVideo(
   if (input.poster !== undefined) {
     form.set('poster', input.poster, 'poster.jpg');
   }
-  const response = await fetch('/messages', {
+  const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}` },
     body: form,

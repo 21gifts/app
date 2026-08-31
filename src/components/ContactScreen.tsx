@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button, Card } from '@/components/ui';
 import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 
 /** Props for {@link ContactScreen}. */
@@ -46,7 +47,7 @@ export function ContactScreen({
   };
 
   return (
-    <section className="flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+    <Card maxWidth="xl">
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
         {t('contact.heading')}
       </h1>
@@ -66,14 +67,10 @@ export function ContactScreen({
           disabled={posting}
           className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
         />
-        <button
-          type="submit"
-          disabled={posting}
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-app-btn px-5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
-        >
+        <Button type="submit" disabled={posting}>
           {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t('contact.send')}
-        </button>
+        </Button>
       </form>
 
       {formError === 'empty' ? (
@@ -91,6 +88,6 @@ export function ContactScreen({
           {t('contact.errorRequest')}
         </p>
       ) : null}
-    </section>
+    </Card>
   );
 }

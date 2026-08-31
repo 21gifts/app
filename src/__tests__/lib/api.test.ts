@@ -744,7 +744,7 @@ describe('postMessageVideo', () => {
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('/messages');
+    expect(url).toBe('/forum/messages');
     expect(init.method).toBe('POST');
     expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer sess');
     expect(init.body).toBeInstanceOf(FormData);

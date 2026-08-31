@@ -189,6 +189,7 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'All conversations' })).toBeTruthy();
+    expect(screen.queryByText('All conversations')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
   });
 

@@ -8,6 +8,7 @@ import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { fetchPublicMessage, fetchPublicMessagePhoto } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
+import { forumVideoSrc } from '@/lib/forum-video';
 import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -134,7 +135,16 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             {formatForumTime(note.createdAt, locale)}
           </time>
         </div>
-        {photoUrl !== null ? (
+        {note.hasVideo ? (
+          <video
+            src={forumVideoSrc(note.id, note.videoContentType)}
+            poster={photoUrl ?? undefined}
+            controls
+            playsInline
+            preload="metadata"
+            className="max-h-80 w-full rounded-2xl bg-black"
+          />
+        ) : photoUrl !== null ? (
           /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
           <img
             src={photoUrl}

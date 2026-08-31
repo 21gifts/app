@@ -435,6 +435,7 @@ export function ForumBoard({
                     playsInline
                     preload="metadata"
                     className="mt-2 max-h-80 w-full rounded-xl bg-black"
+                    onClick={stopCardToggle}
                   />
                 ) : photoUrl !== undefined ? (
                   /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
@@ -442,6 +443,7 @@ export function ForumBoard({
                     src={photoUrl}
                     alt={t('forum.photoAlt', { name: message.name })}
                     className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                    onClick={stopCardToggle}
                   />
                 ) : null}
                 {message.text !== '' ? (

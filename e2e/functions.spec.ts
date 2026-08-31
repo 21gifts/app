@@ -3195,14 +3195,14 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
   await expect(page.locator('form video')).toHaveCount(1);
 
   let sawMultipart = false;
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/forum\/messages$/, async (route) => {
     const request = route.request();
     if (request.method() !== 'POST') {
       await route.fallback();
       return;
     }
     const pathname = new URL(request.url()).pathname;
-    if (pathname !== '/messages' && pathname !== '/messages/') {
+    if (pathname !== '/forum/messages' && pathname !== '/forum/messages/') {
       await route.fallback();
       return;
     }
