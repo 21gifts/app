@@ -141,6 +141,11 @@ export interface ForumBoardProps {
   replyFormError: ForumFormError;
   /** Signed-in display name, used to hide PM on own notes and replies. */
   ownName: string | null;
+  /**
+   * Signed-in account id, used to hide PM on own notes/replies; name is
+   * fallback when a message has no accountId.
+   */
+  ownAccountId: string | null;
   /** Opens a private thread with the note or reply author. */
   onPm: (messageId: string) => void;
   /** Forum message id whose PM request is in flight, or `null`. */
@@ -178,6 +183,31 @@ function fallbackCopy(text: string): boolean {
   }
   ta.remove();
   return ok;
+}
+
+/**
+ * Whether to show the PM control for a note or reply author.
+ * Prefers account id when both sides have one; otherwise falls back to name.
+ *
+ * @param ownAccountId - Signed-in account id, or `null`.
+ * @param ownName - Signed-in display name, or `null`.
+ * @param message - Note or reply with optional `accountId` and display `name`.
+ * @returns `true` when the row is not the signed-in author.
+ */
+function showForumPm(
+  ownAccountId: string | null,
+  ownName: string | null,
+  message: Pick<ForumMessage, 'name' | 'accountId'>,
+): boolean {
+  const messageAccountId = message.accountId;
+  if (
+    ownAccountId !== null &&
+    typeof messageAccountId === 'string' &&
+    messageAccountId !== ''
+  ) {
+    return messageAccountId !== ownAccountId;
+  }
+  return !(ownName !== null && message.name === ownName);
 }
 
 /**
@@ -232,6 +262,7 @@ export function ForumBoard({
   replyPosting,
   replyFormError,
   ownName,
+  ownAccountId,
   onPm,
   pmBusyId,
 }: ForumBoardProps): ReactElement {
@@ -492,7 +523,7 @@ export function ForumBoard({
                       <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                     )}
                   </IconButton>
-                  {ownName === null || message.name !== ownName ? (
+                  {showForumPm(ownAccountId, ownName, message) ? (
                     <IconButton
                       type="button"
                       size="sm"
@@ -622,7 +653,7 @@ export function ForumBoard({
                     </a>
                   ) : null}
                   {/* v8 ignore stop */}
-                  {/* v8 ignore start */}
+                  {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
                   {payWaiting ? (
                     <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
                   ) : null}
@@ -669,7 +700,7 @@ export function ForumBoard({
                               {reply.text}
                             </p>
                           ) : null}
-                          {ownName === null || reply.name !== ownName ? (
+                          {showForumPm(ownAccountId, ownName, reply) ? (
                             <div className="mt-2">
                               <IconButton
                                 type="button"

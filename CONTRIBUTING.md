@@ -123,12 +123,23 @@ app/
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss state for /welcome forum
+│   │   ├── HandbookImageViewer.tsx # handbook baseline image picker (viewport/theme)
+│   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
+│   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
+│   │   ├── PublicMessageLoader.tsx # read-only public forum note on `/messages/[id]`
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
-│   │   └── ContactLoader.tsx    # Post state for /contact
+│   │   ├── ContactLoader.tsx    # Post state for /contact
+│   │   └── ui/
+│   │       ├── Button.tsx       # Shared button primitive
+│   │       ├── Card.tsx         # Shared card chrome
+│   │       ├── Field.tsx        # Shared labeled field
+│   │       ├── IconButton.tsx   # Shared icon button
+│   │       ├── PageChrome.tsx   # Shared page chrome
+│   │       └── index.ts         # Barrel export for ui primitives
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -142,6 +153,8 @@ app/
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
+│   │   ├── handbook-topics.ts   # handbook image topic catalog + combo URLs
+│   │   ├── screen-variant-catalog.json # screen-variant ids/labels/visual stems
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 

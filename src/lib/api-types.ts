@@ -229,10 +229,12 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `role` is optional with default `basis` so a rolling api deploy without the
  * field still parses and the board stays lit.
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
+ * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
  */
 export const forumMessageSchema = z
   .object({
     id: z.string().min(1),
+    accountId: z.string().min(1).optional(),
     name: z.string().min(1),
     text: z.string(), // may be '' when hasPhoto
     createdAt: z.string().datetime({ offset: true }),

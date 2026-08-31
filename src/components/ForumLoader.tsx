@@ -143,6 +143,7 @@ export function ForumLoader(): ReactElement | null {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
   expandedIdRef.current = expandedId;
+  const prevExpandedIdRef = useRef<string | null>(null);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
@@ -314,12 +315,19 @@ export function ForumLoader(): ReactElement | null {
 
   useEffect(() => {
     if (session === null || expandedId === null) {
+      if (expandedId === null) {
+        prevExpandedIdRef.current = null;
+      }
       return;
     }
+    const expandedChanged = prevExpandedIdRef.current !== expandedId;
+    prevExpandedIdRef.current = expandedId;
     let cancelled = false;
     setRepliesLoading(true);
     setRepliesError(false);
-    setReplies(null);
+    if (expandedChanged) {
+      setReplies(null);
+    }
     void (async () => {
       try {
         const next = await fetchReplies(session, expandedId);
@@ -570,14 +578,14 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const rawAmount = payDraft.trim();
-    /* v8 ignore start */
+    /* v8 ignore start -- native submit blocked; button disabled when draft empty */
     if (rawAmount === '' || !/^\d+$/.test(rawAmount)) {
       setPayError('amount');
       return;
     }
     /* v8 ignore stop */
     const sats = Number.parseInt(rawAmount, 10);
-    /* v8 ignore next 4 */
+    /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
     if (sats <= 0 || !Number.isSafeInteger(sats)) {
       setPayError('amount');
       return;
@@ -785,6 +793,9 @@ export function ForumLoader(): ReactElement | null {
       repliesLoading={expandedId !== null && repliesLoading}
       repliesError={expandedId !== null && repliesError}
       onRetryReplies={() => {
+        if (replyPosting) {
+          return;
+        }
         setRepliesAttempt((n) => n + 1);
       }}
       replyDraft={replyDraft}
@@ -796,6 +807,7 @@ export function ForumLoader(): ReactElement | null {
       replyPosting={replyPosting}
       replyFormError={replyFormError}
       ownName={account?.name ?? null}
+      ownAccountId={account?.id ?? null}
       pmBusyId={pmBusyId}
       onPm={(messageId) => {
         /* v8 ignore next 3 -- second PM click while the first is in flight */

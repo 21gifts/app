@@ -119,6 +119,7 @@ const idleProps: Pick<
   | 'replyPosting'
   | 'replyFormError'
   | 'ownName'
+  | 'ownAccountId'
   | 'onPm'
   | 'pmBusyId'
 > = {
@@ -151,6 +152,7 @@ const idleProps: Pick<
   replyPosting: false,
   replyFormError: null,
   ownName: 'Ada',
+  ownAccountId: null,
   onPm: () => undefined,
   pmBusyId: null,
 };
@@ -1673,6 +1675,46 @@ describe('ForumBoard', () => {
     fireEvent.click(pm);
     expect(onPm).toHaveBeenCalledWith('m2');
     expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('hides PM when ownAccountId matches note accountId even if names differ', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...MULTILINE, accountId: 'acc_1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
+  });
+
+  it('shows PM when ownAccountId differs from note accountId even if names match', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
   });
 
   it('spins the PM control while a request is in flight', () => {
