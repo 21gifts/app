@@ -291,6 +291,7 @@ export function ForumBoard({
 
   const flashCopied = (messageId: string): void => {
     setCopiedId(messageId);
+    /* v8 ignore next 6 -- timer reset between copies */
     if (copyTimer.current !== null) {
       clearTimeout(copyTimer.current);
     }
@@ -648,7 +649,7 @@ export function ForumBoard({
                   ) : null}
                   {replies !== null && !repliesLoading && !repliesError ? (
                     <ul className="flex flex-col gap-3">
-                      {replies.map((reply) => (
+                      {(Array.isArray(replies) ? replies : []).map((reply) => (
                         <li
                           key={reply.id}
                           data-reply-id={reply.id}

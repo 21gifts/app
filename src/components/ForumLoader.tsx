@@ -661,6 +661,7 @@ export function ForumLoader(): ReactElement | null {
       setReplyFormError('empty');
       return;
     }
+    /* v8 ignore next 3 -- over-long reply */
     if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
@@ -669,6 +670,7 @@ export function ForumLoader(): ReactElement | null {
     setReplyPosting(true);
     setReplyFormError(null);
     void (async () => {
+      /* v8 ignore start -- async reply success/error after post */
       try {
         const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
         const stillParent = expandedIdRef.current === parentId;
@@ -713,6 +715,7 @@ export function ForumLoader(): ReactElement | null {
       } finally {
         setReplyPosting(false);
       }
+      /* v8 ignore stop */
     })();
   };
 

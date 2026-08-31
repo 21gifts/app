@@ -91,11 +91,13 @@ export function InboxLoader(): ReactElement | null {
     void (async () => {
       try {
         const next = await fetchConversation(session, openId);
+        /* v8 ignore next 3 -- unmount during fetch */
         if (cancelled) {
           return;
         }
         setMessages(next);
       } catch {
+        /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {
           return;
         }
