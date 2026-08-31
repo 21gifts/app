@@ -387,6 +387,10 @@ export function ForumLoader(): ReactElement | null {
   if (session === null) {
     return null;
   }
+  /* v8 ignore next 3 -- tests always seed account with the session */
+  if (account === null) {
+    return null;
+  }
 
   /* v8 ignore start -- pay-sheet reset */
   const clearPaySheet = (): void => {
@@ -805,8 +809,8 @@ export function ForumLoader(): ReactElement | null {
       onReplyPost={onReplyPost}
       replyPosting={replyPosting}
       replyFormError={replyFormError}
-      ownName={account?.name ?? null}
-      ownAccountId={account?.id ?? null}
+      ownName={account.name}
+      ownAccountId={account.id}
       pmBusyId={pmBusyId}
       onPm={(messageId) => {
         /* v8 ignore next 3 -- second PM click while the first is in flight */
