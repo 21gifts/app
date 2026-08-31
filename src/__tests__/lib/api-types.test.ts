@@ -4,6 +4,10 @@ import {
   accountSchema,
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
+  conversationListSchema,
+  conversationMessageSchema,
+  conversationSchema,
+  conversationThreadSchema,
   FORUM_MESSAGE_MAX_LENGTH,
   forumMessageSchema,
   lnAddressResolvedSchema,
@@ -63,6 +67,32 @@ describe('contactSchema', () => {
   });
 });
 
+describe('conversationSchema', () => {
+  it('accepts an empty lastText', () => {
+    const row = {
+      id: 'c1',
+      name: 'Bob',
+      lastText: '',
+      lastAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(conversationSchema.parse(row)).toEqual(row);
+    expect(conversationListSchema.parse({ conversations: [row] }).conversations).toHaveLength(1);
+  });
+});
+
+describe('conversationMessageSchema', () => {
+  it('accepts a well-formed message', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(conversationMessageSchema.parse(message)).toEqual(message);
+    expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
+  });
+});
+
 describe('vapidPublicSchema', () => {
   it('accepts a non-empty public key', () => {
     expect(vapidPublicSchema.parse({ publicKey: 'BAAAA' })).toEqual({ publicKey: 'BAAAA' });
@@ -96,6 +126,7 @@ describe('forumMessageSchema', () => {
     payable: false,
     hasPhoto: false,
     role: 'basis' as const,
+    replyCount: 0,
   };
 
   it('accepts text with no photo', () => {
@@ -103,6 +134,7 @@ describe('forumMessageSchema', () => {
       ...base,
       hasVideo: false,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 
@@ -112,6 +144,7 @@ describe('forumMessageSchema', () => {
       ...photoOnly,
       hasVideo: false,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 
@@ -120,6 +153,7 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse(videoOnly)).toEqual({
       ...videoOnly,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 
@@ -296,6 +330,7 @@ describe('forumMessageSchema', () => {
       role: 'basis',
       hasVideo: false,
       videoContentType: null,
+      replyCount: 0,
     });
   });
 

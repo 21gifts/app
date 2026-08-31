@@ -50,6 +50,14 @@ function resolveHref(rawHref: string, idPrefix: string): string | null {
   const md = /^\.?\/?([^#/]+)\.md(?:#(.+))?$/i.exec(href);
   if (md !== null && md[1] !== undefined) {
     const target = slug(md[1]);
+    if (target === 'screens' || target === 'functions' || target === 'endpoints') {
+      const page = `/handbook/${target}`;
+      if (md[2] !== undefined) {
+        const frag = slug(md[2]);
+        return frag === '' ? page : `${page}#${target}-${frag}`;
+      }
+      return page;
+    }
     if (md[2] !== undefined) {
       const frag = slug(md[2]);
       return frag === '' ? `#${target}` : `#${target}-${frag}`;

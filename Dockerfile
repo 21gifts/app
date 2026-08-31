@@ -44,6 +44,7 @@ COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
 COPY --from=build --chown=app:app /app/docs ./docs
+COPY --from=build --chown=app:app /app/scripts/screen-variants.mjs ./scripts/screen-variants.mjs
 COPY --chmod=0755 entrypoint.sh /app/entrypoint.sh
 
 # Own the working dir itself, not just its contents. entrypoint.sh rewrites

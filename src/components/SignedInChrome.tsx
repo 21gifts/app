@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowDownLeft, ArrowUpRight, Menu, MessageCircle, ScrollText, User } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Inbox,
+  Menu,
+  MessageCircle,
+  ScrollText,
+  User,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -13,7 +21,7 @@ import { formatBitcoin } from '@/lib/stats-money';
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Profile with same-line given/received totals, living-room rules,
- * contact, language, theme, and log out).
+ * messages, contact, language, theme, and log out).
  *
  * @returns The signed-in Menu chrome.
  */
@@ -124,6 +132,16 @@ export function SignedInChrome(): ReactElement {
           >
             <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {t('nav.rules')}
+          </Link>
+          <Link
+            href="/messages"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+          >
+            <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+            {t('nav.inbox')}
           </Link>
           <Link
             href="/contact"

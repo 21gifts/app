@@ -3,16 +3,24 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   deletePushSubscription,
   dismissForumLaws,
+  fetchConversation,
+  fetchConversations,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
   fetchMessagePhoto,
   fetchMessages,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchReplies,
   fetchVapidPublicKey,
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  openConversation,
   postContact,
+  postConversationMessage,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -240,6 +248,17 @@ describe('setLightningAddress', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setLightningAddress('sess', 'x')).rejects.toThrow();
+  });
+
+  it('throws the exact not-zap English string without rewriting', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: LIGHTNING_ADDRESS_NOT_ZAP_ERROR },
+    });
+    await expect(setLightningAddress('sess', 'nozap@walletofsatoshi.com')).rejects.toThrow(
+      LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+    );
   });
 });
 
@@ -504,7 +523,10 @@ const forumMessage = {
   sats: 0,
   payable: false,
   hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
   role: 'basis' as const,
+  replyCount: 0,
 };
 
 describe('fetchMessages', () => {
@@ -524,9 +546,15 @@ describe('fetchMessages', () => {
       body: { messages: [forumMessageWithoutRole] },
     });
     await expect(fetchMessages('sess')).resolves.toEqual([
-      { ...forumMessageWithoutRole, role: 'basis', hasVideo: false, videoContentType: null },
+      {
+        ...forumMessageWithoutRole,
+        role: 'basis',
+        hasVideo: false,
+        videoContentType: null,
+        replyCount: 0,
+      },
     ]);
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       headers: { Authorization: 'Bearer sess' },
     });
   });
@@ -615,13 +643,34 @@ describe('postMessage', () => {
     await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(
       parsedForumMessage,
     );
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text: 'Hello from Ada' }),
+    });
+  });
+
+  it('includes inReplyTo when provided', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada', inReplyTo: 'parent' });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada', inReplyTo: 'parent' }),
+    });
+  });
+
+  it('omits inReplyTo when absent', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada' });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
     });
   });
 
@@ -634,7 +683,7 @@ describe('postMessage', () => {
       hasVideo: false,
       videoContentType: null,
     });
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -653,7 +702,7 @@ describe('postMessage', () => {
       hasVideo: false,
       videoContentType: null,
     });
-    expect(fetchMock).toHaveBeenCalledWith('/messages', {
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -695,7 +744,7 @@ describe('postMessageVideo', () => {
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('/messages');
+    expect(url).toBe('/forum/messages');
     expect(init.method).toBe('POST');
     expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer sess');
     expect(init.body).toBeInstanceOf(FormData);
@@ -815,6 +864,110 @@ describe('fetchMessagePhoto', () => {
   });
 });
 
+describe('fetchPublicMessage', () => {
+  it('GETs /public-messages/:id and returns the message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(fetchPublicMessage('uuid')).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid');
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchPublicMessage('uuid')).resolves.toBeNull();
+  });
+
+  it('throws visitor copy on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchPublicMessage('uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPublicMessage('uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'm1' } });
+    await expect(fetchPublicMessage('uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchPublicMessagePhoto', () => {
+  it('returns the blob without Authorization', async () => {
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchPublicMessagePhoto('m1')).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchPublicMessagePhoto('m1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchPublicMessagePhoto('m1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPublicMessagePhoto('m1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchReplies', () => {
+  it('GETs /forum/messages/:id/replies with bearer and parses replies', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { replies: [forumMessage] },
+    });
+    await expect(fetchReplies('sess', 'parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/parent/replies', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchReplies('sess', 'parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
 const contactMessage = {
   id: 'c1',
   name: 'Ada',
@@ -849,6 +1002,130 @@ describe('postContact', () => {
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
+  });
+});
+
+const conversation = {
+  id: 'conv-1',
+  name: '21.gifts',
+  lastText: 'Hello',
+  lastAt: '2026-08-28T12:00:00.000Z',
+};
+
+const conversationMessage = {
+  id: 'cm1',
+  name: 'Ada',
+  text: 'Hello',
+  createdAt: '2026-08-28T12:00:00.000Z',
+};
+
+describe('fetchConversations', () => {
+  it('returns the list and sends the bearer header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { conversations: [conversation] },
+    });
+    await expect(fetchConversations('sess')).resolves.toEqual([conversation]);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Platform account is not configured' } });
+    await expect(fetchConversations('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchConversation', () => {
+  it('returns messages and encodes the id', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [conversationMessage] },
+    });
+    await expect(fetchConversation('sess', 'a/b')).resolves.toEqual([conversationMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/a%2Fb', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchConversation('sess', 'c1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('postConversationMessage', () => {
+  it('posts the text and returns the message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: conversationMessage });
+    await expect(postConversationMessage('sess', 'conv-1', 'Hello')).resolves.toEqual(
+      conversationMessage,
+    );
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/conv-1', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello' }),
+    });
+  });
+
+  it('throws the api error on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Text must be 1–500 characters' } });
+    await expect(postConversationMessage('sess', 'c1', '')).rejects.toThrow(
+      'Text must be 1–500 characters',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(postConversationMessage('sess', 'c1', 'x')).rejects.toThrow(
+      'Could not send your message',
+    );
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postConversationMessage('sess', 'c1', 'x')).rejects.toThrow(
+      'Could not send your message',
+    );
+  });
+});
+
+describe('openConversation', () => {
+  it('posts forumMessageId and returns the thread', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: conversation });
+    await expect(openConversation('sess', 'note-1')).resolves.toEqual(conversation);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ forumMessageId: 'note-1' }),
+    });
+  });
+
+  it('throws the api error on a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Cannot message yourself' } });
+    await expect(openConversation('sess', 'note-1')).rejects.toThrow('Cannot message yourself');
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(openConversation('sess', 'note-1')).rejects.toThrow('Could not send your message');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(openConversation('sess', 'note-1')).rejects.toThrow('Could not send your message');
   });
 });
 
