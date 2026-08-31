@@ -70,6 +70,17 @@ describe('HandbookImageViewer', () => {
     );
   });
 
+  it('uses dark when the selected viewport has no light combo', () => {
+    const DARK_ONLY: HandbookTopic = {
+      id: 'dark-only',
+      label: 'Dark only',
+      visual: 'function-DarkOnly',
+      combos: ['desktop-dark'],
+    };
+    renderWithLocale(<HandbookImageViewer topics={[DARK_ONLY]} />);
+    expect(screen.getByLabelText('Topic')).toBeTruthy();
+  });
+
   it('uses light when the selected viewport has no dark combo', () => {
     const LIGHT_ONLY: HandbookTopic = {
       id: 'light-only',
