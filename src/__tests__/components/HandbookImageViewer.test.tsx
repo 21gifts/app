@@ -45,6 +45,10 @@ describe('HandbookImageViewer', () => {
     expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-dark.png');
     fireEvent.click(screen.getByRole('button', { name: 'Light' }));
     expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
+    expect(screen.queryByText('Desktop')).toBeNull();
+    expect(screen.queryByText('Mobile')).toBeNull();
+    expect(screen.queryByText('Light')).toBeNull();
+    expect(screen.queryByText('Dark')).toBeNull();
   });
 
   it('hides the theme switch when only one combo exists', () => {

@@ -27,6 +27,7 @@ export interface FieldTextareaProps
   multiline: true;
 }
 
+/** Props for {@link Field} (input or textarea). */
 export type FieldProps = FieldInputProps | FieldTextareaProps;
 
 /**

@@ -278,6 +278,9 @@ export function ForumBoard({
 
   const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
+    if (repliesError || replies === null) {
+      return;
+    }
     onReplyPost();
   };
 
@@ -703,14 +706,18 @@ export function ForumBoard({
                         onChange={(event) => onReplyDraftChange(event.target.value)}
                         maxLength={FORUM_MESSAGE_MAX_LENGTH}
                         rows={2}
-                        disabled={replyPosting || repliesLoading}
+                        disabled={
+                          replyPosting || repliesLoading || repliesError || replies === null
+                        }
                         className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
                       />
                       <IconButton
                         type="submit"
                         size="lg"
                         variant="primary"
-                        disabled={replyPosting || repliesLoading}
+                        disabled={
+                          replyPosting || repliesLoading || repliesError || replies === null
+                        }
                         aria-label={t('forum.post')}
                       >
                         {replyPosting ? (

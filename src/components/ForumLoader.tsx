@@ -655,7 +655,7 @@ export function ForumLoader(): ReactElement | null {
 
   const onReplyPost = (): void => {
     /* v8 ignore next 3 -- reply composer only mounts when expanded */
-    if (expandedId === null || replyPosting) {
+    if (expandedId === null || replyPosting || repliesError || replies === null) {
       return;
     }
     const trimmed = replyDraft.trim();
@@ -682,6 +682,7 @@ export function ForumLoader(): ReactElement | null {
           alreadyListed =
             repliesRef.current !== null &&
             repliesRef.current.some((message) => message.id === created.id);
+          const wasEmpty = repliesRef.current === null;
           setRepliesError(false);
           setRepliesLoading(false);
           setReplies((prev) => {
@@ -696,6 +697,9 @@ export function ForumLoader(): ReactElement | null {
             return [...prev, created];
           });
           setReplyDraft('');
+          if (wasEmpty) {
+            setRepliesAttempt((n) => n + 1);
+          }
         }
         if (!alreadyListed) {
           setMessages((prev) => {

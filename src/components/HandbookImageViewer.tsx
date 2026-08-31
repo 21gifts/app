@@ -1,8 +1,9 @@
 'use client';
 
+import { Monitor, Moon, Smartphone, Sun } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card } from '@/components/ui';
+import { Card, IconButton } from '@/components/ui';
 import {
   comboTheme,
   comboViewport,
@@ -96,46 +97,50 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
       </label>
       {active.showViewport ? (
         <div role="group" aria-label={t('handbook.viewport')} className="flex gap-2">
-          <Button
+          <IconButton
             type="button"
             variant={active.viewport === 'desktop' ? 'primary' : 'secondary'}
+            aria-label={t('handbook.desktop')}
             onClick={() => {
               setViewport('desktop');
             }}
           >
-            {t('handbook.desktop')}
-          </Button>
-          <Button
+            <Monitor aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
+          <IconButton
             type="button"
             variant={active.viewport === 'mobile' ? 'primary' : 'secondary'}
+            aria-label={t('handbook.mobile')}
             onClick={() => {
               setViewport('mobile');
             }}
           >
-            {t('handbook.mobile')}
-          </Button>
+            <Smartphone aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
         </div>
       ) : null}
       {active.showTheme ? (
         <div role="group" aria-label={t('handbook.appearance')} className="flex gap-2">
-          <Button
+          <IconButton
             type="button"
             variant={active.theme === 'light' ? 'primary' : 'secondary'}
+            aria-label={t('handbook.light')}
             onClick={() => {
               setTheme('light');
             }}
           >
-            {t('handbook.light')}
-          </Button>
-          <Button
+            <Sun aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
+          <IconButton
             type="button"
             variant={active.theme === 'dark' ? 'primary' : 'secondary'}
+            aria-label={t('handbook.dark')}
             onClick={() => {
               setTheme('dark');
             }}
           >
-            {t('handbook.dark')}
-          </Button>
+            <Moon aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
         </div>
       ) : null}
       {/* eslint-disable-next-line @next/next/no-img-element -- static handbook baseline PNG */}
