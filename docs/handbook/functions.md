@@ -16,16 +16,16 @@
 
 ## Function: isForumVideoFile
 
-- **Purpose:** True when a picker file is MP4, WebM, or QuickTime (type or `.mp4`/`.webm`/`.mov` name).
+- **Purpose:** True when a picker file is MP4, WebM, QuickTime, or MPEG-4 video (type `video/mp4` / `video/webm` / `video/quicktime` / `video/x-m4v`, or `.mp4`/`.webm`/`.mov`/`.m4v` name).
 - **Inputs:** `File`.
 - **Returns / side effects:** boolean.
 - **Used by:** `ForumLoader` attach control.
 
 ## Function: prepareForumVideo
 
-- **Purpose:** Size-check (32 MiB) and capture a JPEG poster from the first frame.
+- **Purpose:** Size-check (32 MiB) and capture a first-frame JPEG poster when the browser can decode the clip. If capture fails (iPhone HEVC / Dolby Vision), still return ok with a fallback JPEG poster.
 - **Inputs:** `File`.
-- **Returns / side effects:** `{ ok, video }` or `{ ok: false, error }`.
+- **Returns / side effects:** `{ ok: true, video }` with `file`, JPEG `poster`, and `previewUrl`; or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Errors are only type/name (`unsupported`) and oversize (`tooLarge`) — a failed poster capture is not an error.
 - **Used by:** `ForumLoader`.
 
 ## Function: postMessageVideo
