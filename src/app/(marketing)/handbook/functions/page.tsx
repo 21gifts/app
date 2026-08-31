@@ -70,7 +70,7 @@ export default async function HandbookFunctionsPage(): Promise<ReactElement> {
  * @returns Topic list.
  */
 function functionTopics(markdown: string): HandbookTopic[] {
-  const names = [...markdown.matchAll(/^## Function: (.+)$/gm)].map((match) => match[1] ?? '');
+  const names = [...markdown.matchAll(/^## Function: (.+)$/gm)].map((match) => match[1]!);
   return names
     .filter((name) => name !== '')
     .map((name) => ({
