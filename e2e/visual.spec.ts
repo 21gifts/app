@@ -624,7 +624,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
-    await expect(page.getByText('Write a reply')).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
     await shotScreen(page, 'state-welcome-expanded');
   });
 

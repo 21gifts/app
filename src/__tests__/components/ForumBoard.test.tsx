@@ -1590,6 +1590,12 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
     expect(onToggleExpand).toHaveBeenCalledWith('m1');
     onToggleExpand.mockClear();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Show replies' }), { key: 'Enter' });
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Show replies' }), { key: ' ' });
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
 
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     expect(onToggleExpand).not.toHaveBeenCalled();
@@ -1762,6 +1768,35 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Hide replies' })).toBeTruthy();
+  });
+
+  it('retries reply loading from the error state', () => {
+    const onRetryReplies = vi.fn();
+    const onReplyDraftChange = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={null}
+        repliesLoading={false}
+        repliesError={true}
+        onRetryReplies={onRetryReplies}
+        replyDraft="x"
+        onReplyDraftChange={onReplyDraftChange}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(onRetryReplies).toHaveBeenCalledTimes(1);
   });
 
   it('spins the reply post button while posting and hides PM on own replies', () => {

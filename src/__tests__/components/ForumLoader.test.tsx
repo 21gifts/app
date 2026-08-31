@@ -1153,6 +1153,26 @@ describe('ForumLoader', () => {
     await Promise.resolve();
   });
 
+  it('retries reply loading and records reply draft changes', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockRejectedValueOnce(new Error('gone')).mockResolvedValueOnce([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'draft' } });
+    expect(screen.getByLabelText('Your reply')).toHaveProperty('value', 'draft');
+  });
+
   it('does not fetch the next photo after unmount when the current fetch fails', async () => {
     let rejectFirst: ((reason: Error) => void) | undefined;
     fetchMock.mockResolvedValue([
