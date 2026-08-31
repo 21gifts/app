@@ -163,6 +163,18 @@ describe('ViewProfileClaim', () => {
     expect(screen.queryByText('Action required, the account must be activated')).toBeNull();
   });
 
+  it('keeps already-claimed copy if login-instead is cancelled', () => {
+    mockPasskey('error', 'This profile already has a passkey');
+    const { rerender } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+    mockPasskey('idle');
+    rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.getByText('This profile already has a passkey. Log in instead.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+  });
+
   it('shows the in-app escape card when passkeys are unsupported', () => {
     mockPasskey('unsupported');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);

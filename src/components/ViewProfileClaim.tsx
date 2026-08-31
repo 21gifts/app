@@ -65,29 +65,9 @@ export function ViewProfileClaim({
     return null;
   }
 
-  if (claimedLoginRef.current && account !== null) {
-    return null;
-  }
-
-  if (inApp || passkey.status === 'unsupported') {
-    return (
-      <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
-        <InAppBrowserView />
-      </section>
-    );
-  }
-
   const claimLabel = t('view.claim');
 
-  if (passkey.status === 'starting') {
-    return (
-      <div className="flex flex-col items-center gap-2">
-        <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
-      </div>
-    );
-  }
-
-  if (passkey.status === 'error' && isAlreadyClaimedError(passkey.error)) {
+  function alreadyClaimedView(): ReactElement {
     return (
       <div className="flex max-w-sm flex-col items-center gap-3">
         <p className="text-center text-sm text-neutral-500">{t('view.alreadyClaimed')}</p>
@@ -106,6 +86,56 @@ export function ViewProfileClaim({
         </button>
       </div>
     );
+  }
+
+  if (claimedLoginRef.current) {
+    if (account !== null) {
+      return null;
+    }
+    if (passkey.status === 'starting') {
+      return (
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
+        </div>
+      );
+    }
+    if (passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
+      return (
+        <div className="flex max-w-sm flex-col items-center gap-3">
+          <p className="text-center text-sm text-neutral-500">{t('view.claimError')}</p>
+          <button
+            type="button"
+            onClick={() => {
+              passkey.retry();
+            }}
+            className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
+          >
+            {t('view.retry')}
+          </button>
+        </div>
+      );
+    }
+    return alreadyClaimedView();
+  }
+
+  if (inApp || passkey.status === 'unsupported') {
+    return (
+      <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+        <InAppBrowserView />
+      </section>
+    );
+  }
+
+  if (passkey.status === 'starting') {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  if (passkey.status === 'error' && isAlreadyClaimedError(passkey.error)) {
+    return alreadyClaimedView();
   }
 
   if (passkey.status === 'error') {
