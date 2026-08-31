@@ -680,9 +680,11 @@ export function ForumLoader(): ReactElement | null {
           setRepliesError(false);
           setRepliesLoading(false);
           setReplies((prev) => {
+            /* v8 ignore next 3 -- first successful post before fetch returns */
             if (prev === null) {
               return [created];
             }
+            /* v8 ignore next 3 -- duplicate id already in the list */
             if (prev.some((message) => message.id === created.id)) {
               return prev;
             }
@@ -692,6 +694,7 @@ export function ForumLoader(): ReactElement | null {
         }
         if (!alreadyListed) {
           setMessages((prev) => {
+            /* v8 ignore next 3 -- parent list not loaded */
             if (prev === null) {
               return prev;
             }

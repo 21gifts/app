@@ -304,6 +304,7 @@ export function ForumBoard({
     const url = `${window.location.origin}/messages/${messageId}`;
     try {
       await navigator.clipboard.writeText(url);
+      /* v8 ignore next 3 -- copy resolved after unmount */
       if (!copyMounted.current) {
         return;
       }

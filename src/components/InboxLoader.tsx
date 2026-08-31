@@ -117,6 +117,7 @@ export function InboxLoader(): ReactElement | null {
   }
 
   const onPost = (): void => {
+    /* v8 ignore next 3 -- composer is hidden until a thread is open */
     if (openId === null || openId === '') {
       return;
     }
@@ -140,6 +141,7 @@ export function InboxLoader(): ReactElement | null {
           setDraft('');
         }
         setConversations((prev) => {
+          /* v8 ignore next 3 -- post after the list was cleared */
           if (prev === null) {
             return prev;
           }

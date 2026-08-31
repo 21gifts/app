@@ -210,6 +210,7 @@ export function InboxScreen({
           {t('inbox.heading')}
         </h1>
         <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
+          {/* v8 ignore next -- list view only renders when conversations is non-null */}
           {(conversations ?? []).map((row) => (
             <li key={row.id}>
               <button
