@@ -9,6 +9,7 @@ const named: ViewProfile = {
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   createdAt: 1,
+  hasPasskey: false,
 };
 
 afterEach(cleanup);

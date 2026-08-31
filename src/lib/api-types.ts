@@ -43,12 +43,16 @@ export type Account = z.infer<typeof accountSchema>;
 
 /**
  * Runtime schema for a public read-only profile from `GET /view/:viewKey`.
+ *
+ * `hasPasskey` is true when the profile already has a registered passkey
+ * (invite claim is then unnecessary).
  */
 export const viewProfileSchema = z.object({
   name: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
   createdAt: z.number(),
+  hasPasskey: z.boolean(),
 });
 
 /**

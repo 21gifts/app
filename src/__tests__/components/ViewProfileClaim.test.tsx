@@ -63,30 +63,37 @@ afterEach(() => {
 describe('ViewProfileClaim', () => {
   it('shows a spinner until session hydration is ready', () => {
     hydrateReady.current = false;
-    const { container } = renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
+    const { container } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
     expect(container.querySelector('.animate-spin')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Set up a passkey for this profile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
   });
 
-  it('shows an icon-only claim button when logged out', () => {
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    const button = screen.getByRole('button', { name: 'Set up a passkey for this profile' });
-    expect(button).toBeTruthy();
-    expect(screen.queryByText('Set up a passkey for this profile')).toBeNull();
+  it('shows activation copy and Activate when logged out without a passkey', () => {
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.getByText('Action required, the account must be activated')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Activate' })).toBeTruthy();
   });
 
-  it('calls register(viewKey) on click', () => {
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+  it('calls register(viewKey) when Activate is clicked', () => {
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Activate' }));
     expect(registerSpy).toHaveBeenCalledWith(VIEW_KEY);
+  });
+
+  it('hides the Activate button when the profile already has a passkey', () => {
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={true} />);
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    expect(screen.queryByText('Action required, the account must be activated')).toBeNull();
   });
 
   it('replaces to /setup/rules after a successful claim', async () => {
     registerSpy.mockImplementation(() => {
       useAuthStore.setState({ session: 'tok', account });
     });
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Activate' }));
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
@@ -94,8 +101,8 @@ describe('ViewProfileClaim', () => {
 
   it('hides the button and does not redirect when already signed in', () => {
     useAuthStore.setState({ session: 'tok', account });
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
-    expect(screen.queryByRole('button', { name: 'Set up a passkey for this profile' })).toBeNull();
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
 
@@ -104,7 +111,7 @@ describe('ViewProfileClaim', () => {
       useAuthStore.setState({ session: 'tok', account });
     });
     mockPasskey('error', 'This profile already has a passkey');
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
     expect(screen.getByText('This profile already has a passkey. Log in instead.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
     expect(authenticateSpy).toHaveBeenCalledTimes(1);
@@ -116,19 +123,21 @@ describe('ViewProfileClaim', () => {
 
   it('shows in-app copy when passkeys are unsupported', () => {
     mockPasskey('unsupported');
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
     expect(screen.getByText('Open this page in your browser')).toBeTruthy();
   });
 
   it('shows a spinner while the ceremony is starting', () => {
     mockPasskey('starting');
-    const { container } = renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
+    const { container } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
     expect(container.querySelector('.animate-spin')).toBeTruthy();
   });
 
   it('shows claimError copy on other errors', () => {
     mockPasskey('error', 'network down');
-    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} />);
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
     expect(screen.getByText('Could not set up a passkey. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(retrySpy).toHaveBeenCalledTimes(1);

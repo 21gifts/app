@@ -2078,6 +2078,7 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
+        hasPasskey: false,
       }),
     });
   });
@@ -2117,6 +2118,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
+        hasPasskey: false,
       }),
     });
   });
@@ -2151,6 +2153,7 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
+        hasPasskey: false,
       }),
     });
   });
@@ -2162,9 +2165,8 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
     });
   });
   await page.goto(`/view/${key}`);
-  await expect(
-    page.getByRole('button', { name: 'Set up a passkey for this profile' }),
-  ).toBeVisible();
+  await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
 });
 
 test('Function: ViewKeyCopy — profile shows the copy view-key control', async ({ page }) => {
@@ -2186,6 +2188,7 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
+        hasPasskey: false,
       }),
     });
   });
