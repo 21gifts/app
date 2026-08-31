@@ -53,7 +53,10 @@ export default async function HandbookFunctionsPage(): Promise<ReactElement> {
       <HandbookImageViewer topics={topics} />
       {doc !== undefined ? (
         <section id="functions" className="mt-12">
-          <HandbookMarkdown markdown={doc.markdown} idPrefix="functions" />
+          <HandbookMarkdown
+            markdown={doc.markdown.replace(/^# Functions\n+/, '')}
+            idPrefix="functions"
+          />
         </section>
       ) : null}
     </main>

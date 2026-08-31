@@ -14,7 +14,7 @@
     "prebuild": "node scripts/sync-handbook-images.mjs",
     "build": "next build",
     "start": "next start",
-    "start:standalone": "rm -rf .next/standalone/.next/static .next/standalone/public .next/standalone/docs && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && cp -r docs .next/standalone/docs && node .next/standalone/server.js",
+    "start:standalone": "rm -rf .next/standalone/.next/static .next/standalone/public .next/standalone/docs .next/standalone/scripts && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && cp -r docs .next/standalone/docs && mkdir -p .next/standalone/scripts && cp scripts/screen-variants.mjs .next/standalone/scripts/screen-variants.mjs && node .next/standalone/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "next lint && prettier --check .",
     "lint:fix": "next lint --fix && prettier --write .",
