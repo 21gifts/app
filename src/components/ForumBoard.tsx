@@ -200,11 +200,7 @@ function showForumPm(
   message: Pick<ForumMessage, 'name' | 'accountId'>,
 ): boolean {
   const messageAccountId = message.accountId;
-  if (
-    ownAccountId !== null &&
-    typeof messageAccountId === 'string' &&
-    messageAccountId !== ''
-  ) {
+  if (ownAccountId !== null && typeof messageAccountId === 'string' && messageAccountId !== '') {
     return messageAccountId !== ownAccountId;
   }
   return !(ownName !== null && message.name === ownName);
