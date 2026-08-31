@@ -467,7 +467,7 @@ export function ForumBoard({
                     controls
                     playsInline
                     preload="metadata"
-                    className="mt-2 max-h-80 w-full rounded-xl bg-black"
+                    className="mt-2 mx-auto block h-auto w-auto max-h-80 max-w-full rounded-xl object-contain"
                     onClick={stopCardToggle}
                   />
                 ) : photoUrl !== undefined ? (
