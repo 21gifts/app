@@ -143,8 +143,9 @@ export async function prepareForumVideo(file: File): Promise<PrepareForumVideoRe
   if (captured === null) {
     poster = fallbackForumVideoPoster();
   } else {
-    /* v8 ignore next -- non-null only when the browser decoded a frame */
+    /* v8 ignore start -- non-null only when the browser decoded a frame */
     poster = captured;
+    /* v8 ignore stop */
   }
   return {
     ok: true,
