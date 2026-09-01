@@ -112,9 +112,9 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Light language switcher and theme switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **What the user sees:** `PageChrome` with Wordmark top-left; light language switcher and theme switcher top-right (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language or theme. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
-- **Calls:** `PageChrome`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
+- **Calls:** `PageChrome`, `Wordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
 ### Variant: idle
 
@@ -194,9 +194,9 @@ Signed in with a name and no address. **Your Wallet of Satoshi address** and the
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. After the first chapter, an icon-only back control (top-left) returns to the previous chapter. The last chapter shows **I agree to these rules** instead of **Continue**.
+- **What the user sees:** `PageChrome` with one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Wordmark top-left (with icon-only chapter back after the first chapter). Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
 - **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
+- **Calls:** `PageChrome`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
 

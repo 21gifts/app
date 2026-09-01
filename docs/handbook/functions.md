@@ -187,14 +187,14 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `ThemeSwitcher` and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** Renders heading, lead, **Open the forum** link, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). No OnboardingGate.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -218,14 +218,14 @@
 
 - **Purpose:** Third post-login screen: one living-room rules chapter at a time. Intermediate **Continue** clicks only advance the chapter. The last **I agree to these rules** POSTs and merges only `rulesAgreedAt` into the auth-store account.
 - **Inputs:** `chapters` — ordered server-rendered `RulesDocument` elements (one per `RULES_CHAPTER_IDS` id).
-- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules**, icon-only back after the first chapter. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
+- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules**, Wordmark top-left plus icon-only chapter back after the first chapter. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
 - **Used by:** Screen `/setup/rules`.
 
 ## Function: RulesSetupPage
 
 - **Purpose:** Next.js page for `/setup/rules`.
 - **Inputs:** None. Calls `getRequestLocale()` / `getCatalog` for the rules body.
-- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters (`showNav={false}`, `chapter={id}`). `min-h-svh`.
+- **Returns / side effects:** `PageChrome` (`min-h-svh justify-start`) with `SignedInChrome` top-right and `OnboardingGate` around `RulesSetup` (`RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters, `showNav={false}`, `chapter={id}`). Wordmark and chapter-back stay in `RulesSetup` because back is chapter state, not a page-level back.
 - **Used by:** Route `/setup/rules`.
 
 ## Function: LogoutButton
@@ -450,7 +450,7 @@
 - **Purpose:** Full-height app page shell (`min-h-screen` centered column) with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots.
 - **Inputs:** `children`, optional `topLeft`, optional `topRight`, optional `className` on the outer `<main>`.
 - **Returns / side effects:** Layout only. No network. Used by login, donate, rules, welcome, profile, contact, inbox, public note, and view-key.
-- **Used by:** `LoginPage`, `DonatePage`, `RulesPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `PublicMessagePage`, `ViewProfilePage`.
+- **Used by:** `LoginPage`, `DonatePage`, `RulesPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `PublicMessagePage`, `ViewProfilePage`, `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`.
 
 ## Function: Wordmark
 
@@ -561,14 +561,14 @@
 
 - **Purpose:** Fetches gift stats filtered by the signed-in Lightning Address handle and derives given/received sats plus the receive time series.
 - **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats(handle)` and `accountTotals`. Skips the fetch when the address is null/blank.
-- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. On each fetch start (including address change) totals and series reset to zeros/empty; the chart SVG remains mounted on empty series. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
+- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. On each fetch start (including address change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
 - **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `WelcomeScreen`.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
@@ -596,7 +596,7 @@
 
 - **Purpose:** Next.js page for `/contact`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `ContactLoader` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ContactLoader`.
 - **Used by:** Route `/contact`.
 
 ## Function: ContactScreen
@@ -617,7 +617,7 @@
 
 - **Purpose:** Next.js page for `/rules` with localized heading, theme switcher, and language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** The rules screen wrapped in the root layout; `ThemeSwitcher` and `LanguageSwitcher` top-right.
+- **Returns / side effects:** `PageChrome` (`justify-start py-16`) with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right around the living-room rules document.
 - **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
@@ -1287,9 +1287,9 @@
 
 ## Function: MessagesPage
 
-- **Purpose:** Next.js page for `/messages` (signed-in PN inbox). Wraps `InboxLoader` in `OnboardingGate` and `SignedInChrome`.
+- **Purpose:** Next.js page for `/messages` (signed-in PN inbox).
 - **Inputs:** None.
-- **Returns / side effects:** The inbox screen. Conversation HTTP is under `/conversations`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
 - **Used by:** Route `/messages`.
 
 ## Function: InboxLoader

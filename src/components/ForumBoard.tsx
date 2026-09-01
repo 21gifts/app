@@ -623,7 +623,7 @@ export function ForumBoard({
                         onPayOpen(message.id);
                       }}
                     >
-                      <Gift aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
                     </IconButton>
                   ) : null}
                   <IconButton
