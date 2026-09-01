@@ -1419,12 +1419,28 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const video = document.querySelector('video');
+    const video = document.querySelector('ul video');
     expect(video).toBeTruthy();
     expect(video?.getAttribute('src')).toBe('/messages/vid-webm/video.webm');
     expect(video?.hasAttribute('controls')).toBe(true);
     expect(video?.hasAttribute('playsinline')).toBe(true);
     expect(video?.getAttribute('preload')).toBe('metadata');
+    const tokens = (video?.className ?? '').split(/\s+/);
+    expect(tokens).toEqual(
+      expect.arrayContaining([
+        'mt-2',
+        'mx-auto',
+        'block',
+        'h-auto',
+        'w-auto',
+        'max-h-80',
+        'max-w-full',
+        'rounded-xl',
+        'object-contain',
+      ]),
+    );
+    expect(tokens).not.toContain('w-full');
+    expect(tokens).not.toContain('bg-black');
   });
 
   it('renders quicktime video as .mov', () => {
