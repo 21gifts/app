@@ -821,7 +821,7 @@ Promote shared listbox styles only if a third switcher appears; until then, keep
 
 **Rows.** `flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline hover:bg-app-hover min-h-11`. Leading lucide 14px. Profile row: name + given/received `formatBitcoin` with `ArrowUpRight` / `ArrowDownLeft` (indicators, not buttons).
 
-**Order (keep):** Profile, Living room rules, Messages (inbox), Contact, Language, Theme, Log out.
+**Order (keep):** Profile, Living room rules, Messages (inbox), Contact, optional Install app, Language, Theme, Log out.
 
 Escape and outside-click already implemented — keep.
 
