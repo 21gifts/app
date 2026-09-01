@@ -2218,6 +2218,7 @@ describe('ForumBoard', () => {
       />,
     );
     const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
     fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
     fireEvent.touchMove(window, { touches: [{ clientY: 140 }] });
     fireEvent.touchEnd(window);
@@ -2242,6 +2243,7 @@ describe('ForumBoard', () => {
       />,
     );
     const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
     expect(() => {
       fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
       fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
@@ -2353,6 +2355,7 @@ describe('ForumBoard', () => {
       />,
     );
     const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
     fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
     fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
     fireEvent.touchEnd(window);
@@ -2401,6 +2404,7 @@ describe('ForumBoard', () => {
       />,
     );
     const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
     fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
     fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
     expect(screen.getByRole('status', { name: 'Refreshing messages' })).toBeTruthy();
@@ -2429,6 +2433,7 @@ describe('ForumBoard', () => {
       />,
     );
     const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
     fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
     fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
     fireEvent.touchEnd(window);
@@ -2455,6 +2460,7 @@ describe('ForumBoard', () => {
       />,
     );
     const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
     fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 20 });
     fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
@@ -2482,6 +2488,7 @@ describe('ForumBoard', () => {
       />,
     );
     const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
     fireEvent.touchStart(window, { touches: [] });
     fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
     fireEvent.touchEnd(window);
