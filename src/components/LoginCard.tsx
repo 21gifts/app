@@ -4,6 +4,7 @@ import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
 import { useEffect, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button, Card } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
@@ -44,11 +45,7 @@ export function LoginCard(): ReactElement {
     body = <StartView onLogin={passkey.login} />;
   }
 
-  return (
-    <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
-      {body}
-    </section>
-  );
+  return <Card>{body}</Card>;
 }
 
 /** Props for {@link StartView}. */
@@ -68,15 +65,14 @@ function StartView({ onLogin }: StartViewProps): ReactElement {
   return (
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
-      <h2 className="text-center text-lg font-medium text-app-fg">{t('login.heading')}</h2>
-      <button
+      <h1 className="text-center text-lg font-medium text-app-fg">{t('login.heading')}</h1>
+      <Button
         type="button"
         onClick={onLogin}
-        className="inline-flex items-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
+        icon={<Fingerprint aria-hidden="true" className="h-4 w-4" />}
       >
-        <Fingerprint aria-hidden="true" className="h-4 w-4" />
         {t('login.submit')}
-      </button>
+      </Button>
     </>
   );
 }
@@ -114,13 +110,9 @@ function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />
       <p className="text-center text-sm text-app-muted">{t('login.error')}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="inline-flex items-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
-      >
+      <Button type="button" onClick={onRetry}>
         {t('login.retry')}
-      </button>
+      </Button>
     </>
   );
 }

@@ -135,6 +135,7 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
+    expect(screen.getByRole('link', { name: 'Messages' }).getAttribute('href')).toBe('/messages');
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByLabelText('Theme')).toBeTruthy();
@@ -249,6 +250,13 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('link', { name: 'Contact' }));
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
+
+  it('closes the menu when Messages is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Messages' }));
     expect(screen.queryByLabelText('Language')).toBeNull();
   });
 });

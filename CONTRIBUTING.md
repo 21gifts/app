@@ -51,7 +51,7 @@ app/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
-│   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/stats`, `/stats/[day]`
+│   │   ├── (marketing)/         # Dark landing `/`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
 │   │   ├── rules/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
 │   │   ├── setup/
@@ -79,11 +79,21 @@ app/
 │   │   ├── .well-known/
 │   │   │   └── nostr.json/route.ts  # GET/OPTIONS /.well-known/nostr.json NIP-05 CORS *
 │   │   ├── messages/
-│   │   │   ├── route.ts         # GET/POST /messages same-origin proxy
+│   │   │   ├── page.tsx         # GET /messages — signed-in PN inbox
 │   │   │   └── [id]/
+│   │   │       ├── page.tsx     # GET /messages/[id] — public forum note
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
 │   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
+│   │   ├── public-messages/
+│   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
+│   │   ├── conversations/
+│   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
+│   │   │   └── [id]/route.ts    # GET/POST /conversations/[id]
+│   │   ├── forum/
+│   │   │   └── messages/
+│   │   │       ├── route.ts     # GET/POST /forum/messages same-origin proxy
+│   │   │       └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -113,12 +123,23 @@ app/
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss state for /welcome forum
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/PM state for /welcome forum
+│   │   ├── HandbookImageViewer.tsx # handbook baseline image picker (viewport/theme)
+│   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
+│   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
+│   │   ├── PublicMessageLoader.tsx # read-only public forum note on `/messages/[id]`
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
-│   │   └── ContactLoader.tsx    # Post state for /contact
+│   │   ├── ContactLoader.tsx    # Post state for /contact
+│   │   └── ui/
+│   │       ├── Button.tsx       # Shared button primitive
+│   │       ├── Card.tsx         # Shared card chrome
+│   │       ├── Field.tsx        # Shared labeled field
+│   │       ├── IconButton.tsx   # Shared icon button
+│   │       ├── PageChrome.tsx   # Shared page chrome
+│   │       └── index.ts         # Barrel export for ui primitives
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -132,6 +153,8 @@ app/
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
+│   │   ├── handbook-topics.ts   # handbook image topic catalog + combo URLs
+│   │   ├── screen-variant-catalog.json # screen-variant ids/labels/visual stems
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 
@@ -142,12 +165,14 @@ app/
 │       │   ├── page.test.tsx
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
-├── docs/handbook/               # Mandatory: every screen + exported function + endpoint
-│   ├── README.md
-│   ├── screens.md
-│   ├── functions.md
-│   ├── endpoints.md
-│   └── images/                  # Markdown still references images/<file>.png; PNGs are not committed
+├── docs/
+│   ├── ui.md                    # Shared UI primitives (Button, IconButton, Field, Card, PageChrome)
+│   └── handbook/                # Mandatory: every screen + exported function + endpoint
+│       ├── README.md
+│       ├── screens.md
+│       ├── functions.md
+│       ├── endpoints.md
+│       └── images/              # Markdown still references images/<file>.png; PNGs are not committed
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
 │   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
@@ -162,6 +187,7 @@ app/
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
+│   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile + profile view-key copy
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

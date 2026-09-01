@@ -22,7 +22,6 @@ describe('ContactScreen', () => {
         onDraftChange={() => undefined}
         onPost={() => undefined}
         formError={null}
-        success={false}
       />,
     );
     expect(screen.getByRole('heading', { name: 'Contact' })).toBeTruthy();
@@ -43,25 +42,6 @@ describe('ContactScreen', () => {
     expect(field.getAttribute('maxLength')).toBe(String(CONTACT_MESSAGE_MAX_LENGTH));
   });
 
-  it('shows success copy and hides the form', () => {
-    renderWithLocale(
-      <ContactScreen
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        formError={null}
-        success={true}
-      />,
-    );
-    expect(
-      screen.getByText('Received — thank you. We read every message here in the app.'),
-    ).toBeTruthy();
-    expect(screen.queryByLabelText('Your message')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Living room rules' })).toBeTruthy();
-  });
-
   it('shows formError empty alert', () => {
     renderWithLocale(
       <ContactScreen
@@ -70,7 +50,6 @@ describe('ContactScreen', () => {
         onDraftChange={() => undefined}
         onPost={() => undefined}
         formError="empty"
-        success={false}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
@@ -84,7 +63,6 @@ describe('ContactScreen', () => {
         onDraftChange={() => undefined}
         onPost={() => undefined}
         formError="tooLong"
-        success={false}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
@@ -98,7 +76,6 @@ describe('ContactScreen', () => {
         onDraftChange={() => undefined}
         onPost={() => undefined}
         formError="request"
-        success={false}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
@@ -112,7 +89,6 @@ describe('ContactScreen', () => {
         onDraftChange={() => undefined}
         onPost={() => undefined}
         formError={null}
-        success={false}
       />,
     );
     const button = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
@@ -130,7 +106,6 @@ describe('ContactScreen', () => {
         onDraftChange={onDraftChange}
         onPost={onPost}
         formError={null}
-        success={false}
       />,
     );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });

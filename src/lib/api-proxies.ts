@@ -131,7 +131,7 @@ export async function proxyGiftsGet(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies GET /messages to the 21.gifts api.
+ * Proxies GET /messages to the 21.gifts api (app path `/forum/messages`).
  *
  * @param request - Incoming App Router request (Bearer session).
  * @returns The upstream response.
@@ -141,13 +141,43 @@ export async function proxyMessagesGet(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies POST /messages to the 21.gifts api.
+ * Proxies POST /messages to the 21.gifts api (app path `/forum/messages`).
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
  * @returns The upstream response.
  */
 export async function proxyMessagesPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/messages');
+}
+
+/**
+ * Proxies GET /messages/:id/replies to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param messageId - Parent forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesRepliesGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/replies`);
+}
+
+/**
+ * Proxies GET /messages/:id to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id` so `/messages/:id` can serve HTML.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyPublicMessageGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}`);
 }
 
 /**
@@ -175,9 +205,57 @@ export async function proxyContactPost(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies GET /messages/:id/photo to the 21.gifts api.
+ * Proxies GET /conversations to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyConversationsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/conversations');
+}
+
+/**
+ * Proxies POST /conversations to the 21.gifts api (open from a forum note).
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyConversationsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/conversations');
+}
+
+/**
+ * Proxies GET /conversations/:id to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param conversationId - Conversation UUID.
+ * @returns The upstream response.
+ */
+export async function proxyConversationGet(
+  request: Request,
+  conversationId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/conversations/${encodeURIComponent(conversationId)}`);
+}
+
+/**
+ * Proxies POST /conversations/:id to the 21.gifts api (append a reply).
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @param conversationId - Conversation UUID.
+ * @returns The upstream response.
+ */
+export async function proxyConversationPost(
+  request: Request,
+  conversationId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/conversations/${encodeURIComponent(conversationId)}`);
+}
+
+/**
+ * Proxies GET /messages/:id/photo to the 21.gifts api (public; no auth).
+ *
+ * @param request - Incoming App Router request.
  * @param id - Forum message id from the dynamic route segment.
  * @returns The upstream response (raw image bytes).
  */

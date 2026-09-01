@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/messages`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, and `/push/vapid-public`).
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, and `/push/vapid-public`). HTML `/messages` is the inbox page, not a GET proxy.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -16,21 +16,21 @@
 
 ## Function: isForumVideoFile
 
-- **Purpose:** True when a picker file is MP4, WebM, or QuickTime (type or `.mp4`/`.webm`/`.mov` name).
+- **Purpose:** True when a picker file is MP4, WebM, QuickTime, or MPEG-4 video (type `video/mp4` / `video/webm` / `video/quicktime` / `video/x-m4v`, or `.mp4`/`.webm`/`.mov`/`.m4v` name).
 - **Inputs:** `File`.
 - **Returns / side effects:** boolean.
 - **Used by:** `ForumLoader` attach control.
 
 ## Function: prepareForumVideo
 
-- **Purpose:** Size-check (32 MiB) and capture a JPEG poster from the first frame.
+- **Purpose:** Size-check (32 MiB) and capture a first-frame JPEG poster when the browser can decode the clip. If capture fails (iPhone HEVC / Dolby Vision), still return ok with a fallback JPEG poster.
 - **Inputs:** `File`.
-- **Returns / side effects:** `{ ok, video }` or `{ ok: false, error }`.
+- **Returns / side effects:** `{ ok: true, video }` with `file`, JPEG `poster`, and `previewUrl`; or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Errors are only type/name (`unsupported`) and oversize (`tooLarge`) — a failed poster capture is not an error.
 - **Used by:** `ForumLoader`.
 
 ## Function: postMessageVideo
 
-- **Purpose:** Multipart `POST /messages` with `video` + optional `poster`.
+- **Purpose:** Multipart `POST /forum/messages` with `video` + optional `poster`.
 - **Inputs:** session token, `{ text, video, poster? }`.
 - **Returns / side effects:** `ForumMessage`.
 - **Used by:** `ForumLoader` submit.
@@ -48,27 +48,27 @@
 - **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`).
 - **Visible UI:** Idle `Link2` icon; copied `Check` icon. No visible "Copy link" or "Copied" text (`title` and `aria-label` keep the accessible name).
 - **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
-- **Used by:** `HandbookPage` (page title and chapter nav) and `HandbookMarkdown` (every heading).
+- **Used by:** `HandbookPage` (page title) and `HandbookMarkdown` (every heading).
 
 ## Function: HandbookMarkdown
 
 - **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images. Every heading has a sibling `HandbookCopyLink`.
 - **Inputs:** `markdown` string and `idPrefix` for heading ids.
 - **Returns / side effects:** React fragment. No network.
-- **Used by:** `HandbookPage` for each handbook document.
+- **Used by:** `HandbookFunctionsPage` and `HandbookEndpointsPage`.
 
 ## Function: HandbookIntro
 
 - **Purpose:** Server-presentational chrome for the `/handbook` title, intro sentence, and section-nav `aria-label` (already-translated copy).
 - **Inputs:** `title`, `introBefore`, `introAfter`, `navAria` (already-translated strings), `headingAction` (node beside the h1, e.g. copy-link), and `children` (the section links).
 - **Returns / side effects:** Heading, intro with the api-handbook GitHub link, and a nav whose accessible name comes from `navAria`. No network.
-- **Used by:** `HandbookPage`.
+- **Used by:** `HandbookPage`, `HandbookScreensPage`, `HandbookFunctionsPage`, `HandbookEndpointsPage`.
 
 ## Function: HandbookPage
 
-- **Purpose:** Async Next.js page for `/handbook`. Resolves locale via `getRequestLocale`, loads the four app handbook files from disk, and renders them with a link to the api handbook. Title copy-link uses `handbook.title`; chapter copy-links use `handbook.chapterLabel` with `{ title }`; intro chrome via already-translated props on `HandbookIntro`; markdown bodies stay English.
-- **Inputs:** None (calls `getRequestLocale()`; reads `docs/handbook/` from disk at request time; the standalone image copies that tree).
-- **Returns / side effects:** The handbook screen inside `MarketingLayout`.
+- **Purpose:** Async Next.js hub for `/handbook`. Resolves locale via `getRequestLocale` and links to `/handbook/screens`, `/handbook/functions`, and `/handbook/endpoints` without dumping those markdown files. Title copy-link uses `handbook.title`; intro chrome via already-translated props on `HandbookIntro`.
+- **Inputs:** None (calls `getRequestLocale()`).
+- **Returns / side effects:** The handbook hub inside `MarketingLayout`.
 - **Used by:** Route `/handbook`.
 
 ## Function: StatsLoader
@@ -158,7 +158,7 @@
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil, trash).
-- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, and request failures are typed keys so they re-render after a locale change.
+- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, request, and `notZap` failures are typed keys (`la.errorEmpty`, `la.errorNotFound`, `la.errorRequest`, `la.errorNotZap`) so they re-render after a locale change. After `notZap`, Continue/Save stays disabled while the trimmed draft equals the blocked address; changing the draft clears the alert and re-enables; restoring the blocked address re-locks. Inline alerts (`empty` / `notFound` / `request` / `notZap`) are not separate screen variants.
 - **Returns / side effects:** React element or `null` when logged out.
 - **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
 
@@ -185,9 +185,9 @@
 
 ## Function: LoginPage
 
-- **Purpose:** Next.js page for `/login` with localized heading, theme switcher, and language switcher.
-- **Inputs:** None. Calls `getRequestLocale()` for the page title.
-- **Returns / side effects:** Renders `OnboardingGate`, `LoginCard`, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
+- **Inputs:** None.
+- **Returns / side effects:** `PageChrome` with `ThemeSwitcher` and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
@@ -261,14 +261,14 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`).
 - **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile still requires `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/contact`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/contact`, `/messages`.
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; MessageCircle Contact `/contact`; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; Inbox `/messages`; MessageCircle Contact `/contact`; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
 - **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`.
+- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`.
 
 ## Function: ProfilePage
 
@@ -389,6 +389,55 @@
 - **Returns / side effects:** One chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`.
 
+## Function: Button
+
+- **Purpose:** Labeled app button with primary (filled) or secondary (bordered) weight using semantic `app-btn` tokens.
+- **Inputs:** Native button props plus optional `variant` (default `primary`), optional leading `icon`, and `children` label. Default `type="button"`.
+- **Returns / side effects:** A `<button>` element. No network. Used across login, forum retry, public note retry, and forms.
+- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, setup and contact screens.
+
+## Function: IconButton
+
+- **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`).
+- **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
+- **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
+- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, and `HandbookImageViewer`.
+
+## Function: Card
+
+- **Purpose:** Primary app content panel using semantic card tokens (`bg-app-card`, border, shadow) with optional max-width (`sm` / `md` / `xl`).
+- **Inputs:** `children`, optional `className`, optional `maxWidth` (default `sm`).
+- **Returns / side effects:** A `<section>` wrapper. No network. Shared shell for login, public note, and profile-style panels.
+- **Used by:** `PublicMessageLoader`, `LoginCard`, profile and setup screens.
+
+## Function: Field
+
+- **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted.
+- **Inputs:** `label`, optional `id` / `className`, `multiline` (textarea when true), plus native input or textarea attributes.
+- **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
+- **Used by:** `ForumBoard`.
+
+## Function: PageChrome
+
+- **Purpose:** Full-height app page shell (`min-h-screen` centered column) with an optional absolute top-right slot for language/theme chrome.
+- **Inputs:** `children`, optional `topRight`, optional `className` on the outer `<main>`.
+- **Returns / side effects:** Layout only. No network. Used by login and the public message page (light `LanguageSwitcher` in `topRight`).
+- **Used by:** `LoginPage` and `PublicMessagePage`.
+
+## Function: PublicMessagePage
+
+- **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
+- **Inputs:** Dynamic route params (`id`).
+- **Returns / side effects:** `PageChrome` with light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Used by:** Route `/messages/[id]`.
+
+## Function: PublicMessageLoader
+
+- **Purpose:** Client loader for the public note page: validates UUID, fetches via `fetchPublicMessage` / `fetchPublicMessagePhoto`, shows missing/error/retry/loading, and a Log in or Back to the forum link from `useHydrateSession`.
+- **Inputs:** `id` string from the route.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready `Card`. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). No pay or composer.
+- **Used by:** `PublicMessagePage`.
+
 ## Function: ViewProfilePage
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
@@ -496,16 +545,16 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: heading **Forum**, optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video, ₿ amount with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`). The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
-- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
+- **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), ₿ amount with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer), and PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`). PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
+- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
 
-- **Purpose:** Client loader for in-app contact on `/contact`. Session from `useAuthStore`; returns null without a session. Posts via `postContact`. No inbox fetch.
+- **Purpose:** Client loader for in-app contact on `/contact`. Session from `useAuthStore`; returns null without a session. Posts via `postContact`. On success fetches conversations and navigates to `/messages` or `/messages?c=` for the official 21.gifts thread. No local success-hide of the form.
 - **Inputs:** None (reads session from the auth store).
-- **Returns / side effects:** React element wrapping `ContactScreen`, or `null`. Owns draft/posting/formError/success state. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postContact`. On success clears the draft and sets `success` so the form is hidden.
+- **Returns / side effects:** React element wrapping `ContactScreen`, or `null`. Owns draft/posting/formError. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postContact`. After a successful post, `fetchConversations` then `router.push` to the inbox and `posting` stays true until unmount. A failed post sets `request` and clears `posting` so Send can retry.
 - **Used by:** Screen `/contact`.
 
 ## Function: ContactPage
@@ -517,8 +566,8 @@
 
 ## Function: ContactScreen
 
-- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and either a messenger-style composer (textarea with **Send**, `maxLength` 500) or success copy. No message list.
-- **Inputs:** `ContactScreenProps` — `posting`, `draft`, `onDraftChange`, `onPost`, `formError` (`empty` / `tooLong` / `request`), `success`.
+- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and a messenger-style composer (textarea with **Send**, `maxLength` 500). Success is owned by `ContactLoader` (navigate to the inbox thread), not a local success copy.
+- **Inputs:** `ContactScreenProps` — `posting`, `draft`, `onDraftChange`, `onPost`, `formError` (`empty` / `tooLong` / `request`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `ContactLoader`.
 
@@ -538,9 +587,9 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip), prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present).
+- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip), prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /forum/messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present). Owns expand/replies (`fetchReplies`, retry, reply composer via `postMessage` with `inReplyTo`; expand is ignored while a reply posts) and PM (`openConversation` then `/messages?c=`).
 - **Inputs:** None (reads session and account from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/videoDraft/photoUrls/videoUrls/posting/formError/feedMode/pay state and retry attempts. Empty text without a photo and without a video sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage` / `postMessageVideo`. Photo-only and video-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes photo and video blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/videoDraft/photoUrls/videoUrls/posting/formError/feedMode/pay/expand/replies/PM state and retry attempts. Empty text without a photo and without a video sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage` / `postMessageVideo`. Photo-only and video-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes photo and video blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -615,9 +664,30 @@
 
 ## Function: fetchMessages
 
-- **Purpose:** GET `/messages` with the bearer session, parse `forumListSchema`, and return the messages array newest-first.
+- **Purpose:** GET `/forum/messages` with the bearer session, parse `forumListSchema`, and return the messages array newest-first (including defaulted `replyCount`).
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure.
+- **Used by:** `ForumLoader`.
+
+## Function: fetchPublicMessage
+
+- **Purpose:** GET `/public-messages/:id` without a session, parse `forumMessageSchema`, and return one public forum note for the HTML note page.
+- **Inputs:** Forum message `id` (UUID string).
+- **Returns / side effects:** `ForumMessage`, or `null` on 404. Throws visitor copy (`Could not load messages. Please try again.`) on other non-ok, network, or zod failures.
+- **Used by:** `PublicMessageLoader`.
+
+## Function: fetchPublicMessagePhoto
+
+- **Purpose:** GET `/messages/:id/photo` without Authorization and return raw image bytes as a `Blob` for `URL.createObjectURL` on the public note page.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load messages. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
+- **Used by:** `PublicMessageLoader`.
+
+## Function: fetchReplies
+
+- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session, parse `forumRepliesSchema` (`{ messages }`, same key as the list endpoint), and return oldest-first replies for one note.
+- **Inputs:** `sessionToken`, parent message `id`.
+- **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure. Damus authors may omit `role` (schema defaults to `basis`).
 - **Used by:** `ForumLoader`.
 
 ## Function: fetchMessagePhoto
@@ -629,9 +699,9 @@
 
 ## Function: postMessage
 
-- **Purpose:** POST `/messages` with bearer + `{ text, photo? }`, parse `forumMessageSchema`, and return the created message (text and/or photo).
-- **Inputs:** `sessionToken`, `input` with `text` and optional `{ contentType, data }` photo.
-- **Returns / side effects:** `ForumMessage`. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
+- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, inReplyTo? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or photo).
+- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, and optional `inReplyTo` parent id (thread composer only).
+- **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` from the JSON body when absent. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
 - **Used by:** `ForumLoader`.
 
 ## Function: postContact
@@ -855,7 +925,7 @@
 
 - **Purpose:** POST `/me/lightning-address`.
 - **Inputs:** `sessionToken`, `address`.
-- **Returns / side effects:** Updated `Account`.
+- **Returns / side effects:** Updated `Account`. HTTP 400 whose body is `LIGHTNING_ADDRESS_NOT_ZAP_ERROR` is thrown unchanged; any other 400 is rewritten to a visitor-facing save error. Other non-ok statuses throw `'Could not save your Wallet of Satoshi address'`.
 - **Used by:** `LightningAddressForm`.
 
 ## Function: translate
@@ -951,10 +1021,10 @@
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/contact/submit` re-exports `proxyContactPost`.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/contact/submit` re-exports `proxyContactPost`. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /messages`), pay-on-note (`POST /messages/[id]/invoice`), and in-app contact (`POST /contact/submit`).
+- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 
@@ -1007,17 +1077,31 @@
 
 ## Function: proxyMessagesGet
 
-- **Purpose:** Bearer proxy GET `/messages` to the 21.gifts api (public forum list).
+- **Purpose:** Bearer proxy GET `/messages` to the 21.gifts api (public forum list). App route is GET `/forum/messages`.
 - **Inputs:** Incoming `Request` with Bearer session.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
-- **Used by:** Route GET `/messages`.
+- **Used by:** Route GET `/forum/messages`.
 
 ## Function: proxyMessagesPost
 
-- **Purpose:** Bearer proxy POST `/messages` to the 21.gifts api (create a public forum message).
+- **Purpose:** Bearer proxy POST `/messages` to the 21.gifts api (create a public forum message or reply). App route is POST `/forum/messages`.
 - **Inputs:** Incoming `Request` with Bearer session and JSON body.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
-- **Used by:** Route POST `/messages`.
+- **Used by:** Route POST `/forum/messages`.
+
+## Function: proxyMessagesRepliesGet
+
+- **Purpose:** Bearer proxy GET `/messages/:id/replies` to the 21.gifts api (oldest-first replies). App route is GET `/forum/messages/[id]/replies`.
+- **Inputs:** Incoming `Request` with Bearer session, plus parent message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/forum/messages/[id]/replies`.
+
+## Function: proxyPublicMessageGet
+
+- **Purpose:** Public proxy GET `/messages/:id` to the 21.gifts api (one note as JSON, no auth). App path is `/public-messages/[id]` so `/messages/[id]` can serve HTML.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/public-messages/[id]`.
 
 ## Function: proxyContactPost
 
@@ -1028,8 +1112,8 @@
 
 ## Function: proxyMessagesPhotoGet
 
-- **Purpose:** Bearer proxy GET `/messages/:id/photo` to the 21.gifts api (raw forum photo bytes).
-- **Inputs:** Incoming `Request` with Bearer session, plus message `id` from the App Router segment.
+- **Purpose:** Same-origin proxy GET `/messages/:id/photo` to the 21.gifts api (raw forum photo bytes). Public; no bearer required (api photo is public; proxy forwards Authorization if present but does not require it). Runtime `getApiUrl()` via `proxyApiRequest` (not next.config rewrites).
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/messages/[id]/photo`.
 
@@ -1165,3 +1249,143 @@
 - **Inputs:** App Router `Request`.
 - **Returns / side effects:** Forwards to the api.
 - **Used by:** `src/app/messages/[id]/invoice/route.ts`.
+
+## Function: MessagesPage
+
+- **Purpose:** Next.js page for `/messages` (signed-in PN inbox). Wraps `InboxLoader` in `OnboardingGate` and `SignedInChrome`.
+- **Inputs:** None.
+- **Returns / side effects:** The inbox screen. Conversation HTTP is under `/conversations`.
+- **Used by:** Route `/messages`.
+
+## Function: InboxLoader
+
+- **Purpose:** Client loader for `/messages`. Fetches `GET /conversations`, opens `?c=`, posts replies.
+- **Inputs:** None (session from the auth store; `useSearchParams`).
+- **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **Used by:** `MessagesPage`.
+
+## Function: InboxScreen
+
+- **Purpose:** Presentational inbox: conversation list or one open thread with a 500-character composer.
+- **Inputs:** List/thread/composer state from `InboxLoader`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `InboxLoader`.
+
+## Function: fetchConversations
+
+- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`.
+- **Inputs:** Session token.
+- **Returns / side effects:** Conversation list, or throws visitor copy.
+- **Used by:** `InboxLoader`, `ContactLoader`.
+
+## Function: fetchConversation
+
+- **Purpose:** GET `/conversations/:id` with Bearer and parse `{ messages }`.
+- **Inputs:** Session token and conversation id.
+- **Returns / side effects:** Oldest-first messages, or throws visitor copy.
+- **Used by:** `InboxLoader`.
+
+## Function: postConversationMessage
+
+- **Purpose:** POST `/conversations/:id` with `{ text }`.
+- **Inputs:** Session token, conversation id, text.
+- **Returns / side effects:** Created message, or throws api/visitor copy.
+- **Used by:** `InboxLoader`.
+
+## Function: openConversation
+
+- **Purpose:** POST `/conversations` with `{ forumMessageId }`.
+- **Inputs:** Session token and forum note/reply id.
+- **Returns / side effects:** Conversation row, or throws on 400/404/other.
+- **Used by:** `ForumLoader` PM control.
+
+## Function: proxyConversationsGet
+
+- **Purpose:** Same-origin proxy for api GET `/conversations`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/route.ts`.
+
+## Function: proxyConversationsPost
+
+- **Purpose:** Same-origin proxy for api POST `/conversations`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/route.ts`.
+
+## Function: proxyConversationGet
+
+- **Purpose:** Same-origin proxy for api GET `/conversations/:id`.
+- **Inputs:** App Router `Request` and conversation id.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/[id]/route.ts`.
+
+## Function: proxyConversationPost
+
+- **Purpose:** Same-origin proxy for api POST `/conversations/:id`.
+- **Inputs:** App Router `Request` and conversation id.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/[id]/route.ts`.
+
+## Function: HandbookScreensPage
+
+- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics and renders `HandbookImageViewer`.
+- **Inputs:** None.
+- **Returns / side effects:** The screens handbook screen inside `MarketingLayout`.
+- **Used by:** Route `/handbook/screens`.
+
+## Function: HandbookFunctionsPage
+
+- **Purpose:** Next.js page for `/handbook/functions`. Viewer plus functions markdown (id prefix `functions` for visual clips).
+- **Inputs:** None.
+- **Returns / side effects:** The functions handbook screen.
+- **Used by:** Route `/handbook/functions`.
+
+## Function: HandbookEndpointsPage
+
+- **Purpose:** Next.js page for `/handbook/endpoints`. Markdown only; no image switches.
+- **Inputs:** None.
+- **Returns / side effects:** The endpoints handbook screen.
+- **Used by:** Route `/handbook/endpoints`.
+
+## Function: HandbookImageViewer
+
+- **Purpose:** Client one-topic baseline viewer. Desktop/Mobile and Light/Dark switches only when those combo files exist.
+- **Inputs:** `topics` (`HandbookTopic[]`).
+- **Returns / side effects:** React element or `null` when `topics` is empty. No network.
+- **Used by:** `HandbookScreensPage`, `HandbookFunctionsPage`.
+
+## Function: topicImageSrc
+
+- **Purpose:** Public URL for one topic combo PNG under `/handbook-images/`.
+- **Inputs:** Topic and combo id.
+- **Returns / side effects:** Path string. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: comboViewport
+
+- **Purpose:** Viewport half of a combo id.
+- **Inputs:** Combo id.
+- **Returns / side effects:** `'desktop'` or `'mobile'`.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: comboTheme
+
+- **Purpose:** Theme half of a combo id.
+- **Inputs:** Combo id.
+- **Returns / side effects:** `'light'` or `'dark'`.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: makeCombo
+
+- **Purpose:** Build a combo id from viewport and theme.
+- **Inputs:** Viewport and theme.
+- **Returns / side effects:** Combo id.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: defaultCombo
+
+- **Purpose:** First combo to show (`desktop-light` when present, else the first listed, else `null`).
+- **Inputs:** Combo id list.
+- **Returns / side effects:** Combo id or `null`.
+- **Used by:** `HandbookImageViewer`.

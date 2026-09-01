@@ -114,7 +114,7 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 - **URL:** `/login` — login only.
 - **What the user sees:** Light language switcher and theme switcher top-right on the page (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language or theme. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
-- **Calls:** `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
+- **Calls:** `PageChrome`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
 ### Variant: idle
 
@@ -168,34 +168,34 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/address`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/address`.
 - **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
+Signed in, no name yet. **Your name** and the name field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/rules`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/rules`.
 - **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
-Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
+Signed in with a name and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** pinned at the bottom of the screen. One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when name and address are saved but living-room rules are not yet agreed.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. After the first chapter, an icon-only back control (top-left) returns to the previous chapter. The last chapter shows **I agree to these rules** instead of **Continue**.
-- **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. After the first chapter, an icon-only back control (top-left) returns to the previous chapter. The last chapter shows **I agree to these rules** instead of **Continue**.
+- **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
 - **Calls:** `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
@@ -267,13 +267,13 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when name, address, and living-room rules agreement are all saved.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, public forum heading, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video, ₿ amount always; pay control / Send Bitcoin only when the note is payable; composer with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `visibleForumMessages`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way selector (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: message name, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply**). Pay control / Send Bitcoin only when the note is payable; board-bottom composer with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, expand a note to load replies and post a reply, copy a note link to `/messages/<uuid>`, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
+- **Calls:** `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`.
 
 ### Variant: default
 
-Gift icon, **Welcome, Ada**, public **Forum** with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol ₿21 then Ada ₿5); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. Founder / Moderator / Verified pills beside the name when `role` is one of those three; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
+Gift icon, **Welcome, Ada**, with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes in messenger order (Carol ₿21 then Ada ₿5); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. Founder / Moderator / Verified pills beside the name when `role` is one of those three; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -315,9 +315,27 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 500 characters (same as `POST /messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
+Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 500 characters (same as `POST /forum/messages`); over-length drafts show **Keep it to 500 characters** and are not sent.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
+
+### Variant: expanded
+
+On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply**.
+
+![21.gifts welcome expanded](images/welcome-expanded.png)
+
+### Variant: copy
+
+Click **Copy link to this note** — control sets `data-copied` after writing `origin/messages/<uuid>` to the clipboard.
+
+![21.gifts welcome copy](images/welcome-copy.png)
+
+### Variant: pm
+
+**Send a private message** control on another person's note (not on own notes). Does not expand the card.
+
+![21.gifts welcome pm](images/welcome-pm.png)
 
 ### Variant: photo
 
@@ -480,9 +498,9 @@ Full rules body with rule card **Only free donations** visible.
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with **Send**. On success: success copy and the rules link; form hidden. No public inbox.
-- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`).
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with **Send**. A successful send opens the official 21.gifts thread in `/messages`.
+- **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
+- **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -499,7 +517,7 @@ Click **Send** with an empty composer → **Enter a message**.
 
 ### Variant: success
 
-After a successful send: **Received — thank you. We read every message here in the app.** Form hidden; rules link remains.
+After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence).
 
 ![21.gifts contact success](images/contact-success.png)
 
@@ -507,7 +525,7 @@ After a successful send: **Received — thank you. We read every message here in
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes skip an OS banner when any window client is focused; background-only clients still show it), copy the public view-key link via an icon-only control, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
 - **Inputs:** Session account (name + Lightning Address + `viewKey` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
-- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Contact**, language, theme (System / Light / Dark), or **Log out** (best-effort Web Push unsubscribe while the session is still valid); icon-only back (top-left) to the forum; save name; link or change address; toggle Web Push with the icon-only bell (aria from `profile.push.enable` / `profile.push.disable`); toggle the activity chart between ₿ and USD; copy the public view URL with the icon-only control (the 64-hex key and `/view/<key>` are not shown on screen). On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the bell.
+- **Actions:** Open **Menu** for Profile (current), **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out** (best-effort Web Push unsubscribe while the session is still valid); icon-only back (top-left) to the forum; save name; link or change address; toggle Web Push with the icon-only bell (aria from `profile.push.enable` / `profile.push.disable`); toggle the activity chart between ₿ and USD; copy the public view URL with the icon-only control (the 64-hex key and `/view/<key>` are not shown on screen). On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the bell.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
@@ -539,6 +557,75 @@ One receive day (₿21 on **2026-06-01**). Chart draws a horizontal single-point
 Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
+
+## Screen: /messages
+
+- **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
+- **What the user sees:** One **Menu** top-right (includes **Messages**). Heading **Messages**, a conversation list (counterpart name, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. Founder/moderator also see official 21.gifts threads.
+- **Actions:** Open a thread, send a reply, return via **All conversations**. Open **Menu**. Forum PM and `/contact` send land here.
+- **Calls:** `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
+
+### Variant: default
+
+Loaded list with at least one thread (counterpart **21.gifts**).
+
+![21.gifts inbox](images/messages.png)
+
+### Variant: empty
+
+No threads. Copy **No private messages yet.**
+
+![21.gifts inbox empty](images/messages-empty.png)
+
+### Variant: loading
+
+Waiting on `GET /conversations`. Copy **Loading…**
+
+![21.gifts inbox loading](images/messages-loading.png)
+
+### Variant: error
+
+List fetch failed. Button **Try again**.
+
+![21.gifts inbox error](images/messages-error.png)
+
+### Variant: thread
+
+Open official thread. Heading **21.gifts**, message body **Hello team**, composer visible.
+
+![21.gifts inbox thread](images/messages-thread.png)
+
+## Screen: /messages/[id]
+
+- **Purpose:** Public read-only HTML note by forum message UUID. Language switcher (light) top-right via `PageChrome`. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
+- **Inputs:** Dynamic route `id` (UUID). Message from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch.
+- **Actions:** Change language. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
+- **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
+
+### Variant: default
+
+Valid known UUID. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo or clip-aspect `<video>`. Auth CTA below the card.
+
+![21.gifts public message](images/messages-id.png)
+
+### Variant: missing
+
+Unknown or malformed id. Copy **This profile could not be found.**
+
+![21.gifts public message missing](images/messages-id-missing.png)
+
+### Variant: loading
+
+Waiting on the public message fetch. Copy **Loading…**
+
+![21.gifts public message loading](images/messages-id-loading.png)
+
+### Variant: error
+
+Public message fetch failed. Copy **Could not load this profile. Please try again.** and **Try again**.
+
+![21.gifts public message error](images/messages-id-error.png)
 
 ## Screen: /view/[viewKey]
 
@@ -585,22 +672,85 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 
 ## Screen: /handbook
 
-- **URL:** `/handbook` — public app handbook (no auth gate).
-- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), in-page nav (Overview / Screens / Functions / Endpoints) each with a link icon, then the four `docs/handbook/` markdown files rendered as HTML (English bodies). Every markdown heading has a sibling link icon.
-- **Actions:** Change language, read the docs, jump via the section nav, copy a chapter or heading URL (click the link icon → check icon for 1.2s, hash updates), follow the api handbook link, follow in-page markdown links.
-- **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `loadHandbookDocuments`, `HandbookMarkdown` (`parseHandbookMarkdown`), `LanguageSwitcher`.
+- **URL:** `/handbook` — public app handbook hub (no auth gate). Header **Handbook** stays here.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
+- **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
+- **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`.
 
 ### Variant: default
 
-Idle copy buttons: every heading and chapter shows the link icon.
+Hub with heading **Handbook** and links to the three parts.
 
 ![21.gifts handbook](images/handbook.png)
 
 ### Variant: copied
 
-After tapping the link icon on a heading or chapter, that button shows the check icon and `data-copied`, and `location.hash` is that id. Other copy buttons stay idle link icons.
+After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
 
 ![21.gifts handbook copied](images/handbook-copied.png)
+
+## Screen: /handbook/screens
+
+- **URL:** `/handbook/screens` — public screens handbook (no auth gate).
+- **What the user sees:** Heading **Screens**, a one-topic baseline viewer (`HandbookImageViewer`) with a topic picker. **Desktop** / **Mobile** and **Light** / **Dark** switches appear only when those baselines exist for the selected topic. One image at a time.
+- **Actions:** Pick a topic, switch viewport/theme when available, return to the hub.
+- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookIntro`, `HandbookCopyLink`.
+
+### Variant: default
+
+First topic, desktop-light image, **Desktop** and **Light** selected when those combos exist.
+
+![21.gifts handbook screens](images/handbook-screens.png)
+
+### Variant: mobile
+
+**Mobile** selected on a topic that has both viewports.
+
+![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
+
+### Variant: dark
+
+**Dark** selected on a topic that has both themes.
+
+![21.gifts handbook screens dark](images/handbook-screens-dark.png)
+
+## Screen: /handbook/functions
+
+- **URL:** `/handbook/functions` — public functions handbook (no auth gate).
+- **What the user sees:** Heading **Functions**, the same one-topic viewer for function clips, then the functions markdown (`## Function: name`) used by visual clips.
+- **Actions:** Pick a function, switch viewport/theme when available, read the markdown, return to the hub.
+- **Calls:** `HandbookFunctionsPage`, `HandbookImageViewer`, `HandbookMarkdown`, `loadHandbookDocuments`.
+
+### Variant: default
+
+Viewer plus function headings. **Desktop** / **Light** selected.
+
+![21.gifts handbook functions](images/handbook-functions.png)
+
+### Variant: mobile
+
+**Mobile** selected.
+
+![21.gifts handbook functions mobile](images/handbook-functions-mobile.png)
+
+### Variant: dark
+
+**Dark** selected.
+
+![21.gifts handbook functions dark](images/handbook-functions-dark.png)
+
+## Screen: /handbook/endpoints
+
+- **URL:** `/handbook/endpoints` — public endpoints handbook (no auth gate).
+- **What the user sees:** Heading **Endpoints** and the endpoints markdown only. No image switches.
+- **Actions:** Read the markdown, return to the hub.
+- **Calls:** `HandbookEndpointsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
+
+### Variant: default
+
+Markdown list of `## Endpoint:` headings.
+
+![21.gifts handbook endpoints](images/handbook-endpoints.png)
 
 ## Screen: /404
 

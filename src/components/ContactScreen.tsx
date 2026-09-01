@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button, Card } from '@/components/ui';
 import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 
 /** Props for {@link ContactScreen}. */
@@ -18,18 +19,17 @@ export interface ContactScreenProps {
   onPost: () => void;
   /** Client-side composer validation or request failure. */
   formError: 'empty' | 'tooLong' | 'request' | null;
-  /** True after a successful send — form is hidden. */
-  success: boolean;
 }
 
 /**
- * Presentational in-app contact: heading, lead, rules link, and either a
- * messenger-style composer or the success copy.
+ * Presentational in-app contact: heading, lead, rules link, and a
+ * messenger-style composer. A successful send is the official thread in
+ * `/messages`, not a dead-end sentence.
  *
  * Uses semantic app tokens (`bg-app-*` / `text-app-*`) to follow the resolved
- * theme, matching {@link WelcomeScreen}. No message inbox.
+ * theme, matching {@link WelcomeScreen}.
  *
- * @param props - Composer and success/error state from {@link ContactLoader}.
+ * @param props - Composer and error state from {@link ContactLoader}.
  * @returns The contact card.
  */
 export function ContactScreen({
@@ -38,7 +38,6 @@ export function ContactScreen({
   onDraftChange,
   onPost,
   formError,
-  success,
 }: ContactScreenProps): ReactElement {
   const { t } = useTranslations();
 
@@ -48,7 +47,7 @@ export function ContactScreen({
   };
 
   return (
-    <section className="flex w-full max-w-xl flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+    <Card maxWidth="xl">
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
         {t('contact.heading')}
       </h1>
@@ -57,32 +56,22 @@ export function ContactScreen({
         {t('contact.rulesLink')}
       </Link>
 
-      {success ? (
-        <p role="status" className="text-center text-sm text-app-fg">
-          {t('contact.success')}
-        </p>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2">
-          <textarea
-            aria-label={t('contact.composerLabel')}
-            placeholder={t('contact.placeholder')}
-            value={draft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            maxLength={CONTACT_MESSAGE_MAX_LENGTH}
-            rows={2}
-            disabled={posting}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={posting}
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-app-btn px-5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
-          >
-            {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-            {t('contact.send')}
-          </button>
-        </form>
-      )}
+      <form onSubmit={handleSubmit} className="flex w-full items-end gap-2">
+        <textarea
+          aria-label={t('contact.composerLabel')}
+          placeholder={t('contact.placeholder')}
+          value={draft}
+          onChange={(event) => onDraftChange(event.target.value)}
+          maxLength={CONTACT_MESSAGE_MAX_LENGTH}
+          rows={2}
+          disabled={posting}
+          className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+        />
+        <Button type="submit" disabled={posting}>
+          {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
+          {t('contact.send')}
+        </Button>
+      </form>
 
       {formError === 'empty' ? (
         <p role="alert" className="text-center text-sm text-red-600">
@@ -99,6 +88,6 @@ export function ContactScreen({
           {t('contact.errorRequest')}
         </p>
       ) : null}
-    </section>
+    </Card>
   );
 }

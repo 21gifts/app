@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ForumBoard,
@@ -11,6 +12,8 @@ import {
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
+  fetchReplies,
+  openConversation,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -38,7 +41,7 @@ const PAY_POLL_MS = 2000;
  * @returns Whether the message looks like a rate-limit error.
  */
 function isRateLimitError(err: unknown): boolean {
-  /* v8 ignore next 3 */
+  /* v8 ignore next 3 -- non-Error throw is defensive; callers always reject with Error */
   if (!(err instanceof Error)) {
     return false;
   }
@@ -59,7 +62,7 @@ function revokeObjectUrlIfPresent(url: string | undefined): void {
  * @returns Whether the message looks like an author's-wallet error.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 */
+  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
   if (!(err instanceof Error)) {
     return false;
   }
@@ -78,9 +81,20 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
   if (prev === null) {
     return next;
   }
+  const prevById = new Map(prev.map((message) => [message.id, message]));
+  const mergedNext = next.map((message) => {
+    const prior = prevById.get(message.id);
+    if (prior === undefined) {
+      return message;
+    }
+    return {
+      ...message,
+      replyCount: Math.max(prior.replyCount, message.replyCount),
+    };
+  });
   const ids = new Set(next.map((message) => message.id));
   const extra = prev.filter((message) => !ids.has(message.id));
-  return [...extra, ...next];
+  return [...extra, ...mergedNext];
 }
 
 /**
@@ -89,15 +103,18 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * Reads the session and account from the auth store, fetches messages with a
  * cancelled-flag pattern matching {@link StatsLoader}, loads photos via Bearer
  * + blob URLs, owns composer draft/photo/video/post state, the Active/All/Most
- * popular feed mode, pay-on-note invoice + sats-poll state, and persists
- * dismiss of the living-room laws hint on the account. Also polls until
- * unsigned notes become payable. Renders nothing when there is no session.
+ * popular feed mode, pay-on-note invoice + sats-poll state, expand/replies
+ * (`fetchReplies`, reply composer via `postMessage` with `inReplyTo`), PM
+ * (`openConversation` → `/messages?c=`), and persists dismiss of the
+ * living-room laws hint on the account. Also polls until unsigned notes
+ * become payable. Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const router = useRouter();
   const setAccount = useAuthStore((state) => state.setAccount);
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
@@ -125,6 +142,20 @@ export function ForumLoader(): ReactElement | null {
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const expandedIdRef = useRef(expandedId);
+  expandedIdRef.current = expandedId;
+  const prevExpandedIdRef = useRef<string | null>(null);
+  const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const repliesRef = useRef(replies);
+  repliesRef.current = replies;
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [repliesError, setRepliesError] = useState(false);
+  const [repliesAttempt, setRepliesAttempt] = useState(0);
+  const [replyDraft, setReplyDraft] = useState('');
+  const [replyPosting, setReplyPosting] = useState(false);
+  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
+  const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
   const payPollGeneration = useRef(0);
   const payablePollGeneration = useRef(0);
   const messagesRef = useRef(messages);
@@ -283,6 +314,44 @@ export function ForumLoader(): ReactElement | null {
       revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
     };
   }, []);
+
+  useEffect(() => {
+    /* v8 ignore next 3 -- render already returned null without a session */
+    if (session === null) {
+      return;
+    }
+    if (expandedId === null) {
+      prevExpandedIdRef.current = null;
+      return;
+    }
+    const expandedChanged = prevExpandedIdRef.current !== expandedId;
+    prevExpandedIdRef.current = expandedId;
+    let cancelled = false;
+    setRepliesLoading(true);
+    setRepliesError(false);
+    if (expandedChanged) {
+      setReplies(null);
+    }
+    void (async () => {
+      try {
+        const next = await fetchReplies(session, expandedId);
+        if (!cancelled) {
+          setReplies(next);
+        }
+      } catch {
+        if (!cancelled) {
+          setRepliesError(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setRepliesLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, expandedId, repliesAttempt]);
 
   const lawsVisible = account?.forumLawsDismissed !== true;
 
@@ -513,14 +582,14 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const rawAmount = payDraft.trim();
-    /* v8 ignore start */
+    /* v8 ignore start -- native submit blocked; button disabled when draft empty */
     if (rawAmount === '' || !/^\d+$/.test(rawAmount)) {
       setPayError('amount');
       return;
     }
     /* v8 ignore stop */
     const sats = Number.parseInt(rawAmount, 10);
-    /* v8 ignore next 4 */
+    /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
     if (sats <= 0 || !Number.isSafeInteger(sats)) {
       setPayError('amount');
       return;
@@ -573,6 +642,109 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     setFeedMode(next);
+  };
+
+  const onToggleExpand = (messageId: string): void => {
+    /* v8 ignore start -- expand/collapse is covered via ForumBoard */
+    if (replyPosting) {
+      return;
+    }
+    if (expandedId === messageId) {
+      setExpandedId(null);
+      setReplies(null);
+      setRepliesError(false);
+      setRepliesLoading(false);
+      setReplyDraft('');
+      setReplyFormError(null);
+      return;
+    }
+    setExpandedId(messageId);
+    setReplies(null);
+    setRepliesLoading(true);
+    setRepliesError(false);
+    setReplyDraft('');
+    setReplyFormError(null);
+    setRepliesAttempt((n) => n + 1);
+    /* v8 ignore stop */
+  };
+
+  const onReplyPost = (): void => {
+    /* v8 ignore next 3 -- reply composer only mounts when expanded */
+    if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
+      return;
+    }
+    const trimmed = replyDraft.trim();
+    /* v8 ignore start -- empty or over-long reply */
+    if (trimmed === '') {
+      setReplyFormError('empty');
+      return;
+    }
+    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    /* v8 ignore stop */
+    const parentId = expandedId;
+    const parentRow = messagesRef.current?.find((message) => message.id === parentId);
+    /* v8 ignore next -- expanded parent is always in the loaded list */
+    const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
+    setReplyPosting(true);
+    setReplyFormError(null);
+    void (async () => {
+      /* v8 ignore start -- async reply success/error after post */
+      try {
+        const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
+        const stillParent = expandedIdRef.current === parentId;
+        let alreadyListed = false;
+        if (stillParent) {
+          alreadyListed =
+            repliesRef.current !== null &&
+            repliesRef.current.some((message) => message.id === created.id);
+          const wasEmpty = repliesRef.current === null;
+          setRepliesError(false);
+          setRepliesLoading(false);
+          setReplies((prev) => {
+            /* v8 ignore next 3 -- first successful post before fetch returns */
+            if (prev === null) {
+              return [created];
+            }
+            /* v8 ignore next 3 -- duplicate id already in the list */
+            if (prev.some((message) => message.id === created.id)) {
+              return prev;
+            }
+            return [...prev, created];
+          });
+          setReplyDraft('');
+          if (wasEmpty) {
+            setRepliesAttempt((n) => n + 1);
+          }
+        }
+        if (!alreadyListed) {
+          setMessages((prev) => {
+            /* v8 ignore next 3 -- parent list not loaded */
+            if (prev === null) {
+              return prev;
+            }
+            return prev.map((message) =>
+              message.id === parentId
+                ? {
+                    ...message,
+                    replyCount: Math.max(message.replyCount, parentBaseline + 1),
+                  }
+                : message,
+            );
+          });
+        }
+      } catch (err) {
+        /* v8 ignore next 3 -- reply error after the thread was closed */
+        if (expandedIdRef.current === parentId) {
+          setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+        }
+      } finally {
+        setReplyPosting(false);
+      }
+      /* v8 ignore stop */
+    })();
   };
 
   return (
@@ -628,6 +800,40 @@ export function ForumLoader(): ReactElement | null {
       onModeChange={onModeChange}
       lawsVisible={lawsVisible}
       onDismissLaws={onDismissLaws}
+      expandedId={expandedId}
+      onToggleExpand={onToggleExpand}
+      replies={expandedId === null ? null : replies}
+      repliesLoading={expandedId !== null && repliesLoading}
+      repliesError={expandedId !== null && repliesError}
+      onRetryReplies={() => {
+        setRepliesAttempt((n) => n + 1);
+      }}
+      replyDraft={replyDraft}
+      onReplyDraftChange={(value) => {
+        setReplyDraft(value);
+        setReplyFormError(null);
+      }}
+      onReplyPost={onReplyPost}
+      replyPosting={replyPosting}
+      replyFormError={replyFormError}
+      ownName={account?.name ?? null}
+      ownAccountId={account?.id ?? null}
+      pmBusyId={pmBusyId}
+      onPm={(messageId) => {
+        /* v8 ignore next 3 -- second PM click while the first is in flight */
+        if (pmBusyId !== null) {
+          return;
+        }
+        setPmBusyId(messageId);
+        void (async () => {
+          try {
+            const thread = await openConversation(session, messageId);
+            router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
+          } catch {
+            setPmBusyId(null);
+          }
+        })();
+      }}
     />
   );
 }

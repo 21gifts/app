@@ -25,14 +25,19 @@ export function HandbookIntro(props: {
         {props.headingAction}
       </div>
       <p className="mt-4 text-white/60">
-        {props.introBefore}{' '}
-        <a
-          className="text-[#f7931a] underline underline-offset-2"
-          href="https://github.com/21gifts/api/tree/develop/docs/handbook"
-        >
-          21gifts/api
-        </a>
-        {props.introAfter}
+        {props.introBefore}
+        {props.introAfter !== '' ? (
+          <>
+            {' '}
+            <a
+              className="text-[#f7931a] underline underline-offset-2"
+              href="https://github.com/21gifts/api/tree/develop/docs/handbook"
+            >
+              21gifts/api
+            </a>
+            {props.introAfter}
+          </>
+        ) : null}
       </p>
       <nav aria-label={props.navAria} className="mt-8 flex flex-wrap gap-4 text-sm">
         {props.children}

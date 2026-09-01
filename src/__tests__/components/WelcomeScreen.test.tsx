@@ -11,10 +11,18 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: (href: string) => void } => ({ push: vi.fn() }),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn().mockResolvedValue([]),
   postMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchReplies: vi.fn(),
+  openConversation: vi.fn(),
+  postMessageInvoice: vi.fn(),
+  dismissForumLaws: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -48,7 +56,7 @@ describe('WelcomeScreen', () => {
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Welcome, Ada' })).toBeTruthy();
     });
   });
 

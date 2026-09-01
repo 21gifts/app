@@ -228,10 +228,13 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `hasVideo` / `videoContentType` default when an older api omits them.
  * `role` is optional with default `basis` so a rolling api deploy without the
  * field still parses and the board stays lit.
+ * `replyCount` defaults to 0 so mixed deploys without the field still parse.
+ * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
  */
 export const forumMessageSchema = z
   .object({
     id: z.string().min(1),
+    accountId: z.string().min(1).optional(),
     name: z.string().min(1),
     text: z.string(), // may be '' when hasPhoto
     createdAt: z.string().datetime({ offset: true }),
@@ -245,13 +248,21 @@ export const forumMessageSchema = z
       .optional()
       .default(null),
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
+    replyCount: z.number().int().nonnegative().default(0),
   })
   .refine((message) => message.text !== '' || message.hasPhoto || message.hasVideo);
 
 /**
- * Runtime schema for the payload of `GET /messages`.
+ * Runtime schema for the payload of `GET /messages` (top-level notes).
  */
 export const forumListSchema = z.object({
+  messages: z.array(forumMessageSchema),
+});
+
+/**
+ * Runtime schema for `GET /messages/:id/replies` (oldest-first).
+ */
+export const forumRepliesSchema = z.object({
   messages: z.array(forumMessageSchema),
 });
 
@@ -292,6 +303,53 @@ export const contactSchema = z.object({
  * One in-app contact message from the api.
  */
 export type ContactMessage = z.infer<typeof contactSchema>;
+
+/**
+ * Runtime schema for one conversation list row from `GET /conversations`.
+ *
+ * `lastText` may be empty when the thread was opened from a forum note and
+ * has no messages yet.
+ */
+export const conversationSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  lastText: z.string(),
+  lastAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * Runtime schema for `GET /conversations`.
+ */
+export const conversationListSchema = z.object({
+  conversations: z.array(conversationSchema),
+});
+
+/**
+ * One private-message thread from the api.
+ */
+export type Conversation = z.infer<typeof conversationSchema>;
+
+/**
+ * Runtime schema for one message in `GET /conversations/:id`.
+ */
+export const conversationMessageSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * Runtime schema for `GET /conversations/:id`.
+ */
+export const conversationThreadSchema = z.object({
+  messages: z.array(conversationMessageSchema),
+});
+
+/**
+ * One private message from the api.
+ */
+export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 
 /**
  * Runtime schema for `GET /push/vapid-public` success body.

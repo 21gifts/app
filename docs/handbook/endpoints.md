@@ -105,19 +105,33 @@
 - **Used by:** `fetchViewProfile`.
 - **Auth:** Public.
 
-## Endpoint: GET /messages
+## Endpoint: GET /forum/messages
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages` (public forum list, newest-first).
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages` (public forum list, newest-first). App path is `/forum/messages` so `/messages/[id]` can serve HTML.
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
 - **Used by:** `fetchMessages`.
 - **Auth:** Bearer.
 
-## Endpoint: POST /messages
+## Endpoint: POST /forum/messages
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message with optional photo).
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo).
 - **Errors:** Upstream 401/400/429, or 502 if the api is unreachable.
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.
+
+## Endpoint: GET /forum/messages/[id]/replies
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id/replies` (oldest-first replies for one note).
+- **Errors:** Upstream 401/404, or 502 if the api is unreachable.
+- **Used by:** `fetchReplies`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /public-messages/[id]
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id` (one note as JSON, no Bearer). The HTML public note is `/messages/[id]`.
+- **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchPublicMessage`.
+- **Auth:** Public.
 
 ## Endpoint: POST /messages/[id]/invoice
 
@@ -135,10 +149,10 @@
 
 ## Endpoint: GET /messages/[id]/photo
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id/photo` (raw JPEG/PNG/WebP bytes for one forum message). Clients fetch with Authorization and render via blob URLs — not bare `<img src>`.
+- **Purpose:** Same-origin proxy of api GET `/messages/:id/photo` (raw JPEG/PNG/WebP bytes for one forum message). Signed-in clients send Authorization (`fetchMessagePhoto`); the public note page fetches without Bearer (`fetchPublicMessagePhoto`). Always render via blob URLs — not bare `<img src>`.
 - **Errors:** Upstream 401/404, or 502 if the api is unreachable.
-- **Used by:** `fetchMessagePhoto`.
-- **Auth:** Bearer.
+- **Used by:** `fetchMessagePhoto`, `fetchPublicMessagePhoto`.
+- **Auth:** Optional Bearer (api photo is public; forum board still sends Bearer).
 
 ## Endpoint: GET /messages/[id]/[file]
 
@@ -173,6 +187,34 @@
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/push-subscriptions` (register a browser push subscription: `{ endpoint, keys: { p256dh, auth } }`).
 - **Errors:** Upstream 400 `{ error: "Invalid subscription" }`, 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
 - **Used by:** `postPushSubscription` via `enablePush` on `/profile`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /conversations
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (private threads the session may see).
+- **Errors:** Upstream 401/503, or 502 if the api is unreachable.
+- **Used by:** `fetchConversations` on `/messages`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /conversations
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author.
+- **Errors:** Upstream 400 (self), 404 (unknown note), 401/503, or 502 if the api is unreachable.
+- **Used by:** `openConversation` from the forum PM control.
+- **Auth:** Bearer.
+
+## Endpoint: GET /conversations/[id]
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages).
+- **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
+- **Used by:** `fetchConversation` on `/messages?c=`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /conversations/[id]
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters). Staff replies on official threads send as the platform account.
+- **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
+- **Used by:** `postConversationMessage` in the inbox composer.
 - **Auth:** Bearer.
 
 ## Endpoint: DELETE /me/push-subscriptions

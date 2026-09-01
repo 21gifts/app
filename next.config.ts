@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: appRoot,
   outputFileTracingIncludes: {
     '/handbook': ['./docs/handbook/**/*'],
+    '/handbook/screens': ['./docs/handbook/**/*', './scripts/screen-variants.mjs'],
+    '/handbook/functions': ['./docs/handbook/**/*'],
+    '/handbook/endpoints': ['./docs/handbook/**/*'],
   },
   async redirects() {
     return [{ source: '/legal.html', destination: '/legal', permanent: true }];

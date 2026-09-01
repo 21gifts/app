@@ -15,13 +15,19 @@ import {
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
   proxyContactPost,
+  proxyConversationGet,
+  proxyConversationPost,
+  proxyConversationsGet,
+  proxyConversationsPost,
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
   proxyMessagesGet,
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
+  proxyMessagesRepliesGet,
   proxyMessagesVideoGet,
+  proxyPublicMessageGet,
   proxyPushVapidPublicGet,
   proxyViewGet,
 } from '@/lib/api-proxies';
@@ -132,6 +138,18 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
   });
 
+  it('proxyMessagesRepliesGet hits /messages/:id/replies', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepliesGet(new Request('http://localhost/forum/messages/m1/replies'), 'm1');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/replies');
+  });
+
+  it('proxyPublicMessageGet hits /messages/:id', async () => {
+    const fetchMock = stubApi();
+    await proxyPublicMessageGet(new Request('http://localhost/public-messages/m1'), 'm1');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1');
+  });
+
   it('proxyContactPost hits POST /contact', async () => {
     const fetchMock = stubApi();
     await proxyContactPost(
@@ -139,6 +157,37 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/contact');
+  });
+
+  it('proxyConversationsGet hits /conversations', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationsGet(new Request('http://localhost/conversations'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations');
+  });
+
+  it('proxyConversationsPost hits POST /conversations', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationsPost(
+      new Request('http://localhost/conversations', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations');
+  });
+
+  it('proxyConversationGet hits /conversations/:id', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationGet(new Request('http://localhost/conversations/c1'), 'c1');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/c1');
+  });
+
+  it('proxyConversationPost encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationPost(
+      new Request('http://localhost/conversations/a%2Fb', { method: 'POST', body: '{}' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/a%2Fb');
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
   });
 
   it('proxyMessagesPhotoGet hits /messages/:id/photo', async () => {

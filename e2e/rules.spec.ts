@@ -120,7 +120,7 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Contact' })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
 test('welcome forum hides laws when already dismissed on the account', async ({ page }) => {
@@ -159,5 +159,5 @@ test('welcome forum hides laws when already dismissed on the account', async ({ 
     ),
   ).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });

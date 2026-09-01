@@ -18,24 +18,30 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('HandbookPage', () => {
-  it('renders the Handbook heading', async () => {
+  it('renders the Handbook heading and links to the three parts', async () => {
     renderWithLocale(await HandbookPage());
     expect(screen.getByRole('heading', { name: 'Handbook' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to Handbook' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Copy link to Overview chapter' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Copy link to Screens chapter' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Copy link to Functions chapter' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Copy link to Endpoints chapter' })).toBeTruthy();
+    const screens = screen.getAllByRole('link', { name: 'Screens' });
+    expect(screens.some((link) => link.getAttribute('href') === '/handbook/screens')).toBe(true);
+    const functions = screen.getAllByRole('link', { name: 'Functions' });
+    expect(functions.some((link) => link.getAttribute('href') === '/handbook/functions')).toBe(
+      true,
+    );
+    const endpoints = screen.getAllByRole('link', { name: 'Endpoints' });
+    expect(endpoints.some((link) => link.getAttribute('href') === '/handbook/endpoints')).toBe(
+      true,
+    );
   });
 
   it('does not force-static the handbook route', () => {
     expect((handbookRoute as { dynamic?: string }).dynamic).not.toBe('force-static');
   });
 
-  it('localizes chapter copy-link labels', async () => {
+  it('localizes the hub heading', async () => {
     vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
     renderWithLocale(await HandbookPage(), 'de');
-    expect(screen.getByRole('button', { name: 'Link zu Kapitel Overview kopieren' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Handbuch' })).toBeTruthy();
   });
 
   it('links to the api handbook on GitHub', async () => {
@@ -46,14 +52,9 @@ describe('HandbookPage', () => {
     );
   });
 
-  it('exposes the screens section', async () => {
+  it('does not dump screens markdown on the hub', async () => {
     renderWithLocale(await HandbookPage());
-    expect(document.getElementById('screens')).not.toBeNull();
-  });
-
-  it('points the overview screens.md link at the screens section', async () => {
-    renderWithLocale(await HandbookPage());
-    const links = screen.getAllByRole('link', { name: 'screens.md' });
-    expect(links.some((link) => link.getAttribute('href') === '#screens')).toBe(true);
+    expect(document.getElementById('screens')).toBeNull();
+    expect(screen.queryByRole('heading', { name: /Screen: \// })).toBeNull();
   });
 });

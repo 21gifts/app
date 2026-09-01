@@ -93,6 +93,8 @@ async function stubPayableNote(page: Page): Promise<void> {
             sats: 0,
             payable: true,
             hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
           },
         ],
       }),
@@ -132,7 +134,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await page.getByLabel('Amount (₿)').fill('21');
+  await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 }
@@ -314,12 +316,28 @@ test('Function: proxyApiRequest — POST passkey register begin is 200', async (
   expect(res.status()).toBe(200);
 });
 
-test('Function: proxyMessagesGet — GET /messages without bearer is 401', async ({ request }) => {
-  expect((await request.get('/messages')).status()).toBe(401);
+test('Function: proxyMessagesGet — GET /forum/messages without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/messages')).status()).toBe(401);
 });
 
-test('Function: proxyMessagesPost — POST /messages without bearer is 401', async ({ request }) => {
-  expect((await request.post('/messages', { data: { text: 'hi' } })).status()).toBe(401);
+test('Function: proxyMessagesPost — POST /forum/messages without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/messages', { data: { text: 'hi' } })).status()).toBe(401);
+});
+
+test('Function: proxyMessagesRepliesGet — GET /forum/messages/[id]/replies without bearer', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: proxyPublicMessageGet — GET /public-messages/[id] is reachable', async ({
+  request,
+}) => {
+  expect((await request.get('/public-messages/[id]')).status()).toBeGreaterThanOrEqual(400);
 });
 
 test('Function: proxyContactPost — POST /contact/submit without bearer is 401', async ({
@@ -328,10 +346,38 @@ test('Function: proxyContactPost — POST /contact/submit without bearer is 401'
   expect((await request.post('/contact/submit', { data: { text: 'hi' } })).status()).toBe(401);
 });
 
-test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without bearer is 401', async ({
+test('Function: proxyConversationsGet — GET /conversations without bearer is 401', async ({
   request,
 }) => {
-  expect((await request.get('/messages/m1/photo')).status()).toBe(401);
+  expect((await request.get('/conversations')).status()).toBe(401);
+});
+
+test('Function: proxyConversationsPost — POST /conversations without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/conversations', { data: { forumMessageId: 'x' } })).status()).toBe(
+    401,
+  );
+});
+
+test('Function: proxyConversationGet — GET /conversations/[id] without bearer', async ({
+  request,
+}) => {
+  expect((await request.get('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: proxyConversationPost — POST /conversations/[id] without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.post('/conversations/[id]', { data: { text: 'hi' } })).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without a file is 404', async ({
+  request,
+}) => {
+  expect((await request.get('/messages/m1/photo')).status()).toBe(404);
 });
 
 test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a file is 404', async ({
@@ -471,7 +517,7 @@ test('Function: fetchMessages — welcome shows the empty forum', async ({ page,
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
   await expect(page.getByLabel('Your message')).toBeVisible();
@@ -492,7 +538,10 @@ test('Function: postMessage — posting from the composer shows the row', async 
   await expect(page.getByText(body)).toBeVisible();
 });
 
-test('Function: postContact — sending from contact shows success', async ({ page, request }) => {
+test('Function: postContact — sending from contact shows the official thread', async ({
+  page,
+  request,
+}) => {
   await signInViaStub(page, request);
   await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
@@ -502,9 +551,8 @@ test('Function: postContact — sending from contact shows success', async ({ pa
   const body = `Contact note ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(
-    page.getByText('Received — thank you. We read every message here in the app.'),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/messages/);
+  await expect(page.getByText(body)).toBeVisible();
 });
 
 async function reachWelcome(page: Page, request: APIRequestContext): Promise<void> {
@@ -966,19 +1014,360 @@ test('Function: HandbookPage — handbook heading is visible', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
 });
 
+test('Function: HandbookScreensPage — screens heading is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('heading', { name: 'Screens' }).first()).toBeVisible();
+});
+
+test('Function: HandbookFunctionsPage — functions heading is visible', async ({ page }) => {
+  await page.goto('/handbook/functions');
+  await expect(page.getByRole('heading', { name: 'Functions' }).first()).toBeVisible();
+});
+
+test('Function: HandbookEndpointsPage — endpoints heading is visible', async ({ page }) => {
+  await page.goto('/handbook/endpoints');
+  await expect(page.getByRole('heading', { name: 'Endpoints' }).first()).toBeVisible();
+});
+
+test('Function: HandbookImageViewer — topic picker is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByLabel('Topic')).toBeVisible();
+});
+
+test('Function: topicImageSrc — screens viewer shows an image', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.locator('img[src*="/handbook-images/"]').first()).toBeVisible();
+});
+
+test('Function: comboViewport — Desktop switch is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('button', { name: 'Desktop' })).toBeVisible();
+});
+
+test('Function: comboTheme — Light switch is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('button', { name: 'Light' })).toBeVisible();
+});
+
+test('Function: makeCombo — Mobile switch is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('button', { name: 'Mobile' })).toBeVisible();
+});
+
+test('Function: defaultCombo — first topic image is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.locator('img[src*="/handbook-images/"]').first()).toBeVisible();
+});
+
+test('Function: MessagesPage — inbox heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations: [] }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+});
+
+test('Function: InboxLoader — empty inbox copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations: [] }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByText('No private messages yet.')).toBeVisible();
+});
+
+test('Function: InboxScreen — empty inbox copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations: [] }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByText('No private messages yet.')).toBeVisible();
+});
+
+test('Function: fetchConversations — empty inbox copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations: [] }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByText('No private messages yet.')).toBeVisible();
+});
+
+test('Function: fetchConversation — thread body is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByText('Hello team')).toBeVisible();
+});
+
+test('Function: postConversationMessage — composer is visible on a thread', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByLabel('Your message')).toBeVisible();
+});
+
+test('Function: openConversation — Send a private message is on other notes', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  await page.route(/\/forum\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-bob',
+            name: 'Bob',
+            text: 'Hello from Bob',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Send a private message' })).toBeVisible();
+});
+
 test('Function: HandbookMarkdown — functions chapter headings render', async ({ page }) => {
-  await page.goto('/handbook');
+  await page.goto('/handbook/functions');
   await expect(page.locator('#functions h2[id^="functions-function-"]').first()).toBeVisible();
 });
 
 test('Function: parseHandbookMarkdown — functions chapter headings render', async ({ page }) => {
-  await page.goto('/handbook');
+  await page.goto('/handbook/functions');
   await expect(page.locator('#functions h2[id^="functions-function-"]').first()).toBeVisible();
 });
 
 test('Function: loadHandbookDocuments — handbook heading is visible', async ({ page }) => {
   await page.goto('/handbook');
   await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
+  await page.goto('/handbook/functions');
   await expect(page.locator('#functions h2[id^="functions-function-"]').first()).toBeVisible();
 });
 
@@ -1001,7 +1390,7 @@ test('Function: NotFound — unknown path is 404', async ({ page }) => {
 
 test('Function: LoginPage — login heading is visible', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Log in to 21.gifts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
 });
 
 test('Function: DonatePage — send-help explainer renders', async ({ page }) => {
@@ -1706,7 +2095,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
     });
   });
   await page.goto('/welcome');
-  await expect(page.getByRole('heading', { name: 'Forum' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
 test('Function: ContactPage — contact heading is visible', async ({ page }) => {
@@ -2074,6 +2463,179 @@ test('Function: ProfileScreen — back to forum is visible', async ({ page }) =>
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: Button — login shows the Log in button', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Post' })).toBeVisible();
+});
+
+test('Function: Card — login card is visible', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
+});
+
+test('Function: Field — pay amount uses Field', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(page.getByLabel('Amount')).toBeVisible();
+});
+
+test('Function: PageChrome — login shows language switcher chrome', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
+});
+
+test('Function: PublicMessagePage — public note shows Hello from Ada', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
+});
+
+test('Function: PublicMessageLoader — invalid id shows not-found copy', async ({ page }) => {
+  await page.goto('/messages/not-a-uuid');
+  await expect(page.getByText('This profile could not be found.')).toBeVisible();
+});
+
+test('Function: fetchPublicMessage — public note loads via the client fetch', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByText('Ada', { exact: true })).toBeVisible();
+});
+
+test('Function: fetchPublicMessagePhoto — public note with photo shows alt', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/messages/${id}/photo`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+});
+
+test('Function: fetchReplies — expanding a welcome note loads replies', async ({ page }) => {
+  await seedAdaSession(page);
+  const id = 'm-expand';
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id,
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Show replies' }).click();
+  await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
 });
 
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
@@ -2505,19 +3067,7 @@ test('Function: isForumVideoFile — composer accept includes mp4', async ({ pag
   await page.goto('/welcome');
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
-  await expect
-    .poll(
-      async () => {
-        const previewCount = await page.locator('form video').count();
-        const formatError = await page
-          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
-          .isVisible()
-          .catch(() => false);
-        return previewCount === 1 || formatError;
-      },
-      { timeout: 10_000 },
-    )
-    .toBe(true);
+  await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
 test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
   await seedAdaSession(page);
@@ -2533,6 +3083,16 @@ test('Function: forumVideoSrc — composer accept includes mov', async ({ page }
   await seedAdaSession(page);
   await page.goto('/welcome');
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.mov/);
+});
+test('Function: isForumVideoFile — composer accept includes m4v', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/x-m4v/);
+});
+test('Function: prepareForumVideo — composer accept includes m4v extension', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/welcome');
+  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.m4v/);
 });
 
 test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ page }) => {
@@ -2567,9 +3127,7 @@ test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ pa
   );
 });
 
-test('Function: prepareForumVideo — attaching an mp4 shows a preview or the video format error', async ({
-  page,
-}) => {
+test('Function: prepareForumVideo — attaching an mp4 shows a preview', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages$/, async (route) => {
     await route.fulfill({
@@ -2580,19 +3138,7 @@ test('Function: prepareForumVideo — attaching an mp4 shows a preview or the vi
   });
   await page.goto('/welcome');
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
-  await expect
-    .poll(
-      async () => {
-        const previewCount = await page.locator('form video').count();
-        const formatError = await page
-          .getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video')
-          .isVisible()
-          .catch(() => false);
-        return previewCount === 1 || formatError;
-      },
-      { timeout: 10_000 },
-    )
-    .toBe(true);
+  await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
 
 test('Function: postMessageVideo — posting a prepared clip sends multipart video', async ({
@@ -2629,14 +3175,14 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
   await expect(page.locator('form video')).toHaveCount(1);
 
   let sawMultipart = false;
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/forum\/messages$/, async (route) => {
     const request = route.request();
     if (request.method() !== 'POST') {
       await route.fallback();
       return;
     }
     const pathname = new URL(request.url()).pathname;
-    if (pathname !== '/messages' && pathname !== '/messages/') {
+    if (pathname !== '/forum/messages' && pathname !== '/forum/messages/') {
       await route.fallback();
       return;
     }

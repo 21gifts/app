@@ -63,12 +63,22 @@ describe('parseHandbookMarkdown', () => {
       'readme',
     );
     const json = JSON.stringify(blocks);
-    expect(json).toContain('#screens');
-    expect(json).toContain('#screens-screen');
+    expect(json).toContain('/handbook/screens');
+    expect(json).toContain('/handbook/screens#screens-screen');
     expect(json).toContain('#readme-faq');
     expect(json).not.toContain('#readme-screens');
     const emptyFrag = parseHandbookMarkdown('[x](screens.md#---)\n', 'readme');
-    expect(JSON.stringify(emptyFrag)).toContain('"#screens"');
+    expect(JSON.stringify(emptyFrag)).toContain('"/handbook/screens"');
+  });
+
+  it('rewrites non-page relative markdown links to in-page hashes', () => {
+    const blocks = parseHandbookMarkdown(
+      '[a](intro.md) [b](intro.md#Foo Bar) [c](intro.md#---)\n',
+      'readme',
+    );
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('"href":"#intro"');
+    expect(json).toContain('"href":"#intro-foo-bar"');
   });
 
   it('keeps http(s) and absolute paths', () => {

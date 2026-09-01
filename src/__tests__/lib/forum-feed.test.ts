@@ -13,6 +13,7 @@ const ADA: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const CAROL: ForumMessage = {
@@ -26,6 +27,7 @@ const CAROL: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const BOB: ForumMessage = {
@@ -39,6 +41,7 @@ const BOB: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const TIE_NEWER: ForumMessage = {
@@ -52,6 +55,7 @@ const TIE_NEWER: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const TIE_OLDER: ForumMessage = {
@@ -65,6 +69,7 @@ const TIE_OLDER: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const TIE_SAME_TIME_LOW_ID: ForumMessage = {
@@ -78,6 +83,7 @@ const TIE_SAME_TIME_LOW_ID: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 describe('forum-feed', () => {

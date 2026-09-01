@@ -20,6 +20,8 @@ const byPasskeyCredential = new Map();
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
+/** @type {Array<{ id: string, name: string, lastText: string, lastAt: string, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string }> }>} */
+const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
 
@@ -231,18 +233,151 @@ const server = http.createServer(async (req, res) => {
       createdAt: new Date().toISOString(),
     };
     contactMessages.unshift(created);
+    let thread = conversations.find((row) => row.ownerId === account.id && row.name === '21.gifts');
+    if (thread === undefined) {
+      thread = {
+        id: `conv_${hex(randomBytes(8))}`,
+        name: '21.gifts',
+        lastText: text,
+        lastAt: created.createdAt,
+        ownerId: account.id,
+        messages: [],
+      };
+      conversations.unshift(thread);
+    }
+    thread.messages.push({
+      id: created.id,
+      name,
+      text,
+      createdAt: created.createdAt,
+    });
+    thread.lastText = text;
+    thread.lastAt = created.createdAt;
     json(res, 200, created);
     return;
   }
 
-  const photoMatch = pathName.match(/^\/messages\/([^/]+)\/photo$/);
-  if (method === 'GET' && photoMatch) {
+  if (method === 'GET' && pathName === '/conversations') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    json(res, 200, {
+      conversations: conversations
+        .filter((row) => row.ownerId === account.id)
+        .map((row) => ({
+          id: row.id,
+          name: row.name,
+          lastText: row.lastText,
+          lastAt: row.lastAt,
+        })),
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/conversations') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "forumMessageId" string' });
+      return;
+    }
+    const forumMessageId = typeof parsed?.forumMessageId === 'string' ? parsed.forumMessageId : '';
+    const note = forumMessages.find((message) => message.id === forumMessageId);
+    if (note === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const ownName = typeof account.name === 'string' ? account.name.trim() : '';
+    if (ownName !== '' && note.name === ownName) {
+      json(res, 400, { error: 'Cannot message yourself' });
+      return;
+    }
+    let thread = conversations.find((row) => row.ownerId === account.id && row.name === note.name);
+    if (thread === undefined) {
+      const now = new Date().toISOString();
+      thread = {
+        id: `conv_${hex(randomBytes(8))}`,
+        name: note.name,
+        lastText: '',
+        lastAt: now,
+        ownerId: account.id,
+        messages: [],
+      };
+      conversations.unshift(thread);
+    }
+    json(res, 200, {
+      id: thread.id,
+      name: thread.name,
+      lastText: thread.lastText,
+      lastAt: thread.lastAt,
+    });
+    return;
+  }
+
+  const conversationMatch = pathName.match(/^\/conversations\/([^/]+)$/);
+  if (conversationMatch && (method === 'GET' || method === 'POST')) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const id = decodeURIComponent(conversationMatch[1]);
+    const thread = conversations.find((row) => row.id === id && row.ownerId === account.id);
+    if (thread === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (method === 'GET') {
+      json(res, 200, { messages: thread.messages });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
+    const senderName = typeof account.name === 'string' ? account.name.trim() : '';
+    if (senderName === '') {
+      json(res, 400, { error: 'Set a name before posting' });
+      return;
+    }
+    if (typeof parsed?.text !== 'string') {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
+    const text = parsed.text.trim();
+    if (text.length < 1 || text.length > 500) {
+      json(res, 400, { error: 'Text must be 1–500 characters' });
+      return;
+    }
+    const created = {
+      id: `cmsg_${hex(randomBytes(8))}`,
+      name: senderName,
+      text,
+      createdAt: new Date().toISOString(),
+    };
+    thread.messages.push(created);
+    thread.lastText = text;
+    thread.lastAt = created.createdAt;
+    json(res, 200, created);
+    return;
+  }
+
+  const photoMatch = pathName.match(/^\/messages\/([^/]+)\/photo$/);
+  if (method === 'GET' && photoMatch) {
     const id = decodeURIComponent(photoMatch[1]);
     const bytes = forumPhotos.get(id);
     if (bytes === undefined) {
@@ -256,6 +391,18 @@ const server = http.createServer(async (req, res) => {
       'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
     });
     res.end(bytes);
+    return;
+  }
+
+  const publicMessageMatch = pathName.match(/^\/messages\/([^/]+)$/);
+  if (method === 'GET' && publicMessageMatch) {
+    const id = decodeURIComponent(publicMessageMatch[1]);
+    const row = forumMessages.find((message) => message.id === id);
+    if (row === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    json(res, 200, row);
     return;
   }
 

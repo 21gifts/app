@@ -3,7 +3,7 @@ import { proxyMessagesPhotoGet } from '@/lib/api-proxies';
 /**
  * App Router GET for `/messages/[id]/photo`.
  *
- * @param request - Incoming request (Bearer session).
+ * @param request - Incoming request (public / optional Authorization).
  * @param context - Dynamic route params (`id`).
  * @returns The proxied upstream response (raw image bytes).
  */

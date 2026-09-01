@@ -1,8 +1,11 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { getCatalog } from '@/lib/messages';
 import type { ForumFeedMode } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
@@ -42,6 +45,7 @@ const SAMPLE: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const MULTILINE: ForumMessage = {
@@ -55,6 +59,7 @@ const MULTILINE: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const FIVE_SATS: ForumMessage = {
@@ -68,6 +73,7 @@ const FIVE_SATS: ForumMessage = {
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
+  replyCount: 0,
 };
 
 const PHOTO: ForumPhotoPayload = {
@@ -101,6 +107,21 @@ const idleProps: Pick<
   | 'onClearPhoto'
   | 'photoUrls'
   | 'videoUrls'
+  | 'expandedId'
+  | 'onToggleExpand'
+  | 'replies'
+  | 'repliesLoading'
+  | 'repliesError'
+  | 'onRetryReplies'
+  | 'replyDraft'
+  | 'onReplyDraftChange'
+  | 'onReplyPost'
+  | 'replyPosting'
+  | 'replyFormError'
+  | 'ownName'
+  | 'ownAccountId'
+  | 'onPm'
+  | 'pmBusyId'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -119,6 +140,21 @@ const idleProps: Pick<
   onClearPhoto: () => undefined,
   photoUrls: {},
   videoUrls: {},
+  expandedId: null,
+  onToggleExpand: () => undefined,
+  replies: null,
+  repliesLoading: false,
+  repliesError: false,
+  onRetryReplies: () => undefined,
+  replyDraft: '',
+  onReplyDraftChange: () => undefined,
+  onReplyPost: () => undefined,
+  replyPosting: false,
+  replyFormError: null,
+  ownName: 'Ada',
+  ownAccountId: null,
+  onPm: () => undefined,
+  pmBusyId: null,
 };
 
 function modeProps(
@@ -145,7 +181,6 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -176,6 +211,7 @@ describe('ForumBoard', () => {
     );
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+    expect(screen.queryByText('Dismiss')).toBeNull();
   });
 
   it('calls onDismissLaws when the Dismiss button is clicked', () => {
@@ -217,7 +253,7 @@ describe('ForumBoard', () => {
         lawsVisible={false}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Forum' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
     expect(
       screen.queryByText(
         '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
@@ -595,6 +631,7 @@ describe('ForumBoard', () => {
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
+            replyCount: 0,
           },
         ]}
         error={false}
@@ -630,6 +667,7 @@ describe('ForumBoard', () => {
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
+            replyCount: 0,
           },
         ]}
         error={false}
@@ -665,6 +703,7 @@ describe('ForumBoard', () => {
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
+            replyCount: 0,
           },
         ]}
         error={false}
@@ -843,8 +882,8 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByLabelText('Amount (₿)')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '42' } });
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '42' } });
     expect(onPayDraftChange).toHaveBeenCalledWith('42');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
@@ -1380,12 +1419,28 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const video = document.querySelector('video');
+    const video = document.querySelector('ul video');
     expect(video).toBeTruthy();
     expect(video?.getAttribute('src')).toBe('/messages/vid-webm/video.webm');
     expect(video?.hasAttribute('controls')).toBe(true);
     expect(video?.hasAttribute('playsinline')).toBe(true);
     expect(video?.getAttribute('preload')).toBe('metadata');
+    const tokens = (video?.className ?? '').split(/\s+/);
+    expect(tokens).toEqual(
+      expect.arrayContaining([
+        'mt-2',
+        'mx-auto',
+        'block',
+        'h-auto',
+        'w-auto',
+        'max-h-80',
+        'max-w-full',
+        'rounded-xl',
+        'object-contain',
+      ]),
+    );
+    expect(tokens).not.toContain('w-full');
+    expect(tokens).not.toContain('bg-black');
   });
 
   it('renders quicktime video as .mov', () => {
@@ -1490,5 +1545,597 @@ describe('ForumBoard', () => {
       />,
     );
     expect(document.querySelector('video')?.getAttribute('poster')).toBe('blob:poster');
+  });
+
+  it('shows the replyCount text for zero and non-zero counts', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('0 replies')).toBeTruthy();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[{ ...SAMPLE, replyCount: 2 }]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByText('2 replies')).toBeTruthy();
+  });
+
+  it('expands and collapses via the card aria-label, not pay/role/copy', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, role: 'verified' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Show replies' }), { key: 'Enter' });
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Show replies' }), { key: ' ' });
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+
+    expect(screen.queryByText('Copy link to this note')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('does not expand when clicking the video or the photo', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-click',
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+          },
+          {
+            ...SAMPLE,
+            id: 'img-click',
+            name: 'Bob',
+            text: '',
+            hasPhoto: true,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'img-click': 'blob:photo' }}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(document.querySelector('video') as HTMLVideoElement);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByAltText('Photo from Bob'));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it("shows PM on other people's notes, not own, and does not expand", () => {
+    const onPm = vi.fn();
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE, MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onPm={onPm}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText('Send a private message')).toBeNull();
+    const pm = screen.getByRole('button', { name: 'Send a private message' });
+    expect(pm).toBeTruthy();
+    fireEvent.click(pm);
+    expect(onPm).toHaveBeenCalledWith('m2');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('hides PM when ownAccountId matches note accountId even if names differ', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...MULTILINE, accountId: 'acc_1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
+  });
+
+  it('shows PM when ownAccountId differs from note accountId even if names match', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
+  });
+
+  it('spins the PM control while a request is in flight', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        pmBusyId="m2"
+        {...modeProps('all')}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Send a private message' }).querySelector('.animate-spin'),
+    ).toBeTruthy();
+  });
+
+  it('copies the public note URL and sets data-copied', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/m1`);
+      expect(
+        screen.getByRole('button', { name: 'Copy link to this note' }).getAttribute('data-copied'),
+      ).toBe('true');
+    });
+  });
+
+  it('shows the reply composer only when expanded', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByPlaceholderText('Write a reply')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hide replies' })).toBeTruthy();
+  });
+
+  it('retries reply loading from the error state', () => {
+    const onRetryReplies = vi.fn();
+    const onReplyDraftChange = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={null}
+        repliesLoading={false}
+        repliesError={true}
+        onRetryReplies={onRetryReplies}
+        replyDraft="x"
+        onReplyDraftChange={onReplyDraftChange}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(onRetryReplies).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not post a reply while the thread failed to load or is still empty', () => {
+    const onReplyPost = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={null}
+        repliesLoading={false}
+        repliesError={true}
+        onReplyPost={onReplyPost}
+        {...modeProps('all')}
+      />,
+    );
+    const form = screen.getByPlaceholderText('Write a reply').closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form as HTMLFormElement);
+    expect(onReplyPost).not.toHaveBeenCalled();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={null}
+            repliesLoading={false}
+            repliesError={false}
+            onReplyPost={onReplyPost}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const pending = screen.getByPlaceholderText('Write a reply').closest('form');
+    expect(pending).not.toBeNull();
+    fireEvent.submit(pending as HTMLFormElement);
+    expect(onReplyPost).not.toHaveBeenCalled();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            repliesLoading={true}
+            repliesError={false}
+            onReplyPost={onReplyPost}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const loading = screen.getByPlaceholderText('Write a reply').closest('form');
+    expect(loading).not.toBeNull();
+    fireEvent.submit(loading as HTMLFormElement);
+    expect(onReplyPost).not.toHaveBeenCalled();
+  });
+
+  it('spins the reply post button while posting and hides PM on own replies', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r-own', name: 'Ada', text: '', sats: 0, payable: false }]}
+        replyPosting={true}
+        ownName="Ada"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Post' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
+  });
+
+  it("shows PM on other people's replies", () => {
+    const onPm = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onPm={onPm}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    expect(onPm).toHaveBeenCalledWith('r1');
+  });
+
+  it('spins the reply PM control while a request is in flight', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        pmBusyId="r1"
+        {...modeProps('all')}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Send a private message' }).querySelector('.animate-spin'),
+    ).toBeTruthy();
+  });
+
+  it('shows replyFormError tooLong, request, and rateLimit when expanded', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyFormError="empty"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="tooLong"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="request"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="rateLimit"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Too many messages. Please wait a moment and try again.',
+    );
   });
 });
