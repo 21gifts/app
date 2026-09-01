@@ -35,7 +35,8 @@ const PAD_B = 20;
  * Compact dual-line cumulative chart of Given and Received with ₿|USD toggle.
  *
  * @param props - Receive series and optional donate series.
- * @returns Legend + scale chrome and reserved-height SVG (no title heading).
+ * @returns Empty series: `profile.chartEmpty` status copy only. Otherwise
+ *   legend + scale chrome and reserved-height SVG (no title heading).
  */
 export function AccountActivityChart({
   received,
@@ -136,7 +137,7 @@ export function AccountActivityChart({
           <button
             type="button"
             aria-pressed={scale === 'sat'}
-            className={`px-2 py-1 ${
+            className={`min-h-11 min-w-11 px-2 py-1 ${
               scale === 'sat' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
             }`}
             onClick={() => setScale('sat')}
@@ -146,7 +147,7 @@ export function AccountActivityChart({
           <button
             type="button"
             aria-pressed={scale === 'usd'}
-            className={`px-2 py-1 ${
+            className={`min-h-11 min-w-11 px-2 py-1 ${
               scale === 'usd' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
             }`}
             onClick={() => setScale('usd')}

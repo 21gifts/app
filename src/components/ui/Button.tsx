@@ -50,7 +50,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium transition ${SIZE_CLASS[size]} ${VARIANT_CLASS[variant]}${extra}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium transition disabled:cursor-not-allowed ${SIZE_CLASS[size]} ${VARIANT_CLASS[variant]}${extra}`}
       {...rest}
     >
       {icon}

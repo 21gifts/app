@@ -413,7 +413,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </p>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">
+          <h2 className="text-sm tracking-widest text-accent uppercase">
             Total spend over time
           </h2>
           <BarScaleToggle
@@ -440,7 +440,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By person</h2>
+          <h2 className="text-sm tracking-widest text-accent uppercase">By person</h2>
           <BarScaleToggle
             value={personScale}
             onChange={setPersonScale}
@@ -451,7 +451,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By month</h2>
+          <h2 className="text-sm tracking-widest text-accent uppercase">By month</h2>
           <BarScaleToggle
             value={monthScale}
             onChange={setMonthScale}

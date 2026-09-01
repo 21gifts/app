@@ -11,6 +11,7 @@ describe('Wordmark', () => {
     const link = screen.getByRole('link', { name: '21.gifts' });
     expect(link.getAttribute('href')).toBe('/welcome');
     expect(link.className).toContain('text-app-fg');
+    expect(link.className).toContain('text-[17px]');
   });
 
   it('renders a span when href is omitted or empty', () => {
@@ -18,10 +19,11 @@ describe('Wordmark', () => {
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.getByText('21.gifts').tagName).toBe('SPAN');
 
-    rerender(<Wordmark href="" tone="dark" className="x" />);
+    rerender(<Wordmark href="" tone="dark" size="footer" className="x" />);
     const mark = screen.getByText('21.gifts');
     expect(mark.tagName).toBe('SPAN');
     expect(mark.className).toContain('text-paper');
+    expect(mark.className).toContain('text-[15px]');
     expect(mark.className).toContain('x');
   });
 

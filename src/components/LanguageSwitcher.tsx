@@ -202,7 +202,7 @@ export function LanguageSwitcher(props: {
       : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
 
   const checkClass =
-    tone === 'dark' ? 'h-4 w-4 shrink-0 text-[#f7931a]' : 'h-4 w-4 shrink-0 text-app-fg';
+    tone === 'dark' ? 'h-4 w-4 shrink-0 text-accent' : 'h-4 w-4 shrink-0 text-app-fg';
 
   const embeddedOptionRowClass =
     'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
@@ -278,8 +278,8 @@ export function LanguageSwitcher(props: {
 
   const triggerClass =
     tone === 'dark'
-      ? 'inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-white/10'
-      : 'inline-flex items-center gap-1.5 rounded-full border border-app-border-strong px-3 py-1.5 text-sm text-app-fg hover:bg-app-hover';
+      ? 'inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-white/10'
+      : 'inline-flex min-h-11 items-center gap-1.5 rounded-full border border-app-border-strong px-3 py-1.5 text-sm text-app-fg hover:bg-app-hover';
 
   const panelClass =
     tone === 'dark'

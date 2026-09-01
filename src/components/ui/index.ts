@@ -19,4 +19,9 @@ export {
   type IconButtonVariant,
 } from '@/components/ui/IconButton';
 export { PageChrome, type PageChromeProps } from '@/components/ui/PageChrome';
-export { Wordmark, type WordmarkProps, type WordmarkTone } from '@/components/ui/Wordmark';
+export {
+  Wordmark,
+  type WordmarkProps,
+  type WordmarkSize,
+  type WordmarkTone,
+} from '@/components/ui/Wordmark';

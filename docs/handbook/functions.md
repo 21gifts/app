@@ -433,8 +433,8 @@
 
 ## Function: Wordmark
 
-- **Purpose:** Text brand mark `21.gifts` (17px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
-- **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `className`.
+- **Purpose:** Text brand mark `21.gifts` (header 17px/700, footer 15px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
+- **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `size` (`header` / `footer`, default `header`), optional `className`.
 - **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
 - **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileScreen`, `RulesSetup`, setup name/address pages, and `PageChrome` top-left.
 
