@@ -386,7 +386,7 @@
 
 - **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD toggle (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. When the series is empty or all zeros, the SVG and toggle are omitted and `profile.chartEmpty` is shown (`role="status"`). v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
-- **Returns / side effects:** One chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
+- **Returns / side effects:** When the series is empty or all zeros, only `profile.chartEmpty` (`role="status"`) — no legend, toggle, or SVG. Otherwise one chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`.
 
 ## Function: Button
@@ -400,7 +400,7 @@
 
 - **Purpose:** Labeled pill link matching `Button` anatomy (`primary` / `secondary` / `accent`, `sm` / `md` / `lg`, `tone` `app` or `dark`).
 - **Inputs:** `href`, optional `variant` / `size` / `tone` / `icon` / `className`, `children` label.
-- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`walletofsatoshi:`, `https:`). No network.
+- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`walletofsatoshi:`, `https:`). No network. Used on marketing CTAs, donate **Open the forum**, 404 **Back home**, rules nav, and the forum pay-sheet wallet link.
 - **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `NotFound`, `RulesDocument`, `ForumBoard`.
 
 ## Function: IconButton

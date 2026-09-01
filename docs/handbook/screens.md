@@ -224,7 +224,7 @@ Rule card **Rule 3** / **Contact stays in the app** with body (no test callout).
 
 ### Variant: wanted
 
-Heading **Welcome**, muted lead, and the welcome list (accent check glyphs).
+Heading **Welcome**, muted lead, and the welcome list (app-fg check glyphs, not accent).
 
 ![21.gifts rules setup wanted](images/setup-rules-wanted.png)
 
@@ -498,7 +498,7 @@ Full rules body with rule card **Only free donations** visible.
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (name + address + living-room rules agreement required).
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with **Send**. A successful send opens the official 21.gifts thread in `/messages`.
+- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with an icon-only **Send** control (`contact.send` catalog `aria-label`, no visible Send text). A successful send opens the official 21.gifts thread in `/messages`.
 - **Actions:** Send a message, open the rules; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**.
 - **Calls:** `ContactPage`, `ContactLoader`, `ContactScreen`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
@@ -530,7 +530,7 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: a compact reserved-height Given/Received chart (legend left, ₿ | USD right; no chart title heading; axes only when empty), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), an icon-only notifications bell under the address form, then an icon-only copy control for the public view URL; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: when the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG/toggle; otherwise a compact Given/Received chart (legend left, ₿ | USD right; no chart title heading), name and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), an icon-only notifications bell under the address form, then an icon-only copy control for the public view URL; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (menu totals stay icons + amounts). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
 
@@ -636,7 +636,7 @@ Public message fetch failed. Copy **Could not load this profile. Please try agai
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, compact Given/Received chart (legend + ₿ | USD + SVG; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no view-key copy, no back arrow.
+Valid known key. Heading **Profile**, empty series shows `profile.chartEmpty` (**No gifts yet.**, no legend/SVG/toggle; never **Loading…** on the chart), name and Wallet of Satoshi address field labels, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no view-key copy, no back arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
 
