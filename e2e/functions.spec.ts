@@ -999,6 +999,44 @@ test('Function: MarketingHeader — landing shows the wordmark', async ({ page }
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
+test('Function: PwaInstall — iPhone Safari shows the install control', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    });
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      get: () => false,
+    });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Install app' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Install app' }).first().click();
+  await expect(
+    page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+  ).toBeVisible();
+});
+
+test('Function: shouldOfferIosInstall — iPhone Safari shows the install control', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    });
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      get: () => false,
+    });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Install app' }).first()).toBeVisible();
+});
+
 test('Function: MarketingFooter — landing shows the footer wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('footer').getByText('21.gifts')).toBeVisible();

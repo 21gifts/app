@@ -1,11 +1,13 @@
 import type { ReactElement } from 'react';
+import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog, type MessageKey } from '@/lib/messages';
 import { translate } from '@/lib/translate';
 
 /**
- * Marketing landing at `/`: pitch, how it works, why, FAQ, CTAs into the app.
+ * Marketing landing at `/`: pitch, how it works, why, FAQ, CTAs into the app,
+ * and an optional PWA install control after Send help.
  *
  * @returns The home screen.
  */
@@ -31,6 +33,7 @@ export default async function Home(): Promise<ReactElement> {
             <ButtonLink href="/donate" variant="secondary" tone="dark">
               {t('home.ctaSend')}
             </ButtonLink>
+            <PwaInstall tone="dark" placement="hero" />
           </div>
         </div>
       </section>

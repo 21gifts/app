@@ -136,7 +136,7 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Send help, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
@@ -265,9 +265,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; Inbox `/messages`; MessageCircle Contact `/contact`; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
-- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for a `PageChrome` / absolute parent slot; when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; Inbox `/messages`; MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
+- **Inputs:** None. Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for a `PageChrome` / absolute parent slot; when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`.
 
 ## Function: ProfilePage
@@ -317,14 +317,28 @@
 - **Purpose:** Detect installed / standalone display mode (`display-mode: standalone` or iOS `navigator.standalone`).
 - **Inputs:** None (reads `window` / `navigator`).
 - **Returns / side effects:** `boolean`. No network.
-- **Used by:** `PushToggle`.
+- **Used by:** `PushToggle`, `shouldOfferIosInstall`, `PwaInstall`.
 
 ## Function: isIosSafari
 
 - **Purpose:** Detect iPhone/iPod stock Safari (Safari in UA, not CriOS/FxiOS).
 - **Inputs:** None (reads `navigator.userAgent`).
 - **Returns / side effects:** `boolean`. No network.
-- **Used by:** `PushToggle`.
+- **Used by:** `PushToggle`, `shouldOfferIosInstall`.
+
+## Function: shouldOfferIosInstall
+
+- **Purpose:** True when iPhone/iPod Safari is not standalone and not an in-app browser — the condition for offering the iOS Home Screen install sheet.
+- **Inputs:** None. Composes `isIosSafari`, `isStandaloneDisplay`, and `isInAppBrowser` (does not duplicate UA logic).
+- **Returns / side effects:** `boolean`. No network.
+- **Used by:** `PwaInstall`.
+
+## Function: PwaInstall
+
+- **Purpose:** Client install control for the PWA. First paint is `null` (no layout slot). After mount, hidden when standalone or in-app. On iPhone Safari (`shouldOfferIosInstall`) shows a labeled control that opens a three-step `role="dialog"` sheet (Share → Add to Home Screen → leave Open as Web App on). On Chromium, listens for `beforeinstallprompt` (`preventDefault`, store event), shows the control, and on click calls `event.prompt()` then drops the event (hides) regardless of accepted/dismissed; `appinstalled` also hides. Placements: `header` (compact secondary), `hero` (secondary md), `menu` (SignedInChrome Download + label row).
+- **Inputs:** `placement` (`header` | `hero` | `menu`); optional `tone` (`app` | `dark`, default `app`); optional `onMenuAction` (menu row closes the Menu after click). Catalog via `useTranslations`.
+- **Returns / side effects:** Install button and optional iOS sheet, or `null`. No new dependencies; Tailwind only.
+- **Used by:** `MarketingHeader` (`tone="dark"` `placement="header"`), `Home` hero (`tone="dark"` `placement="hero"`), `SignedInChrome` Menu (`placement="menu"`).
 
 ## Function: enablePush
 
@@ -870,7 +884,7 @@
 - **Purpose:** Detects Telegram and other in-app WebViews where a WebAuthn passkey ceremony cannot complete, so `/login` and `/view/[viewKey]` can show an escape card instead of starting WebAuthn.
 - **Inputs:** Optional `InAppBrowserHost` (`win`); defaults to `globalThis.window` when present. Missing window (SSR) is treated as not in-app.
 - **Returns / side effects:** `true` when a Telegram JS bridge is present (`TelegramWebviewProxy`, `TelegramWebview`, or `Telegram.WebApp`) or the UA matches a known in-app token list; otherwise `false`. No network and no DOM writes.
-- **Used by:** `LoginCard` and `ViewProfileClaim` (choose the in-app escape card after mount), `usePasskeyLogin` (safety net: `NotAllowedError` during authenticate → `unsupported`, no register fallback), and the `/login` / `/view/[viewKey]` in-app handbook / e2e variants.
+- **Used by:** `LoginCard` and `ViewProfileClaim` (choose the in-app escape card after mount), `usePasskeyLogin` (safety net: `NotAllowedError` during authenticate → `unsupported`, no register fallback), `shouldOfferIosInstall` / `PwaInstall` (hide install when in-app), and the `/login` / `/view/[viewKey]` in-app handbook / e2e variants.
 
 ## Function: loadHandbookDocuments
 
@@ -1021,9 +1035,9 @@
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with wordmark, section nav, always-visible `LanguageSwitcher` (`tone="dark"`), login CTA, and mobile menu.
+- **Purpose:** Sticky marketing header with wordmark, section nav, optional `PwaInstall` (`tone="dark"` `placement="header"`) next to Log in (desktop and open mobile nav), always-visible `LanguageSwitcher` (`tone="dark"`), login CTA, and mobile menu.
 - **Inputs:** None (internal open state). Reads copy via `useTranslations`.
-- **Returns / side effects:** Header element; toggles nav on small screens. Language select stays visible when the hamburger is closed.
+- **Returns / side effects:** Header element; toggles nav on small screens. Language select stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound`.
 
 ## Function: MarketingLayout

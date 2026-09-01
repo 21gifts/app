@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
+import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink, Wordmark } from '@/components/ui';
 
 /**
- * Sticky dark header for marketing pages: wordmark, section nav, language
- * switcher, login CTA, and a mobile menu toggle.
+ * Sticky dark header for marketing pages: wordmark, section nav, optional
+ * PWA install control, language switcher, login CTA, and a mobile menu toggle.
  *
  * @returns The header element.
  */
@@ -48,6 +49,7 @@ export function MarketingHeader(): ReactElement {
               {t('nav.login')}
             </ButtonLink>
           </span>
+          <PwaInstall tone="dark" placement="header" />
         </nav>
         <LanguageSwitcher tone="dark" />
         <button
