@@ -18,7 +18,8 @@ export type ForumPhotoPayload = {
 
 /** Result of {@link prepareForumPhoto}. */
 export type PrepareForumPhotoResult =
-  { ok: true; photo: ForumPhotoPayload } | { ok: false; error: 'unsupported' | 'tooLarge' };
+  | { ok: true; photo: ForumPhotoPayload }
+  | { ok: false; error: 'unsupported' | 'tooLarge' };
 
 const FORUM_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 

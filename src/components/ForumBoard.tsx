@@ -30,7 +30,13 @@ import {
 
 /** Client-side composer validation or request failure. */
 export type ForumFormError =
-  'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | null;
+  | 'empty'
+  | 'tooLong'
+  | 'request'
+  | 'rateLimit'
+  | 'unsupported'
+  | 'tooLarge'
+  | null;
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | null;
