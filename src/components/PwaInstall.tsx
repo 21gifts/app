@@ -24,7 +24,41 @@ export interface PwaInstallProps {
   onMenuAction?: () => void;
 }
 
-const DARK_SECONDARY = 'border-paper/20 text-paper hover:bg-paper/10';
+const DARK_SECONDARY =
+  'border-paper/20 bg-transparent text-paper hover:bg-paper/10 hover:opacity-100';
+
+let sharedDeferred: BeforeInstallPromptEvent | null = null;
+let promptListenersAttached = false;
+const promptSubscribers = new Set<(event: BeforeInstallPromptEvent | null) => void>();
+
+function notifyPromptSubscribers(): void {
+  for (const subscriber of promptSubscribers) {
+    subscriber(sharedDeferred);
+  }
+}
+
+function attachSharedPromptListeners(): void {
+  if (promptListenersAttached) {
+    return;
+  }
+  promptListenersAttached = true;
+  window.addEventListener('beforeinstallprompt', (event: Event) => {
+    event.preventDefault();
+    sharedDeferred = event as BeforeInstallPromptEvent;
+    notifyPromptSubscribers();
+  });
+  window.addEventListener('appinstalled', () => {
+    sharedDeferred = null;
+    notifyPromptSubscribers();
+  });
+}
+
+function consumeSharedPrompt(): BeforeInstallPromptEvent | null {
+  const event = sharedDeferred;
+  sharedDeferred = null;
+  notifyPromptSubscribers();
+  return event;
+}
 
 /**
  * Labeled control to install the PWA (Chromium prompt) or show iPhone Safari
@@ -46,6 +80,7 @@ export function PwaInstall({
   const [iosOffer, setIosOffer] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const closeId = `${titleId}-close`;
 
   useEffect(() => {
     setReady(true);
@@ -57,19 +92,17 @@ export function PwaInstall({
     if (shouldOfferIosInstall()) {
       setIosOffer(true);
     }
-    const onBeforeInstall = (event: Event): void => {
-      event.preventDefault();
-      setDeferred(event as BeforeInstallPromptEvent);
+    attachSharedPromptListeners();
+    setDeferred(sharedDeferred);
+    const onPrompt = (event: BeforeInstallPromptEvent | null): void => {
+      setDeferred(event);
+      if (event === null) {
+        setIosOffer(false);
+      }
     };
-    const onInstalled = (): void => {
-      setDeferred(null);
-      setIosOffer(false);
-    };
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
-    window.addEventListener('appinstalled', onInstalled);
+    promptSubscribers.add(onPrompt);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
-      window.removeEventListener('appinstalled', onInstalled);
+      promptSubscribers.delete(onPrompt);
     };
   }, []);
 
@@ -85,10 +118,11 @@ export function PwaInstall({
       setSheetOpen(false);
     };
     document.addEventListener('keydown', onKeyDown, true);
+    document.getElementById(closeId)?.focus();
     return () => {
       document.removeEventListener('keydown', onKeyDown, true);
     };
-  }, [sheetOpen]);
+  }, [sheetOpen, closeId]);
 
   if (!ready || !offer) {
     return null;
@@ -109,8 +143,7 @@ export function PwaInstall({
       onMenuAction?.();
       return;
     }
-    const event = deferred;
-    setDeferred(null);
+    const event = consumeSharedPrompt();
     if (event !== null) {
       void event.prompt();
     }
@@ -163,7 +196,11 @@ export function PwaInstall({
               event.stopPropagation();
             }}
           >
-            <div className="absolute inset-0 bg-black/50" aria-hidden="true" onClick={closeSheet} />
+            <div
+              className="absolute inset-0 bg-app-overlay"
+              aria-hidden="true"
+              onClick={closeSheet}
+            />
             <div
               role="dialog"
               aria-modal="true"
@@ -181,6 +218,7 @@ export function PwaInstall({
               </ol>
               <div className="mt-6">
                 <Button
+                  id={closeId}
                   type="button"
                   variant="secondary"
                   className={darkClass ?? ''}

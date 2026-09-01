@@ -23,6 +23,7 @@ describe('ProfilePage', () => {
   it('renders the profile card behind signed-in chrome', () => {
     renderWithLocale(<ProfilePage />);
     expect(screen.getByTestId('profile-screen')).toBeTruthy();
+    expect(screen.getByTestId('profile-chrome-left')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
   });
 });

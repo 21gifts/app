@@ -662,7 +662,7 @@ Migrate `/welcome`, `/profile`, `/contact`, `/messages`, `/donate`, `/setup/*`, 
 
 **Anatomy.** Text `21.gifts` as `Link`.
 
-**Tokens.** `text-[17px] font-bold no-underline`. Color: `text-paper` (marketing) or `text-app-fg` (app).
+**Tokens.** Header `text-[17px] font-bold no-underline`; footer `text-[15px] font-bold no-underline`. Color: `text-paper` (marketing) or `text-app-fg` (app).
 
 **API.**
 
@@ -670,6 +670,7 @@ Migrate `/welcome`, `/profile`, `/contact`, `/messages`, `/donate`, `/setup/*`, 
 export function Wordmark(props: {
   href?: string; // omit → <span>, not a link (marketing footer)
   tone?: 'app' | 'dark'; // app = app-fg; dark = paper on ink
+  size?: 'header' | 'footer'; // header 17px (default); footer 15px
 }): ReactElement;
 ```
 
