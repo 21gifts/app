@@ -269,6 +269,7 @@ export function ForumBoard({
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
 
@@ -380,9 +381,10 @@ export function ForumBoard({
       <ul aria-label={t('forum.listLabel')} className="flex flex-col gap-4">
         {displayed.map((message) => {
           const photoUrl = message.hasPhoto ? photoUrls[message.id] : undefined;
-          const videoSrc = message.hasVideo
-            ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
-            : undefined;
+          const videoSrc =
+            message.hasVideo && !deadVideoIds.has(message.id)
+              ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
+              : undefined;
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
@@ -469,6 +471,9 @@ export function ForumBoard({
                     preload="metadata"
                     className="mt-2 mx-auto block h-auto w-auto max-h-80 max-w-full rounded-xl object-contain"
                     onClick={stopCardToggle}
+                    onError={() => {
+                      setDeadVideoIds((prev) => new Set(prev).add(message.id));
+                    }}
                   />
                 ) : photoUrl !== undefined ? (
                   /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */

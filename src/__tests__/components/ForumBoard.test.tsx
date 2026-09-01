@@ -1443,6 +1443,37 @@ describe('ForumBoard', () => {
     expect(tokens).not.toContain('bg-black');
   });
 
+  it('hides a feed video when playback fails', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-dead',
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+            text: 'clip',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const video = document.querySelector('ul video');
+    expect(video).toBeTruthy();
+    fireEvent.error(video!);
+    expect(document.querySelector('ul video')).toBeNull();
+    expect(screen.getByText('clip')).toBeTruthy();
+  });
+
   it('renders quicktime video as .mov', () => {
     renderWithLocale(
       <ForumBoard

@@ -3097,6 +3097,13 @@ test('Function: prepareForumVideo — composer accept includes m4v extension', a
 
 test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ page }) => {
   await seedAdaSession(page);
+  await page.route('**/messages/m-vid/video.mp4', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'video/mp4',
+      path: 'e2e/fixtures/tiny.mp4',
+    });
+  });
   await page.route(/\/messages$/, async (route) => {
     await route.fulfill({
       status: 200,
