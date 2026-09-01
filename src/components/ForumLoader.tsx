@@ -166,6 +166,7 @@ export function ForumLoader(): ReactElement | null {
   const payablePollGeneration = useRef(0);
   const refreshGeneration = useRef(0);
   const wasHiddenRef = useRef(false);
+  const pendingRefreshRef = useRef(false);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const loadingRef = useRef(loading);
@@ -272,8 +273,10 @@ export function ForumLoader(): ReactElement | null {
       payMessageIdRef.current !== null ||
       replyPostingRef.current
     ) {
+      pendingRefreshRef.current = true;
       return;
     }
+    pendingRefreshRef.current = false;
     const activeSession = session;
     const generation = ++refreshGeneration.current;
     refreshingRef.current = true;
@@ -308,6 +311,12 @@ export function ForumLoader(): ReactElement | null {
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
   }, []);
+
+  useEffect(() => {
+    if (pendingRefreshRef.current) {
+      refreshMessagesRef.current();
+    }
+  }, [posting, preparing, payBusy, payWaiting, payMessageId, replyPosting]);
 
   useEffect(() => {
     if (session === null) {

@@ -2769,6 +2769,41 @@ describe('ForumLoader', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('refreshes after a blocked visibility cycle once the pay sheet closes', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Amount')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('keeps the list and does not show forum.error when a silent refresh fails', async () => {
     fetchMock
       .mockResolvedValueOnce([SAMPLE])

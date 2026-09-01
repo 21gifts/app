@@ -85,13 +85,13 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 **Wordmark.** The string `21.gifts` in Outfit, weight 700, tracking `0`. Not an SVG logotype. The drawn asset is only the favicon/app-icon “21” (see below).
 
-| Context                | Size                                | Weight | Color                                    | Element                                                               |
-| ---------------------- | ----------------------------------- | ------ | ---------------------------------------- | --------------------------------------------------------------------- |
-| Marketing header       | 17px / 1.06rem                      | 700    | `paper` (`#ffffff`)                      | `<Link href="/">`                                                     |
-| Marketing footer       | 15px / 0.9375rem                    | 700    | `paper`                                  | `<span>` (not a second home link if header is present; keep as today) |
-| App chrome (unsigned)  | 17px / 1.06rem                      | 700    | `app-fg`                                 | `<Link href="/">`                                                     |
-| App chrome (signed-in) | 17px / 1.06rem                      | 700    | `app-fg`                                 | `<Link href="/welcome">`                                              |
-| OG / social            | existing `public/og.png` (1200×630) | —      | ink field, white wordmark, orange kicker | do not redraw in v1 of this system                                    |
+| Context                | Size                                | Weight | Color                                    | Element                                                                                                                     |
+| ---------------------- | ----------------------------------- | ------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Marketing header       | 17px / 1.06rem                      | 700    | `paper` (`#ffffff`)                      | `<Link href="/">`                                                                                                           |
+| Marketing footer       | 15px / 0.9375rem                    | 700    | `paper`                                  | `<span>` (not a second home link if header is present; keep as today)                                                       |
+| App chrome (unsigned)  | 17px / 1.06rem                      | 700    | `app-fg`                                 | `<Link href="/">`                                                                                                           |
+| App chrome (signed-in) | 17px / 1.06rem                      | 700    | `app-fg`                                 | `<Link href="/welcome">`, except `/setup/*` (`<span>` — `OnboardingGate` would bounce an incomplete account off `/welcome`) |
+| OG / social            | existing `public/og.png` (1200×630) | —      | ink field, white wordmark, orange kicker | do not redraw in v1 of this system                                                                                          |
 
 **Clear space.** Minimum 8px (`spacing-2`) on all sides of the glyph bounds. Do not place controls closer than 12px (`spacing-3`) to the wordmark.
 
@@ -113,10 +113,10 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 [                         children                                      ]
 ```
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules`, `/messages/[id]`, `/view/*`)                                                                                                            | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`)                                |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `topLeft`  | `Wordmark` → `/`                                                                                                                                                                     | `Wordmark` → `/welcome`. On `/profile` and `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
-| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                    |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules`, `/messages/[id]`, `/view/*`)                                                                                                            | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`)                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `topLeft`  | `Wordmark` → `/`                                                                                                                                                                     | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile` and `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
+| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                                                          |
 
 `PageChrome` today (`src/components/ui/PageChrome.tsx`):
 
@@ -1305,7 +1305,7 @@ Orange is decided: **shell-split**, not gift-only. Marketing Log in stays orange
 
 4. **Orange is shell-split.** Marketing: primary filled CTA (Log in, Ask for help, Back home) + kickers + stats paint. App: gift-money **fill** (charts, ₿ selected, donate Open the forum). Marketing Log in is **not** a gift. App form primaries and Open Wallet stay `app-btn`. **Never orange text on paper** — `/rules` “RULE n” and Welcome ticks move to `app-subtle` / `app-fg`; only the decorative THE TEST bar stays `border-app-accent` (B′). Accent hover is `opacity-90`, no `#e08618`.
 
-5. **Wordmark is chrome on every app page.** Text `21.gifts`, 17px/700. `PageChrome.topLeft`. Signed-in wordmark links to `/welcome`; unsigned to `/`. Favicon stays ink + orange “21”.
+5. **Wordmark is chrome on every app page.** Text `21.gifts`, 17px/700. `PageChrome.topLeft`. Signed-in wordmark links to `/welcome` except during `/setup/*` (span — `OnboardingGate` would bounce an incomplete account); unsigned to `/`. Favicon stays ink + orange “21”.
 
 6. **Control grammar wins over CONTRIBUTING for new work.** Labeled for consent/continue/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. PR 1 rewrites CONTRIBUTING **as the target** and **grandfathers** Contact Send, Bitcoin pay glyph, and `sm` `h-6` until PRs 2/4/5.
 
