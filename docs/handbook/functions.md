@@ -477,7 +477,7 @@
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
 - **Inputs:** Dynamic route params (`viewKey`).
-- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. Light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `PageChrome` with `Wordmark` → `/` top-left and `ThemeSwitcher` plus light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
 - **Used by:** Route `/view/[viewKey]`.
 
 ## Function: ViewProfileLoader

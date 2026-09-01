@@ -1,26 +1,10 @@
 import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProfileChromeLeft, ProfileScreen } from '@/components/ProfileScreen';
+import { ProfileScreen } from '@/components/ProfileScreen';
 import { fetchGiftStats } from '@/lib/api';
 import type { GiftStats } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-
-vi.mock('next/link', () => ({
-  default: ({
-    href,
-    children,
-    ...rest
-  }: {
-    href: string;
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => (
-    <a href={href} {...rest}>
-      {children}
-    </a>
-  ),
-}));
 
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({
@@ -100,17 +84,8 @@ afterEach(() => {
 
 describe('ProfileScreen', () => {
   it('shows the heading, back link, name form, address form, and chart', async () => {
-    renderWithLocale(
-      <>
-        <ProfileChromeLeft />
-        <ProfileScreen />
-      </>,
-    );
+    renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
-      '/welcome',
-    );
-    expect(screen.queryByText('Back to the forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();

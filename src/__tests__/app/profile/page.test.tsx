@@ -6,6 +6,8 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/components/ProfileScreen', () => ({
   ProfileScreen: () => <div data-testid="profile-screen" />,
+}));
+vi.mock('@/components/ProfileChromeLeft', () => ({
   ProfileChromeLeft: () => <div data-testid="profile-chrome-left" />,
 }));
 

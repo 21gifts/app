@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { OnboardingGate } from '@/components/OnboardingGate';
-import { ProfileChromeLeft, ProfileScreen } from '@/components/ProfileScreen';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
+import { ProfileScreen } from '@/components/ProfileScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { PageChrome } from '@/components/ui';
 
