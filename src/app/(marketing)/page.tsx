@@ -91,35 +91,35 @@ export default async function Home(): Promise<ReactElement> {
         <h2 className="text-sm tracking-widest text-accent uppercase">{t('home.faqKicker')}</h2>
         <p className="mt-3 text-2xl font-semibold">{t('home.faqTitle')}</p>
         <div className="mt-10 space-y-3">
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq1Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq1A')}</p>
           </details>
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq2Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq2A')}</p>
           </details>
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq3Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq3A')}</p>
           </details>
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq4Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq4A')}</p>
           </details>
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq5Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq5A')}</p>
           </details>
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq6Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq6A')}</p>
           </details>
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq7Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq7A')}</p>
           </details>
-          <details className="border-b border-white/10 py-4">
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq8Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq8A')}</p>
           </details>
