@@ -85,4 +85,50 @@ describe('PwaInstall', () => {
     expect(onMenuAction).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
+
+  it('renders the hero control with the default app tone', async () => {
+    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(isStandaloneDisplay).mockReturnValue(false);
+    vi.mocked(isInAppBrowser).mockReturnValue(false);
+    renderWithLocale(<PwaInstall placement="hero" />);
+    expect(await screen.findByRole('button', { name: 'Install app' })).toBeTruthy();
+  });
+
+  it('opens the dark hero iOS sheet, ignores overlay mousedown, and closes on Escape', async () => {
+    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(isStandaloneDisplay).mockReturnValue(false);
+    vi.mocked(isInAppBrowser).mockReturnValue(false);
+    renderWithLocale(<PwaInstall tone="dark" placement="hero" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeTruthy();
+    const overlay = dialog.parentElement;
+    expect(overlay).not.toBeNull();
+    fireEvent.mouseDown(overlay as HTMLElement);
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('calls onMenuAction after a Chromium prompt from the menu and clears on appinstalled', async () => {
+    const promptFn = vi.fn().mockResolvedValue(undefined);
+    const onMenuAction = vi.fn();
+    renderWithLocale(<PwaInstall placement="menu" onMenuAction={onMenuAction} />);
+    await act(async () => {
+      const event = new Event('beforeinstallprompt', { cancelable: true });
+      Object.defineProperty(event, 'prompt', { value: promptFn });
+      window.dispatchEvent(event);
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+    expect(promptFn).toHaveBeenCalledTimes(1);
+    expect(onMenuAction).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      window.dispatchEvent(new Event('appinstalled'));
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Install app' })).toBeNull();
+    });
+  });
 });

@@ -2031,8 +2031,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
   await page.goto('/setup/address');
   await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(page.getByLabel('Language')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
@@ -2544,8 +2543,7 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(page.getByLabel('Language')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(

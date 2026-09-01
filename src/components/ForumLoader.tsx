@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { flushSync } from 'react-dom';
 import {
   ForumBoard,
   type ForumFormError,
@@ -285,22 +286,19 @@ export function ForumLoader(): ReactElement | null {
       if (generation !== refreshGeneration.current) {
         return;
       }
-      if (result === 'ok') {
-        setError(false);
-      } else if (result === 'error') {
-        if (messagesRef.current === null) {
-          setError(true);
+      // Commit setMessages from loadMessagesOnce while refreshing is still true
+      // so ForumBoard's newestId effect skips composer scroll.
+      flushSync(() => {
+        if (result === 'ok') {
+          setError(false);
+        } else if (result === 'error') {
+          if (messagesRef.current === null) {
+            setError(true);
+          }
         }
-      }
-      // Keep refreshing true for the commit that first contains any new newestId
-      // so ForumBoard can skip composer scroll. setTimeout(0) (not Promise.resolve)
-      // so React 18 does not batch clearing with setMessages.
-      window.setTimeout(() => {
-        if (generation === refreshGeneration.current) {
-          refreshingRef.current = false;
-          setRefreshing(false);
-        }
-      }, 0);
+      });
+      refreshingRef.current = false;
+      setRefreshing(false);
     })();
   };
 
