@@ -211,7 +211,7 @@
 
 - **Purpose:** Next.js page for `/setup/address`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `AddressSetup`.
 - **Used by:** Route `/setup/address`.
 
 ## Function: RulesSetup
@@ -246,7 +246,7 @@
 
 - **Purpose:** Next.js page for `/setup/name`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `NameSetup` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `NameSetup`.
 - **Used by:** Route `/setup/name`.
 
 ## Function: openInSystemBrowser
@@ -443,7 +443,7 @@
 - **Purpose:** Text brand mark `21.gifts` (header 17px/700, footer 15px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
 - **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `size` (`header` / `footer`, default `header`), optional `className`.
 - **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
-- **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileScreen`, `RulesSetup`, setup name/address pages, and `PageChrome` top-left.
+- **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/address pages, and `PageChrome` top-left.
 
 ## Function: PublicMessagePage
 

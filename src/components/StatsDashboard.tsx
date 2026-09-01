@@ -64,12 +64,12 @@ function BarScaleToggle({
     <div
       role="group"
       aria-label={groupLabel}
-      className="flex overflow-hidden rounded-md border border-white/20 text-xs"
+      className="flex overflow-hidden rounded-md border border-paper/20 text-xs"
     >
       <button
         type="button"
         aria-pressed={value === 'btc'}
-        className={`px-2 py-1 ${value === 'btc' ? 'bg-accent text-ink' : 'text-white/70'}`}
+        className={`px-2 py-1 ${value === 'btc' ? 'bg-accent text-ink' : 'text-paper/70'}`}
         onClick={() => onChange('btc')}
       >
         ₿
@@ -77,7 +77,7 @@ function BarScaleToggle({
       <button
         type="button"
         aria-pressed={value === 'usd'}
-        className={`px-2 py-1 ${value === 'usd' ? 'bg-accent text-ink' : 'text-white/70'}`}
+        className={`px-2 py-1 ${value === 'usd' ? 'bg-accent text-ink' : 'text-paper/70'}`}
         onClick={() => onChange('usd')}
       >
         USD

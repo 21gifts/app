@@ -59,9 +59,9 @@ export function MarketingHeader(): ReactElement {
             setOpen((current) => !current);
           }}
         >
-          <span className="block h-0.5 w-5 bg-white" />
-          <span className="block h-0.5 w-5 bg-white" />
-          <span className="block h-0.5 w-5 bg-white" />
+          <span className="block h-0.5 w-5 bg-paper" />
+          <span className="block h-0.5 w-5 bg-paper" />
+          <span className="block h-0.5 w-5 bg-paper" />
         </button>
       </div>
     </header>

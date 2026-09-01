@@ -11,6 +11,9 @@ describe('Field', () => {
     const input = screen.getByLabelText('Your name');
     expect(input.tagName).toBe('INPUT');
     expect(input.id).toBe('field-your-name');
+    expect(input.className).toContain('min-h-11');
+    expect(input.className).toContain('bg-app-card');
+    expect(input.className).toContain('focus-visible:border-app-fg');
   });
 
   it('uses an explicit id when provided', () => {

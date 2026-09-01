@@ -9,7 +9,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
 import { PushToggle } from '@/components/PushToggle';
 import { ViewKeyCopy } from '@/components/ViewKeyCopy';
-import { Wordmark } from '@/components/ui';
+import { Card, Wordmark } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -51,7 +51,7 @@ export function ProfileScreen(): ReactElement {
   const { receiveOverTime } = useAccountTotals();
 
   return (
-    <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+    <Card>
       <h1 className="text-center text-2xl font-semibold tracking-tight">{t('profile.title')}</h1>
       <AccountActivityChart received={receiveOverTime} />
       <NameForm variant="profile" />
@@ -62,6 +62,6 @@ export function ProfileScreen(): ReactElement {
           <ViewKeyCopy viewKey={account.viewKey} />
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }

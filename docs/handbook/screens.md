@@ -168,9 +168,9 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
+- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
 - **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/address`.
-- **Calls:** `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
+- **Calls:** `PageChrome`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
@@ -181,9 +181,9 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** One **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
+- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
 - **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/rules`.
-- **Calls:** `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
+- **Calls:** `PageChrome`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
 
 ### Variant: default
 
@@ -600,7 +600,7 @@ Open official thread. Heading **21.gifts**, message body **Hello team**, compose
 
 - **Purpose:** Public read-only HTML note by forum message UUID. `PageChrome` Wordmark top-left; ThemeSwitcher and light language switcher top-right. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
 - **Inputs:** Dynamic route `id` (UUID). Message from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch.
-- **Actions:** Change language. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
+- **Actions:** Change language and theme. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
 
 ### Variant: default
