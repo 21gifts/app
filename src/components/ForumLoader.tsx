@@ -346,8 +346,7 @@ export function ForumLoader(): ReactElement | null {
       }
     };
     const onPageShow = (event: Event): void => {
-      const persisted =
-        'persisted' in event && (event as PageTransitionEvent).persisted === true;
+      const persisted = 'persisted' in event && (event as PageTransitionEvent).persisted === true;
       if (persisted) {
         refreshMessagesRef.current();
       }

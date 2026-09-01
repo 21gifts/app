@@ -2629,24 +2629,22 @@ describe('ForumLoader', () => {
   });
 
   it('refetches when the document becomes visible again after being hidden', async () => {
-    fetchMock
-      .mockResolvedValueOnce([SAMPLE])
-      .mockResolvedValueOnce([
-        {
-          id: 'm-new',
-          name: 'Carol',
-          text: 'Fresh from refresh',
-          createdAt: '2026-08-28T15:00:00.000Z',
-          sats: 0,
-          payable: true,
-          hasPhoto: false,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-        },
-        SAMPLE,
-      ]);
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
+      {
+        id: 'm-new',
+        name: 'Carol',
+        text: 'Fresh from refresh',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      SAMPLE,
+    ]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -2858,24 +2856,22 @@ describe('ForumLoader', () => {
   });
 
   it('does not scroll the composer into view when refresh adds a newer message id', async () => {
-    fetchMock
-      .mockResolvedValueOnce([SAMPLE])
-      .mockResolvedValueOnce([
-        {
-          id: 'm-newer',
-          name: 'Carol',
-          text: 'Newer note',
-          createdAt: '2026-08-28T16:00:00.000Z',
-          sats: 21,
-          payable: true,
-          hasPhoto: false,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-        },
-        SAMPLE,
-      ]);
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
+      {
+        id: 'm-newer',
+        name: 'Carol',
+        text: 'Newer note',
+        createdAt: '2026-08-28T16:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      SAMPLE,
+    ]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {

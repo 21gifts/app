@@ -61,21 +61,21 @@ This system **canonizes the live marketing look** and extends it into the themea
 
 Closed set. Each principle is one sentence plus one implication in this codebase.
 
-1. **One family.** The product is a single geometric grotesque, not a marketing face plus a system-ui app. *Implication:* load Outfit via `next/font/google` in `src/app/layout.tsx`; `body` uses `font-sans`; do not leave app pages on the Tailwind default stack.
+1. **One family.** The product is a single geometric grotesque, not a marketing face plus a system-ui app. _Implication:_ load Outfit via `next/font/google` in `src/app/layout.tsx`; `body` uses `font-sans`; do not leave app pages on the Tailwind default stack.
 
-2. **Two shells, one origin.** Marketing is always ink; app is themeable paper/ink. *Implication:* routes under `src/app/(marketing)/` (and `/404`) use `bg-ink text-paper` with no `ThemeSwitcher`. All other pages use `app-*` tokens only.
+2. **Two shells, one origin.** Marketing is always ink; app is themeable paper/ink. _Implication:_ routes under `src/app/(marketing)/` (and `/404`) use `bg-ink text-paper` with no `ThemeSwitcher`. All other pages use `app-*` tokens only.
 
-3. **Orange is shell-split, not “gift-only.”** On the **marketing shell**, `#f7931a` is the primary filled CTA (header **Log in**, **Ask for help**, 404 **Back home**) plus kickers. On the **app shell**, it is gift-money only (charts, ₿ selected, donate **Open the forum**). *Implication:* do not call marketing **Log in** a gift. App form primaries (`Button variant="primary"`) stay `bg-app-btn`. `Button variant="accent"` is the orange fill; marketing uses it as shell primary, the app uses it for gift-intent only.
+3. **Orange is shell-split, not “gift-only.”** On the **marketing shell**, `#f7931a` is the primary filled CTA (header **Log in**, **Ask for help**, 404 **Back home**) plus kickers. On the **app shell**, it is gift-money only (charts, ₿ selected, donate **Open the forum**). _Implication:_ do not call marketing **Log in** a gift. App form primaries (`Button variant="primary"`) stay `bg-app-btn`. `Button variant="accent"` is the orange fill; marketing uses it as shell primary, the app uses it for gift-intent only.
 
-4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. *Implication:* UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1,500`). No `npub`, no “zap”, no “LNURL” on any screen (the API flows document).
+4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1,500`). No `npub`, no “zap”, no “LNURL” on any screen (the API flows document).
 
-5. **People first.** Receiver names, notes, and (later) photos are the hero; chrome is quiet. *Implication:* forum note body is `text-sm text-app-fg`; chrome labels are `text-app-muted`. When photo/story lands, it occupies the reserved profile slot, not a new layout.
+5. **People first.** Receiver names, notes, and (later) photos are the hero; chrome is quiet. _Implication:_ forum note body is `text-sm text-app-fg`; chrome labels are `text-app-muted`. When photo/story lands, it occupies the reserved profile slot, not a new layout.
 
-6. **Wordmark is chrome, not a logo file.** The brand is the text `21.gifts`. *Implication:* `Wordmark` component in both shells; do not draw a mark unless it is the existing favicon “21” on ink.
+6. **Wordmark is chrome, not a logo file.** The brand is the text `21.gifts`. _Implication:_ `Wordmark` component in both shells; do not draw a mark unless it is the existing favicon “21” on ink.
 
-7. **Primitives, not class soup.** New or migrated surfaces compose catalog parts. *Implication:* reject raw `rounded-full bg-app-btn px-6 py-3` and raw `bg-neutral-900` outside `src/components/ui/` and the marketing header/footer (until those are tokenized).
+7. **Primitives, not class soup.** New or migrated surfaces compose catalog parts. _Implication:_ reject raw `rounded-full bg-app-btn px-6 py-3` and raw `bg-neutral-900` outside `src/components/ui/` and the marketing header/footer (until those are tokenized).
 
-8. **Do not canonize defects.** Goldens document current pixels; this system documents the target. *Implication:* `₿21 ₿`, empty profile axis, app chrome without wordmark, `ViewProfileClaim` `bg-neutral-900` are **fix**. Login double-title and welcome “Forum” heading are **already gone in SHA `96d184d4` source** (`LoginPage` / `WelcomeScreen`); do not re-add them.
+8. **Do not canonize defects.** Goldens document current pixels; this system documents the target. _Implication:_ `₿21 ₿`, empty profile axis, app chrome without wordmark, `ViewProfileClaim` `bg-neutral-900` are **fix**. Login double-title and welcome “Forum” heading are **already gone in SHA `96d184d4` source** (`LoginPage` / `WelcomeScreen`); do not re-add them.
 
 ---
 
@@ -85,13 +85,13 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 **Wordmark.** The string `21.gifts` in Outfit, weight 700, tracking `0`. Not an SVG logotype. The drawn asset is only the favicon/app-icon “21” (see below).
 
-| Context | Size | Weight | Color | Element |
-| --- | --- | --- | --- | --- |
-| Marketing header | 17px / 1.06rem | 700 | `paper` (`#ffffff`) | `<Link href="/">` |
-| Marketing footer | 15px / 0.9375rem | 700 | `paper` | `<span>` (not a second home link if header is present; keep as today) |
-| App chrome (unsigned) | 17px / 1.06rem | 700 | `app-fg` | `<Link href="/">` |
-| App chrome (signed-in) | 17px / 1.06rem | 700 | `app-fg` | `<Link href="/welcome">` |
-| OG / social | existing `public/og.png` (1200×630) | — | ink field, white wordmark, orange kicker | do not redraw in v1 of this system |
+| Context                | Size                                | Weight | Color                                    | Element                                                               |
+| ---------------------- | ----------------------------------- | ------ | ---------------------------------------- | --------------------------------------------------------------------- |
+| Marketing header       | 17px / 1.06rem                      | 700    | `paper` (`#ffffff`)                      | `<Link href="/">`                                                     |
+| Marketing footer       | 15px / 0.9375rem                    | 700    | `paper`                                  | `<span>` (not a second home link if header is present; keep as today) |
+| App chrome (unsigned)  | 17px / 1.06rem                      | 700    | `app-fg`                                 | `<Link href="/">`                                                     |
+| App chrome (signed-in) | 17px / 1.06rem                      | 700    | `app-fg`                                 | `<Link href="/welcome">`                                              |
+| OG / social            | existing `public/og.png` (1200×630) | —      | ink field, white wordmark, orange kicker | do not redraw in v1 of this system                                    |
 
 **Clear space.** Minimum 8px (`spacing-2`) on all sides of the glyph bounds. Do not place controls closer than 12px (`spacing-3`) to the wordmark.
 
@@ -113,16 +113,18 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 [                         children                                      ]
 ```
 
-| Slot | Unsigned app (`/login`, `/donate`, `/rules`, `/messages/[id]`, `/view/*`) | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`) |
-| --- | --- | --- |
-| `topLeft` | `Wordmark` → `/` | `Wordmark` → `/welcome`. On `/profile` and `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
-| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu) |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules`, `/messages/[id]`, `/view/*`)                                                                                                            | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`)                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `topLeft`  | `Wordmark` → `/`                                                                                                                                                                     | `Wordmark` → `/welcome`. On `/profile` and `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
+| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                    |
 
 `PageChrome` today (`src/components/ui/PageChrome.tsx`):
 
 ```tsx
 <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6">
-  {topRight ? <div className="absolute top-4 right-5 flex items-center gap-2">{topRight}</div> : null}
+  {topRight ? (
+    <div className="absolute top-4 right-5 flex items-center gap-2">{topRight}</div>
+  ) : null}
   {children}
 </main>
 ```
@@ -155,49 +157,49 @@ flowchart LR
 
 **Sacred hexes (do not shift).**
 
-| Name | Hex | Role |
-| --- | --- | --- |
-| Ink | `#0a090c` | Marketing canvas; app dark `app-bg` |
-| Paper | `#ffffff` | App light canvas; marketing type |
+| Name   | Hex       | Role                                                                  |
+| ------ | --------- | --------------------------------------------------------------------- |
+| Ink    | `#0a090c` | Marketing canvas; app dark `app-bg`                                   |
+| Paper  | `#ffffff` | App light canvas; marketing type                                      |
 | Accent | `#f7931a` | Bitcoin orange — marketing primary + app gift-money (not “gift-only”) |
-| Given | `#525252` | Profile “Given” series (neutral; not accent) |
+| Given  | `#525252` | Profile “Given” series (neutral; not accent)                          |
 
 **Shell-stable tokens** (do not flip with `html.dark`; marketing uses these):
 
-| Token | Hex | Tailwind |
-| --- | --- | --- |
-| `ink` | `#0a090c` | `bg-ink`, `text-ink` |
-| `paper` | `#ffffff` | `text-paper`, `bg-paper` |
+| Token    | Hex       | Tailwind                   |
+| -------- | --------- | -------------------------- |
+| `ink`    | `#0a090c` | `bg-ink`, `text-ink`       |
+| `paper`  | `#ffffff` | `text-paper`, `bg-paper`   |
 | `accent` | `#f7931a` | `bg-accent`, `text-accent` |
 
 **App semantic tokens** (extend `src/app/globals.css`; light `@theme`, dark under `html.dark`):
 
-| Token | Light | Dark | Use |
-| --- | --- | --- | --- |
-| `app-bg` | `#ffffff` | `#0a090c` | Page canvas |
-| `app-fg` | `#171717` | `#ffffff` | Body, titles, primary type |
-| `app-muted` | `#525252` | `#a3a3a3` | Secondary sentences, leads |
-| `app-subtle` | `#737373` | `#a3a3a3` | Overlines, timestamps ≥ 12px |
-| `app-border` | `#e5e5e5` | `rgb(255 255 255 / 0.2)` | Card edge, hairlines |
-| `app-border-strong` | `#d4d4d4` | `rgb(255 255 255 / 0.3)` | Fields, secondary buttons |
-| `app-card` | `#ffffff` | `#121116` | Raised panel |
-| `app-card-muted` | `#fafafa` | `#1a191e` | Note cards, laws banner, composer well |
-| `app-btn` | `#171717` | `#ffffff` | Form primary fill |
-| `app-btn-fg` | `#ffffff` | `#0a090c` | Form primary label |
-| `app-btn-hover` | `#404040` | `#e5e5e5` | Form primary hover |
-| `app-hover` | `#fafafa` | `rgb(255 255 255 / 0.1)` | Row/ghost hover |
-| `app-accent` | `#f7931a` | `#f7931a` | App gift-money fill + ₿ selected; not body text on paper |
-| `app-accent-fg` | `#0a090c` | `#0a090c` | Text on accent fill (always ink) |
-| `app-focus` | `#171717` | `#ffffff` | `:focus-visible` ring (2px) |
-| `app-danger` | `#b91c1c` | `#f87171` | Alert text/border |
-| `app-success` | `#15803d` | `#4ade80` | Future success copy (unused on current screens) |
-| `app-overlay` | `rgb(10 9 12 / 0.4)` | `rgb(10 9 12 / 0.6)` | Future modal scrim |
-| `app-chart-given` | `#525252` | `#a3a3a3` | Given series |
-| `app-chart-received` | `#f7931a` | `#f7931a` | Received / spend series |
-| `app-notice` | `#fff7ed` | `#2a1f12` | Invite/activation banner fill |
-| `app-notice-fg` | `#171717` | `#ffffff` | Notice body |
-| `app-qr-bg` | `#ffffff` | `#ffffff` | QR plate — **always paper** |
-| `app-qr-fg` | `#000000` | `#000000` | QR modules — always black |
+| Token                | Light                | Dark                     | Use                                                      |
+| -------------------- | -------------------- | ------------------------ | -------------------------------------------------------- |
+| `app-bg`             | `#ffffff`            | `#0a090c`                | Page canvas                                              |
+| `app-fg`             | `#171717`            | `#ffffff`                | Body, titles, primary type                               |
+| `app-muted`          | `#525252`            | `#a3a3a3`                | Secondary sentences, leads                               |
+| `app-subtle`         | `#737373`            | `#a3a3a3`                | Overlines, timestamps ≥ 12px                             |
+| `app-border`         | `#e5e5e5`            | `rgb(255 255 255 / 0.2)` | Card edge, hairlines                                     |
+| `app-border-strong`  | `#d4d4d4`            | `rgb(255 255 255 / 0.3)` | Fields, secondary buttons                                |
+| `app-card`           | `#ffffff`            | `#121116`                | Raised panel                                             |
+| `app-card-muted`     | `#fafafa`            | `#1a191e`                | Note cards, laws banner, composer well                   |
+| `app-btn`            | `#171717`            | `#ffffff`                | Form primary fill                                        |
+| `app-btn-fg`         | `#ffffff`            | `#0a090c`                | Form primary label                                       |
+| `app-btn-hover`      | `#404040`            | `#e5e5e5`                | Form primary hover                                       |
+| `app-hover`          | `#fafafa`            | `rgb(255 255 255 / 0.1)` | Row/ghost hover                                          |
+| `app-accent`         | `#f7931a`            | `#f7931a`                | App gift-money fill + ₿ selected; not body text on paper |
+| `app-accent-fg`      | `#0a090c`            | `#0a090c`                | Text on accent fill (always ink)                         |
+| `app-focus`          | `#171717`            | `#ffffff`                | `:focus-visible` ring (2px)                              |
+| `app-danger`         | `#b91c1c`            | `#f87171`                | Alert text/border                                        |
+| `app-success`        | `#15803d`            | `#4ade80`                | Future success copy (unused on current screens)          |
+| `app-overlay`        | `rgb(10 9 12 / 0.4)` | `rgb(10 9 12 / 0.6)`     | Future modal scrim                                       |
+| `app-chart-given`    | `#525252`            | `#a3a3a3`                | Given series                                             |
+| `app-chart-received` | `#f7931a`            | `#f7931a`                | Received / spend series                                  |
+| `app-notice`         | `#fff7ed`            | `#2a1f12`                | Invite/activation banner fill                            |
+| `app-notice-fg`      | `#171717`            | `#ffffff`                | Notice body                                              |
+| `app-qr-bg`          | `#ffffff`            | `#ffffff`                | QR plate — **always paper**                              |
+| `app-qr-fg`          | `#000000`            | `#000000`                | QR modules — always black                                |
 
 **Changes vs today’s `globals.css`.** Keep every current `app-*` hex except:
 
@@ -211,31 +213,31 @@ Marketing replacements: `bg-[#0a090c]` → `bg-ink`; `text-[#f7931a]` → `text-
 
 **(A) Marketing shell** (`bg-ink`): orange is the primary filled CTA plus kickers.
 
-| Orange | Not orange |
-| --- | --- |
-| Header **Log in**, hero **Ask for help**, 404 **Back home**, stats **Try again** | Hero **Send help** (outline `border-paper/20 text-paper`) |
-| Kickers: `HOW IT WORKS`, `WHY THIS EXISTS`, `FAQ`, `TOTAL SPEND OVER TIME`, `BY PERSON`, `BY MONTH` | Nav links, footer links |
-| Stats chart paint (spend series) | KPI tile chrome |
+| Orange                                                                                              | Not orange                                                |
+| --------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Header **Log in**, hero **Ask for help**, 404 **Back home**, stats **Try again**                    | Hero **Send help** (outline `border-paper/20 text-paper`) |
+| Kickers: `HOW IT WORKS`, `WHY THIS EXISTS`, `FAQ`, `TOTAL SPEND OVER TIME`, `BY PERSON`, `BY MONTH` | Nav links, footer links                                   |
+| Stats chart paint (spend series)                                                                    | KPI tile chrome                                           |
 
 This is **not** “Log in is a gift.” It is “ink pages have one filled accent, and it is Bitcoin orange.” Changing header Log in to outline would be a visual change to `/` — **out of scope**. Canonize the live pill.
 
 **(B) App shell** (`app-*`): orange is **gift-money** only — fills and chart paint, never body/kicker **text** on paper (2.3:1).
 
-| Orange | Not orange |
-| --- | --- |
+| Orange                                                               | Not orange                                                                                                                                    |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, **Open Wallet of Satoshi** (`app-btn`) |
-| Charts: received series, ₿ selected in ₿\|USD | Forum Active/All/Most popular selected (`app-btn`) |
-| | Menu, language/theme, app body links (`text-app-fg underline`) |
-| | **Rules kickers and ticks** — see (B′) |
+| Charts: received series, ₿ selected in ₿\|USD                        | Forum Active/All/Most popular selected (`app-btn`)                                                                                            |
+|                                                                      | Menu, language/theme, app body links (`text-app-fg underline`)                                                                                |
+|                                                                      | **Rules kickers and ticks** — see (B′)                                                                                                        |
 
 **(B′) Living-room house chrome (closed exception, not a third job).** SHA `RulesDocument.tsx` paints `text-app-accent` on “RULE n”, Welcome `Check` icons, and `border-l-2 border-app-accent` on “THE TEST”. That is orange **text** on paper and it is **not** gift-money. **Do not keep it.** Target:
 
-| Part | SHA today | Target |
-| --- | --- | --- |
-| `RULE n` / `THE TEST` overlines | `text-app-accent` | **overline** `text-app-subtle` (same as `NAME`) |
-| Welcome-list `Check` | `text-app-accent` | `text-app-fg` (the check glyph is the encoding; not orange, not a new green job) |
-| Forbidden `X` | danger red | `text-app-danger` (keep) |
-| “THE TEST” left bar | `border-l-2 border-app-accent` | **keep** `border-app-accent` as a **decorative** 2px stripe beside the overline. Not a contrast-dependent encoding (1.4.11 does not apply to pure decoration). Dark `/rules` still shows a thin orange rail; light does too, without using orange type. |
+| Part                            | SHA today                      | Target                                                                                                                                                                                                                                                  |
+| ------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RULE n` / `THE TEST` overlines | `text-app-accent`              | **overline** `text-app-subtle` (same as `NAME`)                                                                                                                                                                                                         |
+| Welcome-list `Check`            | `text-app-accent`              | `text-app-fg` (the check glyph is the encoding; not orange, not a new green job)                                                                                                                                                                        |
+| Forbidden `X`                   | danger red                     | `text-app-danger` (keep)                                                                                                                                                                                                                                |
+| “THE TEST” left bar             | `border-l-2 border-app-accent` | **keep** `border-app-accent` as a **decorative** 2px stripe beside the overline. Not a contrast-dependent encoding (1.4.11 does not apply to pure decoration). Dark `/rules` still shows a thin orange rail; light does too, without using orange type. |
 
 Do **not** list `text-app-accent` on paper as an allowed AA fail. Lands in the PR that tokenizes `RulesDocument.tsx` (PR 2).
 
@@ -254,22 +256,22 @@ flowchart TD
 
 **Contrast (WCAG 2.2 AA).**
 
-| Pair | Ratio (approx.) | AA body (4.5:1) | Notes |
-| --- | --- | --- | --- |
-| `app-fg` `#171717` on `app-bg` `#ffffff` | ~16:1 | Pass AAA | |
-| `app-fg` `#ffffff` on `app-bg` `#0a090c` | ~19:1 | Pass AAA | |
-| Light muted **today** `#737373` on white | ~4.7:1 | Pass AA | Keep as `app-subtle` light |
-| Light muted **target** `#525252` on white | ~7.0:1 | Pass AAA | New `app-muted` light |
-| Light subtle **today** `#a3a3a3` on white | ~2.5:1 | **Fail** | Inherited. Do not use for text < 18px. Target: subtle light = `#737373` |
-| Dark muted `#a3a3a3` on ink | ~7.9:1 | Pass | |
-| Dark subtle **today** `#737373` on ink | ~4.2:1 | **Fail** small text | Inherited. Target: dark subtle = `#a3a3a3` |
-| `paper/60` on ink (marketing lead) | ~7.4:1 | Pass | Keep |
-| Accent `#f7931a` on ink | ~8.6:1 | Pass | Kickers, orange type on marketing |
-| Accent on paper | ~2.3:1 | **Fail** | Never orange *text* on light paper — including `/rules` “RULE n”. Orange is fill + `text-ink`, chart paint, or the decorative THE TEST bar |
-| `text-ink` on accent fill | ~8.6:1 | Pass | Accent buttons |
-| `text-red-600` `#dc2626` on white | ~4.5:1 | Bare AA | Replace with `app-danger` |
-| `text-red-600` on ink | ~5:1 | Marginal | Replace with `app-danger` dark `#f87171` |
-| Given `#525252` on white | ~7.0:1 | Pass | Legend + series |
+| Pair                                      | Ratio (approx.) | AA body (4.5:1)     | Notes                                                                                                                                      |
+| ----------------------------------------- | --------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `app-fg` `#171717` on `app-bg` `#ffffff`  | ~16:1           | Pass AAA            |                                                                                                                                            |
+| `app-fg` `#ffffff` on `app-bg` `#0a090c`  | ~19:1           | Pass AAA            |                                                                                                                                            |
+| Light muted **today** `#737373` on white  | ~4.7:1          | Pass AA             | Keep as `app-subtle` light                                                                                                                 |
+| Light muted **target** `#525252` on white | ~7.0:1          | Pass AAA            | New `app-muted` light                                                                                                                      |
+| Light subtle **today** `#a3a3a3` on white | ~2.5:1          | **Fail**            | Inherited. Do not use for text < 18px. Target: subtle light = `#737373`                                                                    |
+| Dark muted `#a3a3a3` on ink               | ~7.9:1          | Pass                |                                                                                                                                            |
+| Dark subtle **today** `#737373` on ink    | ~4.2:1          | **Fail** small text | Inherited. Target: dark subtle = `#a3a3a3`                                                                                                 |
+| `paper/60` on ink (marketing lead)        | ~7.4:1          | Pass                | Keep                                                                                                                                       |
+| Accent `#f7931a` on ink                   | ~8.6:1          | Pass                | Kickers, orange type on marketing                                                                                                          |
+| Accent on paper                           | ~2.3:1          | **Fail**            | Never orange _text_ on light paper — including `/rules` “RULE n”. Orange is fill + `text-ink`, chart paint, or the decorative THE TEST bar |
+| `text-ink` on accent fill                 | ~8.6:1          | Pass                | Accent buttons                                                                                                                             |
+| `text-red-600` `#dc2626` on white         | ~4.5:1          | Bare AA             | Replace with `app-danger`                                                                                                                  |
+| `text-red-600` on ink                     | ~5:1            | Marginal            | Replace with `app-danger` dark `#f87171`                                                                                                   |
+| Given `#525252` on white                  | ~7.0:1          | Pass                | Legend + series                                                                                                                            |
 
 **Allowed inherited failures (until the token PR):** light `#a3a3a3` overlines (`NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`) and dark `#737373` timestamps. The token PR must fix `app-subtle` as in the table. Do not introduce new `#a3a3a3` on white type.
 
@@ -316,26 +318,26 @@ export default async function RootLayout({ children }: { children: ReactNode }):
 
 **Forbidden as the brand face:** Inter, Roboto, Arial, Open Sans, system-ui. `system-ui` / `ui-sans-serif` are **fallback only**. Do not add a display serif. Do not add IBM Plex / Geist / another second family in v1.
 
-**Why not keep the current stack.** Linux Chromium goldens render Tailwind `font-sans` as the distro grotesque. That is not a brand. Marketing *wants* large typography; without `next/font` the app cannot share a face with the wordmark.
+**Why not keep the current stack.** Linux Chromium goldens render Tailwind `font-sans` as the distro grotesque. That is not a brand. Marketing _wants_ large typography; without `next/font` the app cannot share a face with the wordmark.
 
 **Ramp.** 16px root. Use these classes (or a later `@utility` if one is added; until then, write the utilities on the JSX as CONTRIBUTING requires).
 
-| Token | px | rem | Weight | Line-height | Letter-spacing | Max measure | Tailwind recipe | Use |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **display** | 36 / 60 | 2.25 / 3.75 | 600 | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`, 404 “404” uses `text-5xl` = 48px — keep 404 at 48/600) |
-| **h1** | 24 / 30 | 1.5 / 1.875 | 600 | 1.25 | -0.025em | 22em | `text-2xl sm:text-3xl font-semibold tracking-tight text-center` | App page title **inside a card or setup column**: welcome, profile, contact, inbox, setup. **Not login** (see **card-title**) |
-| **card-title** | 18 | 1.125 | 500 | 1.3 | 0 | 22em | `text-lg font-medium text-center text-app-fg` | Login card heading (`LoginCard` `login.heading`, SHA already `text-lg font-medium`). Keep this smaller step so the card is an action, not a billboard |
-| **h1-lg** | 30 / 36 | 1.875 / 2.25 | 600 | 1.2 | -0.025em | 22em | `text-3xl sm:text-4xl font-semibold tracking-tight text-center` | `/donate`, `/rules` (document titles on a full page, not inside a card) |
-| **h2** | 20 | 1.25 | 600 | 1.3 | 0 | 28em | `text-xl font-semibold` | Marketing step titles, legal H2, handbook H2 |
-| **h3** | 18 | 1.125 | 600 | 1.35 | 0 | 28em | `text-lg font-semibold` | Marketing why-grid titles, legal H3 |
-| **kicker** | 14 | 0.875 | 500 | 1.3 | 0.1em (`tracking-widest`) | — | `text-sm font-medium tracking-widest uppercase text-accent` | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules` |
-| **overline** | 12 | 0.75 | 500 | 1.3 | 0.1em | — | `text-xs font-medium tracking-widest uppercase text-app-subtle` | `NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`, `RULE n` (app; **not** `text-accent`) |
-| **body** | 16 | 1 | 400 | 1.5 | 0 | 36em (`max-w-2xl` ~42rem for marketing lead is OK) | `text-base leading-normal` | App body. Marketing lead is **body-lg** |
-| **body-lg** | 18 | 1.125 | 400 | 1.5 | 0 | 36em | `text-lg text-paper/60` (marketing) or `text-lg text-app-muted` | Hero lead, stats subtitle |
-| **body-sm** | 14 | 0.875 | 400 | 1.45 | 0 | 36em | `text-sm` | Forum note body, card sentences, field labels, button labels, FAQ answers |
-| **caption** | 12 | 0.75 | 400 | 1.4 | 0 | — | `text-xs text-app-subtle` | Forum timestamp, pay “Waiting for payment…” |
-| **numeric** | inherit | inherit | 600 | 1.2 | 0 | — | `font-semibold tabular-nums lining-nums` | `formatBitcoin`, USD, KPI values, chart ticks |
-| **code** | 14 | 0.875 | 400 | 1.4 | 0 | — | `font-mono text-sm` (Tailwind default mono, fallback only) | `you@walletofsatoshi.com` on marketing; Lightning Address *value* on profile uses `font-mono text-sm` as today |
+| Token          | px      | rem          | Weight | Line-height            | Letter-spacing              | Max measure                                        | Tailwind recipe                                                   | Use                                                                                                                                                   |
+| -------------- | ------- | ------------ | ------ | ---------------------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **display**    | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`, 404 “404” uses `text-5xl` = 48px — keep 404 at 48/600)                                           |
+| **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, contact, inbox, setup. **Not login** (see **card-title**)                         |
+| **card-title** | 18      | 1.125        | 500    | 1.3                    | 0                           | 22em                                               | `text-lg font-medium text-center text-app-fg`                     | Login card heading (`LoginCard` `login.heading`, SHA already `text-lg font-medium`). Keep this smaller step so the card is an action, not a billboard |
+| **h1-lg**      | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                    | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`   | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                               |
+| **h2**         | 20      | 1.25         | 600    | 1.3                    | 0                           | 28em                                               | `text-xl font-semibold`                                           | Marketing step titles, legal H2, handbook H2                                                                                                          |
+| **h3**         | 18      | 1.125        | 600    | 1.35                   | 0                           | 28em                                               | `text-lg font-semibold`                                           | Marketing why-grid titles, legal H3                                                                                                                   |
+| **kicker**     | 14      | 0.875        | 500    | 1.3                    | 0.1em (`tracking-widest`)   | —                                                  | `text-sm font-medium tracking-widest uppercase text-accent`       | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules`                                                                 |
+| **overline**   | 12      | 0.75         | 500    | 1.3                    | 0.1em                       | —                                                  | `text-xs font-medium tracking-widest uppercase text-app-subtle`   | `NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`, `RULE n` (app; **not** `text-accent`)                                                                |
+| **body**       | 16      | 1            | 400    | 1.5                    | 0                           | 36em (`max-w-2xl` ~42rem for marketing lead is OK) | `text-base leading-normal`                                        | App body. Marketing lead is **body-lg**                                                                                                               |
+| **body-lg**    | 18      | 1.125        | 400    | 1.5                    | 0                           | 36em                                               | `text-lg text-paper/60` (marketing) or `text-lg text-app-muted`   | Hero lead, stats subtitle                                                                                                                             |
+| **body-sm**    | 14      | 0.875        | 400    | 1.45                   | 0                           | 36em                                               | `text-sm`                                                         | Forum note body, card sentences, field labels, button labels, FAQ answers                                                                             |
+| **caption**    | 12      | 0.75         | 400    | 1.4                    | 0                           | —                                                  | `text-xs text-app-subtle`                                         | Forum timestamp, pay “Waiting for payment…”                                                                                                           |
+| **numeric**    | inherit | inherit      | 600    | 1.2                    | 0                           | —                                                  | `font-semibold tabular-nums lining-nums`                          | `formatBitcoin`, USD, KPI values, chart ticks                                                                                                         |
+| **code**       | 14      | 0.875        | 400    | 1.4                    | 0                           | —                                                  | `font-mono text-sm` (Tailwind default mono, fallback only)        | `you@walletofsatoshi.com` on marketing; Lightning Address _value_ on profile uses `font-mono text-sm` as today                                        |
 
 **One title per page.** The document outline has one `h1` (or `card-title` used as the sole heading). Card must not repeat a page title. SHA `96d184d4` `LoginPage` already has no outer “Log in to 21.gifts”; the only heading is `LoginCard` `login.heading` at **card-title**. `login/page.test.tsx` does not assert the old string. Do not add the outer title back after wordmark lands. `login.pageTitle` in catalogs, if unused, is out of this freeze.
 
@@ -351,62 +353,64 @@ USD: `formatUsdDisplay` → `$1.43` / `$1,425.00` (en-US currency). Axis ticks: 
 
 **Spacing scale** (4px base = Tailwind default). Use only these on new surfaces:
 
-| Token | px | Tailwind | Typical |
-| --- | --- | --- | --- |
-| 1 | 4 | `p-1` `gap-1` | Badge padding-y |
-| 1.5 | 6 | `gap-1.5` | Icon+label in Menu |
-| 2 | 8 | `p-2` `gap-2` | IconButton inner, composer gap |
-| 3 | 12 | `p-3` `gap-3` | Pay sheet padding, field stack |
-| 4 | 16 | `p-4` `top-4` `gap-4` | Note card `px-4 py-3` (y=12), chrome top |
-| 5 | 20 | `px-5` `right-5` | Marketing horizontal, chrome right |
-| 6 | 24 | `px-6` `gap-6` `p-6` | App page padding, card gap |
-| 8 | 32 | `p-8` `gap-8` | Card padding |
-| 10 | 40 | `gap-10` `py-10` | PageChrome gap, footer py |
-| 12 | 48 | `mt-12` `gap-12` | Section rhythm, stats `space-y-12` |
-| 16 | 64 | `pt-16` | Stats top |
-| 20 | 80 | `py-20` | Marketing section py |
-| 24 | 96 | `py-24` | Legal/handbook top |
-| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36` | Marketing hero |
+| Token   | px        | Tailwind              | Typical                                  |
+| ------- | --------- | --------------------- | ---------------------------------------- |
+| 1       | 4         | `p-1` `gap-1`         | Badge padding-y                          |
+| 1.5     | 6         | `gap-1.5`             | Icon+label in Menu                       |
+| 2       | 8         | `p-2` `gap-2`         | IconButton inner, composer gap           |
+| 3       | 12        | `p-3` `gap-3`         | Pay sheet padding, field stack           |
+| 4       | 16        | `p-4` `top-4` `gap-4` | Note card `px-4 py-3` (y=12), chrome top |
+| 5       | 20        | `px-5` `right-5`      | Marketing horizontal, chrome right       |
+| 6       | 24        | `px-6` `gap-6` `p-6`  | App page padding, card gap               |
+| 8       | 32        | `p-8` `gap-8`         | Card padding                             |
+| 10      | 40        | `gap-10` `py-10`      | PageChrome gap, footer py                |
+| 12      | 48        | `mt-12` `gap-12`      | Section rhythm, stats `space-y-12`       |
+| 16      | 64        | `pt-16`               | Stats top                                |
+| 20      | 80        | `py-20`               | Marketing section py                     |
+| 24      | 96        | `py-24`               | Legal/handbook top                       |
+| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`      | Marketing hero                           |
 
 App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-5` (20px) as live. Do not mix.
 
 **Radius.**
 
-| Token | px | Tailwind | Use |
-| --- | --- | --- | --- |
-| `pill` | 9999 | `rounded-full` | Buttons, switcher triggers, segmented thumbs, header Log in, badges |
-| `card` | 24 | `rounded-3xl` | `Card`, profile/login/welcome panels |
-| `note` | 16 | `rounded-2xl` | Forum notes, laws banner, fields, onboarding inputs, KPI tiles, QR plate |
-| `panel` | 12 | `rounded-xl` | Menu, listbox, pay-sheet inner, photo preview, role hint |
-| `control` | 8 | `rounded-lg` | Menu rows |
-| `chart` | 6 | `rounded-md` / SVG `rx={6}` | ₿\|USD track (`rounded-md` today), person bars `rx={6}` |
-| `none` | 0 | — | Marketing month bars (keep square as live) |
+| Token     | px   | Tailwind                    | Use                                                                      |
+| --------- | ---- | --------------------------- | ------------------------------------------------------------------------ |
+| `pill`    | 9999 | `rounded-full`              | Buttons, switcher triggers, segmented thumbs, header Log in, badges      |
+| `card`    | 24   | `rounded-3xl`               | `Card`, profile/login/welcome panels                                     |
+| `note`    | 16   | `rounded-2xl`               | Forum notes, laws banner, fields, onboarding inputs, KPI tiles, QR plate |
+| `panel`   | 12   | `rounded-xl`                | Menu, listbox, pay-sheet inner, photo preview, role hint                 |
+| `control` | 8    | `rounded-lg`                | Menu rows                                                                |
+| `chart`   | 6    | `rounded-md` / SVG `rx={6}` | ₿\|USD track (`rounded-md` today), person bars `rx={6}`                  |
+| `none`    | 0    | —                           | Marketing month bars (keep square as live)                               |
 
 **Elevation.**
 
-| Level | Recipe | Use |
-| --- | --- | --- |
-| 0 | border only | Marketing KPI tiles (`border-paper/10`), forum notes |
-| 1 | `border border-app-border shadow-sm` | `Card` |
-| 2 | `border border-app-border shadow-lg` | Menu, language/theme listbox |
-| Overlay | `bg-app-overlay` | Not used on current screens; reserved |
+| Level   | Recipe                               | Use                                                  |
+| ------- | ------------------------------------ | ---------------------------------------------------- |
+| 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes |
+| 1       | `border border-app-border shadow-sm` | `Card`                                               |
+| 2       | `border border-app-border shadow-lg` | Menu, language/theme listbox                         |
+| Overlay | `bg-app-overlay`                     | Not used on current screens; reserved                |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
 **Motion.**
 
-| Event | Duration | Easing | Notes |
-| --- | --- | --- | --- |
-| Color hover | 150ms | `ease` (`transition`) | Buttons, rows, pills |
-| Menu / listbox mount | instant (conditional render, as today) | — | No fade required |
-| Theme switch | instant | — | Class toggle on `html`; do not animate `color` on `<body>` |
-| Pay sheet open | instant | — | Insert in-card; no slide |
-| Spinner | 1000ms linear infinite | `animate-spin` | `Loader2` |
-| Copy check flash | 1200ms then revert | — | `ForumBoard` `COPY_RESET_MS` |
+| Event                | Duration                               | Easing                | Notes                                                      |
+| -------------------- | -------------------------------------- | --------------------- | ---------------------------------------------------------- |
+| Color hover          | 150ms                                  | `ease` (`transition`) | Buttons, rows, pills                                       |
+| Menu / listbox mount | instant (conditional render, as today) | —                     | No fade required                                           |
+| Theme switch         | instant                                | —                     | Class toggle on `html`; do not animate `color` on `<body>` |
+| Pay sheet open       | instant                                | —                     | Insert in-card; no slide                                   |
+| Spinner              | 1000ms linear infinite                 | `animate-spin`        | `Loader2`                                                  |
+| Copy check flash     | 1200ms then revert                     | —                     | `ForumBoard` `COPY_RESET_MS`                               |
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -459,7 +463,7 @@ flowchart TB
   root --> app
 ```
 
-`/rules` is **app shell** (themeable, no marketing header) even though it is public — goldens (`screen-rules-desktop-light-linux.png`) and `src/app/rules/page.tsx` already do this. Keep. Footer links from marketing *into* `/rules`.
+`/rules` is **app shell** (themeable, no marketing header) even though it is public — goldens (`screen-rules-desktop-light-linux.png`) and `src/app/rules/page.tsx` already do this. Keep. Footer links from marketing _into_ `/rules`.
 
 `/donate` is app shell (themeable, unsigned chrome). Keep.
 
@@ -467,21 +471,21 @@ flowchart TB
 
 ### 6. Layout
 
-| Measure | Value | Use |
-| --- | --- | --- |
-| Marketing max | `max-w-[1100px]` | Home, stats, handbook, 404 content, footer inner |
-| Legal max | `max-w-3xl` (48rem) | `/legal` reading column |
-| App card `sm` | `max-w-sm` (24rem) | Login, profile, view, onboarding name/address |
-| App card `md` | `max-w-md` (28rem) | Donate inner (today a non-Card column) |
-| App card `xl` | `max-w-xl` (36rem) | Welcome/forum, contact, inbox |
-| Rules document | `max-w-3xl` | `/rules`, `/setup/rules` |
-| App page pad | `px-6` | `PageChrome` |
-| Marketing pad | `px-5` | Header, sections, footer |
-| Vertical pageChrome | `min-h-screen` + `justify-center` + `gap-10` | Centered cards |
-| Onboarding column | `h-svh` + `pt-24` + `pb-8` + footer CTA `mt-auto` | `/setup/name`, `/setup/address`, `/setup/rules` |
-| Marketing hero | `pt-28 pb-20 sm:pt-36` | `/` |
-| Marketing section | `py-20` | how / why / faq |
-| Stats / handbook | `pt-16 pb-24` / `py-24` | |
+| Measure             | Value                                             | Use                                              |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------ |
+| Marketing max       | `max-w-[1100px]`                                  | Home, stats, handbook, 404 content, footer inner |
+| Legal max           | `max-w-3xl` (48rem)                               | `/legal` reading column                          |
+| App card `sm`       | `max-w-sm` (24rem)                                | Login, profile, view, onboarding name/address    |
+| App card `md`       | `max-w-md` (28rem)                                | Donate inner (today a non-Card column)           |
+| App card `xl`       | `max-w-xl` (36rem)                                | Welcome/forum, contact, inbox                    |
+| Rules document      | `max-w-3xl`                                       | `/rules`, `/setup/rules`                         |
+| App page pad        | `px-6`                                            | `PageChrome`                                     |
+| Marketing pad       | `px-5`                                            | Header, sections, footer                         |
+| Vertical pageChrome | `min-h-screen` + `justify-center` + `gap-10`      | Centered cards                                   |
+| Onboarding column   | `h-svh` + `pt-24` + `pb-8` + footer CTA `mt-auto` | `/setup/name`, `/setup/address`, `/setup/rules`  |
+| Marketing hero      | `pt-28 pb-20 sm:pt-36`                            | `/`                                              |
+| Marketing section   | `py-20`                                           | how / why / faq                                  |
+| Stats / handbook    | `pt-16 pb-24` / `py-24`                           |                                                  |
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden` (keep). App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
@@ -497,14 +501,14 @@ flowchart TB
 
 **Sizes (glyph, not hit target).**
 
-| Glyph | px | Tailwind | Use |
-| --- | --- | --- | --- |
-| 14 | 14 | `h-3.5 w-3.5` | Menu row icons, ₿\|USD is text not icon |
-| 16 | 16 | `h-4 w-4` | Button leading icon, Field-adjacent, pay-sheet back |
-| 20 | 20 | `h-5 w-5` | IconButton md/lg default, profile back |
-| 24 | 24 | `h-6 w-6` | unused in chrome; skip |
-| 32 | 32 | `h-8 w-8` | Login fingerprint / error / spinner |
-| 48 | 48 | `h-12 w-12` | Welcome `Gift` |
+| Glyph | px  | Tailwind      | Use                                                 |
+| ----- | --- | ------------- | --------------------------------------------------- |
+| 14    | 14  | `h-3.5 w-3.5` | Menu row icons, ₿\|USD is text not icon             |
+| 16    | 16  | `h-4 w-4`     | Button leading icon, Field-adjacent, pay-sheet back |
+| 20    | 20  | `h-5 w-5`     | IconButton md/lg default, profile back              |
+| 24    | 24  | `h-6 w-6`     | unused in chrome; skip                              |
+| 32    | 32  | `h-8 w-8`     | Login fingerprint / error / spinner                 |
+| 48    | 48  | `h-12 w-12`   | Welcome `Gift`                                      |
 
 **Decorative vs control.** Decorative: `aria-hidden="true"` (Gift on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. Indicators (given/received arrows in Menu): `aria-label` on the wrapping `span`, not a button — already correct in `SignedInChrome`.
 
@@ -512,7 +516,7 @@ flowchart TB
 
 **Pay control glyph.** Lucide **`Gift`**, not `Bitcoin`. Accessible name stays catalog `forum.pay` = **“Send Bitcoin”** (`de` Bitcoin senden, `es` Enviar Bitcoin, `fil` Magpadala ng Bitcoin). Do **not** retune that string to “Pay” in the pay PR (`e2e/visual.spec.ts` uses `getByRole('button', { name: 'Send Bitcoin' })`). Two Gift glyphs on `/welcome` is intentional: 48px decorative identity vs 16px in-card control with a different name. Sizes + `aria-hidden` vs `aria-label` prevent collision. A labeled **Pay** control was considered and rejected (see Alternatives I).
 
-**Hit targets.** WCAG 2.2 AA 2.5.8 is **24×24px**. Today’s `IconButton` `sm` `h-6 w-6` **meets AA**. 44×44 is 2.5.5 AAA. Target: **44px minimum hit** for every `IconButton`, but in-card `sm` must **not** become a 44px *painted* circle (forum note footers: pay + copy + PM). See §10.
+**Hit targets.** WCAG 2.2 AA 2.5.8 is **24×24px**. Today’s `IconButton` `sm` `h-6 w-6` **meets AA**. 44×44 is 2.5.5 AAA. Target: **44px minimum hit** for every `IconButton`, but in-card `sm` must **not** become a 44px _painted_ circle (forum note footers: pay + copy + PM). See §10.
 
 ---
 
@@ -520,13 +524,13 @@ flowchart TB
 
 Profile photo and story are **Sketch** (API flows document, journey 2). Do not ship UI that pretends they exist. When they land, they occupy this slot so the screen does not invent a look:
 
-| Part | Spec |
-| --- | --- |
-| Avatar | 96×96px (`h-24 w-24`), circle (`rounded-full`), `object-cover`, 1:1 crop, above the profile `h1` or immediately under it, centered |
-| Aspect | 1:1 only for the profile portrait. Forum message photos stay `max-h-80 w-full rounded-xl object-contain` (already) |
-| Fallback | Two-letter initials from `name` (first grapheme of first two words, else first two), Outfit 600 24px, on `bg-app-card-muted text-app-fg`. If no name: lucide `Gift` 32px `text-app-muted` in the same circle |
-| Story | `body-sm text-app-muted`, centered, under the name row, max 4 lines (`line-clamp-4`) on the card; full text on a future expanded view — not designed here |
-| Forum photos | Already specified in `ForumBoard`; not the profile portrait |
+| Part         | Spec                                                                                                                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Avatar       | 96×96px (`h-24 w-24`), circle (`rounded-full`), `object-cover`, 1:1 crop, above the profile `h1` or immediately under it, centered                                                                           |
+| Aspect       | 1:1 only for the profile portrait. Forum message photos stay `max-h-80 w-full rounded-xl object-contain` (already)                                                                                           |
+| Fallback     | Two-letter initials from `name` (first grapheme of first two words, else first two), Outfit 600 24px, on `bg-app-card-muted text-app-fg`. If no name: lucide `Gift` 32px `text-app-muted` in the same circle |
+| Story        | `body-sm text-app-muted`, centered, under the name row, max 4 lines (`line-clamp-4`) on the card; full text on a future expanded view — not designed here                                                    |
+| Forum photos | Already specified in `ForumBoard`; not the profile portrait                                                                                                                                                  |
 
 Do not use a colored placeholder, a camera badge, or a progress ring.
 
@@ -555,13 +559,13 @@ Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet
 
 **₿ \| USD segmented control.**
 
-| Part | Spec |
-| --- | --- |
-| Track | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` (profile) or `border-paper/20` (stats on ink) |
-| Segment | `px-2 py-1 min-h-8` — bump to `min-h-11 min-w-11` if we treat it as a control (44px). **Decision:** 44px min on app profile; stats marketing may keep compact `px-2 py-1` because it is a chart chrome on desktop. Mobile stats: same 44px |
-| Selected | `bg-app-accent text-ink` (gift-money rule) |
-| Unselected | `text-app-muted` / `text-paper/70` |
-| Labels | `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name |
+| Part       | Spec                                                                                                                                                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Track      | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` (profile) or `border-paper/20` (stats on ink)                                                                                                                    |
+| Segment    | `px-2 py-1 min-h-8` — bump to `min-h-11 min-w-11` if we treat it as a control (44px). **Decision:** 44px min on app profile; stats marketing may keep compact `px-2 py-1` because it is a chart chrome on desktop. Mobile stats: same 44px |
+| Selected   | `bg-app-accent text-ink` (gift-money rule)                                                                                                                                                                                                 |
+| Unselected | `text-app-muted` / `text-paper/70`                                                                                                                                                                                                         |
+| Labels     | `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name                                                                                                                                                 |
 
 Promote to `SegmentedControl` (see catalog). Forum Active/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange.
 
@@ -573,26 +577,26 @@ The design system **wins** for **new** work. CONTRIBUTING **Icon controls** is r
 
 **Grandfather until the named PR.** After PR 1 merges, current `develop` code that disagrees with the table is **not** an undeclared deviation. Reviewers of unrelated PRs must not bounce Contact **Send**, lucide `Bitcoin` pay, or `IconButton` `sm` `h-6 w-6` until those conversions land. `docs/ui.md` is the **target spec**, not a claim that shipped pixels already match.
 
-| Labeled (`Button` / `ButtonLink`) | Icon-only (`IconButton`, required `aria-label`) |
-| --- | --- |
-| Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu *trigger* stays labeled) |
+| Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                                                           | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
-| Current (SHA `96d184d4`) | Target | Lands in |
-| --- | --- | --- |
-| Contact **Send** labeled `Button` (`ContactScreen.tsx`) | `IconButton` primary `lg`, lucide `Send` | PR 5 |
-| Pay lucide `Bitcoin` `IconButton` `sm` (`ForumBoard.tsx`) | lucide `Gift`, same `forum.pay` name | PR 4 |
-| `IconButton` `sm` `h-6 w-6` | 24px paint + 44px hit slop | PR 2 (primitive) |
-| Open Wallet raw `<a className="… bg-app-btn px-5 py-2">` | `ButtonLink` primary md | PR 4 or 5 |
+| Current (SHA `96d184d4`)                                  | Target                                   | Lands in         |
+| --------------------------------------------------------- | ---------------------------------------- | ---------------- |
+| Contact **Send** labeled `Button` (`ContactScreen.tsx`)   | `IconButton` primary `lg`, lucide `Send` | PR 5             |
+| Pay lucide `Bitcoin` `IconButton` `sm` (`ForumBoard.tsx`) | lucide `Gift`, same `forum.pay` name     | PR 4             |
+| `IconButton` `sm` `h-6 w-6`                               | 24px paint + 44px hit slop               | PR 2 (primitive) |
+| Open Wallet raw `<a className="… bg-app-btn px-5 py-2">`  | `ButtonLink` primary md                  | PR 4 or 5        |
 
 **Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Activate**, **Try again**.
 
 **Button size scale (one).** Today primitives use `px-6 py-3`; leftovers use `px-5 py-2` / `py-2.5` (`NameForm` onboarding, `RulesSetup`, `ViewProfileClaim`). Unify.
 
-| Size | Padding | Type | Min height | Use |
-| --- | --- | --- | --- | --- |
-| `sm` | `px-4 py-2` | 14px/500 | 44px (`min-h-11`) | Compact labeled (rare; marketing header **Log in** stays `px-4 py-2` but must still be ≥ 44px — use `min-h-11`) |
-| `md` (default) | `px-6 py-3` | 14px/500 | 44px | Login, Try again, secondary |
-| `lg` | `px-6 py-3` + `w-full` | 14px/500 | 44px | Onboarding Continue / I agree (full width in the column) |
+| Size           | Padding                | Type     | Min height        | Use                                                                                                             |
+| -------------- | ---------------------- | -------- | ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| `sm`           | `px-4 py-2`            | 14px/500 | 44px (`min-h-11`) | Compact labeled (rare; marketing header **Log in** stays `px-4 py-2` but must still be ≥ 44px — use `min-h-11`) |
+| `md` (default) | `px-6 py-3`            | 14px/500 | 44px              | Login, Try again, secondary                                                                                     |
+| `lg`           | `px-6 py-3` + `w-full` | 14px/500 | 44px              | Onboarding Continue / I agree (full width in the column)                                                        |
 
 Do not add a 36px button. Marketing header Log in visual may stay slightly smaller in width but not in height.
 
@@ -609,11 +613,11 @@ The painted control stays `h-6 w-6` (absolute `::before` does not grow flex layo
 
 **Clustered `sm` must not overlap.** `-inset-2.5` is 10px slop per side → 44px hit. SHA note footer is `gap-1.5` (6px) → center-to-center 30px → **14px overlap**. **Do not accept overlap.** Any row of two or more `sm` IconButtons uses `gap-5` (20px): 24px paint + 20px gap = 44px center-to-center, hits **touch, do not overlap**. Isolated `sm` (laws dismiss, pay-sheet back) keep their absolute position; no gap change.
 
-| Size | Layout / paint | Hit target | Glyph | SHA today | Tests to update |
-| --- | --- | --- | --- | --- | --- |
-| `sm` | `h-6 w-6` + slop class above | 44×44 via `::before` | 16px | `h-6 w-6` — **AA 2.5.8 already** | `IconButton.test.tsx`: keep `toContain('h-6')`; **add** `toContain("before:content-['']")` and `toContain('before:-inset-2.5')` |
-| `md` (default) | `h-11 w-11` (44px painted) | 44×44 | 20px | `h-10 w-10` (40) | `toContain('h-10')` → `h-11` |
-| `lg` | `h-12 w-12` (48px painted) | 48×48 | 20px | `h-11 w-11` (44) | `toContain('h-11')` for `lg` → `h-12` |
+| Size           | Layout / paint               | Hit target           | Glyph | SHA today                        | Tests to update                                                                                                                 |
+| -------------- | ---------------------------- | -------------------- | ----- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `sm`           | `h-6 w-6` + slop class above | 44×44 via `::before` | 16px  | `h-6 w-6` — **AA 2.5.8 already** | `IconButton.test.tsx`: keep `toContain('h-6')`; **add** `toContain("before:content-['']")` and `toContain('before:-inset-2.5')` |
+| `md` (default) | `h-11 w-11` (44px painted)   | 44×44                | 20px  | `h-10 w-10` (40)                 | `toContain('h-10')` → `h-11`                                                                                                    |
+| `lg`           | `h-12 w-12` (48px painted)   | 48×48                | 20px  | `h-11 w-11` (44)                 | `toContain('h-11')` for `lg` → `h-12`                                                                                           |
 
 PR 2: `md`/`lg` painted boxes, `sm` slop class, **and** `ForumBoard` note-footer `gap-1.5` → `gap-5` (small welcome golden shift, not a painted-circle redesign). Do **not** paint `sm` as `h-11`. Gift-vs-Bitcoin is PR 4.
 
@@ -691,11 +695,11 @@ Do not over-type `href` as `'/' | '/welcome'` — unsigned app also uses `/` fro
 
 **Variants.**
 
-| Variant | Default | Hover | Disabled | Use |
-| --- | --- | --- | --- | --- |
-| `primary` | `bg-app-btn text-app-btn-fg` | `bg-app-btn-hover` | opacity 50 | Log in, Continue, Try again, I agree, Activate |
-| `secondary` | `border border-app-border-strong bg-app-card text-app-fg` | `bg-app-hover` | opacity 50 | Retry on forum, inbox; marketing **Send help** uses the dark-shell equivalent |
-| `accent` **NEW** | `bg-app-accent text-ink` | `opacity-90` (no second hex, no `brightness-95`) | opacity 50 | Marketing-shell primary; app donate **Open the forum** |
+| Variant          | Default                                                   | Hover                                            | Disabled   | Use                                                                           |
+| ---------------- | --------------------------------------------------------- | ------------------------------------------------ | ---------- | ----------------------------------------------------------------------------- |
+| `primary`        | `bg-app-btn text-app-btn-fg`                              | `bg-app-btn-hover`                               | opacity 50 | Log in, Continue, Try again, I agree, Activate                                |
+| `secondary`      | `border border-app-border-strong bg-app-card text-app-fg` | `bg-app-hover`                                   | opacity 50 | Retry on forum, inbox; marketing **Send help** uses the dark-shell equivalent |
+| `accent` **NEW** | `bg-app-accent text-ink`                                  | `opacity-90` (no second hex, no `brightness-95`) | opacity 50 | Marketing-shell primary; app donate **Open the forum**                        |
 
 **States:** default, hover, `:focus-visible` (ring), active (`scale` **not** used — color only), disabled, loading (`icon={<Loader2 className="h-4 w-4 animate-spin" />}` + disabled).
 
@@ -732,10 +736,10 @@ export function ButtonLink(props: {
 }): ReactElement;
 ```
 
-| `tone` | `variant="secondary"` | `variant="accent"` / `primary` |
-| --- | --- | --- |
-| `app` (default) | `border-app-border-strong bg-app-card text-app-fg` | accent = `bg-app-accent text-ink`; primary = `bg-app-btn` |
-| `dark` | `border-paper/20 bg-transparent text-paper hover:bg-paper/10` | accent fill unchanged (`text-ink` on orange) |
+| `tone`          | `variant="secondary"`                                         | `variant="accent"` / `primary`                            |
+| --------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
+| `app` (default) | `border-app-border-strong bg-app-card text-app-fg`            | accent = `bg-app-accent text-ink`; primary = `bg-app-btn` |
+| `dark`          | `border-paper/20 bg-transparent text-paper hover:bg-paper/10` | accent fill unchanged (`text-ink` on orange)              |
 
 Hero **Send help**: `ButtonLink href="/donate" variant="secondary" tone="dark"`. Header **Log in** / **Ask for help** / 404 **Back home**: `variant="accent"` (tone irrelevant). Pay **Open Wallet of Satoshi**: `variant="primary" tone="app"` (not accent).
 
@@ -837,9 +841,9 @@ export function SegmentedControl<T extends string>(props: {
 }): ReactElement;
 ```
 
-| Tone | Track | Selected | Unselected | Use |
-| --- | --- | --- | --- | --- |
-| `gift` | `rounded-md border` compact or 44px on app | `bg-app-accent text-ink` | `text-app-muted` | ₿\|USD |
+| Tone      | Track                                                                     | Selected                                  | Unselected       | Use                               |
+| --------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | --------------------------------- |
+| `gift`    | `rounded-md border` compact or 44px on app                                | `bg-app-accent text-ink`                  | `text-app-muted` | ₿\|USD                            |
 | `neutral` | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / All / Most popular |
 
 Each option: `aria-pressed`. Forum recipe today is already the `neutral` track — extract it.
@@ -944,15 +948,15 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 
 #### Empty states
 
-| Surface | Copy pattern | Control |
-| --- | --- | --- |
-| Forum no messages | muted `text-sm` catalog `forum.empty` | Composer still shown |
-| Forum no paid | `forum.emptyPaid` | Mode switcher still shown |
-| Inbox none | `inbox.empty` | None |
-| Stats none | “No gifts recorded yet.” | None |
-| Profile chart none | `profile.chartEmpty` (new key, all four locales) | None |
-| View missing | `view.missing` | None |
-| 404 | `notFound.body` | Accent **Back home** |
+| Surface            | Copy pattern                                     | Control                   |
+| ------------------ | ------------------------------------------------ | ------------------------- |
+| Forum no messages  | muted `text-sm` catalog `forum.empty`            | Composer still shown      |
+| Forum no paid      | `forum.emptyPaid`                                | Mode switcher still shown |
+| Inbox none         | `inbox.empty`                                    | None                      |
+| Stats none         | “No gifts recorded yet.”                         | None                      |
+| Profile chart none | `profile.chartEmpty` (new key, all four locales) | None                      |
+| View missing       | `view.missing`                                   | None                      |
+| 404                | `notFound.body`                                  | Accent **Back home**      |
 
 Do not illustrate empty states with extra glyphs except the welcome `Gift` which is always present.
 
@@ -1067,21 +1071,21 @@ Marketing shell (duplicated in `not-found.tsx`). `text-5xl font-semibold` “404
 
 **Defects not to canonize (checklist).**
 
-| Defect | Evidence | Target | PR |
-| --- | --- | --- | --- |
-| `₿21 ₿` | SHA `ForumBoard.tsx` + welcome goldens | `formatBitcoin` + Gift `IconButton` (`forum.pay`) | 4 |
-| Empty profile chart axis | `AccountActivityChart` `dataMax === 0` still draws tick 0 | Copy, no SVG | 5 |
-| App chrome without wordmark | SHA pages + goldens | `Wordmark` top-left | 3 |
-| `bg-neutral-900` / `bg-yellow-200` / `text-neutral-400` | `ViewProfileClaim.tsx` | `Button` / `app-notice` / `app-subtle` | 5 |
-| `IconButton` `md` 40px / `lg` 44px | `IconButton.tsx`; tests `h-10` / `h-11` | 44 / 48 painted; `sm` stays 24px + hit slop | 2 |
-| CONTRIBUTING vs docs/ui.md | both files | target table + grandfather | 1 |
-| `text-red-600` | many screens | `app-danger` on migrate | 2/5 |
-| NameForm/RulesSetup `px-5 py-2.5` | those files | `Button` lg | 5 |
-| Pay-sheet Open Wallet raw `<a … px-5 py-2>` | `ForumBoard.tsx` | `ButtonLink` primary md | 4 |
-| QrCode `border-neutral-200` | `QrCode.tsx` | `border-app-border` | 2 or 4 |
-| Contact labeled Send | `ContactScreen.tsx` | icon send | 5 |
-| Rules orange **text** on paper (`RULE n`, Welcome ticks) | `RulesDocument.tsx` | overline `text-app-subtle`; Check `text-app-fg`; keep THE TEST bar | 2 |
-| Forum note footer `gap-1.5` | `ForumBoard.tsx` | `gap-5` so `sm` hits do not overlap | 2 |
+| Defect                                                   | Evidence                                                  | Target                                                             | PR     |
+| -------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------ | ------ |
+| `₿21 ₿`                                                  | SHA `ForumBoard.tsx` + welcome goldens                    | `formatBitcoin` + Gift `IconButton` (`forum.pay`)                  | 4      |
+| Empty profile chart axis                                 | `AccountActivityChart` `dataMax === 0` still draws tick 0 | Copy, no SVG                                                       | 5      |
+| App chrome without wordmark                              | SHA pages + goldens                                       | `Wordmark` top-left                                                | 3      |
+| `bg-neutral-900` / `bg-yellow-200` / `text-neutral-400`  | `ViewProfileClaim.tsx`                                    | `Button` / `app-notice` / `app-subtle`                             | 5      |
+| `IconButton` `md` 40px / `lg` 44px                       | `IconButton.tsx`; tests `h-10` / `h-11`                   | 44 / 48 painted; `sm` stays 24px + hit slop                        | 2      |
+| CONTRIBUTING vs docs/ui.md                               | both files                                                | target table + grandfather                                         | 1      |
+| `text-red-600`                                           | many screens                                              | `app-danger` on migrate                                            | 2/5    |
+| NameForm/RulesSetup `px-5 py-2.5`                        | those files                                               | `Button` lg                                                        | 5      |
+| Pay-sheet Open Wallet raw `<a … px-5 py-2>`              | `ForumBoard.tsx`                                          | `ButtonLink` primary md                                            | 4      |
+| QrCode `border-neutral-200`                              | `QrCode.tsx`                                              | `border-app-border`                                                | 2 or 4 |
+| Contact labeled Send                                     | `ContactScreen.tsx`                                       | icon send                                                          | 5      |
+| Rules orange **text** on paper (`RULE n`, Welcome ticks) | `RulesDocument.tsx`                                       | overline `text-app-subtle`; Check `text-app-fg`; keep THE TEST bar | 2      |
+| Forum note footer `gap-1.5`                              | `ForumBoard.tsx`                                          | `gap-5` so `sm` hits do not overlap                                | 2      |
 
 **Already fixed in SHA `96d184d4` source (do not re-implement):** login outer title; welcome “Forum” heading. If goldens already match source, nothing to do; if they lag, regen is the font PR, not a title patch.
 
@@ -1091,16 +1095,16 @@ Marketing shell (duplicated in `not-found.tsx`). `text-5xl font-semibold` “404
 
 Short, warm, direct. People helping people. English examples (catalogs translate).
 
-| Do | Don’t |
-| --- | --- |
-| Ask for help / Send help | “Start disrupting philanthropy” / “On-ramp to giving” |
-| Direct human-to-human gifts in Bitcoin | “The needy”, “beneficiaries”, “unbanked” |
-| Log in with your device | “Authenticate with your passkey credential” |
-| Wallet of Satoshi address | “LUD-16”, “LNURL-pay endpoint” |
-| Something went wrong. Please try again. | “Request failed with 500” |
-| You are a guest in a living room… | “Community guidelines / ToS summary” |
-| Open the forum | “Go to messenger surface” |
-| `₿1,500` | “1500 sats” as the visitor-facing string |
+| Do                                      | Don’t                                                 |
+| --------------------------------------- | ----------------------------------------------------- |
+| Ask for help / Send help                | “Start disrupting philanthropy” / “On-ramp to giving” |
+| Direct human-to-human gifts in Bitcoin  | “The needy”, “beneficiaries”, “unbanked”              |
+| Log in with your device                 | “Authenticate with your passkey credential”           |
+| Wallet of Satoshi address               | “LUD-16”, “LNURL-pay endpoint”                        |
+| Something went wrong. Please try again. | “Request failed with 500”                             |
+| You are a guest in a living room…       | “Community guidelines / ToS summary”                  |
+| Open the forum                          | “Go to messenger surface”                             |
+| `₿1,500`                                | “1500 sats” as the visitor-facing string              |
 
 Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook), invoice jargon. Push copy stays English `{ title, body }` as the API already sends — out of this freeze.
 
@@ -1124,27 +1128,27 @@ Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ h
 
 No HTTP changes. React-level:
 
-| Module | Change |
-| --- | --- |
-| `src/app/layout.tsx` | Outfit variable **on `<html> className`**, `weight: '400 700'` |
-| `src/app/globals.css` | Complete `@theme` + `html.dark` + reduced-motion + focus-visible base; **no** Field `outline-none` |
-| `src/components/ui/Button.tsx` | `size`, `variant="accent"`, accent hover `opacity-90` |
-| `src/components/ui/ButtonLink.tsx` | **New** (`tone?: 'app' \| 'dark'`) |
-| `src/components/ui/IconButton.tsx` | `md`/`lg` painted 44/48; `sm` hit slop, keep `h-6` |
-| `src/components/ui/PageChrome.tsx` | `topLeft` |
-| `src/components/ui/Wordmark.tsx` | **New** (`href?: string`) |
-| `src/components/ui/SegmentedControl.tsx` | **New** |
-| `src/components/ui/Field.tsx` | `min-h-11`, `bg-app-card`, drop `outline-none` |
-| `src/components/ui/index.ts` | Barrel exports |
-| `ForumBoard.tsx` | Gift pay; drop `Bitcoin` icon import for pay |
-| `ViewProfileClaim.tsx` | tokens + `Button` |
-| `NameForm.tsx` / `RulesSetup.tsx` | `Button` / `IconButton` |
-| `AccountActivityChart.tsx` | empty state |
-| `ContactScreen.tsx` | icon send |
-| `docs/ui.md` | this system (English) |
-| `CONTRIBUTING.md` | control-grammar table |
-| `Review.md` | point at the table, not “new = icon” |
-| `src/lib/messages.ts` | `profile.chartEmpty` (+ 3 locales); any new aria strings |
+| Module                                   | Change                                                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `src/app/layout.tsx`                     | Outfit variable **on `<html> className`**, `weight: 'variable'`                                    |
+| `src/app/globals.css`                    | Complete `@theme` + `html.dark` + reduced-motion + focus-visible base; **no** Field `outline-none` |
+| `src/components/ui/Button.tsx`           | `size`, `variant="accent"`, accent hover `opacity-90`                                              |
+| `src/components/ui/ButtonLink.tsx`       | **New** (`tone?: 'app' \| 'dark'`)                                                                 |
+| `src/components/ui/IconButton.tsx`       | `md`/`lg` painted 44/48; `sm` hit slop, keep `h-6`                                                 |
+| `src/components/ui/PageChrome.tsx`       | `topLeft`                                                                                          |
+| `src/components/ui/Wordmark.tsx`         | **New** (`href?: string`)                                                                          |
+| `src/components/ui/SegmentedControl.tsx` | **New**                                                                                            |
+| `src/components/ui/Field.tsx`            | `min-h-11`, `bg-app-card`, drop `outline-none`                                                     |
+| `src/components/ui/index.ts`             | Barrel exports                                                                                     |
+| `ForumBoard.tsx`                         | Gift pay; drop `Bitcoin` icon import for pay                                                       |
+| `ViewProfileClaim.tsx`                   | tokens + `Button`                                                                                  |
+| `NameForm.tsx` / `RulesSetup.tsx`        | `Button` / `IconButton`                                                                            |
+| `AccountActivityChart.tsx`               | empty state                                                                                        |
+| `ContactScreen.tsx`                      | icon send                                                                                          |
+| `docs/ui.md`                             | this system (English)                                                                              |
+| `CONTRIBUTING.md`                        | control-grammar table                                                                              |
+| `Review.md`                              | point at the table, not “new = icon”                                                               |
+| `src/lib/messages.ts`                    | `profile.chartEmpty` (+ 3 locales); any new aria strings                                           |
 
 ---
 
@@ -1185,7 +1189,7 @@ Pick a “nicer” orange, add a serif display, or adopt Inter.
 Design in Figma, implement from frames.
 
 - **For:** Visual QA with a designer tool.
-- **Against:** No Figma file exists; goldens + primitives + this markdown *are* the inventory; a parallel Figma will drift in a week. Revisit after the catalog is implemented and goldens match.
+- **Against:** No Figma file exists; goldens + primitives + this markdown _are_ the inventory; a parallel Figma will drift in a week. Revisit after the catalog is implemented and goldens match.
 - **Reject for now.**
 
 ### E — Two families (display Outfit + UI Figtree/IBM Plex)
@@ -1242,17 +1246,17 @@ Threats out of scope for this document: XSS in forum text (already escaped via R
 
 This is a visual system, not a metrics pipeline.
 
-| Gate | What it proves |
-| --- | --- |
-| `e2e/visual.spec.ts` | Four combos: desktop/mobile × light/dark. Linux Chromium goldens under `e2e/visual.spec.ts-snapshots/`. `maxDiffPixelRatio` 0 except handbook 0.05 |
-| `npm run screenshot:check` | Every screen/variant/export has a PNG; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`) |
-| `scripts/screen-variants.mjs` | Closed list of UI states; omitting a state is an undeclared deviation |
-| `npm run handbook:check` | Every screen/function/endpoint has a handbook section |
-| `docs/handbook/screens.md` | Update **only when that screen actually changes** |
-| `docs/handbook/functions.md` | `## Function: <Name>` for **every new or changed export** in the **same PR** |
-| `e2e/` `test('Function: <Name> …')` | Required for every new export (CONTRIBUTING E2E) |
-| `function-<Name>-${combo}-linux.png` | Four combos per new export (`screenshot:check`) |
-| `npm run handbook:images` | Copies desktop-light (or first allowed combo) into `public/handbook-images/` |
+| Gate                                 | What it proves                                                                                                                                     |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `e2e/visual.spec.ts`                 | Four combos: desktop/mobile × light/dark. Linux Chromium goldens under `e2e/visual.spec.ts-snapshots/`. `maxDiffPixelRatio` 0 except handbook 0.05 |
+| `npm run screenshot:check`           | Every screen/variant/export has a PNG; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`)                                 |
+| `scripts/screen-variants.mjs`        | Closed list of UI states; omitting a state is an undeclared deviation                                                                              |
+| `npm run handbook:check`             | Every screen/function/endpoint has a handbook section                                                                                              |
+| `docs/handbook/screens.md`           | Update **only when that screen actually changes**                                                                                                  |
+| `docs/handbook/functions.md`         | `## Function: <Name>` for **every new or changed export** in the **same PR**                                                                       |
+| `e2e/` `test('Function: <Name> …')`  | Required for every new export (CONTRIBUTING E2E)                                                                                                   |
+| `function-<Name>-${combo}-linux.png` | Four combos per new export (`screenshot:check`)                                                                                                    |
+| `npm run handbook:images`            | Copies desktop-light (or first allowed combo) into `public/handbook-images/`                                                                       |
 
 **Never** regenerate goldens on the session host. Regen is CI / Linux `docker run --platform linux/amd64 mcr.microsoft.com/playwright:v1.61.1-noble`. A font/token PR will rewrite many PNGs — isolate that (PR 2). New primitives (`ButtonLink`, `Wordmark`, `SegmentedControl`) are full export-surface PRs: unit test + handbook Function + `Function:` e2e + four function goldens, not “CSS only.”
 
@@ -1324,17 +1328,17 @@ Orange is decided: **shell-split**, not gift-only. Marketing Log in stays orange
 
 ## Implementation mapping
 
-| Concern | File |
-| --- | --- |
-| Canonical system | `docs/ui.md` (this document, English, public-repo safe) |
-| Tokens | `src/app/globals.css` `@theme` + `html.dark` |
-| Font | `src/app/layout.tsx` `next/font/google` Outfit |
-| Primitives | `src/components/ui/*` |
-| Control grammar | `CONTRIBUTING.md` (replace Icon controls section) + `Review.md` |
-| Handbook screens | `docs/handbook/screens.md` only in the PR that changes that screen |
-| Handbook functions | `docs/handbook/functions.md` `## Function: <Name>` in the **same PR** as a new/changed export |
-| Function e2e + goldens | `test('Function: <Name> …')` + four `function-<Name>-${combo}-linux.png` |
-| Variants / goldens | `scripts/screen-variants.mjs`, `e2e/visual.spec.ts`, `e2e/visual.spec.ts-snapshots/` |
+| Concern                | File                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| Canonical system       | `docs/ui.md` (this document, English, public-repo safe)                                       |
+| Tokens                 | `src/app/globals.css` `@theme` + `html.dark`                                                  |
+| Font                   | `src/app/layout.tsx` `next/font/google` Outfit                                                |
+| Primitives             | `src/components/ui/*`                                                                         |
+| Control grammar        | `CONTRIBUTING.md` (replace Icon controls section) + `Review.md`                               |
+| Handbook screens       | `docs/handbook/screens.md` only in the PR that changes that screen                            |
+| Handbook functions     | `docs/handbook/functions.md` `## Function: <Name>` in the **same PR** as a new/changed export |
+| Function e2e + goldens | `test('Function: <Name> …')` + four `function-<Name>-${combo}-linux.png`                      |
+| Variants / goldens     | `scripts/screen-variants.mjs`, `e2e/visual.spec.ts`, `e2e/visual.spec.ts-snapshots/`          |
 
 **Public-repo hygiene.** In-repo docs never name private repositories, internal hostnames, or infra internals. Say “the API concept document (Brand)” without a private path. CONTRIBUTING already links the public API repo; that link may stay. Mermaid is fine. Keep numbers.
 
@@ -1387,7 +1391,7 @@ Each PR is mergeable alone. This is the sequence, not a request to open five at 
 - **Title:** Add Outfit and complete app color tokens
 - **Depends on:** PR 1
 - **Files:**
-  - `src/app/layout.tsx` — `Outfit({ subsets: ['latin'], weight: '400 700', display: 'block', variable: '--font-outfit' })`, `className={outfit.variable}` on `<html>`.
+  - `src/app/layout.tsx` — `Outfit({ subsets: ['latin'], weight: 'variable', display: 'block', variable: '--font-outfit' })`, `className={outfit.variable}` on `<html>`.
   - `src/app/globals.css` — `ink`/`paper`/`accent`, new `app-*`, subtle/muted contrast, focus-visible base, reduced-motion.
   - `src/components/ui/Button.tsx` — `size`, `accent`, hover `opacity-90`.
   - `src/components/ui/ButtonLink.tsx` — **new export** (`tone?: 'app' | 'dark'`).
@@ -1438,4 +1442,3 @@ Split if PNG diffs are large (5a/5b).
 **Later, not in this program:** profile photo/story slot (blocked on HTTP); Figma; safe-area; optional Figtree/Instrument swap if Outfit goldens fail the “same grotesque as marketing” test.
 
 ---
-
