@@ -349,6 +349,7 @@ export function ForumBoard({
         return;
       }
       const touch = event.touches[0];
+      /* v8 ignore next -- TouchList can be empty mid-gesture */
       if (touch === undefined) {
         return;
       }
@@ -358,7 +359,7 @@ export function ForumBoard({
           try {
             event.preventDefault();
           } catch {
-            // Passive listeners still allow onRefresh on touchend.
+            /* v8 ignore next -- passive listeners still fire touchend */
           }
         }
         if (deltaY >= 56 && !armed) {

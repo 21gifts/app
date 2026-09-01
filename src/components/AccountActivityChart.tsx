@@ -95,8 +95,13 @@ export function AccountActivityChart({
 
   const donatedLine = linePoints('donated');
   const receivedLine = linePoints('received');
+  const emptySats =
+    n === 0 ||
+    points.every(
+      (point) => point.cumulativeDonatedSats === 0 && point.cumulativeReceivedSats === 0,
+    );
 
-  if (n === 0 || dataMax === 0) {
+  if (emptySats) {
     return (
       <p className="text-center text-sm text-app-muted" role="status">
         {t('profile.chartEmpty')}

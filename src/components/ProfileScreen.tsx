@@ -29,11 +29,11 @@ export function ProfileScreen(): ReactElement {
 
   return (
     <>
-      <div className="absolute top-4 left-5 z-40 flex items-center gap-2">
+      <div className="absolute top-4 left-5 z-40 flex items-center gap-3">
         <Link
           href="/welcome"
           aria-label={t('profile.back')}
-          className="inline-flex items-center justify-center rounded-full p-2 text-app-muted transition hover:text-app-fg"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />
         </Link>

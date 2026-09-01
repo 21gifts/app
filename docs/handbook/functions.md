@@ -400,15 +400,15 @@
 
 - **Purpose:** Labeled pill link matching `Button` anatomy (`primary` / `secondary` / `accent`, `sm` / `md` / `lg`, `tone` `app` or `dark`).
 - **Inputs:** `href`, optional `variant` / `size` / `tone` / `icon` / `className`, `children` label.
-- **Returns / side effects:** A Next.js `<Link>`. No network. Used on marketing CTAs, donate **Open the forum**, 404 **Back home**, and rules nav.
-- **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `NotFound`, `RulesDocument`.
+- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`walletofsatoshi:`, `https:`). No network.
+- **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `NotFound`, `RulesDocument`, `ForumBoard`.
 
 ## Function: IconButton
 
 - **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`). `sm` is 24px paint with a 44px `::before` hit slop; `md` is 44px; `lg` is 48px.
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
-- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, and `HandbookImageViewer`.
+- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `ContactScreen`, `NameForm`, `RulesSetup`.
 
 ## Function: Card
 
@@ -436,7 +436,7 @@
 - **Purpose:** Text brand mark `21.gifts` (17px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
 - **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `className`.
 - **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
-- **Used by:** `MarketingHeader`, `MarketingFooter`, app `PageChrome` top-left, setup screens.
+- **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileScreen`, `RulesSetup`, setup name/address pages, and `PageChrome` top-left.
 
 ## Function: PublicMessagePage
 

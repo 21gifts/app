@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { Button } from '@/components/ui';
 import type { GiftStats } from '@/lib/api-types';
 import { formatBitcoin, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
@@ -483,13 +484,9 @@ export function StatsDashboard({
     return (
       <div className="space-y-4">
         <p className="text-white/80">{error}</p>
-        <button
-          type="button"
-          className="rounded-full bg-accent px-4 py-2 font-medium text-ink"
-          onClick={onRetry}
-        >
+        <Button type="button" variant="accent" onClick={onRetry}>
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
