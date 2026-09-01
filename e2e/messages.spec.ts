@@ -123,7 +123,7 @@ test('inbox loading', async ({ page }) => {
     /* hang — inbox loading */
   });
   await page.goto('/messages');
-  await expect(page.getByText('Loading…')).toBeVisible();
+  await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
 });
 
 test('inbox error shows Could not load messages. Please try again.', async ({ page }) => {
