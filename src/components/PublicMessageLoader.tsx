@@ -31,6 +31,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   );
   const [message, setMessage] = useState<ForumMessage | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     let cancelled = false;
     setStatus('loading');
     setMessage(null);
+    setVideoFailed(false);
 
     void (async () => {
       try {
@@ -135,7 +137,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             {formatForumTime(note.createdAt, locale)}
           </time>
         </div>
-        {note.hasVideo ? (
+        {note.hasVideo && !videoFailed ? (
           <video
             src={forumVideoSrc(note.id, note.videoContentType)}
             poster={photoUrl ?? undefined}
@@ -143,6 +145,9 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             playsInline
             preload="metadata"
             className="mx-auto block h-auto w-auto max-h-80 max-w-full rounded-2xl object-contain"
+            onError={() => {
+              setVideoFailed(true);
+            }}
           />
         ) : photoUrl !== null ? (
           /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */

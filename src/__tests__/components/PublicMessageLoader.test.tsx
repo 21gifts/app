@@ -188,6 +188,26 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
   });
 
+  it('hides the video and shows the photo when playback fails', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      hasVideo: true,
+      hasPhoto: true,
+      videoContentType: 'video/mp4',
+      text: '',
+    });
+    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(document.querySelector('video')).toBeTruthy();
+    });
+    fireEvent.error(document.querySelector('video')!);
+    await waitFor(() => {
+      expect(document.querySelector('video')).toBeNull();
+    });
+    expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+  });
+
   it('ignores a stale message resolve after unmount', async () => {
     let resolveMessage: ((value: ForumMessage | null) => void) | undefined;
     fetchMessage.mockImplementationOnce(
