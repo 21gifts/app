@@ -116,7 +116,7 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={busy}
-          className="w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+          className="w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg transition disabled:opacity-50"
         />
         {error !== null ? (
           <p role="alert" className="text-center text-sm text-app-danger">
@@ -155,7 +155,7 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               disabled={busy}
-              className="min-w-0 flex-1 rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+              className="min-w-0 flex-1 rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg transition disabled:opacity-50"
             />
             <button
               type="submit"

@@ -2781,7 +2781,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   });
   await page.goto(`/view/${key}`);
   await expect(page.getByText('Ada')).toBeVisible();
-  await expect(page.getByText('Given')).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
@@ -2898,8 +2898,8 @@ test('Function: AccountActivityChart — profile shows Given legend and ₿ char
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
-  await expect(page.getByText('Given', { exact: true })).toBeVisible();
-  await expect(page.getByLabel('Given and received in ₿')).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Given and received' })).toHaveCount(0);
 });
 

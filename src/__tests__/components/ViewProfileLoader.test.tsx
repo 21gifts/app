@@ -116,7 +116,7 @@ describe('ViewProfileLoader', () => {
     });
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
-    expect(screen.getByText('Given')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.getByText('Action required, the account must be activated')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Activate' })).toBeTruthy();
     expect(fetchStats).toHaveBeenCalledWith('alice');
@@ -130,7 +130,7 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
     await waitFor(() => {
-      expect(screen.getByText('Given')).toBeTruthy();
+      expect(screen.getByText('No gifts yet.')).toBeTruthy();
     });
   });
 
@@ -141,7 +141,7 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
     expect(fetchStats).not.toHaveBeenCalled();
-    expect(screen.getByText('Given')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
   });
 
   it('skips gift stats when lightningAddress is blank', async () => {
@@ -151,7 +151,7 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByText('Unnamed')).toBeTruthy();
     });
     expect(fetchStats).not.toHaveBeenCalled();
-    expect(screen.getByText('Given')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
   });
 
   it('ignores a stale profile resolve after unmount', async () => {

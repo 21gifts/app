@@ -144,7 +144,7 @@ export function InboxScreen({
             maxLength={CONTACT_MESSAGE_MAX_LENGTH}
             rows={2}
             disabled={posting || messagesLoading}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
           />
           <IconButton
             type="submit"

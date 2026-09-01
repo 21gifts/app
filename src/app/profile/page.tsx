@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ProfileScreen } from '@/components/ProfileScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { PageChrome } from '@/components/ui';
 
 /**
  * `/profile` — edit name and Wallet of Satoshi address after onboarding.
@@ -11,7 +11,7 @@ import { PageChrome, Wordmark } from '@/components/ui';
  */
 export default function ProfilePage(): ReactElement {
   return (
-    <PageChrome topLeft={<Wordmark href="/welcome" />} topRight={<SignedInChrome />}>
+    <PageChrome topRight={<SignedInChrome />}>
       <OnboardingGate screen="profile">
         <ProfileScreen />
       </OnboardingGate>

@@ -52,6 +52,13 @@ describe('ButtonLink', () => {
     expect(screen.getByRole('link', { name: 'Back' }).className).toContain('bg-paper');
   });
 
+  it('renders a native anchor for wallet protocol hrefs', () => {
+    renderWithLocale(<ButtonLink href="walletofsatoshi:lnurl1">Open Wallet of Satoshi</ButtonLink>);
+    const link = screen.getByRole('link', { name: 'Open Wallet of Satoshi' });
+    expect(link.tagName).toBe('A');
+    expect(link.getAttribute('href')).toBe('walletofsatoshi:lnurl1');
+  });
+
   it('uses accent fill on the dark shell', () => {
     renderWithLocale(
       <ButtonLink href="/login" variant="accent" tone="dark">

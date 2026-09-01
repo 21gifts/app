@@ -669,7 +669,7 @@ Migrate `/welcome`, `/profile`, `/contact`, `/messages`, `/donate`, `/setup/*`, 
 ```tsx
 export function Wordmark(props: {
   href?: string; // omit → <span>, not a link (marketing footer)
-  tone: 'dark' | 'light'; // dark = paper on ink; light = app-fg
+  tone?: 'app' | 'dark'; // app = app-fg; dark = paper on ink
 }): ReactElement;
 ```
 

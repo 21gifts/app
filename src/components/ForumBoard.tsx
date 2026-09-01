@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, Field, IconButton } from '@/components/ui';
+import { Button, ButtonLink, Field, IconButton } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
@@ -753,21 +753,22 @@ export function ForumBoard({
                   ) : null}
                   {/* v8 ignore start -- wosHref is set whenever an invoice is shown */}
                   {wosHref !== null ? (
-                    <a
+                    <ButtonLink
                       href={wosHref}
                       aria-label={t('forum.payOpenWalletAria')}
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg no-underline transition hover:bg-app-btn-hover"
+                      icon={
+                        <img
+                          src="/wos-icon.png"
+                          alt=""
+                          width={20}
+                          height={20}
+                          aria-hidden="true"
+                          className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                        />
+                      }
                     >
-                      <img
-                        src="/wos-icon.png"
-                        alt=""
-                        width={20}
-                        height={20}
-                        aria-hidden="true"
-                        className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                      />
                       {t('forum.payOpenWallet')}
-                    </a>
+                    </ButtonLink>
                   ) : null}
                   {/* v8 ignore stop */}
                   {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
@@ -857,7 +858,7 @@ export function ForumBoard({
                         disabled={
                           replyPosting || repliesLoading || repliesError || replies === null
                         }
-                        className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+                        className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
                       />
                       <IconButton
                         type="submit"
@@ -1005,7 +1006,7 @@ export function ForumBoard({
             maxLength={FORUM_MESSAGE_MAX_LENGTH}
             rows={2}
             disabled={posting}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
           />
           <IconButton
             type="submit"

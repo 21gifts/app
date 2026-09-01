@@ -15,7 +15,9 @@ export default function AddressSetupPage(): ReactElement {
       <div className="absolute top-4 left-5 z-40">
         <Wordmark href="/welcome" />
       </div>
-      <SignedInChrome />
+      <div className="absolute top-4 right-5 z-40">
+        <SignedInChrome />
+      </div>
       <OnboardingGate screen="address">
         <AddressSetup />
       </OnboardingGate>

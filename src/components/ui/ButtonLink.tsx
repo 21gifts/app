@@ -26,6 +26,8 @@ export interface ButtonLinkProps {
   children: ReactNode;
   /** Extra classes. */
   className?: string;
+  /** Accessible name when the visible label is not enough. */
+  'aria-label'?: string;
 }
 
 const SIZE_CLASS: Record<ButtonLinkSize, string> = {
@@ -74,13 +76,22 @@ export function ButtonLink({
   icon,
   children,
   className,
+  'aria-label': ariaLabel,
 }: ButtonLinkProps): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
+  const classes = `inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium no-underline transition ${SIZE_CLASS[size]} ${variantClass(variant, tone)}${extra}`;
+  const internal = href.startsWith('/') || href.startsWith('#');
+  const named = ariaLabel === undefined ? {} : { 'aria-label': ariaLabel };
+  if (!internal) {
+    return (
+      <a href={href} className={classes} {...named}>
+        {icon}
+        {children}
+      </a>
+    );
+  }
   return (
-    <Link
-      href={href}
-      className={`inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium no-underline transition ${SIZE_CLASS[size]} ${variantClass(variant, tone)}${extra}`}
-    >
+    <Link href={href} className={classes} {...named}>
       {icon}
       {children}
     </Link>

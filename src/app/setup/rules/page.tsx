@@ -3,7 +3,6 @@ import { OnboardingGate } from '@/components/OnboardingGate';
 import { RulesDocument } from '@/components/RulesDocument';
 import { RulesSetup } from '@/components/RulesSetup';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { Wordmark } from '@/components/ui';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { RULES_CHAPTER_IDS } from '@/lib/rules-chapters';
@@ -18,10 +17,9 @@ export default async function RulesSetupPage(): Promise<ReactElement> {
   const messages = getCatalog(locale);
   return (
     <main className="relative flex min-h-svh flex-col items-center px-6">
-      <div className="absolute top-4 left-5 z-40">
-        <Wordmark href="/welcome" />
+      <div className="absolute top-4 right-5 z-40">
+        <SignedInChrome />
       </div>
-      <SignedInChrome />
       <OnboardingGate screen="rules">
         <RulesSetup
           chapters={RULES_CHAPTER_IDS.map((id) => (

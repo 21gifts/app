@@ -22,8 +22,8 @@ export interface AccountActivityChartProps {
   donated?: GiftStats['spendOverTime'];
 }
 
-const GIVEN_STROKE = '#525252';
-const RECEIVED_STROKE = '#f7931a';
+const GIVEN_STROKE = 'var(--color-app-chart-given)';
+const RECEIVED_STROKE = 'var(--color-app-chart-received)';
 const WIDTH = 400;
 const HEIGHT = 110;
 const PAD_L = 56;

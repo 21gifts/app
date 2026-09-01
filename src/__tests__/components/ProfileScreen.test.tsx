@@ -108,9 +108,8 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText('Back to the forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
-    expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     await waitFor(() => {
       expect(vi.mocked(fetchGiftStats)).toHaveBeenCalled();
@@ -121,9 +120,8 @@ describe('ProfileScreen', () => {
     vi.mocked(fetchGiftStats).mockReturnValue(new Promise<GiftStats>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
-    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
-    expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
     expect(screen.queryByLabelText('Given ₿0')).toBeNull();
   });
