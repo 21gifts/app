@@ -289,7 +289,7 @@ import { Outfit } from 'next/font/google';
 
 const outfit = Outfit({
   subsets: ['latin'],
-  weight: '400 700',
+  weight: 'variable',
   display: 'block', // avoid FOUT in visual goldens; swap is allowed only with fonts.ready in shotScreen
   variable: '--font-outfit',
 });
@@ -1296,7 +1296,7 @@ Orange is decided: **shell-split**, not gift-only. Marketing Log in stays orange
 
 2. **Two shells remain.** Marketing always-dark, no theme switcher. App keeps `ThemeProvider` / cookie / `html.dark`. Killing light theme was considered and rejected.
 
-3. **One family: Outfit (SIL OFL) via `next/font/google`.** Variable API (`weight: '400 700'`), `className={outfit.variable}` on `<html>`. `display: 'block'` (or `swap` + `document.fonts.ready` in `shotScreen`). Build-time download; `next/font/local` if CI cannot reach Google. Forbidden brand faces: Inter, Roboto, Arial, Open Sans, system-ui.
+3. **One family: Outfit (SIL OFL) via `next/font/google`.** Variable API (`weight: 'variable'`), `className={outfit.variable}` on `<html>`. `display: 'block'` (or `swap` + `document.fonts.ready` in `shotScreen`). Build-time download; `next/font/local` if CI cannot reach Google. Forbidden brand faces: Inter, Roboto, Arial, Open Sans, system-ui.
 
 4. **Orange is shell-split.** Marketing: primary filled CTA (Log in, Ask for help, Back home) + kickers + stats paint. App: gift-money **fill** (charts, ₿ selected, donate Open the forum). Marketing Log in is **not** a gift. App form primaries and Open Wallet stay `app-btn`. **Never orange text on paper** — `/rules` “RULE n” and Welcome ticks move to `app-subtle` / `app-fg`; only the decorative THE TEST bar stays `border-app-accent` (B′). Accent hover is `opacity-90`, no `#e08618`.
 
