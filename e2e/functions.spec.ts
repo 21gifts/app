@@ -2534,6 +2534,13 @@ test('Function: ProfileScreen — back to forum is visible', async ({ page }) =>
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
 });
 
+test('Function: ProfileChromeLeft — profile chrome has back and wordmark', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+});
+
 test('Function: Button — login shows the Log in button', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();

@@ -21,12 +21,12 @@ export function MarketingHeader(): ReactElement {
   };
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
       <Wordmark href="/" tone="dark" />
       <div className="flex items-center gap-4">
         <nav
           aria-label={t('aria.primary')}
-          className={`items-center gap-6 text-sm text-white/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-white/10 bg-ink px-5 py-4' : 'hidden md:flex'}`}
+          className={`items-center gap-6 text-sm text-paper/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4' : 'hidden md:flex'}`}
         >
           <Link href="/#how" onClick={closeMenu}>
             {t('nav.how')}

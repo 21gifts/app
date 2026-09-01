@@ -324,7 +324,7 @@ describe('LanguageSwitcher', () => {
   it('dark standalone uses white trigger chrome and dark panel', () => {
     renderWithLocale(<LanguageSwitcher tone="dark" />);
     const trigger = screen.getByLabelText('Language');
-    expect(trigger.className).toContain('text-white');
+    expect(trigger.className).toContain('text-paper');
     expect(trigger.className).toContain('border-white/20');
     fireEvent.click(trigger);
     expect(screen.getByRole('listbox').className).toContain('bg-ink');

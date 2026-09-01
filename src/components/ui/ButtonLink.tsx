@@ -80,7 +80,7 @@ export function ButtonLink({
 }: ButtonLinkProps): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const classes = `inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium no-underline transition ${SIZE_CLASS[size]} ${variantClass(variant, tone)}${extra}`;
-  const internal = href.startsWith('/') || href.startsWith('#');
+  const internal = href.startsWith('#') || (href.startsWith('/') && !href.startsWith('//'));
   const named = ariaLabel === undefined ? {} : { 'aria-label': ariaLabel };
   if (!internal) {
     return (

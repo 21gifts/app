@@ -14,13 +14,36 @@ import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
+ * Icon-only forum back plus wordmark for `/profile` `PageChrome.topLeft`.
+ *
+ * Back stays a link (navigation), with IconButton `md` geometry.
+ *
+ * @returns The profile top-left chrome.
+ */
+export function ProfileChromeLeft(): ReactElement {
+  const { t } = useTranslations();
+  return (
+    <>
+      <Link
+        href="/welcome"
+        aria-label={t('profile.back')}
+        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
+      >
+        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
+      </Link>
+      <Wordmark href="/welcome" />
+    </>
+  );
+}
+
+/**
  * Signed-in profile card with compact activity chart, name and address forms,
  * an icon-only Web Push bell, and an icon-only copy of the public view URL
  * (the key itself is never shown).
  *
  * Never shows `forum.loading` for the chart. Menu totals stay in `SignedInChrome`.
  *
- * @returns The profile chrome and identity card.
+ * @returns The identity card.
  */
 export function ProfileScreen(): ReactElement {
   const { t } = useTranslations();
@@ -28,29 +51,17 @@ export function ProfileScreen(): ReactElement {
   const { receiveOverTime } = useAccountTotals();
 
   return (
-    <>
-      <div className="absolute top-4 left-5 z-40 flex items-center gap-3">
-        <Link
-          href="/welcome"
-          aria-label={t('profile.back')}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-        >
-          <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-        </Link>
-        <Wordmark href="/welcome" />
-      </div>
-      <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
-        <h1 className="text-center text-2xl font-semibold tracking-tight">{t('profile.title')}</h1>
-        <AccountActivityChart received={receiveOverTime} />
-        <NameForm variant="profile" />
-        <LightningAddressForm variant="profile" />
-        <PushToggle />
-        {account !== null ? (
-          <div className="flex w-full justify-end">
-            <ViewKeyCopy viewKey={account.viewKey} />
-          </div>
-        ) : null}
-      </section>
-    </>
+    <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+      <h1 className="text-center text-2xl font-semibold tracking-tight">{t('profile.title')}</h1>
+      <AccountActivityChart received={receiveOverTime} />
+      <NameForm variant="profile" />
+      <LightningAddressForm variant="profile" />
+      <PushToggle />
+      {account !== null ? (
+        <div className="flex w-full justify-end">
+          <ViewKeyCopy viewKey={account.viewKey} />
+        </div>
+      ) : null}
+    </section>
   );
 }

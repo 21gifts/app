@@ -3,6 +3,7 @@ import { OnboardingGate } from '@/components/OnboardingGate';
 import { RulesDocument } from '@/components/RulesDocument';
 import { RulesSetup } from '@/components/RulesSetup';
 import { SignedInChrome } from '@/components/SignedInChrome';
+import { PageChrome } from '@/components/ui';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { RULES_CHAPTER_IDS } from '@/lib/rules-chapters';
@@ -16,10 +17,7 @@ export default async function RulesSetupPage(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
   return (
-    <main className="relative flex min-h-svh flex-col items-center px-6">
-      <div className="absolute top-4 right-5 z-40">
-        <SignedInChrome />
-      </div>
+    <PageChrome className="min-h-svh justify-start" topRight={<SignedInChrome />}>
       <OnboardingGate screen="rules">
         <RulesSetup
           chapters={RULES_CHAPTER_IDS.map((id) => (
@@ -27,6 +25,6 @@ export default async function RulesSetupPage(): Promise<ReactElement> {
           ))}
         />
       </OnboardingGate>
-    </main>
+    </PageChrome>
   );
 }

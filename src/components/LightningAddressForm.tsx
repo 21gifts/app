@@ -156,7 +156,7 @@ export function LightningAddressForm(
   );
 
   const inputClass =
-    'w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg transition disabled:opacity-50';
+    'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50';
 
   if (variant === 'onboarding') {
     return (

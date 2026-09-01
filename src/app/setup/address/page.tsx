@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { AddressSetup } from '@/components/AddressSetup';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { Wordmark } from '@/components/ui';
+import { PageChrome, Wordmark } from '@/components/ui';
 
 /**
  * `/setup/address` — ask for a Wallet of Satoshi address after the name.
@@ -11,16 +11,14 @@ import { Wordmark } from '@/components/ui';
  */
 export default function AddressSetupPage(): ReactElement {
   return (
-    <main className="relative flex h-svh flex-col items-center px-6">
-      <div className="absolute top-4 left-5 z-40">
-        <Wordmark href="/welcome" />
-      </div>
-      <div className="absolute top-4 right-5 z-40">
-        <SignedInChrome />
-      </div>
+    <PageChrome
+      className="h-svh justify-start"
+      topLeft={<Wordmark href="/welcome" />}
+      topRight={<SignedInChrome />}
+    >
       <OnboardingGate screen="address">
         <AddressSetup />
       </OnboardingGate>
-    </main>
+    </PageChrome>
   );
 }

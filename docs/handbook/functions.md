@@ -274,14 +274,21 @@
 
 - **Purpose:** Next.js page for `/profile`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `ProfileScreen` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ProfileScreen`.
 - **Used by:** Route `/profile`.
+
+## Function: ProfileChromeLeft
+
+- **Purpose:** `/profile` top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
+- **Inputs:** Catalog `profile.back` via `useTranslations`.
+- **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
+- **Used by:** `ProfilePage` (`PageChrome.topLeft`).
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), and an icon-only view-key copy (the key and URL are not displayed). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
 - **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `PushToggle`; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only back + Wordmark row (`aria-label` from `profile.back`), heading **Profile**, empty series → `profile.chartEmpty` (no SVG/toggle), otherwise compact chart (legend + ₿ | USD + SVG), name form, address form, push bell under the address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no SVG/toggle; otherwise legend + ₿ | USD + SVG), name form, address form, push bell under the address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: PushToggle

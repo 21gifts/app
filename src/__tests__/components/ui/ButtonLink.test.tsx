@@ -59,6 +59,18 @@ describe('ButtonLink', () => {
     expect(link.getAttribute('href')).toBe('walletofsatoshi:lnurl1');
   });
 
+  it('renders a native anchor for https and protocol-relative hrefs', () => {
+    const { rerender } = renderWithLocale(
+      <ButtonLink href="https://21.gifts">Open 21.gifts</ButtonLink>,
+    );
+    expect(screen.getByRole('link', { name: 'Open 21.gifts' }).tagName).toBe('A');
+
+    rerender(<ButtonLink href="//example.com/pay">Protocol relative</ButtonLink>);
+    const relative = screen.getByRole('link', { name: 'Protocol relative' });
+    expect(relative.tagName).toBe('A');
+    expect(relative.getAttribute('href')).toBe('//example.com/pay');
+  });
+
   it('uses accent fill on the dark shell', () => {
     renderWithLocale(
       <ButtonLink href="/login" variant="accent" tone="dark">

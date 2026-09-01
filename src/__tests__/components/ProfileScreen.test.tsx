@@ -1,6 +1,6 @@
 import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProfileScreen } from '@/components/ProfileScreen';
+import { ProfileChromeLeft, ProfileScreen } from '@/components/ProfileScreen';
 import { fetchGiftStats } from '@/lib/api';
 import type { GiftStats } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -100,7 +100,12 @@ afterEach(() => {
 
 describe('ProfileScreen', () => {
   it('shows the heading, back link, name form, address form, and chart', async () => {
-    renderWithLocale(<ProfileScreen />);
+    renderWithLocale(
+      <>
+        <ProfileChromeLeft />
+        <ProfileScreen />
+      </>,
+    );
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { OnboardingGate } from '@/components/OnboardingGate';
-import { ProfileScreen } from '@/components/ProfileScreen';
+import { ProfileChromeLeft, ProfileScreen } from '@/components/ProfileScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { PageChrome } from '@/components/ui';
 
@@ -11,7 +11,7 @@ import { PageChrome } from '@/components/ui';
  */
 export default function ProfilePage(): ReactElement {
   return (
-    <PageChrome topRight={<SignedInChrome />}>
+    <PageChrome topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="profile">
         <ProfileScreen />
       </OnboardingGate>

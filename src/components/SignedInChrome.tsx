@@ -93,7 +93,7 @@ export function SignedInChrome(): ReactElement {
             onClick={() => {
               setOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-app-fg no-underline transition hover:bg-app-hover"
+            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-app-fg no-underline transition hover:bg-app-hover"
           >
             <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             <span className="font-medium">{t('profile.title')}</span>
@@ -128,7 +128,7 @@ export function SignedInChrome(): ReactElement {
             onClick={() => {
               setOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
           >
             <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {t('nav.rules')}
@@ -138,7 +138,7 @@ export function SignedInChrome(): ReactElement {
             onClick={() => {
               setOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
           >
             <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {t('nav.inbox')}
@@ -148,7 +148,7 @@ export function SignedInChrome(): ReactElement {
             onClick={() => {
               setOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
           >
             <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {t('nav.contact')}
