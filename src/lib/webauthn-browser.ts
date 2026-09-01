@@ -65,11 +65,9 @@ export function creationOptionsFromJSON(
   const rp = options['rp'] as { name: string; id?: string };
   const user = options['user'] as { id: string; name: string; displayName: string };
   const pubKeyCredParams = options['pubKeyCredParams'] as
-    | PublicKeyCredentialParameters[]
-    | undefined;
+    PublicKeyCredentialParameters[] | undefined;
   const authenticatorSelection = options['authenticatorSelection'] as
-    | AuthenticatorSelectionCriteria
-    | undefined;
+    AuthenticatorSelectionCriteria | undefined;
   const timeout = options['timeout'];
   const attestation = options['attestation'];
   const excludeCredentials = credentialDescriptorsFromJSON(options['excludeCredentials']);

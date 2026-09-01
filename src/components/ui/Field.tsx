@@ -15,16 +15,14 @@ interface FieldShellProps {
 
 /** Props for a single-line {@link Field}. */
 export interface FieldInputProps
-  extends FieldShellProps,
-    Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'className'> {
+  extends FieldShellProps, Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'className'> {
   /** Renders an `<input>`. */
   multiline?: false;
 }
 
 /** Props for a multiline {@link Field}. */
 export interface FieldTextareaProps
-  extends FieldShellProps,
-    Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id' | 'className'> {
+  extends FieldShellProps, Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id' | 'className'> {
   /** Renders a `<textarea>`. */
   multiline: true;
 }

@@ -15,8 +15,7 @@ export type ForumVideoPayload = {
 
 /** Result of {@link prepareForumVideo}. */
 export type PrepareForumVideoResult =
-  | { ok: true; video: ForumVideoPayload }
-  | { ok: false; error: 'unsupported' | 'tooLarge' };
+  { ok: true; video: ForumVideoPayload } | { ok: false; error: 'unsupported' | 'tooLarge' };
 
 /**
  * True when `file.type` is MP4, WebM, QuickTime, or MPEG-4 video, or the
