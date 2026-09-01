@@ -2213,6 +2213,75 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
   await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
 });
 
+test('Function: ForumLoader — becoming visible again refetches the forum list', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  let messagesBody: unknown = { messages: [] };
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(messagesBody),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+
+  messagesBody = {
+    messages: [
+      {
+        id: 'm-refresh',
+        name: 'Ada',
+        text: 'Visible again note',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ],
+  };
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  await expect(page.getByText('Visible again note')).toBeVisible();
+});
+
 test('Function: formatForumTime — message timestamp is visible', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

@@ -121,6 +121,10 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => 'visible',
+  });
   fetchMock.mockReset();
   postMock.mockReset();
   invoiceMock.mockReset();
@@ -2622,5 +2626,287 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
     });
+  });
+
+  it('refetches when the document becomes visible again after being hidden', async () => {
+    fetchMock
+      .mockResolvedValueOnce([SAMPLE])
+      .mockResolvedValueOnce([
+        {
+          id: 'm-new',
+          name: 'Carol',
+          text: 'Fresh from refresh',
+          createdAt: '2026-08-28T15:00:00.000Z',
+          sats: 0,
+          payable: true,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+        SAMPLE,
+      ]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+  });
+
+  it('does not double-fetch on first mount before any visibility event', async () => {
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refetches on pageshow when persisted is true, not when false', async () => {
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      const notPersisted = new Event('pageshow');
+      Object.defineProperty(notPersisted, 'persisted', { value: false });
+      window.dispatchEvent(notPersisted);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      const persisted = new Event('pageshow');
+      Object.defineProperty(persisted, 'persisted', { value: true });
+      window.dispatchEvent(persisted);
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not double-fetch when pageshow and visibilitychange fire in the same turn', async () => {
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      const persisted = new Event('pageshow');
+      Object.defineProperty(persisted, 'persisted', { value: true });
+      window.dispatchEvent(persisted);
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not refresh while a pay sheet is open', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Amount')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the list and does not show forum.error when a silent refresh fails', async () => {
+    fetchMock
+      .mockResolvedValueOnce([SAMPLE])
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
+  it('does not refresh while the initial fetch is still loading', async () => {
+    fetchMock.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sets forum.error when a silent refresh fails before any list is loaded', async () => {
+    fetchMock
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+  });
+
+  it('does not scroll the composer into view when refresh adds a newer message id', async () => {
+    fetchMock
+      .mockResolvedValueOnce([SAMPLE])
+      .mockResolvedValueOnce([
+        {
+          id: 'm-newer',
+          name: 'Carol',
+          text: 'Newer note',
+          createdAt: '2026-08-28T16:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+        SAMPLE,
+      ]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    const scrollMock = HTMLElement.prototype.scrollIntoView as unknown as ReturnType<typeof vi.fn>;
+    scrollMock.mockClear();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Newer note')).toBeTruthy();
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+    expect(scrollMock).not.toHaveBeenCalled();
   });
 });

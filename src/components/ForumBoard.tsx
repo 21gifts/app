@@ -65,6 +65,10 @@ export interface ForumBoardProps {
   error: boolean;
   /** True while a fetch is in flight. */
   loading: boolean;
+  /** True while a silent/pull refresh is in flight (list stays on screen). */
+  refreshing?: boolean;
+  /** Re-fetch the forum list. Omit to disable pull-to-refresh. */
+  onRefresh?: () => void;
   /** True while a post is in flight. */
   posting: boolean;
   /** Composer draft text. */
@@ -212,6 +216,8 @@ function showForumPm(
  * composer (new notes only, photo or video attach), per-card expand for replies
  * + reply composer, copy-link control, PM control on other people's notes,
  * pay-on-note sheet, optional inline photos, and optional inline videos.
+ * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
+ * status spinner without changing idle markup.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
@@ -220,6 +226,8 @@ export function ForumBoard({
   messages,
   error,
   loading,
+  refreshing = false,
+  onRefresh,
   posting,
   draft,
   onDraftChange,
@@ -263,6 +271,7 @@ export function ForumBoard({
   pmBusyId,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
+  const rootRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newestId = messages?.[0]?.id ?? null;
@@ -270,15 +279,120 @@ export function ForumBoard({
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
+  const refreshingRef = useRef(refreshing);
+  refreshingRef.current = refreshing;
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
   useEffect(() => {
     if (newestId === null) {
       return;
     }
+    // Read refreshing via ref so clearing refreshing after a silent refresh
+    // does not re-run this effect and jump to the composer.
+    if (refreshingRef.current) {
+      return;
+    }
     composerRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
   }, [newestId]);
+
+  useEffect(() => {
+    if (onRefresh === undefined) {
+      return;
+    }
+    const node = rootRef.current;
+    if (node === null) {
+      return;
+    }
+
+    let startY: number | null = null;
+    let deltaY = 0;
+    let armed = false;
+
+    const pageScrollTop = (): number =>
+      window.scrollY || document.documentElement.scrollTop || 0;
+
+    const resetPull = (): void => {
+      startY = null;
+      deltaY = 0;
+      if (armed) {
+        armed = false;
+        setPullArmed(false);
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent): void => {
+      if (refreshingRef.current || loadingRef.current) {
+        return;
+      }
+      if (pageScrollTop() >= 8) {
+        return;
+      }
+      const touch = event.touches[0];
+      if (touch === undefined) {
+        return;
+      }
+      startY = touch.clientY;
+      deltaY = 0;
+    };
+
+    const onTouchMove = (event: TouchEvent): void => {
+      if (startY === null || refreshingRef.current || loadingRef.current) {
+        return;
+      }
+      if (pageScrollTop() >= 8) {
+        resetPull();
+        return;
+      }
+      const touch = event.touches[0];
+      if (touch === undefined) {
+        return;
+      }
+      deltaY = touch.clientY - startY;
+      if (deltaY > 0) {
+        if (deltaY > 24) {
+          try {
+            event.preventDefault();
+          } catch {
+            // Passive listeners still allow onRefresh on touchend.
+          }
+        }
+        if (deltaY >= 56 && !armed) {
+          armed = true;
+          setPullArmed(true);
+        }
+      }
+    };
+
+    const onTouchEnd = (): void => {
+      const shouldRefresh =
+        startY !== null && deltaY >= 56 && refreshingRef.current === false;
+      resetPull();
+      if (shouldRefresh) {
+        onRefreshRef.current?.();
+      }
+    };
+
+    const onTouchCancel = (): void => {
+      resetPull();
+    };
+
+    node.addEventListener('touchstart', onTouchStart, { passive: true });
+    node.addEventListener('touchmove', onTouchMove, { passive: false });
+    node.addEventListener('touchend', onTouchEnd);
+    node.addEventListener('touchcancel', onTouchCancel);
+    return () => {
+      node.removeEventListener('touchstart', onTouchStart);
+      node.removeEventListener('touchmove', onTouchMove);
+      node.removeEventListener('touchend', onTouchEnd);
+      node.removeEventListener('touchcancel', onTouchCancel);
+    };
+  }, [onRefresh]);
 
   useEffect(() => {
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -378,7 +492,11 @@ export function ForumBoard({
   } else if (messages !== null && visible !== null) {
     const displayed = mode === 'popular' ? visible : visible.slice().reverse();
     middle = (
-      <ul aria-label={t('forum.listLabel')} className="flex flex-col gap-4">
+      <ul
+        aria-label={t('forum.listLabel')}
+        aria-busy={refreshing === true}
+        className="flex flex-col gap-4"
+      >
         {displayed.map((message) => {
           const photoUrl = message.hasPhoto ? photoUrls[message.id] : undefined;
           const videoSrc =
@@ -794,8 +912,23 @@ export function ForumBoard({
     middle = <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
   }
 
+  const showRefreshStatus = refreshing === true || pullArmed;
+
   return (
-    <div className="flex w-full flex-col gap-4 border-t border-app-border pt-6">
+    <div
+      ref={rootRef}
+      className="flex w-full flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
+    >
+      {showRefreshStatus ? (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={t('forum.refreshing')}
+          className="flex justify-center"
+        >
+          <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-app-muted" />
+        </div>
+      ) : null}
       {lawsVisible ? (
         <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
           <IconButton

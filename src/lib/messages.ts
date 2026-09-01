@@ -214,6 +214,7 @@ const en = {
   'forum.repliesError': 'Could not load replies. Please try again.',
   'forum.expand': 'Show replies',
   'forum.collapse': 'Hide replies',
+  'forum.refreshing': 'Refreshing messages',
 
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
@@ -592,6 +593,7 @@ const de = {
   'forum.repliesError': 'Antworten konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'forum.expand': 'Antworten anzeigen',
   'forum.collapse': 'Antworten ausblenden',
+  'forum.refreshing': 'Nachrichten werden aktualisiert',
 
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
@@ -965,6 +967,7 @@ const es = {
   'forum.repliesError': 'No se pudieron cargar las respuestas. Inténtalo de nuevo.',
   'forum.expand': 'Mostrar respuestas',
   'forum.collapse': 'Ocultar respuestas',
+  'forum.refreshing': 'Actualizando mensajes',
 
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
@@ -1336,6 +1339,7 @@ const fil = {
   'forum.repliesError': 'Hindi ma-load ang mga sagot. Subukan ulit.',
   'forum.expand': 'Ipakita ang mga sagot',
   'forum.collapse': 'Itago ang mga sagot',
+  'forum.refreshing': 'Nire-refresh ang mga mensahe',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',
