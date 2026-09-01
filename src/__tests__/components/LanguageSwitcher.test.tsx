@@ -325,7 +325,7 @@ describe('LanguageSwitcher', () => {
     renderWithLocale(<LanguageSwitcher tone="dark" />);
     const trigger = screen.getByLabelText('Language');
     expect(trigger.className).toContain('text-paper');
-    expect(trigger.className).toContain('border-white/20');
+    expect(trigger.className).toContain('border-paper/20');
     fireEvent.click(trigger);
     expect(screen.getByRole('listbox').className).toContain('bg-ink');
   });
