@@ -305,11 +305,6 @@ export function ForumBoard({
     if (onRefresh === undefined) {
       return;
     }
-    const node = rootRef.current;
-    /* v8 ignore next 3 -- root ref is set on the always-mounted board wrapper */
-    if (node === null) {
-      return;
-    }
 
     let startY: number | null = null;
     let deltaY = 0;
@@ -384,15 +379,15 @@ export function ForumBoard({
       resetPull();
     };
 
-    node.addEventListener('touchstart', onTouchStart, { passive: true });
-    node.addEventListener('touchmove', onTouchMove, { passive: false });
-    node.addEventListener('touchend', onTouchEnd);
-    node.addEventListener('touchcancel', onTouchCancel);
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('touchcancel', onTouchCancel);
     return () => {
-      node.removeEventListener('touchstart', onTouchStart);
-      node.removeEventListener('touchmove', onTouchMove);
-      node.removeEventListener('touchend', onTouchEnd);
-      node.removeEventListener('touchcancel', onTouchCancel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchCancel);
     };
   }, [onRefresh]);
 

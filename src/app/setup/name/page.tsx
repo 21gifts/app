@@ -13,7 +13,7 @@ export default function NameSetupPage(): ReactElement {
   return (
     <PageChrome
       className="h-svh justify-start"
-      topLeft={<Wordmark href="/welcome" />}
+      topLeft={<Wordmark />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="name">

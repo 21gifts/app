@@ -98,7 +98,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
             <ArrowLeft aria-hidden="true" className="h-5 w-5" />
           </IconButton>
         ) : null}
-        <Wordmark href="/welcome" />
+        <Wordmark />
       </div>
       <section className="flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8 pt-24">
         <h1 className="text-center text-2xl font-semibold tracking-tight">
