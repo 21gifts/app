@@ -19,10 +19,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'bg-app-btn text-app-btn-fg hover:bg-app-btn-hover disabled:opacity-50',
+  primary:
+    'bg-app-btn text-app-btn-fg hover:bg-app-btn-hover disabled:cursor-not-allowed disabled:opacity-50',
   secondary:
-    'border border-app-border-strong bg-app-card text-app-fg hover:bg-app-hover disabled:opacity-50',
-  accent: 'bg-app-accent text-app-accent-fg hover:opacity-90 disabled:opacity-50',
+    'border border-app-border-strong bg-app-card text-app-fg hover:bg-app-hover disabled:cursor-not-allowed disabled:opacity-50',
+  accent:
+    'bg-app-accent text-app-accent-fg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50',
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {

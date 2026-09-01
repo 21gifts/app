@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, ReactElement, ReactNode, TextareaHTMLAttributes } from 'react';
 
 const CONTROL_CLASS =
-  'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition disabled:opacity-50';
+  'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50';
 
 /** Shared props for labeled fields. */
 interface FieldShellProps {
@@ -15,14 +15,16 @@ interface FieldShellProps {
 
 /** Props for a single-line {@link Field}. */
 export interface FieldInputProps
-  extends FieldShellProps, Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'className'> {
+  extends FieldShellProps,
+    Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'className'> {
   /** Renders an `<input>`. */
   multiline?: false;
 }
 
 /** Props for a multiline {@link Field}. */
 export interface FieldTextareaProps
-  extends FieldShellProps, Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id' | 'className'> {
+  extends FieldShellProps,
+    Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id' | 'className'> {
   /** Renders a `<textarea>`. */
   multiline: true;
 }

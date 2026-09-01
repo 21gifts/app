@@ -413,9 +413,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </p>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-accent uppercase">
-            Total spend over time
-          </h2>
+          <h2 className="text-sm tracking-widest text-accent uppercase">Total spend over time</h2>
           <BarScaleToggle
             value={overTimeScale}
             onChange={setOverTimeScale}

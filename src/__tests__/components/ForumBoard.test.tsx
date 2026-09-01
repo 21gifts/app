@@ -770,6 +770,7 @@ describe('ForumBoard', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    expect(screen.queryByText('Send Bitcoin')).toBeNull();
     expect(onPayOpen).toHaveBeenCalledWith('m1');
   });
 

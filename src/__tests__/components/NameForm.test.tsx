@@ -50,9 +50,10 @@ describe('NameForm', () => {
 
   it('uses icon actions beside the field on the profile variant without a name', () => {
     renderWithLocale(<NameForm variant="profile" />);
-    expect(screen.getByRole('button', { name: /save name/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save name' })).toBeTruthy();
+    expect(screen.queryByText('Save name')).toBeNull();
     expect(screen.queryByRole('button', { name: /continue/i })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /save name/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter your name');
   });
 
@@ -147,7 +148,8 @@ describe('NameForm', () => {
     renderWithLocale(<NameForm />);
 
     expect(screen.getByText('Ada')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /edit/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
+    expect(screen.queryByText('Edit')).toBeNull();
     expect(screen.queryByRole('button', { name: /unlink/i })).toBeNull();
   });
 
