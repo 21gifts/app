@@ -357,11 +357,13 @@ export function ForumBoard({
       deltaY = touch.clientY - startY;
       if (deltaY > 0) {
         if (deltaY > 24) {
+          /* v8 ignore start -- preventDefault throws when the listener is passive */
           try {
             event.preventDefault();
           } catch {
-            /* v8 ignore next -- passive listeners still fire touchend */
+            // Passive listeners still fire touchend.
           }
+          /* v8 ignore stop */
         }
         if (deltaY >= 56 && !armed) {
           armed = true;
