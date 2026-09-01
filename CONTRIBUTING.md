@@ -332,8 +332,8 @@ unrelated PRs for these:
   24px paint.
 
 The signed-in **Menu** trigger stays labeled (icon plus visible Menu word).
-**Log out**, **Link address**, **Continue**, **I agree to these rules**,
-**Activate**, **Try again**, **Cancel**, and sentence-length links stay
+**Log out**, **Continue**, **I agree to these rules**,
+**Activate**, **Try again**, and sentence-length links stay
 labeled.
 
 Reviewers follow `Review.md` and `docs/ui.md`.

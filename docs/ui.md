@@ -1375,13 +1375,13 @@ Font + token PR: expect hundreds of PNG diffs. Budget CI visual jobs (10 minutes
 
 ## PR Plan
 
-Each PR is mergeable alone. One open PR per repo per session still applies operationally; this is the sequence, not a request to open five at once.
+Each PR is mergeable alone. This is the sequence, not a request to open five at once.
 
 ### PR 1 — Design system as `docs/ui.md`
 
 - **Title:** Document the 21.gifts visual design system
 - **Depends on:** nothing
-- **Files:** `docs/ui.md` (English adaptation of this document: principles, tokens, type ramp, chrome, control table, catalog, screen recipes, key decisions). Strip Author/Status/SHA table, “,” session metadata, `` filenames, private-repo names. Title it as the **target system**, with a one-line current-vs-target note. `CONTRIBUTING.md`: replace **Icon controls** with the labeled vs icon-only table **and** a grandfather clause (Contact Send → PR 5; pay glyph → PR 4; `sm` hit slop / `md`/`lg` boxes → PR 2). Point to `docs/ui.md`. `Review.md`: reviewers follow the table for **new** controls; do not bounce grandfathered SHA code.
+- **Files:** `docs/ui.md` (English adaptation of this document: principles, tokens, type ramp, chrome, control table, catalog, screen recipes, key decisions). Title it as the **target system**, with a one-line current-vs-target note. `CONTRIBUTING.md`: replace **Icon controls** with the labeled vs icon-only table **and** a grandfather clause (Contact Send → PR 5; pay glyph → PR 4; `sm` hit slop / `md`/`lg` boxes → PR 2). Point to `docs/ui.md`. `Review.md`: reviewers follow the table for **new** controls; do not bounce grandfathered SHA code.
 - **Goldens:** none. Markdown only. No Vitest assertions of CONTRIBUTING prose.
 - **Description:** Makes the design system the in-repo source of truth. Resolves the CONTRIBUTING conflict without making current `develop` an undeclared deviation.
 

@@ -217,7 +217,7 @@ function showForumPm(
  * + reply composer, copy-link control, PM control on other people's notes,
  * pay-on-note sheet, optional inline photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
- * status spinner without changing idle markup.
+ * visually hidden (`sr-only`) refresh status without changing idle markup.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
@@ -924,10 +924,8 @@ export function ForumBoard({
           role="status"
           aria-live="polite"
           aria-label={t('forum.refreshing')}
-          className="flex justify-center"
-        >
-          <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-app-muted" />
-        </div>
+          className="sr-only"
+        />
       ) : null}
       {lawsVisible ? (
         <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
