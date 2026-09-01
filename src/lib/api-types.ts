@@ -263,7 +263,7 @@ export const forumListSchema = z.object({
  * Runtime schema for `GET /messages/:id/replies` (oldest-first).
  */
 export const forumRepliesSchema = z.object({
-  replies: z.array(forumMessageSchema),
+  messages: z.array(forumMessageSchema),
 });
 
 /**

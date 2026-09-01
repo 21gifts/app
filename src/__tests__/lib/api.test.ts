@@ -952,7 +952,7 @@ describe('fetchReplies', () => {
     const fetchMock = stubFetch({
       ok: true,
       status: 200,
-      body: { replies: [forumMessage] },
+      body: { messages: [forumMessage] },
     });
     await expect(fetchReplies('sess', 'parent')).resolves.toEqual([forumMessage]);
     expect(fetchMock).toHaveBeenCalledWith('/forum/messages/parent/replies', {

@@ -2614,7 +2614,7 @@ test('Function: fetchReplies — expanding a welcome note loads replies', async 
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        replies: [
+        messages: [
           {
             id: 'r1',
             name: 'Bob',

@@ -685,7 +685,7 @@
 
 ## Function: fetchReplies
 
-- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session, parse `forumRepliesSchema`, and return oldest-first replies for one note.
+- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session, parse `forumRepliesSchema` (`{ messages }`, same key as the list endpoint), and return oldest-first replies for one note.
 - **Inputs:** `sessionToken`, parent message `id`.
 - **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure. Damus authors may omit `role` (schema defaults to `basis`).
 - **Used by:** `ForumLoader`.
