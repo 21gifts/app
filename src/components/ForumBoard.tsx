@@ -306,6 +306,7 @@ export function ForumBoard({
       return;
     }
     const node = rootRef.current;
+    /* v8 ignore next 3 -- root ref is set on the always-mounted board wrapper */
     if (node === null) {
       return;
     }
