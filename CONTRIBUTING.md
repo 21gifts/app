@@ -166,7 +166,7 @@ app/
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
 ├── docs/
-│   ├── ui.md                    # Shared UI primitives (Button, IconButton, Field, Card, PageChrome)
+│   ├── ui.md                    # Visual design system (target: tokens, type, chrome, control grammar)
 │   └── handbook/                # Mandatory: every screen + exported function + endpoint
 │       ├── README.md
 │       ├── screens.md
@@ -257,6 +257,10 @@ update stuff
 - **Tailwind CSS only.** No CSS files beyond `src/app/globals.css`, no CSS
   modules, no styled-components, no inline `style` attributes.
 - Utility classes live directly on the JSX elements.
+- Visual language (shells, tokens, type, chrome, control grammar) lives in
+  `docs/ui.md`. New or migrated surfaces compose those parts. Raw
+  `rounded-full bg-app-btn` (or `bg-neutral-900`) outside primitives on a
+  new or migrated surface is an undeclared deviation.
 
 ### Components
 
@@ -299,27 +303,40 @@ English).
 
 ### Icon controls (hard requirement)
 
-**New action buttons default to icon-only:** a lucide glyph plus a catalog
-`aria-label`, no visible text. Tests locate icon **buttons** with
-`getByRole('button', { name })` against that label and assert
-`queryByText` for the catalog string is `null`. Icon **links** use
-`getByRole('link', { name })`. Non-interactive indicators (given/received
-arrows) use `aria-label` on the glyph, not a button role.
+The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
+**target**. New work follows that table, not “everything new is an icon”.
 
-Already icon-only: composer attach, send (**Post**), remove-photo, profile push
-bell (`PushToggle`), and the
-Bitcoin pay control. Profile back is an icon **link**. Given/received totals
-are icon indicators.
+| Labeled (`Button` / `ButtonLink`) | Icon-only (`IconButton`, required `aria-label`) |
+| --------------------------------- | ----------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu *trigger* stays labeled) |
 
-Existing hybrid or text controls stay until converted: the signed-in **Menu**
-disclosure (icon plus visible Menu word), **Log out**, **Link address**,
-**Continue**, **I agree to these rules** (onboarding consent must be readable
-as an agreement, not an icon), **Activate** (invite claim on `/view/[viewKey]`
-must be readable, not an icon), **Try again**, **Cancel**, and sentence-length
-links such as **Open Wallet of Satoshi**. A **new** text button for an action
-control is an undeclared deviation and is rejected.
+Tests locate icon **buttons** with `getByRole('button', { name })` against
+the catalog `aria-label` and assert `queryByText` for the visible catalog
+string is `null`. Icon **links** use `getByRole('link', { name })`.
+Non-interactive indicators (given/received arrows) use `aria-label` on the
+glyph, not a button role.
 
-Reviewers follow `Review.md`.
+A **new** control that is labeled when the table says icon-only (or
+icon-only when the table says labeled) is an undeclared deviation.
+
+**Grandfathered until the named follow-up** — current `develop` code that
+disagrees with the table is **not** an undeclared deviation. Do not bounce
+unrelated PRs for these:
+
+- Contact **Send** is still a labeled `Button` (`ContactScreen.tsx`) until
+  it becomes an `IconButton` (design-system screen-migration PR).
+- Pay is still lucide `Bitcoin` (`ForumBoard.tsx`) until it becomes lucide
+  `Gift` with the same `forum.pay` name (“Send Bitcoin”).
+- `IconButton` `sm` is still `h-6 w-6` until the token/primitive PR adds
+  44px hit slop (`before:content-[''] before:-inset-2.5`) while keeping
+  24px paint.
+
+The signed-in **Menu** trigger stays labeled (icon plus visible Menu word).
+**Log out**, **Link address**, **Continue**, **I agree to these rules**,
+**Activate**, **Try again**, **Cancel**, and sentence-length links stay
+labeled.
+
+Reviewers follow `Review.md` and `docs/ui.md`.
 
 ### Payment QR vs deep links (hard requirement)
 
