@@ -1210,7 +1210,7 @@ test.describe('welcome forum variants', () => {
       await route.abort();
     });
     await page.goto('/welcome');
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-welcome-loading');
     release();
   });
@@ -1976,7 +1976,7 @@ test.describe('inbox screens', () => {
       /* hang */
     });
     await page.goto('/messages');
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-messages-loading');
   });
 
