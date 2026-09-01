@@ -2407,4 +2407,83 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status', { name: 'Refreshing messages' })).toBeNull();
     expect(onRefresh).not.toHaveBeenCalled();
   });
+
+  it('does not start a pull when the page is already scrolled', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 20 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    fireEvent.touchStart(root!, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(root!, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(root!);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('cancels an in-progress pull when the page scrolls during the gesture', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    fireEvent.touchStart(root!, { touches: [{ clientY: 100 }] });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 20 });
+    fireEvent.touchMove(root!, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(root!);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('ignores a touchstart with an empty TouchList', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    fireEvent.touchStart(root!, { touches: [] });
+    fireEvent.touchMove(root!, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(root!);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
 });

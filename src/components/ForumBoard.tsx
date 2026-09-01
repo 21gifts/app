@@ -349,7 +349,7 @@ export function ForumBoard({
         return;
       }
       const touch = event.touches[0];
-      /* v8 ignore next -- TouchList can be empty mid-gesture */
+      /* v8 ignore next 3 -- TouchList can be empty mid-gesture */
       if (touch === undefined) {
         return;
       }

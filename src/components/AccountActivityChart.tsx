@@ -181,12 +181,8 @@ export function AccountActivityChart({
             </text>
           </g>
         ))}
-        {donatedLine !== '' ? (
-          <polyline points={donatedLine} fill="none" stroke={GIVEN_STROKE} strokeWidth="1.5" />
-        ) : null}
-        {receivedLine !== '' ? (
-          <polyline points={receivedLine} fill="none" stroke={RECEIVED_STROKE} strokeWidth="1.5" />
-        ) : null}
+        <polyline points={donatedLine} fill="none" stroke={GIVEN_STROKE} strokeWidth="1.5" />
+        <polyline points={receivedLine} fill="none" stroke={RECEIVED_STROKE} strokeWidth="1.5" />
         {points.map((point, i) => {
           const prevDonated =
             i === 0 ? 0 : activityValue(points[i - 1] as (typeof points)[number], 'donated', scale);

@@ -2905,4 +2905,59 @@ describe('ForumLoader', () => {
     });
     expect(scrollMock).not.toHaveBeenCalled();
   });
+
+  it('refetches when the board is pulled at the top of the page', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    const { container } = renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(root!, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(root!, { touches: [{ clientY: 160 }] });
+    fireEvent.touchEnd(root!);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('ignores a silent refresh that finishes after unmount', async () => {
+    let resolveRefresh: (value: ForumMessage[]) => void = () => undefined;
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockImplementationOnce(
+      () =>
+        new Promise<ForumMessage[]>((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    unmount();
+    await act(async () => {
+      resolveRefresh([SAMPLE]);
+    });
+  });
 });

@@ -256,6 +256,7 @@ export function ForumLoader(): ReactElement | null {
   };
 
   const refreshMessages = (): void => {
+    /* v8 ignore next 3 -- board unmounts without a session */
     if (session === null) {
       return;
     }
