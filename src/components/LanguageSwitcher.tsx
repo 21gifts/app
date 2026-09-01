@@ -283,7 +283,7 @@ export function LanguageSwitcher(props: {
 
   const panelClass =
     tone === 'dark'
-      ? 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-white/10 bg-[#0a090c] p-2 shadow-lg'
+      ? 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-white/10 bg-ink p-2 shadow-lg'
       : 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg';
 
   return (

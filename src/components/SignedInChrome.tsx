@@ -67,7 +67,7 @@ export function SignedInChrome(): ReactElement {
   const receivedAmount = formatBitcoin(receivedSats, locale);
 
   return (
-    <div ref={rootRef} className="absolute top-4 right-5">
+    <div ref={rootRef} className="relative">
       <button
         ref={buttonRef}
         type="button"

@@ -28,14 +28,11 @@ const MULTI_DAY: SpendPoint[] = [
 ];
 
 describe('AccountActivityChart', () => {
-  it('renders a reserved sat chart with no day labels when empty', () => {
-    const { container } = renderWithLocale(<AccountActivityChart received={[]} />);
-    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
-    expect(container.textContent).not.toMatch(/20\d{2}-\d{2}-\d{2}/);
-    expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByText('Received')).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
-    expect(screen.getByRole('group', { name: 'Given and received' })).toBeTruthy();
+  it('renders empty copy instead of an axis when there is no data', () => {
+    renderWithLocale(<AccountActivityChart received={[]} />);
+    expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
+    expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Given and received' })).toBeNull();
   });
 
   it('draws the received polyline and keeps ₿ pressed with grouped ticks', () => {

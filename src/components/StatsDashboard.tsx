@@ -68,7 +68,7 @@ function BarScaleToggle({
       <button
         type="button"
         aria-pressed={value === 'btc'}
-        className={`px-2 py-1 ${value === 'btc' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
+        className={`px-2 py-1 ${value === 'btc' ? 'bg-accent text-ink' : 'text-white/70'}`}
         onClick={() => onChange('btc')}
       >
         ₿
@@ -76,7 +76,7 @@ function BarScaleToggle({
       <button
         type="button"
         aria-pressed={value === 'usd'}
-        className={`px-2 py-1 ${value === 'usd' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
+        className={`px-2 py-1 ${value === 'usd' ? 'bg-accent text-ink' : 'text-white/70'}`}
         onClick={() => onChange('usd')}
       >
         USD
@@ -485,7 +485,7 @@ export function StatsDashboard({
         <p className="text-white/80">{error}</p>
         <button
           type="button"
-          className="rounded-full bg-[#f7931a] px-4 py-2 font-medium text-[#0a090c]"
+          className="rounded-full bg-accent px-4 py-2 font-medium text-ink"
           onClick={onRetry}
         >
           Try again

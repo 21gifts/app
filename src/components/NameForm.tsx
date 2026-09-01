@@ -3,6 +3,7 @@
 import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui';
 import { setName } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { hasDisplayName } from '@/lib/onboarding';
@@ -118,18 +119,19 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
           className="w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
         />
         {error !== null ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
           </p>
         ) : null}
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={busy}
-          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
+          className="mt-auto"
+          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
         >
-          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t('setup.continue')}
-        </button>
+        </Button>
       </form>
     );
   }
@@ -200,7 +202,7 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
       )}
 
       {error !== null ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
         </p>
       ) : null}

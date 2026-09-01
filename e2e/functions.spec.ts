@@ -2539,6 +2539,16 @@ test('Function: Button — login shows the Log in button', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
+test('Function: ButtonLink — landing Ask for help is a link', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: 'Ask for help' })).toBeVisible();
+});
+
+test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+});
+
 test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages$/, async (route) => {
@@ -2932,15 +2942,14 @@ test('Function: activityValue — USD toggle shows received USD on the profile c
   await expect(page.getByLabel('Given and received in USD').getByText('$1.43')).toBeVisible();
 });
 
-test('Function: activityMaxY — empty profile chart still reserves the SVG box', async ({
+test('Function: activityMaxY — empty profile chart shows copy instead of an axis', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
-  const chart = page.getByLabel('Given and received in ₿');
-  await expect(chart).toBeVisible();
-  await expect(chart).toHaveAttribute('viewBox', '0 0 400 110');
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿')).toHaveCount(0);
 });
 
 test('Function: formatBitcoin — populated profile chart shows grouped ₿ ticks', async ({

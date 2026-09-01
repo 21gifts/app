@@ -96,16 +96,30 @@ export function AccountActivityChart({
   const donatedLine = linePoints('donated');
   const receivedLine = linePoints('received');
 
+  if (n === 0 || dataMax === 0) {
+    return (
+      <p className="text-center text-sm text-app-muted" role="status">
+        {t('profile.chartEmpty')}
+      </p>
+    );
+  }
+
   return (
     <div role="group" aria-label={t('profile.chartTitle')} className="flex w-full flex-col gap-2">
       <div className="flex items-center justify-between gap-3 text-xs text-app-muted">
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#525252]" />
+            <span
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-sm bg-app-chart-given"
+            />
             {t('profile.legendGiven')}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#f7931a]" />
+            <span
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-sm bg-app-chart-received"
+            />
             {t('profile.legendReceived')}
           </span>
         </div>
@@ -118,7 +132,7 @@ export function AccountActivityChart({
             type="button"
             aria-pressed={scale === 'sat'}
             className={`px-2 py-1 ${
-              scale === 'sat' ? 'bg-app-accent text-[#0a090c]' : 'text-app-muted'
+              scale === 'sat' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
             }`}
             onClick={() => setScale('sat')}
           >
@@ -128,7 +142,7 @@ export function AccountActivityChart({
             type="button"
             aria-pressed={scale === 'usd'}
             className={`px-2 py-1 ${
-              scale === 'usd' ? 'bg-app-accent text-[#0a090c]' : 'text-app-muted'
+              scale === 'usd' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
             }`}
             onClick={() => setScale('usd')}
           >

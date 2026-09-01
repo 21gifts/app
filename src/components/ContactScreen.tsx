@@ -1,10 +1,10 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card } from '@/components/ui';
+import { Card, IconButton } from '@/components/ui';
 import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 
 /** Props for {@link ContactScreen}. */
@@ -67,24 +67,33 @@ export function ContactScreen({
           disabled={posting}
           className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
         />
-        <Button type="submit" disabled={posting}>
-          {posting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
-          {t('contact.send')}
-        </Button>
+        <IconButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          disabled={posting}
+          aria-label={t('contact.send')}
+        >
+          {posting ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send aria-hidden="true" className="h-4 w-4" />
+          )}
+        </IconButton>
       </form>
 
       {formError === 'empty' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('contact.errorEmpty')}
         </p>
       ) : null}
       {formError === 'tooLong' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('contact.errorTooLong')}
         </p>
       ) : null}
       {formError === 'request' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('contact.errorRequest')}
         </p>
       ) : null}

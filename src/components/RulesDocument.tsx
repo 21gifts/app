@@ -1,6 +1,6 @@
 import { Check, Minus, X } from 'lucide-react';
-import Link from 'next/link';
 import { Fragment, type ReactElement } from 'react';
+import { ButtonLink } from '@/components/ui';
 import type { MessageKey, Messages } from '@/lib/messages';
 import { RULES_CHAPTER_IDS, type RulesChapterId } from '@/lib/rules-chapters';
 import { translate } from '@/lib/translate';
@@ -75,10 +75,10 @@ const FORBIDDEN_OTHER = [
 ] as const;
 
 const LIST_GLYPH: Record<ListTone, { Icon: typeof Check; className: string }> = {
-  welcome: { Icon: Check, className: 'text-app-accent' },
+  welcome: { Icon: Check, className: 'text-app-fg' },
   allowed: { Icon: Check, className: 'text-app-muted' },
   ratherNot: { Icon: Minus, className: 'text-app-muted' },
-  forbidden: { Icon: X, className: 'text-red-600' },
+  forbidden: { Icon: X, className: 'text-app-danger' },
 };
 
 const HEADING = 'text-2xl font-semibold tracking-tight text-app-fg';
@@ -112,7 +112,7 @@ function RuleList({
 function TestCallout({ text, t }: { text: string; t: Translate }): ReactElement {
   return (
     <div className="rounded-xl bg-app-card-muted px-5 py-4">
-      <p className={`${KICKER} text-app-muted`}>{t('rules.testLabel')}</p>
+      <p className={`${KICKER} text-app-subtle`}>{t('rules.testLabel')}</p>
       <p className="mt-1.5 text-sm leading-relaxed text-app-fg">{text}</p>
     </div>
   );
@@ -133,7 +133,7 @@ function Law({
 }): ReactElement {
   return (
     <section className={`${CARD} flex flex-col gap-4 p-6 sm:p-8`}>
-      <p className={`${KICKER} text-app-accent`}>{t('rules.lawKicker', { n })}</p>
+      <p className={`${KICKER} text-app-subtle`}>{t('rules.lawKicker', { n })}</p>
       <h2 className={HEADING}>{title}</h2>
       <p className={BODY}>{body}</p>
       {test === undefined ? null : <TestCallout text={test} t={t} />}
@@ -172,7 +172,7 @@ function renderChapter(id: RulesChapterId, t: Translate): ReactElement {
         <section className="flex flex-col gap-5">
           <p className="text-lg leading-relaxed text-app-fg">{t('rules.lead')}</p>
           <div className="border-l-2 border-app-accent pl-5">
-            <p className={`${KICKER} text-app-muted`}>{t('rules.testLabel')}</p>
+            <p className={`${KICKER} text-app-subtle`}>{t('rules.testLabel')}</p>
             <p className="mt-1.5 text-base leading-relaxed text-app-fg">{t('rules.leadTest')}</p>
           </div>
         </section>
@@ -290,18 +290,10 @@ export function RulesDocument({
   const nav =
     chapter === undefined && showNav ? (
       <nav className="flex flex-wrap items-center justify-center gap-4 pb-8 text-sm font-medium">
-        <Link
-          href="/contact"
-          className="rounded-full bg-app-btn px-5 py-2.5 text-app-btn-fg transition hover:bg-app-btn-hover"
-        >
-          {t('rules.contactCta')}
-        </Link>
-        <Link
-          href="/welcome"
-          className="rounded-full border border-app-border-strong px-5 py-2.5 text-app-fg transition hover:bg-app-hover"
-        >
+        <ButtonLink href="/contact">{t('rules.contactCta')}</ButtonLink>
+        <ButtonLink href="/welcome" variant="secondary">
           {t('rules.forumCta')}
-        </Link>
+        </ButtonLink>
       </nav>
     ) : null;
 

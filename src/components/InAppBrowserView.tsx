@@ -3,6 +3,7 @@
 import { ExternalLink } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 
 const COPY_RESET_MS = 1200;
@@ -96,25 +97,24 @@ export function InAppBrowserView(): ReactElement {
         <p className="text-center text-sm text-app-muted">{t('login.inAppIosHint')}</p>
       ) : null}
       <div className="flex flex-col items-center gap-3">
-        <button
+        <Button
           type="button"
           onClick={() => {
             openInSystemBrowser(loginUrl());
           }}
-          className="inline-flex items-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
         >
           {t('login.openInBrowser')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="secondary"
           onClick={() => {
             void copyLink();
           }}
           data-copied={copied ? 'true' : undefined}
-          className="rounded-full border border-app-border-strong bg-app-card px-6 py-3 text-sm font-medium text-app-fg"
         >
           {copied ? t('login.linkCopied') : t('login.copyLink')}
-        </button>
+        </Button>
       </div>
     </>
   );

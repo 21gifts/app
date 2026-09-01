@@ -3,10 +3,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #0a090c;
+  --color-paper: #ffffff;
+  --color-accent: #f7931a;
   --color-app-bg: #ffffff;
   --color-app-fg: #171717;
-  --color-app-muted: #737373;
-  --color-app-subtle: #a3a3a3;
+  --color-app-muted: #525252;
+  --color-app-subtle: #737373;
   --color-app-border: #e5e5e5;
   --color-app-border-strong: #d4d4d4;
   --color-app-card: #ffffff;
@@ -16,6 +20,17 @@
   --color-app-btn-hover: #404040;
   --color-app-hover: #fafafa;
   --color-app-accent: #f7931a;
+  --color-app-accent-fg: #0a090c;
+  --color-app-focus: #171717;
+  --color-app-danger: #b91c1c;
+  --color-app-success: #15803d;
+  --color-app-overlay: rgb(10 9 12 / 0.4);
+  --color-app-chart-given: #525252;
+  --color-app-chart-received: #f7931a;
+  --color-app-notice: #fff7ed;
+  --color-app-notice-fg: #171717;
+  --color-app-qr-bg: #ffffff;
+  --color-app-qr-fg: #000000;
 }
 
 html {
@@ -27,7 +42,7 @@ html.dark {
   --color-app-bg: #0a090c;
   --color-app-fg: #ffffff;
   --color-app-muted: #a3a3a3;
-  --color-app-subtle: #737373;
+  --color-app-subtle: #a3a3a3;
   --color-app-border: rgb(255 255 255 / 0.2);
   --color-app-border-strong: rgb(255 255 255 / 0.3);
   --color-app-card: #121116;
@@ -37,4 +52,33 @@ html.dark {
   --color-app-btn-hover: #e5e5e5;
   --color-app-hover: rgb(255 255 255 / 0.1);
   --color-app-accent: #f7931a;
+  --color-app-accent-fg: #0a090c;
+  --color-app-focus: #ffffff;
+  --color-app-danger: #f87171;
+  --color-app-success: #4ade80;
+  --color-app-overlay: rgb(10 9 12 / 0.6);
+  --color-app-chart-given: #a3a3a3;
+  --color-app-chart-received: #f7931a;
+  --color-app-notice: #2a1f12;
+  --color-app-notice-fg: #ffffff;
+  --color-app-qr-bg: #ffffff;
+  --color-app-qr-fg: #000000;
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-app-focus);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

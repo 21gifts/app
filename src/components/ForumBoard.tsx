@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bitcoin, Check, ImagePlus, Link2, Loader2, Mail, Send, X } from 'lucide-react';
+import { ArrowLeft, Check, Gift, ImagePlus, Link2, Loader2, Mail, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import {
   useEffect,
@@ -314,8 +314,7 @@ export function ForumBoard({
     let deltaY = 0;
     let armed = false;
 
-    const pageScrollTop = (): number =>
-      window.scrollY || document.documentElement.scrollTop || 0;
+    const pageScrollTop = (): number => window.scrollY || document.documentElement.scrollTop || 0;
 
     const resetPull = (): void => {
       startY = null;
@@ -370,8 +369,7 @@ export function ForumBoard({
     };
 
     const onTouchEnd = (): void => {
-      const shouldRefresh =
-        startY !== null && deltaY >= 56 && refreshingRef.current === false;
+      const shouldRefresh = startY !== null && deltaY >= 56 && refreshingRef.current === false;
       resetPull();
       if (shouldRefresh) {
         onRefreshRef.current?.();
@@ -605,8 +603,8 @@ export function ForumBoard({
                 {message.text !== '' ? (
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
-                <div className="mt-3 flex items-center gap-1.5">
-                  <p className="text-xs font-medium text-app-muted">
+                <div className="mt-3 flex items-center gap-5">
+                  <p className="text-xs font-semibold tabular-nums lining-nums text-app-muted">
                     {formatBitcoin(message.sats, locale)}
                   </p>
                   {message.payable ? (
@@ -621,7 +619,7 @@ export function ForumBoard({
                         onPayOpen(message.id);
                       }}
                     >
-                      <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                      <Gift aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                     </IconButton>
                   ) : null}
                   <IconButton
@@ -697,22 +695,22 @@ export function ForumBoard({
                     onChange={(event) => onPayDraftChange(event.target.value)}
                   />
                   {payError === 'amount' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorAmount')}
                     </p>
                   ) : null}
                   {payError === 'request' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorRequest')}
                     </p>
                   ) : null}
                   {payError === 'rateLimit' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorRateLimit')}
                     </p>
                   ) : null}
                   {payError === 'authorWallet' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorAuthorWallet')}
                     </p>
                   ) : null}
@@ -758,7 +756,7 @@ export function ForumBoard({
                     <a
                       href={wosHref}
                       aria-label={t('forum.payOpenWalletAria')}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-app-btn px-6 py-3 text-sm font-medium text-app-btn-fg no-underline transition hover:bg-app-btn-hover"
                     >
                       <img
                         src="/wos-icon.png"
@@ -881,22 +879,22 @@ export function ForumBoard({
                       </IconButton>
                     </div>
                     {replyFormError === 'empty' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorEmpty')}
                       </p>
                     ) : null}
                     {replyFormError === 'tooLong' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorTooLong')}
                       </p>
                     ) : null}
                     {replyFormError === 'request' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorRequest')}
                       </p>
                     ) : null}
                     {replyFormError === 'rateLimit' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorRateLimit')}
                       </p>
                     ) : null}
@@ -1067,32 +1065,32 @@ export function ForumBoard({
       </form>
 
       {formError === 'empty' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorEmpty')}
         </p>
       ) : null}
       {formError === 'tooLong' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLong')}
         </p>
       ) : null}
       {formError === 'request' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRequest')}
         </p>
       ) : null}
       {formError === 'rateLimit' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRateLimit')}
         </p>
       ) : null}
       {formError === 'unsupported' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorUnsupported')}
         </p>
       ) : null}
       {formError === 'tooLarge' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLarge')}
         </p>
       ) : null}

@@ -135,10 +135,12 @@ app/
 │   │   ├── ContactLoader.tsx    # Post state for /contact
 │   │   └── ui/
 │   │       ├── Button.tsx       # Shared button primitive
+│   │       ├── ButtonLink.tsx   # Shared pill link
 │   │       ├── Card.tsx         # Shared card chrome
 │   │       ├── Field.tsx        # Shared labeled field
 │   │       ├── IconButton.tsx   # Shared icon button
 │   │       ├── PageChrome.tsx   # Shared page chrome
+│   │       ├── Wordmark.tsx     # Text wordmark 21.gifts
 │   │       └── index.ts         # Barrel export for ui primitives
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
@@ -306,9 +308,9 @@ English).
 The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 **target**. New work follows that table, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink`) | Icon-only (`IconButton`, required `aria-label`) |
-| --------------------------------- | ----------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu *trigger* stays labeled) |
+| Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                      | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 Tests locate icon **buttons** with `getByRole('button', { name })` against
 the catalog `aria-label` and assert `queryByText` for the visible catalog
@@ -318,18 +320,6 @@ glyph, not a button role.
 
 A **new** control that is labeled when the table says icon-only (or
 icon-only when the table says labeled) is an undeclared deviation.
-
-**Grandfathered until the named follow-up** — current `develop` code that
-disagrees with the table is **not** an undeclared deviation. Do not bounce
-unrelated PRs for these:
-
-- Contact **Send** is still a labeled `Button` (`ContactScreen.tsx`) until
-  it becomes an `IconButton` (design-system screen-migration PR).
-- Pay is still lucide `Bitcoin` (`ForumBoard.tsx`) until it becomes lucide
-  `Gift` with the same `forum.pay` name (“Send Bitcoin”).
-- `IconButton` `sm` is still `h-6 w-6` until the token/primitive PR adds
-  44px hit slop (`before:content-[''] before:-inset-2.5`) while keeping
-  24px paint.
 
 The signed-in **Menu** trigger stays labeled (icon plus visible Menu word).
 **Log out**, **Continue**, **I agree to these rules**,

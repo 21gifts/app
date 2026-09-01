@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
-import { PageChrome } from '@/components/ui';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { PageChrome, Wordmark } from '@/components/ui';
 
 /**
  * `/messages/[id]` — public read-only HTML note by forum message UUID.
@@ -19,7 +20,15 @@ export default async function PublicMessagePage({
 }): Promise<ReactElement> {
   const { id } = await params;
   return (
-    <PageChrome topRight={<LanguageSwitcher tone="light" />}>
+    <PageChrome
+      topLeft={<Wordmark href="/" />}
+      topRight={
+        <>
+          <ThemeSwitcher />
+          <LanguageSwitcher tone="light" />
+        </>
+      }
+    >
       <PublicMessageLoader key={id} id={id} />
     </PageChrome>
   );

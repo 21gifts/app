@@ -2,11 +2,8 @@
 
 Target system for the 21.gifts web app. New UI composes the parts named here.
 Do not invent a second look. This file is the **target**, not an inventory of
-pixels already true on `develop`. Until the follow-up PRs land, shipped code
-may disagree (Contact **Send** still labeled, pay still lucide `Bitcoin`,
-`IconButton` `sm` still `h-6 w-6`). Those are grandfathered — not undeclared
-deviations. Reviewers follow the control-grammar table in this file and in
-`CONTRIBUTING.md` for **new** work.
+pixels already true on `develop`. Reviewers follow the control-grammar table
+in this file and in `CONTRIBUTING.md` for **new** work.
 
 Brand source: the API concept document, section **Brand**. Visual source: live
 marketing at `/` plus the app-shell recipes in §12.

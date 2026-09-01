@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactElement } from 'react';
+import { Wordmark } from '@/components/ui';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
@@ -16,7 +17,7 @@ export async function MarketingFooter(): Promise<ReactElement> {
   return (
     <footer className="border-t border-white/10 px-5 py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <span className="font-bold">21.gifts</span>
+        <Wordmark tone="dark" />
         <nav
           aria-label={translate(messages, 'aria.footer')}
           className="flex flex-wrap gap-4 text-sm text-white/70"

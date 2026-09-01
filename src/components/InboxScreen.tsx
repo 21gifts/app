@@ -161,17 +161,17 @@ export function InboxScreen({
           </IconButton>
         </form>
         {formError === 'empty' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorEmpty')}
           </p>
         ) : null}
         {formError === 'tooLong' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorTooLong')}
           </p>
         ) : null}
         {formError === 'request' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorRequest')}
           </p>
         ) : null}

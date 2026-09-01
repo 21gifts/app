@@ -384,21 +384,28 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD toggle (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD toggle (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. When the series is empty or all zeros, the SVG and toggle are omitted and `profile.chartEmpty` is shown (`role="status"`). v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
 - **Returns / side effects:** One chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`.
 
 ## Function: Button
 
-- **Purpose:** Labeled app button with primary (filled) or secondary (bordered) weight using semantic `app-btn` tokens.
-- **Inputs:** Native button props plus optional `variant` (default `primary`), optional leading `icon`, and `children` label. Default `type="button"`.
+- **Purpose:** Labeled app button with primary (filled), secondary (bordered), or accent fill using semantic `app-*` tokens. Size `sm` / `md` / `lg` (`lg` is full width). All sizes `min-h-11`.
+- **Inputs:** Native button props plus optional `variant` (default `primary`), optional `size` (default `md`), optional leading `icon`, and `children` label. Default `type="button"`.
 - **Returns / side effects:** A `<button>` element. No network. Used across login, forum retry, public note retry, and forms.
 - **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, setup and contact screens.
 
+## Function: ButtonLink
+
+- **Purpose:** Labeled pill link matching `Button` anatomy (`primary` / `secondary` / `accent`, `sm` / `md` / `lg`, `tone` `app` or `dark`).
+- **Inputs:** `href`, optional `variant` / `size` / `tone` / `icon` / `className`, `children` label.
+- **Returns / side effects:** A Next.js `<Link>`. No network. Used on marketing CTAs, donate **Open the forum**, 404 **Back home**, and rules nav.
+- **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `NotFound`, `RulesDocument`.
+
 ## Function: IconButton
 
-- **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`).
+- **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`). `sm` is 24px paint with a 44px `::before` hit slop; `md` is 44px; `lg` is 48px.
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
 - **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, and `HandbookImageViewer`.
@@ -419,10 +426,17 @@
 
 ## Function: PageChrome
 
-- **Purpose:** Full-height app page shell (`min-h-screen` centered column) with an optional absolute top-right slot for language/theme chrome.
-- **Inputs:** `children`, optional `topRight`, optional `className` on the outer `<main>`.
-- **Returns / side effects:** Layout only. No network. Used by login and the public message page (light `LanguageSwitcher` in `topRight`).
-- **Used by:** `LoginPage` and `PublicMessagePage`.
+- **Purpose:** Full-height app page shell (`min-h-screen` centered column) with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots.
+- **Inputs:** `children`, optional `topLeft`, optional `topRight`, optional `className` on the outer `<main>`.
+- **Returns / side effects:** Layout only. No network. Used by login, donate, rules, welcome, profile, contact, inbox, public note, and view-key.
+- **Used by:** `LoginPage`, `DonatePage`, `RulesPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `PublicMessagePage`, `ViewProfilePage`.
+
+## Function: Wordmark
+
+- **Purpose:** Text brand mark `21.gifts` (17px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
+- **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `className`.
+- **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
+- **Used by:** `MarketingHeader`, `MarketingFooter`, app `PageChrome` top-left, setup screens.
 
 ## Function: PublicMessagePage
 
@@ -545,7 +559,7 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), ₿ amount with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged.
+- **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), ₿ amount with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged.
 - **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer), and PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`). PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
 - **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes, except while `refreshing` is true (silent refresh must not jump to the composer). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.

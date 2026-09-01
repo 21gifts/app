@@ -3,6 +3,7 @@
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui';
 import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -107,19 +108,20 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         </p>
         {current}
         {error ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('setup.rulesErrorRequest')}
           </p>
         ) : null}
-        <button
+        <Button
           type="button"
+          size="lg"
           onClick={handleAgree}
           disabled={busy}
-          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
+          className="mt-auto"
+          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
         >
-          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t(lastChapter ? 'setup.agree' : 'setup.continue')}
-        </button>
+        </Button>
       </section>
     </>
   );

@@ -27,6 +27,24 @@ describe('PageChrome', () => {
     expect(screen.getByTestId('slot')).toBeTruthy();
   });
 
+  it('renders topLeft in the absolute slot', () => {
+    renderWithLocale(
+      <PageChrome topLeft={<span data-testid="brand">21.gifts</span>}>
+        <p>Body</p>
+      </PageChrome>,
+    );
+    expect(screen.getByTestId('brand')).toBeTruthy();
+  });
+
+  it('omits the topLeft slot when topLeft is null', () => {
+    const { container } = renderWithLocale(
+      <PageChrome topLeft={null}>
+        <p>Body</p>
+      </PageChrome>,
+    );
+    expect(container.querySelector('main')?.querySelector('.left-5')).toBeNull();
+  });
+
   it('omits the topRight slot when topRight is null', () => {
     const { container } = renderWithLocale(
       <PageChrome topRight={null}>
