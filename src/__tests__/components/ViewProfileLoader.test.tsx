@@ -116,7 +116,7 @@ describe('ViewProfileLoader', () => {
     });
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
-    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Action required, the account must be activated')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Activate' })).toBeTruthy();
     expect(fetchStats).toHaveBeenCalledWith('alice');

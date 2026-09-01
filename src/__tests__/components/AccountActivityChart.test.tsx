@@ -38,7 +38,9 @@ describe('AccountActivityChart', () => {
   it('draws the received polyline and keeps ₿ pressed with grouped ticks', () => {
     const { container } = renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
     const polylines = [...container.querySelectorAll('polyline')];
-    expect(polylines.some((line) => line.getAttribute('stroke') === '#f7931a')).toBe(true);
+    expect(
+      polylines.some((line) => line.getAttribute('stroke') === 'var(--color-app-chart-received)'),
+    ).toBe(true);
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText('₿1,500')).toBeTruthy();
@@ -60,8 +62,12 @@ describe('AccountActivityChart', () => {
       <AccountActivityChart received={MULTI_DAY} donated={donated} />,
     );
     const polylines = [...container.querySelectorAll('polyline')];
-    expect(polylines.some((line) => line.getAttribute('stroke') === '#f7931a')).toBe(true);
-    expect(polylines.some((line) => line.getAttribute('stroke') === '#525252')).toBe(true);
+    expect(
+      polylines.some((line) => line.getAttribute('stroke') === 'var(--color-app-chart-received)'),
+    ).toBe(true);
+    expect(
+      polylines.some((line) => line.getAttribute('stroke') === 'var(--color-app-chart-given)'),
+    ).toBe(true);
   });
 
   it('renders a single-day series', () => {
