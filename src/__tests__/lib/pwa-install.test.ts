@@ -16,6 +16,12 @@ const IPHONE_EDGIOS =
 const IPHONE_TELEGRAM =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 Telegram';
 
+const DESKTOP_SAFARI =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+
+const IPHONE_NO_SAFARI =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15';
+
 afterEach(() => {
   vi.unstubAllGlobals();
   Reflect.deleteProperty(window, 'TelegramWebviewProxy');
@@ -77,6 +83,16 @@ describe('shouldOfferIosInstall', () => {
 
   it('is false in a Telegram in-app browser', () => {
     stubInstallEnv({ userAgent: IPHONE_TELEGRAM, standalone: false, telegram: true });
+    expect(shouldOfferIosInstall()).toBe(false);
+  });
+
+  it('is false for desktop Safari', () => {
+    stubInstallEnv({ userAgent: DESKTOP_SAFARI, standalone: false });
+    expect(shouldOfferIosInstall()).toBe(false);
+  });
+
+  it('is false for iPhone agents that are not Safari', () => {
+    stubInstallEnv({ userAgent: IPHONE_NO_SAFARI, standalone: false });
     expect(shouldOfferIosInstall()).toBe(false);
   });
 });
