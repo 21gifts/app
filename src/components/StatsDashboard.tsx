@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { Button } from '@/components/ui';
 import type { GiftStats } from '@/lib/api-types';
 import { formatBitcoin, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
@@ -63,12 +64,12 @@ function BarScaleToggle({
     <div
       role="group"
       aria-label={groupLabel}
-      className="flex overflow-hidden rounded-md border border-white/20 text-xs"
+      className="flex overflow-hidden rounded-md border border-paper/20 text-xs"
     >
       <button
         type="button"
         aria-pressed={value === 'btc'}
-        className={`px-2 py-1 ${value === 'btc' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
+        className={`px-2 py-1 ${value === 'btc' ? 'bg-accent text-ink' : 'text-paper/70'}`}
         onClick={() => onChange('btc')}
       >
         ₿
@@ -76,7 +77,7 @@ function BarScaleToggle({
       <button
         type="button"
         aria-pressed={value === 'usd'}
-        className={`px-2 py-1 ${value === 'usd' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
+        className={`px-2 py-1 ${value === 'usd' ? 'bg-accent text-ink' : 'text-paper/70'}`}
         onClick={() => onChange('usd')}
       >
         USD
@@ -407,14 +408,12 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
 
   return (
     <>
-      <p className="text-sm text-white/60">
+      <p className="text-sm text-paper/60">
         {"USD is the BTC-USD daily close (UTC) on each gift's day."}
       </p>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">
-            Total spend over time
-          </h2>
+          <h2 className="text-sm tracking-widest text-accent uppercase">Total spend over time</h2>
           <BarScaleToggle
             value={overTimeScale}
             onChange={setOverTimeScale}
@@ -439,7 +438,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By person</h2>
+          <h2 className="text-sm tracking-widest text-accent uppercase">By person</h2>
           <BarScaleToggle
             value={personScale}
             onChange={setPersonScale}
@@ -450,7 +449,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By month</h2>
+          <h2 className="text-sm tracking-widest text-accent uppercase">By month</h2>
           <BarScaleToggle
             value={monthScale}
             onChange={setMonthScale}
@@ -476,26 +475,22 @@ export function StatsDashboard({
   onRetry,
 }: StatsDashboardProps): ReactElement {
   if (loading && stats === null && error === null) {
-    return <p className="text-white/60">Loading…</p>;
+    return <p className="text-paper/60">Loading…</p>;
   }
 
   if (error !== null && stats === null) {
     return (
       <div className="space-y-4">
-        <p className="text-white/80">{error}</p>
-        <button
-          type="button"
-          className="rounded-full bg-[#f7931a] px-4 py-2 font-medium text-[#0a090c]"
-          onClick={onRetry}
-        >
+        <p className="text-paper/80">{error}</p>
+        <Button type="button" variant="accent" onClick={onRetry}>
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (stats === null) {
-    return <p className="text-white/60">Loading…</p>;
+    return <p className="text-paper/60">Loading…</p>;
   }
 
   const empty = stats.giftCount === 0;
@@ -503,23 +498,23 @@ export function StatsDashboard({
   return (
     <div className="space-y-12">
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">Total spent</dt>
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">Total spent</dt>
           <dd className="mt-2">
             <div className="text-2xl font-semibold">{formatBitcoin(stats.totalSats)}</div>
             <div className="text-2xl font-semibold">{formatUsdDisplay(stats.totalUsd)}</div>
           </dd>
         </div>
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">Gifts</dt>
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">Gifts</dt>
           <dd className="mt-2 text-2xl font-semibold">{formatCount(stats.giftCount)}</dd>
         </div>
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">People</dt>
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">People</dt>
           <dd className="mt-2 text-2xl font-semibold">{formatCount(stats.recipientCount)}</dd>
         </div>
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">Period</dt>
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">Period</dt>
           <dd className="mt-2 text-2xl font-semibold">
             {utcDay(stats.firstPaidAt)} – {utcDay(stats.lastPaidAt)}
           </dd>
@@ -527,7 +522,7 @@ export function StatsDashboard({
       </dl>
 
       {empty ? (
-        <p className="text-white/60">No gifts recorded yet.</p>
+        <p className="text-paper/60">No gifts recorded yet.</p>
       ) : (
         <StatsCharts stats={stats} />
       )}

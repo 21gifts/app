@@ -156,7 +156,7 @@ export function LightningAddressForm(
   );
 
   const inputClass =
-    'w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50';
+    'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50';
 
   if (variant === 'onboarding') {
     return (
@@ -180,7 +180,7 @@ export function LightningAddressForm(
           className={inputClass}
         />
         {error !== null ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t(lightningAddressErrorKey(error))}
           </p>
         ) : null}
@@ -278,7 +278,7 @@ export function LightningAddressForm(
       )}
 
       {error !== null ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t(lightningAddressErrorKey(error))}
         </p>
       ) : null}

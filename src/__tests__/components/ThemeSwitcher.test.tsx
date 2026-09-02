@@ -55,6 +55,7 @@ describe('ThemeSwitcher', () => {
     const trigger = screen.getByLabelText('Theme');
     expect(trigger.className).toContain('text-app-muted');
     expect(trigger.className).toContain('hover:bg-app-hover');
+    expect(trigger.className).toContain('min-h-11');
   });
 
   it('selecting Dark writes theme=dark cookie', async () => {
@@ -65,6 +66,13 @@ describe('ThemeSwitcher', () => {
     fireEvent.click(screen.getByLabelText('Theme'));
     fireEvent.click(screen.getByRole('option', { name: /Dark/ }));
     expect(document.cookie).toContain(`${THEME_COOKIE}=dark`);
+  });
+
+  it('standalone trigger uses the 44px pill recipe', async () => {
+    renderWithLocale(<ThemeSwitcher />);
+    const trigger = screen.getByLabelText('Theme');
+    expect(trigger.className).toContain('min-h-11');
+    expect(trigger.className).toContain('border-app-border-strong');
   });
 
   it('Escape closes the listbox and restores focus to the trigger', async () => {

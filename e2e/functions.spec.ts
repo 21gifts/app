@@ -999,6 +999,44 @@ test('Function: MarketingHeader — landing shows the wordmark', async ({ page }
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
+test('Function: PwaInstall — iPhone Safari shows the install control', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    });
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      get: () => false,
+    });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Install app' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Install app' }).first().click();
+  await expect(
+    page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+  ).toBeVisible();
+});
+
+test('Function: shouldOfferIosInstall — iPhone Safari shows the install control', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    });
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      get: () => false,
+    });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Install app' }).first()).toBeVisible();
+});
+
 test('Function: MarketingFooter — landing shows the footer wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('footer').getByText('21.gifts')).toBeVisible();
@@ -1993,8 +2031,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
   await page.goto('/setup/address');
   await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(page.getByLabel('Language')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
@@ -2211,6 +2248,75 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
   });
   await page.goto('/welcome');
   await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+});
+
+test('Function: ForumLoader — becoming visible again refetches the forum list', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+      }),
+    });
+  });
+  let messagesBody: unknown = { messages: [] };
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(messagesBody),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+
+  messagesBody = {
+    messages: [
+      {
+        id: 'm-refresh',
+        name: 'Ada',
+        text: 'Visible again note',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ],
+  };
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  await expect(page.getByText('Visible again note')).toBeVisible();
 });
 
 test('Function: formatForumTime — message timestamp is visible', async ({ page }) => {
@@ -2437,8 +2543,7 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(page.getByLabel('Language')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
@@ -2465,9 +2570,26 @@ test('Function: ProfileScreen — back to forum is visible', async ({ page }) =>
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
 });
 
+test('Function: ProfileChromeLeft — profile chrome has back and wordmark', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+});
+
 test('Function: Button — login shows the Log in button', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: ButtonLink — landing Ask for help is a link', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: 'Ask for help' })).toBeVisible();
+});
+
+test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
 test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
@@ -2702,7 +2824,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   });
   await page.goto(`/view/${key}`);
   await expect(page.getByText('Ada')).toBeVisible();
-  await expect(page.getByText('Given')).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
@@ -2819,8 +2941,8 @@ test('Function: AccountActivityChart — profile shows Given legend and ₿ char
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
-  await expect(page.getByText('Given', { exact: true })).toBeVisible();
-  await expect(page.getByLabel('Given and received in ₿')).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Given and received' })).toHaveCount(0);
 });
 
@@ -2863,15 +2985,14 @@ test('Function: activityValue — USD toggle shows received USD on the profile c
   await expect(page.getByLabel('Given and received in USD').getByText('$1.43')).toBeVisible();
 });
 
-test('Function: activityMaxY — empty profile chart still reserves the SVG box', async ({
+test('Function: activityMaxY — empty profile chart shows copy instead of an axis', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
-  const chart = page.getByLabel('Given and received in ₿');
-  await expect(chart).toBeVisible();
-  await expect(chart).toHaveAttribute('viewBox', '0 0 400 110');
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿')).toHaveCount(0);
 });
 
 test('Function: formatBitcoin — populated profile chart shows grouped ₿ ticks', async ({

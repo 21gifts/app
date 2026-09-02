@@ -3,6 +3,7 @@
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button, IconButton, Wordmark } from '@/components/ui';
 import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -78,23 +79,27 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
 
   return (
     <>
-      {index > 0 ? (
-        <button
-          type="button"
-          aria-label={t('setup.rulesBack')}
-          onClick={(event) => {
-            if (event.detail > 1 || busy || stepLock.current) {
-              return;
-            }
-            stepLock.current = true;
-            setIndex((currentIndex) => Math.max(0, currentIndex - 1));
-          }}
-          disabled={busy}
-          className="absolute top-4 left-5 inline-flex items-center justify-center rounded-full p-2 text-app-muted transition hover:text-app-fg disabled:opacity-50"
-        >
-          <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-        </button>
-      ) : null}
+      <div className="absolute top-4 left-5 z-40 flex items-center gap-2">
+        {index > 0 ? (
+          <IconButton
+            type="button"
+            variant="ghost"
+            size="md"
+            aria-label={t('setup.rulesBack')}
+            disabled={busy}
+            onClick={(event) => {
+              if (event.detail > 1 || busy || stepLock.current) {
+                return;
+              }
+              stepLock.current = true;
+              setIndex((currentIndex) => Math.max(0, currentIndex - 1));
+            }}
+          >
+            <ArrowLeft aria-hidden="true" className="h-5 w-5" />
+          </IconButton>
+        ) : null}
+        <Wordmark />
+      </div>
       <section className="flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8 pt-24">
         <h1 className="text-center text-2xl font-semibold tracking-tight">
           {t('setup.rulesTitle')}
@@ -107,19 +112,20 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         </p>
         {current}
         {error ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('setup.rulesErrorRequest')}
           </p>
         ) : null}
-        <button
+        <Button
           type="button"
+          size="lg"
           onClick={handleAgree}
           disabled={busy}
-          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
+          className="mt-auto"
+          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
         >
-          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t(lastChapter ? 'setup.agree' : 'setup.continue')}
-        </button>
+        </Button>
       </section>
     </>
   );

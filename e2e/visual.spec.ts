@@ -1210,7 +1210,7 @@ test.describe('welcome forum variants', () => {
       await route.abort();
     });
     await page.goto('/welcome');
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-welcome-loading');
     release();
   });
@@ -1976,7 +1976,7 @@ test.describe('inbox screens', () => {
       /* hang */
     });
     await page.goto('/messages');
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-messages-loading');
   });
 
@@ -2128,7 +2128,8 @@ test.describe('function baselines', () => {
     expect(count).toBeGreaterThan(0);
 
     // One test walks every handbook function clip; count × comparison exceeds Playwright’s 30s default.
-    test.setTimeout(Math.max(90_000, count * 500));
+    // Desktop workers need more than count*500 (that floor hit 100s and closed the page).
+    test.setTimeout(Math.max(180_000, count * 800));
 
     const sections = await headings.evaluateAll((nodes) =>
       nodes.map((node) => {

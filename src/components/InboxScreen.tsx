@@ -144,7 +144,7 @@ export function InboxScreen({
             maxLength={CONTACT_MESSAGE_MAX_LENGTH}
             rows={2}
             disabled={posting || messagesLoading}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
           />
           <IconButton
             type="submit"
@@ -161,17 +161,17 @@ export function InboxScreen({
           </IconButton>
         </form>
         {formError === 'empty' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorEmpty')}
           </p>
         ) : null}
         {formError === 'tooLong' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorTooLong')}
           </p>
         ) : null}
         {formError === 'request' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorRequest')}
           </p>
         ) : null}

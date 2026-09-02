@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/font/google', () => ({
+  Outfit: (): { variable: string } => ({ variable: '__outfit_variable' }),
+}));
+
 import RootLayout, { metadata } from '@/app/layout';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -91,6 +96,7 @@ describe('RootLayout', () => {
     expect(tree.type).toBe('html');
     expect(props.lang).toBe('en');
     expect(props.suppressHydrationWarning).toBe(true);
+    expect((props as { className?: string }).className).toContain('__outfit_variable');
   });
 
   it('injects THEME_BOOTSTRAP_SCRIPT as a raw head script', async () => {
@@ -120,6 +126,7 @@ describe('RootLayout', () => {
 
     expect(body.type).toBe('body');
     expect(body.props.className).toContain('bg-app-bg');
+    expect(body.props.className).toContain('font-sans');
     expect(body.props.className).not.toContain('bg-white');
     const localeProvider = body.props.children;
     expect(localeProvider.type).toBe(LocaleProvider);

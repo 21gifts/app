@@ -7,6 +7,9 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('@/components/ProfileScreen', () => ({
   ProfileScreen: () => <div data-testid="profile-screen" />,
 }));
+vi.mock('@/components/ProfileChromeLeft', () => ({
+  ProfileChromeLeft: () => <div data-testid="profile-chrome-left" />,
+}));
 
 vi.mock('@/components/OnboardingGate', () => ({
   OnboardingGate: ({ children }: { children: ReactNode }) => children,
@@ -22,6 +25,7 @@ describe('ProfilePage', () => {
   it('renders the profile card behind signed-in chrome', () => {
     renderWithLocale(<ProfilePage />);
     expect(screen.getByTestId('profile-screen')).toBeTruthy();
+    expect(screen.getByTestId('profile-chrome-left')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
   });
 });

@@ -3,6 +3,7 @@
 import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button, IconButton } from '@/components/ui';
 import { setName } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { hasDisplayName } from '@/lib/onboarding';
@@ -115,21 +116,22 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={busy}
-          className="w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+          className="w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
         />
         {error !== null ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
           </p>
         ) : null}
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={busy}
-          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
+          className="mt-auto"
+          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
         >
-          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t('setup.continue')}
-        </button>
+        </Button>
       </form>
     );
   }
@@ -153,54 +155,57 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               disabled={busy}
-              className="min-w-0 flex-1 rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+              className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
             />
-            <button
+            <IconButton
               type="submit"
+              variant="primary"
+              size="md"
               disabled={busy}
               aria-label={editing ? t('name.save') : t('name.saveName')}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-app-btn text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
             >
               {submitIcon}
-            </button>
+            </IconButton>
             {editing ? (
-              <button
+              <IconButton
                 type="button"
+                variant="secondary"
+                size="md"
+                disabled={busy}
+                aria-label={t('name.cancel')}
                 onClick={() => {
                   setEditing(false);
                   setError(null);
                 }}
-                disabled={busy}
-                aria-label={t('name.cancel')}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
               >
                 <X aria-hidden="true" className="h-4 w-4" />
-              </button>
+              </IconButton>
             ) : null}
           </div>
         </form>
       ) : (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{name}</p>
-          <button
+          <IconButton
             type="button"
+            variant="secondary"
+            size="md"
+            disabled={busy}
+            aria-label={t('name.edit')}
             onClick={() => {
               /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
               setDraft(name ?? '');
               setEditing(true);
               setError(null);
             }}
-            disabled={busy}
-            aria-label={t('name.edit')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <Pencil aria-hidden="true" className="h-4 w-4" />
-          </button>
+          </IconButton>
         </div>
       )}
 
       {error !== null ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
         </p>
       ) : null}

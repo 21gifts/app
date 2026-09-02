@@ -198,14 +198,14 @@ export function LanguageSwitcher(props: {
 
   const optionRowClass =
     tone === 'dark'
-      ? 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10'
-      : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
+      ? 'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-paper hover:bg-paper/10'
+      : 'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
 
   const checkClass =
-    tone === 'dark' ? 'h-4 w-4 shrink-0 text-[#f7931a]' : 'h-4 w-4 shrink-0 text-app-fg';
+    tone === 'dark' ? 'h-4 w-4 shrink-0 text-accent' : 'h-4 w-4 shrink-0 text-app-fg';
 
   const embeddedOptionRowClass =
-    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
+    'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
 
   const listboxOptions = (rowClass: string, check: string): ReactElement => (
     <>
@@ -278,12 +278,12 @@ export function LanguageSwitcher(props: {
 
   const triggerClass =
     tone === 'dark'
-      ? 'inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-white/10'
-      : 'inline-flex items-center gap-1.5 rounded-full border border-app-border-strong px-3 py-1.5 text-sm text-app-fg hover:bg-app-hover';
+      ? 'inline-flex min-h-11 items-center gap-1.5 rounded-full border border-paper/20 px-3 py-1.5 text-sm text-paper hover:bg-paper/10'
+      : 'inline-flex min-h-11 items-center gap-1.5 rounded-full border border-app-border-strong px-3 py-1.5 text-sm text-app-fg hover:bg-app-hover';
 
   const panelClass =
     tone === 'dark'
-      ? 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-white/10 bg-[#0a090c] p-2 shadow-lg'
+      ? 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-paper/10 bg-ink p-2 shadow-lg'
       : 'absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg';
 
   return (

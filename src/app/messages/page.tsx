@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { InboxLoader } from '@/components/InboxLoader';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { SignedInChrome } from '@/components/SignedInChrome';
+import { PageChrome, Wordmark } from '@/components/ui';
 
 /**
  * `/messages` — signed-in private-message inbox.
@@ -17,13 +18,12 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  */
 export default function MessagesPage(): ReactElement {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6">
-      <SignedInChrome />
+    <PageChrome topLeft={<Wordmark href="/welcome" />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="welcome">
         <Suspense>
           <InboxLoader />
         </Suspense>
       </OnboardingGate>
-    </main>
+    </PageChrome>
   );
 }

@@ -22,8 +22,8 @@ export interface AccountActivityChartProps {
   donated?: GiftStats['spendOverTime'];
 }
 
-const GIVEN_STROKE = '#525252';
-const RECEIVED_STROKE = '#f7931a';
+const GIVEN_STROKE = 'var(--color-app-chart-given)';
+const RECEIVED_STROKE = 'var(--color-app-chart-received)';
 const WIDTH = 400;
 const HEIGHT = 110;
 const PAD_L = 56;
@@ -35,7 +35,8 @@ const PAD_B = 20;
  * Compact dual-line cumulative chart of Given and Received with ₿|USD toggle.
  *
  * @param props - Receive series and optional donate series.
- * @returns Legend + scale chrome and reserved-height SVG (no title heading).
+ * @returns Empty series: `profile.chartEmpty` status copy only. Otherwise
+ *   legend + scale chrome and reserved-height SVG (no title heading).
  */
 export function AccountActivityChart({
   received,
@@ -95,17 +96,36 @@ export function AccountActivityChart({
 
   const donatedLine = linePoints('donated');
   const receivedLine = linePoints('received');
+  const emptySats =
+    n === 0 ||
+    points.every(
+      (point) => point.cumulativeDonatedSats === 0 && point.cumulativeReceivedSats === 0,
+    );
+
+  if (emptySats) {
+    return (
+      <p className="text-center text-sm text-app-muted" role="status">
+        {t('profile.chartEmpty')}
+      </p>
+    );
+  }
 
   return (
     <div role="group" aria-label={t('profile.chartTitle')} className="flex w-full flex-col gap-2">
       <div className="flex items-center justify-between gap-3 text-xs text-app-muted">
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#525252]" />
+            <span
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-sm bg-app-chart-given"
+            />
             {t('profile.legendGiven')}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-[#f7931a]" />
+            <span
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-sm bg-app-chart-received"
+            />
             {t('profile.legendReceived')}
           </span>
         </div>
@@ -117,8 +137,8 @@ export function AccountActivityChart({
           <button
             type="button"
             aria-pressed={scale === 'sat'}
-            className={`px-2 py-1 ${
-              scale === 'sat' ? 'bg-app-accent text-[#0a090c]' : 'text-app-muted'
+            className={`min-h-11 min-w-11 px-2 py-1 ${
+              scale === 'sat' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
             }`}
             onClick={() => setScale('sat')}
           >
@@ -127,8 +147,8 @@ export function AccountActivityChart({
           <button
             type="button"
             aria-pressed={scale === 'usd'}
-            className={`px-2 py-1 ${
-              scale === 'usd' ? 'bg-app-accent text-[#0a090c]' : 'text-app-muted'
+            className={`min-h-11 min-w-11 px-2 py-1 ${
+              scale === 'usd' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
             }`}
             onClick={() => setScale('usd')}
           >
@@ -162,12 +182,8 @@ export function AccountActivityChart({
             </text>
           </g>
         ))}
-        {donatedLine !== '' ? (
-          <polyline points={donatedLine} fill="none" stroke={GIVEN_STROKE} strokeWidth="1.5" />
-        ) : null}
-        {receivedLine !== '' ? (
-          <polyline points={receivedLine} fill="none" stroke={RECEIVED_STROKE} strokeWidth="1.5" />
-        ) : null}
+        <polyline points={donatedLine} fill="none" stroke={GIVEN_STROKE} strokeWidth="1.5" />
+        <polyline points={receivedLine} fill="none" stroke={RECEIVED_STROKE} strokeWidth="1.5" />
         {points.map((point, i) => {
           const prevDonated =
             i === 0 ? 0 : activityValue(points[i - 1] as (typeof points)[number], 'donated', scale);

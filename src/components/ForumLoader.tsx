@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { flushSync } from 'react-dom';
 import {
   ForumBoard,
   type ForumFormError,
@@ -107,7 +108,11 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * (`fetchReplies`, reply composer via `postMessage` with `inReplyTo`), PM
  * (`openConversation` → `/messages?c=`), and persists dismiss of the
  * living-room laws hint on the account. Also polls until unsigned notes
- * become payable. Renders nothing when there is no session.
+ * become payable. Silently re-fetches when the document becomes visible again
+ * (`visibilitychange` hidden→visible, `pageshow` with `persisted`) and when
+ * the board pull-to-refresh fires; silent refresh keeps an existing list on
+ * screen (no loading copy) and does not auto-scroll the composer. Renders
+ * nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
@@ -119,6 +124,7 @@ export function ForumLoader(): ReactElement | null {
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
@@ -158,8 +164,27 @@ export function ForumLoader(): ReactElement | null {
   const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
   const payPollGeneration = useRef(0);
   const payablePollGeneration = useRef(0);
+  const refreshGeneration = useRef(0);
+  const wasHiddenRef = useRef(false);
+  const pendingRefreshRef = useRef(false);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
+  const refreshingRef = useRef(refreshing);
+  refreshingRef.current = refreshing;
+  const postingRef = useRef(posting);
+  postingRef.current = posting;
+  const preparingRef = useRef(preparing);
+  preparingRef.current = preparing;
+  const payBusyRef = useRef(payBusy);
+  payBusyRef.current = payBusy;
+  const payWaitingRef = useRef(payWaiting);
+  payWaitingRef.current = payWaiting;
+  const payMessageIdRef = useRef(payMessageId);
+  payMessageIdRef.current = payMessageId;
+  const replyPostingRef = useRef(replyPosting);
+  replyPostingRef.current = replyPosting;
   const photoIdsKey =
     messages === null
       ? ''
@@ -203,6 +228,96 @@ export function ForumLoader(): ReactElement | null {
     })();
   };
 
+  /**
+   * Shared fetch + merge + payable-poll path for mount/retry and silent refresh.
+   *
+   * @param activeSession - Session token for the fetch.
+   * @param shouldContinue - False when the caller was cancelled or superseded.
+   * @returns `ok` when the list was applied, `error` on failure, `aborted` when skipped.
+   */
+  const loadMessagesOnce = async (
+    activeSession: string,
+    shouldContinue: () => boolean,
+  ): Promise<'ok' | 'error' | 'aborted'> => {
+    try {
+      const next = await fetchMessages(activeSession);
+      if (!shouldContinue()) {
+        return 'aborted';
+      }
+      setMessages((prev) => mergeMessages(prev, next));
+      if (next.some((message) => message.payable === false)) {
+        startPayablePoll(activeSession);
+      }
+      return 'ok';
+    } catch {
+      if (!shouldContinue()) {
+        return 'aborted';
+      }
+      return 'error';
+    }
+  };
+
+  const refreshMessages = (): void => {
+    /* v8 ignore next 3 -- board unmounts without a session */
+    if (session === null) {
+      return;
+    }
+    if (loadingRef.current || refreshingRef.current) {
+      return;
+    }
+    if (
+      postingRef.current ||
+      preparingRef.current ||
+      payBusyRef.current ||
+      payWaitingRef.current ||
+      payMessageIdRef.current !== null ||
+      replyPostingRef.current
+    ) {
+      pendingRefreshRef.current = true;
+      return;
+    }
+    pendingRefreshRef.current = false;
+    const activeSession = session;
+    const generation = ++refreshGeneration.current;
+    refreshingRef.current = true;
+    setRefreshing(true);
+    void (async () => {
+      const result = await loadMessagesOnce(
+        activeSession,
+        () => generation === refreshGeneration.current,
+      );
+      if (generation !== refreshGeneration.current) {
+        return;
+      }
+      // Commit setMessages from loadMessagesOnce while refreshing is still true
+      // so ForumBoard's newestId effect skips composer scroll.
+      flushSync(() => {
+        if (result === 'ok') {
+          setError(false);
+        } else if (result === 'error') {
+          if (messagesRef.current === null) {
+            setError(true);
+          }
+        }
+      });
+      refreshingRef.current = false;
+      setRefreshing(false);
+    })();
+  };
+
+  const refreshMessagesRef = useRef(refreshMessages);
+  refreshMessagesRef.current = refreshMessages;
+
+  const onRefresh = useCallback((): void => {
+    refreshMessagesRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (pendingRefreshRef.current) {
+      refreshMessagesRef.current();
+    }
+  }, [posting, preparing, payBusy, payWaiting, payMessageId, replyPosting]);
+
   useEffect(() => {
     if (session === null) {
       return;
@@ -211,28 +326,46 @@ export function ForumLoader(): ReactElement | null {
     setLoading(true);
     setError(false);
     void (async () => {
-      try {
-        const next = await fetchMessages(session);
-        if (!cancelled) {
-          setMessages((prev) => mergeMessages(prev, next));
-          if (next.some((message) => message.payable === false)) {
-            startPayablePoll(session);
-          }
-        }
-      } catch {
-        if (!cancelled) {
-          setError(true);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+      const result = await loadMessagesOnce(session, () => !cancelled);
+      if (!cancelled && result === 'error') {
+        setError(true);
+      }
+      if (!cancelled) {
+        setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [attempt, session]);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === 'hidden') {
+        wasHiddenRef.current = true;
+        return;
+      }
+      if (document.visibilityState === 'visible' && wasHiddenRef.current) {
+        wasHiddenRef.current = false;
+        refreshMessagesRef.current();
+      }
+    };
+    const onPageShow = (event: Event): void => {
+      const persisted = 'persisted' in event && (event as PageTransitionEvent).persisted === true;
+      if (persisted) {
+        refreshMessagesRef.current();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [session]);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {
@@ -304,6 +437,7 @@ export function ForumLoader(): ReactElement | null {
     return () => {
       payPollGeneration.current += 1;
       payablePollGeneration.current += 1;
+      refreshGeneration.current += 1;
       pickGeneration.current += 1;
       for (const url of Object.values(photoUrlsRef.current)) {
         URL.revokeObjectURL(url);
@@ -752,6 +886,8 @@ export function ForumLoader(): ReactElement | null {
       messages={messages}
       error={error}
       loading={loading}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       posting={posting || preparing}
       draft={draft}
       onDraftChange={(value) => {

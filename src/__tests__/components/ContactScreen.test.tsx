@@ -38,6 +38,7 @@ describe('ContactScreen', () => {
     const field = screen.getByLabelText('Your message');
     const button = screen.getByRole('button', { name: 'Send' });
     expect(button).toBeTruthy();
+    expect(screen.queryByText('Send')).toBeNull();
     expect(field.nextElementSibling).toBe(button);
     expect(field.getAttribute('maxLength')).toBe(String(CONTACT_MESSAGE_MAX_LENGTH));
   });

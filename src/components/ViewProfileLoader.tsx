@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { ViewProfileScreen } from '@/components/ViewProfileScreen';
 import { recipientHandleFromAddress } from '@/lib/account-totals';
@@ -95,15 +96,14 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     return (
       <div className="flex flex-col items-center gap-4">
         <p className="text-center text-sm text-app-muted">{t('view.error')}</p>
-        <button
+        <Button
           type="button"
           onClick={() => {
             setAttempt((n) => n + 1);
           }}
-          className="rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
         >
           {t('view.retry')}
-        </button>
+        </Button>
       </div>
     );
   }

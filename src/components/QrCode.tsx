@@ -28,7 +28,7 @@ export function QrCode({ value, label }: QrCodeProps): ReactElement {
     <div
       role="img"
       aria-label={label}
-      className="rounded-2xl border border-neutral-200 bg-white p-4"
+      className="rounded-2xl border border-app-border bg-app-qr-bg p-4"
     >
       <QRCodeSVG value={value} size={QR_SIZE} />
     </div>

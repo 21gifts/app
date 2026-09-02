@@ -6,22 +6,6 @@ import type { GiftStats } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('next/link', () => ({
-  default: ({
-    href,
-    children,
-    ...rest
-  }: {
-    href: string;
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => (
-    <a href={href} {...rest}>
-      {children}
-    </a>
-  ),
-}));
-
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({
     totalSats: 0,
@@ -102,15 +86,10 @@ describe('ProfileScreen', () => {
   it('shows the heading, back link, name form, address form, and chart', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
-      '/welcome',
-    );
-    expect(screen.queryByText('Back to the forum')).toBeNull();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
-    expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     await waitFor(() => {
       expect(vi.mocked(fetchGiftStats)).toHaveBeenCalled();
@@ -121,9 +100,8 @@ describe('ProfileScreen', () => {
     vi.mocked(fetchGiftStats).mockReturnValue(new Promise<GiftStats>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
-    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
-    expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
     expect(screen.queryByLabelText('Given ₿0')).toBeNull();
   });

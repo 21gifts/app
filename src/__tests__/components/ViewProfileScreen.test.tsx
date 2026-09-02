@@ -22,8 +22,8 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
-    expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
   });
 
   it('shows view.unnamed when name is null', () => {
