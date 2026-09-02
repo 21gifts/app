@@ -3390,6 +3390,14 @@ test('Function: THEME_BOOTSTRAP_SCRIPT — dark cookie paints html.dark before i
   await expect(page.getByLabel('Theme')).toBeVisible();
 });
 
+test('Function: APP_HEIGHT_BOOTSTRAP_SCRIPT — document has --app-height', async ({ page }) => {
+  await page.goto('/login');
+  const value = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+  );
+  expect(value).not.toBe('');
+});
+
 test('Function: manifest — web app manifest is served', async ({ request }) => {
   const res = await request.get('/manifest.webmanifest');
   expect(res.status()).toBe(200);

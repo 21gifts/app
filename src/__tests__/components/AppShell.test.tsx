@@ -1,9 +1,22 @@
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { AppShell, AppShellFooter, AppShellHeader, AppShellTopLeft } from '@/components/AppShell';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(cleanup);
+
+/** Footer whose children are new JSX every parent render — used to catch slot update loops. */
+function FlakyFooter(): ReactElement {
+  const [n, setN] = useState(0);
+  return (
+    <AppShellFooter>
+      <button type="button" onClick={() => setN(n + 1)}>
+        {n}
+      </button>
+    </AppShellFooter>
+  );
+}
 
 describe('AppShell', () => {
   it('fill renders footer as a sibling of the inner scroller', () => {
@@ -39,7 +52,7 @@ describe('AppShell', () => {
     expect(screen.getByText('Body')).toBeTruthy();
   });
 
-  it('fill align=center centers the inner scroller, not main', () => {
+  it('fill align=center centers an inner wrapper, not the scroller or main', () => {
     const { container } = renderWithLocale(
       <AppShell mode="fill" align="center">
         <p>Card</p>
@@ -48,8 +61,12 @@ describe('AppShell', () => {
     const main = container.querySelector('main');
     expect(main?.className).not.toContain('justify-center');
     const scroller = main?.querySelector('.overflow-y-auto');
-    expect(scroller?.className).toContain('items-center');
-    expect(scroller?.className).toContain('justify-center');
+    expect(scroller?.className).not.toContain('items-center');
+    expect(scroller?.className).not.toContain('justify-center');
+    const inner = scroller?.firstElementChild;
+    expect(inner?.className).toContain('min-h-full');
+    expect(inner?.className).toContain('items-center');
+    expect(inner?.className).toContain('justify-center');
   });
 
   it('flow has no overflow-hidden and no inner overflow-y-auto', () => {
@@ -85,8 +102,12 @@ describe('AppShell', () => {
         <p>Body</p>
       </AppShell>,
     );
-    expect(container.querySelector('.left-5')).toBeNull();
+    expect(screen.queryByTestId('left')).toBeNull();
+    expect(screen.queryByTestId('right')).toBeNull();
     expect(container.querySelector('.right-5')).toBeNull();
+    const leftHost = container.querySelector('.left-5');
+    expect(leftHost?.className).toContain('empty:hidden');
+    expect(leftHost?.childNodes.length).toBe(0);
   });
 
   it('AppShellTopLeft from a child wins over the page topLeft prop', () => {
@@ -137,12 +158,29 @@ describe('AppShell', () => {
     expect(screen.getByText('Inline left')).toBeTruthy();
   });
 
-  it('omits footer when no AppShellFooter registers', () => {
+  it('keeps an empty footer host when no AppShellFooter registers', () => {
     const { container } = renderWithLocale(
       <AppShell mode="fill">
         <p>Only body</p>
       </AppShell>,
     );
-    expect(container.querySelector('footer')).toBeNull();
+    const footer = container.querySelector('footer');
+    expect(footer).toBeTruthy();
+    expect(footer?.className).toContain('empty:hidden');
+    expect(footer?.childNodes.length).toBe(0);
+  });
+
+  it('does not infinite-loop when footer children are new JSX each render', () => {
+    renderWithLocale(
+      <AppShell mode="fill">
+        <p>Body</p>
+        <FlakyFooter />
+      </AppShell>,
+    );
+    const button = screen.getByRole('button');
+    for (let i = 0; i < 8; i += 1) {
+      fireEvent.click(button);
+    }
+    expect(screen.getByRole('button').textContent).toBe('8');
   });
 });

@@ -452,13 +452,20 @@
 - **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
 - **Used by:** `ForumBoard`.
 
+## Function: APP_HEIGHT_BOOTSTRAP_SCRIPT
+
+- **Purpose:** Blocking bootstrap IIFE string injected as a raw head script before paint. Sets `--app-height` from `visualViewport.height` (fallback `innerHeight`) so first paint matches the visible viewport.
+- **Inputs:** None (constant string).
+- **Returns / side effects:** Non-empty IIFE source mentioning `visualViewport` and `--app-height`.
+- **Used by:** `RootLayout` `<head>` script.
+
 ## Function: useAppHeight
 
 - **Purpose:** After hydration, keeps the CSS custom property `--app-height` in sync with the visible viewport (`visualViewport.height`, fallback `innerHeight`) so `AppShell` fill/flow layouts track mobile browser chrome and keyboard overlap.
 - **Inputs:** None (reads `window.visualViewport` / `innerHeight` inside a `useEffect`).
 - **Returns / side effects:** `void`. Sets `--app-height` on `document.documentElement` and registers resize/scroll/orientation listeners; cleans them up on unmount.
 - **Used by:**
-  - **`AppHeightSync`** (root layout mount)
+  - **`AppHeightSync`** (same file; root layout mount)
   - **Every hydrated app page** (via that mount)
   - **Fill/flow `AppShell` layouts** that consume `--app-height`
 
@@ -484,9 +491,9 @@
 
 ## Function: AppShellHeader
 
-- **Purpose:** Registers flex-none header content into the nearest `AppShell` fill layout (portaled into the shell `<header>`). Without an `AppShell` ancestor, renders children inline.
+- **Purpose:** Registers flex-none header content into the nearest `AppShell` fill layout (DOM portal into the shell `<header>` host). Without an `AppShell` ancestor, renders children inline.
 - **Inputs:** `children` (typically an onboarding `h1`).
-- **Returns / side effects:** `null` when registered into the shell; otherwise the children. Layout only.
+- **Returns / side effects:** Portal into the shell header host when present; otherwise the children. Layout only.
 - **Used by:**
   - **`NameSetup`**
   - **`AddressSetup`**
@@ -494,9 +501,9 @@
 
 ## Function: AppShellFooter
 
-- **Purpose:** Registers flex-none footer content (CTAs) into the nearest `AppShell` fill layout (`pb-8` on the shell footer). Without an `AppShell` ancestor, renders children inline.
+- **Purpose:** Registers flex-none footer content (CTAs) into the nearest `AppShell` fill layout (DOM portal into the shell `<footer>` host; `pb-8` on that host). Without an `AppShell` ancestor, renders children inline.
 - **Inputs:** `children` (typically Continue / Skip / Agree buttons).
-- **Returns / side effects:** `null` when registered into the shell; otherwise the children. Layout only.
+- **Returns / side effects:** Portal into the shell footer host when present; otherwise the children. Layout only.
 - **Used by:**
   - **`NameForm`** (onboarding)
   - **`LightningAddressForm`** (onboarding)
@@ -504,9 +511,9 @@
 
 ## Function: AppShellTopLeft
 
-- **Purpose:** Registers absolute top-left chrome into the nearest `AppShell`; child registration wins over the page `topLeft` prop. Without an `AppShell` ancestor, renders children inline.
+- **Purpose:** Registers absolute top-left chrome into the nearest `AppShell` via DOM portal; child registration wins over the page `topLeft` prop. Without an `AppShell` ancestor, renders children inline.
 - **Inputs:** `children` (back control + wordmark, etc.).
-- **Returns / side effects:** `null` when registered into the shell; otherwise the children. Layout only.
+- **Returns / side effects:** Portal into the shell top-left host when present; otherwise the children. Layout only.
 - **Used by:**
   - **`RulesSetup`** (chapter back + wordmark)
   - **Fill `AppShell` pages** that pass `topLeft` as a prop instead
@@ -815,7 +822,7 @@
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `LocaleProvider` with the request catalog, and `ThemeProvider`.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, and `ThemeProvider`.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.

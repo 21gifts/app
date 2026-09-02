@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useLayoutEffect,
   useMemo,
@@ -10,6 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 /** Visible-viewport lock (`fill`) or document-scroll (`flow`). */
 export type AppShellMode = 'fill' | 'flow';
@@ -30,18 +30,18 @@ export interface AppShellProps {
   /** Optional extra class on `<main>` — never viewport height classes. */
   className?: string;
   /**
-   * `fill` only. `center` = inner scroller is flex items-center justify-center
-   * (short cards). Never justify-center on `<main>`. `flow` ignores this.
+   * `fill` only. `center` wraps children in a `min-h-full` flex center inside the
+   * overflow scroller (short cards). Never put justify-center on the scroller or
+   * `<main>`. `flow` ignores this.
    */
   align?: AppShellAlign;
 }
 
-type SlotSetter = (node: ReactNode | undefined) => void;
-
 interface AppShellContextValue {
-  setHeader: SlotSetter;
-  setFooter: SlotSetter;
-  setTopLeft: SlotSetter;
+  headerEl: HTMLElement | null;
+  footerEl: HTMLElement | null;
+  topLeftEl: HTMLElement | null;
+  setHasTopLeftPortal: (value: boolean) => void;
 }
 
 const AppShellContext = createContext<AppShellContextValue | null>(null);
@@ -61,36 +61,28 @@ export function AppShell({
   className,
   align = 'start',
 }: AppShellProps): ReactElement {
-  const [header, setHeaderState] = useState<ReactNode | undefined>(undefined);
-  const [footer, setFooterState] = useState<ReactNode | undefined>(undefined);
-  const [slotTopLeft, setSlotTopLeftState] = useState<ReactNode | undefined>(undefined);
-
-  const setHeader = useCallback<SlotSetter>((node) => {
-    setHeaderState(node);
-  }, []);
-  const setFooter = useCallback<SlotSetter>((node) => {
-    setFooterState(node);
-  }, []);
-  const setTopLeft = useCallback<SlotSetter>((node) => {
-    setSlotTopLeftState(node);
-  }, []);
+  const [headerEl, setHeaderEl] = useState<HTMLElement | null>(null);
+  const [footerEl, setFooterEl] = useState<HTMLElement | null>(null);
+  const [topLeftEl, setTopLeftEl] = useState<HTMLElement | null>(null);
+  const [hasTopLeftPortal, setHasTopLeftPortal] = useState(false);
 
   const ctx = useMemo<AppShellContextValue>(
-    () => ({ setHeader, setFooter, setTopLeft }),
-    [setHeader, setFooter, setTopLeft],
+    () => ({ headerEl, footerEl, topLeftEl, setHasTopLeftPortal }),
+    [headerEl, footerEl, topLeftEl],
   );
 
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
-  const effectiveTopLeft = slotTopLeft !== undefined ? slotTopLeft : topLeft;
-  const hasLeft = effectiveTopLeft !== undefined && effectiveTopLeft !== null;
   const hasRight = topRight !== undefined && topRight !== null;
-  const hasHeader = header !== undefined && header !== null;
-  const hasFooter = footer !== undefined && footer !== null;
+  const showPageTopLeft = !hasTopLeftPortal && topLeft !== undefined && topLeft !== null;
 
   const chrome = (
     <>
-      {hasLeft ? (
-        <div className="absolute top-4 left-5 z-40 flex items-center gap-2">{effectiveTopLeft}</div>
+      <div
+        ref={setTopLeftEl}
+        className="absolute top-4 left-5 z-40 flex items-center gap-2 empty:hidden"
+      />
+      {showPageTopLeft ? (
+        <div className="absolute top-4 left-5 z-40 flex items-center gap-2">{topLeft}</div>
       ) : null}
       {hasRight ? (
         <div className="absolute top-4 right-5 z-40 flex items-center gap-2">{topRight}</div>
@@ -105,13 +97,13 @@ export function AppShell({
           className={`relative flex min-h-[var(--app-height)] flex-col items-center px-6${extra}`}
         >
           {chrome}
+          <header ref={setHeaderEl} className="flex-none empty:hidden" />
           <div className="w-full flex-none pt-24 pb-8">{children}</div>
+          <footer ref={setFooterEl} className="flex-none pb-8 empty:hidden" />
         </main>
       </AppShellContext.Provider>
     );
   }
-
-  const scrollerAlign = align === 'center' ? ' flex items-center justify-center' : '';
 
   return (
     <AppShellContext.Provider value={ctx}>
@@ -119,9 +111,15 @@ export function AppShell({
         className={`relative flex h-[var(--app-height)] flex-col overflow-hidden overscroll-y-none px-6${extra}`}
       >
         {chrome}
-        <header className="flex-none">{hasHeader ? header : null}</header>
-        <div className={`min-h-0 flex-1 overflow-y-auto${scrollerAlign}`}>{children}</div>
-        {hasFooter ? <footer className="flex-none pb-8">{footer}</footer> : null}
+        <header ref={setHeaderEl} className="flex-none empty:hidden" />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {align === 'center' ? (
+            <div className="flex min-h-full items-center justify-center">{children}</div>
+          ) : (
+            children
+          )}
+        </div>
+        <footer ref={setFooterEl} className="flex-none pb-8 empty:hidden" />
       </main>
     </AppShellContext.Provider>
   );
@@ -132,24 +130,17 @@ export function AppShell({
  * renders children inline.
  *
  * @param props - Header content.
- * @returns `null` when portaled into the shell; otherwise the children.
+ * @returns Portal into the shell header, inline children, or `null` before the host mounts.
  */
 export function AppShellHeader(props: { children: ReactNode }): ReactElement | null {
   const ctx = useContext(AppShellContext);
-  useLayoutEffect(() => {
-    if (ctx === null) {
-      return;
-    }
-    ctx.setHeader(props.children);
-    return () => {
-      ctx.setHeader(undefined);
-    };
-  }, [ctx, props.children]);
-
   if (ctx === null) {
     return <>{props.children}</>;
   }
-  return null;
+  if (ctx.headerEl === null) {
+    return null;
+  }
+  return createPortal(props.children, ctx.headerEl);
 }
 
 /**
@@ -157,24 +148,17 @@ export function AppShellHeader(props: { children: ReactNode }): ReactElement | n
  * {@link AppShell} ancestor, renders children inline.
  *
  * @param props - Footer content (typically CTAs).
- * @returns `null` when portaled into the shell; otherwise the children.
+ * @returns Portal into the shell footer, inline children, or `null` before the host mounts.
  */
 export function AppShellFooter(props: { children: ReactNode }): ReactElement | null {
   const ctx = useContext(AppShellContext);
-  useLayoutEffect(() => {
-    if (ctx === null) {
-      return;
-    }
-    ctx.setFooter(props.children);
-    return () => {
-      ctx.setFooter(undefined);
-    };
-  }, [ctx, props.children]);
-
   if (ctx === null) {
     return <>{props.children}</>;
   }
-  return null;
+  if (ctx.footerEl === null) {
+    return null;
+  }
+  return createPortal(props.children, ctx.footerEl);
 }
 
 /**
@@ -182,7 +166,7 @@ export function AppShellFooter(props: { children: ReactNode }): ReactElement | n
  * `topLeft` prop. Without an {@link AppShell} ancestor, renders children inline.
  *
  * @param props - Left chrome (back + wordmark, etc.).
- * @returns `null` when portaled into the shell; otherwise the children.
+ * @returns Portal into the shell top-left host, inline children, or `null` before the host mounts.
  */
 export function AppShellTopLeft(props: { children: ReactNode }): ReactElement | null {
   const ctx = useContext(AppShellContext);
@@ -190,14 +174,17 @@ export function AppShellTopLeft(props: { children: ReactNode }): ReactElement | 
     if (ctx === null) {
       return;
     }
-    ctx.setTopLeft(props.children);
+    ctx.setHasTopLeftPortal(true);
     return () => {
-      ctx.setTopLeft(undefined);
+      ctx.setHasTopLeftPortal(false);
     };
-  }, [ctx, props.children]);
+  }, [ctx]);
 
   if (ctx === null) {
     return <>{props.children}</>;
   }
-  return null;
+  if (ctx.topLeftEl === null) {
+    return null;
+  }
+  return createPortal(props.children, ctx.topLeftEl);
 }

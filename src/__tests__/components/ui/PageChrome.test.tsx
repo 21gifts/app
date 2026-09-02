@@ -17,7 +17,8 @@ describe('PageChrome', () => {
     expect(main?.className).not.toContain('overflow-hidden');
     expect(main?.className).not.toContain('justify-center');
     expect(screen.getByText('Body')).toBeTruthy();
-    expect(main?.querySelector('.absolute')).toBeNull();
+    expect(main?.querySelector('.right-5')).toBeNull();
+    expect(main?.querySelector('.left-5')?.childNodes.length ?? 0).toBe(0);
   });
 
   it('renders topRight in the absolute slot', () => {
@@ -58,7 +59,9 @@ describe('PageChrome', () => {
         <p>Body</p>
       </PageChrome>,
     );
-    expect(container.querySelector('main')?.querySelector('.left-5')).toBeNull();
+    expect(container.querySelector('main')?.querySelector('.left-5')?.childNodes.length ?? 0).toBe(
+      0,
+    );
   });
 
   it('omits the topRight slot when topRight is null', () => {
@@ -67,7 +70,7 @@ describe('PageChrome', () => {
         <p>Body</p>
       </PageChrome>,
     );
-    expect(container.querySelector('main')?.querySelector('.absolute')).toBeNull();
+    expect(container.querySelector('main')?.querySelector('.right-5')).toBeNull();
   });
 
   it('appends className and treats empty className as absent', () => {

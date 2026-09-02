@@ -499,7 +499,7 @@ flowchart TB
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden` (keep). App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
-**Safe area / visualViewport.** intern#17 ships `AppShell` + `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`). Do not add `env(safe-area-inset-*)` here.
+**Safe area / visualViewport.** `AppShell` plus `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`) is the height source. Do not add `env(safe-area-inset-*)` here.
 
 ---
 
@@ -679,7 +679,7 @@ export interface PageChromeProps {
 }
 ```
 
-Migrate `/welcome`, `/profile`, `/contact`, `/messages`, `/donate`, `/setup/*`, `/view/*` onto `PageChrome` so chrome positions cannot drift. `/login` and `/messages/[id]` already use it.
+Those routes use `AppShell` (`fill` or `flow`); `PageChrome` is the flow-mode wrapper only. Prefer `AppShell` directly so chrome positions cannot drift.
 
 ---
 

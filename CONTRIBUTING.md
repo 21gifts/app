@@ -170,7 +170,7 @@ app/
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
 │   │   ├── handbook-topics.ts   # handbook image topic catalog + combo URLs
 │   │   ├── screen-variant-catalog.json # screen-variant ids/labels/visual stems
-│   │   ├── app-height.ts        # --app-height bootstrap script + useAppHeight hook
+│   │   ├── app-height.ts        # --app-height bootstrap IIFE (server-safe; no hooks)
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 
