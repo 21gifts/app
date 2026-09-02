@@ -3472,11 +3472,11 @@ describe('ForumLoader', () => {
 
   it('retries the post after a missing_requirements overlay is satisfied', async () => {
     fetchMock.mockResolvedValue([]);
-    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     postMock.mockResolvedValueOnce(SAMPLE);
-    vi.mocked(setName).mockResolvedValue({
+    vi.mocked(agreeToRules).mockResolvedValue({
       ...account,
-      name: 'Ada',
+      rulesAgreedAt: 2,
       missing: [],
       setup: null,
       forumLawsDismissed: true,
@@ -3487,9 +3487,10 @@ describe('ForumLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledTimes(2);
     });
@@ -3543,7 +3544,7 @@ describe('ForumLoader', () => {
   it('retries the reply after a missing_requirements overlay is satisfied', async () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
     repliesMock.mockResolvedValue([]);
-    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     postMock.mockResolvedValueOnce({
       id: 'r-new',
       name: 'Ada',
@@ -3557,9 +3558,9 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     });
-    vi.mocked(setName).mockResolvedValue({
+    vi.mocked(agreeToRules).mockResolvedValue({
       ...account,
-      name: 'Ada',
+      rulesAgreedAt: 2,
       missing: [],
       setup: null,
       forumLawsDismissed: true,
@@ -3575,9 +3576,10 @@ describe('ForumLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledTimes(2);
     });
