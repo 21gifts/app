@@ -109,7 +109,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 **App chrome today** (`screen-welcome`, `screen-profile`, `screen-contact`): no wordmark; **Menu** top-right (`SignedInChrome`); profile has a ghost back arrow top-left. **Target:** every app page uses `AppShell` with both chrome slots (`PageChrome` is only the flow-mode wrapper).
 
-**`PageChrome` slots (target).**
+**`AppShell` slots (target).**
 
 ```
 [ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Menu | Theme+Language ]
@@ -153,8 +153,8 @@ flowchart LR
     MF[MarketingFooter: Wordmark + links + GitHub]
   end
   subgraph appShell [App shell — themeable]
-    PL[PageChrome.topLeft: Wordmark]
-    PR[PageChrome.topRight: Menu or Theme+Language]
+    PL[AppShell.topLeft: Wordmark]
+    PR[AppShell.topRight: Menu or Theme+Language]
     BODY[Card / onboarding column / document]
   end
   MH --> MC --> MF
@@ -489,7 +489,7 @@ flowchart TB
 | App card `md`      | `max-w-md` (28rem)                          | Donate inner (today a non-Card column)           |
 | App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox                    |
 | Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                         |
-| App page pad       | `px-6`                                      | `PageChrome`                                     |
+| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                   |
 | Marketing pad      | `px-5`                                      | Header, sections, footer                         |
 | Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                |
 | Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/address`, `/setup/rules`  |
@@ -699,7 +699,7 @@ export function Wordmark(props: {
 }): ReactElement;
 ```
 
-Do not over-type `href` as `'/' | '/welcome'` — unsigned app also uses `/` from `/rules` and `/donate`, and the footer is not a link. Use in `MarketingHeader` (`href="/"`), `MarketingFooter` (no `href`), app `PageChrome.topLeft` (`/` or `/welcome`).
+Do not over-type `href` as `'/' | '/welcome'` — unsigned app also uses `/` from `/rules` and `/donate`, and the footer is not a link. Use in `MarketingHeader` (`href="/"`), `MarketingFooter` (no `href`), app `AppShell` `topLeft` (`/` or `/welcome`).
 
 ---
 

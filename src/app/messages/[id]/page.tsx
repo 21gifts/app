@@ -1,9 +1,8 @@
 import type { ReactElement } from 'react';
-import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { Wordmark } from '@/components/ui';
+import { PageChrome, Wordmark } from '@/components/ui';
 
 /**
  * `/messages/[id]` — public read-only HTML note by forum message UUID.
@@ -21,8 +20,7 @@ export default async function PublicMessagePage({
 }): Promise<ReactElement> {
   const { id } = await params;
   return (
-    <AppShell
-      mode="flow"
+    <PageChrome
       topLeft={<Wordmark href="/" />}
       topRight={
         <>
@@ -32,6 +30,6 @@ export default async function PublicMessagePage({
       }
     >
       <PublicMessageLoader key={id} id={id} />
-    </AppShell>
+    </PageChrome>
   );
 }

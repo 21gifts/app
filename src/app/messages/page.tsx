@@ -1,10 +1,9 @@
 import type { ReactElement } from 'react';
 import { Suspense } from 'react';
-import { AppShell } from '@/components/AppShell';
 import { InboxLoader } from '@/components/InboxLoader';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { Wordmark } from '@/components/ui';
+import { PageChrome, Wordmark } from '@/components/ui';
 
 /**
  * `/messages` — signed-in private-message inbox.
@@ -19,12 +18,12 @@ import { Wordmark } from '@/components/ui';
  */
 export default function MessagesPage(): ReactElement {
   return (
-    <AppShell mode="flow" topLeft={<Wordmark href="/welcome" />} topRight={<SignedInChrome />}>
+    <PageChrome topLeft={<Wordmark href="/welcome" />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="welcome">
         <Suspense>
           <InboxLoader />
         </Suspense>
       </OnboardingGate>
-    </AppShell>
+    </PageChrome>
   );
 }
