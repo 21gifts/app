@@ -106,7 +106,12 @@ export function ContactLoader(): ReactElement | null {
 
   const onOverlaySatisfied = (): void => {
     const current = useAuthStore.getState().account;
-    const still = nextPostRequirement(current?.missing ?? []);
+    /* v8 ignore next 4 -- overlay onSatisfied is not invoked after the account vanishes */
+    if (current === null) {
+      setOverlayRequirement(null);
+      return;
+    }
+    const still = nextPostRequirement(current.missing);
     if (still !== null) {
       setOverlayRequirement(still);
       return;

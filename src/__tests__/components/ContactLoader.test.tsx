@@ -308,6 +308,33 @@ describe('ContactLoader', () => {
     });
   });
 
+  it('retries the send after a missing_requirements overlay is satisfied', async () => {
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    postMock.mockResolvedValueOnce({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hi',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockResolvedValue([]);
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+    });
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('does not reopen the overlay when a retried send is still missing requirements', async () => {
     useAuthStore.setState({
       session: 'sess',

@@ -435,6 +435,34 @@ describe('MemberProfileScreen', () => {
     expect(postMessage).not.toHaveBeenCalled();
   });
 
+  it('retries the reply after a missing_requirements overlay is satisfied', async () => {
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+    });
+    vi.mocked(postMessage).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    vi.mocked(postMessage).mockResolvedValueOnce({
+      ...note,
+      id: '44444444-4444-4444-8444-444444444444',
+      text: 'reply',
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('does not reopen the overlay when a retried reply is still missing requirements', async () => {
     useAuthStore.setState({
       session: 'sess',
