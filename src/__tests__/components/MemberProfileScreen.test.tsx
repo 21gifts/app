@@ -96,7 +96,7 @@ describe('MemberProfileScreen', () => {
   it('toggles the role hint', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
-    expect(screen.getByRole('status')).toBeTruthy();
+    expect(screen.getByText(/confirmed they are real/i)).toBeTruthy();
   });
 
   it('renders a profile note when present', () => {
