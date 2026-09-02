@@ -77,6 +77,7 @@ export function ContactLoader(): ReactElement | null {
           setPosting(false);
           return;
         }
+        setFormError('request');
         setPosting(false);
         return;
       }

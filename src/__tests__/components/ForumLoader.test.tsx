@@ -129,6 +129,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.clearAllTimers();
   vi.useRealTimers();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   Object.defineProperty(document, 'visibilityState', {
@@ -3014,6 +3015,33 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('redirects to /setup/rules when a silent refresh returns missing_requirements', async () => {
+    fetchMock
+      .mockResolvedValueOnce([SAMPLE])
+      .mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
   it('opens the requirements overlay when posting with a missing name', async () => {
     useAuthStore.setState({
       session: 'sess',
@@ -3130,6 +3158,7 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
   });
 
   it('opens the overlay when a reply is missing a name', async () => {

@@ -149,6 +149,7 @@ export function MemberProfileScreen({
           pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
           return;
         }
+        setReplyFormError('request');
         return;
       }
       setReplyFormError('request');

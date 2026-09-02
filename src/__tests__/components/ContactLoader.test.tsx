@@ -312,5 +312,6 @@ describe('ContactLoader', () => {
       expect(postMock).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
   });
 });

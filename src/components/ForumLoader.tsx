@@ -314,6 +314,8 @@ export function ForumLoader(): ReactElement | null {
       flushSync(() => {
         if (result === 'ok') {
           setError(false);
+        } else if (result === 'requirements') {
+          router.replace('/setup/rules');
         } else if (result === 'error') {
           if (messagesRef.current === null) {
             setError(true);
@@ -728,6 +730,7 @@ export function ForumLoader(): ReactElement | null {
           pendingPostRef.current = () => runNotePost(trimmed, pendingPhoto, pendingVideo, true);
           return;
         }
+        setFormError('request');
         return;
       }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
@@ -923,6 +926,7 @@ export function ForumLoader(): ReactElement | null {
           pendingPostRef.current = () => runReplyPost(trimmed, parentId, parentBaseline, true);
           return;
         }
+        setReplyFormError('request');
         return;
       }
       /* v8 ignore next 3 -- reply error after the thread was closed */

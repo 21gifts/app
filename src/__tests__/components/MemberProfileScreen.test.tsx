@@ -442,6 +442,7 @@ describe('MemberProfileScreen', () => {
       expect(postMessage).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
   });
 
   it('shows a replies error when expanding without a session', async () => {
