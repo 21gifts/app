@@ -587,4 +587,39 @@ describe('MemberProfileScreen', () => {
     );
     expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
   });
+
+  it('posts a reply when the account snapshot is missing', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
+  });
+
+  it('closes the overlay when the account is cleared during satisfy', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockImplementation(async (session, name) => {
+      useAuthStore.setState({ session, account: null });
+      return { ...account, name, missing: [], setup: null };
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+  });
 });

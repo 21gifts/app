@@ -2511,7 +2511,22 @@ describe('ForumLoader', () => {
   });
 
   it('increments replyCount when a new reply is posted', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    fetchMock.mockResolvedValue([
+      { ...SAMPLE, replyCount: 0 },
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-new',
@@ -2529,10 +2544,10 @@ describe('ForumLoader', () => {
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
-      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    expect(screen.getByText('0 replies')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    expect(screen.getAllByText('0 replies')).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
     await waitFor(() => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
@@ -2542,6 +2557,7 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
       expect(screen.getByText('Fresh reply')).toBeTruthy();
       expect(screen.getByText('1 replies')).toBeTruthy();
+      expect(screen.getByText('0 replies')).toBeTruthy();
     });
   });
 

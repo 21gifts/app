@@ -190,6 +190,27 @@ describe('fetchMember', () => {
     });
     await expect(fetchMember('sess', member.id)).rejects.toBeInstanceOf(MissingRequirementsError);
   });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchMember('sess', member.id)).rejects.toThrow(
+      'Could not load this profile. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(fetchMember('sess', member.id)).rejects.toThrow(
+      'Could not load this profile. Please try again.',
+    );
+  });
 });
 
 describe('setName', () => {
@@ -640,6 +661,27 @@ describe('fetchMessages', () => {
     await expect(fetchMessages('sess')).rejects.toBeInstanceOf(MissingRequirementsError);
   });
 
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     await expect(fetchMessages('sess')).rejects.toThrow(
@@ -811,6 +853,23 @@ describe('postMessage', () => {
       MissingRequirementsError,
     );
   });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
+  });
 });
 
 describe('postMessageVideo', () => {
@@ -892,6 +951,29 @@ describe('postMessageVideo', () => {
     const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
     await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toBeInstanceOf(
       MissingRequirementsError,
+    );
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
+      'Could not post your message',
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
+      'Could not post your message',
     );
   });
 });
@@ -1108,6 +1190,23 @@ describe('postContact', () => {
       body: { error: 'missing_requirements', missing: ['name'] },
     });
     await expect(postContact('sess', 'x')).rejects.toBeInstanceOf(MissingRequirementsError);
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(postContact('sess', 'x')).rejects.toThrow('Could not send your message');
   });
 });
 

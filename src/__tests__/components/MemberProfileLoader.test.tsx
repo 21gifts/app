@@ -1,8 +1,9 @@
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileLoader } from '@/components/MemberProfileLoader';
 import { fetchGiftStats, fetchMember } from '@/lib/api';
-import type { MemberProfile } from '@/lib/api-types';
+import type { GiftStats, MemberProfile } from '@/lib/api-types';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -29,6 +30,24 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   profileMessage: null,
+};
+
+const EMPTY_STATS: GiftStats = {
+  totalSats: 0,
+  totalBtc: '0.00000000',
+  totalUsd: '0.00',
+  giftCount: 0,
+  recipientCount: 0,
+  firstPaidAt: null,
+  lastPaidAt: null,
+  spendOverTime: [],
+  byRecipient: [],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
 };
 
 beforeEach(() => {
@@ -95,9 +114,115 @@ describe('MemberProfileLoader', () => {
   });
 
   it('shows error and retry when the fetch fails', async () => {
-    vi.mocked(fetchMember).mockRejectedValue(new Error('boom'));
+    vi.mocked(fetchMember).mockRejectedValueOnce(new Error('boom'));
+    vi.mocked(fetchMember).mockResolvedValueOnce(profile);
+    vi.mocked(fetchGiftStats).mockResolvedValue(EMPTY_STATS);
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
     expect(await screen.findByText('Could not load this profile. Please try again.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(fetchMember).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows loading when there is no session', () => {
+    useAuthStore.setState({ session: null });
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(fetchMember).not.toHaveBeenCalled();
+  });
+
+  it('redirects to rules when the member fetch is missing requirements', async () => {
+    vi.mocked(fetchMember).mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('still shows the card when gift stats fail', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    vi.mocked(fetchGiftStats).mockRejectedValue(new Error('stats down'));
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(await screen.findByText('Carol')).toBeTruthy();
+  });
+
+  it('skips gift stats when lightningAddress is null', async () => {
+    vi.mocked(fetchMember).mockResolvedValue({ ...profile, lightningAddress: null });
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(fetchGiftStats).not.toHaveBeenCalled();
+  });
+
+  it('skips gift stats when lightningAddress is blank', async () => {
+    vi.mocked(fetchMember).mockResolvedValue({ ...profile, lightningAddress: '   ' });
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(fetchGiftStats).not.toHaveBeenCalled();
+  });
+
+  it('ignores a stale member resolve after unmount', async () => {
+    let resolveMember: ((value: MemberProfile | null) => void) | undefined;
+    vi.mocked(fetchMember).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveMember = resolve;
+        }),
+    );
+    const view = renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    view.unmount();
+    resolveMember?.(profile);
+    await Promise.resolve();
+    expect(fetchMember).toHaveBeenCalled();
+  });
+
+  it('ignores a stale member reject after unmount', async () => {
+    let rejectMember: ((reason: Error) => void) | undefined;
+    vi.mocked(fetchMember).mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectMember = reject;
+        }),
+    );
+    const view = renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    view.unmount();
+    rejectMember?.(new Error('gone'));
+    await Promise.resolve();
+    expect(fetchMember).toHaveBeenCalled();
+  });
+
+  it('ignores a stale stats resolve after unmount', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    let resolveStats: ((value: GiftStats) => void) | undefined;
+    vi.mocked(fetchGiftStats).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStats = resolve;
+        }),
+    );
+    const view = renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    await waitFor(() => {
+      expect(fetchGiftStats).toHaveBeenCalled();
+    });
+    view.unmount();
+    resolveStats?.(EMPTY_STATS);
+    await Promise.resolve();
+  });
+
+  it('ignores a stale stats reject after unmount', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    let rejectStats: ((reason: Error) => void) | undefined;
+    vi.mocked(fetchGiftStats).mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectStats = reject;
+        }),
+    );
+    const view = renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    await waitFor(() => {
+      expect(fetchGiftStats).toHaveBeenCalled();
+    });
+    view.unmount();
+    rejectStats?.(new Error('gone'));
+    await Promise.resolve();
   });
 });

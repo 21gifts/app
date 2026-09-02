@@ -70,4 +70,87 @@ describe('RequirementsOverlay', () => {
     expect(onDismiss).toHaveBeenCalled();
     expect(agreeToRules).not.toHaveBeenCalled();
   });
+
+  it('does not agree when there is no session', () => {
+    useAuthStore.setState({ session: null, account });
+    renderWithLocale(
+      <RequirementsOverlay requirement="rules" onDismiss={vi.fn()} onSatisfied={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    expect(agreeToRules).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when agreeing fails', async () => {
+    vi.mocked(agreeToRules).mockRejectedValue(new Error('fail'));
+    renderWithLocale(
+      <RequirementsOverlay requirement="rules" onDismiss={vi.fn()} onSatisfied={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Could not save your agreement');
+  });
+
+  it('ignores a second agree click while busy', async () => {
+    const onSatisfied = vi.fn();
+    let resolveAgree: ((value: Account) => void) | undefined;
+    vi.mocked(agreeToRules).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAgree = resolve;
+        }),
+    );
+    renderWithLocale(
+      <RequirementsOverlay requirement="rules" onDismiss={vi.fn()} onSatisfied={onSatisfied} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    expect(agreeToRules).toHaveBeenCalledTimes(1);
+    resolveAgree?.({ ...account, rulesAgreedAt: 2, missing: ['name'] });
+    await waitFor(() => {
+      expect(onSatisfied).toHaveBeenCalled();
+    });
+  });
+
+  it('does not update account when the session changes during agree', async () => {
+    const onSatisfied = vi.fn();
+    let resolveAgree: ((value: Account) => void) | undefined;
+    vi.mocked(agreeToRules).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAgree = resolve;
+        }),
+    );
+    renderWithLocale(
+      <RequirementsOverlay requirement="rules" onDismiss={vi.fn()} onSatisfied={onSatisfied} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    useAuthStore.setState({ session: 'other', account });
+    resolveAgree?.({ ...account, rulesAgreedAt: 2, missing: ['name'] });
+    await waitFor(() => {
+      expect(agreeToRules).toHaveBeenCalled();
+    });
+    expect(onSatisfied).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().account?.rulesAgreedAt).toBeNull();
+  });
+
+  it('does not update when the account is cleared during agree', async () => {
+    const onSatisfied = vi.fn();
+    let resolveAgree: ((value: Account) => void) | undefined;
+    vi.mocked(agreeToRules).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAgree = resolve;
+        }),
+    );
+    renderWithLocale(
+      <RequirementsOverlay requirement="rules" onDismiss={vi.fn()} onSatisfied={onSatisfied} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    useAuthStore.setState({ session: 'sess', account: null });
+    resolveAgree?.({ ...account, rulesAgreedAt: 2, missing: ['name'] });
+    await waitFor(() => {
+      expect(agreeToRules).toHaveBeenCalled();
+    });
+    expect(onSatisfied).not.toHaveBeenCalled();
+  });
 });
