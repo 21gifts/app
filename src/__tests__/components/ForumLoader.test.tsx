@@ -3472,9 +3472,8 @@ describe('ForumLoader', () => {
 
   it('retries the post after a missing_requirements overlay is satisfied', async () => {
     fetchMock.mockResolvedValue([]);
-    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name'])).mockResolvedValueOnce(
-      SAMPLE,
-    );
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    postMock.mockResolvedValueOnce(SAMPLE);
     vi.mocked(setName).mockResolvedValue({
       ...account,
       name: 'Ada',
@@ -3544,7 +3543,8 @@ describe('ForumLoader', () => {
   it('retries the reply after a missing_requirements overlay is satisfied', async () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
     repliesMock.mockResolvedValue([]);
-    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name'])).mockResolvedValueOnce({
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    postMock.mockResolvedValueOnce({
       id: 'r-new',
       name: 'Ada',
       text: 'reply',
