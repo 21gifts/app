@@ -324,18 +324,18 @@
 - **Purpose:** Detect iPhone/iPod stock Safari (Safari in UA, not CriOS/FxiOS).
 - **Inputs:** None (reads `navigator.userAgent`).
 - **Returns / side effects:** `boolean`. No network.
-- **Used by:** `PushToggle`, `shouldOfferIosInstall`.
+- **Used by:** `PushToggle` only.
 
 ## Function: shouldOfferIosInstall
 
-- **Purpose:** True when iPhone/iPod Safari is not standalone and not an in-app browser — the condition for offering the iOS Home Screen install sheet.
-- **Inputs:** None. Composes `isIosSafari`, `isStandaloneDisplay`, and `isInAppBrowser` (does not duplicate UA logic).
+- **Purpose:** True when an iPhone/iPod browser whose UA contains Safari (stock Safari, Chrome CriOS, Firefox FxiOS, Edge EdgiOS) is not standalone and not an in-app browser — the condition for the iOS Home Screen install sheet.
+- **Inputs:** None. Reads `navigator.userAgent` plus `isStandaloneDisplay` and `isInAppBrowser`. Does not call `isIosSafari`.
 - **Returns / side effects:** `boolean`. No network.
 - **Used by:** `PwaInstall`.
 
 ## Function: PwaInstall
 
-- **Purpose:** Client install control for the PWA. First paint is `null` (no layout slot). After mount, hidden when standalone or in-app. On iPhone Safari (`shouldOfferIosInstall`) shows a labeled control that opens a three-step `role="dialog"` sheet (Share → Add to Home Screen → leave Open as Web App on). On Chromium, listens for `beforeinstallprompt` (`preventDefault`, store event), shows the control, and on click calls `event.prompt()` then drops the event (hides) regardless of accepted/dismissed; `appinstalled` also hides. Placements: `header` (compact secondary), `hero` (secondary md), `menu` (SignedInChrome Download + label row).
+- **Purpose:** Client install control for the PWA. First paint is `null` (no layout slot). After mount, hidden when standalone or in-app. On iPhone Home Screen browsers (Safari, Chrome, Firefox, Edge) (`shouldOfferIosInstall`) shows a labeled control that opens a three-step `role="dialog"` sheet (Share → Add to Home Screen → if Open as Web App is shown, leave it on). On Chromium, listens for `beforeinstallprompt` (`preventDefault`, store event), shows the control, and on click calls `event.prompt()` then drops the event (hides) regardless of accepted/dismissed; `appinstalled` also hides. Placements: `header` (compact secondary), `hero` (secondary md), `menu` (SignedInChrome Download + label row).
 - **Inputs:** `placement` (`header` | `hero` | `menu`); optional `tone` (`app` | `dark`, default `app`); optional `onMenuAction` (menu row closes the Menu after click). Catalog via `useTranslations`.
 - **Returns / side effects:** Install button and optional iOS sheet, or `null`. No new dependencies; Tailwind only.
 - **Used by:** `MarketingHeader` (`tone="dark"` `placement="header"`), `Home` hero (`tone="dark"` `placement="hero"`), `SignedInChrome` Menu (`placement="menu"`).

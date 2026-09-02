@@ -1182,6 +1182,26 @@ test('Function: PwaInstall — iPhone Safari shows the install control', async (
   ).toBeVisible();
 });
 
+test('Function: PwaInstall — iPhone Chrome shows the install control', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1',
+    });
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      get: () => false,
+    });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Install app' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Install app' }).first().click();
+  await expect(
+    page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+  ).toBeVisible();
+});
+
 test('Function: shouldOfferIosInstall — iPhone Safari shows the install control', async ({
   page,
 }) => {

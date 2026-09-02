@@ -7,6 +7,12 @@ const IPHONE_SAFARI =
 const IPHONE_CRIOS =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1';
 
+const IPHONE_FXIOS =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/120.0 Mobile/15E148 Safari/604.1';
+
+const IPHONE_EDGIOS =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/120.0.0.0 Mobile/15E148 Safari/604.1';
+
 const IPHONE_TELEGRAM =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 Telegram';
 
@@ -49,9 +55,19 @@ describe('shouldOfferIosInstall', () => {
     expect(shouldOfferIosInstall()).toBe(true);
   });
 
-  it('is false for Chrome on iOS (CriOS)', () => {
+  it('is true for Chrome on iOS (CriOS)', () => {
     stubInstallEnv({ userAgent: IPHONE_CRIOS, standalone: false });
-    expect(shouldOfferIosInstall()).toBe(false);
+    expect(shouldOfferIosInstall()).toBe(true);
+  });
+
+  it('is true for Firefox on iOS (FxiOS)', () => {
+    stubInstallEnv({ userAgent: IPHONE_FXIOS, standalone: false });
+    expect(shouldOfferIosInstall()).toBe(true);
+  });
+
+  it('is true for Edge on iOS (EdgiOS)', () => {
+    stubInstallEnv({ userAgent: IPHONE_EDGIOS, standalone: false });
+    expect(shouldOfferIosInstall()).toBe(true);
   });
 
   it('is false when already standalone', () => {

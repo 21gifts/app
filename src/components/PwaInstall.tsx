@@ -61,9 +61,10 @@ function consumeSharedPrompt(): BeforeInstallPromptEvent | null {
 }
 
 /**
- * Labeled control to install the PWA (Chromium prompt) or show iPhone Safari
- * Home Screen steps. Renders nothing until after mount, and stays hidden when
- * already standalone, in an in-app browser, or when neither offer applies.
+ * Labeled control to install the PWA (Chromium prompt) or show iPhone Home
+ * Screen steps (Safari, Chrome, Firefox, Edge). Renders nothing until after
+ * mount, and stays hidden when already standalone, in an in-app browser, or
+ * when neither offer applies.
  *
  * @param props - Placement, optional tone, and optional menu close callback.
  * @returns The install control, iOS sheet, or `null`.

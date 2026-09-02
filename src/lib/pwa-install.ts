@@ -1,11 +1,19 @@
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { isIosSafari, isStandaloneDisplay } from '@/lib/push';
+import { isStandaloneDisplay } from '@/lib/push';
 
 /**
- * True when iPhone/iPod Safari is not standalone and not an in-app browser.
+ * iPhone/iPod browser whose UA contains Safari (stock Safari, CriOS, FxiOS, EdgiOS).
+ */
+function isIosHomeScreenBrowser(): boolean {
+  const ua = navigator.userAgent;
+  return /iPhone|iPod/i.test(ua) && /Safari/i.test(ua);
+}
+
+/**
+ * True when an iPhone/iPod Home Screen browser is not standalone and not in-app.
  *
  * @returns Whether the iOS Home Screen install sheet should be offered.
  */
 export function shouldOfferIosInstall(): boolean {
-  return isIosSafari() && !isStandaloneDisplay() && !isInAppBrowser();
+  return isIosHomeScreenBrowser() && !isStandaloneDisplay() && !isInAppBrowser();
 }
