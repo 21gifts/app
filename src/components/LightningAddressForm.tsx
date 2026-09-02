@@ -146,7 +146,6 @@ export function LightningAddressForm(
       (token) => skipSetup(token, 'lightning-address'),
       (updated) => {
         const current = useAuthStore.getState().account;
-        /* v8 ignore next 3 -- skip returns after logout */
         if (current === null) {
           return;
         }

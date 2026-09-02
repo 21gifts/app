@@ -91,6 +91,27 @@ describe('LightningAddressForm', () => {
     expect(useAuthStore.getState().account?.setup).toBe('rules');
   });
 
+  it('does not merge skip when the account is gone', async () => {
+    let resolveSkip!: (value: typeof baseAccount) => void;
+    vi.mocked(skipSetup).mockReturnValue(
+      new Promise((resolve) => {
+        resolveSkip = resolve;
+      }),
+    );
+    renderWithLocale(<LightningAddressForm variant="onboarding" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    useAuthStore.setState({ session: 'sess', account: null });
+    resolveSkip({
+      ...baseAccount,
+      setup: 'rules',
+      missing: ['lightning-address', 'rules'],
+    });
+    await waitFor(() => {
+      expect(skipSetup).toHaveBeenCalled();
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('hides Skip on the profile variant', () => {
     renderWithLocale(<LightningAddressForm variant="profile" />);
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
