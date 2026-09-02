@@ -39,7 +39,7 @@ const account = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   setup: 'name' as const,
-  missing: ['name', 'lightning-address', 'rules'] as const,
+  missing: ['name', 'lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
 
 const begin = { challengeId: 'ch', options: { challenge: 'aa' } };
