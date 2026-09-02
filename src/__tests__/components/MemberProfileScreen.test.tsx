@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
-import * as api from '@/lib/api';
+import { fetchReplies, openConversation, postMessage, postMessageInvoice } from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -14,6 +14,17 @@ vi.mock('next/navigation', () => ({
     replace: push,
   }),
 }));
+
+vi.mock('@/lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api')>();
+  return {
+    ...actual,
+    fetchReplies: vi.fn(),
+    openConversation: vi.fn(),
+    postMessage: vi.fn(),
+    postMessageInvoice: vi.fn(),
+  };
+});
 
 const profile: MemberProfile = {
   id: '22222222-2222-4222-8222-222222222222',
@@ -41,15 +52,15 @@ const note = {
 
 beforeEach(() => {
   push.mockClear();
-  vi.spyOn(api, 'fetchReplies').mockResolvedValue([]);
-  vi.spyOn(api, 'openConversation').mockResolvedValue({
+  vi.mocked(fetchReplies).mockResolvedValue([]);
+  vi.mocked(openConversation).mockResolvedValue({
     id: 'conv-1',
     name: 'Carol',
     lastText: '',
     lastAt: '2026-01-01T00:00:00.000Z',
   });
-  vi.spyOn(api, 'postMessageInvoice').mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
-  vi.spyOn(api, 'postMessage').mockResolvedValue({
+  vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
+  vi.mocked(postMessage).mockResolvedValue({
     ...note,
     id: '44444444-4444-4444-8444-444444444444',
     text: 'reply',
@@ -77,7 +88,6 @@ afterEach(async () => {
   await act(async () => {
     await Promise.resolve();
   });
-  vi.restoreAllMocks();
   cleanup();
 });
 
@@ -131,7 +141,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('opens a conversation from the profile note', async () => {
-    vi.mocked(api.openConversation).mockResolvedValue({
+    vi.mocked(openConversation).mockResolvedValue({
       id: 'conv-1',
       name: 'Carol',
       lastText: '',
@@ -147,7 +157,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('requests a pay invoice from the profile note', async () => {
-    vi.mocked(api.postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
@@ -155,18 +165,18 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(api.postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
     });
   });
 
   it('loads replies when the profile note is expanded', async () => {
-    vi.mocked(api.fetchReplies).mockResolvedValue([]);
+    vi.mocked(fetchReplies).mockResolvedValue([]);
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
     await waitFor(() => {
-      expect(api.fetchReplies).toHaveBeenCalledWith('sess', note.id);
+      expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
     });
   });
 
@@ -177,11 +187,11 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'x' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(api.postMessageInvoice).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('shows a pay error when the invoice request fails', async () => {
-    vi.mocked(api.postMessageInvoice).mockRejectedValue(new Error('fail'));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('fail'));
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
@@ -194,7 +204,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('retries replies after a failed expand', async () => {
-    vi.mocked(api.fetchReplies).mockRejectedValueOnce(new Error('fail')).mockResolvedValueOnce([]);
+    vi.mocked(fetchReplies).mockRejectedValueOnce(new Error('fail')).mockResolvedValueOnce([]);
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
@@ -204,18 +214,18 @@ describe('MemberProfileScreen', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(api.fetchReplies).toHaveBeenCalledTimes(2);
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
     });
   });
 
   it('collapses an expanded profile note', async () => {
-    vi.mocked(api.fetchReplies).mockResolvedValue([]);
+    vi.mocked(fetchReplies).mockResolvedValue([]);
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
     await waitFor(() => {
-      expect(api.fetchReplies).toHaveBeenCalled();
+      expect(fetchReplies).toHaveBeenCalled();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
     expect(screen.queryByLabelText('Your reply')).toBeNull();
@@ -232,8 +242,8 @@ describe('MemberProfileScreen', () => {
   });
 
   it('posts a reply on the expanded profile note', async () => {
-    vi.mocked(api.fetchReplies).mockResolvedValue([]);
-    vi.mocked(api.postMessage).mockResolvedValue({
+    vi.mocked(fetchReplies).mockResolvedValue([]);
+    vi.mocked(postMessage).mockResolvedValue({
       ...note,
       id: '44444444-4444-4444-8444-444444444444',
       text: 'reply',
@@ -243,12 +253,12 @@ describe('MemberProfileScreen', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
     await waitFor(() => {
-      expect(api.fetchReplies).toHaveBeenCalled();
+      expect(fetchReplies).toHaveBeenCalled();
     });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(api.postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
     });
   });
 
