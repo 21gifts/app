@@ -444,12 +444,11 @@ Default screen shots use the `screen-…` args; extra states use `state-…` arg
 Restrict `combos` only when the UI cannot exist (hamburger nav on desktop,
 payment QR on a smartphone, smartphone pay sheet on desktop).
 
-Every exported function **must** have four Playwright baselines
-`function-<Name>-${combo}-linux.png` (the handbook section on `/handbook`,
-clipped, in each combo project). Adding a screen, UI state, or export without
-updating the baselines in the **same PR** is rejected.
-`npm run screenshot:check` (and CI) fails when a PNG is missing or a variant
-has no matching shot in `e2e/visual.spec.ts`.
+Adding a screen or UI state without updating the baselines in the **same PR**
+is rejected. `npm run screenshot:check` (and CI) fails when a PNG is missing or
+a variant has no matching shot in `e2e/visual.spec.ts`. Exported functions need
+a handbook `## Function: <Name>` section and an e2e `Function: <Name>` needle,
+not a screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
 combo projects as parallel jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.

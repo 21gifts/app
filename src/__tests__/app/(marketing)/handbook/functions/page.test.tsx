@@ -30,7 +30,7 @@ describe('HandbookFunctionsPage', () => {
     renderWithLocale(await HandbookFunctionsPage());
     expect(screen.getByRole('heading', { level: 1, name: 'Functions' })).toBeTruthy();
     expect(document.getElementById('functions')).not.toBeNull();
-    expect(screen.getByLabelText('Topic')).toBeTruthy();
+    expect(screen.queryByLabelText('Topic')).toBeNull();
   });
 
   it('omits the functions section when the handbook doc is missing', async () => {

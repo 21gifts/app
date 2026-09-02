@@ -110,8 +110,7 @@ const en = {
   'handbook.screensLead':
     'Each screen and UI state, with Desktop/Mobile and Light/Dark switches when those baselines exist.',
   'handbook.functionsTitle': 'Functions',
-  'handbook.functionsLead':
-    'Each exported function, with Desktop/Mobile and Light/Dark switches when those baselines exist.',
+  'handbook.functionsLead': 'Each exported function.',
   'handbook.endpointsTitle': 'Endpoints',
   'handbook.endpointsLead': 'HTTP routes this app exposes.',
   'handbook.desktop': 'Desktop',
@@ -503,8 +502,7 @@ const de = {
   'handbook.screensLead':
     'Jeder Screen und jeder Zustand, mit Desktop/Mobil und Hell/Dunkel, wenn diese Baselines existieren.',
   'handbook.functionsTitle': 'Funktionen',
-  'handbook.functionsLead':
-    'Jede exportierte Funktion, mit Desktop/Mobil und Hell/Dunkel, wenn diese Baselines existieren.',
+  'handbook.functionsLead': 'Jede exportierte Funktion.',
   'handbook.endpointsTitle': 'Endpunkte',
   'handbook.endpointsLead': 'HTTP-Routen, die diese App bereitstellt.',
   'handbook.desktop': 'Desktop',
@@ -896,8 +894,7 @@ const es = {
   'handbook.screensLead':
     'Cada pantalla y estado, con conmutadores Escritorio/Móvil y Claro/Oscuro cuando existen esas capturas.',
   'handbook.functionsTitle': 'Funciones',
-  'handbook.functionsLead':
-    'Cada función exportada, con conmutadores Escritorio/Móvil y Claro/Oscuro cuando existen esas capturas.',
+  'handbook.functionsLead': 'Cada función exportada.',
   'handbook.endpointsTitle': 'Endpoints',
   'handbook.endpointsLead': 'Rutas HTTP que expone esta app.',
   'handbook.desktop': 'Escritorio',
@@ -1280,8 +1277,7 @@ const fil = {
   'handbook.screensLead':
     'Bawat screen at UI state, na may Desktop/Mobile at Light/Dark kapag meron ang mga baseline na iyon.',
   'handbook.functionsTitle': 'Functions',
-  'handbook.functionsLead':
-    'Bawat exported function, na may Desktop/Mobile at Light/Dark kapag meron ang mga baseline na iyon.',
+  'handbook.functionsLead': 'Bawat exported function.',
   'handbook.endpointsTitle': 'Endpoints',
   'handbook.endpointsLead': 'Mga HTTP route na inilalabas ng app na ito.',
   'handbook.desktop': 'Desktop',

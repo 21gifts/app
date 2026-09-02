@@ -1455,7 +1455,7 @@
 
 ## Function: HandbookFunctionsPage
 
-- **Purpose:** Next.js page for `/handbook/functions`. Viewer plus functions markdown (id prefix `functions` for visual clips).
+- **Purpose:** Next.js page for `/handbook/functions`. Functions markdown only (id prefix `functions`).
 - **Inputs:** None.
 - **Returns / side effects:** The functions handbook screen.
 - **Used by:** Route `/handbook/functions`.
@@ -1472,7 +1472,7 @@
 - **Purpose:** Client one-topic baseline viewer. Desktop/Mobile and Light/Dark switches only when those combo files exist.
 - **Inputs:** `topics` (`HandbookTopic[]`).
 - **Returns / side effects:** React element or `null` when `topics` is empty. No network.
-- **Used by:** `HandbookScreensPage`, `HandbookFunctionsPage`.
+- **Used by:** `HandbookScreensPage`.
 
 ## Function: topicImageSrc
 
