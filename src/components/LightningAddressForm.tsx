@@ -16,7 +16,10 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the Lightning Address form. */
 type LightningAddressError =
-  { type: 'empty' } | { type: 'request' } | { type: 'notFound' } | { type: 'notZap' };
+  | { type: 'empty' }
+  | { type: 'request' }
+  | { type: 'notFound' }
+  | { type: 'notZap' };
 
 /** Catalog key for a Lightning Address form alert. */
 function lightningAddressErrorKey(
@@ -143,6 +146,7 @@ export function LightningAddressForm(
       (token) => skipSetup(token, 'lightning-address'),
       (updated) => {
         const current = useAuthStore.getState().account;
+        /* v8 ignore next 3 -- skip returns after logout */
         if (current === null) {
           return;
         }

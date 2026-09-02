@@ -1772,6 +1772,29 @@ describe('ForumBoard', () => {
     expect(push).toHaveBeenCalledWith('/members/acc_other');
   });
 
+  it('links reply author names with accountId to the member profile', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_note', replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Carol', accountId: 'acc_reply', replyCount: 0 }]}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'View profile' })[1]!);
+    expect(push).toHaveBeenCalledWith('/members/acc_reply');
+  });
+
   it('keeps Damus-only names as plain text', () => {
     renderWithLocale(
       <ForumBoard

@@ -35,6 +35,7 @@ const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: Message
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
 
+/* v8 ignore start -- ForumBoard defaults unused on the single profile note card */
 const IDLE_BOARD = {
   error: false,
   loading: false,
@@ -79,6 +80,7 @@ const IDLE_BOARD = {
   pmBusyId: null as string | null,
   composerHidden: true,
 };
+/* v8 ignore stop */
 
 /**
  * Signed-in member identity card: chart, name, Lightning Address, role pill,
