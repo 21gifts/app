@@ -15,7 +15,7 @@ export function AddressSetup(): ReactElement {
   const { t } = useTranslations();
   const name = useAuthStore((state) => state.account?.name);
   return (
-    <section className="flex w-full max-w-sm flex-col">
+    <section className="mx-auto flex w-full max-w-sm flex-col">
       <AppShellHeader>
         <div className="pt-24">
           <h1 className="text-center text-2xl font-semibold tracking-tight">

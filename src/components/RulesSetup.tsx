@@ -109,7 +109,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         </>
       </AppShellTopLeft>
       <AppShellHeader>
-        <div className="flex w-full max-w-3xl flex-col gap-6 pt-24">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-24">
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('setup.rulesTitle')}
           </h1>
@@ -121,7 +121,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
           </p>
         </div>
       </AppShellHeader>
-      <section className="flex w-full max-w-3xl flex-col gap-6">
+      <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         {current}
         {error ? (
           <p role="alert" className="text-center text-sm text-app-danger">

@@ -516,8 +516,7 @@
 - **Returns / side effects:** Portal into the shell top-left host when present; otherwise the children. Layout only.
 - **Used by:**
   - **`RulesSetup`** (chapter back + wordmark)
-  - **Fill `AppShell` pages** that pass `topLeft` as a prop instead
-  - **Login / donate wordmark chrome** (page `topLeft` prop path)
+  - **`AppShell` unit tests** (child portal wins over the page `topLeft` prop)
 
 ## Function: PageChrome
 

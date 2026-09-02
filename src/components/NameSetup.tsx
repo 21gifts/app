@@ -13,7 +13,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 export function NameSetup(): ReactElement {
   const { t } = useTranslations();
   return (
-    <section className="flex w-full max-w-sm flex-col">
+    <section className="mx-auto flex w-full max-w-sm flex-col">
       <AppShellHeader>
         <h1 className="pt-24 text-center text-2xl font-semibold tracking-tight">
           {t('setup.nameTitle')}

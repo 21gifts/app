@@ -7,7 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Wordmark } from '@/components/ui';
 
 /**
- * Icon-only forum back plus wordmark for `/profile` `PageChrome.topLeft`.
+ * Icon-only forum back plus wordmark for `/profile` `AppShell` `topLeft`.
  *
  * Back stays a link (navigation), with IconButton `md` geometry.
  *
