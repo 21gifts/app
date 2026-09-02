@@ -16,10 +16,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /** Validation or request failure shown on the Lightning Address form. */
 type LightningAddressError =
-  | { type: 'empty' }
-  | { type: 'request' }
-  | { type: 'notFound' }
-  | { type: 'notZap' };
+  { type: 'empty' } | { type: 'request' } | { type: 'notFound' } | { type: 'notZap' };
 
 /** Catalog key for a Lightning Address form alert. */
 function lightningAddressErrorKey(
