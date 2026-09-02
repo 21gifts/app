@@ -564,9 +564,7 @@ export function ForumLoader(): ReactElement | null {
   const startPayPoll = (messageId: string, baselineSats: number): void => {
     const generation = ++payPollGeneration.current;
     setPayWaiting(true);
-    /* v8 ignore next -- pay poll loop after wallet return */
     void (async () => {
-      /* v8 ignore start -- pay poll loop after wallet return */
       for (let i = 0; i < PAY_POLL_ATTEMPTS; i += 1) {
         await new Promise((resolve) => {
           setTimeout(resolve, PAY_POLL_MS);
@@ -597,7 +595,6 @@ export function ForumLoader(): ReactElement | null {
         setPayWaiting(false);
       }
     })();
-    /* v8 ignore stop */
   };
 
   const onPickPhoto = (file: File): void => {
