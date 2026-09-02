@@ -523,9 +523,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) and optional profile forum note. Own profiles use this route too (forum author names navigate here, not `/profile`).
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) and optional profile forum note. Own profiles use this route too (forum author names navigate here, not `/profile`). A missing name or rules agreement on a reply opens `RequirementsOverlay` (no Skip).
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` plus optional `GET /gifts/stats?recipient=`.
-- **Actions:** Open **Menu**; icon-only back to the forum; expand role hint; open author profile links on the note when present. No edit controls.
+- **Actions:** Open **Menu**; icon-only back to the forum; expand role hint; open author profile links on the note when present; complete a `RequirementsOverlay` for a missing name or rules agreement before a reply. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 

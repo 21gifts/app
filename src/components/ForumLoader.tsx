@@ -836,7 +836,6 @@ export function ForumLoader(): ReactElement | null {
     setFeedMode(next);
   };
 
-  /* v8 ignore next -- expand/collapse is covered via ForumBoard */
   const onToggleExpand = (messageId: string): void => {
     /* v8 ignore start -- expand/collapse is covered via ForumBoard */
     if (replyPosting) {

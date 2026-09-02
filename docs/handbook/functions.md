@@ -632,14 +632,14 @@
 - **Purpose:** True when the account has a non-null display name that is non-empty after trim.
 - **Inputs:** `account`.
 - **Returns / side effects:** Boolean. No side effects.
-- **Used by:** `nextOnboardingPath`, `NameForm`.
+- **Used by:** `NameForm`.
 
 ## Function: hasLightningAddress
 
 - **Purpose:** True when the account has a non-null Wallet of Satoshi address that is non-empty after trim.
 - **Inputs:** `account`.
 - **Returns / side effects:** Boolean. No side effects.
-- **Used by:** `nextOnboardingPath`, `LightningAddressForm`.
+- **Used by:** `LightningAddressForm`.
 
 ## Function: hasAgreedToRules
 
@@ -706,9 +706,9 @@
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note.
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note. A missing name or rules agreement on a reply opens `RequirementsOverlay` (no Skip).
 - **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
-- **Returns / side effects:** React tree; may `POST` invoice/conversation/replies and navigate to `/messages?c=`.
+- **Returns / side effects:** React tree; may `POST` invoice/conversation/replies and navigate to `/messages?c=`; may mount `RequirementsOverlay`.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: MemberProfilePage
