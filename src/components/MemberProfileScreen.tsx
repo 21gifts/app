@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState, type ReactElement } from 'react';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import {
@@ -9,8 +10,10 @@ import {
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
+import { fetchReplies, openConversation, postMessage, postMessageInvoice } from '@/lib/api';
 import type { ForumMessage, GiftStats, MemberProfile } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Roles that show a clickable tag beside the author name. */
 type MemberTaggedRole = 'founder' | 'moderator' | 'verified';
@@ -81,6 +84,22 @@ export function MemberProfileScreen({
   received: GiftStats['spendOverTime'];
 }): ReactElement {
   const { t } = useTranslations();
+  const router = useRouter();
+  const session = useAuthStore((state) => state.session);
+  const account = useAuthStore((state) => state.account);
+  const [payMessageId, setPayMessageId] = useState<string | null>(null);
+  const [payDraft, setPayDraft] = useState('');
+  const [payBusy, setPayBusy] = useState(false);
+  const [payError, setPayError] = useState<ForumPayError>(null);
+  const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [repliesError, setRepliesError] = useState(false);
+  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
+  const [replyDraft, setReplyDraft] = useState('');
+  const [replyPosting, setReplyPosting] = useState(false);
+  const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
   const address = profile.lightningAddress;
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const tagged =
@@ -133,7 +152,155 @@ export function MemberProfileScreen({
         </div>
       </section>
       {profile.profileMessage !== null ? (
-        <ForumBoard {...IDLE_BOARD} messages={[profile.profileMessage]} />
+        <ForumBoard
+          {...IDLE_BOARD}
+          messages={[profile.profileMessage]}
+          payMessageId={payMessageId}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          onPayOpen={(messageId) => {
+            setPayMessageId(messageId);
+            setPayDraft('');
+            setPayError(null);
+            setPayInvoice(null);
+            setPayBusy(false);
+          }}
+          onPayDraftChange={(value) => {
+            setPayDraft(value);
+            setPayError(null);
+          }}
+          onPaySubmit={() => {
+            if (session === null || payMessageId === null || payBusy) {
+              return;
+            }
+            const sats = Number.parseInt(payDraft.trim(), 10);
+            if (!Number.isSafeInteger(sats) || sats <= 0) {
+              setPayError('amount');
+              return;
+            }
+            setPayBusy(true);
+            void (async () => {
+              try {
+                const invoice = await postMessageInvoice(session, payMessageId, sats);
+                setPayInvoice({
+                  messageId: payMessageId,
+                  pr: invoice.pr,
+                  amountSats: invoice.amountSats,
+                });
+              } catch {
+                setPayError('request');
+              } finally {
+                setPayBusy(false);
+              }
+            })();
+          }}
+          onPayCancel={() => {
+            setPayMessageId(null);
+            setPayDraft('');
+            setPayError(null);
+            setPayInvoice(null);
+            setPayBusy(false);
+          }}
+          expandedId={expandedId}
+          onToggleExpand={(messageId) => {
+            if (expandedId === messageId) {
+              setExpandedId(null);
+              setReplies(null);
+              setRepliesError(false);
+              setRepliesLoading(false);
+              return;
+            }
+            setExpandedId(messageId);
+            setReplies(null);
+            setRepliesLoading(true);
+            setRepliesError(false);
+            if (session === null) {
+              setRepliesLoading(false);
+              setRepliesError(true);
+              return;
+            }
+            void (async () => {
+              try {
+                const next = await fetchReplies(session, messageId);
+                setReplies(next);
+              } catch {
+                setRepliesError(true);
+              } finally {
+                setRepliesLoading(false);
+              }
+            })();
+          }}
+          replies={expandedId === null ? null : replies}
+          repliesLoading={expandedId !== null && repliesLoading}
+          repliesError={expandedId !== null && repliesError}
+          replyDraft={replyDraft}
+          onReplyDraftChange={(value) => {
+            setReplyDraft(value);
+            setReplyFormError(null);
+          }}
+          replyPosting={replyPosting}
+          replyFormError={replyFormError}
+          onReplyPost={() => {
+            if (session === null || expandedId === null || replyPosting) {
+              return;
+            }
+            const trimmed = replyDraft.trim();
+            if (trimmed === '') {
+              setReplyFormError('empty');
+              return;
+            }
+            setReplyPosting(true);
+            const parentId = expandedId;
+            void (async () => {
+              try {
+                const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
+                setReplies((prev) => (prev === null ? [created] : [...prev, created]));
+                setReplyDraft('');
+              } catch {
+                setReplyFormError('request');
+              } finally {
+                setReplyPosting(false);
+              }
+            })();
+          }}
+          onRetryReplies={() => {
+            if (expandedId === null || session === null) {
+              return;
+            }
+            setRepliesLoading(true);
+            setRepliesError(false);
+            const messageId = expandedId;
+            void (async () => {
+              try {
+                const next = await fetchReplies(session, messageId);
+                setReplies(next);
+              } catch {
+                setRepliesError(true);
+              } finally {
+                setRepliesLoading(false);
+              }
+            })();
+          }}
+          ownName={account?.name ?? null}
+          ownAccountId={account?.id ?? null}
+          pmBusyId={pmBusyId}
+          onPm={(messageId) => {
+            if (session === null || pmBusyId !== null) {
+              return;
+            }
+            setPmBusyId(messageId);
+            void (async () => {
+              try {
+                const thread = await openConversation(session, messageId);
+                router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
+              } catch {
+                setPmBusyId(null);
+              }
+            })();
+          }}
+        />
       ) : null}
     </div>
   );

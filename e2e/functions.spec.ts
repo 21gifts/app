@@ -804,9 +804,8 @@ test('Function: nextPostRequirement — rules before name for the overlay order'
   await expect(page).toHaveURL(/\/setup\/address/);
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await expect(
-    page.getByText(`1 of ${RULES_CHAPTER_IDS.length}`, { exact: true }),
-  ).toBeVisible();
+  const chapter = `1 of ${RULES_CHAPTER_IDS.length}`;
+  await expect(page.getByText(chapter, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 

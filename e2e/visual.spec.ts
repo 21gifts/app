@@ -766,7 +766,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
-    await shotScreen(page, 'screen-members');
+    await shotScreen(page, 'screen-members-accountId');
   });
 
   test('state /members note-null', async ({ page }) => {

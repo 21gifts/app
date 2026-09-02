@@ -482,7 +482,7 @@ export const SCREEN_VARIANTS = [
     route: '/members/[accountId]',
     id: 'default',
     image: 'members.png',
-    visual: 'screen-members',
+    visual: 'screen-members-accountId',
     needle: "getByRole('heading', { name: 'Profile' })",
   },
   {

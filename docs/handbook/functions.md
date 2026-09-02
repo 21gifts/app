@@ -706,9 +706,9 @@
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`).
-- **Inputs:** `MemberProfile` and receive series.
-- **Returns / side effects:** Presentational React tree.
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note.
+- **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
+- **Returns / side effects:** React tree; may `POST` invoice/conversation/replies and navigate to `/messages?c=`.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: MemberProfilePage

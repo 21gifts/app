@@ -368,7 +368,7 @@
   {
     "id": "/members/[accountId]:default",
     "label": "/members/[accountId] default",
-    "visual": "screen-members",
+    "visual": "screen-members-accountId",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
