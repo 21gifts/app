@@ -65,8 +65,45 @@ function bearer(req) {
   return token === '' ? null : token;
 }
 
+function hasName(account) {
+  return account.name !== null && String(account.name).trim() !== '';
+}
+
+function hasLightningAddress(account) {
+  return account.lightningAddress !== null && String(account.lightningAddress).trim() !== '';
+}
+
+function hasRules(account) {
+  return account.rulesAgreedAt !== null;
+}
+
+/** Refresh `missing` from filled fields. */
+function refreshMissing(account) {
+  const missing = [];
+  if (!hasName(account)) missing.push('name');
+  if (!hasLightningAddress(account)) missing.push('lightning-address');
+  if (!hasRules(account)) missing.push('rules');
+  account.missing = missing;
+}
+
+/**
+ * Advance `setup` only when the current step is satisfied.
+ *
+ * @param {object} account
+ */
+function afterFieldWrite(account) {
+  refreshMissing(account);
+  if (account.setup === 'name' && hasName(account)) {
+    account.setup = hasLightningAddress(account) ? (hasRules(account) ? null : 'rules') : 'lightning-address';
+  } else if (account.setup === 'lightning-address' && hasLightningAddress(account)) {
+    account.setup = hasRules(account) ? null : 'rules';
+  } else if (account.setup === 'rules' && hasRules(account)) {
+    account.setup = null;
+  }
+}
+
 function newAccount(linkingKey) {
-  return {
+  const account = {
     id: `acc_${hex(randomBytes(8))}`,
     linkingKey,
     role: 'basis',
@@ -77,7 +114,47 @@ function newAccount(linkingKey) {
     createdAt: Date.now(),
     rulesAgreedAt: null,
     viewKey: hex(randomBytes(32)),
+    setup: 'name',
+    missing: ['name', 'lightning-address', 'rules'],
   };
+  return account;
+}
+
+/** Canned member profile UUID for e2e. */
+const E2E_MEMBER_ID = '22222222-2222-4222-8222-222222222222';
+const E2E_MEMBER_PROFILE = {
+  id: E2E_MEMBER_ID,
+  name: 'Carol',
+  role: 'verified',
+  lightningAddress: 'carol@walletofsatoshi.com',
+  createdAt: '2026-01-15T12:00:00.000Z',
+  profileMessage: {
+    id: '33333333-3333-4333-8333-333333333333',
+    accountId: E2E_MEMBER_ID,
+    name: 'Carol',
+    text: 'Hello from my profile note.',
+    createdAt: '2026-08-01T10:00:00.000Z',
+    sats: 21,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified',
+    replyCount: 0,
+  },
+};
+
+/** True when a write (forum/contact post) needs name or rules. */
+function missingPostRequirements(account) {
+  return account.missing.includes('name') || account.missing.includes('rules');
+}
+
+/**
+ * True when a list/read still needs rules agreement.
+ * Skipped name alone must not 409 GET /messages after setup is complete.
+ */
+function missingListRequirements(account) {
+  return account.missing.includes('rules');
 }
 
 const server = http.createServer(async (req, res) => {
@@ -107,6 +184,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
     json(res, 200, { messages: [...forumMessages] });
     return;
   }
@@ -116,6 +197,10 @@ const server = http.createServer(async (req, res) => {
     const account = token === null ? undefined : byToken.get(token);
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingPostRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
       return;
     }
     const name = typeof account.name === 'string' ? account.name.trim() : '';
@@ -149,6 +234,7 @@ const server = http.createServer(async (req, res) => {
     }
     const created = {
       id: `msg_${hex(randomBytes(8))}`,
+      accountId: account.id,
       name,
       text,
       createdAt: new Date().toISOString(),
@@ -205,11 +291,11 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    const name = typeof account.name === 'string' ? account.name.trim() : '';
-    if (name === '') {
-      json(res, 400, { error: 'Set a name before posting' });
+    if (missingPostRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
       return;
     }
+    const name = typeof account.name === 'string' ? account.name.trim() : '';
     let parsed;
     try {
       parsed = JSON.parse(await readBody(req));
@@ -469,7 +555,70 @@ const server = http.createServer(async (req, res) => {
     if (account.rulesAgreedAt === null) {
       account.rulesAgreedAt = Date.now();
     }
+    afterFieldWrite(account);
     json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/setup/skip') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "step" string' });
+      return;
+    }
+    if (parsed?.step !== 'name' && parsed?.step !== 'lightning-address') {
+      json(res, 400, { error: 'Expected step name or lightning-address' });
+      return;
+    }
+    if (account.setup === parsed.step) {
+      if (parsed.step === 'name') {
+        account.setup = 'lightning-address';
+      } else {
+        account.setup = 'rules';
+      }
+    }
+    refreshMissing(account);
+    json(res, 200, account);
+    return;
+  }
+
+  const membersMatch = pathName.match(/^\/members\/([^/]+)$/);
+  if (method === 'GET' && membersMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
+    const id = decodeURIComponent(membersMatch[1]);
+    if (id === E2E_MEMBER_ID) {
+      json(res, 200, E2E_MEMBER_PROFILE);
+      return;
+    }
+    if (id === account.id) {
+      json(res, 200, {
+        id: account.id,
+        name: account.name,
+        role: account.role,
+        lightningAddress: account.lightningAddress,
+        createdAt: new Date(account.createdAt).toISOString(),
+        profileMessage: null,
+      });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
     return;
   }
 
@@ -528,6 +677,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     account.name = trimmed;
+    afterFieldWrite(account);
     json(res, 200, account);
     return;
   }
@@ -569,6 +719,7 @@ const server = http.createServer(async (req, res) => {
     }
     account.lightningAddress = trimmed;
     account.lightningAddressVerified = false;
+    afterFieldWrite(account);
     json(res, 200, account);
     return;
   }
@@ -582,6 +733,7 @@ const server = http.createServer(async (req, res) => {
     }
     account.lightningAddress = null;
     account.lightningAddressVerified = false;
+    afterFieldWrite(account);
     json(res, 200, account);
     return;
   }

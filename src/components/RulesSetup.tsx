@@ -67,7 +67,12 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         if (currentAccount === null) {
           return;
         }
-        setAccount({ ...currentAccount, rulesAgreedAt: updated.rulesAgreedAt });
+        setAccount({
+          ...currentAccount,
+          rulesAgreedAt: updated.rulesAgreedAt,
+          setup: updated.setup,
+          missing: updated.missing,
+        });
       } catch {
         setError(true);
       } finally {

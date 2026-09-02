@@ -11,6 +11,8 @@ const E2E_ACCOUNT = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [],
 };
 
 async function seedSignedIn(page: import('@playwright/test').Page): Promise<void> {

@@ -1,13 +1,14 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NameForm } from '@/components/NameForm';
-import { setName } from '@/lib/api';
+import { setName, skipSetup } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
   setName: vi.fn(),
+  skipSetup: vi.fn(),
 }));
 
 const baseAccount: Account = {
@@ -21,6 +22,8 @@ const baseAccount: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  setup: 'name',
+  missing: ['name', 'lightning-address', 'rules'],
 };
 
 const namedAccount: Account = {
@@ -64,6 +67,31 @@ describe('NameForm', () => {
     expect(input.value).toBe('');
     expect(screen.getByText(/people know who you are/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy();
+  });
+
+  it('skips the name step and merges setup and missing', async () => {
+    vi.mocked(skipSetup).mockResolvedValue({
+      ...baseAccount,
+      setup: 'lightning-address',
+      missing: ['name', 'lightning-address', 'rules'],
+    });
+    renderWithLocale(<NameForm variant="onboarding" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    await waitFor(() => {
+      expect(skipSetup).toHaveBeenCalledWith('sess', 'name');
+    });
+    expect(useAuthStore.getState().account?.setup).toBe('lightning-address');
+    expect(useAuthStore.getState().account?.missing).toEqual([
+      'name',
+      'lightning-address',
+      'rules',
+    ]);
+  });
+
+  it('hides Skip on the profile variant', () => {
+    renderWithLocale(<NameForm variant="profile" />);
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 
   it('shows the prompt for a whitespace-only name instead of display/edit', () => {

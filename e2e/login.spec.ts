@@ -100,6 +100,10 @@ const E2E_ACCOUNT = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  setup: 'name' as 'name' | 'lightning-address' | 'rules' | null,
+  missing: ['name', 'lightning-address', 'rules'] as Array<
+    'name' | 'lightning-address' | 'rules'
+  >,
 };
 
 test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({
@@ -113,7 +117,12 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
+      }),
     });
   });
   await page.route(/\/me\/lightning-address$/, async (route) => {
@@ -126,6 +135,8 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
           ...E2E_ACCOUNT,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
+          setup: 'rules',
+          missing: ['rules'],
         }),
       });
       return;
@@ -134,7 +145,13 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada', lightningAddress: null }),
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: null,
+          setup: 'lightning-address',
+          missing: ['lightning-address', 'rules'],
+        }),
       });
       return;
     }
@@ -150,6 +167,8 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
         lightningAddress: 'alice@walletofsatoshi.com',
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });

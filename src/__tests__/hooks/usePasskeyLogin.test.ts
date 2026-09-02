@@ -38,6 +38,8 @@ const account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  setup: 'name' as const,
+  missing: ['name', 'lightning-address', 'rules'] as const,
 };
 
 const begin = { challengeId: 'ch', options: { challenge: 'aa' } };

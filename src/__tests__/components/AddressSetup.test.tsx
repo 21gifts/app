@@ -13,6 +13,7 @@ vi.mock('@/lib/api', () => ({
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
+  skipSetup: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -38,6 +39,8 @@ beforeEach(() => {
       createdAt: 1,
       rulesAgreedAt: null,
       viewKey: 'a'.repeat(64),
+      setup: 'lightning-address',
+      missing: ['lightning-address', 'rules'],
     },
   });
 });
@@ -70,6 +73,8 @@ describe('AddressSetup', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+      setup: 'lightning-address',
+      missing: ['lightning-address', 'rules'],
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -91,6 +96,8 @@ describe('AddressSetup', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+      setup: 'lightning-address',
+      missing: ['lightning-address', 'rules'],
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -112,6 +119,8 @@ describe('AddressSetup', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+      setup: 'lightning-address',
+      missing: ['lightning-address', 'rules'],
       },
     });
     renderWithLocale(<AddressSetup />);

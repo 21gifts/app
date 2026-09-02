@@ -1,7 +1,7 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
-import { setLightningAddress, unlinkLightningAddress } from '@/lib/api';
+import { setLightningAddress, skipSetup, unlinkLightningAddress } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -9,6 +9,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('@/lib/api', () => ({
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
+  skipSetup: vi.fn(),
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR:
     'This Wallet of Satoshi address cannot receive these Bitcoin payments',
 }));
@@ -24,6 +25,8 @@ const baseAccount: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  setup: 'lightning-address',
+  missing: ['lightning-address', 'rules'],
 };
 
 const linkedAccount: Account = {
@@ -71,6 +74,26 @@ describe('LightningAddressForm', () => {
     expect(input.value).toBe('');
     expect(screen.getByText(/gifts can reach you/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy();
+  });
+
+  it('skips the address step and merges setup and missing', async () => {
+    vi.mocked(skipSetup).mockResolvedValue({
+      ...baseAccount,
+      setup: 'rules',
+      missing: ['lightning-address', 'rules'],
+    });
+    renderWithLocale(<LightningAddressForm variant="onboarding" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    await waitFor(() => {
+      expect(skipSetup).toHaveBeenCalledWith('sess', 'lightning-address');
+    });
+    expect(useAuthStore.getState().account?.setup).toBe('rules');
+  });
+
+  it('hides Skip on the profile variant', () => {
+    renderWithLocale(<LightningAddressForm variant="profile" />);
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 
   it('shows the link prompt for a whitespace-only address instead of display/unlink', () => {

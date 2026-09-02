@@ -12,6 +12,7 @@ import {
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
+  memberProfileSchema,
   messageInvoiceSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
@@ -26,11 +27,16 @@ import {
   type GiftDay,
   type GiftStats,
   type LnAddressResolved,
+  type MemberProfile,
   type MessageInvoice,
   type PasskeyBegin,
   type PasskeySession,
   type ViewProfile,
 } from '@/lib/api-types';
+import {
+  MissingRequirementsError,
+  parseMissingRequirements,
+} from '@/lib/missing-requirements';
 
 /**
  * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
@@ -171,6 +177,70 @@ export async function fetchViewProfile(viewKey: string): Promise<ViewProfile | n
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Failed to fetch view profile: ${response.status}`);
   return viewProfileSchema.parse(await response.json());
+}
+
+/**
+ * Skips one onboarding setup step without filling the field.
+ *
+ * @param sessionToken - Bearer session.
+ * @param step - `name` or `lightning-address` (rules cannot be skipped).
+ * @returns The updated {@link Account} with advanced `setup` and refreshed `missing`.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}.
+ */
+export async function skipSetup(
+  sessionToken: string,
+  step: 'name' | 'lightning-address',
+): Promise<Account> {
+  const response = await fetch('/me/setup/skip', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ step }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not skip this step');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Fetches a signed-in member profile by account id.
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The {@link MemberProfile}, or `null` on 401/404.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error on other non-2xx or a body that fails {@link memberProfileSchema}.
+ */
+export async function fetchMember(
+  sessionToken: string,
+  accountId: string,
+): Promise<MemberProfile | null> {
+  const response = await fetch(`/forum/members/${encodeURIComponent(accountId)}`, {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 401 || response.status === 404) {
+    return null;
+  }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not load this profile. Please try again.');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not load this profile. Please try again.');
+  }
+  if (!response.ok) {
+    throw new Error('Could not load this profile. Please try again.');
+  }
+  return memberProfileSchema.parse(await response.json());
 }
 
 /**
@@ -339,11 +409,27 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
     const response = await fetch('/forum/messages', {
       headers: { Authorization: `Bearer ${sessionToken}` },
     });
+    if (response.status === 409) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        throw new Error('Could not load messages. Please try again.');
+      }
+      const missing = parseMissingRequirements(body);
+      if (missing !== null) {
+        throw missing;
+      }
+      throw new Error('Could not load messages. Please try again.');
+    }
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }
     return forumListSchema.parse(await response.json()).messages;
-  } catch {
+  } catch (err) {
+    if (err instanceof MissingRequirementsError) {
+      throw err;
+    }
     throw new Error('Could not load messages. Please try again.');
   }
 }
@@ -435,6 +521,19 @@ export async function postMessage(
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not post your message');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not post your message');
+  }
   if (!response.ok) {
     throw new Error('Could not post your message');
   }
@@ -469,6 +568,19 @@ export async function postMessageVideo(
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
+  }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not post your message');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not post your message');
   }
   if (!response.ok) {
     throw new Error('Could not post your message');
@@ -540,6 +652,19 @@ export async function postContact(sessionToken: string, text: string): Promise<C
   if (response.status === 400) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not send your message' : toUserFacingError(raw));
+  }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not send your message');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not send your message');
   }
   if (!response.ok) {
     throw new Error('Could not send your message');

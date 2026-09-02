@@ -98,6 +98,8 @@ describe('LoginCard', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       },
     });
     renderWithLocale(<LoginCard />);

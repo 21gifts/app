@@ -36,6 +36,8 @@ test('welcome forum shows the two laws and links to rules and contact', async ({
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -82,6 +84,8 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -100,6 +104,8 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -142,6 +148,8 @@ test('welcome forum hides laws when already dismissed on the account', async ({ 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });

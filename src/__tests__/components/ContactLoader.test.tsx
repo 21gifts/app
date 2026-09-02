@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactLoader } from '@/components/ContactLoader';
 import type { Account, ContactMessage } from '@/lib/api-types';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -15,12 +16,15 @@ vi.mock('next/link', () => ({
 const push = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push } => ({ push }),
+  useRouter: (): { push: typeof push; replace: () => void } => ({ push, replace: vi.fn() }),
 }));
 
 vi.mock('@/lib/api', () => ({
   postContact: vi.fn(),
   fetchConversations: vi.fn(),
+  agreeToRules: vi.fn(),
+  setName: vi.fn(),
+  skipSetup: vi.fn(),
 }));
 
 import { fetchConversations, postContact } from '@/lib/api';
@@ -39,6 +43,8 @@ const account: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [],
 };
 
 beforeEach(() => {
@@ -195,5 +201,42 @@ describe('ContactLoader', () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages');
     });
+  });
+
+  it('opens the requirements overlay when name is missing and does not post', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('dismisses the overlay without posting', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('opens the overlay when postContact throws MissingRequirementsError', async () => {
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 });

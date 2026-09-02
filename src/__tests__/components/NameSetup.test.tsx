@@ -8,6 +8,7 @@ vi.mock('@/lib/api', () => ({
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
+  skipSetup: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -24,6 +25,8 @@ beforeEach(() => {
       createdAt: 1,
       rulesAgreedAt: null,
       viewKey: 'a'.repeat(64),
+      setup: 'name',
+      missing: ['name', 'lightning-address', 'rules'],
     },
   });
 });
@@ -37,6 +40,7 @@ describe('NameSetup', () => {
     renderWithLocale(<NameSetup />);
     expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /link address/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
   });

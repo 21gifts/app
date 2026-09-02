@@ -9,6 +9,7 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
+import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import {
   dismissForumLaws,
   fetchMessagePhoto,
@@ -27,6 +28,11 @@ import {
 } from '@/lib/forum-feed';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
+import {
+  MissingRequirementsError,
+  nextPostRequirement,
+  type MissingRequirement,
+} from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for pay confirmation or payable status. */
@@ -162,6 +168,8 @@ export function ForumLoader(): ReactElement | null {
   const [replyPosting, setReplyPosting] = useState(false);
   const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
+  const [overlayRequirement, setOverlayRequirement] = useState<'name' | 'rules' | null>(null);
+  const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const payPollGeneration = useRef(0);
   const payablePollGeneration = useRef(0);
   const refreshGeneration = useRef(0);
@@ -238,7 +246,7 @@ export function ForumLoader(): ReactElement | null {
   const loadMessagesOnce = async (
     activeSession: string,
     shouldContinue: () => boolean,
-  ): Promise<'ok' | 'error' | 'aborted'> => {
+  ): Promise<'ok' | 'error' | 'aborted' | 'requirements'> => {
     try {
       const next = await fetchMessages(activeSession);
       if (!shouldContinue()) {
@@ -249,12 +257,24 @@ export function ForumLoader(): ReactElement | null {
         startPayablePoll(activeSession);
       }
       return 'ok';
-    } catch {
+    } catch (err) {
       if (!shouldContinue()) {
         return 'aborted';
       }
+      if (err instanceof MissingRequirementsError) {
+        return 'requirements';
+      }
       return 'error';
     }
+  };
+
+  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+    const next = nextPostRequirement(missing);
+    if (next === null) {
+      return false;
+    }
+    setOverlayRequirement(next);
+    return true;
   };
 
   const refreshMessages = (): void => {
@@ -327,6 +347,10 @@ export function ForumLoader(): ReactElement | null {
     setError(false);
     void (async () => {
       const result = await loadMessagesOnce(session, () => !cancelled);
+      if (!cancelled && result === 'requirements') {
+        router.replace('/setup/rules');
+        return;
+      }
       if (!cancelled && result === 'error') {
         setError(true);
       }
@@ -337,7 +361,7 @@ export function ForumLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [attempt, session]);
+  }, [attempt, router, session]);
 
   useEffect(() => {
     if (session === null) {
@@ -627,6 +651,91 @@ export function ForumLoader(): ReactElement | null {
     })();
   };
 
+  const applyCreatedNote = (
+    created: ForumMessage,
+    pendingPhoto: ForumPhotoPayload | null,
+    pendingVideo: ForumVideoPayload | null,
+  ): void => {
+    setMessages((prev) => {
+      if (prev === null) {
+        return [created];
+      }
+      if (prev.some((message) => message.id === created.id)) {
+        return prev;
+      }
+      return [created, ...prev];
+    });
+    if (created.sats === 0) {
+      setFeedMode('all');
+    }
+    if (created.hasPhoto && pendingPhoto !== null) {
+      setPhotoUrls((prev) => {
+        if (prev[created.id] !== undefined) {
+          return prev;
+        }
+        return { ...prev, [created.id]: pendingPhoto.previewUrl };
+      });
+    }
+    if (created.hasVideo && pendingVideo !== null) {
+      if (videoUrlsRef.current[created.id] !== undefined) {
+        revokeObjectUrlIfPresent(pendingVideo.previewUrl);
+      } else {
+        setVideoUrls((prev) => {
+          /* v8 ignore start -- race if the same id was filled while posting */
+          if (prev[created.id] !== undefined) {
+            return prev;
+          }
+          /* v8 ignore stop */
+          return { ...prev, [created.id]: pendingVideo.previewUrl };
+        });
+      }
+    } else if (pendingVideo !== null) {
+      revokeObjectUrlIfPresent(pendingVideo.previewUrl);
+    }
+    setDraft('');
+    setPhotoDraft(null);
+    setVideoDraft(null);
+    startPayablePoll(session);
+  };
+
+  const runNotePost = async (
+    trimmed: string,
+    pendingPhoto: ForumPhotoPayload | null,
+    pendingVideo: ForumVideoPayload | null,
+    isRetry: boolean,
+  ): Promise<void> => {
+    setPosting(true);
+    setFormError(null);
+    try {
+      const created =
+        pendingVideo !== null
+          ? await postMessageVideo(session, {
+              text: trimmed,
+              video: pendingVideo.file,
+              poster: pendingVideo.poster,
+            })
+          : await postMessage(session, {
+              text: trimmed,
+              ...(pendingPhoto === null
+                ? {}
+                : { photo: { contentType: pendingPhoto.contentType, data: pendingPhoto.data } }),
+            });
+      applyCreatedNote(created, pendingPhoto, pendingVideo);
+      pendingPostRef.current = null;
+    } catch (err) {
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runNotePost(trimmed, pendingPhoto, pendingVideo, true);
+          return;
+        }
+        return;
+      }
+      setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+    } finally {
+      setPosting(false);
+    }
+  };
+
   const onPost = (): void => {
     const trimmed = draft.trim();
     if (trimmed === '' && photoDraft === null && videoDraft === null) {
@@ -637,72 +746,17 @@ export function ForumLoader(): ReactElement | null {
       setFormError('tooLong');
       return;
     }
+    const missing = account?.missing ?? [];
+    if (openOverlayForMissing(missing)) {
+      const pendingPhoto = photoDraft;
+      const pendingVideo = videoDraft;
+      pendingPostRef.current = () => runNotePost(trimmed, pendingPhoto, pendingVideo, true);
+      return;
+    }
     pickGeneration.current += 1;
-    setPosting(true);
-    setFormError(null);
     const pendingPhoto = photoDraft;
     const pendingVideo = videoDraft;
-    void (async () => {
-      try {
-        const created =
-          pendingVideo !== null
-            ? await postMessageVideo(session, {
-                text: trimmed,
-                video: pendingVideo.file,
-                poster: pendingVideo.poster,
-              })
-            : await postMessage(session, {
-                text: trimmed,
-                ...(pendingPhoto === null
-                  ? {}
-                  : { photo: { contentType: pendingPhoto.contentType, data: pendingPhoto.data } }),
-              });
-        setMessages((prev) => {
-          if (prev === null) {
-            return [created];
-          }
-          if (prev.some((message) => message.id === created.id)) {
-            return prev;
-          }
-          return [created, ...prev];
-        });
-        if (created.sats === 0) {
-          setFeedMode('all');
-        }
-        if (created.hasPhoto && pendingPhoto !== null) {
-          setPhotoUrls((prev) => {
-            if (prev[created.id] !== undefined) {
-              return prev;
-            }
-            return { ...prev, [created.id]: pendingPhoto.previewUrl };
-          });
-        }
-        if (created.hasVideo && pendingVideo !== null) {
-          if (videoUrlsRef.current[created.id] !== undefined) {
-            revokeObjectUrlIfPresent(pendingVideo.previewUrl);
-          } else {
-            setVideoUrls((prev) => {
-              /* v8 ignore start -- race if the same id was filled while posting */
-              if (prev[created.id] !== undefined) {
-                return prev;
-              }
-              /* v8 ignore stop */
-              return { ...prev, [created.id]: pendingVideo.previewUrl };
-            });
-          }
-        } else if (pendingVideo !== null) {
-          revokeObjectUrlIfPresent(pendingVideo.previewUrl);
-        }
-        setDraft('');
-        setPhotoDraft(null);
-        setVideoDraft(null);
-        startPayablePoll(session);
-      } catch (err) {
-        setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
-      } finally {
-        setPosting(false);
-      }
-    })();
+    void runNotePost(trimmed, pendingPhoto, pendingVideo, false);
   };
 
   const onPaySubmit = (): void => {
@@ -802,6 +856,85 @@ export function ForumLoader(): ReactElement | null {
     /* v8 ignore stop */
   };
 
+  const applyCreatedReply = (
+    created: ForumMessage,
+    parentId: string,
+    parentBaseline: number,
+  ): void => {
+    const stillParent = expandedIdRef.current === parentId;
+    let alreadyListed = false;
+    if (stillParent) {
+      alreadyListed =
+        repliesRef.current !== null &&
+        repliesRef.current.some((message) => message.id === created.id);
+      const wasEmpty = repliesRef.current === null;
+      setRepliesError(false);
+      setRepliesLoading(false);
+      setReplies((prev) => {
+        /* v8 ignore next 3 -- first successful post before fetch returns */
+        if (prev === null) {
+          return [created];
+        }
+        /* v8 ignore next 3 -- duplicate id already in the list */
+        if (prev.some((message) => message.id === created.id)) {
+          return prev;
+        }
+        return [...prev, created];
+      });
+      setReplyDraft('');
+      if (wasEmpty) {
+        setRepliesAttempt((n) => n + 1);
+      }
+    }
+    if (!alreadyListed) {
+      setMessages((prev) => {
+        /* v8 ignore next 3 -- parent list not loaded */
+        if (prev === null) {
+          return prev;
+        }
+        return prev.map((message) =>
+          message.id === parentId
+            ? {
+                ...message,
+                replyCount: Math.max(message.replyCount, parentBaseline + 1),
+              }
+            : message,
+        );
+      });
+    }
+  };
+
+  const runReplyPost = async (
+    trimmed: string,
+    parentId: string,
+    parentBaseline: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    setReplyPosting(true);
+    setReplyFormError(null);
+    /* v8 ignore start -- async reply success/error after post */
+    try {
+      const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
+      applyCreatedReply(created, parentId, parentBaseline);
+      pendingPostRef.current = null;
+    } catch (err) {
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runReplyPost(trimmed, parentId, parentBaseline, true);
+          return;
+        }
+        return;
+      }
+      /* v8 ignore next 3 -- reply error after the thread was closed */
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      }
+    } finally {
+      setReplyPosting(false);
+    }
+    /* v8 ignore stop */
+  };
+
   const onReplyPost = (): void => {
     /* v8 ignore next 3 -- reply composer only mounts when expanded */
     if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
@@ -822,66 +955,41 @@ export function ForumLoader(): ReactElement | null {
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next -- expanded parent is always in the loaded list */
     const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
-    setReplyPosting(true);
-    setReplyFormError(null);
-    void (async () => {
-      /* v8 ignore start -- async reply success/error after post */
-      try {
-        const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
-        const stillParent = expandedIdRef.current === parentId;
-        let alreadyListed = false;
-        if (stillParent) {
-          alreadyListed =
-            repliesRef.current !== null &&
-            repliesRef.current.some((message) => message.id === created.id);
-          const wasEmpty = repliesRef.current === null;
-          setRepliesError(false);
-          setRepliesLoading(false);
-          setReplies((prev) => {
-            /* v8 ignore next 3 -- first successful post before fetch returns */
-            if (prev === null) {
-              return [created];
-            }
-            /* v8 ignore next 3 -- duplicate id already in the list */
-            if (prev.some((message) => message.id === created.id)) {
-              return prev;
-            }
-            return [...prev, created];
-          });
-          setReplyDraft('');
-          if (wasEmpty) {
-            setRepliesAttempt((n) => n + 1);
-          }
-        }
-        if (!alreadyListed) {
-          setMessages((prev) => {
-            /* v8 ignore next 3 -- parent list not loaded */
-            if (prev === null) {
-              return prev;
-            }
-            return prev.map((message) =>
-              message.id === parentId
-                ? {
-                    ...message,
-                    replyCount: Math.max(message.replyCount, parentBaseline + 1),
-                  }
-                : message,
-            );
-          });
-        }
-      } catch (err) {
-        /* v8 ignore next 3 -- reply error after the thread was closed */
-        if (expandedIdRef.current === parentId) {
-          setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
-        }
-      } finally {
-        setReplyPosting(false);
-      }
-      /* v8 ignore stop */
-    })();
+    const missing = account?.missing ?? [];
+    if (openOverlayForMissing(missing)) {
+      pendingPostRef.current = () => runReplyPost(trimmed, parentId, parentBaseline, true);
+      return;
+    }
+    void runReplyPost(trimmed, parentId, parentBaseline, false);
+  };
+
+  const onOverlaySatisfied = (): void => {
+    const current = useAuthStore.getState().account;
+    const still = nextPostRequirement(current?.missing ?? []);
+    if (still !== null) {
+      setOverlayRequirement(still);
+      return;
+    }
+    setOverlayRequirement(null);
+    const pending = pendingPostRef.current;
+    if (pending === null) {
+      return;
+    }
+    void pending();
   };
 
   return (
+    <>
+    {overlayRequirement !== null ? (
+      <RequirementsOverlay
+        requirement={overlayRequirement}
+        onDismiss={() => {
+          setOverlayRequirement(null);
+          pendingPostRef.current = null;
+        }}
+        onSatisfied={onOverlaySatisfied}
+      />
+    ) : null}
     <ForumBoard
       messages={messages}
       error={error}
@@ -971,5 +1079,6 @@ export function ForumLoader(): ReactElement | null {
         })();
       }}
     />
+    </>
   );
 }

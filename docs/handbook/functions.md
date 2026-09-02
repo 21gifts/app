@@ -150,17 +150,17 @@
 
 ## Function: NameForm
 
-- **Purpose:** Logged-in form to set or edit a display name. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil).
+- **Purpose:** Logged-in form to set or edit a display name. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile / overlay: icon-only actions (no Skip). Optional `onSaved` after a successful save.
 - **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
-- **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
-- **Used by:** `NameSetup` on screen `/setup/name` and `ProfileScreen` on `/profile`.
+- **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save; POST `/me/setup/skip` on Skip. Merges `name`, `setup`, and `missing`.
+- **Used by:** `NameSetup` on `/setup/name`, `ProfileScreen` on `/profile`, and `RequirementsOverlay`.
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil, trash).
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile: icon-only actions (no Skip).
 - **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, request, and `notZap` failures are typed keys (`la.errorEmpty`, `la.errorNotFound`, `la.errorRequest`, `la.errorNotZap`) so they re-render after a locale change. After `notZap`, Continue/Save stays disabled while the trimmed draft equals the blocked address; changing the draft clears the alert and re-enables; restoring the blocked address re-locks. Inline alerts (`empty` / `notFound` / `request` / `notZap`) are not separate screen variants.
-- **Returns / side effects:** React element or `null` when logged out.
-- **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
+- **Returns / side effects:** React element or `null` when logged out. POST `/me/lightning-address` on save; POST `/me/setup/skip` on Skip. Merges address fields plus `setup` and `missing`.
+- **Used by:** `AddressSetup` on `/setup/address` and `ProfileScreen` on `/profile`.
 
 ## Function: LocaleProvider
 
@@ -258,10 +258,10 @@
 
 ## Function: OnboardingGate
 
-- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`).
-- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile still requires `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/contact`, `/messages`.
+- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
+- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`.
 
 ## Function: SignedInChrome
 
@@ -646,14 +646,91 @@
 - **Purpose:** True when the account has a non-null `rulesAgreedAt` timestamp (epoch ms of first living-room rules agreement).
 - **Inputs:** `account`.
 - **Returns / side effects:** Boolean. No side effects.
-- **Used by:** `nextOnboardingPath`.
+- **Used by:** UI that still checks agreement state (overlays, payable); wizard order uses `account.setup` only.
 
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` from the account (name → address → rules agreement → welcome).
-- **Inputs:** `account`.
+- **Purpose:** Picks `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; skips advance `setup` without clearing `missing`).
+- **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
 - **Used by:** `OnboardingGate`.
+
+## Function: skipSetup
+
+- **Purpose:** Skips the current onboarding name or Lightning Address step without filling the field.
+- **Inputs:** Bearer session and `step` (`name` | `lightning-address`).
+- **Returns / side effects:** Updated `Account` from `POST /me/setup/skip`; callers merge `setup` and `missing` into the auth store.
+- **Used by:** `NameForm` and `LightningAddressForm` onboarding Skip buttons.
+
+## Function: fetchMember
+
+- **Purpose:** Loads a signed-in member profile by account id.
+- **Inputs:** Bearer session and `accountId`.
+- **Returns / side effects:** Validated `MemberProfile`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`.
+- **Used by:** `MemberProfileLoader`.
+
+## Function: parseMissingRequirements
+
+- **Purpose:** Parses a 409 `{ error: 'missing_requirements', missing: [...] }` body.
+- **Inputs:** Unknown JSON body.
+- **Returns / side effects:** `MissingRequirementsError` or `null`.
+- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`.
+
+## Function: MissingRequirementsError
+
+- **Purpose:** Typed error for api 409 missing name/rules (or lightning-address) requirements.
+- **Inputs:** `missing` array from the api body.
+- **Returns / side effects:** Error instance with `missing` field; not shown as a generic toast.
+- **Used by:** Forum and contact loaders (open `RequirementsOverlay`) and member fetch.
+
+## Function: nextPostRequirement
+
+- **Purpose:** Picks the next field to collect before a forum or contact post (`rules` before `name`). Lightning-address-only gaps return `null`.
+- **Inputs:** `missing` array from the account or a 409 body.
+- **Returns / side effects:** `'rules'`, `'name'`, or `null`. No side effects.
+- **Used by:** `ForumLoader`, `ContactLoader`, `RequirementsOverlay` flow.
+
+## Function: RequirementsOverlay
+
+- **Purpose:** Modal to add a missing name (`NameForm` profile) or agree to rules before retrying a post. No Skip.
+- **Inputs:** `requirement` (`name` | `rules`), `onDismiss`, `onSatisfied`.
+- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`.
+- **Used by:** `ForumLoader`, `ContactLoader`.
+
+## Function: MemberProfileLoader
+
+- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, optional gift stats for the chart.
+- **Inputs:** Route `accountId`; session from auth store.
+- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`.
+- **Used by:** `MemberProfilePage`.
+
+## Function: MemberProfileScreen
+
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`).
+- **Inputs:** `MemberProfile` and receive series.
+- **Returns / side effects:** Presentational React tree.
+- **Used by:** `MemberProfileLoader`.
+
+## Function: MemberProfilePage
+
+- **Purpose:** Route `/members/[accountId]` with profile onboarding gate and signed-in chrome.
+- **Inputs:** Dynamic `accountId`.
+- **Returns / side effects:** Page chrome + `MemberProfileLoader`.
+- **Used by:** App Router.
+
+## Function: proxyMeSetupSkipPost
+
+- **Purpose:** Proxies `POST /me/setup/skip` to the api.
+- **Inputs:** App Router request (Bearer + `{ step }`).
+- **Returns / side effects:** Upstream response.
+- **Used by:** `/me/setup/skip` route.
+
+## Function: proxyMembersGet
+
+- **Purpose:** Proxies `GET /members/:accountId` to the api.
+- **Inputs:** App Router request and `accountId`.
+- **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}`.
+- **Used by:** `/forum/members/[accountId]` route.
 
 ## Function: useHydrateSession
 

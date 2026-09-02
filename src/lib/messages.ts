@@ -141,6 +141,7 @@ const en = {
   'setup.nameTitle': 'Your name',
   'setup.addressTitle': 'Your Wallet of Satoshi address',
   'setup.continue': 'Continue',
+  'setup.skip': 'Skip',
   'setup.rulesTitle': 'Living room rules',
   'setup.rulesPrompt': 'Please read this chapter.',
   'setup.rulesPromptLast':
@@ -223,6 +224,11 @@ const en = {
   'forum.expand': 'Show replies',
   'forum.collapse': 'Hide replies',
   'forum.refreshing': 'Refreshing messages',
+  'forum.authorProfile': 'View profile',
+
+  'requirements.nameTitle': 'Add your name',
+  'requirements.rulesTitle': 'Agree to the living room rules',
+  'requirements.close': 'Close',
 
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
@@ -528,6 +534,7 @@ const de = {
   'setup.nameTitle': 'Ihr Name',
   'setup.addressTitle': 'Ihre Wallet of Satoshi address',
   'setup.continue': 'Weiter',
+  'setup.skip': 'Überspringen',
   'setup.rulesTitle': 'Wohnzimmerregeln',
   'setup.rulesPrompt': 'Bitte lesen Sie dieses Kapitel.',
   'setup.rulesPromptLast':
@@ -610,6 +617,11 @@ const de = {
   'forum.expand': 'Antworten anzeigen',
   'forum.collapse': 'Antworten ausblenden',
   'forum.refreshing': 'Nachrichten werden aktualisiert',
+  'forum.authorProfile': 'Profil anzeigen',
+
+  'requirements.nameTitle': 'Namen hinzufügen',
+  'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
+  'requirements.close': 'Schließen',
 
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
@@ -914,6 +926,7 @@ const es = {
   'setup.nameTitle': 'Tu nombre',
   'setup.addressTitle': 'Tu Wallet of Satoshi address',
   'setup.continue': 'Continuar',
+  'setup.skip': 'Omitir',
   'setup.rulesTitle': 'Reglas del salón',
   'setup.rulesPrompt': 'Lee este capítulo.',
   'setup.rulesPromptLast': 'Lee este capítulo. Podrás continuar cuando aceptes las reglas.',
@@ -992,6 +1005,11 @@ const es = {
   'forum.expand': 'Mostrar respuestas',
   'forum.collapse': 'Ocultar respuestas',
   'forum.refreshing': 'Actualizando mensajes',
+  'forum.authorProfile': 'Ver perfil',
+
+  'requirements.nameTitle': 'Añade tu nombre',
+  'requirements.rulesTitle': 'Acepta las reglas del salón',
+  'requirements.close': 'Cerrar',
 
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
@@ -1292,6 +1310,7 @@ const fil = {
   'setup.nameTitle': 'Ang pangalan mo',
   'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
   'setup.continue': 'Magpatuloy',
+  'setup.skip': 'Laktawan',
   'setup.rulesTitle': 'Mga patakaran sa living room',
   'setup.rulesPrompt': 'Pakibasa ang kabanatang ito.',
   'setup.rulesPromptLast':
@@ -1372,6 +1391,11 @@ const fil = {
   'forum.expand': 'Ipakita ang mga sagot',
   'forum.collapse': 'Itago ang mga sagot',
   'forum.refreshing': 'Nire-refresh ang mga mensahe',
+  'forum.authorProfile': 'Tingnan ang profile',
+
+  'requirements.nameTitle': 'Idagdag ang pangalan mo',
+  'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',
+  'requirements.close': 'Isara',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',

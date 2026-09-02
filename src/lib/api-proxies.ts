@@ -61,6 +61,27 @@ export async function proxyMeNamePost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/setup/skip to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ step }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeSetupSkipPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/setup/skip');
+}
+
+/**
+ * Proxies GET /members/:accountId to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersGet(request: Request, accountId: string): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}`);
+}
+
+/**
  * Proxies POST /me/forum-laws-dismissed to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).

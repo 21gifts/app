@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Check, Gift, ImagePlus, Link2, Loader2, Mail, Send, X } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useEffect,
   useRef,
@@ -154,6 +155,8 @@ export interface ForumBoardProps {
   onPm: (messageId: string) => void;
   /** Forum message id whose PM request is in flight, or `null`. */
   pmBusyId: string | null;
+  /** When true, hide the board-bottom new-note composer (profile note card). */
+  composerHidden?: boolean;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -269,8 +272,10 @@ export function ForumBoard({
   ownAccountId,
   onPm,
   pmBusyId,
+  composerHidden = false,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
+  const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -290,7 +295,7 @@ export function ForumBoard({
   onRefreshRef.current = onRefresh;
 
   useEffect(() => {
-    if (newestId === null) {
+    if (composerHidden || newestId === null) {
       return;
     }
     // Read refreshing via ref so clearing refreshing after a silent refresh
@@ -299,7 +304,7 @@ export function ForumBoard({
       return;
     }
     composerRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
-  }, [newestId]);
+  }, [composerHidden, newestId]);
 
   useEffect(() => {
     if (onRefresh === undefined) {
@@ -553,7 +558,21 @@ export function ForumBoard({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                    {typeof message.accountId === 'string' && message.accountId !== '' ? (
+                      <button
+                        type="button"
+                        aria-label={t('forum.authorProfile')}
+                        className="text-sm font-medium text-app-fg underline underline-offset-2"
+                        onClick={(event) => {
+                          stopCardToggle(event);
+                          router.push(`/members/${message.accountId}`);
+                        }}
+                      >
+                        {message.name}
+                      </button>
+                    ) : (
+                      <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                    )}
                     {roleKeys !== null ? (
                       <button
                         type="button"
@@ -807,7 +826,21 @@ export function ForumBoard({
                           className="rounded-xl border border-app-border bg-app-card px-3 py-2"
                         >
                           <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <span className="text-sm font-medium text-app-fg">{reply.name}</span>
+                            {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
+                              <button
+                                type="button"
+                                aria-label={t('forum.authorProfile')}
+                                className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                onClick={(event) => {
+                                  stopCardToggle(event);
+                                  router.push(`/members/${reply.accountId}`);
+                                }}
+                              >
+                                {reply.name}
+                              </button>
+                            ) : (
+                              <span className="text-sm font-medium text-app-fg">{reply.name}</span>
+                            )}
                             <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
                               {formatForumTime(reply.createdAt, locale)}
                             </time>
@@ -952,29 +985,32 @@ export function ForumBoard({
         </div>
       ) : null}
 
-      <div
-        role="group"
-        aria-label={t('forum.modeLabel')}
-        className="flex w-full rounded-full border border-app-border bg-app-card-muted p-1"
-      >
-        {FORUM_FEED_MODES.map((next) => (
-          <button
-            key={next}
-            type="button"
-            aria-pressed={mode === next}
-            onClick={() => onModeChange(next)}
-            className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
-              mode === next ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
-            }`}
-          >
-            {t(MODE_LABEL_KEY[next])}
-          </button>
-        ))}
-      </div>
+      {!composerHidden ? (
+        <div
+          role="group"
+          aria-label={t('forum.modeLabel')}
+          className="flex w-full rounded-full border border-app-border bg-app-card-muted p-1"
+        >
+          {FORUM_FEED_MODES.map((next) => (
+            <button
+              key={next}
+              type="button"
+              aria-pressed={mode === next}
+              onClick={() => onModeChange(next)}
+              className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
+                mode === next ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
+              }`}
+            >
+              {t(MODE_LABEL_KEY[next])}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {middle}
       {error && messages !== null ? errorBlock : null}
 
+      {!composerHidden ? (
       <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <IconButton
@@ -1063,33 +1099,34 @@ export function ForumBoard({
           </div>
         ) : null}
       </form>
+      ) : null}
 
-      {formError === 'empty' ? (
+      {!composerHidden && formError === 'empty' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorEmpty')}
         </p>
       ) : null}
-      {formError === 'tooLong' ? (
+      {!composerHidden && formError === 'tooLong' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLong')}
         </p>
       ) : null}
-      {formError === 'request' ? (
+      {!composerHidden && formError === 'request' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRequest')}
         </p>
       ) : null}
-      {formError === 'rateLimit' ? (
+      {!composerHidden && formError === 'rateLimit' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRateLimit')}
         </p>
       ) : null}
-      {formError === 'unsupported' ? (
+      {!composerHidden && formError === 'unsupported' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorUnsupported')}
         </p>
       ) : null}
-      {formError === 'tooLarge' ? (
+      {!composerHidden && formError === 'tooLarge' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLarge')}
         </p>

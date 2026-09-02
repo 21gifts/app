@@ -13,9 +13,10 @@ vi.mock('next/link', () => ({
 }));
 
 const push = vi.fn();
+const replace = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push } => ({ push }),
+  useRouter: (): { push: typeof push; replace: typeof replace } => ({ push, replace }),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -27,6 +28,9 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
+  agreeToRules: vi.fn(),
+  setName: vi.fn(),
+  skipSetup: vi.fn(),
 }));
 
 vi.mock('@/lib/forum-photo', () => ({
@@ -48,6 +52,7 @@ import {
   postMessageInvoice,
   postMessageVideo,
 } from '@/lib/api';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
@@ -74,6 +79,8 @@ const account: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [],
 };
 
 const SAMPLE: ForumMessage = {
@@ -100,6 +107,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   isVideoMock.mockReturnValue(false);
   push.mockReset();
+  replace.mockReset();
   HTMLElement.prototype.scrollIntoView = vi.fn();
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
@@ -2994,5 +3002,30 @@ describe('ForumLoader', () => {
     await act(async () => {
       resolveRefresh([SAMPLE]);
     });
+  });
+
+  it('redirects to /setup/rules when the message list returns missing_requirements', async () => {
+    fetchMock.mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('opens the requirements overlay when posting with a missing name', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(postMock).not.toHaveBeenCalled();
   });
 });

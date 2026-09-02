@@ -168,9 +168,9 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login.
-- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/address`.
-- **Calls:** `PageChrome`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`.
+- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
+- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
+- **Calls:** `PageChrome`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
@@ -181,9 +181,9 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login.
-- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form. No name form.
-- **Actions:** Enter an address and **Continue**; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save, the visitor is sent to `/setup/rules`.
-- **Calls:** `PageChrome`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`.
+- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
+- **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).
+- **Calls:** `PageChrome`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
@@ -520,6 +520,44 @@ Click **Send** with an empty composer → **Enter a message**.
 After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence).
 
 ![21.gifts contact success](images/contact-success.png)
+
+## Screen: /members/[accountId]
+
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) and optional profile forum note. Own profiles use this route too (forum author names navigate here, not `/profile`).
+- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` plus optional `GET /gifts/stats?recipient=`.
+- **Actions:** Open **Menu**; icon-only back to the forum; expand role hint; open author profile links on the note when present. No edit controls.
+- **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
+- **Auth:** Bearer; `OnboardingGate screen="profile"`.
+
+### Variant: default
+
+Member with a non-null `profileMessage` shown as a one-item forum card (`composerHidden`).
+
+![21.gifts member profile](images/members.png)
+
+### Variant: note-null
+
+Member identity card only (`profileMessage: null`); no forum card under the identity section.
+
+![21.gifts member profile without note](images/members-note-null.png)
+
+### Variant: missing
+
+Malformed or unknown id → **This profile could not be found.**
+
+![21.gifts member profile missing](images/members-missing.png)
+
+### Variant: error
+
+Failed fetch → error copy and **Try again**.
+
+![21.gifts member profile error](images/members-error.png)
+
+### Variant: own
+
+Signed-in visitor viewing their own `/members/:id` card.
+
+![21.gifts member profile own](images/members-own.png)
 
 ## Screen: /profile
 
