@@ -49,6 +49,8 @@ describe('MarketingHeader', () => {
   it('toggles the mobile menu', () => {
     renderWithLocale(<MarketingHeader />);
     const toggle = screen.getByRole('button', { name: 'Menu' });
+    expect(toggle.className).toContain('min-h-11');
+    expect(toggle.className).toContain('min-w-11');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');

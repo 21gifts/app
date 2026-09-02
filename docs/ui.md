@@ -1,34 +1,37 @@
 # 21.gifts visual design system
 
-Target system for the 21.gifts web app. New UI composes the parts named here.
-Do not invent a second look. This file is the **target**, not an inventory of
-pixels already true on `develop`. Reviewers follow the control-grammar table
-in this file and in `CONTRIBUTING.md` for **new** work.
+Current inventory of the shipped 21.gifts web UI. New UI composes the parts
+named here. Do not invent a second look. This file is the **current inventory**,
+not a target-only RFC. Reviewers follow the control-grammar table in this file
+and in `CONTRIBUTING.md`.
 
 Brand source: the API concept document, section **Brand**. Visual source: live
 marketing at `/` plus the app-shell recipes in §12.
 
 ## Overview
 
-21.gifts already has a distinctive marketing face: near-black ink `#0a090c`, huge white grotesque headlines, a single Bitcoin orange `#f7931a`, numbered steps, generous whitespace, the wordmark `21.gifts` top-left, and an orange **Log in** pill. App surfaces (login, forum, profile, onboarding) currently look like a second product: white iOS-Notes cards, no wordmark, a text **Menu**, stacked titles, the Tailwind/system stack, mixed button languages, and a double Bitcoin glyph on forum notes (`₿21` plus a ₿ pay control).
-
-This system **canonizes the live marketing look** and extends it into the themeable app shell. One grotesque family, two shells (marketing always-dark; app light/dark via existing `ThemeProvider`), orange as **marketing-shell primary** and **app-shell gift-money** (two explicit jobs, not one smuggled definition), wordmark on every chrome, a closed control grammar, and a component catalog with numbers. Light theme stays. No new palette, no serif, no Inter, no Figma-as-source until this file is the in-repo source of truth.
+21.gifts ships one visual family across marketing and app: Outfit via
+`next/font`, ink/paper/accent plus `app-*` tokens, Wordmark on app chrome,
+catalog primitives (`Button`, `ButtonLink`, `IconButton`, `Field`, `Card`,
+`PageChrome`, `Wordmark`, `SegmentedControl`), Gift pay beside BIP-177 amount
+text (no second ₿), marketing always-dark, app light/dark in the same family,
+and empty profile charts that show copy instead of a null axis.
 
 ---
 
 ## Background & Motivation
 
-**Why now.** The previous inventory listed shells, hex tokens, and five primitives. `CONTRIBUTING.md` **Icon controls** contradicted that inventory: “New action buttons default to icon-only” and rejected a new text button as an undeclared deviation. Reviewers cannot tell whether **Log in** / **Continue** / **Open the forum** are labeled on purpose. Screens still sprinkle `rounded-full bg-app-btn px-6 py-3` (or worse, `bg-neutral-900 px-5 py-2`) beside the primitives. There is no typeface, no type ramp, no wordmark on app pages, no focus-ring token, no chart empty state, and no rule for orange.
+**Why this file.** Reviewers need one inventory of shipped tokens, type, chrome, control grammar, and catalog primitives. `CONTRIBUTING.md` **Icon controls** points here.
 
-**Current state (SHA `96d184d…`).**
+**Current state (SHA `209486fe`).**
 
-- Marketing: `src/app/(marketing)/layout.tsx` hardcodes `bg-[#0a090c] text-white`. Header wordmark is `<Link className="text-[17px] font-bold text-white">21.gifts</Link>`. Hero is `text-4xl sm:text-6xl leading-tight font-semibold tracking-tight`. Kickers are `text-sm tracking-widest text-[#f7931a] uppercase`. CTAs are raw `<Link>` pills, not `Button`.
-- App: `src/app/layout.tsx` sets `body` to `bg-app-bg text-app-fg antialiased` with **no `next/font`**. Tokens live in `src/app/globals.css` `@theme` / `html.dark`. Primitives: `src/components/ui/{Button,IconButton,Card,Field,PageChrome}.tsx`.
-- Theme: cookie `theme` (`src/lib/theme.ts`), bootstrap script in `<head>`, `html.dark`. Marketing never mounts `ThemeSwitcher`.
-- Money: `formatBitcoin` in `src/lib/stats-money.ts` (BIP 177, leading `₿` U+20BF). Forum cards still render that string next to a lucide `Bitcoin` `IconButton` (`ForumBoard.tsx`) — the `₿21 ₿` defect visible in `screen-welcome-desktop-light-linux.png`.
+- Marketing: `src/app/(marketing)/layout.tsx` uses `bg-ink text-paper`. Header `Wordmark` + nav + accent **Log in** `ButtonLink` + `LanguageSwitcher` + optional `PwaInstall tone="dark" placement="header"`. Hero CTAs are `ButtonLink` (accent / secondary dark) plus `PwaInstall` hero. Kickers use `text-sm font-medium tracking-widest text-accent uppercase`. Leftover raw `#f7931a` / `text-white` on listed marketing surfaces move to `text-accent` / `text-paper/*`.
+- App: `src/app/layout.tsx` loads Outfit via `next/font/google`; `body` is `font-sans bg-app-bg text-app-fg antialiased`. Tokens live in `src/app/globals.css` `@theme` / `html.dark`. Primitives: `src/components/ui/{Button,ButtonLink,IconButton,Card,Field,PageChrome,Wordmark,SegmentedControl}.tsx`.
+- Theme: cookie `theme` (`src/lib/theme.ts`), bootstrap script in `<head>`, `html.dark`. Marketing never mounts `ThemeSwitcher`. Unsigned app routes mount ThemeSwitcher + LanguageSwitcher.
+- Money: `formatBitcoin` in `src/lib/stats-money.ts` (BIP 177, leading `₿` U+20BF). Forum amount is text-only (`font-medium`); pay is lucide `Gift` `IconButton` (`forum.pay` “Send Bitcoin”). Empty profile charts show `profile.chartEmpty`, not a null axis.
 - Locales: four catalogs in `src/lib/messages.ts` (`en`, `de`, `es`, `fil`). The API concept document says “English only”; the app already ships four. This system does not pretend otherwise.
 
-**Pain.** Two products in one origin. Goldens prove it: `screen-root` is a magazine on ink; `screen-login` / `screen-welcome` / `screen-profile` are Notes.app on paper, with no `21.gifts` in the chrome.
+**Shipped in #125.** Contact Send → IconButton; Gift pay; Open Wallet ButtonLink; IconButton sm slop; public ThemeSwitcher; claim banner; NameForm buttons; empty chart.
 
 ---
 
@@ -557,36 +560,40 @@ Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet
 
 **USD.** `$1.43` via `formatUsdDisplay`. Stats KPI shows ₿ on the first line and USD on the second (keep).
 
-**₿ \| USD segmented control.**
+**₿ \| USD segmented control** — shipped as `SegmentedControl` (see catalog).
 
-| Part       | Spec                                                                                                                                                                                                                                       |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Track      | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` (profile) or `border-paper/20` (stats on ink)                                                                                                                    |
-| Segment    | `px-2 py-1 min-h-8` — bump to `min-h-11 min-w-11` if we treat it as a control (44px). **Decision:** 44px min on app profile; stats marketing may keep compact `px-2 py-1` because it is a chart chrome on desktop. Mobile stats: same 44px |
-| Selected   | `bg-app-accent text-ink` (gift-money rule)                                                                                                                                                                                                 |
-| Unselected | `text-app-muted` / `text-paper/70`                                                                                                                                                                                                         |
-| Labels     | `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name                                                                                                                                                 |
+| Part       | Spec                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------ |
+| Track      | Gift app: `inline-flex overflow-hidden rounded-md border border-app-border text-xs`. Gift dark: `border-paper/20`. |
+| Segment    | `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop                                                            |
+| Selected   | Gift app: `bg-app-accent text-app-accent-fg`. Gift dark: `bg-accent text-ink`                                      |
+| Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                             |
+| Labels     | `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name                         |
 
-Promote to `SegmentedControl` (see catalog). Forum Active/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange.
+Forum Active/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
 ---
 
 ### 10. Control grammar
 
-The design system **wins** for **new** work. CONTRIBUTING **Icon controls** is rewritten to this table in PR 1. Reviewers follow the table, not “everything new is an icon”.
+The design system **wins** for **new** work. CONTRIBUTING **Icon controls** matches this table. Reviewers follow the table, not “everything new is an icon”.
 
-**Grandfather until the named PR.** After PR 1 merges, current `develop` code that disagrees with the table is **not** an undeclared deviation. Reviewers of unrelated PRs must not bounce Contact **Send**, lucide `Bitcoin` pay, or `IconButton` `sm` `h-6 w-6` until those conversions land. `docs/ui.md` is the **target spec**, not a claim that shipped pixels already match.
+**Shipped conversions (#125).** The eight grandfathered migrations below already landed. Do not re-grandfather them as future work.
 
 | Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                                                           | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                    |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
-| Current (SHA `96d184d4`)                                  | Target                                   | Lands in         |
-| --------------------------------------------------------- | ---------------------------------------- | ---------------- |
-| Contact **Send** labeled `Button` (`ContactScreen.tsx`)   | `IconButton` primary `lg`, lucide `Send` | PR 5             |
-| Pay lucide `Bitcoin` `IconButton` `sm` (`ForumBoard.tsx`) | lucide `Gift`, same `forum.pay` name     | PR 4             |
-| `IconButton` `sm` `h-6 w-6`                               | 24px paint + 44px hit slop               | PR 2 (primitive) |
-| Open Wallet raw `<a className="… bg-app-btn px-5 py-2">`  | `ButtonLink` primary md                  | PR 4 or 5        |
+| Conversion (shipped in #125)                              | Result                                   |
+| --------------------------------------------------------- | ---------------------------------------- |
+| Contact **Send** labeled `Button` (`ContactScreen.tsx`)   | `IconButton` primary `lg`, lucide `Send` |
+| Pay lucide `Bitcoin` `IconButton` `sm` (`ForumBoard.tsx`) | lucide `Gift`, same `forum.pay` name     |
+| `IconButton` `sm` `h-6 w-6`                               | 24px paint + 44px hit slop               |
+| Open Wallet raw `<a className="… bg-app-btn px-5 py-2">`  | `ButtonLink` primary md                  |
+| Public ThemeSwitcher on unsigned app routes               | ThemeSwitcher + LanguageSwitcher         |
+| Claim banner `bg-neutral-900` leftovers                   | `app-notice` + `Button`                  |
+| NameForm / RulesSetup leftover buttons                    | `Button` / `IconButton`                  |
+| Empty profile chart null axis                             | `profile.chartEmpty` status copy         |
 
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on the post overlay.
 
@@ -694,25 +701,29 @@ Do not over-type `href` as `'/' | '/welcome'` — unsigned app also uses `/` fro
 
 #### `Button` (labeled)
 
-**Anatomy.** `inline-flex items-center justify-center gap-2 rounded-full font-medium text-sm`. Optional leading `icon` (decorative).
+**Anatomy.** `inline-flex items-center justify-center gap-2 rounded-full font-medium text-sm`. Optional leading `icon` (decorative). Optional `tone?: 'app' | 'dark'` (default `app`), same shell split as `ButtonLink`.
 
-**Variants.**
+**Variants (app tone).**
 
-| Variant          | Default                                                   | Hover                                            | Disabled   | Use                                                                           |
-| ---------------- | --------------------------------------------------------- | ------------------------------------------------ | ---------- | ----------------------------------------------------------------------------- |
-| `primary`        | `bg-app-btn text-app-btn-fg`                              | `bg-app-btn-hover`                               | opacity 50 | Log in, Continue, Try again, I agree, Activate                                |
-| `secondary`      | `border border-app-border-strong bg-app-card text-app-fg` | `bg-app-hover`                                   | opacity 50 | Retry on forum, inbox; marketing **Send help** uses the dark-shell equivalent |
-| `accent` **NEW** | `bg-app-accent text-ink`                                  | `opacity-90` (no second hex, no `brightness-95`) | opacity 50 | Marketing-shell primary; app donate **Open the forum**                        |
+| Variant     | Default                                                   | Hover              | Disabled   | Use                                              |
+| ----------- | --------------------------------------------------------- | ------------------ | ---------- | ------------------------------------------------ |
+| `primary`   | `bg-app-btn text-app-btn-fg`                              | `bg-app-btn-hover` | opacity 50 | Log in, Continue, Try again, I agree, Activate   |
+| `secondary` | `border border-app-border-strong bg-app-card text-app-fg` | `bg-app-hover`     | opacity 50 | Retry on forum, inbox                            |
+| `accent`    | `bg-app-accent text-app-accent-fg`                        | `opacity-90`       | opacity 50 | App donate **Open the forum**; gift-intent fills |
+
+**Dark tone.** Secondary `border border-paper/20 text-paper hover:bg-paper/10`; primary `bg-paper text-ink`; accent `bg-accent text-ink`. Used by `PwaInstall` header/hero (and iOS sheet Close) on marketing ink.
 
 **States:** default, hover, `:focus-visible` (ring), active (`scale` **not** used — color only), disabled, loading (`icon={<Loader2 className="h-4 w-4 animate-spin" />}` + disabled).
 
-**API diff.**
+**API.**
 
 ```tsx
 export type ButtonVariant = 'primary' | 'secondary' | 'accent';
+export type ButtonTone = 'app' | 'dark';
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
-  size?: 'sm' | 'md' | 'lg'; // NEW, default md
+  size?: 'sm' | 'md' | 'lg'; // default md
+  tone?: ButtonTone; // default app
   icon?: ReactNode;
   children: ReactNode;
 }
@@ -829,27 +840,33 @@ Escape and outside-click already implemented — keep.
 
 ---
 
-#### `SegmentedControl` (new primitive)
+#### `SegmentedControl` (shipped)
 
-Two tones.
+Two tones. Gift also takes `shell?: 'app' | 'dark'` (default `app`; ignored for `neutral`).
 
 ```tsx
+export type SegmentedControlTone = 'gift' | 'neutral';
+export type SegmentedControlShell = 'app' | 'dark';
+
 export function SegmentedControl<T extends string>(props: {
   value: T;
   options: readonly { value: T; label: string }[];
   onChange: (value: T) => void;
   ariaLabel: string;
-  tone: 'gift' | 'neutral';
+  tone: SegmentedControlTone;
+  /** Gift on marketing-dark. Default `app`. Ignored for `neutral`. */
+  shell?: SegmentedControlShell;
   className?: string;
 }): ReactElement;
 ```
 
-| Tone      | Track                                                                     | Selected                                  | Unselected       | Use                               |
-| --------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | --------------------------------- |
-| `gift`    | `rounded-md border` compact or 44px on app                                | `bg-app-accent text-ink`                  | `text-app-muted` | ₿\|USD                            |
-| `neutral` | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / All / Most popular |
+| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                               |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | --------------------------------- |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿\|USD                    |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿\|USD                      |
+| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / All / Most popular |
 
-Each option: `aria-pressed`. Forum recipe today is already the `neutral` track — extract it.
+Gift options: `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop. Each option: `type="button"` `aria-pressed`. Forum: `tone="neutral"`. Profile: `tone="gift"` (omit `shell`). Stats: `tone="gift" shell="dark"`.
 
 ---
 
@@ -939,13 +956,15 @@ Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above
 
 #### Marketing header / footer / CTA pair
 
-**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark`. Right: `nav` (how, why, faq, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `LanguageSwitcher tone="dark"` + hamburger (`flex flex-col gap-1.5 md:hidden`, 20×20 bars, `aria-label` menu, `aria-expanded`).
+**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark`. Right: `nav` (how, why, faq, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` (`Button tone="dark" variant="secondary" size="sm"`) + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, keep three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
 
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile (keep).
 
 **Footer.** `border-t border-paper/10 px-5 py-10`. Inner `max-w-[1100px]` flex wrap. Wordmark bold. Nav `text-sm text-paper/70 gap-4`. GitHub `text-sm text-paper/70`.
 
-**Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**.
+**Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"` (`Button tone="dark" variant="secondary"`).
+
+**Signed-in menu Install.** `PwaInstall placement="menu"` stays the labeled row (Download icon + `t('pwa.install')`) — app shell, not dark Button.
 
 ---
 
@@ -1359,7 +1378,7 @@ Font + token PR: expect hundreds of PNG diffs. Budget CI visual jobs (10 minutes
 
 ## References
 
-- App `develop` SHA `96d184d4d95c9047ca9d52ea62d8b87ec2e559bd`
+- App `develop` SHA `209486fe85ae9d601c598e63a957ed349e4df6ca`
 - API `develop` SHA `0e04f84e289c28e21b223d8b30bbc7c982284237`
 - API concept document, sections Vision, Brand, Core Principles
 - API flows document, journeys 1–7 (photo/story Sketch)
@@ -1379,68 +1398,15 @@ Font + token PR: expect hundreds of PNG diffs. Budget CI visual jobs (10 minutes
 
 ## PR Plan
 
-Each PR is mergeable alone. This is the sequence, not a request to open five at once.
+PRs 1–5 in the original sequence **shipped in 21gifts/app#125** (Outfit, tokens, primitives, Wordmark chrome, Gift pay, Contact icon send, empty chart, claim banner, public ThemeSwitcher). Grandfather rows for those conversions are closed.
 
-### PR 1 — Design system as `docs/ui.md`
+**This PR** finishes the remaining target:
 
-- **Title:** Document the 21.gifts visual design system
-- **Depends on:** nothing
-- **Files:** `docs/ui.md` (English adaptation of this document: principles, tokens, type ramp, chrome, control table, catalog, screen recipes, key decisions). Title it as the **target system**, with a one-line current-vs-target note. `CONTRIBUTING.md`: replace **Icon controls** with the labeled vs icon-only table **and** a grandfather clause (Contact Send → PR 5; pay glyph → PR 4; `sm` hit slop / `md`/`lg` boxes → PR 2). Point to `docs/ui.md`. `Review.md`: reviewers follow the table for **new** controls; do not bounce grandfathered SHA code.
-- **Goldens:** none. Markdown only. No Vitest assertions of CONTRIBUTING prose.
-- **Description:** Makes the design system the in-repo source of truth. Resolves the CONTRIBUTING conflict without making current `develop` an undeclared deviation.
-
-### PR 2 — Type + tokens + primitive unification (full export surface)
-
-- **Title:** Add Outfit and complete app color tokens
-- **Depends on:** PR 1
-- **Files:**
-  - `src/app/layout.tsx` — `Outfit({ subsets: ['latin'], weight: 'variable', display: 'block', variable: '--font-outfit' })`, `className={outfit.variable}` on `<html>`.
-  - `src/app/globals.css` — `ink`/`paper`/`accent`, new `app-*`, subtle/muted contrast, focus-visible base, reduced-motion.
-  - `src/components/ui/Button.tsx` — `size`, `accent`, hover `opacity-90`.
-  - `src/components/ui/ButtonLink.tsx` — **new export** (`tone?: 'app' | 'dark'`).
-  - `src/components/ui/IconButton.tsx` — `md` `h-11`, `lg` `h-12`, `sm` keep `h-6` + full slop class (`before:content-[''] before:-inset-2.5 …`).
-  - `src/components/ui/Field.tsx` — drop `outline-none`, `min-h-11`, `bg-app-card`.
-  - `src/__tests__/components/ui/{Button,ButtonLink,IconButton,Field}.test.tsx` — `IconButton.test.tsx`: keep `h-6` for `sm`; **assert** `before:content-['']` and `before:-inset-2.5`; default `h-11`; `lg` `h-12`.
-  - `src/components/RulesDocument.tsx` — B′: overlines `text-app-subtle`, Welcome Check `text-app-fg`, keep THE TEST `border-app-accent`.
-  - `ForumBoard.tsx` note footer (and any clustered `sm` row) — `gap-1.5` → `gap-5`.
-  - Marketing header/footer/home/404/stats/legal/handbook → tokens/`ButtonLink` where mechanical.
-  - `e2e/visual.spec.ts` — if not using `display: 'block'`, `await page.evaluate(() => document.fonts.ready)` in `shotScreen`.
-  - **Export gates for `ButtonLink` (and any other new export):** `src/__tests__/…` 100% coverage, `## Function: ButtonLink` in `docs/handbook/functions.md`, `test('Function: ButtonLink …')` in `e2e/`, four `function-ButtonLink-${combo}-linux.png`. `handbook:check` / `e2e:check` / `screenshot:check`.
-- **Goldens:** regenerate **all four combos** in CI/Linux Docker (`playwright:v1.61.1-noble`, `--platform linux/amd64`). Expected large diff (typeface + muted + focus + `md`/`lg` icon boxes + rules overline color + welcome footer `gap-5`). Do not regen on the session host. Do **not** paint forum `sm` as 44px here.
-- **Description:** One family, complete tokens, primitive sizes. Full export surface. Visual delta includes typeface, contrast, focus rings, composer `lg` box, **non-overlapping `sm` hits** (`gap-5`), and rules kickers off orange text.
-
-### PR 3 — Wordmark on app chrome
-
-- **Title:** Put 21.gifts on app page chrome
-- **Depends on:** PR 2
-- **Files:** `src/components/ui/Wordmark.tsx` (**new export**), `PageChrome.tsx` (`topLeft`; handbook Functions text for existing `PageChrome` must update), `index.ts`. Migrate `/welcome`, `/profile`, `/contact`, `/messages`, `/messages/[id]`, `/donate`, `/setup/*`, `/view/*`, `/rules` onto `PageChrome` + Wordmark. Unsigned `topRight` is **always** ThemeSwitcher + LanguageSwitcher — **add** ThemeSwitcher on `/messages/[id]` and `/view/*` (SHA is language-only). Drop duplicate absolute chrome wrappers. Profile back sits in `topLeft` beside Wordmark.
-- **Export gates for `Wordmark`:** unit test, `## Function: Wordmark`, `Function: Wordmark` e2e, four `function-Wordmark-*.png`.
-- **Goldens:** all chrome-bearing app screens, **including** `screen-view-viewKey`, `screen-view-*` variants, and public-message shots for `/messages/[id]`. Marketing unchanged if PR 2 already tokenized header.
-- **Description:** Same family of chrome as marketing. Fixes “app without wordmark.” Public app routes get ThemeSwitcher like `/login`.
-
-### PR 4 — Money / pay control
-
-- **Title:** Use a Gift pay control instead of a second ₿
-- **Depends on:** PR 2 (primitives); can parallel PR 3
-- **Files:** `ForumBoard.tsx` (Gift `IconButton` `sm`, amount text only; Open Wallet → `ButtonLink` primary md). `QrCode.tsx` border token if not in PR 2. Extract `SegmentedControl` if not already (**new export** → unit + `## Function: SegmentedControl` + `Function:` e2e + four function goldens). **Do not** change `forum.pay` (“Send Bitcoin”) or e2e needles.
-- **Goldens:** welcome default/all/popular/pay-qr/pay-smartphone and related states (one regen for the glyph, not a second size pass).
-- **Description:** Kills `₿21 ₿`. Amount remains `formatBitcoin`. QR rules unchanged. Copy frozen.
-
-### PR 5 — Screen-by-screen defect migration
-
-Split if PNG diffs are large (5a/5b).
-
-- **Title:** Align profile chart, claim banner, contact send, and leftover buttons with the design system
-- **Depends on:** PR 3 (chrome) + PR 4 (pay)
-- **Files / surfaces:**
-  - **Not in this PR:** login outer title and welcome “Forum” heading — already absent in SHA `96d184d4` source.
-  - `AccountActivityChart.tsx` + `messages.ts` `profile.chartEmpty` (en/de/es/fil): hide SVG+toggle when empty. Update `AccountActivityChart.test.tsx` and any e2e needles.
-  - `ViewProfileClaim.tsx`: `app-notice` + `Button`; delete `bg-neutral-900` / `text-neutral-500` / `bg-yellow-200`.
-  - `NameForm.tsx` / `RulesSetup.tsx`: `Button` lg; profile name actions → `IconButton`.
-  - `ContactScreen.tsx`: icon send. Update `ContactScreen.test.tsx` and e2e (`getByRole('button', { name: 'Send' })` today — keep the accessible name from `contact.send`, assert no visible “Send” text if the table requires icon-only).
-  - Handbook `docs/handbook/screens.md` **and** Functions text for any export whose behavior/API changed.
-- **Goldens:** those screens’ variants.
-- **Description:** Remaining defects from the checklist. Title stacks are not in scope.
+- `SegmentedControl` primitive (`tone` gift|neutral, optional `shell` app|dark) wired to forum Active/All/Most popular, profile ₿|USD, and stats ₿|USD.
+- `Button.tone` (`app` | `dark`) so marketing PwaInstall header/hero is a real dark secondary, not class soup.
+- Marketing leftover `text-white` / `#f7931a` → `paper` / `accent` on legal, handbook, stats, day table.
+- PwaInstall documented on marketing header, `/` hero, and signed-in menu.
+- Chrome/a11y nits: THE TEST rail on law callouts, claim errors as `role="alert"`, QR fg/bg, 44px marketing hamburger, embedded Language `min-h-11`, Field placeholder, app `h1` `sm:text-3xl`.
 
 **Later, not in this program:** profile photo/story slot (blocked on HTTP); Figma; safe-area; optional Figtree/Instrument swap if Outfit goldens fail the “same grotesque as marketing” test.
 

@@ -37,13 +37,13 @@ export default async function HandbookScreensPage(): Promise<ReactElement> {
         navAria={translate(messages, 'aria.handbookSections')}
         headingAction={<HandbookCopyLink targetId="handbook" label={title} />}
       >
-        <a href="/handbook" className="text-[#f7931a] underline underline-offset-2">
+        <a href="/handbook" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.title')}
         </a>
-        <a href="/handbook/functions" className="text-[#f7931a] underline underline-offset-2">
+        <a href="/handbook/functions" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.functionsTitle')}
         </a>
-        <a href="/handbook/endpoints" className="text-[#f7931a] underline underline-offset-2">
+        <a href="/handbook/endpoints" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.endpointsTitle')}
         </a>
       </HandbookIntro>

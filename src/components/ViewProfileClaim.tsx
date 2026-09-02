@@ -103,7 +103,9 @@ export function ViewProfileClaim({
     if (passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
       return (
         <div className="flex max-w-sm flex-col items-center gap-3">
-          <p className="text-center text-sm text-app-muted">{t('view.claimError')}</p>
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('view.claimError')}
+          </p>
           <Button type="button" onClick={() => passkey.retry()}>
             {t('view.retry')}
           </Button>
@@ -136,7 +138,9 @@ export function ViewProfileClaim({
   if (passkey.status === 'error') {
     return (
       <div className="flex max-w-sm flex-col items-center gap-3">
-        <p className="text-center text-sm text-app-muted">{t('view.claimError')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('view.claimError')}
+        </p>
         <Button type="button" onClick={() => passkey.retry()}>
           {t('view.retry')}
         </Button>

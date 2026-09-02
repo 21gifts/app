@@ -1182,6 +1182,26 @@ test('Function: PwaInstall — iPhone Safari shows the install control', async (
   ).toBeVisible();
 });
 
+test('Function: PwaInstall — iPhone Chrome shows the install control', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1',
+    });
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      get: () => false,
+    });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Install app' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Install app' }).first().click();
+  await expect(
+    page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+  ).toBeVisible();
+});
+
 test('Function: shouldOfferIosInstall — iPhone Safari shows the install control', async ({
   page,
 }) => {
@@ -2799,6 +2819,20 @@ test('Function: ButtonLink — landing Ask for help is a link', async ({ page })
 test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+});
+
+test('Function: SegmentedControl — welcome shows Active / All / Most popular', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('group', { name: 'Forum view' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Active' })).toBeVisible();
 });
 
 test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {

@@ -37,43 +37,43 @@ export default async function HandbookPage(): Promise<ReactElement> {
           <HandbookCopyLink targetId="handbook" label={translate(messages, 'handbook.title')} />
         }
       >
-        <a href="/handbook/screens" className="text-[#f7931a] underline underline-offset-2">
+        <a href="/handbook/screens" className="text-accent underline underline-offset-2">
           {screensTitle}
         </a>
-        <a href="/handbook/functions" className="text-[#f7931a] underline underline-offset-2">
+        <a href="/handbook/functions" className="text-accent underline underline-offset-2">
           {functionsTitle}
         </a>
-        <a href="/handbook/endpoints" className="text-[#f7931a] underline underline-offset-2">
+        <a href="/handbook/endpoints" className="text-accent underline underline-offset-2">
           {endpointsTitle}
         </a>
       </HandbookIntro>
       <ul className="mt-12 flex flex-col gap-8">
         <li>
-          <h2 className="text-xl font-semibold text-[#f7931a]">{screensTitle}</h2>
-          <p className="mt-2 text-white/60">{translate(messages, 'handbook.screensLead')}</p>
+          <h2 className="text-xl font-semibold text-accent">{screensTitle}</h2>
+          <p className="mt-2 text-paper/60">{translate(messages, 'handbook.screensLead')}</p>
           <a
             href="/handbook/screens"
-            className="mt-2 inline-block text-[#f7931a] underline underline-offset-2"
+            className="mt-2 inline-block text-accent underline underline-offset-2"
           >
             {screensTitle}
           </a>
         </li>
         <li>
-          <h2 className="text-xl font-semibold text-[#f7931a]">{functionsTitle}</h2>
-          <p className="mt-2 text-white/60">{translate(messages, 'handbook.functionsLead')}</p>
+          <h2 className="text-xl font-semibold text-accent">{functionsTitle}</h2>
+          <p className="mt-2 text-paper/60">{translate(messages, 'handbook.functionsLead')}</p>
           <a
             href="/handbook/functions"
-            className="mt-2 inline-block text-[#f7931a] underline underline-offset-2"
+            className="mt-2 inline-block text-accent underline underline-offset-2"
           >
             {functionsTitle}
           </a>
         </li>
         <li>
-          <h2 className="text-xl font-semibold text-[#f7931a]">{endpointsTitle}</h2>
-          <p className="mt-2 text-white/60">{translate(messages, 'handbook.endpointsLead')}</p>
+          <h2 className="text-xl font-semibold text-accent">{endpointsTitle}</h2>
+          <p className="mt-2 text-paper/60">{translate(messages, 'handbook.endpointsLead')}</p>
           <a
             href="/handbook/endpoints"
-            className="mt-2 inline-block text-[#f7931a] underline underline-offset-2"
+            className="mt-2 inline-block text-accent underline underline-offset-2"
           >
             {endpointsTitle}
           </a>

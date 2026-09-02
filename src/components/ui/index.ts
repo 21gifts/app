@@ -2,6 +2,7 @@ export {
   Button,
   type ButtonProps,
   type ButtonSize,
+  type ButtonTone,
   type ButtonVariant,
 } from '@/components/ui/Button';
 export {
@@ -19,6 +20,12 @@ export {
   type IconButtonVariant,
 } from '@/components/ui/IconButton';
 export { PageChrome, type PageChromeProps } from '@/components/ui/PageChrome';
+export {
+  SegmentedControl,
+  type SegmentedControlProps,
+  type SegmentedControlShell,
+  type SegmentedControlTone,
+} from '@/components/ui/SegmentedControl';
 export {
   Wordmark,
   type WordmarkProps,

@@ -30,7 +30,7 @@ export function QrCode({ value, label }: QrCodeProps): ReactElement {
       aria-label={label}
       className="rounded-2xl border border-app-border bg-app-qr-bg p-4"
     >
-      <QRCodeSVG value={value} size={QR_SIZE} />
+      <QRCodeSVG value={value} size={QR_SIZE} fgColor="#000000" bgColor="#ffffff" />
     </div>
   );
 }

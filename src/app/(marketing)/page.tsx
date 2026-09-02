@@ -39,7 +39,9 @@ export default async function Home(): Promise<ReactElement> {
       </section>
 
       <section id="how" className="mx-auto max-w-[1100px] px-5 py-20">
-        <h2 className="text-sm tracking-widest text-accent uppercase">{t('home.howKicker')}</h2>
+        <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
+          {t('home.howKicker')}
+        </h2>
         <p className="mt-3 text-2xl font-semibold">{t('home.howTitle')}</p>
         <p className="mt-4 max-w-3xl text-paper/60">{t('home.howLead')}</p>
         <div className="mt-12 grid gap-10 sm:grid-cols-3">
@@ -65,7 +67,9 @@ export default async function Home(): Promise<ReactElement> {
       </section>
 
       <section id="why" className="mx-auto max-w-[1100px] px-5 py-20">
-        <h2 className="text-sm tracking-widest text-accent uppercase">{t('home.whyKicker')}</h2>
+        <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
+          {t('home.whyKicker')}
+        </h2>
         <p className="mt-3 text-2xl font-semibold">{t('home.whyTitle')}</p>
         <div className="mt-12 grid gap-10 sm:grid-cols-2">
           <div>
@@ -88,7 +92,9 @@ export default async function Home(): Promise<ReactElement> {
       </section>
 
       <section id="faq" className="mx-auto max-w-[1100px] px-5 py-20">
-        <h2 className="text-sm tracking-widest text-accent uppercase">{t('home.faqKicker')}</h2>
+        <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
+          {t('home.faqKicker')}
+        </h2>
         <p className="mt-3 text-2xl font-semibold">{t('home.faqTitle')}</p>
         <div className="mt-10 space-y-3">
           <details className="border-b border-paper/10 py-4">

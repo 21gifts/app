@@ -237,7 +237,9 @@ describe('ViewProfileClaim', () => {
   it('shows claimError copy on other errors', () => {
     mockPasskey('error', 'network down');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
-    expect(screen.getByText('Could not set up a passkey. Please try again.')).toBeTruthy();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain('Could not set up a passkey. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(retrySpy).toHaveBeenCalledTimes(1);
   });
@@ -246,7 +248,9 @@ describe('ViewProfileClaim', () => {
     useAuthStore.setState({ session: 'tok', account });
     mockPasskey('error', 'network down');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
-    expect(screen.getByText('Could not set up a passkey. Please try again.')).toBeTruthy();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain('Could not set up a passkey. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
   });
 });

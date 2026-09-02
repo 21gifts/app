@@ -24,7 +24,7 @@ export function WelcomeScreen(): ReactElement {
   return (
     <Card maxWidth="xl">
       <Gift aria-hidden="true" className="h-12 w-12 text-app-fg" />
-      <h1 className="text-center text-2xl font-semibold tracking-tight">
+      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('login.welcomeHeading', { name })}
       </h1>
       <ForumLoader />

@@ -148,6 +148,7 @@ app/
 │   │       ├── Field.tsx        # Shared labeled field
 │   │       ├── IconButton.tsx   # Shared icon button
 │   │       ├── PageChrome.tsx   # Shared page chrome
+│   │       ├── SegmentedControl.tsx # Mutually exclusive option group
 │   │       ├── Wordmark.tsx     # Text wordmark 21.gifts
 │   │       └── index.ts         # Barrel export for ui primitives
 │   ├── lib/

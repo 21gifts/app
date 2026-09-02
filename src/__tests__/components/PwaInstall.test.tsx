@@ -2,11 +2,11 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PwaInstall } from '@/components/PwaInstall';
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { isIosSafari, isStandaloneDisplay } from '@/lib/push';
+import { shouldOfferIosInstall } from '@/lib/pwa-install';
+import { isStandaloneDisplay } from '@/lib/push';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/push', () => ({
-  isIosSafari: vi.fn().mockReturnValue(false),
   isStandaloneDisplay: vi.fn().mockReturnValue(false),
 }));
 
@@ -14,8 +14,12 @@ vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn().mockReturnValue(false),
 }));
 
+vi.mock('@/lib/pwa-install', () => ({
+  shouldOfferIosInstall: vi.fn().mockReturnValue(false),
+}));
+
 beforeEach(() => {
-  vi.mocked(isIosSafari).mockReturnValue(false);
+  vi.mocked(shouldOfferIosInstall).mockReturnValue(false);
   vi.mocked(isStandaloneDisplay).mockReturnValue(false);
   vi.mocked(isInAppBrowser).mockReturnValue(false);
 });
@@ -34,7 +38,7 @@ describe('PwaInstall', () => {
   });
 
   it('shows the iOS sheet steps and closes on Close', async () => {
-    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
     vi.mocked(isStandaloneDisplay).mockReturnValue(false);
     vi.mocked(isInAppBrowser).mockReturnValue(false);
     renderWithLocale(<PwaInstall placement="header" />);
@@ -43,13 +47,13 @@ describe('PwaInstall', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Tap Share (square with the arrow).')).toBeTruthy();
     expect(screen.getByText('Tap Add to Home Screen.')).toBeTruthy();
-    expect(screen.getByText('Leave Open as Web App on, then tap Add.')).toBeTruthy();
+    expect(screen.getByText('If you see Open as Web App, leave it on, then tap Add.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('renders nothing when already standalone', async () => {
-    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
     vi.mocked(isStandaloneDisplay).mockReturnValue(true);
     vi.mocked(isInAppBrowser).mockReturnValue(false);
     renderWithLocale(<PwaInstall placement="hero" />);
@@ -75,7 +79,7 @@ describe('PwaInstall', () => {
   });
 
   it('calls onMenuAction when opening the iOS sheet from the menu and keeps the dialog mounted', async () => {
-    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
     vi.mocked(isStandaloneDisplay).mockReturnValue(false);
     vi.mocked(isInAppBrowser).mockReturnValue(false);
     const onMenuAction = vi.fn();
@@ -87,7 +91,7 @@ describe('PwaInstall', () => {
   });
 
   it('renders the hero control with the default app tone', async () => {
-    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
     vi.mocked(isStandaloneDisplay).mockReturnValue(false);
     vi.mocked(isInAppBrowser).mockReturnValue(false);
     renderWithLocale(<PwaInstall placement="hero" />);
@@ -95,11 +99,13 @@ describe('PwaInstall', () => {
   });
 
   it('opens the dark hero iOS sheet, ignores overlay mousedown, and closes on Escape', async () => {
-    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
     vi.mocked(isStandaloneDisplay).mockReturnValue(false);
     vi.mocked(isInAppBrowser).mockReturnValue(false);
     renderWithLocale(<PwaInstall tone="dark" placement="hero" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+    const install = await screen.findByRole('button', { name: 'Install app' });
+    expect(install.className).toContain('border-paper/20');
+    fireEvent.click(install);
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeTruthy();
     const overlay = dialog.parentElement;
@@ -110,6 +116,16 @@ describe('PwaInstall', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('uses Button dark secondary classes on the dark header Install control', async () => {
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
+    vi.mocked(isStandaloneDisplay).mockReturnValue(false);
+    vi.mocked(isInAppBrowser).mockReturnValue(false);
+    renderWithLocale(<PwaInstall tone="dark" placement="header" />);
+    const install = await screen.findByRole('button', { name: 'Install app' });
+    expect(install.className).toContain('border-paper/20');
+    expect(install.className).toContain('text-paper');
   });
 
   it('calls onMenuAction after a Chromium prompt from the menu and clears on appinstalled', async () => {

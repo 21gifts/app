@@ -24,9 +24,6 @@ export interface PwaInstallProps {
   onMenuAction?: () => void;
 }
 
-const DARK_SECONDARY =
-  'border-paper/20 bg-transparent text-paper hover:bg-paper/10 hover:opacity-100';
-
 let sharedDeferred: BeforeInstallPromptEvent | null = null;
 let promptListenersAttached = false;
 const promptSubscribers = new Set<(event: BeforeInstallPromptEvent | null) => void>();
@@ -61,9 +58,10 @@ function consumeSharedPrompt(): BeforeInstallPromptEvent | null {
 }
 
 /**
- * Labeled control to install the PWA (Chromium prompt) or show iPhone Safari
- * Home Screen steps. Renders nothing until after mount, and stays hidden when
- * already standalone, in an in-app browser, or when neither offer applies.
+ * Labeled control to install the PWA (Chromium prompt) or show iPhone Home
+ * Screen steps (Safari, Chrome, Firefox, Edge). Renders nothing until after
+ * mount, and stays hidden when already standalone, in an in-app browser, or
+ * when neither offer applies.
  *
  * @param props - Placement, optional tone, and optional menu close callback.
  * @returns The install control, iOS sheet, or `null`.
@@ -131,8 +129,6 @@ export function PwaInstall({
     return null;
   }
 
-  const darkClass = tone === 'dark' ? DARK_SECONDARY : undefined;
-
   const closeSheet = (): void => {
     setSheetOpen(false);
   };
@@ -150,6 +146,8 @@ export function PwaInstall({
     onMenuAction?.();
   };
 
+  const darkButton = tone === 'dark';
+
   let control: ReactElement;
   if (placement === 'menu') {
     control = (
@@ -163,20 +161,22 @@ export function PwaInstall({
       </button>
     );
   } else if (placement === 'header') {
-    control = (
-      <Button
-        type="button"
-        size="sm"
-        variant="secondary"
-        className={darkClass ?? ''}
-        onClick={handleClick}
-      >
+    control = darkButton ? (
+      <Button type="button" size="sm" variant="secondary" tone="dark" onClick={handleClick}>
+        {t('pwa.install')}
+      </Button>
+    ) : (
+      <Button type="button" size="sm" variant="secondary" onClick={handleClick}>
         {t('pwa.install')}
       </Button>
     );
   } else {
-    control = (
-      <Button type="button" variant="secondary" className={darkClass ?? ''} onClick={handleClick}>
+    control = darkButton ? (
+      <Button type="button" variant="secondary" tone="dark" onClick={handleClick}>
+        {t('pwa.install')}
+      </Button>
+    ) : (
+      <Button type="button" variant="secondary" onClick={handleClick}>
         {t('pwa.install')}
       </Button>
     );
@@ -217,15 +217,21 @@ export function PwaInstall({
                 <li>{t('pwa.iosOpen')}</li>
               </ol>
               <div className="mt-6">
-                <Button
-                  id={closeId}
-                  type="button"
-                  variant="secondary"
-                  className={darkClass ?? ''}
-                  onClick={closeSheet}
-                >
-                  {t('pwa.close')}
-                </Button>
+                {darkButton ? (
+                  <Button
+                    id={closeId}
+                    type="button"
+                    variant="secondary"
+                    tone="dark"
+                    onClick={closeSheet}
+                  >
+                    {t('pwa.close')}
+                  </Button>
+                ) : (
+                  <Button id={closeId} type="button" variant="secondary" onClick={closeSheet}>
+                    {t('pwa.close')}
+                  </Button>
+                )}
               </div>
             </div>
           </div>,

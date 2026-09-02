@@ -101,6 +101,8 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('$0.00')).toBeTruthy();
     expect(screen.getByText('— – —')).toBeTruthy();
+    const period = screen.getByText('— – —');
+    expect(period.className).toContain('tabular-nums');
   });
 
   it('does not crash when giftCount is set but series are empty', () => {
@@ -151,6 +153,7 @@ describe('StatsDashboard', () => {
     const svg = screen.getByLabelText('Spend over time in ₿');
     expect(within(svg).getByText('2026-06-01')).toBeTruthy();
     expect(within(svg).getByText('2026-06-02')).toBeTruthy();
+    expect(within(svg).getByText('2026-06-01').getAttribute('class')).toContain('fill-paper/50');
     expect(within(svg).getAllByText('2026-06-01')).toHaveLength(1);
     expect(within(svg).getAllByText('2026-06-02')).toHaveLength(1);
     expect(within(svg).getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
