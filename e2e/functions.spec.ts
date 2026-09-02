@@ -810,7 +810,10 @@ test('Function: nextPostRequirement — rules before name for the overlay order'
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
-test('Function: MemberProfilePage — member page heading is visible', async ({ page, request }) => {
+test('Function: MemberProfilePage — member page heading is visible', async ({
+  page,
+  request,
+}) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();

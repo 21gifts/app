@@ -579,7 +579,7 @@ The design system **wins** for **new** work. CONTRIBUTING **Icon controls** is r
 
 | Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                                                           | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                    |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 | Current (SHA `96d184d4`)                                  | Target                                   | Lands in         |
 | --------------------------------------------------------- | ---------------------------------------- | ---------------- |
@@ -1009,11 +1009,11 @@ Today: hand-rolled `main` + absolute switchers, no wordmark, accent **Open the f
 
 #### `/setup/name` — **fix button leftover**
 
-`PageChrome` `h-svh` + Wordmark + Menu → `h1` “Your name” → `NameForm onboarding` (prompt, `Field`/`input` recipe, alert, `Button` primary lg **Continue**). Replace raw `px-5 py-2.5` with `Button`. Keep floating footer CTA (`mt-auto`).
+`PageChrome` `h-svh` + Wordmark + Menu → `h1` “Your name” → `NameForm onboarding` (prompt, `Field`/`input` recipe, alert, `Button` primary lg **Continue** and labeled **Skip**). Replace raw `px-5 py-2.5` with `Button`. Keep floating footer CTA (`mt-auto`).
 
 #### `/setup/address` — **keep structure, primitives**
 
-Same column. `h1` “Your Wallet of Satoshi address”. Hello line muted. `LightningAddressForm onboarding` already uses `Button`. Placeholder `you@walletofsatoshi.com` stays (product token). Wordmark + Menu.
+Same column. `h1` “Your Wallet of Satoshi address”. Hello line muted. `LightningAddressForm onboarding` already uses `Button` (**Continue** and labeled **Skip**). Placeholder `you@walletofsatoshi.com` stays (product token). Wordmark + Menu.
 
 #### `/setup/rules` — **fix button leftover**
 
