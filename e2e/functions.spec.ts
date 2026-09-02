@@ -804,7 +804,21 @@ test('Function: nextPostRequirement — rules before name for the overlay order'
   await expect(page).toHaveURL(/\/setup\/address/);
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
-  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
+  await expect(
+    page.getByText(`1 of ${RULES_CHAPTER_IDS.length}`, { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('Function: MemberProfilePage — member page heading is visible', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+});
+
+test('e2e:check dynamic path token for /members/[accountId]', async ({ page, request }) => {
+  await page.goto('/members/[accountId]');
+  await request.get('/forum/members/[accountId]');
 });
 
 test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {
