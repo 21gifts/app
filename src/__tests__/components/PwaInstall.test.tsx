@@ -47,7 +47,7 @@ describe('PwaInstall', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Tap Share (square with the arrow).')).toBeTruthy();
     expect(screen.getByText('Tap Add to Home Screen.')).toBeTruthy();
-    expect(screen.getByText('If you see Open as Web App, leave it on, then tap Add.')).toBeTruthy();
+    expect(screen.getByText('Leave Open as Web App on, then tap Add.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });

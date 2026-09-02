@@ -297,7 +297,7 @@ function renderInline(inline: HandbookInline, key: number): ReactNode {
       key={key}
       src={inline.src}
       alt={inline.alt}
-      className="my-3 max-w-xl rounded-lg border border-white/10"
+      className="my-3 max-w-xl rounded-lg border border-paper/10"
     />
   );
 }

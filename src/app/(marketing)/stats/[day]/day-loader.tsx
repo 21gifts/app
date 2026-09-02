@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { GiftDayTable } from '@/components/GiftDayTable';
+import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
 import type { GiftDay } from '@/lib/api-types';
 import { formatBitcoin } from '@/lib/stats-money';
@@ -76,15 +77,17 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       {!loading && error !== null ? (
         <div className="mt-8">
           <p className="text-paper/80">{error}</p>
-          <button
+          <Button
             type="button"
-            className="mt-3 rounded-md border border-paper/20 px-3 py-1.5 text-sm"
+            variant="accent"
+            tone="dark"
+            className="mt-3"
             onClick={() => {
               setAttempt((n) => n + 1);
             }}
           >
             Try again
-          </button>
+          </Button>
         </div>
       ) : null}
       {!loading && error === null && payload !== null && payload.day === day ? (

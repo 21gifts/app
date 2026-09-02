@@ -58,7 +58,7 @@ function variantClass(variant: ButtonVariant, tone: ButtonTone): string {
 /**
  * Labeled app button (primary filled, secondary bordered, or accent fill).
  *
- * @param props - Native button props plus {@link ButtonVariant} and size.
+ * @param props - Native button props plus {@link ButtonVariant}, size, and {@link ButtonTone}.
  * @returns The button element.
  */
 export function Button({
