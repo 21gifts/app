@@ -524,7 +524,7 @@
 - **Purpose:** Flow-mode wrapper around `AppShell` with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots. Prefer `AppShell` directly on app routes.
 - **Inputs:** `children`, optional `topLeft`, optional `topRight`, optional `className` on the outer `<main>`.
 - **Returns / side effects:** Layout only (`AppShell mode="flow"`). No network.
-- **Used by:** Legacy call sites that still import the flow wrapper; new pages should use `AppShell`.
+- **Used by:** Unit tests and the `ui` barrel. No remaining app-route call sites; prefer `AppShell`.
 
 ## Function: Wordmark
 
@@ -789,7 +789,7 @@
 
 - **Purpose:** Route `/members/[accountId]` with profile onboarding gate and signed-in chrome.
 - **Inputs:** Dynamic `accountId`.
-- **Returns / side effects:** Page chrome + `MemberProfileLoader`.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `MemberProfileLoader`.
 - **Used by:** App Router.
 
 ## Function: proxyMeSetupSkipPost

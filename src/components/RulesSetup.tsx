@@ -130,15 +130,19 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         ) : null}
       </section>
       <AppShellFooter>
-        <Button
-          type="button"
-          size="lg"
-          onClick={handleAgree}
-          disabled={busy}
-          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
-        >
-          {t(lastChapter ? 'setup.agree' : 'setup.continue')}
-        </Button>
+        <div className="mx-auto w-full max-w-3xl">
+          <Button
+            type="button"
+            size="lg"
+            onClick={handleAgree}
+            disabled={busy}
+            icon={
+              busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+            }
+          >
+            {t(lastChapter ? 'setup.agree' : 'setup.continue')}
+          </Button>
+        </div>
       </AppShellFooter>
     </>
   );

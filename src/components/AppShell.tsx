@@ -108,18 +108,18 @@ export function AppShell({
   return (
     <AppShellContext.Provider value={ctx}>
       <main
-        className={`relative flex h-[var(--app-height)] flex-col overflow-hidden overscroll-y-none px-6${extra}`}
+        className={`relative flex h-[var(--app-height)] flex-col items-center overflow-hidden overscroll-y-none px-6${extra}`}
       >
         {chrome}
-        <header ref={setHeaderEl} className="flex-none empty:hidden" />
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <header ref={setHeaderEl} className="flex-none w-full empty:hidden" />
+        <div className="min-h-0 w-full flex-1 overflow-y-auto">
           {align === 'center' ? (
             <div className="flex min-h-full items-center justify-center">{children}</div>
           ) : (
             children
           )}
         </div>
-        <footer ref={setFooterEl} className="flex-none pb-8 empty:hidden" />
+        <footer ref={setFooterEl} className="flex-none w-full pb-8 empty:hidden" />
       </main>
     </AppShellContext.Provider>
   );

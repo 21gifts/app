@@ -107,7 +107,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 - `public/apple-touch-icon.png` / `icon-192.png` / `icon-512.png` — ink field, orange `21`, no rounded-squircle decoration beyond what iOS applies.
 - `public/og.png` — ink, orange kicker `PEER-TO-PEER · BITCOIN · WALLET OF SATOSHI`, white `21.gifts`, subtitle, orange-outline pill. Keep. A later isolated PR may regenerate with Outfit; not required to land tokens.
 
-**App chrome today** (`screen-welcome`, `screen-profile`, `screen-contact`): no wordmark; **Menu** top-right (`SignedInChrome`); profile has a ghost back arrow top-left. **Target:** every app page uses `PageChrome` with both slots.
+**App chrome today** (`screen-welcome`, `screen-profile`, `screen-contact`): no wordmark; **Menu** top-right (`SignedInChrome`); profile has a ghost back arrow top-left. **Target:** every app page uses `AppShell` with both chrome slots (`PageChrome` is only the flow-mode wrapper).
 
 **`PageChrome` slots (target).**
 

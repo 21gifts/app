@@ -208,7 +208,7 @@ export function LightningAddressForm(
           </p>
         ) : null}
         <AppShellFooter>
-          <div className="flex w-full flex-col items-stretch gap-3">
+          <div className="mx-auto flex w-full max-w-sm flex-col items-stretch gap-3">
             <Button
               type="submit"
               form={formId}
