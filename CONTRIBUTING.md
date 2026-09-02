@@ -41,7 +41,7 @@ npm run dev    # → http://localhost:3000
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
-| `npm run screenshot:check`     | Fail if a screen, variant, or export lacks a Playwright PNG, or a variant has no shot in `e2e/visual.spec.ts`                                 |
+| `npm run screenshot:check`     | Fail if a screen or variant lacks a Playwright PNG, or a variant has no shot in `e2e/visual.spec.ts`                                          |
 | `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
 ## Project structure
@@ -191,7 +191,7 @@ app/
 │   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
-│   └── check-screenshots.mjs    # CI gate: missing screen/variant/function PNG or visual.spec.ts shot → exit 1
+│   └── check-screenshots.mjs    # CI gate: missing screen/variant PNG or visual.spec.ts shot → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
