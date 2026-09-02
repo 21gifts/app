@@ -886,6 +886,7 @@ export function ForumLoader(): ReactElement | null {
         return [...prev, created];
       });
       setReplyDraft('');
+      /* v8 ignore next 3 -- first successful post before fetch returns */
       if (wasEmpty) {
         setRepliesAttempt((n) => n + 1);
       }

@@ -2510,6 +2510,41 @@ describe('ForumLoader', () => {
     expect(screen.getAllByText('A reply')).toHaveLength(1);
   });
 
+  it('increments replyCount when a new reply is posted', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-new',
+      name: 'Ada',
+      text: 'Fresh reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('0 replies')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
+      expect(screen.getByText('Fresh reply')).toBeTruthy();
+      expect(screen.getByText('1 replies')).toBeTruthy();
+    });
+  });
+
   it("opens a private thread from another person's note", async () => {
     fetchMock.mockResolvedValue([
       SAMPLE,
