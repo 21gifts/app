@@ -85,7 +85,7 @@ const HEADING = 'text-2xl font-semibold tracking-tight text-app-fg';
 const LEAD = 'text-base leading-relaxed text-app-muted';
 const BODY = 'text-base leading-relaxed text-app-fg';
 const CARD = 'rounded-2xl border border-app-border bg-app-card';
-const KICKER = 'text-sm font-medium tracking-widest uppercase';
+const KICKER = 'text-xs font-medium tracking-widest uppercase';
 
 function RuleList({
   items,

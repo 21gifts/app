@@ -386,7 +386,9 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </p>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-accent uppercase">Total spend over time</h2>
+          <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
+            Total spend over time
+          </h2>
           <SegmentedControl
             value={overTimeScale}
             options={BAR_SCALE_OPTIONS}
@@ -414,7 +416,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-accent uppercase">By person</h2>
+          <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By person</h2>
           <SegmentedControl
             value={personScale}
             options={BAR_SCALE_OPTIONS}
@@ -428,7 +430,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-accent uppercase">By month</h2>
+          <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By month</h2>
           <SegmentedControl
             value={monthScale}
             options={BAR_SCALE_OPTIONS}
