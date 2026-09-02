@@ -103,8 +103,8 @@ describe('useAccountTotals', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
-      setup: null,
-      missing: [],
+        setup: null,
+        missing: [],
       },
     });
     renderWithLocale(<Probe />);
@@ -138,8 +138,8 @@ describe('useAccountTotals', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
-      setup: null,
-      missing: [],
+        setup: null,
+        missing: [],
       },
     });
     renderWithLocale(<Probe />);
@@ -211,8 +211,8 @@ describe('useAccountTotals', () => {
           createdAt: 1,
           rulesAgreedAt: null,
           viewKey: 'a'.repeat(64),
-      setup: null,
-      missing: [],
+          setup: null,
+          missing: [],
         },
       });
     });
@@ -265,8 +265,8 @@ describe('useAccountTotals', () => {
           createdAt: 1,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
-      setup: null,
-      missing: [],
+          setup: null,
+          missing: [],
         },
       });
     });
@@ -311,8 +311,8 @@ describe('useAccountTotals', () => {
           createdAt: 1,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
-      setup: null,
-      missing: [],
+          setup: null,
+          missing: [],
         },
       });
     });

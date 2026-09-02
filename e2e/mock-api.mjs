@@ -94,7 +94,11 @@ function refreshMissing(account) {
 function afterFieldWrite(account) {
   refreshMissing(account);
   if (account.setup === 'name' && hasName(account)) {
-    account.setup = hasLightningAddress(account) ? (hasRules(account) ? null : 'rules') : 'lightning-address';
+    account.setup = hasLightningAddress(account)
+      ? hasRules(account)
+        ? null
+        : 'rules'
+      : 'lightning-address';
   } else if (account.setup === 'lightning-address' && hasLightningAddress(account)) {
     account.setup = hasRules(account) ? null : 'rules';
   } else if (account.setup === 'rules' && hasRules(account)) {

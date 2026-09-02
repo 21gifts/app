@@ -101,9 +101,7 @@ const E2E_ACCOUNT = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   setup: 'name' as 'name' | 'lightning-address' | 'rules' | null,
-  missing: ['name', 'lightning-address', 'rules'] as Array<
-    'name' | 'lightning-address' | 'rules'
-  >,
+  missing: ['name', 'lightning-address', 'rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
 
 test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({

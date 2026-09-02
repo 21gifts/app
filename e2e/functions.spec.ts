@@ -799,7 +799,9 @@ test('Function: nextPostRequirement — rules before name for the overlay order'
   request,
 }) => {
   await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/name/);
   await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();

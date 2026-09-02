@@ -73,8 +73,8 @@ describe('AddressSetup', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
-      setup: 'lightning-address',
-      missing: ['lightning-address', 'rules'],
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -96,8 +96,8 @@ describe('AddressSetup', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
-      setup: 'lightning-address',
-      missing: ['lightning-address', 'rules'],
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
       },
     });
     renderWithLocale(<AddressSetup />);
@@ -119,8 +119,8 @@ describe('AddressSetup', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
-      setup: 'lightning-address',
-      missing: ['lightning-address', 'rules'],
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
       },
     });
     renderWithLocale(<AddressSetup />);
