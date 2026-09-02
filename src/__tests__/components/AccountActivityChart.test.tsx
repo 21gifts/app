@@ -28,20 +28,19 @@ const MULTI_DAY: SpendPoint[] = [
 ];
 
 describe('AccountActivityChart', () => {
-  it('renders a reserved sat chart with no day labels when empty', () => {
-    const { container } = renderWithLocale(<AccountActivityChart received={[]} />);
-    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
-    expect(container.textContent).not.toMatch(/20\d{2}-\d{2}-\d{2}/);
-    expect(screen.getByText('Given')).toBeTruthy();
-    expect(screen.getByText('Received')).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
-    expect(screen.getByRole('group', { name: 'Given and received' })).toBeTruthy();
+  it('renders empty copy instead of an axis when there is no data', () => {
+    renderWithLocale(<AccountActivityChart received={[]} />);
+    expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
+    expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Given and received' })).toBeNull();
   });
 
   it('draws the received polyline and keeps ₿ pressed with grouped ticks', () => {
     const { container } = renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
     const polylines = [...container.querySelectorAll('polyline')];
-    expect(polylines.some((line) => line.getAttribute('stroke') === '#f7931a')).toBe(true);
+    expect(
+      polylines.some((line) => line.getAttribute('stroke') === 'var(--color-app-chart-received)'),
+    ).toBe(true);
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText('₿1,500')).toBeTruthy();
@@ -63,8 +62,12 @@ describe('AccountActivityChart', () => {
       <AccountActivityChart received={MULTI_DAY} donated={donated} />,
     );
     const polylines = [...container.querySelectorAll('polyline')];
-    expect(polylines.some((line) => line.getAttribute('stroke') === '#f7931a')).toBe(true);
-    expect(polylines.some((line) => line.getAttribute('stroke') === '#525252')).toBe(true);
+    expect(
+      polylines.some((line) => line.getAttribute('stroke') === 'var(--color-app-chart-received)'),
+    ).toBe(true);
+    expect(
+      polylines.some((line) => line.getAttribute('stroke') === 'var(--color-app-chart-given)'),
+    ).toBe(true);
   });
 
   it('renders a single-day series', () => {

@@ -71,6 +71,22 @@ describe('RulesDocument', () => {
     expect(screen.queryByRole('heading', { name: 'Only free donations' })).toBeNull();
   });
 
+  it('styles The test kickers with tracking-widest and TestCallout border accent', () => {
+    render(<RulesDocument messages={getCatalog('en')} />);
+    const kickers = screen.getAllByText('The test');
+    expect(kickers.length).toBeGreaterThan(0);
+    for (const kicker of kickers) {
+      expect(kicker.className).toContain('font-medium');
+      expect(kicker.className).toContain('tracking-widest');
+      expect(kicker.className).not.toContain('tracking-[0.2em]');
+    }
+    const calloutKicker = kickers.find((node) =>
+      node.parentElement?.className.includes('border-l-2'),
+    );
+    expect(calloutKicker).toBeTruthy();
+    expect(calloutKicker?.parentElement?.className).toContain('border-app-accent');
+  });
+
   it('renders all three forbidden groups when chapter is forbidden', () => {
     render(<RulesDocument messages={getCatalog('en')} chapter="forbidden" />);
     expect(screen.getByRole('heading', { name: 'Forbidden' })).toBeTruthy();

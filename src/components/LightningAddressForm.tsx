@@ -7,6 +7,7 @@ import { Button, IconButton } from '@/components/ui';
 import {
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   setLightningAddress,
+  skipSetup,
   unlinkLightningAddress,
 } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
@@ -37,12 +38,12 @@ function lightningAddressErrorKey(
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
  * receives their gifts.
  *
- * @param props - `onboarding` shows the field at the top and **Continue** at
- *   the bottom of the screen; `profile` uses icon actions to the right of the
- *   field. Defaults from whether an address is already linked. After `notZap`,
- *   Continue/Save stay disabled while the trimmed draft equals the blocked
- *   address; changing the draft clears the alert and re-enables; restoring the
- *   blocked address re-locks.
+ * @param props - `onboarding` shows the field at the top and **Continue** plus
+ *   **Skip** at the bottom; `profile` uses icon actions to the right of the
+ *   field (no Skip). Defaults from whether an address is already linked. After
+ *   `notZap`, Continue/Save stay disabled while the trimmed draft equals the
+ *   blocked address; changing the draft clears the alert and re-enables;
+ *   restoring the blocked address re-locks.
  * @returns The Lightning Address section, or `null` when there is nothing to show.
  */
 export function LightningAddressForm(
@@ -127,12 +128,31 @@ export function LightningAddressForm(
         ...current,
         lightningAddress: updated.lightningAddress,
         lightningAddressVerified: updated.lightningAddressVerified,
+        setup: updated.setup,
+        missing: updated.missing,
       });
       setEditing(false);
       if (updated.lightningAddress === null) {
         setDraft('');
       }
     });
+  };
+
+  const handleSkip = (): void => {
+    void runGuarded(
+      (token) => skipSetup(token, 'lightning-address'),
+      (updated) => {
+        const current = useAuthStore.getState().account;
+        if (current === null) {
+          return;
+        }
+        setAccount({
+          ...current,
+          setup: updated.setup,
+          missing: updated.missing,
+        });
+      },
+    );
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -156,7 +176,7 @@ export function LightningAddressForm(
   );
 
   const inputClass =
-    'w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50';
+    'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50';
 
   if (variant === 'onboarding') {
     return (
@@ -180,7 +200,7 @@ export function LightningAddressForm(
           className={inputClass}
         />
         {error !== null ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t(lightningAddressErrorKey(error))}
           </p>
         ) : null}
@@ -191,6 +211,9 @@ export function LightningAddressForm(
           icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
         >
           {t('setup.continue')}
+        </Button>
+        <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={handleSkip}>
+          {t('setup.skip')}
         </Button>
       </form>
     );
@@ -278,7 +301,7 @@ export function LightningAddressForm(
       )}
 
       {error !== null ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t(lightningAddressErrorKey(error))}
         </p>
       ) : null}

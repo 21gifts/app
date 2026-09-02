@@ -1,7 +1,8 @@
 'use client';
 
-import { ArrowLeft, Bitcoin, Check, ImagePlus, Link2, Loader2, Mail, Send, X } from 'lucide-react';
+import { ArrowLeft, Check, Gift, ImagePlus, Link2, Loader2, Mail, Send, X } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useEffect,
   useRef,
@@ -13,7 +14,7 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, Field, IconButton } from '@/components/ui';
+import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
@@ -65,6 +66,10 @@ export interface ForumBoardProps {
   error: boolean;
   /** True while a fetch is in flight. */
   loading: boolean;
+  /** True while a silent/pull refresh is in flight (list stays on screen). */
+  refreshing?: boolean;
+  /** Re-fetch the forum list. Omit to disable pull-to-refresh. */
+  onRefresh?: () => void;
   /** True while a post is in flight. */
   posting: boolean;
   /** Composer draft text. */
@@ -150,6 +155,8 @@ export interface ForumBoardProps {
   onPm: (messageId: string) => void;
   /** Forum message id whose PM request is in flight, or `null`. */
   pmBusyId: string | null;
+  /** When true, hide the board-bottom new-note composer (profile note card). */
+  composerHidden?: boolean;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -212,6 +219,8 @@ function showForumPm(
  * composer (new notes only, photo or video attach), per-card expand for replies
  * + reply composer, copy-link control, PM control on other people's notes,
  * pay-on-note sheet, optional inline photos, and optional inline videos.
+ * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
+ * visually hidden (`sr-only`) refresh status without changing idle markup.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
@@ -220,6 +229,8 @@ export function ForumBoard({
   messages,
   error,
   loading,
+  refreshing = false,
+  onRefresh,
   posting,
   draft,
   onDraftChange,
@@ -261,8 +272,11 @@ export function ForumBoard({
   ownAccountId,
   onPm,
   pmBusyId,
+  composerHidden = false,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
+  const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newestId = messages?.[0]?.id ?? null;
@@ -270,15 +284,117 @@ export function ForumBoard({
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
+  const refreshingRef = useRef(refreshing);
+  refreshingRef.current = refreshing;
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
   useEffect(() => {
-    if (newestId === null) {
+    if (composerHidden || newestId === null) {
+      return;
+    }
+    // Read refreshing via ref so clearing refreshing after a silent refresh
+    // does not re-run this effect and jump to the composer.
+    if (refreshingRef.current) {
       return;
     }
     composerRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
-  }, [newestId]);
+  }, [composerHidden, newestId]);
+
+  useEffect(() => {
+    if (onRefresh === undefined) {
+      return;
+    }
+
+    let startY: number | null = null;
+    let deltaY = 0;
+    let armed = false;
+
+    const pageScrollTop = (): number => window.scrollY || document.documentElement.scrollTop || 0;
+
+    const resetPull = (): void => {
+      startY = null;
+      deltaY = 0;
+      if (armed) {
+        armed = false;
+        setPullArmed(false);
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent): void => {
+      if (refreshingRef.current || loadingRef.current) {
+        return;
+      }
+      if (pageScrollTop() >= 8) {
+        return;
+      }
+      const touch = event.touches[0];
+      if (touch === undefined) {
+        return;
+      }
+      startY = touch.clientY;
+      deltaY = 0;
+    };
+
+    const onTouchMove = (event: TouchEvent): void => {
+      if (startY === null || refreshingRef.current || loadingRef.current) {
+        return;
+      }
+      if (pageScrollTop() >= 8) {
+        resetPull();
+        return;
+      }
+      const touch = event.touches[0];
+      /* v8 ignore next 3 -- TouchList can be empty mid-gesture */
+      if (touch === undefined) {
+        return;
+      }
+      deltaY = touch.clientY - startY;
+      if (deltaY > 0) {
+        if (deltaY > 24) {
+          /* v8 ignore start -- preventDefault throws when the listener is passive */
+          try {
+            event.preventDefault();
+          } catch {
+            // Passive listeners still fire touchend.
+          }
+          /* v8 ignore stop */
+        }
+        if (deltaY >= 56 && !armed) {
+          armed = true;
+          setPullArmed(true);
+        }
+      }
+    };
+
+    const onTouchEnd = (): void => {
+      const shouldRefresh = startY !== null && deltaY >= 56 && refreshingRef.current === false;
+      resetPull();
+      if (shouldRefresh) {
+        onRefreshRef.current?.();
+      }
+    };
+
+    const onTouchCancel = (): void => {
+      resetPull();
+    };
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('touchcancel', onTouchCancel);
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchCancel);
+    };
+  }, [onRefresh]);
 
   useEffect(() => {
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -378,7 +494,11 @@ export function ForumBoard({
   } else if (messages !== null && visible !== null) {
     const displayed = mode === 'popular' ? visible : visible.slice().reverse();
     middle = (
-      <ul aria-label={t('forum.listLabel')} className="flex flex-col gap-4">
+      <ul
+        aria-label={t('forum.listLabel')}
+        aria-busy={refreshing === true}
+        className="flex flex-col gap-4"
+      >
         {displayed.map((message) => {
           const photoUrl = message.hasPhoto ? photoUrls[message.id] : undefined;
           const videoSrc =
@@ -438,7 +558,21 @@ export function ForumBoard({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                    {typeof message.accountId === 'string' && message.accountId !== '' ? (
+                      <button
+                        type="button"
+                        aria-label={t('forum.authorProfile')}
+                        className="text-sm font-medium text-app-fg underline underline-offset-2"
+                        onClick={(event) => {
+                          stopCardToggle(event);
+                          router.push(`/members/${message.accountId}`);
+                        }}
+                      >
+                        {message.name}
+                      </button>
+                    ) : (
+                      <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                    )}
                     {roleKeys !== null ? (
                       <button
                         type="button"
@@ -487,8 +621,8 @@ export function ForumBoard({
                 {message.text !== '' ? (
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
-                <div className="mt-3 flex items-center gap-1.5">
-                  <p className="text-xs font-medium text-app-muted">
+                <div className="mt-3 flex items-center gap-5">
+                  <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
                     {formatBitcoin(message.sats, locale)}
                   </p>
                   {message.payable ? (
@@ -503,7 +637,7 @@ export function ForumBoard({
                         onPayOpen(message.id);
                       }}
                     >
-                      <Bitcoin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
                     </IconButton>
                   ) : null}
                   <IconButton
@@ -579,22 +713,22 @@ export function ForumBoard({
                     onChange={(event) => onPayDraftChange(event.target.value)}
                   />
                   {payError === 'amount' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorAmount')}
                     </p>
                   ) : null}
                   {payError === 'request' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorRequest')}
                     </p>
                   ) : null}
                   {payError === 'rateLimit' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorRateLimit')}
                     </p>
                   ) : null}
                   {payError === 'authorWallet' ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorAuthorWallet')}
                     </p>
                   ) : null}
@@ -637,21 +771,22 @@ export function ForumBoard({
                   ) : null}
                   {/* v8 ignore start -- wosHref is set whenever an invoice is shown */}
                   {wosHref !== null ? (
-                    <a
+                    <ButtonLink
                       href={wosHref}
                       aria-label={t('forum.payOpenWalletAria')}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover"
+                      icon={
+                        <img
+                          src="/wos-icon.png"
+                          alt=""
+                          width={20}
+                          height={20}
+                          aria-hidden="true"
+                          className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                        />
+                      }
                     >
-                      <img
-                        src="/wos-icon.png"
-                        alt=""
-                        width={20}
-                        height={20}
-                        aria-hidden="true"
-                        className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                      />
                       {t('forum.payOpenWallet')}
-                    </a>
+                    </ButtonLink>
                   ) : null}
                   {/* v8 ignore stop */}
                   {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
@@ -691,7 +826,21 @@ export function ForumBoard({
                           className="rounded-xl border border-app-border bg-app-card px-3 py-2"
                         >
                           <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <span className="text-sm font-medium text-app-fg">{reply.name}</span>
+                            {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
+                              <button
+                                type="button"
+                                aria-label={t('forum.authorProfile')}
+                                className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                onClick={(event) => {
+                                  stopCardToggle(event);
+                                  router.push(`/members/${reply.accountId}`);
+                                }}
+                              >
+                                {reply.name}
+                              </button>
+                            ) : (
+                              <span className="text-sm font-medium text-app-fg">{reply.name}</span>
+                            )}
                             <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
                               {formatForumTime(reply.createdAt, locale)}
                             </time>
@@ -741,7 +890,7 @@ export function ForumBoard({
                         disabled={
                           replyPosting || repliesLoading || repliesError || replies === null
                         }
-                        className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+                        className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
                       />
                       <IconButton
                         type="submit"
@@ -763,22 +912,22 @@ export function ForumBoard({
                       </IconButton>
                     </div>
                     {replyFormError === 'empty' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorEmpty')}
                       </p>
                     ) : null}
                     {replyFormError === 'tooLong' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorTooLong')}
                       </p>
                     ) : null}
                     {replyFormError === 'request' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorRequest')}
                       </p>
                     ) : null}
                     {replyFormError === 'rateLimit' ? (
-                      <p role="alert" className="text-center text-sm text-red-600">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorRateLimit')}
                       </p>
                     ) : null}
@@ -794,8 +943,21 @@ export function ForumBoard({
     middle = <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
   }
 
+  const showRefreshStatus = refreshing === true || pullArmed;
+
   return (
-    <div className="flex w-full flex-col gap-4 border-t border-app-border pt-6">
+    <div
+      ref={rootRef}
+      className="flex w-full flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
+    >
+      {showRefreshStatus ? (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={t('forum.refreshing')}
+          className="sr-only"
+        />
+      ) : null}
       {lawsVisible ? (
         <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
           <IconButton
@@ -823,145 +985,140 @@ export function ForumBoard({
         </div>
       ) : null}
 
-      <div
-        role="group"
-        aria-label={t('forum.modeLabel')}
-        className="flex w-full rounded-full border border-app-border bg-app-card-muted p-1"
-      >
-        {FORUM_FEED_MODES.map((next) => (
-          <button
-            key={next}
-            type="button"
-            aria-pressed={mode === next}
-            onClick={() => onModeChange(next)}
-            className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
-              mode === next ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
-            }`}
-          >
-            {t(MODE_LABEL_KEY[next])}
-          </button>
-        ))}
-      </div>
+      {!composerHidden ? (
+        <SegmentedControl
+          value={mode}
+          options={FORUM_FEED_MODES.map((next) => ({
+            value: next,
+            label: t(MODE_LABEL_KEY[next]),
+          }))}
+          onChange={onModeChange}
+          ariaLabel={t('forum.modeLabel')}
+          tone="neutral"
+        />
+      ) : null}
 
       {middle}
       {error && messages !== null ? errorBlock : null}
 
-      <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <IconButton
-            type="button"
-            size="lg"
-            variant="secondary"
-            aria-label={t('forum.attach')}
-            disabled={posting}
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-          >
-            <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-          </IconButton>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
-            className="hidden"
-            disabled={posting}
-            onChange={handleFileChange}
-          />
-          <textarea
-            aria-label={t('forum.composerLabel')}
-            placeholder={t('forum.placeholder')}
-            value={draft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            maxLength={FORUM_MESSAGE_MAX_LENGTH}
-            rows={2}
-            disabled={posting}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
-          />
-          <IconButton
-            type="submit"
-            size="lg"
-            variant="primary"
-            disabled={posting}
-            aria-label={t('forum.post')}
-          >
-            {posting ? (
-              <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
-            ) : (
-              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-            )}
-          </IconButton>
-        </div>
-        {videoDraft !== null ? (
-          <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-            <video
-              src={videoDraft.previewUrl}
-              className="h-20 w-20 rounded-lg object-cover"
-              muted
-              playsInline
-              preload="metadata"
-            />
+      {!composerHidden ? (
+        <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
             <IconButton
               type="button"
-              size="sm"
+              size="lg"
               variant="secondary"
-              onClick={onClearPhoto}
+              aria-label={t('forum.attach')}
               disabled={posting}
-              aria-label={t('forum.removeVideo')}
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
             >
-              <X aria-hidden="true" className="h-4 w-4" />
+              <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
             </IconButton>
-          </div>
-        ) : null}
-        {photoDraft !== null ? (
-          <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
-            <img
-              src={photoDraft.previewUrl}
-              alt={t('forum.previewAlt')}
-              className="h-20 w-20 rounded-lg object-cover"
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+              className="hidden"
+              disabled={posting}
+              onChange={handleFileChange}
+            />
+            <textarea
+              aria-label={t('forum.composerLabel')}
+              placeholder={t('forum.placeholder')}
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              maxLength={FORUM_MESSAGE_MAX_LENGTH}
+              rows={2}
+              disabled={posting}
+              className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
             />
             <IconButton
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={onClearPhoto}
+              type="submit"
+              size="lg"
+              variant="primary"
               disabled={posting}
-              aria-label={t('forum.removePhoto')}
+              aria-label={t('forum.post')}
             >
-              <X aria-hidden="true" className="h-4 w-4" />
+              {posting ? (
+                <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+              ) : (
+                <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+              )}
             </IconButton>
           </div>
-        ) : null}
-      </form>
+          {videoDraft !== null ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              <video
+                src={videoDraft.previewUrl}
+                className="h-20 w-20 rounded-lg object-cover"
+                muted
+                playsInline
+                preload="metadata"
+              />
+              <IconButton
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={onClearPhoto}
+                disabled={posting}
+                aria-label={t('forum.removeVideo')}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          ) : null}
+          {photoDraft !== null ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+              <img
+                src={photoDraft.previewUrl}
+                alt={t('forum.previewAlt')}
+                className="h-20 w-20 rounded-lg object-cover"
+              />
+              <IconButton
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={onClearPhoto}
+                disabled={posting}
+                aria-label={t('forum.removePhoto')}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          ) : null}
+        </form>
+      ) : null}
 
-      {formError === 'empty' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+      {!composerHidden && formError === 'empty' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorEmpty')}
         </p>
       ) : null}
-      {formError === 'tooLong' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+      {!composerHidden && formError === 'tooLong' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLong')}
         </p>
       ) : null}
-      {formError === 'request' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+      {!composerHidden && formError === 'request' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRequest')}
         </p>
       ) : null}
-      {formError === 'rateLimit' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+      {!composerHidden && formError === 'rateLimit' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRateLimit')}
         </p>
       ) : null}
-      {formError === 'unsupported' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+      {!composerHidden && formError === 'unsupported' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorUnsupported')}
         </p>
       ) : null}
-      {formError === 'tooLarge' ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+      {!composerHidden && formError === 'tooLarge' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLarge')}
         </p>
       ) : null}

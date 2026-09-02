@@ -23,13 +23,13 @@ export default async function GiftDayPage({
 
   return (
     <main className="mx-auto max-w-[1100px] px-5 pt-16 pb-24">
-      <p className="text-sm text-white/50">
-        <Link href="/stats" className="text-[#f7931a] underline">
+      <p className="text-sm text-paper/50">
+        <Link href="/stats" className="text-accent underline">
           All stats
         </Link>
       </p>
       <h1 className="mt-4 text-4xl font-semibold tracking-tight">{`Gifts on ${day}`}</h1>
-      <p className="mt-3 max-w-2xl text-lg text-white/60">Each outbound gift that UTC day.</p>
+      <p className="mt-3 max-w-2xl text-lg text-paper/60">Each outbound gift that UTC day.</p>
       <DayLoader key={day} day={day} />
     </main>
   );

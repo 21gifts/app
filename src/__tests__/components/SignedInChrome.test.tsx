@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { fetchGiftStats } from '@/lib/api';
+import { isInAppBrowser } from '@/lib/in-app-browser';
+import { shouldOfferIosInstall } from '@/lib/pwa-install';
+import { isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -46,6 +49,16 @@ vi.mock('@/lib/session-storage', () => ({
   saveSession: vi.fn(),
   clearSession: vi.fn(),
 }));
+vi.mock('@/lib/pwa-install', () => ({
+  shouldOfferIosInstall: vi.fn(() => false),
+}));
+vi.mock('@/lib/push', () => ({
+  isIosSafari: vi.fn(() => false),
+  isStandaloneDisplay: vi.fn(() => false),
+}));
+vi.mock('@/lib/in-app-browser', () => ({
+  isInAppBrowser: vi.fn(() => false),
+}));
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({
     totalSats: 0,
@@ -66,10 +79,29 @@ vi.mock('@/lib/api', () => ({
   }),
 }));
 
+function menuPanel(): HTMLElement {
+  const panel = document.getElementById('signed-in-menu');
+  expect(panel).not.toBeNull();
+  return panel as HTMLElement;
+}
+
+function expectMenuClosed(): void {
+  expect(menuPanel().className.includes('hidden')).toBe(true);
+  expect(screen.getByRole('button', { name: 'Menu' }).getAttribute('aria-expanded')).toBe('false');
+}
+
+function expectMenuOpen(): void {
+  expect(menuPanel().className.includes('hidden')).toBe(false);
+  expect(screen.getByRole('button', { name: 'Menu' }).getAttribute('aria-expanded')).toBe('true');
+}
+
 beforeEach(() => {
   replace.mockClear();
   refresh.mockClear();
   cancel.mockClear();
+  vi.mocked(shouldOfferIosInstall).mockReturnValue(false);
+  vi.mocked(isStandaloneDisplay).mockReturnValue(false);
+  vi.mocked(isInAppBrowser).mockReturnValue(false);
   vi.mocked(fetchGiftStats).mockResolvedValue({
     totalSats: 0,
     totalBtc: '0.00000000',
@@ -109,6 +141,8 @@ beforeEach(() => {
       createdAt: 1,
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
+      setup: null,
+      missing: [],
     },
   });
 });
@@ -121,16 +155,13 @@ describe('SignedInChrome', () => {
   it('shows Menu while Language and Log out stay hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Living room rules' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Contact' })).toBeNull();
-    expect(screen.queryByLabelText('Language')).toBeNull();
-    expect(screen.queryByLabelText('Theme')).toBeNull();
-    expect(screen.queryByRole('button', { name: /log out/i })).toBeNull();
+    expectMenuClosed();
   });
 
   it('opens the menu with Profile, Language, Log out, and zero totals', async () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
@@ -160,6 +191,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.keyDown(document, { key: 'Tab' });
+    expectMenuOpen();
     expect(screen.getByLabelText('Language')).toBeTruthy();
   });
 
@@ -167,9 +199,10 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     const menuButton = screen.getByRole('button', { name: 'Menu' });
     fireEvent.click(menuButton);
+    expectMenuOpen();
     screen.getByLabelText('Language').focus();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByLabelText('Language')).toBeNull();
+    expectMenuClosed();
     expect(document.activeElement).toBe(menuButton);
   });
 
@@ -177,6 +210,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     const menuButton = screen.getByRole('button', { name: 'Menu' });
     fireEvent.click(menuButton);
+    expectMenuOpen();
     const languageButton = screen.getByLabelText('Language');
     fireEvent.click(languageButton);
     expect(screen.getByRole('option', { name: 'Deutsch' })).toBeTruthy();
@@ -186,16 +220,17 @@ describe('SignedInChrome', () => {
     expect(screen.queryByRole('option')).toBeNull();
     expect(document.activeElement).toBe(languageButton);
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByLabelText('Language')).toBeNull();
+    expectMenuClosed();
     expect(document.activeElement).toBe(menuButton);
   });
 
   it('closes the menu on outside mousedown', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
     expect(screen.getByLabelText('Language')).toBeTruthy();
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByLabelText('Language')).toBeNull();
+    expectMenuClosed();
   });
 
   it('formats a single received amount as BIP-177 ₿1', async () => {
@@ -226,6 +261,7 @@ describe('SignedInChrome', () => {
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
     await waitFor(() => {
       expect(screen.getByLabelText('Received ₿1')).toBeTruthy();
     });
@@ -234,29 +270,43 @@ describe('SignedInChrome', () => {
   it('closes the menu when Profile is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
     expect(screen.getByLabelText('Language')).toBeTruthy();
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
-    expect(screen.queryByLabelText('Language')).toBeNull();
+    expectMenuClosed();
   });
 
   it('closes the menu when Living room rules is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Living room rules' }));
-    expect(screen.queryByLabelText('Language')).toBeNull();
+    expectMenuClosed();
   });
 
   it('closes the menu when Contact is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Contact' }));
-    expect(screen.queryByLabelText('Language')).toBeNull();
+    expectMenuClosed();
   });
 
   it('closes the menu when Messages is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Messages' }));
-    expect(screen.queryByLabelText('Language')).toBeNull();
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Install app is clicked and keeps the iOS sheet', async () => {
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+    expectMenuClosed();
+    expect(screen.getByRole('dialog')).toBeTruthy();
   });
 });

@@ -3,7 +3,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LoginCard } from '@/components/LoginCard';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { PageChrome } from '@/components/ui';
+import { PageChrome, Wordmark } from '@/components/ui';
 
 /**
  * `/login` — the passkey sign-in page.
@@ -15,6 +15,7 @@ import { PageChrome } from '@/components/ui';
 export default function LoginPage(): ReactElement {
   return (
     <PageChrome
+      topLeft={<Wordmark href="/" />}
       topRight={
         <>
           <ThemeSwitcher />

@@ -24,6 +24,26 @@ describe('Button', () => {
     expect(button.className).toContain('extra');
   });
 
+  it('applies accent fill and lg full width', () => {
+    renderWithLocale(
+      <Button variant="accent" size="lg">
+        Open the forum
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Open the forum' });
+    expect(button.className).toContain('bg-app-accent');
+    expect(button.className).toContain('w-full');
+  });
+
+  it('keeps sm at min-h-11', () => {
+    renderWithLocale(
+      <Button size="sm" variant="primary">
+        Compact
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Compact' }).className).toContain('min-h-11');
+  });
+
   it('forwards type=submit and click handlers', () => {
     const onClick = vi.fn();
     renderWithLocale(
@@ -46,5 +66,28 @@ describe('Button', () => {
   it('treats an empty className like no className', () => {
     renderWithLocale(<Button className="">Plain</Button>);
     expect(screen.getByRole('button', { name: 'Plain' }).className).not.toContain('undefined');
+  });
+
+  it('applies dark tone variants', () => {
+    const { rerender } = renderWithLocale(
+      <Button variant="secondary" tone="dark">
+        Install
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Install' }).className).toContain('border-paper/20');
+
+    rerender(
+      <Button variant="primary" tone="dark">
+        Primary dark
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Primary dark' }).className).toContain('bg-paper');
+
+    rerender(
+      <Button variant="accent" tone="dark">
+        Accent dark
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Accent dark' }).className).toContain('bg-accent');
   });
 });

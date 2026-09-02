@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Button, IconButton } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
@@ -57,7 +58,7 @@ export function ViewProfileClaim({
   }, [account, router]);
 
   if (!ready) {
-    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />;
+    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
 
   if (hasPasskey) {
@@ -69,9 +70,11 @@ export function ViewProfileClaim({
   function alreadyClaimedView(): ReactElement {
     return (
       <div className="flex max-w-sm flex-col items-center gap-3">
-        <p className="text-center text-sm text-neutral-500">{t('view.alreadyClaimed')}</p>
-        <button
+        <p className="text-center text-sm text-app-muted">{t('view.alreadyClaimed')}</p>
+        <IconButton
           type="button"
+          variant="primary"
+          size="md"
           onClick={() => {
             claimedLoginRef.current = true;
             claimAttemptedRef.current = false;
@@ -79,10 +82,9 @@ export function ViewProfileClaim({
           }}
           aria-label={claimLabel}
           title={claimLabel}
-          className="inline-flex items-center justify-center rounded-full bg-neutral-900 p-3 text-white transition hover:bg-neutral-700"
         >
           <Fingerprint aria-hidden="true" className="h-5 w-5" />
-        </button>
+        </IconButton>
       </div>
     );
   }
@@ -94,23 +96,19 @@ export function ViewProfileClaim({
     if (passkey.status === 'starting') {
       return (
         <div className="flex flex-col items-center gap-2">
-          <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
+          <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
         </div>
       );
     }
     if (passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
       return (
         <div className="flex max-w-sm flex-col items-center gap-3">
-          <p className="text-center text-sm text-neutral-500">{t('view.claimError')}</p>
-          <button
-            type="button"
-            onClick={() => {
-              passkey.retry();
-            }}
-            className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
-          >
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('view.claimError')}
+          </p>
+          <Button type="button" onClick={() => passkey.retry()}>
             {t('view.retry')}
-          </button>
+          </Button>
         </div>
       );
     }
@@ -128,7 +126,7 @@ export function ViewProfileClaim({
   if (passkey.status === 'starting') {
     return (
       <div className="flex flex-col items-center gap-2">
-        <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-neutral-400" />
+        <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
       </div>
     );
   }
@@ -140,24 +138,20 @@ export function ViewProfileClaim({
   if (passkey.status === 'error') {
     return (
       <div className="flex max-w-sm flex-col items-center gap-3">
-        <p className="text-center text-sm text-neutral-500">{t('view.claimError')}</p>
-        <button
-          type="button"
-          onClick={() => {
-            passkey.retry();
-          }}
-          className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
-        >
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('view.claimError')}
+        </p>
+        <Button type="button" onClick={() => passkey.retry()}>
           {t('view.retry')}
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl bg-yellow-200 px-4 py-4 text-neutral-900">
+    <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl bg-app-notice px-4 py-4 text-app-notice-fg">
       <p className="text-center text-sm font-medium">{t('view.activationRequired')}</p>
-      <button
+      <Button
         type="button"
         onClick={() => {
           claimAttemptedRef.current = true;
@@ -167,10 +161,9 @@ export function ViewProfileClaim({
           }
           passkey.register(viewKey);
         }}
-        className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
       >
         {t('view.activate')}
-      </button>
+      </Button>
     </div>
   );
 }

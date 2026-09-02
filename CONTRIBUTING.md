@@ -41,7 +41,7 @@ npm run dev    # → http://localhost:3000
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
-| `npm run screenshot:check`     | Fail if a screen, variant, or export lacks a Playwright PNG, or a variant has no shot in `e2e/visual.spec.ts`                                 |
+| `npm run screenshot:check`     | Fail if a screen or variant lacks a Playwright PNG, or a variant has no shot in `e2e/visual.spec.ts`                                          |
 | `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
 ## Project structure
@@ -61,6 +61,7 @@ app/
 │   │   ├── me/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
 │   │   │   ├── name/route.ts    # POST /me/name
+│   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
@@ -91,15 +92,19 @@ app/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   └── [id]/route.ts    # GET/POST /conversations/[id]
 │   │   ├── forum/
-│   │   │   └── messages/
-│   │   │       ├── route.ts     # GET/POST /forum/messages same-origin proxy
-│   │   │       └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
+│   │   │   ├── messages/
+│   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy
+│   │   │   │   └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
+│   │   │   └── members/
+│   │   │       └── [accountId]/route.ts  # GET /forum/members/:id → api GET /members/:id
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + address + push bell + icon-only view-key copy
+│   │   ├── members/
+│   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── manifest.ts          # Web App Manifest (MetadataRoute.Manifest default export)
 │   │   ├── view/
 
@@ -121,10 +126,13 @@ app/
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
+│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + filtered spendOverTime
+│   │   ├── MemberProfileScreen.tsx # Member identity card + optional profile note
+│   │   ├── RequirementsOverlay.tsx # Add name or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/PM state for /welcome forum
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM + author profile links
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/PM/requirements-overlay state for /welcome forum
 │   │   ├── HandbookImageViewer.tsx # handbook baseline image picker (viewport/theme)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
@@ -132,19 +140,24 @@ app/
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
-│   │   ├── ContactLoader.tsx    # Post state for /contact
+│   │   ├── ContactLoader.tsx    # Post + requirements-overlay state for /contact
 │   │   └── ui/
 │   │       ├── Button.tsx       # Shared button primitive
+│   │       ├── ButtonLink.tsx   # Shared pill link
 │   │       ├── Card.tsx         # Shared card chrome
 │   │       ├── Field.tsx        # Shared labeled field
 │   │       ├── IconButton.tsx   # Shared icon button
 │   │       ├── PageChrome.tsx   # Shared page chrome
+│   │       ├── SegmentedControl.tsx # Mutually exclusive option group
+│   │       ├── Wordmark.tsx     # Text wordmark 21.gifts
 │   │       └── index.ts         # Barrel export for ui primitives
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
+│   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
+│   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
@@ -166,7 +179,7 @@ app/
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
 ├── docs/
-│   ├── ui.md                    # Shared UI primitives (Button, IconButton, Field, Card, PageChrome)
+│   ├── ui.md                    # Visual design system (target: tokens, type, chrome, control grammar)
 │   └── handbook/                # Mandatory: every screen + exported function + endpoint
 │       ├── README.md
 │       ├── screens.md
@@ -178,7 +191,7 @@ app/
 │   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
-│   └── check-screenshots.mjs    # CI gate: missing screen/variant/function PNG or visual.spec.ts shot → exit 1
+│   └── check-screenshots.mjs    # CI gate: missing screen/variant PNG or visual.spec.ts shot → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
@@ -257,6 +270,10 @@ update stuff
 - **Tailwind CSS only.** No CSS files beyond `src/app/globals.css`, no CSS
   modules, no styled-components, no inline `style` attributes.
 - Utility classes live directly on the JSX elements.
+- Visual language (shells, tokens, type, chrome, control grammar) lives in
+  `docs/ui.md`. New or migrated surfaces compose those parts. Raw
+  `rounded-full bg-app-btn` (or `bg-neutral-900`) outside primitives on a
+  new or migrated surface is an undeclared deviation.
 
 ### Components
 
@@ -299,27 +316,28 @@ English).
 
 ### Icon controls (hard requirement)
 
-**New action buttons default to icon-only:** a lucide glyph plus a catalog
-`aria-label`, no visible text. Tests locate icon **buttons** with
-`getByRole('button', { name })` against that label and assert
-`queryByText` for the catalog string is `null`. Icon **links** use
-`getByRole('link', { name })`. Non-interactive indicators (given/received
-arrows) use `aria-label` on the glyph, not a button role.
+The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
+**target**. New work follows that table, not “everything new is an icon”.
 
-Already icon-only: composer attach, send (**Post**), remove-photo, profile push
-bell (`PushToggle`), and the
-Bitcoin pay control. Profile back is an icon **link**. Given/received totals
-are icon indicators.
+| Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                                                               | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
-Existing hybrid or text controls stay until converted: the signed-in **Menu**
-disclosure (icon plus visible Menu word), **Log out**, **Link address**,
-**Continue**, **I agree to these rules** (onboarding consent must be readable
-as an agreement, not an icon), **Activate** (invite claim on `/view/[viewKey]`
-must be readable, not an icon), **Try again**, **Cancel**, and sentence-length
-links such as **Open Wallet of Satoshi**. A **new** text button for an action
-control is an undeclared deviation and is rejected.
+Tests locate icon **buttons** with `getByRole('button', { name })` against
+the catalog `aria-label` and assert `queryByText` for the visible catalog
+string is `null`. Icon **links** use `getByRole('link', { name })`.
+Non-interactive indicators (given/received arrows) use `aria-label` on the
+glyph, not a button role.
 
-Reviewers follow `Review.md`.
+A **new** control that is labeled when the table says icon-only (or
+icon-only when the table says labeled) is an undeclared deviation.
+
+The signed-in **Menu** trigger stays labeled (icon plus visible Menu word).
+**Log out**, **Continue**, **I agree to these rules**,
+**Activate**, **Try again**, and sentence-length links stay
+labeled.
+
+Reviewers follow `Review.md` and `docs/ui.md`.
 
 ### Payment QR vs deep links (hard requirement)
 
@@ -426,12 +444,11 @@ Default screen shots use the `screen-…` args; extra states use `state-…` arg
 Restrict `combos` only when the UI cannot exist (hamburger nav on desktop,
 payment QR on a smartphone, smartphone pay sheet on desktop).
 
-Every exported function **must** have four Playwright baselines
-`function-<Name>-${combo}-linux.png` (the handbook section on `/handbook`,
-clipped, in each combo project). Adding a screen, UI state, or export without
-updating the baselines in the **same PR** is rejected.
-`npm run screenshot:check` (and CI) fails when a PNG is missing or a variant
-has no matching shot in `e2e/visual.spec.ts`.
+Adding a screen or UI state without updating the baselines in the **same PR**
+is rejected. `npm run screenshot:check` (and CI) fails when a PNG is missing or
+a variant has no matching shot in `e2e/visual.spec.ts`. Exported functions need
+a handbook `## Function: <Name>` section and an e2e `Function: <Name>` needle,
+not a screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
 combo projects as parallel jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.

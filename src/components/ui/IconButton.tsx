@@ -11,7 +11,7 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   children: ReactNode;
   /** Filled, bordered, or bare. Default `secondary`. */
   variant?: IconButtonVariant;
-  /** Hit-target size. Default `md`. */
+  /** Painted size. Default `md`. `sm` keeps 24px paint with a 44px hit slop. */
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -22,9 +22,9 @@ const VARIANT_CLASS: Record<IconButtonVariant, string> = {
 };
 
 const SIZE_CLASS: Record<NonNullable<IconButtonProps['size']>, string> = {
-  sm: 'h-6 w-6',
-  md: 'h-10 w-10',
-  lg: 'h-11 w-11',
+  sm: "relative isolate h-6 w-6 before:absolute before:content-[''] before:block before:-inset-2.5 before:min-h-11 before:min-w-11 before:rounded-full",
+  md: 'h-11 w-11',
+  lg: 'h-12 w-12',
 };
 
 /**
@@ -48,7 +48,7 @@ export function IconButton({
       className={`inline-flex shrink-0 items-center justify-center rounded-full leading-none transition disabled:cursor-not-allowed disabled:opacity-50 ${SIZE_CLASS[size]} ${VARIANT_CLASS[variant]}${extra}`}
       {...rest}
     >
-      {children}
+      <span className="relative z-10 inline-flex items-center justify-center">{children}</span>
     </button>
   );
 }

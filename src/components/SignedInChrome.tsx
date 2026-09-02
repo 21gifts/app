@@ -14,6 +14,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
+import { PwaInstall } from '@/components/PwaInstall';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { formatBitcoin } from '@/lib/stats-money';
@@ -21,7 +22,7 @@ import { formatBitcoin } from '@/lib/stats-money';
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Profile with same-line given/received totals, living-room rules,
- * messages, contact, language, theme, and log out).
+ * messages, contact, optional PWA install, language, theme, and log out).
  *
  * @returns The signed-in Menu chrome.
  */
@@ -67,7 +68,7 @@ export function SignedInChrome(): ReactElement {
   const receivedAmount = formatBitcoin(receivedSats, locale);
 
   return (
-    <div ref={rootRef} className="absolute top-4 right-5">
+    <div ref={rootRef} className="relative">
       <button
         ref={buttonRef}
         type="button"
@@ -78,86 +79,90 @@ export function SignedInChrome(): ReactElement {
         onClick={() => {
           setOpen((current) => !current);
         }}
-        className="inline-flex items-center gap-1.5 text-sm text-app-muted transition hover:text-app-fg"
+        className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg"
       >
         <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         {t('aria.menu')}
       </button>
-      {open ? (
-        <div
-          id="signed-in-menu"
-          className="absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
+      <div
+        id="signed-in-menu"
+        className={`absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${open ? '' : 'hidden'}`}
+      >
+        <Link
+          href="/profile"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-app-fg no-underline transition hover:bg-app-hover"
         >
-          <Link
-            href="/profile"
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-app-fg no-underline transition hover:bg-app-hover"
-          >
-            <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-            <span className="font-medium">{t('profile.title')}</span>
-            <span className="ml-auto flex items-center gap-2 text-app-muted">
-              {loading ? (
-                t('forum.loading')
-              ) : (
-                <>
-                  <span
-                    className="inline-flex items-center gap-1"
-                    aria-label={t('profile.given', { amount: givenAmount })}
-                    title={t('profile.given', { amount: givenAmount })}
-                  >
-                    <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    {givenAmount}
-                  </span>
-                  <span aria-hidden="true">·</span>
-                  <span
-                    className="inline-flex items-center gap-1"
-                    aria-label={t('profile.received', { amount: receivedAmount })}
-                    title={t('profile.received', { amount: receivedAmount })}
-                  >
-                    <ArrowDownLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    {receivedAmount}
-                  </span>
-                </>
-              )}
-            </span>
-          </Link>
-          <Link
-            href="/rules"
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-          >
-            <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-            {t('nav.rules')}
-          </Link>
-          <Link
-            href="/messages"
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-          >
-            <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-            {t('nav.inbox')}
-          </Link>
-          <Link
-            href="/contact"
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-          >
-            <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-            {t('nav.contact')}
-          </Link>
-          <LanguageSwitcher tone="light" embedded />
-          <ThemeSwitcher embedded />
-          <LogoutButton />
-        </div>
-      ) : null}
+          <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          <span className="font-medium">{t('profile.title')}</span>
+          <span className="ml-auto flex items-center gap-2 text-app-muted">
+            {loading ? (
+              t('forum.loading')
+            ) : (
+              <>
+                <span
+                  className="inline-flex items-center gap-1"
+                  aria-label={t('profile.given', { amount: givenAmount })}
+                  title={t('profile.given', { amount: givenAmount })}
+                >
+                  <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {givenAmount}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span
+                  className="inline-flex items-center gap-1"
+                  aria-label={t('profile.received', { amount: receivedAmount })}
+                  title={t('profile.received', { amount: receivedAmount })}
+                >
+                  <ArrowDownLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {receivedAmount}
+                </span>
+              </>
+            )}
+          </span>
+        </Link>
+        <Link
+          href="/rules"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('nav.rules')}
+        </Link>
+        <Link
+          href="/messages"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('nav.inbox')}
+        </Link>
+        <Link
+          href="/contact"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('nav.contact')}
+        </Link>
+        <PwaInstall
+          placement="menu"
+          onMenuAction={() => {
+            setOpen(false);
+          }}
+        />
+        <LanguageSwitcher tone="light" embedded />
+        <ThemeSwitcher embedded />
+        <LogoutButton />
+      </div>
     </div>
   );
 }

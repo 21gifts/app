@@ -236,7 +236,7 @@ export function ThemeSwitcher(props: { embedded?: boolean }): ReactElement {
           {...(open
             ? { role: 'combobox' as const, 'aria-activedescendant': optionId(highlight) }
             : {})}
-          className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted transition hover:bg-app-hover hover:text-app-fg"
+          className="inline-flex min-h-11 w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted transition hover:bg-app-hover hover:text-app-fg"
           onClick={onTriggerClick}
           onKeyDown={onTriggerKeyDown}
         >
@@ -253,7 +253,7 @@ export function ThemeSwitcher(props: { embedded?: boolean }): ReactElement {
             className="flex flex-col"
           >
             {listboxOptions(
-              'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover',
+              'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover',
               'h-4 w-4 shrink-0 text-app-fg',
             )}
           </div>
@@ -273,7 +273,7 @@ export function ThemeSwitcher(props: { embedded?: boolean }): ReactElement {
         aria-controls="theme-listbox"
         aria-label={t('aria.theme')}
         {...(open ? { 'aria-activedescendant': optionId(highlight) } : {})}
-        className="inline-flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 text-sm text-app-fg transition hover:bg-app-hover"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-app-border-strong px-3 py-1.5 text-sm text-app-fg transition hover:bg-app-hover"
         onClick={onTriggerClick}
         onKeyDown={onTriggerKeyDown}
       >
@@ -290,7 +290,7 @@ export function ThemeSwitcher(props: { embedded?: boolean }): ReactElement {
           className="absolute right-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
         >
           {listboxOptions(
-            'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover',
+            'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover',
             'h-4 w-4 shrink-0 text-app-fg',
           )}
         </div>

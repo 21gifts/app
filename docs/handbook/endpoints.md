@@ -77,6 +77,20 @@
 - **Used by:** `setName`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/setup/skip
+
+- **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).
+- **Errors:** Upstream 400/401, or 502 if the api is unreachable.
+- **Used by:** `skipSetup`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /forum/members/[accountId]
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId` for signed-in member profiles.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMember` via `MemberProfileLoader`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/forum-laws-dismissed
 
 - **Purpose:** Same-origin proxy to permanently dismiss the welcome-forum living-room laws hint (`forumLawsDismissed: true` on the account).

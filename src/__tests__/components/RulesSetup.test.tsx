@@ -22,6 +22,8 @@ const baseAccount: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  setup: 'rules',
+  missing: ['rules'],
 };
 
 const oneChapter = [<p key="body">rules-body</p>];
@@ -93,6 +95,8 @@ describe('RulesSetup', () => {
       ...baseAccount,
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
+      setup: null,
+      missing: [],
     });
     renderWithLocale(
       <RulesSetup
@@ -206,12 +210,14 @@ describe('RulesSetup', () => {
     expect(screen.queryByText('chapter-one')).toBeNull();
   });
 
-  it('posts agreement and merges only rulesAgreedAt into the store', async () => {
+  it('posts agreement and merges rulesAgreedAt, setup, and missing into the store', async () => {
     vi.mocked(agreeToRules).mockResolvedValue({
       ...baseAccount,
       name: 'Stale',
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
+      setup: null,
+      missing: [],
     });
     renderWithLocale(<RulesSetup chapters={oneChapter} />);
 
@@ -222,7 +228,8 @@ describe('RulesSetup', () => {
       expect(useAuthStore.getState().account).toEqual({
         ...baseAccount,
         rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       });
     });
   });
@@ -245,14 +252,21 @@ describe('RulesSetup', () => {
     });
 
     await act(async () => {
-      resolve({ ...baseAccount, name: 'Ada', rulesAgreedAt: 1_700_000_001 });
+      resolve({
+        ...baseAccount,
+        name: 'Ada',
+        rulesAgreedAt: 1_700_000_001,
+        setup: null,
+        missing: [],
+      });
     });
 
     expect(useAuthStore.getState().account).toEqual({
       ...baseAccount,
       name: 'Bob',
       rulesAgreedAt: 1_700_000_001,
-      viewKey: 'a'.repeat(64),
+      setup: null,
+      missing: [],
     });
   });
 

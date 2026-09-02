@@ -6,13 +6,12 @@
  *
  * Markdown still uses one image per variant (desktop-light, or the first
  * listed combo). The viewer also copies `${visual}-${comboId}.png` for every
- * combo that exists, plus function clips.
+ * combo that exists.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import {
   HANDBOOK_COMBO_ID,
-  BASELINE_COMBOS,
   SCREEN_VARIANTS,
   comboSnapshotStem,
   variantComboIds,
@@ -55,27 +54,6 @@ for (const variant of SCREEN_VARIANTS) {
     }
     fs.copyFileSync(comboSource, comboDest);
     copied += 1;
-  }
-}
-
-const functionsMd = path.join(ROOT, 'docs', 'handbook', 'functions.md');
-if (fs.existsSync(functionsMd)) {
-  const names = [...fs.readFileSync(functionsMd, 'utf8').matchAll(/^## Function: (.+)$/gm)].map(
-    (match) => match[1],
-  );
-  for (const name of names) {
-    for (const combo of BASELINE_COMBOS) {
-      const stem = comboSnapshotStem(`function-${name}`, combo.id);
-      const source = path.join(SNAP_DIR, `${stem}-linux.png`);
-      const destName = `function-${name}-${combo.id}.png`;
-      const destPath = path.join(DEST_DIR, destName);
-      if (!fs.existsSync(source)) {
-        missing.push(`${stem}-linux.png → ${destName}`);
-        continue;
-      }
-      fs.copyFileSync(source, destPath);
-      copied += 1;
-    }
   }
 }
 

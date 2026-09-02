@@ -47,6 +47,6 @@ These must be green on the PR. A missing or red gate is rejected:
 
 Named exports, explicit return types, no `any`, no `console.log`, Tailwind
 only, server components by default, TSDoc on exports, handbook / e2e /
-screenshot sections in the same PR as the new screen or export. New action
-buttons are lucide icons with a catalog `aria-label` (no visible text);
-see CONTRIBUTING **Icon controls**.
+screenshot baselines for new screens/variants in the same PR. New controls
+follow the labeled vs icon-only table in `docs/ui.md` and CONTRIBUTING
+**Icon controls**. A new control that ignores the table is rejected.

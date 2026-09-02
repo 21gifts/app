@@ -27,6 +27,37 @@ describe('PageChrome', () => {
     expect(screen.getByTestId('slot')).toBeTruthy();
   });
 
+  it('renders topLeft in the absolute slot', () => {
+    const { container } = renderWithLocale(
+      <PageChrome topLeft={<span data-testid="brand">21.gifts</span>}>
+        <p>Body</p>
+      </PageChrome>,
+    );
+    expect(screen.getByTestId('brand')).toBeTruthy();
+    expect(container.querySelector('.left-5')?.className).toContain('flex');
+    expect(container.querySelector('.left-5')?.className).toContain('gap-2');
+  });
+
+  it('uses justify-start instead of justify-center when className asks', () => {
+    const { container } = renderWithLocale(
+      <PageChrome className="h-svh justify-start">
+        <p>Body</p>
+      </PageChrome>,
+    );
+    const main = container.querySelector('main');
+    expect(main?.className).toContain('justify-start');
+    expect(main?.className).not.toContain('justify-center');
+  });
+
+  it('omits the topLeft slot when topLeft is null', () => {
+    const { container } = renderWithLocale(
+      <PageChrome topLeft={null}>
+        <p>Body</p>
+      </PageChrome>,
+    );
+    expect(container.querySelector('main')?.querySelector('.left-5')).toBeNull();
+  });
+
   it('omits the topRight slot when topRight is null', () => {
     const { container } = renderWithLocale(
       <PageChrome topRight={null}>

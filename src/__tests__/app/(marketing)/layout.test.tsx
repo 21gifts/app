@@ -12,7 +12,7 @@ describe('MarketingLayout', () => {
     const props = tree.props as { className: string; children: ReactNode[] };
 
     expect(tree.type).toBe('div');
-    expect(props.className).toContain('bg-[#0a090c]');
+    expect(props.className).toContain('bg-ink');
     expect(props.className).toContain('[color-scheme:dark]');
   });
 

@@ -101,7 +101,7 @@ export function InboxScreen({
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </IconButton>
-          <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
+          <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
             {open?.name ?? t('inbox.heading')}
           </h1>
         </div>
@@ -144,7 +144,7 @@ export function InboxScreen({
             maxLength={CONTACT_MESSAGE_MAX_LENGTH}
             rows={2}
             disabled={posting || messagesLoading}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
           />
           <IconButton
             type="submit"
@@ -161,17 +161,17 @@ export function InboxScreen({
           </IconButton>
         </form>
         {formError === 'empty' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorEmpty')}
           </p>
         ) : null}
         {formError === 'tooLong' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorTooLong')}
           </p>
         ) : null}
         {formError === 'request' ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorRequest')}
           </p>
         ) : null}
@@ -180,7 +180,7 @@ export function InboxScreen({
   } else if (loading && conversations === null) {
     body = (
       <>
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
+        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('inbox.heading')}
         </h1>
         <p className="text-center text-sm text-app-muted">{t('inbox.loading')}</p>
@@ -189,7 +189,7 @@ export function InboxScreen({
   } else if (error && conversations === null) {
     body = (
       <>
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
+        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('inbox.heading')}
         </h1>
         <p className="text-center text-sm text-app-fg">{t('inbox.error')}</p>
@@ -201,7 +201,7 @@ export function InboxScreen({
   } else if (conversations !== null && conversations.length === 0) {
     body = (
       <>
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
+        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('inbox.heading')}
         </h1>
         <p className="text-center text-sm text-app-muted">{t('inbox.empty')}</p>
@@ -210,7 +210,7 @@ export function InboxScreen({
   } else {
     body = (
       <>
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg">
+        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('inbox.heading')}
         </h1>
         <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">

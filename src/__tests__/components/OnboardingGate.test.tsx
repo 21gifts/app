@@ -33,14 +33,29 @@ const account = {
   createdAt: 1,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  setup: 'name' as const,
+  missing: ['name', 'lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
+};
+
+const named = {
+  ...account,
+  name: 'Ada',
+  setup: 'lightning-address' as const,
+  missing: ['lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
+};
+
+const namedAddress = {
+  ...named,
+  lightningAddress: 'alice@walletofsatoshi.com',
+  setup: 'rules' as const,
+  missing: ['rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
 
 const complete = {
-  ...account,
-  name: 'Ada',
-  lightningAddress: 'alice@walletofsatoshi.com',
+  ...namedAddress,
   rulesAgreedAt: 1_700_000_001,
-  viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [] as ('name' | 'lightning-address' | 'rules')[],
 };
 
 beforeEach(() => {
@@ -104,7 +119,7 @@ describe('OnboardingGate', () => {
   });
 
   it('sends a named account from the name screen to the address screen', async () => {
-    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
       <OnboardingGate screen="name">
         <p>name-ui</p>
@@ -116,7 +131,7 @@ describe('OnboardingGate', () => {
   });
 
   it('renders address children when the account has a name and no address', async () => {
-    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
       <OnboardingGate screen="address">
         <p>address-ui</p>
@@ -129,7 +144,7 @@ describe('OnboardingGate', () => {
   it('sends name+address without agreement from the address screen to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+      account: namedAddress,
     });
     renderWithLocale(
       <OnboardingGate screen="address">
@@ -144,7 +159,7 @@ describe('OnboardingGate', () => {
   it('sends name+address without agreement from welcome to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+      account: namedAddress,
     });
     renderWithLocale(
       <OnboardingGate screen="welcome">
@@ -159,7 +174,7 @@ describe('OnboardingGate', () => {
   it('sends name+address without agreement from profile to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+      account: namedAddress,
     });
     renderWithLocale(
       <OnboardingGate screen="profile">
@@ -174,7 +189,7 @@ describe('OnboardingGate', () => {
   it('renders rules children when name and address are saved but agreement is missing', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: { ...account, name: 'Ada', lightningAddress: 'alice@walletofsatoshi.com' },
+      account: namedAddress,
     });
     renderWithLocale(
       <OnboardingGate screen="rules">
@@ -217,7 +232,7 @@ describe('OnboardingGate', () => {
   });
 
   it('sends a named account without an address from profile to the address screen', async () => {
-    useAuthStore.setState({ session: 'tok', account: { ...account, name: 'Ada' } });
+    useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
       <OnboardingGate screen="profile">
         <p>profile-ui</p>

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Fail if a UI screen, listed variant, or exported function lacks a committed
- * Playwright screenshot baseline, or if a variant is not shot in
- * `e2e/visual.spec.ts`. `/setup/rules` must list one variant per
- * `RULES_CHAPTER_IDS` chapter. Run from the repo root. No extra packages.
+ * Fail if a UI screen or listed variant lacks a committed Playwright
+ * screenshot baseline, or if a variant is not shot in `e2e/visual.spec.ts`.
+ * `/setup/rules` must list one variant per `RULES_CHAPTER_IDS` chapter.
+ * Run from the repo root. No extra packages.
  *
  * Snapshot files live next to the visual spec (Playwright default layout):
  *   e2e/visual.spec.ts-snapshots/<arg>-<project>-<platform>.png
@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { extractFunctions, extractScreens, sectionBody } from './check-handbook.mjs';
+import { extractScreens, sectionBody } from './check-handbook.mjs';
 import {
   BASELINE_COMBOS,
   SCREEN_VARIANTS,
@@ -161,21 +161,8 @@ if (chapterIds.length === 0) {
   }
 }
 
-const fns = extractFunctions(path.join(ROOT, 'src'));
-for (const name of [...fns].sort()) {
-  const arg = `function-${name}`;
-  for (const comboId of variantComboIds({})) {
-    const stem = comboSnapshotStem(arg, comboId);
-    if (!hasSnapshot(snapFiles, stem)) {
-      missing.push(
-        `Function ${name} ${comboId} has no Playwright Linux baseline ${stem}-linux.png`,
-      );
-    }
-  }
-}
-
-if (screens.size === 0 && fns.size === 0) {
-  console.error('SCREENSHOTS: no screens or functions discovered — refusing to pass');
+if (screens.size === 0) {
+  console.error('SCREENSHOTS: no screens discovered — refusing to pass');
   process.exit(1);
 }
 
@@ -188,5 +175,5 @@ if (missing.length) {
 }
 
 console.log(
-  `Screenshots complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants × 4 combos (restricted where listed), ${fns.size} functions × 4 combos, ${snapFiles.length} PNG baselines.`,
+  `Screenshots complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants × 4 combos (restricted where listed), ${snapFiles.length} PNG baselines.`,
 );

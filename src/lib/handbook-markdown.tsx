@@ -17,7 +17,7 @@ export type HandbookBlock =
 
 const HEADING_CLASS: Record<1 | 2 | 3 | 4, string> = {
   1: 'scroll-mt-24 mt-10 mb-3 text-3xl font-semibold first:mt-0',
-  2: 'scroll-mt-24 mt-8 mb-2 text-xl font-semibold text-[#f7931a]',
+  2: 'scroll-mt-24 mt-8 mb-2 text-xl font-semibold text-accent',
   3: 'scroll-mt-24 mt-6 mb-2 text-lg font-semibold',
   4: 'scroll-mt-24 mt-4 mb-2 text-base font-semibold',
 };
@@ -277,7 +277,7 @@ function renderInline(inline: HandbookInline, key: number): ReactNode {
   }
   if (inline.type === 'code') {
     return (
-      <code key={key} className="rounded bg-white/10 px-1 py-0.5 text-[0.9em] text-white">
+      <code key={key} className="rounded bg-paper/10 px-1 py-0.5 text-[0.9em] text-paper">
         {inline.value}
       </code>
     );
@@ -287,7 +287,7 @@ function renderInline(inline: HandbookInline, key: number): ReactNode {
   }
   if (inline.type === 'link') {
     return (
-      <a key={key} href={inline.href} className="text-[#f7931a] underline underline-offset-2">
+      <a key={key} href={inline.href} className="text-accent underline underline-offset-2">
         {inline.children}
       </a>
     );
@@ -297,7 +297,7 @@ function renderInline(inline: HandbookInline, key: number): ReactNode {
       key={key}
       src={inline.src}
       alt={inline.alt}
-      className="my-3 max-w-xl rounded-lg border border-white/10"
+      className="my-3 max-w-xl rounded-lg border border-paper/10"
     />
   );
 }
@@ -407,13 +407,13 @@ export function HandbookMarkdown({
         }
         if (block.type === 'paragraph') {
           return (
-            <p key={index} className="mt-2 mb-4 text-white/60">
+            <p key={index} className="mt-2 mb-4 text-paper/60">
               {block.inlines.map((inline, i) => renderInline(inline, i))}
             </p>
           );
         }
         return (
-          <ul key={index} className="mb-4 ml-5 list-disc text-white/60">
+          <ul key={index} className="mb-4 ml-5 list-disc text-paper/60">
             {block.items.map((item, itemIndex) => (
               <li key={itemIndex} className="mt-1">
                 {item.map((inline, i) => renderInline(inline, i))}

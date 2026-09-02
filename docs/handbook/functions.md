@@ -80,7 +80,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` + USD, no sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** has a ₿ | USD control (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` + USD, no sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | USD (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `StatsLoader`.
@@ -136,7 +136,7 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Send help, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
@@ -150,17 +150,17 @@
 
 ## Function: NameForm
 
-- **Purpose:** Logged-in form to set or edit a display name. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil).
+- **Purpose:** Logged-in form to set or edit a display name. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile / overlay: icon-only actions (no Skip). Optional `onSaved` after a successful save.
 - **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
-- **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save.
-- **Used by:** `NameSetup` on screen `/setup/name` and `ProfileScreen` on `/profile`.
+- **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save; POST `/me/setup/skip` on Skip. Merges `name`, `setup`, and `missing`.
+- **Used by:** `NameSetup` on `/setup/name`, `ProfileScreen` on `/profile`, and `RequirementsOverlay`.
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** at the bottom of the screen. Profile: icon-only actions to the right of the field (check, X, pencil, trash).
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile: icon-only actions (no Skip).
 - **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, request, and `notZap` failures are typed keys (`la.errorEmpty`, `la.errorNotFound`, `la.errorRequest`, `la.errorNotZap`) so they re-render after a locale change. After `notZap`, Continue/Save stays disabled while the trimmed draft equals the blocked address; changing the draft clears the alert and re-enables; restoring the blocked address re-locks. Inline alerts (`empty` / `notFound` / `request` / `notZap`) are not separate screen variants.
-- **Returns / side effects:** React element or `null` when logged out.
-- **Used by:** `AddressSetup` on screen `/setup/address` and `ProfileScreen` on `/profile`.
+- **Returns / side effects:** React element or `null` when logged out. POST `/me/lightning-address` on save; POST `/me/setup/skip` on Skip. Merges address fields plus `setup` and `missing`.
+- **Used by:** `AddressSetup` on `/setup/address` and `ProfileScreen` on `/profile`.
 
 ## Function: LocaleProvider
 
@@ -187,14 +187,14 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `ThemeSwitcher` and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** Renders heading, lead, **Open the forum** link, `ThemeSwitcher`, and `LanguageSwitcher` (top-right). No OnboardingGate.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -211,21 +211,21 @@
 
 - **Purpose:** Next.js page for `/setup/address`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `AddressSetup` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `AddressSetup`.
 - **Used by:** Route `/setup/address`.
 
 ## Function: RulesSetup
 
 - **Purpose:** Third post-login screen: one living-room rules chapter at a time. Intermediate **Continue** clicks only advance the chapter. The last **I agree to these rules** POSTs and merges only `rulesAgreedAt` into the auth-store account.
 - **Inputs:** `chapters` — ordered server-rendered `RulesDocument` elements (one per `RULES_CHAPTER_IDS` id).
-- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules**, icon-only back after the first chapter. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
+- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules**, Wordmark top-left plus icon-only chapter back after the first chapter. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
 - **Used by:** Screen `/setup/rules`.
 
 ## Function: RulesSetupPage
 
 - **Purpose:** Next.js page for `/setup/rules`.
 - **Inputs:** None. Calls `getRequestLocale()` / `getCatalog` for the rules body.
-- **Returns / side effects:** `OnboardingGate` around `RulesSetup` with `SignedInChrome` and `RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters (`showNav={false}`, `chapter={id}`). `min-h-svh`.
+- **Returns / side effects:** `PageChrome` (`min-h-svh justify-start`) with `SignedInChrome` top-right and `OnboardingGate` around `RulesSetup` (`RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters, `showNav={false}`, `chapter={id}`). Wordmark and chapter-back stay in `RulesSetup` because back is chapter state, not a page-level back.
 - **Used by:** Route `/setup/rules`.
 
 ## Function: LogoutButton
@@ -246,7 +246,7 @@
 
 - **Purpose:** Next.js page for `/setup/name`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `NameSetup` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `NameSetup`.
 - **Used by:** Route `/setup/name`.
 
 ## Function: openInSystemBrowser
@@ -258,30 +258,37 @@
 
 ## Function: OnboardingGate
 
-- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`).
-- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile still requires `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/contact`, `/messages`.
+- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
+- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`.
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; Inbox `/messages`; MessageCircle Contact `/contact`; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
-- **Inputs:** None. Composes `useAccountTotals`, `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Absolutely positioned **Menu** button (`aria-expanded`, `aria-controls`); when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; Inbox `/messages`; MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
+- **Inputs:** None. Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for a `PageChrome` / absolute parent slot; when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`.
 
 ## Function: ProfilePage
 
 - **Purpose:** Next.js page for `/profile`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `ProfileScreen` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ProfileScreen`.
 - **Used by:** Route `/profile`.
+
+## Function: ProfileChromeLeft
+
+- **Purpose:** `/profile` top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
+- **Inputs:** Catalog `profile.back` via `useTranslations`.
+- **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
+- **Used by:** `ProfilePage` (`PageChrome.topLeft`).
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), and an icon-only view-key copy (the key and URL are not displayed); icon-only back control (ArrowLeft) at the top-left returns to the forum. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), and an icon-only view-key copy (the key and URL are not displayed). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
 - **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `PushToggle`; `AccountActivityChart`; `account.viewKey` from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** Icon-only link to `/welcome` (`aria-label` from `profile.back`), heading **Profile**, compact chart (legend + ₿ | USD + SVG), name form, address form, push bell under the address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel).
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no SVG/toggle; otherwise legend + ₿ | USD + SVG), name form, address form, push bell under the address form, and icon-only view-key copy (hidden when account is null; key/URL not displayed) — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: PushToggle
@@ -310,14 +317,28 @@
 - **Purpose:** Detect installed / standalone display mode (`display-mode: standalone` or iOS `navigator.standalone`).
 - **Inputs:** None (reads `window` / `navigator`).
 - **Returns / side effects:** `boolean`. No network.
-- **Used by:** `PushToggle`.
+- **Used by:** `PushToggle`, `shouldOfferIosInstall`, `PwaInstall`.
 
 ## Function: isIosSafari
 
 - **Purpose:** Detect iPhone/iPod stock Safari (Safari in UA, not CriOS/FxiOS).
 - **Inputs:** None (reads `navigator.userAgent`).
 - **Returns / side effects:** `boolean`. No network.
-- **Used by:** `PushToggle`.
+- **Used by:** `PushToggle` only.
+
+## Function: shouldOfferIosInstall
+
+- **Purpose:** True when an iPhone/iPod browser whose UA contains Safari (stock Safari, Chrome CriOS, Firefox FxiOS, Edge EdgiOS) is not standalone and not an in-app browser — the condition for the iOS Home Screen install sheet.
+- **Inputs:** None. Reads `navigator.userAgent` plus `isStandaloneDisplay` and `isInAppBrowser`. Does not call `isIosSafari`.
+- **Returns / side effects:** `boolean`. No network.
+- **Used by:** `PwaInstall`.
+
+## Function: PwaInstall
+
+- **Purpose:** Client install control for the PWA. First paint is `null` (no layout slot). After mount, hidden when standalone or in-app. On iPhone Home Screen browsers (Safari, Chrome, Firefox, Edge) (`shouldOfferIosInstall`) shows a labeled control that opens a three-step `role="dialog"` sheet (Share → Add to Home Screen → if Open as Web App is shown, leave it on). On Chromium, listens for `beforeinstallprompt` (`preventDefault`, store event), shows the control, and on click calls `event.prompt()` then drops the event (hides) regardless of accepted/dismissed; `appinstalled` also hides. Placements: `header` (compact secondary), `hero` (secondary md), `menu` (SignedInChrome Download + label row).
+- **Inputs:** `placement` (`header` | `hero` | `menu`); optional `tone` (`app` | `dark`, default `app`); optional `onMenuAction` (menu row closes the Menu after click). Catalog via `useTranslations`.
+- **Returns / side effects:** Install button and optional iOS sheet, or `null`. No new dependencies; Tailwind only.
+- **Used by:** `MarketingHeader` (`tone="dark"` `placement="header"`), `Home` hero (`tone="dark"` `placement="hero"`), `SignedInChrome` Menu (`placement="menu"`).
 
 ## Function: enablePush
 
@@ -384,24 +405,38 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD toggle (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. Reserved `viewBox` (`400×110`) height from first paint; empty series keep axes without fake calendar days. v1 Given defaults to zeros on the received days.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD `SegmentedControl tone="gift"` (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. When the series is empty or all zeros, the SVG and toggle are omitted and `profile.chartEmpty` is shown (`role="status"`). v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
-- **Returns / side effects:** One chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
+- **Returns / side effects:** When the series is empty or all zeros, only `profile.chartEmpty` (`role="status"`) — no legend, toggle, or SVG. Otherwise one chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`.
 
 ## Function: Button
 
-- **Purpose:** Labeled app button with primary (filled) or secondary (bordered) weight using semantic `app-btn` tokens.
-- **Inputs:** Native button props plus optional `variant` (default `primary`), optional leading `icon`, and `children` label. Default `type="button"`.
-- **Returns / side effects:** A `<button>` element. No network. Used across login, forum retry, public note retry, and forms.
-- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, setup and contact screens.
+- **Purpose:** Labeled app button with primary (filled), secondary (bordered), or accent fill. Optional `tone` `app` (default) or `dark` for marketing-ink shells (same class split as `ButtonLink`). Size `sm` / `md` / `lg` (`lg` is full width). All sizes `min-h-11`.
+- **Inputs:** Native button props plus optional `variant` (default `primary`), optional `size` (default `md`), optional `tone` (default `app`), optional leading `icon`, and `children` label. Default `type="button"`.
+- **Returns / side effects:** A `<button>` element. No network. Used across login, forum retry, public note retry, PWA install on dark shells, and forms.
+- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, `PwaInstall`, setup and contact screens.
+
+## Function: ButtonLink
+
+- **Purpose:** Labeled pill link matching `Button` anatomy (`primary` / `secondary` / `accent`, `sm` / `md` / `lg`, `tone` `app` or `dark`).
+- **Inputs:** `href`, optional `variant` / `size` / `tone` / `icon` / `className`, `children` label.
+- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`walletofsatoshi:`, `https:`). No network. Used on marketing CTAs, donate **Open the forum**, 404 **Back home**, rules nav, and the forum pay-sheet wallet link.
+- **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `NotFound`, `RulesDocument`, `ForumBoard`.
+
+## Function: SegmentedControl
+
+- **Purpose:** Mutually exclusive option group with `tone` `gift` (compact ₿|USD cells, optional `shell` `app`/`dark`) or `neutral` (full-width forum pills). Gift hit target is `min-h-11 min-w-11` on mobile and desktop. `shell` is ignored for `neutral`.
+- **Inputs:** `value`, `options` (`value` + `label`), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className`.
+- **Returns / side effects:** A `role="group"` track of `type="button"` options with `aria-pressed`. No network.
+- **Used by:** `ForumBoard` (`tone="neutral"`), `AccountActivityChart` (`tone="gift"`), `StatsDashboard` (`tone="gift" shell="dark"`).
 
 ## Function: IconButton
 
-- **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`).
+- **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`). `sm` is 24px paint with a 44px `::before` hit slop; `md` is 44px; `lg` is 48px.
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
-- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, and `HandbookImageViewer`.
+- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `ContactScreen`, `NameForm`, `RulesSetup`.
 
 ## Function: Card
 
@@ -419,16 +454,23 @@
 
 ## Function: PageChrome
 
-- **Purpose:** Full-height app page shell (`min-h-screen` centered column) with an optional absolute top-right slot for language/theme chrome.
-- **Inputs:** `children`, optional `topRight`, optional `className` on the outer `<main>`.
-- **Returns / side effects:** Layout only. No network. Used by login and the public message page (light `LanguageSwitcher` in `topRight`).
-- **Used by:** `LoginPage` and `PublicMessagePage`.
+- **Purpose:** Full-height app page shell (`min-h-screen` centered column) with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots.
+- **Inputs:** `children`, optional `topLeft`, optional `topRight`, optional `className` on the outer `<main>`.
+- **Returns / side effects:** Layout only. No network. Used by login, donate, rules, welcome, profile, contact, inbox, public note, and view-key.
+- **Used by:** `LoginPage`, `DonatePage`, `RulesPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `PublicMessagePage`, `ViewProfilePage`, `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`.
+
+## Function: Wordmark
+
+- **Purpose:** Text brand mark `21.gifts` (header 17px/700, footer 15px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
+- **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `size` (`header` / `footer`, default `header`), optional `className`.
+- **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
+- **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/address pages, and `PageChrome` top-left.
 
 ## Function: PublicMessagePage
 
 - **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
 - **Inputs:** Dynamic route params (`id`).
-- **Returns / side effects:** `PageChrome` with light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Returns / side effects:** `PageChrome` with Wordmark top-left and ThemeSwitcher + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
 - **Used by:** Route `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -442,7 +484,7 @@
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
 - **Inputs:** Dynamic route params (`viewKey`).
-- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. Light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `PageChrome` with `Wordmark` → `/` top-left and `ThemeSwitcher` plus light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
 - **Used by:** Route `/view/[viewKey]`.
 
 ## Function: ViewProfileLoader
@@ -526,14 +568,14 @@
 
 - **Purpose:** Fetches gift stats filtered by the signed-in Lightning Address handle and derives given/received sats plus the receive time series.
 - **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats(handle)` and `accountTotals`. Skips the fetch when the address is null/blank.
-- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. On each fetch start (including address change) totals and series reset to zeros/empty; the chart SVG remains mounted on empty series. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
+- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. On each fetch start (including address change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
 - **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `WelcomeScreen` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `WelcomeScreen`.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
@@ -545,9 +587,9 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular selector, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), ₿ amount with a Bitcoin pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed.
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer), and PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`). PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
-- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes. Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
+- **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/All/Most popular `SegmentedControl tone="neutral"`, list of posts (name, optional Founder / Moderator / Verified role pill when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), ₿ amount with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` when loaded rows exist but the selected mode hides them all. Props `messages` are newest-first (API window); Active and All reverse the filtered list so oldest is at the top and newest at the bottom above the composer. Most popular keeps sats-descending order. Messenger-group thread, not a social feed. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged.
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer), and PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`). PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
+- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Scrolls the composer into view when the newest message id is set or changes, except while `refreshing` is true (silent refresh must not jump to the composer). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
@@ -561,19 +603,19 @@
 
 - **Purpose:** Next.js page for `/contact`.
 - **Inputs:** None.
-- **Returns / side effects:** `OnboardingGate` around `ContactLoader` with `SignedInChrome`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ContactLoader`.
 - **Used by:** Route `/contact`.
 
 ## Function: ContactScreen
 
-- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and a messenger-style composer (textarea with **Send**, `maxLength` 500). Success is owned by `ContactLoader` (navigate to the inbox thread), not a local success copy.
+- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and a messenger-style composer (textarea with icon-only Send `IconButton`, catalog `aria-label` `contact.send`, `maxLength` 500). Success is owned by `ContactLoader` (navigate to the inbox thread), not a local success copy.
 - **Inputs:** `ContactScreenProps` — `posting`, `draft`, `onDraftChange`, `onPost`, `formError` (`empty` / `tooLong` / `request`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `ContactLoader`.
 
 ## Function: RulesDocument
 
-- **Purpose:** Presentational living-room rules body from catalog keys: lead with the **The test** callout, three rule cards (`rules.lawKicker` with `{n}`, title, body, optional test callout), welcome / allowed / better-not / forbidden lists rendered as bordered cards with lucide glyphs (`Check` accent, `Check` muted, `Minus`, `X` red), the **Our house** closing block (`rules.houseBody` + `rules.houseClosing`), and optional CTAs to `/contact` and `/welcome`.
+- **Purpose:** Presentational living-room rules body from catalog keys: lead with the **The test** callout, three rule cards (`rules.lawKicker` with `{n}`, title, body, optional test callout), welcome / allowed / better-not / forbidden lists rendered as bordered cards with lucide glyphs (`Check` `text-app-fg`, `Check` muted, `Minus`, `X` `text-app-danger`), the **Our house** closing block (`rules.houseBody` + `rules.houseClosing`), and optional CTAs to `/contact` and `/welcome`.
 - **Inputs:** `messages` catalog for the request locale; optional `showNav` (default `true`); optional `chapter` (`RulesChapterId`). When `chapter` is set, only that chapter is rendered and the public nav is omitted (`showNav` ignored). When `showNav` is `false` and `chapter` is omitted, the public Contact / forum nav is omitted.
 - **Returns / side effects:** React element. Server component — uses `translate`, not `useTranslations`. No network.
 - **Used by:** `RulesPage`, `RulesSetupPage`.
@@ -582,14 +624,14 @@
 
 - **Purpose:** Next.js page for `/rules` with localized heading, theme switcher, and language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** The rules screen wrapped in the root layout; `ThemeSwitcher` and `LanguageSwitcher` top-right.
+- **Returns / side effects:** `PageChrome` (`justify-start py-16`) with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right around the living-room rules document.
 - **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
 
-- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip), prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /forum/messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present). Owns expand/replies (`fetchReplies`, retry, reply composer via `postMessage` with `inReplyTo`; expand is ignored while a reply posts) and PM (`openConversation` then `/messages?c=`).
+- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip), prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /forum/messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Silently re-fetches on `visibilitychange` (hidden→visible), on `pageshow` when `persisted` is true, and when the board pull-to-refresh calls `onRefresh` — shared load path with mount/retry; silent refresh does not flip the board to the loading copy when a list already exists, keeps the list when a silent refresh fails, and does not auto-scroll the composer when a newer note arrives from refresh. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present). Owns expand/replies (`fetchReplies`, retry, reply composer via `postMessage` with `inReplyTo`; expand is ignored while a reply posts) and PM (`openConversation` then `/messages?c=`).
 - **Inputs:** None (reads session and account from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/videoDraft/photoUrls/videoUrls/posting/formError/feedMode/pay/expand/replies/PM state and retry attempts. Empty text without a photo and without a video sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage` / `postMessageVideo`. Photo-only and video-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes photo and video blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws` and `mode` / `onModeChange` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/videoDraft/photoUrls/videoUrls/posting/formError/feedMode/pay/expand/replies/PM/`refreshing` state and retry attempts. Empty text without a photo and without a video sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage` / `postMessageVideo`. Photo-only and video-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A failed silent refresh with an existing list does not set the error flag. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes photo and video blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws`, `mode` / `onModeChange`, and `refreshing` / `onRefresh` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -611,14 +653,91 @@
 - **Purpose:** True when the account has a non-null `rulesAgreedAt` timestamp (epoch ms of first living-room rules agreement).
 - **Inputs:** `account`.
 - **Returns / side effects:** Boolean. No side effects.
-- **Used by:** `nextOnboardingPath`.
+- **Used by:** UI that still checks agreement state (overlays, payable); wizard order uses `account.setup` only.
 
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` from the account (name → address → rules agreement → welcome).
-- **Inputs:** `account`.
+- **Purpose:** Picks `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; skips advance `setup` without clearing `missing`).
+- **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
 - **Used by:** `OnboardingGate`.
+
+## Function: skipSetup
+
+- **Purpose:** Skips the current onboarding name or Lightning Address step without filling the field.
+- **Inputs:** Bearer session and `step` (`name` | `lightning-address`).
+- **Returns / side effects:** Updated `Account` from `POST /me/setup/skip`; callers merge `setup` and `missing` into the auth store.
+- **Used by:** `NameForm` and `LightningAddressForm` onboarding Skip buttons.
+
+## Function: fetchMember
+
+- **Purpose:** Loads a signed-in member profile by account id.
+- **Inputs:** Bearer session and `accountId`.
+- **Returns / side effects:** Validated `MemberProfile`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`.
+- **Used by:** `MemberProfileLoader`.
+
+## Function: parseMissingRequirements
+
+- **Purpose:** Parses a 409 `{ error: 'missing_requirements', missing: [...] }` body.
+- **Inputs:** Unknown JSON body.
+- **Returns / side effects:** `MissingRequirementsError` or `null`.
+- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`.
+
+## Function: MissingRequirementsError
+
+- **Purpose:** Typed error for api 409 missing name/rules (or lightning-address) requirements.
+- **Inputs:** `missing` array from the api body.
+- **Returns / side effects:** Error instance with `missing` field; not shown as a generic toast.
+- **Used by:** Forum and contact loaders (open `RequirementsOverlay`) and member fetch.
+
+## Function: nextPostRequirement
+
+- **Purpose:** Picks the next field to collect before a forum or contact post (`rules` before `name`). Lightning-address-only gaps return `null`.
+- **Inputs:** `missing` array from the account or a 409 body.
+- **Returns / side effects:** `'rules'`, `'name'`, or `null`. No side effects.
+- **Used by:** `ForumLoader`, `ContactLoader`, `RequirementsOverlay` flow.
+
+## Function: RequirementsOverlay
+
+- **Purpose:** Modal to add a missing name (`NameForm` profile) or agree to rules before retrying a post. No Skip.
+- **Inputs:** `requirement` (`name` | `rules`), `onDismiss`, `onSatisfied`.
+- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`.
+- **Used by:** `ForumLoader`, `ContactLoader`.
+
+## Function: MemberProfileLoader
+
+- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, optional gift stats for the chart.
+- **Inputs:** Route `accountId`; session from auth store.
+- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`.
+- **Used by:** `MemberProfilePage`.
+
+## Function: MemberProfileScreen
+
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note.
+- **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
+- **Returns / side effects:** React tree; may `POST` invoice/conversation/replies and navigate to `/messages?c=`.
+- **Used by:** `MemberProfileLoader`.
+
+## Function: MemberProfilePage
+
+- **Purpose:** Route `/members/[accountId]` with profile onboarding gate and signed-in chrome.
+- **Inputs:** Dynamic `accountId`.
+- **Returns / side effects:** Page chrome + `MemberProfileLoader`.
+- **Used by:** App Router.
+
+## Function: proxyMeSetupSkipPost
+
+- **Purpose:** Proxies `POST /me/setup/skip` to the api.
+- **Inputs:** App Router request (Bearer + `{ step }`).
+- **Returns / side effects:** Upstream response.
+- **Used by:** `/me/setup/skip` route.
+
+## Function: proxyMembersGet
+
+- **Purpose:** Proxies `GET /members/:accountId` to the api.
+- **Inputs:** App Router request and `accountId`.
+- **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}`.
+- **Used by:** `/forum/members/[accountId]` route.
 
 ## Function: useHydrateSession
 
@@ -849,7 +968,7 @@
 - **Purpose:** Detects Telegram and other in-app WebViews where a WebAuthn passkey ceremony cannot complete, so `/login` and `/view/[viewKey]` can show an escape card instead of starting WebAuthn.
 - **Inputs:** Optional `InAppBrowserHost` (`win`); defaults to `globalThis.window` when present. Missing window (SSR) is treated as not in-app.
 - **Returns / side effects:** `true` when a Telegram JS bridge is present (`TelegramWebviewProxy`, `TelegramWebview`, or `Telegram.WebApp`) or the UA matches a known in-app token list; otherwise `false`. No network and no DOM writes.
-- **Used by:** `LoginCard` and `ViewProfileClaim` (choose the in-app escape card after mount), `usePasskeyLogin` (safety net: `NotAllowedError` during authenticate → `unsupported`, no register fallback), and the `/login` / `/view/[viewKey]` in-app handbook / e2e variants.
+- **Used by:** `LoginCard` and `ViewProfileClaim` (choose the in-app escape card after mount), `usePasskeyLogin` (safety net: `NotAllowedError` during authenticate → `unsupported`, no register fallback), `shouldOfferIosInstall` / `PwaInstall` (hide install when in-app), and the `/login` / `/view/[viewKey]` in-app handbook / e2e variants.
 
 ## Function: loadHandbookDocuments
 
@@ -1000,9 +1119,9 @@
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with wordmark, section nav, always-visible `LanguageSwitcher` (`tone="dark"`), login CTA, and mobile menu.
+- **Purpose:** Sticky marketing header with wordmark, section nav, optional `PwaInstall` (`tone="dark"` `placement="header"`) next to Log in (desktop and open mobile nav), always-visible `LanguageSwitcher` (`tone="dark"`), login CTA, and mobile menu.
 - **Inputs:** None (internal open state). Reads copy via `useTranslations`.
-- **Returns / side effects:** Header element; toggles nav on small screens. Language select stays visible when the hamburger is closed.
+- **Returns / side effects:** Header element; toggles nav on small screens. Language select stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound`.
 
 ## Function: MarketingLayout
@@ -1252,9 +1371,9 @@
 
 ## Function: MessagesPage
 
-- **Purpose:** Next.js page for `/messages` (signed-in PN inbox). Wraps `InboxLoader` in `OnboardingGate` and `SignedInChrome`.
+- **Purpose:** Next.js page for `/messages` (signed-in PN inbox).
 - **Inputs:** None.
-- **Returns / side effects:** The inbox screen. Conversation HTTP is under `/conversations`.
+- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
 - **Used by:** Route `/messages`.
 
 ## Function: InboxLoader
@@ -1336,7 +1455,7 @@
 
 ## Function: HandbookFunctionsPage
 
-- **Purpose:** Next.js page for `/handbook/functions`. Viewer plus functions markdown (id prefix `functions` for visual clips).
+- **Purpose:** Next.js page for `/handbook/functions`. Functions markdown only (id prefix `functions`).
 - **Inputs:** None.
 - **Returns / side effects:** The functions handbook screen.
 - **Used by:** Route `/handbook/functions`.
@@ -1353,7 +1472,7 @@
 - **Purpose:** Client one-topic baseline viewer. Desktop/Mobile and Light/Dark switches only when those combo files exist.
 - **Inputs:** `topics` (`HandbookTopic[]`).
 - **Returns / side effects:** React element or `null` when `topics` is empty. No network.
-- **Used by:** `HandbookScreensPage`, `HandbookFunctionsPage`.
+- **Used by:** `HandbookScreensPage`.
 
 ## Function: topicImageSrc
 

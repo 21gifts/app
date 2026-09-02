@@ -24,19 +24,6 @@ test('handbook screens heading is Screens', async ({ page }) => {
 test('handbook functions heading is Functions', async ({ page }) => {
   await page.goto('/handbook/functions');
   await expect(page.getByRole('heading', { name: 'Functions' }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Mobile' })).toBeVisible();
-});
-
-test('handbook functions mobile', async ({ page }) => {
-  await page.goto('/handbook/functions');
-  await page.getByRole('button', { name: 'Mobile' }).click();
-  await expect(page.getByRole('button', { name: 'Mobile' })).toBeVisible();
-});
-
-test('handbook functions dark', async ({ page }) => {
-  await page.goto('/handbook/functions');
-  await page.getByRole('button', { name: 'Dark' }).click();
-  await expect(page.getByRole('button', { name: 'Dark' })).toBeVisible();
 });
 
 test('handbook endpoints heading is Endpoints', async ({ page }) => {

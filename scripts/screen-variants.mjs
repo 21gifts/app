@@ -39,7 +39,7 @@ export function variantComboIds(variant) {
 /**
  * Playwright snapshot stem for a visual arg and combo (`-linux.png` is added by Playwright).
  *
- * @param visual - Variant `visual` or `function-${name}`.
+ * @param visual - Variant `visual` arg.
  * @param comboId - Combo id.
  * @returns Snapshot arg Playwright stores as `${stem}-linux.png`.
  */
@@ -479,6 +479,41 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Profile' })",
   },
   {
+    route: '/members/[accountId]',
+    id: 'default',
+    image: 'members.png',
+    visual: 'screen-members-accountId',
+    needle: "getByRole('heading', { name: 'Profile' })",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'note-null',
+    image: 'members-note-null.png',
+    visual: 'state-members-note-null',
+    needle: 'profileMessage: null',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'missing',
+    image: 'members-missing.png',
+    visual: 'state-members-missing',
+    needle: 'This profile could not be found.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'error',
+    image: 'members-error.png',
+    visual: 'state-members-error',
+    needle: 'Try again',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'own',
+    image: 'members-own.png',
+    visual: 'state-members-own',
+    needle: 'state-members-own',
+  },
+  {
     route: '/profile',
     id: 'receive',
     image: 'profile-receive.png',
@@ -652,20 +687,6 @@ export const SCREEN_VARIANTS = [
     image: 'handbook-functions.png',
     visual: 'screen-handbook-functions',
     needle: "getByRole('heading', { name: 'Functions' })",
-  },
-  {
-    route: '/handbook/functions',
-    id: 'mobile',
-    image: 'handbook-functions-mobile.png',
-    visual: 'state-handbook-functions-mobile',
-    needle: 'handbook functions mobile',
-  },
-  {
-    route: '/handbook/functions',
-    id: 'dark',
-    image: 'handbook-functions-dark.png',
-    visual: 'state-handbook-functions-dark',
-    needle: 'handbook functions dark',
   },
   {
     route: '/handbook/endpoints',

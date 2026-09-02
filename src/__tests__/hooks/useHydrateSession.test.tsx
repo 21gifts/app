@@ -27,6 +27,8 @@ const account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [],
 };
 
 /** Mounts the hydration hook. */

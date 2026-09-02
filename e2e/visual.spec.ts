@@ -17,6 +17,8 @@ const E2E_ACCOUNT = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  setup: 'name' as 'name' | 'lightning-address' | 'rules' | null,
+  missing: ['name', 'lightning-address', 'rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
@@ -177,6 +179,8 @@ const RULES_SETUP_ACCOUNT = {
   lightningAddress: 'alice@walletofsatoshi.com',
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  setup: 'rules' as const,
+  missing: ['rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
 
 /** Signed-in visitor at `/setup/rules` (name + address saved, rules not agreed). */
@@ -367,18 +371,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-handbook-functions', false);
   });
 
-  test('state /handbook/functions mobile', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await page.getByRole('button', { name: 'Mobile' }).click();
-    await shotScreen(page, 'state-handbook-functions-mobile', false);
-  });
-
-  test('state /handbook/functions dark', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await page.getByRole('button', { name: 'Dark' }).click();
-    await shotScreen(page, 'state-handbook-functions-dark', false);
-  });
-
   test('screen /handbook/endpoints', async ({ page }) => {
     await page.goto('/handbook/endpoints');
     await expect(page.getByRole('heading', { name: 'Endpoints' }).first()).toBeVisible();
@@ -464,7 +456,12 @@ test.describe('onboarding screens', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ ...E2E_ACCOUNT, name: 'Ada' }),
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          setup: 'lightning-address',
+          missing: ['lightning-address', 'rules'],
+        }),
       });
     });
     await page.goto('/setup/address');
@@ -580,6 +577,8 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -611,6 +610,8 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -642,6 +643,8 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -667,6 +670,8 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -692,12 +697,194 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
     await page.goto('/profile');
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
+  });
+
+  test('screen /members/[accountId]', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await shotScreen(page, 'screen-members-accountId');
+  });
+
+  test('state /members note-null', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
+    await expect(page.getByText('profileMessage: null')).toHaveCount(0);
+    await shotScreen(page, 'state-members-note-null');
+  });
+
+  test('state /members missing', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/members/not-a-uuid');
+    await expect(page.getByText('This profile could not be found.')).toBeVisible();
+    await shotScreen(page, 'state-members-missing');
+  });
+
+  test('state /members error', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-members-error');
+  });
+
+  test('state /members own', async ({ page }) => {
+    const ownId = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: ownId,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${ownId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: ownId,
+          name: 'Ada',
+          role: 'basis',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+        }),
+      });
+    });
+    await page.goto(`/members/${ownId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Ada')).toBeVisible();
+    await shotScreen(page, 'state-members-own');
   });
 
   test('screen /messages/[id] default', async ({ page }) => {
@@ -1009,6 +1196,8 @@ test.describe('profile activity chart variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -1081,6 +1270,8 @@ test.describe('welcome forum variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -1210,7 +1401,7 @@ test.describe('welcome forum variants', () => {
       await route.abort();
     });
     await page.goto('/welcome');
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-welcome-loading');
     release();
   });
@@ -1827,6 +2018,8 @@ test.describe('contact screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -1928,6 +2121,8 @@ test.describe('inbox screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });
@@ -1976,7 +2171,7 @@ test.describe('inbox screens', () => {
       /* hang */
     });
     await page.goto('/messages');
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-messages-loading');
   });
 
@@ -2114,78 +2309,7 @@ test.describe('stats variant baselines', () => {
   });
 });
 
-test.describe('function baselines', () => {
-  // ~140 Function: clips × 4 combo projects; 30s timed out, 120s is tight on mobile workers.
-  test.describe.configure({ timeout: 180_000 });
-
-  test('every handbook function section', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await expect(page.getByRole('heading', { name: 'Functions' }).first()).toBeVisible();
-    await unstickStickyChrome(page);
-
-    const headings = page.locator('#functions h2[id^="functions-function-"]');
-    const count = await headings.count();
-    expect(count).toBeGreaterThan(0);
-
-    // One test walks every handbook function clip; count × comparison exceeds Playwright’s 30s default.
-    test.setTimeout(Math.max(90_000, count * 500));
-
-    const sections = await headings.evaluateAll((nodes) =>
-      nodes.map((node) => {
-        const el = node as HTMLElement;
-        const label = (el.textContent ?? '').trim();
-        const match = /^Function: (.+)$/.exec(label);
-        return { id: el.id, name: match?.[1] ?? '' };
-      }),
-    );
-    expect(sections.every((s) => s.id !== '' && s.name !== '')).toBe(true);
-    expect(new Set(sections.map((s) => s.name)).size).toBe(sections.length);
-
-    for (const section of sections) {
-      const heading = page.locator(`#${section.id}`);
-      await heading.scrollIntoViewIfNeeded();
-      const clip = await page.evaluate((id: string) => {
-        const el = document.getElementById(id);
-        if (el === null) {
-          return null;
-        }
-        const wrap = el.parentElement;
-        if (wrap === null) {
-          return null;
-        }
-        const nodes: Element[] = [wrap];
-        let next = wrap.nextElementSibling;
-        while (next !== null) {
-          if (next.querySelector('h2[id^="functions-function-"]') !== null) {
-            break;
-          }
-          nodes.push(next);
-          next = next.nextElementSibling;
-        }
-        const rects = nodes.map((node) => node.getBoundingClientRect());
-        const left = Math.min(...rects.map((r) => r.left));
-        const top = Math.min(...rects.map((r) => r.top));
-        const right = Math.max(...rects.map((r) => r.right));
-        const bottom = Math.max(...rects.map((r) => r.bottom));
-        return {
-          x: left + window.scrollX,
-          y: top + window.scrollY,
-          width: right - left,
-          height: bottom - top,
-        };
-      }, section.id);
-      expect(clip).not.toBeNull();
-      await expect.soft(page).toHaveScreenshot(`function-${section.name}.png`, {
-        clip: clip as { x: number; y: number; width: number; height: number },
-        fullPage: true,
-        // Function clips sit below handbook screen PNGs; those images changing
-        // size reflows wrap in later sections by a couple of percent.
-        maxDiffPixelRatio: 0.05,
-        ...SHOT,
-      });
-    }
-  });
-
+test.describe('remaining visual states', () => {
   test('LightningAddressForm welcome after linked address', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -2200,6 +2324,8 @@ test.describe('function baselines', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
         }),
       });
     });

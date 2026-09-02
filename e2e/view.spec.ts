@@ -54,7 +54,7 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('Ada')).toBeVisible();
   await expect(page.getByText('Wallet of Satoshi address')).toBeVisible();
   await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
-  await expect(page.getByText('Given')).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
@@ -103,6 +103,8 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'c'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -223,6 +225,8 @@ test('signed-in profile shows the copy control without the view-key URL', async 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: KEY,
+        setup: null,
+        missing: [],
       }),
     });
   });

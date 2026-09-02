@@ -110,7 +110,7 @@ export function HandbookCopyLink({
       title={ariaName}
       data-copied={copied ? 'true' : undefined}
       className={`inline-flex items-center shrink-0 rounded px-1.5 py-0.5 text-xs leading-none transition ${
-        copied ? 'text-[#f7931a]' : 'text-white/40 hover:text-[#f7931a]'
+        copied ? 'text-accent' : 'text-paper/40 hover:text-accent'
       }`}
     >
       {copied ? (

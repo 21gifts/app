@@ -34,20 +34,20 @@ export function hasAgreedToRules(account: Account): boolean {
 }
 
 /**
- * Next path after login: name, address, rules, or welcome.
+ * Next path after login from `account.setup` only (1:1 map; no second table).
  *
  * @param account - Signed-in account.
  * @returns The screen the visitor should see.
  */
 export function nextOnboardingPath(account: Account): OnboardingPath {
-  if (!hasDisplayName(account)) {
-    return '/setup/name';
+  switch (account.setup) {
+    case 'name':
+      return '/setup/name';
+    case 'lightning-address':
+      return '/setup/address';
+    case 'rules':
+      return '/setup/rules';
+    case null:
+      return '/welcome';
   }
-  if (!hasLightningAddress(account)) {
-    return '/setup/address';
-  }
-  if (!hasAgreedToRules(account)) {
-    return '/setup/rules';
-  }
-  return '/welcome';
 }

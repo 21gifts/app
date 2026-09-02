@@ -12,16 +12,22 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const push = vi.fn();
+
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+}));
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
 }));
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
 
 beforeEach(() => {
+  push.mockClear();
   HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 
@@ -474,6 +480,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.getByText('₿21').className).toContain('font-medium');
     expect(screen.getByText(formatForumTime(SAMPLE.createdAt, 'en'))).toBeTruthy();
     const preWrap = screen.getByText(
       (content) => content.includes('Line one') && content.includes('Line two'),
@@ -770,6 +777,7 @@ describe('ForumBoard', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    expect(screen.queryByText('Send Bitcoin')).toBeNull();
     expect(onPayOpen).toHaveBeenCalledWith('m1');
   });
 
@@ -1744,6 +1752,70 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
+  it('links author names with accountId to the member profile', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_other');
+  });
+
+  it('links reply author names with accountId to the member profile', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_note', replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Carol', accountId: 'acc_reply', replyCount: 0 }]}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'View profile' })[1]!);
+    expect(push).toHaveBeenCalledWith('/members/acc_reply');
+  });
+
+  it('keeps Damus-only names as plain text', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByText('Ada')).toBeTruthy();
+  });
+
   it('shows PM when ownAccountId differs from note accountId even if names match', () => {
     renderWithLocale(
       <ForumBoard
@@ -2168,5 +2240,329 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       'Too many messages. Please wait a moment and try again.',
     );
+  });
+
+  it('calls onRefresh after a pull of at least 56px at the top of the page', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 160 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onRefresh for a small pull under 56px', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 140 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('does not throw on a touch pull when onRefresh is omitted', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    expect(() => {
+      fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+      fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+      fireEvent.touchEnd(window);
+    }).not.toThrow();
+  });
+
+  it('shows a refreshing status only while refreshing is true', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('status', { name: 'Refreshing messages' })).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            refreshing
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('status', { name: 'Refreshing messages' })).toBeTruthy();
+  });
+
+  it('skips composer scroll while refreshing when newestId changes', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const scrollMock = HTMLElement.prototype.scrollIntoView as unknown as ReturnType<typeof vi.fn>;
+    scrollMock.mockClear();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[MULTILINE, SAMPLE]}
+            error={false}
+            loading={false}
+            refreshing
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(scrollMock).not.toHaveBeenCalled();
+  });
+
+  it('does not call onRefresh while refreshing is true', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        refreshing
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('marks the message list aria-busy while refreshing', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        refreshing
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('list', { name: 'All messages' }).getAttribute('aria-busy')).toBe(
+      'true',
+    );
+  });
+
+  it('cancels an in-progress pull on touchcancel', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    expect(screen.getByRole('status', { name: 'Refreshing messages' })).toBeTruthy();
+    fireEvent.touchCancel(window);
+    expect(screen.queryByRole('status', { name: 'Refreshing messages' })).toBeNull();
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('does not start a pull when the page is already scrolled', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 20 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('cancels an in-progress pull when the page scrolls during the gesture', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 20 });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('ignores a touchstart with an empty TouchList', () => {
+    const onRefresh = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const { container } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        onRefresh={onRefresh}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).not.toHaveBeenCalled();
   });
 });

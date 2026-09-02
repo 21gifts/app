@@ -13,9 +13,10 @@ vi.mock('next/link', () => ({
 }));
 
 const push = vi.fn();
+const replace = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push } => ({ push }),
+  useRouter: (): { push: typeof push; replace: typeof replace } => ({ push, replace }),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -27,6 +28,9 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
+  agreeToRules: vi.fn(),
+  setName: vi.fn(),
+  skipSetup: vi.fn(),
 }));
 
 vi.mock('@/lib/forum-photo', () => ({
@@ -39,6 +43,7 @@ vi.mock('@/lib/forum-video', () => ({
 }));
 
 import {
+  agreeToRules,
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
@@ -47,7 +52,9 @@ import {
   postMessage,
   postMessageInvoice,
   postMessageVideo,
+  setName,
 } from '@/lib/api';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
@@ -74,6 +81,8 @@ const account: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [],
 };
 
 const SAMPLE: ForumMessage = {
@@ -100,6 +109,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   isVideoMock.mockReturnValue(false);
   push.mockReset();
+  replace.mockReset();
   HTMLElement.prototype.scrollIntoView = vi.fn();
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
@@ -119,8 +129,13 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.clearAllTimers();
   vi.useRealTimers();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => 'visible',
+  });
   fetchMock.mockReset();
   postMock.mockReset();
   invoiceMock.mockReset();
@@ -144,6 +159,21 @@ describe('ForumLoader', () => {
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+  });
+
+  it('posts when the account snapshot is missing', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
     });
   });
 
@@ -1826,6 +1856,135 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('clears the pay sheet when a poll sees more sats', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
+    fetchMock.mockResolvedValue([{ ...SAMPLE, sats: 21 }]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('ignores a pay poll fetch that resolves after cancel', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    let resolvePoll: ((value: ForumMessage[]) => void) | undefined;
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      resolvePoll?.([{ ...SAMPLE, sats: 21 }]);
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('aborts pay poll after cancel', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fetchMock.mockResolvedValue([{ ...SAMPLE, sats: 21 }]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('keeps polling when a pay poll fetch fails', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fetchMock.mockRejectedValueOnce(new Error('poll failed'));
+    fetchMock.mockResolvedValueOnce([{ ...SAMPLE, sats: 21 }]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('stops waiting after pay poll attempts are exhausted', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+  });
+
   it('requests an invoice and shows the QR', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
@@ -2268,6 +2427,44 @@ describe('ForumLoader', () => {
     expect(invoiceMock).toHaveBeenCalledTimes(1);
   });
 
+  it('does not collapse while a reply is posting', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockImplementation(() => new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'wait' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expect(screen.getByLabelText('Your reply')).toBeTruthy();
+  });
+
+  it('collapses an expanded thread', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expect(screen.queryByLabelText('Your reply')).toBeNull();
+  });
+
   it('loads replies via fetchReplies when a row is expanded', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     repliesMock.mockResolvedValue([
@@ -2495,6 +2692,90 @@ describe('ForumLoader', () => {
     expect(screen.getAllByText('A reply')).toHaveLength(1);
   });
 
+  it('increments replyCount when a new reply is posted', async () => {
+    fetchMock.mockResolvedValue([
+      { ...SAMPLE, replyCount: 0 },
+      {
+        id: 'm-bob',
+        name: 'Bob',
+        text: 'Hello from Bob',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-new',
+      name: 'Ada',
+      text: 'Fresh reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    expect(screen.getAllByText('0 replies')).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm-bob' });
+      expect(screen.getByText('Fresh reply')).toBeTruthy();
+      expect(screen.getByText('1 replies')).toBeTruthy();
+      expect(screen.getByText('0 replies')).toBeTruthy();
+    });
+  });
+
+  it('posts a reply when the account snapshot is missing', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-new',
+      name: 'Ada',
+      text: 'Fresh reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
+    });
+  });
+
   it("opens a private thread from another person's note", async () => {
     fetchMock.mockResolvedValue([
       SAMPLE,
@@ -2621,6 +2902,686 @@ describe('ForumLoader', () => {
     });
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
+    });
+  });
+
+  it('refetches when the document becomes visible again after being hidden', async () => {
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
+      {
+        id: 'm-new',
+        name: 'Carol',
+        text: 'Fresh from refresh',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      SAMPLE,
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+  });
+
+  it('does not double-fetch on first mount before any visibility event', async () => {
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refetches on pageshow when persisted is true, not when false', async () => {
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      const notPersisted = new Event('pageshow');
+      Object.defineProperty(notPersisted, 'persisted', { value: false });
+      window.dispatchEvent(notPersisted);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      const persisted = new Event('pageshow');
+      Object.defineProperty(persisted, 'persisted', { value: true });
+      window.dispatchEvent(persisted);
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not double-fetch when pageshow and visibilitychange fire in the same turn', async () => {
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      const persisted = new Event('pageshow');
+      Object.defineProperty(persisted, 'persisted', { value: true });
+      window.dispatchEvent(persisted);
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not refresh while a pay sheet is open', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Amount')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes after a blocked visibility cycle once the pay sheet closes', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Amount')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('keeps the list and does not show forum.error when a silent refresh fails', async () => {
+    fetchMock
+      .mockResolvedValueOnce([SAMPLE])
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
+  it('does not refresh while the initial fetch is still loading', async () => {
+    fetchMock.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sets forum.error when a silent refresh fails before any list is loaded', async () => {
+    fetchMock
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+  });
+
+  it('does not scroll the composer into view when refresh adds a newer message id', async () => {
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
+      {
+        id: 'm-newer',
+        name: 'Carol',
+        text: 'Newer note',
+        createdAt: '2026-08-28T16:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      SAMPLE,
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    const scrollMock = HTMLElement.prototype.scrollIntoView as unknown as ReturnType<typeof vi.fn>;
+    scrollMock.mockClear();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Newer note')).toBeTruthy();
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+    expect(scrollMock).not.toHaveBeenCalled();
+  });
+
+  it('refetches when the board is pulled at the top of the page', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    const { container } = renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const root = container.querySelector('.overscroll-y-contain');
+    expect(root).toBeTruthy();
+    fireEvent.touchStart(root!, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(root!, { touches: [{ clientY: 160 }] });
+    fireEvent.touchEnd(root!);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('ignores a silent refresh that finishes after unmount', async () => {
+    let resolveRefresh: (value: ForumMessage[]) => void = () => undefined;
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockImplementationOnce(
+      () =>
+        new Promise<ForumMessage[]>((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    unmount();
+    await act(async () => {
+      resolveRefresh([SAMPLE]);
+    });
+  });
+
+  it('redirects to /setup/rules when the message list returns missing_requirements', async () => {
+    fetchMock.mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('redirects to /setup/rules when a silent refresh returns missing_requirements', async () => {
+    fetchMock
+      .mockResolvedValueOnce([SAMPLE])
+      .mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('opens the requirements overlay when posting with a missing name', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(postMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('opens the overlay when posting returns missing_requirements', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+  });
+
+  it('retries the post after the name overlay is satisfied', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+  });
+
+  it('advances from rules to name when the overlay still has a gap', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        name: null,
+        rulesAgreedAt: null,
+        missing: ['rules', 'name'],
+        forumLawsDismissed: true,
+      },
+    });
+    fetchMock.mockResolvedValue([]);
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      name: null,
+      rulesAgreedAt: 2,
+      missing: ['name'],
+      setup: 'name',
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Agree to the living room rules' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('does not reopen the overlay when a retried post is still missing requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
+  it('opens the overlay when a reply is missing a name', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('opens the overlay when a reply returns missing_requirements', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+  });
+
+  it('retries the post after a missing_requirements overlay is satisfied', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    postMock.mockResolvedValueOnce(SAMPLE);
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('retries the reply after the name overlay is satisfied', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-new',
+      name: 'Ada',
+      text: 'reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: 'm1' });
+    });
+  });
+
+  it('retries the reply after a missing_requirements overlay is satisfied', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    postMock.mockResolvedValueOnce({
+      id: 'r-new',
+      name: 'Ada',
+      text: 'reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledTimes(2);
     });
   });
 });

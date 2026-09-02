@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { Button, SegmentedControl } from '@/components/ui';
 import type { GiftStats } from '@/lib/api-types';
 import { formatBitcoin, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
@@ -16,9 +17,12 @@ export interface StatsDashboardProps {
   onRetry: () => void;
 }
 
-const ORANGE = '#f7931a';
-
 type BarScale = 'btc' | 'usd';
+
+const BAR_SCALE_OPTIONS = [
+  { value: 'btc' as const, label: '₿' },
+  { value: 'usd' as const, label: 'USD' },
+];
 
 /**
  * Converts an API USD amount string to integer cents for bar sizing.
@@ -40,49 +44,6 @@ function usdCents(usd: string): number {
  */
 function scaleValue(scale: BarScale, sats: number, usd: string): number {
   return scale === 'btc' ? sats : usdCents(usd);
-}
-
-/**
- * Compact ₿ | USD segmented control for diagram scale.
- *
- * @param value - Active scale.
- * @param onChange - Called with the next scale.
- * @param groupLabel - Accessible name for the button group.
- * @returns Toggle element.
- */
-function BarScaleToggle({
-  value,
-  onChange,
-  groupLabel,
-}: {
-  value: BarScale;
-  onChange: (next: BarScale) => void;
-  groupLabel: string;
-}): ReactElement {
-  return (
-    <div
-      role="group"
-      aria-label={groupLabel}
-      className="flex overflow-hidden rounded-md border border-white/20 text-xs"
-    >
-      <button
-        type="button"
-        aria-pressed={value === 'btc'}
-        className={`px-2 py-1 ${value === 'btc' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
-        onClick={() => onChange('btc')}
-      >
-        ₿
-      </button>
-      <button
-        type="button"
-        aria-pressed={value === 'usd'}
-        className={`px-2 py-1 ${value === 'usd' ? 'bg-[#f7931a] text-[#0a090c]' : 'text-white/70'}`}
-        onClick={() => onChange('usd')}
-      >
-        USD
-      </button>
-    </div>
-  );
 }
 
 /**
@@ -188,21 +149,21 @@ function CumulativeOverTimeChart(
             x2={padL + innerW}
             y1={yAt(tick)}
             y2={yAt(tick)}
-            stroke="rgba(255,255,255,0.08)"
+            className="stroke-paper/8"
           />
           <text
             x={padL - 8}
             y={yAt(tick) + 4}
             textAnchor="end"
-            fill="rgba(255,255,255,0.5)"
+            className="fill-paper/50"
             fontSize="12"
           >
             {formatTick(tick)}
           </text>
         </g>
       ))}
-      <polygon points={area} fill={ORANGE} fillOpacity="0.25" />
-      <polyline points={line} fill="none" stroke={ORANGE} strokeWidth="2" />
+      <polygon points={area} className="fill-accent/25" />
+      <polyline points={line} fill="none" className="stroke-accent" strokeWidth="2" />
       {series.map((point, i) => {
         if (point.sats <= 0) {
           return null;
@@ -219,7 +180,7 @@ function CumulativeOverTimeChart(
             className="cursor-pointer"
           >
             <rect x={hitX} y={padT} width={hitEnd - hitX} height={innerH} fill="transparent" />
-            <circle cx={cx} cy={cy} r={3.5} fill={ORANGE} pointerEvents="none" />
+            <circle cx={cx} cy={cy} r={3.5} className="fill-accent" pointerEvents="none" />
           </a>
         );
       })}
@@ -237,7 +198,7 @@ function CumulativeOverTimeChart(
             x={xAt(i)}
             y={height - 10}
             textAnchor={anchor}
-            fill="rgba(255,255,255,0.5)"
+            className="fill-paper/50"
             fontSize="12"
           >
             {point.day}
@@ -280,17 +241,24 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
         const barW = value === 0 ? 0 : Math.max(2, (value / max) * barMax);
         return (
           <g key={row.recipient}>
-            <text x={padL} y={y + 22} fill="rgba(255,255,255,0.9)" fontSize="14">
+            <text x={padL} y={y + 22} className="fill-paper/90" fontSize="14">
               {row.recipient}
             </text>
             {barW > 0 ? (
-              <rect x={padL + labelW} y={y + 12} width={barW} height={12} rx={6} fill={ORANGE} />
+              <rect
+                x={padL + labelW}
+                y={y + 12}
+                width={barW}
+                height={12}
+                rx={6}
+                className="fill-accent"
+              />
             ) : null}
             <text
               x={width - padR}
               y={y + 22}
               textAnchor="end"
-              fill="rgba(255,255,255,0.6)"
+              className="fill-paper/60"
               fontSize="14"
             >
               {formatBitcoin(row.sats)} · ${row.usd}
@@ -355,13 +323,19 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
         return (
           <g key={row.month}>
             {displayH > 0 ? (
-              <rect x={x} y={axisY - displayH} width={w} height={displayH} fill={ORANGE} />
+              <rect
+                x={x}
+                y={axisY - displayH}
+                width={w}
+                height={displayH}
+                className="fill-accent"
+              />
             ) : null}
             <text
               x={x + w / 2}
               y={btcY}
               textAnchor="middle"
-              fill="rgba(255,255,255,0.7)"
+              className="fill-paper/70"
               fontSize="11"
             >
               {formatBitcoin(row.sats)}
@@ -370,7 +344,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
               x={x + w / 2}
               y={usdY}
               textAnchor="middle"
-              fill="rgba(255,255,255,0.7)"
+              className="fill-paper/70"
               fontSize="11"
             >
               {formatUsdDisplay(row.usd)}
@@ -379,7 +353,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
               x={x + w / 2}
               y={height - 10}
               textAnchor="middle"
-              fill="rgba(255,255,255,0.5)"
+              className="fill-paper/50"
               fontSize="12"
             >
               {row.month}
@@ -407,18 +381,21 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
 
   return (
     <>
-      <p className="text-sm text-white/60">
+      <p className="text-sm text-paper/60">
         {"USD is the BTC-USD daily close (UTC) on each gift's day."}
       </p>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">
+          <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
             Total spend over time
           </h2>
-          <BarScaleToggle
+          <SegmentedControl
             value={overTimeScale}
+            options={BAR_SCALE_OPTIONS}
             onChange={setOverTimeScale}
-            groupLabel="Over time scale"
+            ariaLabel="Over time scale"
+            tone="gift"
+            shell="dark"
           />
         </div>
         <div className="mt-6">
@@ -439,22 +416,28 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By person</h2>
-          <BarScaleToggle
+          <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By person</h2>
+          <SegmentedControl
             value={personScale}
+            options={BAR_SCALE_OPTIONS}
             onChange={setPersonScale}
-            groupLabel="By person bar scale"
+            ariaLabel="By person bar scale"
+            tone="gift"
+            shell="dark"
           />
         </div>
         <div className="mt-6">{ByPersonChart(stats.byRecipient, personScale)}</div>
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm tracking-widest text-[#f7931a] uppercase">By month</h2>
-          <BarScaleToggle
+          <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By month</h2>
+          <SegmentedControl
             value={monthScale}
+            options={BAR_SCALE_OPTIONS}
             onChange={setMonthScale}
-            groupLabel="By month bar scale"
+            ariaLabel="By month bar scale"
+            tone="gift"
+            shell="dark"
           />
         </div>
         <div className="mt-6">{ByMonthChart(stats.byMonth, monthScale)}</div>
@@ -476,26 +459,22 @@ export function StatsDashboard({
   onRetry,
 }: StatsDashboardProps): ReactElement {
   if (loading && stats === null && error === null) {
-    return <p className="text-white/60">Loading…</p>;
+    return <p className="text-paper/60">Loading…</p>;
   }
 
   if (error !== null && stats === null) {
     return (
       <div className="space-y-4">
-        <p className="text-white/80">{error}</p>
-        <button
-          type="button"
-          className="rounded-full bg-[#f7931a] px-4 py-2 font-medium text-[#0a090c]"
-          onClick={onRetry}
-        >
+        <p className="text-paper/80">{error}</p>
+        <Button type="button" variant="accent" onClick={onRetry}>
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (stats === null) {
-    return <p className="text-white/60">Loading…</p>;
+    return <p className="text-paper/60">Loading…</p>;
   }
 
   const empty = stats.giftCount === 0;
@@ -503,31 +482,35 @@ export function StatsDashboard({
   return (
     <div className="space-y-12">
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">Total spent</dt>
-          <dd className="mt-2">
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">Total spent</dt>
+          <dd className="mt-2 tabular-nums lining-nums">
             <div className="text-2xl font-semibold">{formatBitcoin(stats.totalSats)}</div>
             <div className="text-2xl font-semibold">{formatUsdDisplay(stats.totalUsd)}</div>
           </dd>
         </div>
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">Gifts</dt>
-          <dd className="mt-2 text-2xl font-semibold">{formatCount(stats.giftCount)}</dd>
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">Gifts</dt>
+          <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
+            {formatCount(stats.giftCount)}
+          </dd>
         </div>
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">People</dt>
-          <dd className="mt-2 text-2xl font-semibold">{formatCount(stats.recipientCount)}</dd>
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">People</dt>
+          <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
+            {formatCount(stats.recipientCount)}
+          </dd>
         </div>
-        <div className="rounded-2xl border border-white/10 p-5">
-          <dt className="text-sm text-white/60">Period</dt>
-          <dd className="mt-2 text-2xl font-semibold">
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">Period</dt>
+          <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
             {utcDay(stats.firstPaidAt)} – {utcDay(stats.lastPaidAt)}
           </dd>
         </div>
       </dl>
 
       {empty ? (
-        <p className="text-white/60">No gifts recorded yet.</p>
+        <p className="text-paper/60">No gifts recorded yet.</p>
       ) : (
         <StatsCharts stats={stats} />
       )}

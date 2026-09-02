@@ -3,7 +3,8 @@
 import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { setName } from '@/lib/api';
+import { Button, IconButton } from '@/components/ui';
+import { setName, skipSetup } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { hasDisplayName } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
@@ -15,19 +16,23 @@ type NameError = { type: 'empty' } | { type: 'request' };
  * Lets a signed-in giver set or edit the display name shown on their account.
  *
  * Reads the current account and session token from the auth store and merges
- * the saved `name` into that account so a concurrent address write is not
- * overwritten. Renders nothing when no account — or, defensively, no session
- * token — is present, since it is only mounted inside the logged-in view.
+ * the saved `name`, `setup`, and `missing` into that account so a concurrent
+ * address write is not overwritten. Renders nothing when no account — or,
+ * defensively, no session token — is present, since it is only mounted inside
+ * the logged-in view.
  *
  * Treats a missing or whitespace-only name the same as `hasDisplayName`: the
  * prompt and input stay up until a non-empty trimmed name is saved.
  *
- * @param props - `onboarding` shows the field at the top and **Continue** at
- *   the bottom of the screen; `profile` uses icon actions to the right of the
- *   field. Defaults from whether a name is already saved.
+ * @param props - `onboarding` shows the field at the top and **Continue** plus
+ *   **Skip** at the bottom; `profile` uses icon actions to the right of the
+ *   field (no Skip). Defaults from whether a name is already saved.
+ *   Optional `onSaved` runs after a successful name save.
  * @returns The name section, or `null` when there is nothing to show.
  */
-export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): ReactElement | null {
+export function NameForm(
+  props: { variant?: 'onboarding' | 'profile'; onSaved?: () => void } = {},
+): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
@@ -87,8 +92,32 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
         }
         // Keep fields this form does not own so a concurrent address save
         // is not overwritten by a stale full-account response.
-        setAccount({ ...current, name: updated.name });
+        setAccount({
+          ...current,
+          name: updated.name,
+          setup: updated.setup,
+          missing: updated.missing,
+        });
         setEditing(false);
+        props.onSaved?.();
+      },
+    );
+  };
+
+  const handleSkip = (): void => {
+    void runGuarded(
+      (token) => skipSetup(token, 'name'),
+      (updated) => {
+        const current = useAuthStore.getState().account;
+        /* v8 ignore next 3 -- skip returns after logout */
+        if (current === null) {
+          return;
+        }
+        setAccount({
+          ...current,
+          setup: updated.setup,
+          missing: updated.missing,
+        });
       },
     );
   };
@@ -115,21 +144,25 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={busy}
-          className="w-full rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+          className="w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
         />
         {error !== null ? (
-          <p role="alert" className="text-center text-sm text-red-600">
+          <p role="alert" className="text-center text-sm text-app-danger">
             {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
           </p>
         ) : null}
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={busy}
-          className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-app-btn px-5 py-2.5 text-sm font-medium text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
+          className="mt-auto"
+          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
         >
-          {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
           {t('setup.continue')}
-        </button>
+        </Button>
+        <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={handleSkip}>
+          {t('setup.skip')}
+        </Button>
       </form>
     );
   }
@@ -153,54 +186,57 @@ export function NameForm(props: { variant?: 'onboarding' | 'profile' } = {}): Re
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               disabled={busy}
-              className="min-w-0 flex-1 rounded-2xl border border-app-border-strong px-4 py-2 text-sm text-app-fg outline-none transition focus:border-app-border-strong disabled:opacity-50"
+              className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
             />
-            <button
+            <IconButton
               type="submit"
+              variant="primary"
+              size="md"
               disabled={busy}
               aria-label={editing ? t('name.save') : t('name.saveName')}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-app-btn text-app-btn-fg transition hover:bg-app-btn-hover disabled:opacity-50"
             >
               {submitIcon}
-            </button>
+            </IconButton>
             {editing ? (
-              <button
+              <IconButton
                 type="button"
+                variant="secondary"
+                size="md"
+                disabled={busy}
+                aria-label={t('name.cancel')}
                 onClick={() => {
                   setEditing(false);
                   setError(null);
                 }}
-                disabled={busy}
-                aria-label={t('name.cancel')}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
               >
                 <X aria-hidden="true" className="h-4 w-4" />
-              </button>
+              </IconButton>
             ) : null}
           </div>
         </form>
       ) : (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{name}</p>
-          <button
+          <IconButton
             type="button"
+            variant="secondary"
+            size="md"
+            disabled={busy}
+            aria-label={t('name.edit')}
             onClick={() => {
               /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
               setDraft(name ?? '');
               setEditing(true);
               setError(null);
             }}
-            disabled={busy}
-            aria-label={t('name.edit')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-app-border-strong text-app-fg transition hover:bg-app-hover disabled:opacity-50"
           >
             <Pencil aria-hidden="true" className="h-4 w-4" />
-          </button>
+          </IconButton>
         </div>
       )}
 
       {error !== null ? (
-        <p role="alert" className="text-center text-sm text-red-600">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
         </p>
       ) : null}

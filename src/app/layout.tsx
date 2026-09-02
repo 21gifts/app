@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -6,6 +7,13 @@ import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import './globals.css';
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: 'variable',
+  display: 'block',
+  variable: '--font-outfit',
+});
 
 const description =
   'Direct human-to-human giving in Bitcoin. People helping people — no middleman, no cut.';
@@ -72,11 +80,11 @@ export default async function RootLayout({
 }): Promise<ReactElement> {
   const locale = await getRequestLocale();
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning className={outfit.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
-      <body className="bg-app-bg text-app-fg antialiased">
+      <body className="bg-app-bg font-sans text-app-fg antialiased">
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
           <ThemeProvider>{children}</ThemeProvider>
         </LocaleProvider>
