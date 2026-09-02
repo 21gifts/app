@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { fetchReplies, openConversation, postMessage, postMessageInvoice } from '@/lib/api';
@@ -49,6 +49,14 @@ const note = {
 beforeEach(() => {
   push.mockClear();
   vi.clearAllMocks();
+  vi.mocked(fetchReplies).mockResolvedValue([]);
+  vi.mocked(openConversation).mockResolvedValue({
+    id: 'conv-1',
+    name: 'Carol',
+    lastText: '',
+    lastAt: '2026-01-01T00:00:00.000Z',
+  });
+  vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
   useAuthStore.setState({
     session: 'sess',
     account: {
@@ -68,7 +76,12 @@ beforeEach(() => {
   });
 });
 
-afterEach(cleanup);
+afterEach(async () => {
+  await act(async () => {
+    await Promise.resolve();
+  });
+  cleanup();
+});
 
 describe('MemberProfileScreen', () => {
   it('shows name, address, chart empty state, and role pill', () => {
