@@ -24,13 +24,13 @@ export function HandbookIntro(props: {
         </h1>
         {props.headingAction}
       </div>
-      <p className="mt-4 text-white/60">
+      <p className="mt-4 text-paper/60">
         {props.introBefore}
         {props.introAfter !== '' ? (
           <>
             {' '}
             <a
-              className="text-[#f7931a] underline underline-offset-2"
+              className="text-accent underline underline-offset-2"
               href="https://github.com/21gifts/api/tree/develop/docs/handbook"
             >
               21gifts/api

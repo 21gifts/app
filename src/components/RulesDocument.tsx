@@ -85,7 +85,7 @@ const HEADING = 'text-2xl font-semibold tracking-tight text-app-fg';
 const LEAD = 'text-base leading-relaxed text-app-muted';
 const BODY = 'text-base leading-relaxed text-app-fg';
 const CARD = 'rounded-2xl border border-app-border bg-app-card';
-const KICKER = 'text-xs font-semibold uppercase tracking-[0.2em]';
+const KICKER = 'text-sm font-medium tracking-widest uppercase';
 
 function RuleList({
   items,
@@ -111,7 +111,7 @@ function RuleList({
 
 function TestCallout({ text, t }: { text: string; t: Translate }): ReactElement {
   return (
-    <div className="rounded-xl bg-app-card-muted px-5 py-4">
+    <div className="rounded-xl border-l-2 border-app-accent bg-app-card-muted px-5 py-4">
       <p className={`${KICKER} text-app-subtle`}>{t('rules.testLabel')}</p>
       <p className="mt-1.5 text-sm leading-relaxed text-app-fg">{text}</p>
     </div>

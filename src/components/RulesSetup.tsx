@@ -106,7 +106,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
         <Wordmark />
       </div>
       <section className="flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8 pt-24">
-        <h1 className="text-center text-2xl font-semibold tracking-tight">
+        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
           {t('setup.rulesTitle')}
         </h1>
         <p className="text-center text-sm text-app-muted">

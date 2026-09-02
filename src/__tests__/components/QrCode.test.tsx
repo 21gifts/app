@@ -10,9 +10,14 @@ describe('QrCode', () => {
     expect(screen.getByRole('img', { name: 'Login QR code' })).toBeTruthy();
   });
 
-  it('renders the QR as an SVG', () => {
+  it('renders the QR as an SVG on the app-qr plate with black/white modules', () => {
     const { container } = render(<QrCode value="LNURL1TEST" label="Login QR code" />);
-    expect(container.querySelector('svg')).not.toBeNull();
+    const plate = screen.getByRole('img', { name: 'Login QR code' });
+    expect(plate.className).toContain('bg-app-qr-bg');
+    const svg = container.querySelector('svg');
+    expect(svg).not.toBeNull();
+    expect(svg?.innerHTML).toContain('#000000');
+    expect(svg?.innerHTML).toContain('#ffffff');
   });
 
   it('uses a custom accessible name when given', () => {

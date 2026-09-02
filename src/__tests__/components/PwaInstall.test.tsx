@@ -103,7 +103,9 @@ describe('PwaInstall', () => {
     vi.mocked(isStandaloneDisplay).mockReturnValue(false);
     vi.mocked(isInAppBrowser).mockReturnValue(false);
     renderWithLocale(<PwaInstall tone="dark" placement="hero" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+    const install = await screen.findByRole('button', { name: 'Install app' });
+    expect(install.className).toContain('border-paper/20');
+    fireEvent.click(install);
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeTruthy();
     const overlay = dialog.parentElement;
@@ -114,6 +116,16 @@ describe('PwaInstall', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('uses Button dark secondary classes on the dark header Install control', async () => {
+    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(isStandaloneDisplay).mockReturnValue(false);
+    vi.mocked(isInAppBrowser).mockReturnValue(false);
+    renderWithLocale(<PwaInstall tone="dark" placement="header" />);
+    const install = await screen.findByRole('button', { name: 'Install app' });
+    expect(install.className).toContain('border-paper/20');
+    expect(install.className).toContain('text-paper');
   });
 
   it('calls onMenuAction after a Chromium prompt from the menu and clears on appinstalled', async () => {

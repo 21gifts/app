@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { SegmentedControl } from '@/components/ui';
 import {
   activityMaxY,
   activityValue,
@@ -129,32 +130,16 @@ export function AccountActivityChart({
             {t('profile.legendReceived')}
           </span>
         </div>
-        <div
-          role="group"
-          aria-label={t('profile.chartScale')}
-          className="flex overflow-hidden rounded-md border border-app-border text-xs"
-        >
-          <button
-            type="button"
-            aria-pressed={scale === 'sat'}
-            className={`min-h-11 min-w-11 px-2 py-1 ${
-              scale === 'sat' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
-            }`}
-            onClick={() => setScale('sat')}
-          >
-            {t('profile.scaleSat')}
-          </button>
-          <button
-            type="button"
-            aria-pressed={scale === 'usd'}
-            className={`min-h-11 min-w-11 px-2 py-1 ${
-              scale === 'usd' ? 'bg-app-accent text-app-accent-fg' : 'text-app-muted'
-            }`}
-            onClick={() => setScale('usd')}
-          >
-            {t('profile.scaleUsd')}
-          </button>
-        </div>
+        <SegmentedControl
+          value={scale}
+          options={[
+            { value: 'sat' as const, label: t('profile.scaleSat') },
+            { value: 'usd' as const, label: t('profile.scaleUsd') },
+          ]}
+          onChange={setScale}
+          ariaLabel={t('profile.chartScale')}
+          tone="gift"
+        />
       </div>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}

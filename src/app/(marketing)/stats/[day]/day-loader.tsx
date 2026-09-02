@@ -57,13 +57,13 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
 
   return (
     <div className="mt-8">
-      <label className="block text-sm text-white/60">
+      <label className="block text-sm text-paper/60">
         UTC day
         <input
           type="date"
           value={day}
           aria-label="UTC day"
-          className="mt-2 block rounded-md border border-white/20 bg-transparent px-3 py-2 text-white"
+          className="mt-2 block rounded-md border border-paper/20 bg-transparent px-3 py-2 text-paper"
           onChange={(event) => {
             const next = event.target.value;
             if (isUtcDay(next) && next !== day) {
@@ -72,13 +72,13 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
           }}
         />
       </label>
-      {loading ? <p className="mt-8 text-white/60">Loading…</p> : null}
+      {loading ? <p className="mt-8 text-paper/60">Loading…</p> : null}
       {!loading && error !== null ? (
         <div className="mt-8">
-          <p className="text-white/80">{error}</p>
+          <p className="text-paper/80">{error}</p>
           <button
             type="button"
-            className="mt-3 rounded-md border border-white/20 px-3 py-1.5 text-sm"
+            className="mt-3 rounded-md border border-paper/20 px-3 py-1.5 text-sm"
             onClick={() => {
               setAttempt((n) => n + 1);
             }}
@@ -89,7 +89,7 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       ) : null}
       {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8">
-          <p className="mb-4 text-white/60">
+          <p className="mb-4 text-paper/60">
             {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
             {formatBitcoin(payload.totalSats)} · {payload.totalUsd} USD
           </p>

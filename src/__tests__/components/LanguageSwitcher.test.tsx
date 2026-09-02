@@ -263,6 +263,7 @@ describe('LanguageSwitcher', () => {
     const trigger = screen.getByLabelText('Language');
     expect(trigger.tagName).toBe('BUTTON');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.className).toContain('min-h-11');
     expect(trigger.className).not.toContain('rounded-full');
     expect(trigger.className).not.toContain('border-neutral-300');
     expect(trigger.getAttribute('tabindex')).not.toBe('-1');

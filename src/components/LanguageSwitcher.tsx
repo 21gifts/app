@@ -253,7 +253,7 @@ export function LanguageSwitcher(props: {
           {...(open
             ? { role: 'combobox' as const, 'aria-activedescendant': optionId(highlight) }
             : {})}
-          className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted hover:bg-app-hover hover:text-app-fg"
+          className="inline-flex min-h-11 w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted hover:bg-app-hover hover:text-app-fg"
           onClick={onTriggerClick}
           onKeyDown={onTriggerKeyDown}
         >

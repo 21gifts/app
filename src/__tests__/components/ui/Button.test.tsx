@@ -67,4 +67,27 @@ describe('Button', () => {
     renderWithLocale(<Button className="">Plain</Button>);
     expect(screen.getByRole('button', { name: 'Plain' }).className).not.toContain('undefined');
   });
+
+  it('applies dark tone variants', () => {
+    const { rerender } = renderWithLocale(
+      <Button variant="secondary" tone="dark">
+        Install
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Install' }).className).toContain('border-paper/20');
+
+    rerender(
+      <Button variant="primary" tone="dark">
+        Primary dark
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Primary dark' }).className).toContain('bg-paper');
+
+    rerender(
+      <Button variant="accent" tone="dark">
+        Accent dark
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Accent dark' }).className).toContain('bg-accent');
+  });
 });

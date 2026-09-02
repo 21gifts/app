@@ -27,7 +27,9 @@ export function ProfileScreen(): ReactElement {
 
   return (
     <Card>
-      <h1 className="text-center text-2xl font-semibold tracking-tight">{t('profile.title')}</h1>
+      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+        {t('profile.title')}
+      </h1>
       <AccountActivityChart received={receiveOverTime} />
       <NameForm variant="profile" />
       <LightningAddressForm variant="profile" />

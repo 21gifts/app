@@ -14,7 +14,7 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, ButtonLink, Field, IconButton } from '@/components/ui';
+import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
@@ -622,7 +622,7 @@ export function ForumBoard({
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
                 <div className="mt-3 flex items-center gap-5">
-                  <p className="text-xs font-semibold tabular-nums lining-nums text-app-muted">
+                  <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
                     {formatBitcoin(message.sats, locale)}
                   </p>
                   {message.payable ? (
@@ -986,25 +986,16 @@ export function ForumBoard({
       ) : null}
 
       {!composerHidden ? (
-        <div
-          role="group"
-          aria-label={t('forum.modeLabel')}
-          className="flex w-full rounded-full border border-app-border bg-app-card-muted p-1"
-        >
-          {FORUM_FEED_MODES.map((next) => (
-            <button
-              key={next}
-              type="button"
-              aria-pressed={mode === next}
-              onClick={() => onModeChange(next)}
-              className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
-                mode === next ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
-              }`}
-            >
-              {t(MODE_LABEL_KEY[next])}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          value={mode}
+          options={FORUM_FEED_MODES.map((next) => ({
+            value: next,
+            label: t(MODE_LABEL_KEY[next]),
+          }))}
+          onChange={onModeChange}
+          ariaLabel={t('forum.modeLabel')}
+          tone="neutral"
+        />
       ) : null}
 
       {middle}

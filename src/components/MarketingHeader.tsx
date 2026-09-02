@@ -54,7 +54,7 @@ export function MarketingHeader(): ReactElement {
         <LanguageSwitcher tone="dark" />
         <button
           type="button"
-          className="flex flex-col gap-1.5 md:hidden"
+          className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden"
           aria-label={t('aria.menu')}
           aria-expanded={open}
           onClick={() => {

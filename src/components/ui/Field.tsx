@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, ReactElement, ReactNode, TextareaHTMLAttribut
 
 const CONTROL_CLASS = [
   'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card',
-  'px-4 py-2 text-sm text-app-fg transition focus-visible:border-app-fg disabled:opacity-50',
+  'px-4 py-2 text-sm text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50',
 ].join(' ');
 
 /** Shared props for labeled fields. */

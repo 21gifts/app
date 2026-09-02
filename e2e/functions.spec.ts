@@ -2821,6 +2821,21 @@ test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
+test('Function: SegmentedControl — welcome shows Active / All / Most popular', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  const group = page.getByRole('group', { name: 'Forum view' });
+  const active = page.getByRole('button', { name: 'Active' });
+  await expect(group.or(active)).toBeVisible();
+});
+
 test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages$/, async (route) => {

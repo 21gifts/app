@@ -13,6 +13,7 @@ describe('Field', () => {
     expect(input.id).toBe('field-your-name');
     expect(input.className).toContain('min-h-11');
     expect(input.className).toContain('bg-app-card');
+    expect(input.className).toContain('placeholder:text-app-subtle');
     expect(input.className).toContain('focus-visible:border-app-fg');
   });
 
