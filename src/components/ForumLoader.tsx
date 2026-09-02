@@ -837,7 +837,6 @@ export function ForumLoader(): ReactElement | null {
   };
 
   const onToggleExpand = (messageId: string): void => {
-    /* v8 ignore start -- expand/collapse is covered via ForumBoard */
     if (replyPosting) {
       return;
     }
@@ -857,7 +856,6 @@ export function ForumLoader(): ReactElement | null {
     setReplyDraft('');
     setReplyFormError(null);
     setRepliesAttempt((n) => n + 1);
-    /* v8 ignore stop */
   };
 
   const applyCreatedReply = (
