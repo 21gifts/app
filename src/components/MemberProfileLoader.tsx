@@ -93,7 +93,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
     return () => {
       cancelled = true;
     };
-  }, [accountId, attempt, router, session]);
+    /* router.replace is used on 409; next/navigation's identity is not stable */
+  }, [accountId, attempt, session]);
 
   if (session === null) {
     return <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
