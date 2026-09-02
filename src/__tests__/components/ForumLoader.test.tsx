@@ -3472,9 +3472,9 @@ describe('ForumLoader', () => {
 
   it('retries the post after a missing_requirements overlay is satisfied', async () => {
     fetchMock.mockResolvedValue([]);
-    postMock
-      .mockRejectedValueOnce(new MissingRequirementsError(['name']))
-      .mockResolvedValueOnce(SAMPLE);
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name'])).mockResolvedValueOnce(
+      SAMPLE,
+    );
     vi.mocked(setName).mockResolvedValue({
       ...account,
       name: 'Ada',
@@ -3544,21 +3544,19 @@ describe('ForumLoader', () => {
   it('retries the reply after a missing_requirements overlay is satisfied', async () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
     repliesMock.mockResolvedValue([]);
-    postMock
-      .mockRejectedValueOnce(new MissingRequirementsError(['name']))
-      .mockResolvedValueOnce({
-        id: 'r-new',
-        name: 'Ada',
-        text: 'reply',
-        createdAt: '2026-08-28T12:45:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      });
+    postMock.mockRejectedValueOnce(new MissingRequirementsError(['name'])).mockResolvedValueOnce({
+      id: 'r-new',
+      name: 'Ada',
+      text: 'reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
     vi.mocked(setName).mockResolvedValue({
       ...account,
       name: 'Ada',
