@@ -12,16 +12,22 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const push = vi.fn();
+
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+}));
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
 }));
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
 
 beforeEach(() => {
+  push.mockClear();
   HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 
@@ -1743,6 +1749,70 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
+  });
+
+  it('links author names with accountId to the member profile', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_other');
+  });
+
+  it('links reply author names with accountId to the member profile', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_note', replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Carol', accountId: 'acc_reply', replyCount: 0 }]}
+        ownAccountId="acc_1"
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'View profile' })[1]!);
+    expect(push).toHaveBeenCalledWith('/members/acc_reply');
+  });
+
+  it('keeps Damus-only names as plain text', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByText('Ada')).toBeTruthy();
   });
 
   it('shows PM when ownAccountId differs from note accountId even if names match', () => {

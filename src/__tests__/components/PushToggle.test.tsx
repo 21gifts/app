@@ -46,6 +46,8 @@ beforeEach(() => {
       createdAt: 1,
       rulesAgreedAt: 1_700_000_001,
       viewKey: VIEW_KEY,
+      setup: null,
+      missing: [],
     },
   });
   vi.mocked(isIosSafari).mockReturnValue(false);

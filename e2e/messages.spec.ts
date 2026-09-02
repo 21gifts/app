@@ -37,6 +37,8 @@ test('signed-in inbox heading is Messages', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -83,6 +85,8 @@ test('inbox empty shows No private messages yet.', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -116,6 +120,8 @@ test('inbox loading', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -145,6 +151,8 @@ test('inbox error shows Could not load messages. Please try again.', async ({ pa
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -178,6 +186,8 @@ test('inbox thread shows Hello team', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });

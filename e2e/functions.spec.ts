@@ -172,6 +172,8 @@ async function seedAdaSession(page: Page): Promise<void> {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -405,6 +407,8 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -461,6 +465,8 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -494,6 +500,8 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -665,6 +673,153 @@ test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, 
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
+test('Function: proxyMeSetupSkipPost — POST /me/setup/skip advances setup', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/setup/skip', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { step: 'name' },
+  });
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { setup: string | null; missing: string[] };
+  expect(body.setup).toBe('lightning-address');
+  expect(body.missing).toContain('name');
+});
+
+test('Function: skipSetup — Skip on name setup advances without a name', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await page.goto('/setup/name');
+  await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
+});
+
+test('Function: NameForm — Skip is absent on the rules setup screen', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
+});
+
+test('Function: proxyMembersGet — GET /forum/members/:id returns a canned profile', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  await request.post('/me/name', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { name: 'Ada' },
+  });
+  await request.post('/me/lightning-address', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { address: 'alice@walletofsatoshi.com' },
+  });
+  await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
+  const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { name: string }).name).toBe('Carol');
+});
+
+test('Function: fetchMember — member page shows the canned profile', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
+});
+
+test('Function: MissingRequirementsError — 409 body is missing_requirements', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/forum/messages', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { text: 'blocked until name and rules' },
+  });
+  expect(res.status()).toBe(409);
+  const body = (await res.json()) as { error: string; missing: string[] };
+  expect(body.error).toBe('missing_requirements');
+  expect(body.missing.length).toBeGreaterThan(0);
+});
+
+test('Function: parseMissingRequirements — documented via MissingRequirementsError path', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/forum/messages', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { text: 'blocked until name and rules' },
+  });
+  expect(res.status()).toBe(409);
+  const body = (await res.json()) as { error: string; missing: string[] };
+  expect(body.error).toBe('missing_requirements');
+  expect(body.missing.length).toBeGreaterThan(0);
+});
+
+test('Function: MemberProfileLoader — missing id shows view.missing', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/not-a-uuid');
+  await expect(page.getByText('This profile could not be found.')).toBeVisible();
+});
+
+test('Function: MemberProfileScreen — role pill is visible on the canned member', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByRole('button', { name: 'Verified' }).first()).toBeVisible();
+});
+
+test('Function: RequirementsOverlay — contact post without a name opens the overlay', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await page.goto('/contact');
+  await page.getByRole('textbox', { name: 'Your message' }).fill('Need a name first');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByRole('dialog', { name: 'Add your name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
+});
+
+test('Function: nextPostRequirement — rules before name for the overlay order', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/name/);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  const chapter = `1 of ${RULES_CHAPTER_IDS.length}`;
+  await expect(page.getByText(chapter, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('Function: MemberProfilePage — member page heading is visible', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+});
+
+test('e2e:check dynamic path token for /members/[accountId]', async ({ page, request }) => {
+  await page.goto('/members/[accountId]');
+  await request.get('/forum/members/[accountId]');
+});
+
 test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {
   const token = await loginHttp(request);
   const res = await request.post('/me/name', {
@@ -775,6 +930,8 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'rules',
+        missing: ['rules'],
       }),
     });
   });
@@ -801,6 +958,8 @@ test('Function: RulesDocument — onboarding first chapter is the lead', async (
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'rules',
+        missing: ['rules'],
       }),
     });
   });
@@ -832,6 +991,8 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'rules',
+        missing: ['rules'],
       }),
     });
   });
@@ -860,6 +1021,8 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'rules',
+        missing: ['rules'],
       }),
     });
   });
@@ -1116,6 +1279,8 @@ test('Function: MessagesPage — inbox heading is visible', async ({ page }) => 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -1149,6 +1314,8 @@ test('Function: InboxLoader — empty inbox copy is visible', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -1182,6 +1349,8 @@ test('Function: InboxScreen — empty inbox copy is visible', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -1215,6 +1384,8 @@ test('Function: fetchConversations — empty inbox copy is visible', async ({ pa
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -1248,6 +1419,8 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -1306,6 +1479,8 @@ test('Function: postConversationMessage — composer is visible on a thread', as
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -1364,6 +1539,8 @@ test('Function: openConversation — Send a private message is on other notes', 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -1947,6 +2124,8 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'name',
+        missing: ['name', 'lightning-address', 'rules'],
       }),
     });
   });
@@ -1973,6 +2152,8 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'name',
+        missing: ['name', 'lightning-address', 'rules'],
       }),
     });
   });
@@ -1999,6 +2180,8 @@ test('Function: AddressSetupPage — address screen heading is visible', async (
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
       }),
     });
   });
@@ -2025,6 +2208,8 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
       }),
     });
   });
@@ -2055,6 +2240,8 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2088,6 +2275,8 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2121,6 +2310,8 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2154,6 +2345,8 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2180,6 +2373,8 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2210,6 +2405,8 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2236,6 +2433,8 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2271,6 +2470,8 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2338,6 +2539,8 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2386,6 +2589,8 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -2471,6 +2676,8 @@ test('Function: OnboardingGate — name and address without agreement go to rule
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'rules',
+        missing: ['rules'],
       }),
     });
   });
@@ -2515,6 +2722,8 @@ test('Function: hasLightningAddress — named account without address stays on a
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
       }),
     });
   });

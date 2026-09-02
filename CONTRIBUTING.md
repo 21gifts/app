@@ -61,6 +61,7 @@ app/
 │   │   ├── me/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
 │   │   │   ├── name/route.ts    # POST /me/name
+│   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
@@ -91,15 +92,19 @@ app/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   └── [id]/route.ts    # GET/POST /conversations/[id]
 │   │   ├── forum/
-│   │   │   └── messages/
-│   │   │       ├── route.ts     # GET/POST /forum/messages same-origin proxy
-│   │   │       └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
+│   │   │   ├── messages/
+│   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy
+│   │   │   │   └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
+│   │   │   └── members/
+│   │   │       └── [accountId]/route.ts  # GET /forum/members/:id → api GET /members/:id
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + address + push bell + icon-only view-key copy
+│   │   ├── members/
+│   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── manifest.ts          # Web App Manifest (MetadataRoute.Manifest default export)
 │   │   ├── view/
 
@@ -121,10 +126,13 @@ app/
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
+│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + filtered spendOverTime
+│   │   ├── MemberProfileScreen.tsx # Member identity card + optional profile note
+│   │   ├── RequirementsOverlay.tsx # Add name or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/PM state for /welcome forum
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM + author profile links
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/PM/requirements-overlay state for /welcome forum
 │   │   ├── HandbookImageViewer.tsx # handbook baseline image picker (viewport/theme)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
@@ -132,7 +140,7 @@ app/
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
-│   │   ├── ContactLoader.tsx    # Post state for /contact
+│   │   ├── ContactLoader.tsx    # Post + requirements-overlay state for /contact
 │   │   └── ui/
 │   │       ├── Button.tsx       # Shared button primitive
 │   │       ├── ButtonLink.tsx   # Shared pill link
@@ -147,6 +155,8 @@ app/
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
+│   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
+│   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
@@ -308,9 +318,9 @@ English).
 The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 **target**. New work follows that table, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                      | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+| Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                                                               | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 Tests locate icon **buttons** with `getByRole('button', { name })` against
 the catalog `aria-label` and assert `queryByText` for the visible catalog

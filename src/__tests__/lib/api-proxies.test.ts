@@ -14,6 +14,8 @@ import {
   proxyMeLightningAddressPost,
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
+  proxyMeSetupSkipPost,
+  proxyMembersGet,
   proxyContactPost,
   proxyConversationGet,
   proxyConversationPost,
@@ -57,6 +59,21 @@ describe('api proxy wrappers', () => {
     await proxyMeNamePost(new Request('http://localhost/me/name', { method: 'POST', body: '{}' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/name');
+  });
+
+  it('proxyMeSetupSkipPost hits POST /me/setup/skip', async () => {
+    const fetchMock = stubApi();
+    await proxyMeSetupSkipPost(
+      new Request('http://localhost/me/setup/skip', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/setup/skip');
+  });
+
+  it('proxyMembersGet hits GET /members/:id', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersGet(new Request('http://localhost/forum/members/acc%201'), 'acc 1');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/acc%201');
   });
 
   it('proxyMeForumLawsDismissedPost hits POST /me/forum-laws-dismissed', async () => {

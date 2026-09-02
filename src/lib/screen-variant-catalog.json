@@ -366,6 +366,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:default",
+    "label": "/members/[accountId] default",
+    "visual": "screen-members-accountId",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:note-null",
+    "label": "/members/[accountId] note-null",
+    "visual": "state-members-note-null",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:missing",
+    "label": "/members/[accountId] missing",
+    "visual": "state-members-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:error",
+    "label": "/members/[accountId] error",
+    "visual": "state-members-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:own",
+    "label": "/members/[accountId] own",
+    "visual": "state-members-own",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",

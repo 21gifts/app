@@ -39,6 +39,8 @@ const account: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [],
 };
 
 const THREAD: Conversation = {

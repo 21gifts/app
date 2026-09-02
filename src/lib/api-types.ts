@@ -18,6 +18,10 @@ export const accountSchema = z.object({
   /** Epoch ms of the first living-room rules agreement, or `null` if not yet agreed. */
   rulesAgreedAt: z.number().nullable(),
   viewKey: z.string().regex(/^[0-9a-f]{64}$/),
+  /** Next onboarding step from the api, or `null` when onboarding is done. */
+  setup: z.enum(['name', 'lightning-address', 'rules']).nullable(),
+  /** Fields still missing for posts (may include skipped onboarding steps). */
+  missing: z.array(z.enum(['name', 'lightning-address', 'rules'])),
 });
 
 /**
@@ -38,6 +42,9 @@ export const accountSchema = z.object({
  * lowercase hex capability key for the public read-only profile URL
  * `/view/<viewKey>` (owner `/me` only; never shown on the public view payload;
  * never rendered as visible text in the signed-in profile UI).
+ * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
+ * or `null` when onboarding is complete (including after skips). `missing` lists
+ * fields still unset for posting; skipped steps stay listed until filled.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -375,3 +382,22 @@ export const pushSubscriptionResponseSchema = z.object({
  * Confirmed push subscription row from the api.
  */
 export type PushSubscriptionResponse = z.infer<typeof pushSubscriptionResponseSchema>;
+
+/**
+ * Runtime schema for a signed-in member profile from `GET /members/:id`.
+ *
+ * `profileMessage` is the member's pinned forum note when present.
+ */
+export const memberProfileSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).nullable(),
+  role: z.enum(['basis', 'verified', 'moderator', 'founder']),
+  lightningAddress: z.string().nullable(),
+  createdAt: z.string(),
+  profileMessage: forumMessageSchema.nullable(),
+});
+
+/**
+ * Signed-in member profile from the api.
+ */
+export type MemberProfile = z.infer<typeof memberProfileSchema>;

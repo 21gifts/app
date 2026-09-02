@@ -103,6 +103,8 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'c'.repeat(64),
+        setup: null,
+        missing: [],
       }),
     });
   });
@@ -223,6 +225,8 @@ test('signed-in profile shows the copy control without the view-key URL', async 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: KEY,
+        setup: null,
+        missing: [],
       }),
     });
   });

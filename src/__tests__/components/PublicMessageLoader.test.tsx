@@ -125,6 +125,8 @@ describe('PublicMessageLoader', () => {
         createdAt: 1,
         rulesAgreedAt: 1,
         viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
       },
     });
     fetchMessage.mockResolvedValue(sample);

@@ -588,7 +588,9 @@ The design system **wins** for **new** work. CONTRIBUTING **Icon controls** is r
 | `IconButton` `sm` `h-6 w-6`                               | 24px paint + 44px hit slop               | PR 2 (primitive) |
 | Open Wallet raw `<a className="… bg-app-btn px-5 py-2">`  | `ButtonLink` primary md                  | PR 4 or 5        |
 
-**Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Activate**, **Try again**.
+**Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on the post overlay.
+
+**Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Skip**, **Activate**, **Try again**.
 
 **Button size scale (one).** Today primitives use `px-6 py-3`; leftovers use `px-5 py-2` / `py-2.5` (`NameForm` onboarding, `RulesSetup`, `ViewProfileClaim`). Unify.
 
@@ -1009,11 +1011,11 @@ Today: hand-rolled `main` + absolute switchers, no wordmark, accent **Open the f
 
 #### `/setup/name` — **fix button leftover**
 
-`PageChrome` `h-svh` + Wordmark + Menu → `h1` “Your name” → `NameForm onboarding` (prompt, `Field`/`input` recipe, alert, `Button` primary lg **Continue**). Replace raw `px-5 py-2.5` with `Button`. Keep floating footer CTA (`mt-auto`).
+`PageChrome` `h-svh` + Wordmark + Menu → `h1` “Your name” → `NameForm onboarding` (prompt, `Field`/`input` recipe, alert, `Button` primary lg **Continue** and labeled **Skip**). Replace raw `px-5 py-2.5` with `Button`. Keep floating footer CTA (`mt-auto`).
 
 #### `/setup/address` — **keep structure, primitives**
 
-Same column. `h1` “Your Wallet of Satoshi address”. Hello line muted. `LightningAddressForm onboarding` already uses `Button`. Placeholder `you@walletofsatoshi.com` stays (product token). Wordmark + Menu.
+Same column. `h1` “Your Wallet of Satoshi address”. Hello line muted. `LightningAddressForm onboarding` already uses `Button` (**Continue** and labeled **Skip**). Placeholder `you@walletofsatoshi.com` stays (product token). Wordmark + Menu.
 
 #### `/setup/rules` — **fix button leftover**
 

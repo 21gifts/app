@@ -40,6 +40,8 @@ const account = {
   createdAt: 1,
   rulesAgreedAt: null,
   viewKey: VIEW_KEY,
+  setup: 'rules' as const,
+  missing: ['rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
 
 /** Points the mocked passkey hook at a fixed state for the next render. */
