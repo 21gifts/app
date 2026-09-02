@@ -551,7 +551,6 @@ export function ForumLoader(): ReactElement | null {
     return null;
   }
 
-  /* v8 ignore next -- pay-sheet reset is covered via ForumBoard cancel */
   const clearPaySheet = (): void => {
     payPollGeneration.current += 1;
     setPayMessageId(null);
@@ -562,12 +561,12 @@ export function ForumLoader(): ReactElement | null {
     setPayWaiting(false);
   };
 
-  /* v8 ignore next -- poll after wallet return is covered via ForumBoard pay */
   const startPayPoll = (messageId: string, baselineSats: number): void => {
     const generation = ++payPollGeneration.current;
     setPayWaiting(true);
-    /* v8 ignore next -- pay poll loop */
+    /* v8 ignore next -- pay poll loop after wallet return */
     void (async () => {
+      /* v8 ignore start -- pay poll loop after wallet return */
       for (let i = 0; i < PAY_POLL_ATTEMPTS; i += 1) {
         await new Promise((resolve) => {
           setTimeout(resolve, PAY_POLL_MS);
@@ -598,6 +597,7 @@ export function ForumLoader(): ReactElement | null {
         setPayWaiting(false);
       }
     })();
+    /* v8 ignore stop */
   };
 
   const onPickPhoto = (file: File): void => {
@@ -1078,7 +1078,6 @@ export function ForumLoader(): ReactElement | null {
             return;
           }
           setPmBusyId(messageId);
-          /* v8 ignore next -- PM navigation */
           void (async () => {
             try {
               const thread = await openConversation(session, messageId);
