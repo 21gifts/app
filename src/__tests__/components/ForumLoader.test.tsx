@@ -162,6 +162,21 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('posts when the account snapshot is missing', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
+    });
+  });
+
   it('shows empty copy when fetch resolves to an empty list', async () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
@@ -2558,6 +2573,39 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Fresh reply')).toBeTruthy();
       expect(screen.getByText('1 replies')).toBeTruthy();
       expect(screen.getByText('0 replies')).toBeTruthy();
+    });
+  });
+
+  it('posts a reply when the account snapshot is missing', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-new',
+      name: 'Ada',
+      text: 'Fresh reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
     });
   });
 

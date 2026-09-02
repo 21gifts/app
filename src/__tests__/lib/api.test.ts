@@ -182,6 +182,13 @@ describe('fetchMember', () => {
     await expect(fetchMember('sess', member.id)).resolves.toBeNull();
   });
 
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMember('sess', member.id)).rejects.toThrow(
+      'Could not load this profile. Please try again.',
+    );
+  });
+
   it('throws MissingRequirementsError on 409', async () => {
     stubFetch({
       ok: false,

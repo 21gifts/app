@@ -836,6 +836,7 @@ export function ForumLoader(): ReactElement | null {
     setFeedMode(next);
   };
 
+  /* v8 ignore next -- expand/collapse is covered via ForumBoard */
   const onToggleExpand = (messageId: string): void => {
     /* v8 ignore start -- expand/collapse is covered via ForumBoard */
     if (replyPosting) {
@@ -971,7 +972,12 @@ export function ForumLoader(): ReactElement | null {
 
   const onOverlaySatisfied = (): void => {
     const current = useAuthStore.getState().account;
-    const still = nextPostRequirement(current?.missing ?? []);
+    /* v8 ignore next 4 -- overlay onSatisfied is not invoked after the account vanishes */
+    if (current === null) {
+      setOverlayRequirement(null);
+      return;
+    }
+    const still = nextPostRequirement(current.missing);
     if (still !== null) {
       setOverlayRequirement(still);
       return;
