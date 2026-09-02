@@ -363,7 +363,8 @@ export function ForumLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [attempt, router, session]);
+    /* router.replace is used on 409; next/navigation's identity is not stable */
+  }, [attempt, session]);
 
   useEffect(() => {
     if (session === null) {

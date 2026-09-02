@@ -26,10 +26,6 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    // Forks + isolate so a file's vi.mock('@/lib/api') cannot clear another
-    // file's fetchMessages and hang coverage on leftover payable-poll timers.
-    pool: 'forks',
-    isolate: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/__tests__/**/*.test.{ts,tsx}', 'src/__tests__/app/.well-known/**/*.test.ts'],
     coverage: {
