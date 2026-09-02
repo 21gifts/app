@@ -3179,7 +3179,7 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -3198,7 +3198,7 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
 });
