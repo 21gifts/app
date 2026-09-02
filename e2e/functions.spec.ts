@@ -2831,9 +2831,8 @@ test('Function: SegmentedControl — welcome shows Active / All / Most popular',
     });
   });
   await page.goto('/welcome');
-  const group = page.getByRole('group', { name: 'Forum view' });
-  const active = page.getByRole('button', { name: 'Active' });
-  await expect(group.or(active)).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Forum view' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Active' })).toBeVisible();
 });
 
 test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {

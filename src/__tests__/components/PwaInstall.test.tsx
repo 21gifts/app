@@ -119,7 +119,7 @@ describe('PwaInstall', () => {
   });
 
   it('uses Button dark secondary classes on the dark header Install control', async () => {
-    vi.mocked(isIosSafari).mockReturnValue(true);
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
     vi.mocked(isStandaloneDisplay).mockReturnValue(false);
     vi.mocked(isInAppBrowser).mockReturnValue(false);
     renderWithLocale(<PwaInstall tone="dark" placement="header" />);
