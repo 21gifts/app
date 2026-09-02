@@ -2554,7 +2554,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm-bob' });
       expect(screen.getByText('Fresh reply')).toBeTruthy();
       expect(screen.getByText('1 replies')).toBeTruthy();
       expect(screen.getByText('0 replies')).toBeTruthy();

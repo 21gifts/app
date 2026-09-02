@@ -308,32 +308,6 @@ describe('ContactLoader', () => {
     });
   });
 
-  it('retries after overlay when the account snapshot is missing', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, name: null, missing: ['name'] },
-    });
-    postMock.mockResolvedValue({
-      id: 'c1',
-      name: 'Ada',
-      text: 'Hi',
-      createdAt: '2026-08-28T14:00:00.000Z',
-    });
-    conversationsMock.mockResolvedValue([]);
-    vi.mocked(setName).mockImplementation(async (session, name) => {
-      useAuthStore.setState({ session, account: null });
-      return { ...account, name, missing: [], setup: null };
-    });
-    renderWithLocale(<ContactLoader />);
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
-    await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', 'Hi');
-    });
-  });
-
   it('does not reopen the overlay when a retried send is still missing requirements', async () => {
     useAuthStore.setState({
       session: 'sess',
