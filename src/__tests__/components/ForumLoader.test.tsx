@@ -1880,6 +1880,39 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
+  it('ignores a pay poll fetch that resolves after cancel', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    let resolvePoll: ((value: ForumMessage[]) => void) | undefined;
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      resolvePoll?.([{ ...SAMPLE, sats: 21 }]);
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
   it('aborts pay poll after cancel', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);
