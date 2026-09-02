@@ -3020,6 +3020,7 @@ describe('ForumLoader', () => {
       .mockResolvedValueOnce([SAMPLE])
       .mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     renderWithLocale(<ForumLoader />);
+    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
@@ -3169,6 +3170,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
+    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
@@ -3187,6 +3189,7 @@ describe('ForumLoader', () => {
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(<ForumLoader />);
+    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
