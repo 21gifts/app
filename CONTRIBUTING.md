@@ -141,13 +141,15 @@ app/
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
 │   │   ├── ContactLoader.tsx    # Post + requirements-overlay state for /contact
+│   │   ├── AppShell.tsx         # fill/flow page shell driven by --app-height
+│   │   ├── AppHeightSync.tsx    # Client mount that syncs --app-height after hydration
 │   │   └── ui/
 │   │       ├── Button.tsx       # Shared button primitive
 │   │       ├── ButtonLink.tsx   # Shared pill link
 │   │       ├── Card.tsx         # Shared card chrome
 │   │       ├── Field.tsx        # Shared labeled field
 │   │       ├── IconButton.tsx   # Shared icon button
-│   │       ├── PageChrome.tsx   # Shared page chrome
+│   │       ├── PageChrome.tsx   # Flow-mode wrapper around AppShell
 │   │       ├── SegmentedControl.tsx # Mutually exclusive option group
 │   │       ├── Wordmark.tsx     # Text wordmark 21.gifts
 │   │       └── index.ts         # Barrel export for ui primitives
@@ -168,6 +170,7 @@ app/
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
 │   │   ├── handbook-topics.ts   # handbook image topic catalog + combo URLs
 │   │   ├── screen-variant-catalog.json # screen-variant ids/labels/visual stems
+│   │   ├── app-height.ts        # --app-height bootstrap script + useAppHeight hook
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 

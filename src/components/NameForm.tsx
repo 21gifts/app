@@ -1,7 +1,8 @@
 'use client';
 
 import { Check, Loader2, Pencil, X } from 'lucide-react';
-import { useState, type FormEvent, type ReactElement } from 'react';
+import { useId, useState, type FormEvent, type ReactElement } from 'react';
+import { AppShellFooter } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { setName, skipSetup } from '@/lib/api';
@@ -41,6 +42,7 @@ export function NameForm(
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<NameError | null>(null);
+  const formId = useId();
 
   if (account === null || session === null) {
     return null;
@@ -131,8 +133,9 @@ export function NameForm(
   if (variant === 'onboarding') {
     return (
       <form
+        id={formId}
         onSubmit={handleSubmit}
-        className="mt-6 flex w-full flex-1 flex-col items-stretch gap-3"
+        className="mt-6 flex w-full flex-col items-stretch gap-3"
       >
         <p className="text-center text-sm text-app-muted">{t('name.prompt')}</p>
         <input
@@ -151,18 +154,30 @@ export function NameForm(
             {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
           </p>
         ) : null}
-        <Button
-          type="submit"
-          size="lg"
-          disabled={busy}
-          className="mt-auto"
-          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
-        >
-          {t('setup.continue')}
-        </Button>
-        <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={handleSkip}>
-          {t('setup.skip')}
-        </Button>
+        <AppShellFooter>
+          <div className="flex w-full flex-col items-stretch gap-3">
+            <Button
+              type="submit"
+              form={formId}
+              size="lg"
+              disabled={busy}
+              icon={
+                busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+              }
+            >
+              {t('setup.continue')}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              disabled={busy}
+              onClick={handleSkip}
+            >
+              {t('setup.skip')}
+            </Button>
+          </div>
+        </AppShellFooter>
       </form>
     );
   }

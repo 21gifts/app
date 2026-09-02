@@ -121,18 +121,25 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 | `topLeft`  | `Wordmark` → `/`                                                                                                                                                                     | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile` and `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
 | `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                                                          |
 
-`PageChrome` today (`src/components/ui/PageChrome.tsx`):
+App shell today (`src/components/AppShell.tsx`); `PageChrome` is a thin `mode="flow"` wrapper:
 
 ```tsx
-<main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6">
-  {topRight ? (
-    <div className="absolute top-4 right-5 flex items-center gap-2">{topRight}</div>
-  ) : null}
-  {children}
+// fill — locks to --app-height; header / scroll / footer slots
+<main className="relative flex h-[var(--app-height)] flex-col overflow-hidden overscroll-y-none px-6">
+  {/* absolute topLeft / topRight */}
+  <header className="flex-none">{/* AppShellHeader */}</header>
+  <div className="min-h-0 flex-1 overflow-y-auto">{/* children */}</div>
+  <footer className="flex-none pb-8">{/* AppShellFooter */}</footer>
+</main>
+
+// flow — min-height --app-height; document scroll
+<main className="relative flex min-h-[var(--app-height)] flex-col items-center px-6">
+  {/* absolute topLeft / topRight */}
+  <div className="w-full flex-none pt-24 pb-8">{/* children */}</div>
 </main>
 ```
 
-**API diff.** Add `topLeft?: ReactNode`. Render it `absolute top-4 left-5 flex items-center gap-2`. Keep `top-4` / `left-5` / `right-5` (16px / 20px). Default `justify-center`; onboarding screens that pin a footer CTA pass `className="justify-start"` and use `h-svh` as `/setup/name` already does.
+**API.** Prefer `AppShell` directly (`mode`, `align`, `topLeft`, `topRight`, `className`). Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `align="center"` centers short cards inside the inner scroller (never `justify-center` on `<main>`). Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column.
 
 Signed-in **Menu** trigger stays labeled (“Menu” + lucide `Menu` 16px). It is chrome, not an in-card action. Hit target ≥ 44×44px (pad the current `text-sm` trigger). Panel: `min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` — keep.
 
@@ -430,7 +437,7 @@ This global `*` hammer is WCAG 2.3.3-compliant and **does freeze** `Loader2` and
 
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).
 
-- Canvas: `min-h-screen bg-ink text-paper [color-scheme:dark]`.
+- Canvas: `min-h-[var(--app-height)] bg-ink text-paper [color-scheme:dark]`.
 - No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/legal`, `/stats`, `/handbook`, `/404`.
 - Header + footer always mounted.
 - Hardcoded `#0a090c` / `#f7931a` migrate to `ink` / `accent` / `paper`.
@@ -474,25 +481,25 @@ flowchart TB
 
 ### 6. Layout
 
-| Measure             | Value                                             | Use                                              |
-| ------------------- | ------------------------------------------------- | ------------------------------------------------ |
-| Marketing max       | `max-w-[1100px]`                                  | Home, stats, handbook, 404 content, footer inner |
-| Legal max           | `max-w-3xl` (48rem)                               | `/legal` reading column                          |
-| App card `sm`       | `max-w-sm` (24rem)                                | Login, profile, view, onboarding name/address    |
-| App card `md`       | `max-w-md` (28rem)                                | Donate inner (today a non-Card column)           |
-| App card `xl`       | `max-w-xl` (36rem)                                | Welcome/forum, contact, inbox                    |
-| Rules document      | `max-w-3xl`                                       | `/rules`, `/setup/rules`                         |
-| App page pad        | `px-6`                                            | `PageChrome`                                     |
-| Marketing pad       | `px-5`                                            | Header, sections, footer                         |
-| Vertical pageChrome | `min-h-screen` + `justify-center` + `gap-10`      | Centered cards                                   |
-| Onboarding column   | `h-svh` + `pt-24` + `pb-8` + footer CTA `mt-auto` | `/setup/name`, `/setup/address`, `/setup/rules`  |
-| Marketing hero      | `pt-28 pb-20 sm:pt-36`                            | `/`                                              |
-| Marketing section   | `py-20`                                           | how / why / faq                                  |
-| Stats / handbook    | `pt-16 pb-24` / `py-24`                           |                                                  |
+| Measure            | Value                                       | Use                                              |
+| ------------------ | ------------------------------------------- | ------------------------------------------------ |
+| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner |
+| Legal max          | `max-w-3xl` (48rem)                         | `/legal` reading column                          |
+| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, onboarding name/address    |
+| App card `md`      | `max-w-md` (28rem)                          | Donate inner (today a non-Card column)           |
+| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox                    |
+| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                         |
+| App page pad       | `px-6`                                      | `PageChrome`                                     |
+| Marketing pad      | `px-5`                                      | Header, sections, footer                         |
+| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                |
+| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/address`, `/setup/rules`  |
+| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                              |
+| Marketing section  | `py-20`                                     | how / why / faq                                  |
+| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                  |
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden` (keep). App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
-**Safe area / visualViewport.** Open product issue. Out of this freeze. Do not invent `env(safe-area-inset-*)` until a dedicated PR with goldens. `/setup/name` already uses `h-svh`; keep that, do not switch `min-h-screen` globally without measuring keyboard overlap on iOS.
+**Safe area / visualViewport.** intern#17 ships `AppShell` + `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`). Do not add `env(safe-area-inset-*)` here.
 
 ---
 
@@ -644,21 +651,30 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 
 ---
 
-#### `PageChrome`
+#### `AppShell` / `PageChrome`
 
-**Anatomy.** Full-viewport `<main>`: optional `topLeft`, optional `topRight`, centered (or start) children.
+**Anatomy.** `AppShell` owns the app `<main>`: optional absolute `topLeft` / `topRight`, `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
 
-**Tokens.** `min-h-screen` (or `h-svh` via `className`), `px-6`, `gap-10`, `bg` inherited from `body`.
+**Tokens.** `h-[var(--app-height)]` (`fill`) or `min-h-[var(--app-height)]` (`flow`), `px-6`, `bg` inherited from `body`. Never Tailwind viewport-height utilities on app routes.
 
 **States.** None of its own.
 
-**API (current + diff).**
+**API.**
 
 ```tsx
+export interface AppShellProps {
+  children: ReactNode;
+  mode: 'fill' | 'flow';
+  topLeft?: ReactNode;
+  topRight?: ReactNode;
+  className?: string;
+  align?: 'start' | 'center'; // fill only
+}
+
 export interface PageChromeProps {
   children: ReactNode;
   topRight?: ReactNode;
-  topLeft?: ReactNode; // NEW
+  topLeft?: ReactNode;
   className?: string;
 }
 ```
@@ -1030,7 +1046,7 @@ Today: hand-rolled `main` + absolute switchers, no wordmark, accent **Open the f
 
 #### `/setup/name` — **fix button leftover**
 
-`PageChrome` `h-svh` + Wordmark + Menu → `h1` “Your name” → `NameForm onboarding` (prompt, `Field`/`input` recipe, alert, `Button` primary lg **Continue** and labeled **Skip**). Replace raw `px-5 py-2.5` with `Button`. Keep floating footer CTA (`mt-auto`).
+Fill `AppShell` + Wordmark + Menu → `AppShellHeader` “Your name” → `NameForm onboarding` (prompt, `Field`/`input` recipe, alert, **Continue** and labeled **Skip** in `AppShellFooter`). Replace raw `px-5 py-2.5` with `Button`.
 
 #### `/setup/address` — **keep structure, primitives**
 

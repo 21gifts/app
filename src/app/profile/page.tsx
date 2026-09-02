@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ProfileScreen } from '@/components/ProfileScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { PageChrome } from '@/components/ui';
 
 /**
  * `/profile` — edit name and Wallet of Satoshi address after onboarding.
@@ -12,10 +12,15 @@ import { PageChrome } from '@/components/ui';
  */
 export default function ProfilePage(): ReactElement {
   return (
-    <PageChrome topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
+    <AppShell
+      mode="fill"
+      align="center"
+      topLeft={<ProfileChromeLeft />}
+      topRight={<SignedInChrome />}
+    >
       <OnboardingGate screen="profile">
         <ProfileScreen />
       </OnboardingGate>
-    </PageChrome>
+    </AppShell>
   );
 }

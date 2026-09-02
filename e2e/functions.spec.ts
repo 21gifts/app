@@ -2867,6 +2867,88 @@ test('Function: PageChrome — login shows language switcher chrome', async ({ p
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
+test('Function: AppShell — login chrome is visible', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
+});
+
+test('Function: AppShellTopLeft — login shows the wordmark', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+});
+
+test('Function: AppHeightSync — document has --app-height', async ({ page }) => {
+  await page.goto('/login');
+  const value = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+  );
+  expect(value).not.toBe('');
+});
+
+test('Function: useAppHeight — document has --app-height', async ({ page }) => {
+  await page.goto('/login');
+  const value = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+  );
+  expect(value).not.toBe('');
+});
+
+test('Function: AppShellHeader — name screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        setup: 'name',
+        missing: ['name', 'lightning-address', 'rules'],
+      }),
+    });
+  });
+  await page.goto('/setup/name');
+  await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
+});
+
+test('Function: AppShellFooter — name screen Continue is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        setup: 'name',
+        missing: ['name', 'lightning-address', 'rules'],
+      }),
+    });
+  });
+  await page.goto('/setup/name');
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
 test('Function: PublicMessagePage — public note shows Hello from Ada', async ({ page }) => {
   const id = '11111111-1111-4111-8111-111111111111';
   await page.route(`**/public-messages/${id}`, async (route) => {

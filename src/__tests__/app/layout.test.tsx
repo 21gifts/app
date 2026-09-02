@@ -7,8 +7,10 @@ vi.mock('next/font/google', () => ({
 }));
 
 import RootLayout, { metadata } from '@/app/layout';
+import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 
 vi.mock('@/lib/request-locale', () => ({
@@ -99,21 +101,26 @@ describe('RootLayout', () => {
     expect((props as { className?: string }).className).toContain('__outfit_variable');
   });
 
-  it('injects THEME_BOOTSTRAP_SCRIPT as a raw head script', async () => {
+  it('injects APP_HEIGHT then THEME bootstrap scripts as raw head scripts', async () => {
     const tree = await RootLayout({ children: 'content' });
     const htmlProps = tree.props as {
       children: ReactElement[];
     };
     const children = Array.isArray(htmlProps.children) ? htmlProps.children : [htmlProps.children];
     const head = children.find((child) => child.type === 'head') as ReactElement<{
-      children: ReactElement<{ dangerouslySetInnerHTML: { __html: string } }>;
+      children: ReactElement<{ dangerouslySetInnerHTML: { __html: string } }>[];
     }>;
-    const script = head.props.children;
-    expect(script.type).toBe('script');
-    expect(script.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
+    const scripts = Array.isArray(head.props.children)
+      ? head.props.children
+      : [head.props.children];
+    expect(scripts).toHaveLength(2);
+    expect(scripts[0]?.type).toBe('script');
+    expect(scripts[0]?.props.dangerouslySetInnerHTML.__html).toBe(APP_HEIGHT_BOOTSTRAP_SCRIPT);
+    expect(scripts[1]?.type).toBe('script');
+    expect(scripts[1]?.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
   });
 
-  it('wraps children LocaleProvider → ThemeProvider and uses bg-app-bg on body', async () => {
+  it('wraps children LocaleProvider → ThemeProvider with AppHeightSync first on body', async () => {
     const tree = await RootLayout({ children: 'content' });
     const htmlProps = tree.props as {
       children: ReactElement[];
@@ -121,14 +128,20 @@ describe('RootLayout', () => {
     const children = Array.isArray(htmlProps.children) ? htmlProps.children : [htmlProps.children];
     const body = children.find((child) => child.type === 'body') as ReactElement<{
       className: string;
-      children: ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
+      children: ReactElement[];
     }>;
 
     expect(body.type).toBe('body');
     expect(body.props.className).toContain('bg-app-bg');
     expect(body.props.className).toContain('font-sans');
     expect(body.props.className).not.toContain('bg-white');
-    const localeProvider = body.props.children;
+    const bodyChildren = Array.isArray(body.props.children)
+      ? body.props.children
+      : [body.props.children];
+    expect(bodyChildren[0]?.type).toBe(AppHeightSync);
+    const localeProvider = bodyChildren[1] as ReactElement<{
+      children: ReactElement<{ children: ReactNode }>;
+    }>;
     expect(localeProvider.type).toBe(LocaleProvider);
     const themeProvider = localeProvider.props.children;
     expect(themeProvider.type).toBe(ThemeProvider);

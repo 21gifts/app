@@ -13,7 +13,9 @@ describe('PageChrome', () => {
       </PageChrome>,
     );
     const main = container.querySelector('main');
-    expect(main?.className).toContain('min-h-screen');
+    expect(main?.className).toContain('min-h-[var(--app-height)]');
+    expect(main?.className).not.toContain('overflow-hidden');
+    expect(main?.className).not.toContain('justify-center');
     expect(screen.getByText('Body')).toBeTruthy();
     expect(main?.querySelector('.absolute')).toBeNull();
   });
@@ -38,14 +40,15 @@ describe('PageChrome', () => {
     expect(container.querySelector('.left-5')?.className).toContain('gap-2');
   });
 
-  it('uses justify-start instead of justify-center when className asks', () => {
+  it('appends non-viewport className extras', () => {
     const { container } = renderWithLocale(
-      <PageChrome className="h-svh justify-start">
+      <PageChrome className="justify-start">
         <p>Body</p>
       </PageChrome>,
     );
     const main = container.querySelector('main');
     expect(main?.className).toContain('justify-start');
+    expect(main?.className).toContain('min-h-[var(--app-height)]');
     expect(main?.className).not.toContain('justify-center');
   });
 

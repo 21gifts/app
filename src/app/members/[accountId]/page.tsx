@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { MemberProfileLoader } from '@/components/MemberProfileLoader';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { PageChrome } from '@/components/ui';
 
 /**
  * `/members/[accountId]` — signed-in member identity card and optional profile note.
@@ -18,10 +18,15 @@ export default async function MemberProfilePage({
 }): Promise<ReactElement> {
   const { accountId } = await params;
   return (
-    <PageChrome topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
+    <AppShell
+      mode="fill"
+      align="center"
+      topLeft={<ProfileChromeLeft />}
+      topRight={<SignedInChrome />}
+    >
       <OnboardingGate screen="profile">
         <MemberProfileLoader accountId={accountId} />
       </OnboardingGate>
-    </PageChrome>
+    </AppShell>
   );
 }

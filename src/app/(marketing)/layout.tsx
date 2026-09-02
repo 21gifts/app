@@ -15,7 +15,7 @@ export default async function MarketingLayout({
 }): Promise<ReactElement> {
   const footer = await MarketingFooter();
   return (
-    <div className="min-h-screen bg-ink text-paper [color-scheme:dark]">
+    <div className="min-h-[var(--app-height)] bg-ink text-paper [color-scheme:dark]">
       <MarketingHeader />
       {children}
       {footer}

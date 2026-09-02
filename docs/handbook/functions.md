@@ -187,14 +187,14 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** `PageChrome` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -211,7 +211,7 @@
 
 - **Purpose:** Next.js page for `/setup/address`.
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `AddressSetup`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `AddressSetup`.
 - **Used by:** Route `/setup/address`.
 
 ## Function: RulesSetup
@@ -225,7 +225,7 @@
 
 - **Purpose:** Next.js page for `/setup/rules`.
 - **Inputs:** None. Calls `getRequestLocale()` / `getCatalog` for the rules body.
-- **Returns / side effects:** `PageChrome` (`min-h-svh justify-start`) with `SignedInChrome` top-right and `OnboardingGate` around `RulesSetup` (`RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters, `showNav={false}`, `chapter={id}`). Wordmark and chapter-back stay in `RulesSetup` because back is chapter state, not a page-level back.
+- **Returns / side effects:** Fill `AppShell` (`align="start"`) with `SignedInChrome` top-right and `OnboardingGate` around `RulesSetup` (`RULES_CHAPTER_IDS` mapped to `RulesDocument` chapters, `showNav={false}`, `chapter={id}`). Wordmark and chapter-back stay in `RulesSetup` via `AppShellTopLeft` because back is chapter state, not a page-level back.
 - **Used by:** Route `/setup/rules`.
 
 ## Function: LogoutButton
@@ -246,7 +246,7 @@
 
 - **Purpose:** Next.js page for `/setup/name`.
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `NameSetup`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `NameSetup`.
 - **Used by:** Route `/setup/name`.
 
 ## Function: openInSystemBrowser
@@ -267,14 +267,14 @@
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts; ScrollText Living room rules `/rules`; Inbox `/messages`; MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
 - **Inputs:** None. Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for a `PageChrome` / absolute parent slot; when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: Profile link (`/profile`) with same-line given/received totals (`aria-label`/`title` from `profile.given` / `profile.received`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`.
 
 ## Function: ProfilePage
 
 - **Purpose:** Next.js page for `/profile`.
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ProfileScreen`.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ProfileScreen`.
 - **Used by:** Route `/profile`.
 
 ## Function: ProfileChromeLeft
@@ -282,7 +282,7 @@
 - **Purpose:** `/profile` top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
 - **Inputs:** Catalog `profile.back` via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
-- **Used by:** `ProfilePage` (`PageChrome.topLeft`).
+- **Used by:** `ProfilePage` (`AppShell` `topLeft`).
 
 ## Function: ProfileScreen
 
@@ -452,25 +452,85 @@
 - **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
 - **Used by:** `ForumBoard`.
 
+## Function: useAppHeight
+
+- **Purpose:** After hydration, keeps the CSS custom property `--app-height` in sync with the visible viewport (`visualViewport.height`, fallback `innerHeight`) so `AppShell` fill/flow layouts track mobile browser chrome and keyboard overlap.
+- **Inputs:** None (reads `window.visualViewport` / `innerHeight` inside a `useEffect`).
+- **Returns / side effects:** `void`. Sets `--app-height` on `document.documentElement` and registers resize/scroll/orientation listeners; cleans them up on unmount.
+- **Used by:**
+  - **`AppHeightSync`** (root layout mount)
+  - **Every hydrated app page** (via that mount)
+  - **Fill/flow `AppShell` layouts** that consume `--app-height`
+
+## Function: AppHeightSync
+
+- **Purpose:** Client-only root mount that calls `useAppHeight` so `--app-height` stays live after the blocking bootstrap script runs in `<head>`.
+- **Inputs:** None.
+- **Returns / side effects:** Renders `null`; side effect is the hook. Mounted as the first child of `<body>` in `RootLayout`.
+- **Used by:**
+  - **`RootLayout`** (`src/app/layout.tsx`)
+  - **All app and marketing routes** under that layout
+  - **`useAppHeight` consumers** that rely on a single shared mount
+
+## Function: AppShell
+
+- **Purpose:** App page shell driven by `--app-height`: `fill` locks height with header / scroll / footer slots; `flow` uses min-height and document scroll. Prefer this over Tailwind viewport-height utilities on app routes.
+- **Inputs:** `children`, required `mode` (`fill` | `flow`), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`, fill only).
+- **Returns / side effects:** A `<main>` layout with absolute chrome slots and optional header/footer portals. No network.
+- **Used by:**
+  - **App route pages** (`LoginPage`, `DonatePage`, setup, welcome, profile, contact, messages, rules, view, members)
+  - **`PageChrome`** (flow-mode wrapper)
+  - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
+
+## Function: AppShellHeader
+
+- **Purpose:** Registers flex-none header content into the nearest `AppShell` fill layout (portaled into the shell `<header>`). Without an `AppShell` ancestor, renders children inline.
+- **Inputs:** `children` (typically an onboarding `h1`).
+- **Returns / side effects:** `null` when registered into the shell; otherwise the children. Layout only.
+- **Used by:**
+  - **`NameSetup`**
+  - **`AddressSetup`**
+  - **`RulesSetup`**
+
+## Function: AppShellFooter
+
+- **Purpose:** Registers flex-none footer content (CTAs) into the nearest `AppShell` fill layout (`pb-8` on the shell footer). Without an `AppShell` ancestor, renders children inline.
+- **Inputs:** `children` (typically Continue / Skip / Agree buttons).
+- **Returns / side effects:** `null` when registered into the shell; otherwise the children. Layout only.
+- **Used by:**
+  - **`NameForm`** (onboarding)
+  - **`LightningAddressForm`** (onboarding)
+  - **`RulesSetup`**
+
+## Function: AppShellTopLeft
+
+- **Purpose:** Registers absolute top-left chrome into the nearest `AppShell`; child registration wins over the page `topLeft` prop. Without an `AppShell` ancestor, renders children inline.
+- **Inputs:** `children` (back control + wordmark, etc.).
+- **Returns / side effects:** `null` when registered into the shell; otherwise the children. Layout only.
+- **Used by:**
+  - **`RulesSetup`** (chapter back + wordmark)
+  - **Fill `AppShell` pages** that pass `topLeft` as a prop instead
+  - **Login / donate wordmark chrome** (page `topLeft` prop path)
+
 ## Function: PageChrome
 
-- **Purpose:** Full-height app page shell (`min-h-screen` centered column) with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots.
+- **Purpose:** Flow-mode wrapper around `AppShell` with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots. Prefer `AppShell` directly on app routes.
 - **Inputs:** `children`, optional `topLeft`, optional `topRight`, optional `className` on the outer `<main>`.
-- **Returns / side effects:** Layout only. No network. Used by login, donate, rules, welcome, profile, contact, inbox, public note, and view-key.
-- **Used by:** `LoginPage`, `DonatePage`, `RulesPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `PublicMessagePage`, `ViewProfilePage`, `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`.
+- **Returns / side effects:** Layout only (`AppShell mode="flow"`). No network.
+- **Used by:** Legacy call sites that still import the flow wrapper; new pages should use `AppShell`.
 
 ## Function: Wordmark
 
 - **Purpose:** Text brand mark `21.gifts` (header 17px/700, footer 15px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
 - **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `size` (`header` / `footer`, default `header`), optional `className`.
 - **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
-- **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/address pages, and `PageChrome` top-left.
+- **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/address pages, and `AppShell` top-left.
 
 ## Function: PublicMessagePage
 
 - **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
 - **Inputs:** Dynamic route params (`id`).
-- **Returns / side effects:** `PageChrome` with Wordmark top-left and ThemeSwitcher + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Returns / side effects:** `AppShell` with Wordmark top-left and ThemeSwitcher + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
 - **Used by:** Route `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -484,7 +544,7 @@
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
 - **Inputs:** Dynamic route params (`viewKey`).
-- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `PageChrome` with `Wordmark` → `/` top-left and `ThemeSwitcher` plus light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `Wordmark` → `/` top-left and `ThemeSwitcher` plus light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
 - **Used by:** Route `/view/[viewKey]`.
 
 ## Function: ViewProfileLoader
@@ -575,7 +635,7 @@
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `WelcomeScreen`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `WelcomeScreen`.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
@@ -603,7 +663,7 @@
 
 - **Purpose:** Next.js page for `/contact`.
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ContactLoader`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `ContactLoader`.
 - **Used by:** Route `/contact`.
 
 ## Function: ContactScreen
@@ -624,7 +684,7 @@
 
 - **Purpose:** Next.js page for `/rules` with localized heading, theme switcher, and language switcher.
 - **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** `PageChrome` (`justify-start py-16`) with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right around the living-room rules document.
+- **Returns / side effects:** Flow `AppShell` with `Wordmark` top-left and `ThemeSwitcher` plus `LanguageSwitcher` top-right around the living-room rules document.
 - **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
@@ -1373,7 +1433,7 @@
 
 - **Purpose:** Next.js page for `/messages` (signed-in PN inbox).
 - **Inputs:** None.
-- **Returns / side effects:** `PageChrome` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
 - **Used by:** Route `/messages`.
 
 ## Function: InboxLoader

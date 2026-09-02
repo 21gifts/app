@@ -1,8 +1,9 @@
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { RulesDocument } from '@/components/RulesDocument';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { Wordmark } from '@/components/ui';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
@@ -16,8 +17,8 @@ export default async function RulesPage(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
   return (
-    <PageChrome
-      className="justify-start py-16"
+    <AppShell
+      mode="flow"
       topLeft={<Wordmark href="/" />}
       topRight={
         <>
@@ -30,6 +31,6 @@ export default async function RulesPage(): Promise<ReactElement> {
         {translate(messages, 'rules.heading')}
       </h1>
       <RulesDocument messages={messages} />
-    </PageChrome>
+    </AppShell>
   );
 }
