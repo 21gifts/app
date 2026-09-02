@@ -33,10 +33,7 @@ import {
   type PasskeySession,
   type ViewProfile,
 } from '@/lib/api-types';
-import {
-  MissingRequirementsError,
-  parseMissingRequirements,
-} from '@/lib/missing-requirements';
+import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 
 /**
  * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.

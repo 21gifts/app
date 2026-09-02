@@ -1011,94 +1011,94 @@ export function ForumBoard({
       {error && messages !== null ? errorBlock : null}
 
       {!composerHidden ? (
-      <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <IconButton
-            type="button"
-            size="lg"
-            variant="secondary"
-            aria-label={t('forum.attach')}
-            disabled={posting}
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-          >
-            <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-          </IconButton>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
-            className="hidden"
-            disabled={posting}
-            onChange={handleFileChange}
-          />
-          <textarea
-            aria-label={t('forum.composerLabel')}
-            placeholder={t('forum.placeholder')}
-            value={draft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            maxLength={FORUM_MESSAGE_MAX_LENGTH}
-            rows={2}
-            disabled={posting}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
-          />
-          <IconButton
-            type="submit"
-            size="lg"
-            variant="primary"
-            disabled={posting}
-            aria-label={t('forum.post')}
-          >
-            {posting ? (
-              <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
-            ) : (
-              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-            )}
-          </IconButton>
-        </div>
-        {videoDraft !== null ? (
-          <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-            <video
-              src={videoDraft.previewUrl}
-              className="h-20 w-20 rounded-lg object-cover"
-              muted
-              playsInline
-              preload="metadata"
-            />
+        <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
             <IconButton
               type="button"
-              size="sm"
+              size="lg"
               variant="secondary"
-              onClick={onClearPhoto}
+              aria-label={t('forum.attach')}
               disabled={posting}
-              aria-label={t('forum.removeVideo')}
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
             >
-              <X aria-hidden="true" className="h-4 w-4" />
+              <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
             </IconButton>
-          </div>
-        ) : null}
-        {photoDraft !== null ? (
-          <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
-            <img
-              src={photoDraft.previewUrl}
-              alt={t('forum.previewAlt')}
-              className="h-20 w-20 rounded-lg object-cover"
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+              className="hidden"
+              disabled={posting}
+              onChange={handleFileChange}
+            />
+            <textarea
+              aria-label={t('forum.composerLabel')}
+              placeholder={t('forum.placeholder')}
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              maxLength={FORUM_MESSAGE_MAX_LENGTH}
+              rows={2}
+              disabled={posting}
+              className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
             />
             <IconButton
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={onClearPhoto}
+              type="submit"
+              size="lg"
+              variant="primary"
               disabled={posting}
-              aria-label={t('forum.removePhoto')}
+              aria-label={t('forum.post')}
             >
-              <X aria-hidden="true" className="h-4 w-4" />
+              {posting ? (
+                <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+              ) : (
+                <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+              )}
             </IconButton>
           </div>
-        ) : null}
-      </form>
+          {videoDraft !== null ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              <video
+                src={videoDraft.previewUrl}
+                className="h-20 w-20 rounded-lg object-cover"
+                muted
+                playsInline
+                preload="metadata"
+              />
+              <IconButton
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={onClearPhoto}
+                disabled={posting}
+                aria-label={t('forum.removeVideo')}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          ) : null}
+          {photoDraft !== null ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+              <img
+                src={photoDraft.previewUrl}
+                alt={t('forum.previewAlt')}
+                className="h-20 w-20 rounded-lg object-cover"
+              />
+              <IconButton
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={onClearPhoto}
+                disabled={posting}
+                aria-label={t('forum.removePhoto')}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          ) : null}
+        </form>
       ) : null}
 
       {!composerHidden && formError === 'empty' ? (

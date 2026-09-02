@@ -18,9 +18,7 @@ const E2E_ACCOUNT = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   setup: 'name' as 'name' | 'lightning-address' | 'rules' | null,
-  missing: ['name', 'lightning-address', 'rules'] as Array<
-    'name' | 'lightning-address' | 'rules'
-  >,
+  missing: ['name', 'lightning-address', 'rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
@@ -806,7 +804,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await expect(page.getByText('Carol')).toBeVisible();
+    await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
     await expect(page.getByText('profileMessage: null')).toHaveCount(0);
     await shotScreen(page, 'state-members-note-null');
   });

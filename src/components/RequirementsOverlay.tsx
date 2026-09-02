@@ -107,7 +107,9 @@ export function RequirementsOverlay({
               size="lg"
               disabled={busy}
               onClick={handleAgree}
-              icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+              icon={
+                busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+              }
             >
               {t('setup.agree')}
             </Button>

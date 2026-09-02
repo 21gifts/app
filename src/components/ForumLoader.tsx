@@ -980,105 +980,105 @@ export function ForumLoader(): ReactElement | null {
 
   return (
     <>
-    {overlayRequirement !== null ? (
-      <RequirementsOverlay
-        requirement={overlayRequirement}
-        onDismiss={() => {
-          setOverlayRequirement(null);
-          pendingPostRef.current = null;
+      {overlayRequirement !== null ? (
+        <RequirementsOverlay
+          requirement={overlayRequirement}
+          onDismiss={() => {
+            setOverlayRequirement(null);
+            pendingPostRef.current = null;
+          }}
+          onSatisfied={onOverlaySatisfied}
+        />
+      ) : null}
+      <ForumBoard
+        messages={messages}
+        error={error}
+        loading={loading}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        posting={posting || preparing}
+        draft={draft}
+        onDraftChange={(value) => {
+          setDraft(value);
+          setFormError(null);
         }}
-        onSatisfied={onOverlaySatisfied}
-      />
-    ) : null}
-    <ForumBoard
-      messages={messages}
-      error={error}
-      loading={loading}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      posting={posting || preparing}
-      draft={draft}
-      onDraftChange={(value) => {
-        setDraft(value);
-        setFormError(null);
-      }}
-      onPost={onPost}
-      onRetry={() => {
-        setAttempt((n) => n + 1);
-      }}
-      formError={formError}
-      photoDraft={photoDraft}
-      videoDraft={videoDraft}
-      onPickPhoto={onPickPhoto}
-      onClearPhoto={() => {
-        revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
-        pickGeneration.current += 1;
-        setPhotoDraft(null);
-        setVideoDraft(null);
-        setFormError(null);
-      }}
-      photoUrls={photoUrls}
-      videoUrls={videoUrls}
-      payMessageId={payMessageId}
-      payDraft={payDraft}
-      payBusy={payBusy}
-      payError={payError}
-      payInvoice={payInvoice}
-      payWaiting={payWaiting}
-      onPayOpen={(messageId) => {
-        payPollGeneration.current += 1;
-        setPayMessageId(messageId);
-        setPayDraft('');
-        setPayError(null);
-        setPayInvoice(null);
-        setPayWaiting(false);
-        setPayBusy(false);
-      }}
-      onPayDraftChange={(value) => {
-        setPayDraft(value);
-        setPayError(null);
-      }}
-      onPaySubmit={onPaySubmit}
-      onPayCancel={clearPaySheet}
-      mode={feedMode}
-      onModeChange={onModeChange}
-      lawsVisible={lawsVisible}
-      onDismissLaws={onDismissLaws}
-      expandedId={expandedId}
-      onToggleExpand={onToggleExpand}
-      replies={expandedId === null ? null : replies}
-      repliesLoading={expandedId !== null && repliesLoading}
-      repliesError={expandedId !== null && repliesError}
-      onRetryReplies={() => {
-        setRepliesAttempt((n) => n + 1);
-      }}
-      replyDraft={replyDraft}
-      onReplyDraftChange={(value) => {
-        setReplyDraft(value);
-        setReplyFormError(null);
-      }}
-      onReplyPost={onReplyPost}
-      replyPosting={replyPosting}
-      replyFormError={replyFormError}
-      ownName={account?.name ?? null}
-      ownAccountId={account?.id ?? null}
-      pmBusyId={pmBusyId}
-      onPm={(messageId) => {
-        /* v8 ignore next 3 -- second PM click while the first is in flight */
-        if (pmBusyId !== null) {
-          return;
-        }
-        setPmBusyId(messageId);
-        void (async () => {
-          try {
-            const thread = await openConversation(session, messageId);
-            router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
-          } catch {
-            setPmBusyId(null);
+        onPost={onPost}
+        onRetry={() => {
+          setAttempt((n) => n + 1);
+        }}
+        formError={formError}
+        photoDraft={photoDraft}
+        videoDraft={videoDraft}
+        onPickPhoto={onPickPhoto}
+        onClearPhoto={() => {
+          revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
+          pickGeneration.current += 1;
+          setPhotoDraft(null);
+          setVideoDraft(null);
+          setFormError(null);
+        }}
+        photoUrls={photoUrls}
+        videoUrls={videoUrls}
+        payMessageId={payMessageId}
+        payDraft={payDraft}
+        payBusy={payBusy}
+        payError={payError}
+        payInvoice={payInvoice}
+        payWaiting={payWaiting}
+        onPayOpen={(messageId) => {
+          payPollGeneration.current += 1;
+          setPayMessageId(messageId);
+          setPayDraft('');
+          setPayError(null);
+          setPayInvoice(null);
+          setPayWaiting(false);
+          setPayBusy(false);
+        }}
+        onPayDraftChange={(value) => {
+          setPayDraft(value);
+          setPayError(null);
+        }}
+        onPaySubmit={onPaySubmit}
+        onPayCancel={clearPaySheet}
+        mode={feedMode}
+        onModeChange={onModeChange}
+        lawsVisible={lawsVisible}
+        onDismissLaws={onDismissLaws}
+        expandedId={expandedId}
+        onToggleExpand={onToggleExpand}
+        replies={expandedId === null ? null : replies}
+        repliesLoading={expandedId !== null && repliesLoading}
+        repliesError={expandedId !== null && repliesError}
+        onRetryReplies={() => {
+          setRepliesAttempt((n) => n + 1);
+        }}
+        replyDraft={replyDraft}
+        onReplyDraftChange={(value) => {
+          setReplyDraft(value);
+          setReplyFormError(null);
+        }}
+        onReplyPost={onReplyPost}
+        replyPosting={replyPosting}
+        replyFormError={replyFormError}
+        ownName={account?.name ?? null}
+        ownAccountId={account?.id ?? null}
+        pmBusyId={pmBusyId}
+        onPm={(messageId) => {
+          /* v8 ignore next 3 -- second PM click while the first is in flight */
+          if (pmBusyId !== null) {
+            return;
           }
-        })();
-      }}
-    />
+          setPmBusyId(messageId);
+          void (async () => {
+            try {
+              const thread = await openConversation(session, messageId);
+              router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
+            } catch {
+              setPmBusyId(null);
+            }
+          })();
+        }}
+      />
     </>
   );
 }

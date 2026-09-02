@@ -99,7 +99,9 @@ export function MemberProfileScreen({
             {t('name.heading')}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <p className="min-w-0 truncate text-sm text-app-fg">{profile.name ?? t('view.unnamed')}</p>
+            <p className="min-w-0 truncate text-sm text-app-fg">
+              {profile.name ?? t('view.unnamed')}
+            </p>
             {roleKeys !== null ? (
               <button
                 type="button"

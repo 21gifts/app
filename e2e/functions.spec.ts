@@ -685,7 +685,10 @@ test('Function: proxyMeSetupSkipPost — POST /me/setup/skip advances setup', as
   expect(body.missing).toContain('name');
 });
 
-test('Function: skipSetup — Skip on name setup advances without a name', async ({ page, request }) => {
+test('Function: skipSetup — Skip on name setup advances without a name', async ({
+  page,
+  request,
+}) => {
   await signInViaStub(page, request);
   await page.goto('/setup/name');
   await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
@@ -727,7 +730,7 @@ test('Function: fetchMember — member page shows the canned profile', async ({ 
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-  await expect(page.getByText('Carol')).toBeVisible();
+  await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
 });
 
 test('Function: MissingRequirementsError — 409 body is missing_requirements', async ({
@@ -770,7 +773,7 @@ test('Function: MemberProfileScreen — role pill is visible on the canned membe
 }) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
-  await expect(page.getByRole('button', { name: 'Verified' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Verified' }).first()).toBeVisible();
 });
 
 test('Function: RequirementsOverlay — contact post without a name opens the overlay', async ({
