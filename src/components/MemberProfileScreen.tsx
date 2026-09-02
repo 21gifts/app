@@ -11,12 +11,7 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import {
-  fetchReplies,
-  openConversation,
-  postMessage,
-  postMessageInvoice,
-} from '@/lib/api';
+import { fetchReplies, openConversation, postMessage, postMessageInvoice } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type ForumMessage,
@@ -198,7 +193,9 @@ export function MemberProfileScreen({
       ) : null}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
         <section className="flex w-full flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
-          <h1 className="text-center text-2xl font-semibold tracking-tight">{t('profile.title')}</h1>
+          <h1 className="text-center text-2xl font-semibold tracking-tight">
+            {t('profile.title')}
+          </h1>
           <AccountActivityChart received={received} />
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">

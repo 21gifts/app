@@ -565,10 +565,7 @@ describe('MemberProfileScreen', () => {
 
   it('treats a blank Lightning Address as missing', () => {
     renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, lightningAddress: '   ' }}
-        received={[]}
-      />,
+      <MemberProfileScreen profile={{ ...profile, lightningAddress: '   ' }} received={[]} />,
     );
     expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
   });
