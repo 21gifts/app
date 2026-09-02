@@ -371,18 +371,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-handbook-functions', false);
   });
 
-  test('state /handbook/functions mobile', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await page.getByRole('button', { name: 'Mobile' }).click();
-    await shotScreen(page, 'state-handbook-functions-mobile', false);
-  });
-
-  test('state /handbook/functions dark', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await page.getByRole('button', { name: 'Dark' }).click();
-    await shotScreen(page, 'state-handbook-functions-dark', false);
-  });
-
   test('screen /handbook/endpoints', async ({ page }) => {
     await page.goto('/handbook/endpoints');
     await expect(page.getByRole('heading', { name: 'Endpoints' }).first()).toBeVisible();
@@ -2321,79 +2309,7 @@ test.describe('stats variant baselines', () => {
   });
 });
 
-test.describe('function baselines', () => {
-  // ~140 Function: clips × 4 combo projects; 30s timed out, 120s is tight on mobile workers.
-  test.describe.configure({ timeout: 180_000 });
-
-  test('every handbook function section', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await expect(page.getByRole('heading', { name: 'Functions' }).first()).toBeVisible();
-    await unstickStickyChrome(page);
-
-    const headings = page.locator('#functions h2[id^="functions-function-"]');
-    const count = await headings.count();
-    expect(count).toBeGreaterThan(0);
-
-    // One test walks every handbook function clip; count × comparison exceeds Playwright’s 30s default.
-    // Desktop workers need more than count*500 (that floor hit 100s and closed the page).
-    test.setTimeout(Math.max(180_000, count * 800));
-
-    const sections = await headings.evaluateAll((nodes) =>
-      nodes.map((node) => {
-        const el = node as HTMLElement;
-        const label = (el.textContent ?? '').trim();
-        const match = /^Function: (.+)$/.exec(label);
-        return { id: el.id, name: match?.[1] ?? '' };
-      }),
-    );
-    expect(sections.every((s) => s.id !== '' && s.name !== '')).toBe(true);
-    expect(new Set(sections.map((s) => s.name)).size).toBe(sections.length);
-
-    for (const section of sections) {
-      const heading = page.locator(`#${section.id}`);
-      await heading.scrollIntoViewIfNeeded();
-      const clip = await page.evaluate((id: string) => {
-        const el = document.getElementById(id);
-        if (el === null) {
-          return null;
-        }
-        const wrap = el.parentElement;
-        if (wrap === null) {
-          return null;
-        }
-        const nodes: Element[] = [wrap];
-        let next = wrap.nextElementSibling;
-        while (next !== null) {
-          if (next.querySelector('h2[id^="functions-function-"]') !== null) {
-            break;
-          }
-          nodes.push(next);
-          next = next.nextElementSibling;
-        }
-        const rects = nodes.map((node) => node.getBoundingClientRect());
-        const left = Math.min(...rects.map((r) => r.left));
-        const top = Math.min(...rects.map((r) => r.top));
-        const right = Math.max(...rects.map((r) => r.right));
-        const bottom = Math.max(...rects.map((r) => r.bottom));
-        return {
-          x: left + window.scrollX,
-          y: top + window.scrollY,
-          width: right - left,
-          height: bottom - top,
-        };
-      }, section.id);
-      expect(clip).not.toBeNull();
-      await expect.soft(page).toHaveScreenshot(`function-${section.name}.png`, {
-        clip: clip as { x: number; y: number; width: number; height: number },
-        fullPage: true,
-        // Function clips sit below handbook screen PNGs; those images changing
-        // size reflows wrap in later sections by a couple of percent.
-        maxDiffPixelRatio: 0.05,
-        ...SHOT,
-      });
-    }
-  });
-
+test.describe('remaining visual states', () => {
   test('LightningAddressForm welcome after linked address', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

@@ -1268,19 +1268,18 @@ Threats out of scope for this document: XSS in forum text (already escaped via R
 
 This is a visual system, not a metrics pipeline.
 
-| Gate                                 | What it proves                                                                                                                                     |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `e2e/visual.spec.ts`                 | Four combos: desktop/mobile × light/dark. Linux Chromium goldens under `e2e/visual.spec.ts-snapshots/`. `maxDiffPixelRatio` 0 except handbook 0.05 |
-| `npm run screenshot:check`           | Every screen/variant/export has a PNG; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`)                                 |
-| `scripts/screen-variants.mjs`        | Closed list of UI states; omitting a state is an undeclared deviation                                                                              |
-| `npm run handbook:check`             | Every screen/function/endpoint has a handbook section                                                                                              |
-| `docs/handbook/screens.md`           | Update **only when that screen actually changes**                                                                                                  |
-| `docs/handbook/functions.md`         | `## Function: <Name>` for **every new or changed export** in the **same PR**                                                                       |
-| `e2e/` `test('Function: <Name> …')`  | Required for every new export (CONTRIBUTING E2E)                                                                                                   |
-| `function-<Name>-${combo}-linux.png` | Four combos per new export (`screenshot:check`)                                                                                                    |
-| `npm run handbook:images`            | Copies desktop-light (or first allowed combo) into `public/handbook-images/`                                                                       |
+| Gate                                | What it proves                                                                                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `e2e/visual.spec.ts`                | Four combos: desktop/mobile × light/dark. Linux Chromium goldens under `e2e/visual.spec.ts-snapshots/`. `maxDiffPixelRatio` 0 except handbook 0.05 |
+| `npm run screenshot:check`          | Every screen/variant has a PNG; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`)                                        |
+| `scripts/screen-variants.mjs`       | Closed list of UI states; omitting a state is an undeclared deviation                                                                              |
+| `npm run handbook:check`            | Every screen/function/endpoint has a handbook section                                                                                              |
+| `docs/handbook/screens.md`          | Update **only when that screen actually changes**                                                                                                  |
+| `docs/handbook/functions.md`        | `## Function: <Name>` for **every new or changed export** in the **same PR**                                                                       |
+| `e2e/` `test('Function: <Name> …')` | Required for every new export (CONTRIBUTING E2E)                                                                                                   |
+| `npm run handbook:images`           | Copies desktop-light (or first allowed combo) into `public/handbook-images/`                                                                       |
 
-**Never** regenerate goldens on the session host. Regen is CI / Linux `docker run --platform linux/amd64 mcr.microsoft.com/playwright:v1.61.1-noble`. A font/token PR will rewrite many PNGs — isolate that (PR 2). New primitives (`ButtonLink`, `Wordmark`, `SegmentedControl`) are full export-surface PRs: unit test + handbook Function + `Function:` e2e + four function goldens, not “CSS only.”
+**Never** regenerate goldens on the session host. Regen is CI / Linux `docker run --platform linux/amd64 mcr.microsoft.com/playwright:v1.61.1-noble`. A font/token PR will rewrite many PNGs — isolate that (PR 2). New primitives (`ButtonLink`, `Wordmark`, `SegmentedControl`) are full export-surface PRs: unit test + handbook Function + `Function:` e2e, not “CSS only.”
 
 No Datadog. Visual drift is the alert.
 
@@ -1350,17 +1349,17 @@ Orange is decided: **shell-split**, not gift-only. Marketing Log in stays orange
 
 ## Implementation mapping
 
-| Concern                | File                                                                                          |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
-| Canonical system       | `docs/ui.md` (this document, English, public-repo safe)                                       |
-| Tokens                 | `src/app/globals.css` `@theme` + `html.dark`                                                  |
-| Font                   | `src/app/layout.tsx` `next/font/google` Outfit                                                |
-| Primitives             | `src/components/ui/*`                                                                         |
-| Control grammar        | `CONTRIBUTING.md` (replace Icon controls section) + `Review.md`                               |
-| Handbook screens       | `docs/handbook/screens.md` only in the PR that changes that screen                            |
-| Handbook functions     | `docs/handbook/functions.md` `## Function: <Name>` in the **same PR** as a new/changed export |
-| Function e2e + goldens | `test('Function: <Name> …')` + four `function-<Name>-${combo}-linux.png`                      |
-| Variants / goldens     | `scripts/screen-variants.mjs`, `e2e/visual.spec.ts`, `e2e/visual.spec.ts-snapshots/`          |
+| Concern            | File                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| Canonical system   | `docs/ui.md` (this document, English, public-repo safe)                                       |
+| Tokens             | `src/app/globals.css` `@theme` + `html.dark`                                                  |
+| Font               | `src/app/layout.tsx` `next/font/google` Outfit                                                |
+| Primitives         | `src/components/ui/*`                                                                         |
+| Control grammar    | `CONTRIBUTING.md` (replace Icon controls section) + `Review.md`                               |
+| Handbook screens   | `docs/handbook/screens.md` only in the PR that changes that screen                            |
+| Handbook functions | `docs/handbook/functions.md` `## Function: <Name>` in the **same PR** as a new/changed export |
+| Function e2e       | `test('Function: <Name> …')`                                                                  |
+| Variants / goldens | `scripts/screen-variants.mjs`, `e2e/visual.spec.ts`, `e2e/visual.spec.ts-snapshots/`          |
 
 **Public-repo hygiene.** In-repo docs never name private repositories, internal hostnames, or infra internals. Say “the API concept document (Brand)” without a private path. CONTRIBUTING already links the public API repo; that link may stay. Mermaid is fine. Keep numbers.
 

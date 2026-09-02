@@ -546,18 +546,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/handbook/functions:mobile",
-    "label": "/handbook/functions mobile",
-    "visual": "state-handbook-functions-mobile",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/functions:dark",
-    "label": "/handbook/functions dark",
-    "visual": "state-handbook-functions-dark",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/handbook/endpoints:default",
     "label": "/handbook/endpoints default",
     "visual": "screen-handbook-endpoints",

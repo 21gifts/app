@@ -755,27 +755,15 @@ First topic, desktop-light image, **Desktop** and **Light** selected when those 
 ## Screen: /handbook/functions
 
 - **URL:** `/handbook/functions` — public functions handbook (no auth gate).
-- **What the user sees:** Heading **Functions**, the same one-topic viewer for function clips, then the functions markdown (`## Function: name`) used by visual clips.
-- **Actions:** Pick a function, switch viewport/theme when available, read the markdown, return to the hub.
-- **Calls:** `HandbookFunctionsPage`, `HandbookImageViewer`, `HandbookMarkdown`, `loadHandbookDocuments`.
+- **What the user sees:** Heading **Functions** and the functions markdown (`## Function: name`) only. No image switches.
+- **Actions:** Read the markdown, return to the hub.
+- **Calls:** `HandbookFunctionsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
 
 ### Variant: default
 
-Viewer plus function headings. **Desktop** / **Light** selected.
+Markdown list of `## Function:` headings.
 
 ![21.gifts handbook functions](images/handbook-functions.png)
-
-### Variant: mobile
-
-**Mobile** selected.
-
-![21.gifts handbook functions mobile](images/handbook-functions-mobile.png)
-
-### Variant: dark
-
-**Dark** selected.
-
-![21.gifts handbook functions dark](images/handbook-functions-dark.png)
 
 ## Screen: /handbook/endpoints
 

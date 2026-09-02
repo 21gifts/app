@@ -41,7 +41,7 @@ npm run dev    # → http://localhost:3000
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
-| `npm run screenshot:check`     | Fail if a screen, variant, or export lacks a Playwright PNG, or a variant has no shot in `e2e/visual.spec.ts`                                 |
+| `npm run screenshot:check`     | Fail if a screen or variant lacks a Playwright PNG, or a variant has no shot in `e2e/visual.spec.ts`                                          |
 | `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
 ## Project structure
@@ -191,7 +191,7 @@ app/
 │   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
-│   └── check-screenshots.mjs    # CI gate: missing screen/variant/function PNG or visual.spec.ts shot → exit 1
+│   └── check-screenshots.mjs    # CI gate: missing screen/variant PNG or visual.spec.ts shot → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
@@ -444,12 +444,11 @@ Default screen shots use the `screen-…` args; extra states use `state-…` arg
 Restrict `combos` only when the UI cannot exist (hamburger nav on desktop,
 payment QR on a smartphone, smartphone pay sheet on desktop).
 
-Every exported function **must** have four Playwright baselines
-`function-<Name>-${combo}-linux.png` (the handbook section on `/handbook`,
-clipped, in each combo project). Adding a screen, UI state, or export without
-updating the baselines in the **same PR** is rejected.
-`npm run screenshot:check` (and CI) fails when a PNG is missing or a variant
-has no matching shot in `e2e/visual.spec.ts`.
+Adding a screen or UI state without updating the baselines in the **same PR**
+is rejected. `npm run screenshot:check` (and CI) fails when a PNG is missing or
+a variant has no matching shot in `e2e/visual.spec.ts`. Exported functions need
+a handbook `## Function: <Name>` section and an e2e `Function: <Name>` needle,
+not a screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
 combo projects as parallel jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.

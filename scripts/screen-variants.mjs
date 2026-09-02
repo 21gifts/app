@@ -39,7 +39,7 @@ export function variantComboIds(variant) {
 /**
  * Playwright snapshot stem for a visual arg and combo (`-linux.png` is added by Playwright).
  *
- * @param visual - Variant `visual` or `function-${name}`.
+ * @param visual - Variant `visual` arg.
  * @param comboId - Combo id.
  * @returns Snapshot arg Playwright stores as `${stem}-linux.png`.
  */
@@ -687,20 +687,6 @@ export const SCREEN_VARIANTS = [
     image: 'handbook-functions.png',
     visual: 'screen-handbook-functions',
     needle: "getByRole('heading', { name: 'Functions' })",
-  },
-  {
-    route: '/handbook/functions',
-    id: 'mobile',
-    image: 'handbook-functions-mobile.png',
-    visual: 'state-handbook-functions-mobile',
-    needle: 'handbook functions mobile',
-  },
-  {
-    route: '/handbook/functions',
-    id: 'dark',
-    image: 'handbook-functions-dark.png',
-    visual: 'state-handbook-functions-dark',
-    needle: 'handbook functions dark',
   },
   {
     route: '/handbook/endpoints',
