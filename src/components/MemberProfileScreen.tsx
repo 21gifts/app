@@ -113,6 +113,7 @@ export function MemberProfileScreen({
   const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<'name' | 'rules' | null>(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const [listedNote, setListedNote] = useState(profile.profileMessage);
   const address = profile.lightningAddress;
 
   const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
@@ -134,13 +135,28 @@ export function MemberProfileScreen({
     setReplyFormError(null);
     try {
       const created = await postMessage(token, { text: trimmed, inReplyTo: parentId });
+      let alreadyListed = false;
       setReplies((prev) => {
         /* v8 ignore next 3 -- composer only posts after the thread loaded */
         if (prev === null) {
           return [created];
         }
+        alreadyListed = prev.some((message) => message.id === created.id);
+        /* v8 ignore next 3 -- duplicate id already in the list */
+        if (alreadyListed) {
+          return prev;
+        }
         return [...prev, created];
       });
+      if (!alreadyListed) {
+        setListedNote((prev) => {
+          /* v8 ignore next 3 -- reply composer only mounts with a profile note */
+          if (prev === null) {
+            return prev;
+          }
+          return { ...prev, replyCount: Math.max(prev.replyCount, prev.replyCount + 1) };
+        });
+      }
       setReplyDraft('');
       pendingPostRef.current = null;
     } catch (err) {
@@ -236,10 +252,10 @@ export function MemberProfileScreen({
             )}
           </div>
         </section>
-        {profile.profileMessage !== null ? (
+        {listedNote !== null ? (
           <ForumBoard
             {...IDLE_BOARD}
-            messages={[profile.profileMessage]}
+            messages={[listedNote]}
             payMessageId={payMessageId}
             payDraft={payDraft}
             payBusy={payBusy}

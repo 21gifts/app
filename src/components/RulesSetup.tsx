@@ -11,8 +11,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * Third post-login screen: one living-room rules chapter at a time.
  *
  * Intermediate **Continue** clicks only advance the chapter index. The last
- * chapter’s **I agree to these rules** POSTs `agreeToRules` and merges only
- * `rulesAgreedAt` into the auth-store account
+ * chapter’s **I agree to these rules** POSTs `agreeToRules` and merges
+ * `rulesAgreedAt`, `setup`, and `missing` into the auth-store account
  * so concurrent name or address writes are not overwritten. Renders nothing
  * without a session token or when `chapters` is empty.
  *

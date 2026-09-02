@@ -251,6 +251,7 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
     });
+    expect(screen.getByText('1 replies')).toBeTruthy();
   });
 
   it('does not post a reply after the session is cleared', async () => {
