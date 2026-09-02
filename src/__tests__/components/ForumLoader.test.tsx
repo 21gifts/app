@@ -2298,6 +2298,44 @@ describe('ForumLoader', () => {
     expect(invoiceMock).toHaveBeenCalledTimes(1);
   });
 
+  it('does not collapse while a reply is posting', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockImplementation(() => new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'wait' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expect(screen.getByLabelText('Your reply')).toBeTruthy();
+  });
+
+  it('collapses an expanded thread', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expect(screen.queryByLabelText('Your reply')).toBeNull();
+  });
+
   it('loads replies via fetchReplies when a row is expanded', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     repliesMock.mockResolvedValue([
