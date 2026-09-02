@@ -43,6 +43,7 @@ vi.mock('@/lib/forum-video', () => ({
 }));
 
 import {
+  agreeToRules,
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
@@ -51,6 +52,7 @@ import {
   postMessage,
   postMessageInvoice,
   postMessageVideo,
+  setName,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
@@ -3027,5 +3029,144 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('opens the overlay when posting returns missing_requirements', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+  });
+
+  it('retries the post after the name overlay is satisfied', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+  });
+
+  it('advances from rules to name when the overlay still has a gap', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        name: null,
+        rulesAgreedAt: null,
+        missing: ['rules', 'name'],
+        forumLawsDismissed: true,
+      },
+    });
+    fetchMock.mockResolvedValue([]);
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      name: null,
+      rulesAgreedAt: 2,
+      missing: ['name'],
+      setup: 'name',
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Agree to the living room rules' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('does not reopen the overlay when a retried post is still missing requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('opens the overlay when a reply is missing a name', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('opens the overlay when a reply returns missing_requirements', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
 });

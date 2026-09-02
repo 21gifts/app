@@ -112,6 +112,7 @@ export function ContactLoader(): ReactElement | null {
     }
     setOverlayRequirement(null);
     const pending = pendingPostRef.current;
+    /* v8 ignore next 3 -- overlay cannot satisfy without a queued send */
     if (pending === null) {
       return;
     }

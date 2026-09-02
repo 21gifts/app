@@ -27,7 +27,7 @@ vi.mock('@/lib/api', () => ({
   skipSetup: vi.fn(),
 }));
 
-import { fetchConversations, postContact } from '@/lib/api';
+import { agreeToRules, fetchConversations, postContact, setName } from '@/lib/api';
 
 const postMock = vi.mocked(postContact);
 const conversationsMock = vi.mocked(fetchConversations);
@@ -238,5 +238,79 @@ describe('ContactLoader', () => {
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
+  });
+
+  it('retries the send after the name overlay is satisfied', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    postMock.mockResolvedValue({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hi',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockResolvedValue([]);
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'Hi');
+    });
+  });
+
+  it('advances from rules to name when the overlay still has a gap', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, rulesAgreedAt: null, missing: ['rules', 'name'] },
+    });
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      name: null,
+      rulesAgreedAt: 2,
+      missing: ['name'],
+      setup: 'name',
+    });
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('dialog', { name: 'Agree to the living room rules' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('does not reopen the overlay when a retried send is still missing requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

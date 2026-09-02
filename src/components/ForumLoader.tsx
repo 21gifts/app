@@ -972,6 +972,7 @@ export function ForumLoader(): ReactElement | null {
     }
     setOverlayRequirement(null);
     const pending = pendingPostRef.current;
+    /* v8 ignore next 3 -- overlay cannot satisfy without a queued post */
     if (pending === null) {
       return;
     }
