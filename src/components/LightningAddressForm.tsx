@@ -212,7 +212,7 @@ export function LightningAddressForm(
             <Button
               type="submit"
               form={formId}
-              className="w-full"
+              size="lg"
               disabled={continueDisabled}
               icon={
                 busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined

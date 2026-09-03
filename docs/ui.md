@@ -135,7 +135,7 @@ App shell today (`src/components/AppShell.tsx`); `PageChrome` is a thin `mode="f
 // flow — min-height --app-height; document scroll
 <main className="relative flex min-h-[var(--app-height)] flex-col items-center px-6">
   {/* absolute topLeft / topRight */}
-  <div className="w-full flex-none pt-24 pb-8">{/* children */}</div>
+  <div className="flex w-full flex-none flex-col items-center pt-24 pb-8">{/* children */}</div>
 </main>
 ```
 
