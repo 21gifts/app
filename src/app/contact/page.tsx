@@ -1,8 +1,9 @@
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { ContactLoader } from '@/components/ContactLoader';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { Wordmark } from '@/components/ui';
 
 /**
  * `/contact` — signed-in in-app contact (only way to reach 21.gifts).
@@ -15,10 +16,15 @@ import { PageChrome, Wordmark } from '@/components/ui';
  */
 export default function ContactPage(): ReactElement {
   return (
-    <PageChrome topLeft={<Wordmark href="/welcome" />} topRight={<SignedInChrome />}>
+    <AppShell
+      mode="fill"
+      align="center"
+      topLeft={<Wordmark href="/welcome" />}
+      topRight={<SignedInChrome />}
+    >
       <OnboardingGate screen="welcome">
         <ContactLoader />
       </OnboardingGate>
-    </PageChrome>
+    </AppShell>
   );
 }

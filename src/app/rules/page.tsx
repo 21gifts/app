@@ -17,7 +17,6 @@ export default async function RulesPage(): Promise<ReactElement> {
   const messages = getCatalog(locale);
   return (
     <PageChrome
-      className="justify-start py-16"
       topLeft={<Wordmark href="/" />}
       topRight={
         <>

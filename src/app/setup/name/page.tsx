@@ -1,8 +1,9 @@
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { NameSetup } from '@/components/NameSetup';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { Wordmark } from '@/components/ui';
 
 /**
  * `/setup/name` — ask for a display name after login.
@@ -11,14 +12,10 @@ import { PageChrome, Wordmark } from '@/components/ui';
  */
 export default function NameSetupPage(): ReactElement {
   return (
-    <PageChrome
-      className="h-svh justify-start"
-      topLeft={<Wordmark />}
-      topRight={<SignedInChrome />}
-    >
+    <AppShell mode="fill" align="start" topLeft={<Wordmark />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="name">
         <NameSetup />
       </OnboardingGate>
-    </PageChrome>
+    </AppShell>
   );
 }

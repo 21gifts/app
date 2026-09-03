@@ -1,7 +1,8 @@
 'use client';
 
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
-import { useState, type FormEvent, type ReactElement } from 'react';
+import { useId, useState, type FormEvent, type ReactElement } from 'react';
+import { AppShellFooter } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import {
@@ -58,6 +59,7 @@ export function LightningAddressForm(
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<LightningAddressError | null>(null);
   const [blockedAddress, setBlockedAddress] = useState<string | null>(null);
+  const formId = useId();
 
   if (account === null || session === null) {
     return null;
@@ -181,8 +183,9 @@ export function LightningAddressForm(
   if (variant === 'onboarding') {
     return (
       <form
+        id={formId}
         onSubmit={handleSubmit}
-        className="mt-6 flex w-full flex-1 flex-col items-stretch gap-3"
+        className="mt-6 flex w-full flex-col items-stretch gap-3"
       >
         <p className="text-center text-sm text-app-muted">{t('la.prompt')}</p>
         <input
@@ -204,17 +207,30 @@ export function LightningAddressForm(
             {t(lightningAddressErrorKey(error))}
           </p>
         ) : null}
-        <Button
-          type="submit"
-          disabled={continueDisabled}
-          className="mt-auto w-full"
-          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
-        >
-          {t('setup.continue')}
-        </Button>
-        <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={handleSkip}>
-          {t('setup.skip')}
-        </Button>
+        <AppShellFooter>
+          <div className="mx-auto flex w-full max-w-sm flex-col items-stretch gap-3">
+            <Button
+              type="submit"
+              form={formId}
+              size="lg"
+              disabled={continueDisabled}
+              icon={
+                busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+              }
+            >
+              {t('setup.continue')}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              disabled={busy}
+              onClick={handleSkip}
+            >
+              {t('setup.skip')}
+            </Button>
+          </div>
+        </AppShellFooter>
       </form>
     );
   }

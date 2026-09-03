@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
+import { AppShell } from '@/components/AppShell';
 
 /** Props for {@link PageChrome}. */
 export interface PageChromeProps {
@@ -8,12 +9,13 @@ export interface PageChromeProps {
   topLeft?: ReactNode;
   /** Optional absolute top-right chrome (menu, language, theme). */
   topRight?: ReactNode;
-  /** Extra classes on the outer `<main>`. */
+  /** Extra classes on the outer `<main>` — never viewport height classes. */
   className?: string;
 }
 
 /**
- * Full-height app page shell with optional top-left and top-right slots.
+ * Flow-mode app page wrapper around {@link AppShell} with optional chrome slots.
+ * Prefer {@link AppShell} directly on app routes.
  *
  * @param props - See {@link PageChromeProps}.
  * @returns The page chrome element.
@@ -24,21 +26,14 @@ export function PageChrome({
   topRight,
   className,
 }: PageChromeProps): ReactElement {
-  const extra = className === undefined || className === '' ? '' : ` ${className}`;
-  const hasLeft = topLeft !== undefined && topLeft !== null;
-  const hasRight = topRight !== undefined && topRight !== null;
-  const justify = extra.includes('justify-start') ? '' : ' justify-center';
   return (
-    <main
-      className={`relative flex min-h-screen flex-col items-center${justify} gap-10 px-6${extra}`}
+    <AppShell
+      mode="flow"
+      topLeft={topLeft}
+      topRight={topRight}
+      {...(className === undefined ? {} : { className })}
     >
-      {hasLeft ? (
-        <div className="absolute top-4 left-5 z-40 flex items-center gap-2">{topLeft}</div>
-      ) : null}
-      {hasRight ? (
-        <div className="absolute top-4 right-5 z-40 flex items-center gap-2">{topRight}</div>
-      ) : null}
       {children}
-    </main>
+    </AppShell>
   );
 }

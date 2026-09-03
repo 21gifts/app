@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { ButtonLink, PageChrome, Wordmark } from '@/components/ui';
+import { ButtonLink, Wordmark } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
@@ -15,7 +16,9 @@ export default async function DonatePage(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
   return (
-    <PageChrome
+    <AppShell
+      mode="fill"
+      align="center"
       topLeft={<Wordmark href="/" />}
       topRight={
         <>
@@ -33,6 +36,6 @@ export default async function DonatePage(): Promise<ReactElement> {
           {translate(messages, 'donate.continue')}
         </ButtonLink>
       </div>
-    </PageChrome>
+    </AppShell>
   );
 }

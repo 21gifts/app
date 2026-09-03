@@ -35,6 +35,7 @@
 
 html {
   color-scheme: light;
+  --app-height: 100dvh;
 }
 
 html.dark {
