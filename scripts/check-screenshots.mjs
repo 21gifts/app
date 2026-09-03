@@ -86,6 +86,19 @@ function rulesChapterIds() {
 }
 
 const missing = [];
+/** @type {Set<string>} */
+const expectedSnapFiles = new Set();
+
+/**
+ * Expected Playwright Linux baseline filename for a snapshot stem.
+ * Same mapping as {@link hasSnapshot}.
+ *
+ * @param {string} stem - Snapshot stem before `-linux.png`.
+ * @returns {string} Baseline file name.
+ */
+function expectedSnapshotFile(stem) {
+  return `${stem.replaceAll('_', '-')}-linux.png`;
+}
 
 if (!fs.existsSync(E2E_VISUAL)) {
   console.error('SCREENSHOTS MISSING: e2e/visual.spec.ts does not exist');
@@ -110,6 +123,7 @@ for (const route of [...screens].sort()) {
       : variantComboIds(defaultVariant);
   for (const comboId of comboIds) {
     const stem = comboSnapshotStem(arg, comboId);
+    expectedSnapFiles.add(expectedSnapshotFile(stem));
     if (!hasSnapshot(snapFiles, stem)) {
       missing.push(`Screen ${route} has no Playwright Linux baseline ${stem}-linux.png`);
     }
@@ -132,6 +146,7 @@ for (const route of [...screens].sort()) {
 for (const variant of SCREEN_VARIANTS) {
   for (const comboId of variantComboIds(variant)) {
     const stem = comboSnapshotStem(variant.visual, comboId);
+    expectedSnapFiles.add(expectedSnapshotFile(stem));
     if (!hasSnapshot(snapFiles, stem)) {
       missing.push(
         `Variant ${variant.route} ${variant.id} ${comboId} has no Playwright Linux baseline ${stem}-linux.png`,
@@ -141,6 +156,14 @@ for (const variant of SCREEN_VARIANTS) {
   if (!hasVisualShot(visualSrc, variant.visual)) {
     missing.push(
       `Variant ${variant.route} ${variant.id} has no shotScreen/toHaveScreenshot('${variant.visual}') in e2e/visual.spec.ts`,
+    );
+  }
+}
+
+for (const file of snapFiles) {
+  if (!expectedSnapFiles.has(file)) {
+    missing.push(
+      `Unexpected Playwright Linux baseline ${file} (not a screen or SCREEN_VARIANTS combo)`,
     );
   }
 }
