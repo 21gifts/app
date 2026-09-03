@@ -1514,7 +1514,7 @@
 
 ## Function: HandbookScreensPage
 
-- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics and renders `HandbookImageViewer`.
+- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics and renders the stacked `HandbookImageViewer`.
 - **Inputs:** None.
 - **Returns / side effects:** The screens handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook/screens`.
@@ -1535,9 +1535,9 @@
 
 ## Function: HandbookImageViewer
 
-- **Purpose:** Client one-topic baseline viewer. Desktop/Mobile and Light/Dark switches only when those combo files exist.
+- **Purpose:** Client stacked baseline viewer. Every topic with combos is listed under global Desktop/Mobile and Light/Dark switches; switches use the union of remaining topics and appear only when both sides exist.
 - **Inputs:** `topics` (`HandbookTopic[]`).
-- **Returns / side effects:** React element or `null` when `topics` is empty. No network.
+- **Returns / side effects:** React element or `null` when no topic has combos. No network.
 - **Used by:** `HandbookScreensPage`.
 
 ## Function: topicImageSrc

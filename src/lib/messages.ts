@@ -108,7 +108,7 @@ const en = {
   'handbook.chapterLabel': '{title} chapter',
   'handbook.screensTitle': 'Screens',
   'handbook.screensLead':
-    'Each screen and UI state, with Desktop/Mobile and Light/Dark switches when those baselines exist.',
+    'Stacked screen states, with Desktop/Mobile and Light/Dark switches when those baselines exist.',
   'handbook.functionsTitle': 'Functions',
   'handbook.functionsLead': 'Each exported function.',
   'handbook.endpointsTitle': 'Endpoints',
@@ -500,7 +500,7 @@ const de = {
   'handbook.chapterLabel': 'Kapitel {title}',
   'handbook.screensTitle': 'Screens',
   'handbook.screensLead':
-    'Jeder Screen und jeder Zustand, mit Desktop/Mobil und Hell/Dunkel, wenn diese Baselines existieren.',
+    'Gestapelte Screen-Zustände, mit Desktop/Mobil und Hell/Dunkel, wenn diese Baselines existieren.',
   'handbook.functionsTitle': 'Funktionen',
   'handbook.functionsLead': 'Jede exportierte Funktion.',
   'handbook.endpointsTitle': 'Endpunkte',
@@ -892,7 +892,7 @@ const es = {
   'handbook.chapterLabel': 'Capítulo {title}',
   'handbook.screensTitle': 'Pantallas',
   'handbook.screensLead':
-    'Cada pantalla y estado, con conmutadores Escritorio/Móvil y Claro/Oscuro cuando existen esas capturas.',
+    'Estados de pantalla apilados, con conmutadores Escritorio/Móvil y Claro/Oscuro cuando existen esas capturas.',
   'handbook.functionsTitle': 'Funciones',
   'handbook.functionsLead': 'Cada función exportada.',
   'handbook.endpointsTitle': 'Endpoints',
@@ -1275,7 +1275,7 @@ const fil = {
   'handbook.chapterLabel': 'Kabanata {title}',
   'handbook.screensTitle': 'Screens',
   'handbook.screensLead':
-    'Bawat screen at UI state, na may Desktop/Mobile at Light/Dark kapag meron ang mga baseline na iyon.',
+    'Naka-stack na screen states, na may Desktop/Mobile at Light/Dark kapag meron ang mga baseline na iyon.',
   'handbook.functionsTitle': 'Functions',
   'handbook.functionsLead': 'Bawat exported function.',
   'handbook.endpointsTitle': 'Endpoints',

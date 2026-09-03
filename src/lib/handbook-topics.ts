@@ -11,7 +11,7 @@ export type HandbookComboId = (typeof HANDBOOK_COMBOS)[number];
 
 /** One handbook image topic (screen variant or function clip). */
 export type HandbookTopic = {
-  /** Stable id for the topic picker. */
+  /** Stable topic id used as the stacked list section key. */
   id: string;
   /** Visible label. */
   label: string;
