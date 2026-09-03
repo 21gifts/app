@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react';
+import { AppShellFooter, AppShellHeader, AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton, Wordmark } from '@/components/ui';
 import { agreeToRules } from '@/lib/api';
@@ -84,54 +85,65 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
 
   return (
     <>
-      <div className="absolute top-4 left-5 z-40 flex items-center gap-2">
-        {index > 0 ? (
-          <IconButton
-            type="button"
-            variant="ghost"
-            size="md"
-            aria-label={t('setup.rulesBack')}
-            disabled={busy}
-            onClick={(event) => {
-              if (event.detail > 1 || busy || stepLock.current) {
-                return;
-              }
-              stepLock.current = true;
-              setIndex((currentIndex) => Math.max(0, currentIndex - 1));
-            }}
-          >
-            <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-          </IconButton>
-        ) : null}
-        <Wordmark />
-      </div>
-      <section className="flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8 pt-24">
-        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          {t('setup.rulesTitle')}
-        </h1>
-        <p className="text-center text-sm text-app-muted">
-          {t(lastChapter ? 'setup.rulesPromptLast' : 'setup.rulesPrompt')}
-        </p>
-        <p className="text-center text-sm text-app-muted" aria-live="polite">
-          {t('setup.rulesProgress', { current: index + 1, total: chapters.length })}
-        </p>
+      <AppShellTopLeft>
+        <>
+          {index > 0 ? (
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="md"
+              aria-label={t('setup.rulesBack')}
+              disabled={busy}
+              onClick={(event) => {
+                if (event.detail > 1 || busy || stepLock.current) {
+                  return;
+                }
+                stepLock.current = true;
+                setIndex((currentIndex) => Math.max(0, currentIndex - 1));
+              }}
+            >
+              <ArrowLeft aria-hidden="true" className="h-5 w-5" />
+            </IconButton>
+          ) : null}
+          <Wordmark />
+        </>
+      </AppShellTopLeft>
+      <AppShellHeader>
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-24">
+          <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+            {t('setup.rulesTitle')}
+          </h1>
+          <p className="text-center text-sm text-app-muted">
+            {t(lastChapter ? 'setup.rulesPromptLast' : 'setup.rulesPrompt')}
+          </p>
+          <p className="text-center text-sm text-app-muted" aria-live="polite">
+            {t('setup.rulesProgress', { current: index + 1, total: chapters.length })}
+          </p>
+        </div>
+      </AppShellHeader>
+      <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         {current}
         {error ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('setup.rulesErrorRequest')}
           </p>
         ) : null}
-        <Button
-          type="button"
-          size="lg"
-          onClick={handleAgree}
-          disabled={busy}
-          className="mt-auto"
-          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
-        >
-          {t(lastChapter ? 'setup.agree' : 'setup.continue')}
-        </Button>
       </section>
+      <AppShellFooter>
+        <div className="mx-auto w-full max-w-3xl">
+          <Button
+            type="button"
+            size="lg"
+            onClick={handleAgree}
+            disabled={busy}
+            icon={
+              busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+            }
+          >
+            {t(lastChapter ? 'setup.agree' : 'setup.continue')}
+          </Button>
+        </div>
+      </AppShellFooter>
     </>
   );
 }

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { Wordmark } from '@/components/ui';
 
 /**
  * Capability-URL referrer policy so the view key is not sent as Referer.
@@ -23,7 +24,9 @@ export default async function ViewProfilePage({
 }): Promise<ReactElement> {
   const { viewKey } = await params;
   return (
-    <PageChrome
+    <AppShell
+      mode="fill"
+      align="center"
       topLeft={<Wordmark href="/" />}
       topRight={
         <>
@@ -33,6 +36,6 @@ export default async function ViewProfilePage({
       }
     >
       <ViewProfileLoader viewKey={viewKey} />
-    </PageChrome>
+    </AppShell>
   );
 }

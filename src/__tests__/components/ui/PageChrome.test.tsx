@@ -13,9 +13,12 @@ describe('PageChrome', () => {
       </PageChrome>,
     );
     const main = container.querySelector('main');
-    expect(main?.className).toContain('min-h-screen');
+    expect(main?.className).toContain('min-h-[var(--app-height)]');
+    expect(main?.className).not.toContain('overflow-hidden');
+    expect(main?.className).not.toContain('justify-center');
     expect(screen.getByText('Body')).toBeTruthy();
-    expect(main?.querySelector('.absolute')).toBeNull();
+    expect(main?.querySelector('.right-5')).toBeNull();
+    expect(main?.querySelector('.left-5')?.childNodes.length ?? 0).toBe(0);
   });
 
   it('renders topRight in the absolute slot', () => {
@@ -38,14 +41,15 @@ describe('PageChrome', () => {
     expect(container.querySelector('.left-5')?.className).toContain('gap-2');
   });
 
-  it('uses justify-start instead of justify-center when className asks', () => {
+  it('appends non-viewport className extras', () => {
     const { container } = renderWithLocale(
-      <PageChrome className="h-svh justify-start">
+      <PageChrome className="justify-start">
         <p>Body</p>
       </PageChrome>,
     );
     const main = container.querySelector('main');
     expect(main?.className).toContain('justify-start');
+    expect(main?.className).toContain('min-h-[var(--app-height)]');
     expect(main?.className).not.toContain('justify-center');
   });
 
@@ -55,7 +59,9 @@ describe('PageChrome', () => {
         <p>Body</p>
       </PageChrome>,
     );
-    expect(container.querySelector('main')?.querySelector('.left-5')).toBeNull();
+    expect(container.querySelector('main')?.querySelector('.left-5')?.childNodes.length ?? 0).toBe(
+      0,
+    );
   });
 
   it('omits the topRight slot when topRight is null', () => {
@@ -64,7 +70,7 @@ describe('PageChrome', () => {
         <p>Body</p>
       </PageChrome>,
     );
-    expect(container.querySelector('main')?.querySelector('.absolute')).toBeNull();
+    expect(container.querySelector('main')?.querySelector('.right-5')).toBeNull();
   });
 
   it('appends className and treats empty className as absent', () => {

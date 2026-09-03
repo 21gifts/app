@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
+import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
@@ -82,9 +84,11 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning className={outfit.variable}>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: APP_HEIGHT_BOOTSTRAP_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
       <body className="bg-app-bg font-sans text-app-fg antialiased">
+        <AppHeightSync />
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
           <ThemeProvider>{children}</ThemeProvider>
         </LocaleProvider>

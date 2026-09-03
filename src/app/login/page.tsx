@@ -1,9 +1,10 @@
 import type { ReactElement } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LoginCard } from '@/components/LoginCard';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { Wordmark } from '@/components/ui';
 
 /**
  * `/login` — the passkey sign-in page.
@@ -14,7 +15,9 @@ import { PageChrome, Wordmark } from '@/components/ui';
  */
 export default function LoginPage(): ReactElement {
   return (
-    <PageChrome
+    <AppShell
+      mode="fill"
+      align="center"
       topLeft={<Wordmark href="/" />}
       topRight={
         <>
@@ -26,6 +29,6 @@ export default function LoginPage(): ReactElement {
       <OnboardingGate screen="login">
         <LoginCard />
       </OnboardingGate>
-    </PageChrome>
+    </AppShell>
   );
 }

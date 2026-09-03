@@ -112,9 +112,9 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** `PageChrome` with Wordmark top-left; light language switcher and theme switcher top-right (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left; light language switcher and theme switcher top-right (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language or theme. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
-- **Calls:** `PageChrome`, `Wordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
+- **Calls:** `AppShell`, `Wordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
 ### Variant: idle
 
@@ -155,9 +155,9 @@ Open the theme switcher top-right. Custom listbox with System / Light / Dark —
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
-- **What the user sees:** `PageChrome` with Wordmark top-left; light language switcher and theme switcher top-right (not marketing header). Heading **Send help**, short lead about picking a forum message then sending Bitcoin, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left; light language switcher and theme switcher top-right (not marketing header). Heading **Send help**, short lead about picking a forum message then sending Bitcoin, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
 - **Actions:** Change language or theme. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
-- **Calls:** `PageChrome`, `Wordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`, `ThemeSwitcher`.
+- **Calls:** `AppShell`, `Wordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`, `ThemeSwitcher`.
 
 ### Variant: default
 
@@ -168,9 +168,9 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login (`account.setup === 'name'`).
-- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
 - **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
-- **Calls:** `PageChrome`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
+- **Calls:** `AppShell`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
@@ -181,9 +181,9 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login (`account.setup === 'address'`; name may already be saved or skipped).
-- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
 - **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).
-- **Calls:** `PageChrome`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
+- **Calls:** `AppShell`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
@@ -194,9 +194,9 @@ Signed in with a name (or a skipped name) and no address. **Your Wallet of Satos
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when living-room rules are not yet agreed (`account.setup === 'rules'`). Name and address may already be saved or skipped; rules cannot be skipped.
-- **What the user sees:** `PageChrome` with one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Wordmark top-left (with icon-only chapter back after the first chapter). Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
+- **What the user sees:** Fill `AppShell` with one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Wordmark top-left (with icon-only chapter back after the first chapter). Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
 - **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `PageChrome`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
+- **Calls:** `AppShell`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
 
@@ -267,9 +267,9 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when `account.setup` is null (name and address may be saved or skipped; living-room rules agreement is required).
-- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way `SegmentedControl tone="neutral"` (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply**). Pay control / Send Bitcoin only when the note is payable; board-bottom composer with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
+- **What the user sees:** Flow `AppShell` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Gift icon, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a three-way `SegmentedControl tone="neutral"` (**Active** / **All** / **Most popular**). Default is **Active** (paid notes, messenger order: oldest top, newest above the composer). **All** shows every note in that messenger order. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply**). Pay control / Send Bitcoin only when the note is payable; board-bottom composer with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
 - **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, copy a note link to `/messages/<uuid>`, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / All / Most popular), pull down from the top to refresh the forum list, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `PageChrome`, `Wordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`.
+- **Calls:** `PageChrome`, `AppShell`, `Wordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`.
 
 ### Variant: default
 
@@ -484,9 +484,9 @@ Carol's **Verified** tag clicked; the explanation under that card header is visi
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate.
-- **What the user sees:** `PageChrome` with Wordmark top-left; light language switcher and theme switcher top-right. Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
+- **What the user sees:** Flow `AppShell` with Wordmark top-left; light language switcher and theme switcher top-right. Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`).
 - **Actions:** Change language or theme. Read the rules. Open contact or the forum.
-- **Calls:** `PageChrome`, `Wordmark`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `ThemeSwitcher`.
+- **Calls:** `PageChrome`, `AppShell`, `Wordmark`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `ThemeSwitcher`.
 - **Auth:** None.
 
 ### Variant: default
@@ -498,9 +498,9 @@ Full rules body with rule card **Only free donations** visible.
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (`account.setup` null; name and address may be skipped; living-room rules agreement required).
-- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with an icon-only **Send** control (`contact.send` catalog `aria-label`, no visible Send text). A missing name or rules agreement opens `RequirementsOverlay` (no Skip) before the send retries. A successful send opens the official 21.gifts thread in `/messages`.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with an icon-only **Send** control (`contact.send` catalog `aria-label`, no visible Send text). A missing name or rules agreement opens `RequirementsOverlay` (no Skip) before the send retries. A successful send opens the official 21.gifts thread in `/messages`.
 - **Actions:** Send a message, complete a `RequirementsOverlay` for a missing name or rules agreement, open the rules; open **Menu** for Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `PageChrome`, `Wordmark`, `ContactPage`, `ContactLoader`, `ContactScreen`, `RequirementsOverlay`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
+- **Calls:** `AppShell`, `Wordmark`, `ContactPage`, `ContactLoader`, `ContactScreen`, `RequirementsOverlay`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -599,9 +599,9 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** `PageChrome` with Wordmark top-left and one **Menu** top-right (includes **Messages**). Heading **Messages**, a conversation list (counterpart name, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. Founder/moderator also see official 21.gifts threads.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with Wordmark top-left and one **Menu** top-right (includes **Messages**). Heading **Messages**, a conversation list (counterpart name, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. Founder/moderator also see official 21.gifts threads.
 - **Actions:** Open a thread, send a reply, return via **All conversations**. Open **Menu**. Forum PM and `/contact` send land here.
-- **Calls:** `PageChrome`, `Wordmark`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **Calls:** `AppShell`, `Wordmark`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -636,7 +636,7 @@ Open official thread. Heading **21.gifts**, message body **Hello team**, compose
 
 ## Screen: /messages/[id]
 
-- **Purpose:** Public read-only HTML note by forum message UUID. `PageChrome` Wordmark top-left; ThemeSwitcher and light language switcher top-right. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
+- **Purpose:** Public read-only HTML note by forum message UUID. Fill `AppShell` (`align="center"`) Wordmark top-left; ThemeSwitcher and light language switcher top-right. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
 - **Inputs:** Dynamic route `id` (UUID). Message from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch.
 - **Actions:** Change language and theme. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
