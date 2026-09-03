@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Fail if a UI screen or listed variant lacks a committed Playwright
- * screenshot baseline, or if a variant is not shot in `e2e/visual.spec.ts`.
+ * screenshot baseline, an unexpected PNG is present under
+ * `e2e/visual.spec.ts-snapshots/`, or a variant is not shot in
+ * `e2e/visual.spec.ts`.
  * `/setup/rules` must list one variant per `RULES_CHAPTER_IDS` chapter.
  * Run from the repo root. No extra packages.
  *

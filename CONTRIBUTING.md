@@ -194,7 +194,7 @@ app/
 │   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
-│   └── check-screenshots.mjs    # CI gate: missing screen/variant PNG or visual.spec.ts shot → exit 1
+│   └── check-screenshots.mjs    # CI gate: missing or unexpected PNG, or variant with no visual.spec.ts shot → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
