@@ -24,7 +24,7 @@ desktop). Exported **functions** need a `## Function:` section and an e2e
 `predev` from the desktop-light baseline, or the variant’s first listed combo
 when desktop-light is not allowed. Do not commit PNGs under
 `docs/handbook/images/`.
-`npm run screenshot:check` fails the PR when a baseline is missing.
+`npm run screenshot:check` fails the PR when a baseline is missing or an unexpected PNG is present.
 
 See [screens.md](screens.md), [functions.md](functions.md), and
 [endpoints.md](endpoints.md).

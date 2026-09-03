@@ -1287,7 +1287,7 @@ This is a visual system, not a metrics pipeline.
 | Gate                                | What it proves                                                                                                                                     |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `e2e/visual.spec.ts`                | Four combos: desktop/mobile × light/dark. Linux Chromium goldens under `e2e/visual.spec.ts-snapshots/`. `maxDiffPixelRatio` 0 except handbook 0.05 |
-| `npm run screenshot:check`          | Every screen/variant has a PNG; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`)                                        |
+| `npm run screenshot:check`          | Every screen/variant has a PNG; no unexpected PNGs; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`)                    |
 | `scripts/screen-variants.mjs`       | Closed list of UI states; omitting a state is an undeclared deviation                                                                              |
 | `npm run handbook:check`            | Every screen/function/endpoint has a handbook section                                                                                              |
 | `docs/handbook/screens.md`          | Update **only when that screen actually changes**                                                                                                  |
