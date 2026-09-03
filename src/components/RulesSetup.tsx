@@ -29,9 +29,14 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
   const [error, setError] = useState(false);
   const [index, setIndex] = useState(0);
   const stepLock = useRef(false);
+  const bodyRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     stepLock.current = false;
+    const scroller = bodyRef.current?.closest('.overflow-y-auto');
+    if (scroller instanceof HTMLElement) {
+      scroller.scrollTop = 0;
+    }
   }, [index]);
 
   if (account === null || session === null) {
@@ -121,7 +126,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
           </p>
         </div>
       </AppShellHeader>
-      <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <section ref={bodyRef} className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         {current}
         {error ? (
           <p role="alert" className="text-center text-sm text-app-danger">
