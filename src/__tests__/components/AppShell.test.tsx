@@ -80,6 +80,8 @@ describe('AppShell', () => {
     expect(main?.className).not.toContain('overflow-hidden');
     expect(main?.className).not.toContain('justify-center');
     expect(main?.querySelector('.overflow-y-auto')).toBeNull();
+    const body = main?.querySelector('.pt-24');
+    expect(body?.className).toContain('items-center');
     expect(screen.getByText('Flow body')).toBeTruthy();
   });
 

@@ -98,7 +98,7 @@ export function AppShell({
         >
           {chrome}
           <header ref={setHeaderEl} className="flex-none empty:hidden" />
-          <div className="w-full flex-none pt-24 pb-8">{children}</div>
+          <div className="flex w-full flex-none flex-col items-center pt-24 pb-8">{children}</div>
           <footer ref={setFooterEl} className="flex-none pb-8 empty:hidden" />
         </main>
       </AppShellContext.Provider>

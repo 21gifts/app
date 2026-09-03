@@ -485,8 +485,8 @@
 - **Inputs:** `children`, required `mode` (`fill` | `flow`), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`, fill only).
 - **Returns / side effects:** A `<main>` layout with absolute chrome slots and optional header/footer portals. No network.
 - **Used by:**
-  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, profile, contact, view, members)
-  - **`PageChrome`** (flow-mode wrapper used by welcome, messages, public note, public rules)
+  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, profile, contact, view, members, inbox, public note)
+  - **`PageChrome`** (flow-mode wrapper used by welcome and public rules)
   - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
 
 ## Function: AppShellHeader
@@ -523,7 +523,7 @@
 - **Purpose:** Flow-mode wrapper around `AppShell` with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots. Prefer `AppShell` directly on app routes.
 - **Inputs:** `children`, optional `topLeft`, optional `topRight`, optional `className` on the outer `<main>`.
 - **Returns / side effects:** Layout only (`AppShell mode="flow"`). No network.
-- **Used by:** Flow app routes (`WelcomePage`, `MessagesPage`, `PublicMessagePage`, `RulesPage`) plus unit tests and the `ui` barrel. Fill routes use `AppShell` directly.
+- **Used by:** Flow app routes (`WelcomePage`, `RulesPage`) plus unit tests and the `ui` barrel. Fill routes use `AppShell` directly.
 
 ## Function: Wordmark
 
@@ -536,7 +536,7 @@
 
 - **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
 - **Inputs:** Dynamic route params (`id`).
-- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with Wordmark top-left and ThemeSwitcher + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Returns / side effects:** Fill `AppShell` (`align="center"`) with Wordmark top-left and ThemeSwitcher + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
 - **Used by:** Route `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -1439,7 +1439,7 @@
 
 - **Purpose:** Next.js page for `/messages` (signed-in PN inbox).
 - **Inputs:** None.
-- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
+- **Returns / side effects:** Fill `AppShell` (`align="center"`) with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
 - **Used by:** Route `/messages`.
 
 ## Function: InboxLoader

@@ -599,9 +599,9 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Flow `AppShell` with Wordmark top-left and one **Menu** top-right (includes **Messages**). Heading **Messages**, a conversation list (counterpart name, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. Founder/moderator also see official 21.gifts threads.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with Wordmark top-left and one **Menu** top-right (includes **Messages**). Heading **Messages**, a conversation list (counterpart name, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. Founder/moderator also see official 21.gifts threads.
 - **Actions:** Open a thread, send a reply, return via **All conversations**. Open **Menu**. Forum PM and `/contact` send land here.
-- **Calls:** `PageChrome`, `AppShell`, `Wordmark`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **Calls:** `AppShell`, `Wordmark`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -636,7 +636,7 @@ Open official thread. Heading **21.gifts**, message body **Hello team**, compose
 
 ## Screen: /messages/[id]
 
-- **Purpose:** Public read-only HTML note by forum message UUID. Flow `AppShell` Wordmark top-left; ThemeSwitcher and light language switcher top-right. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
+- **Purpose:** Public read-only HTML note by forum message UUID. Fill `AppShell` (`align="center"`) Wordmark top-left; ThemeSwitcher and light language switcher top-right. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
 - **Inputs:** Dynamic route `id` (UUID). Message from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch.
 - **Actions:** Change language and theme. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
