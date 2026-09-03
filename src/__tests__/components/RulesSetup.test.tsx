@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { RulesSetup } from '@/components/RulesSetup';
 import { agreeToRules } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
@@ -377,5 +378,42 @@ describe('RulesSetup', () => {
     await act(async () => {
       resolve({ ...baseAccount, rulesAgreedAt: 1_700_000_001 });
     });
+  });
+
+  it('resets the fill inner scroller to the top on Continue', () => {
+    const { container } = renderWithLocale(
+      <AppShell mode="fill" align="start">
+        <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeInstanceOf(HTMLElement);
+    (scroller as HTMLElement).scrollTop = 400;
+    expect((scroller as HTMLElement).scrollTop).toBe(400);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    expect((scroller as HTMLElement).scrollTop).toBe(0);
+  });
+
+  it('resets the fill inner scroller to the top on Back', () => {
+    const { container } = renderWithLocale(
+      <AppShell mode="fill" align="start">
+        <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeInstanceOf(HTMLElement);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    (scroller as HTMLElement).scrollTop = 400;
+    expect((scroller as HTMLElement).scrollTop).toBe(400);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(screen.getByText('chapter-one')).toBeTruthy();
+    expect((scroller as HTMLElement).scrollTop).toBe(0);
   });
 });
