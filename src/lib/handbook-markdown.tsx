@@ -45,6 +45,7 @@ function slug(text: string): string {
  */
 function uniqueDomId(base: string, used: Set<string>): string {
   const cleaned = base.replace(/^-+|-+$/g, '');
+  /* v8 ignore next — callers always pass a prefixed id */
   const stem = cleaned === '' ? 'image' : cleaned;
   let id = stem;
   let n = 2;

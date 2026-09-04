@@ -189,6 +189,16 @@ describe('HandbookImageViewer', () => {
     expect(screen.getByRole('dialog', { name: '/welcome pay-qr' })).toBeTruthy();
   });
 
+  it('opens the shared lightbox from a card preview and steps with chevrons', () => {
+    renderWithLocale(<HandbookImageViewer topics={[ALL, LIGHT_ONLY]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open /welcome default at full size' }));
+    expect(screen.getByRole('dialog', { name: '/welcome default' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next screen' }));
+    expect(screen.getByRole('dialog', { name: '/welcome pay-qr' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous screen' }));
+    expect(screen.getByRole('dialog', { name: '/welcome default' })).toBeTruthy();
+  });
+
   it('ignores arrows while typing in a field', () => {
     renderWithLocale(<HandbookImageViewer topics={[ALL, LIGHT_ONLY]} />);
     const field = document.createElement('input');
@@ -196,6 +206,8 @@ describe('HandbookImageViewer', () => {
     fireEvent.keyDown(field, { key: 'ArrowRight' });
     expect(screen.queryByRole('dialog')).toBeNull();
     field.remove();
+    fireEvent.keyDown(document, { key: 'ArrowRight', ctrlKey: true });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('skips topics with empty combos while gridding the rest', () => {

@@ -45,6 +45,17 @@ describe('HandbookScreensPage', () => {
     expect(screen.queryByText('Open / default at full size')).toBeNull();
   });
 
+  it('renders cards when the screens handbook document is absent', async () => {
+    vi.mocked(loadHandbookDocuments).mockReturnValueOnce([
+      { id: 'readme', title: 'Overview', markdown: '' },
+      { id: 'functions', title: 'Functions', markdown: '' },
+      { id: 'endpoints', title: 'Endpoints', markdown: '' },
+    ]);
+    renderWithLocale(await HandbookScreensPage());
+    expect(screen.getByAltText('/ default')).toBeTruthy();
+    expect(document.getElementById('root-default')?.textContent).toContain('/ default');
+  });
+
   it('falls back to the catalog label when a description is missing', async () => {
     vi.mocked(loadHandbookDocuments).mockReturnValueOnce([
       { id: 'readme', title: 'Overview', markdown: '' },

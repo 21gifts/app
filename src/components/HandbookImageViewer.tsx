@@ -114,6 +114,9 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
   }, [activeId]);
 
   useEffect(() => {
+    if (slides.length === 0) {
+      return;
+    }
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
         return;
@@ -127,9 +130,6 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
         if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) {
           return;
         }
-      }
-      if (slides.length === 0) {
-        return;
       }
       event.preventDefault();
       step(event.key === 'ArrowRight' ? 1 : -1);
