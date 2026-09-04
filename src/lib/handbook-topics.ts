@@ -15,11 +15,33 @@ export type HandbookTopic = {
   id: string;
   /** Visible label. */
   label: string;
+  /**
+   * English description of what the baseline shows (from `screens.md`;
+   * handbook-body catalog exception).
+   */
+  description: string;
   /** Playwright visual stem (`screen-root`, `function-GET`, …). */
   visual: string;
   /** Combo ids that have a baseline PNG. */
   combos: HandbookComboId[];
 };
+
+/**
+ * Stable DOM / hash id from a catalog topic id (`${route}:${variant}`).
+ *
+ * Path `/` becomes `root`; other paths drop the leading `/` and replace
+ * remaining `/` with `-`. The variant is the segment after the last `:`.
+ *
+ * @param id - Catalog topic id (`/:default`, `/welcome:pay-qr`, …).
+ * @returns Hyphenated anchor (`root-default`, `welcome-pay-qr`, …).
+ */
+export function topicAnchor(id: string): string {
+  const colon = id.lastIndexOf(':');
+  const path = colon < 0 ? id : id.slice(0, colon);
+  const variant = colon < 0 ? '' : id.slice(colon + 1);
+  const pathPart = path === '/' ? 'root' : path.replace(/^\//, '').replace(/\//g, '-');
+  return variant === '' ? pathPart : `${pathPart}-${variant}`;
+}
 
 /**
  * Public URL for one topic combo image.

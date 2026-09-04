@@ -730,25 +730,25 @@ After tapping the link icon on the Handbook heading, that button shows the check
 ## Screen: /handbook/screens
 
 - **URL:** `/handbook/screens` — public screens handbook (no auth gate).
-- **What the user sees:** Heading **Screens**, then a stacked list of every screen/UI-state topic (`HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each row shows its label and the selected combo image; topics that lack that combo are omitted. No topic picker.
-- **Actions:** Switch viewport/theme when available (applies to every row), return to the hub.
-- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookIntro`, `HandbookCopyLink`.
+- **What the user sees:** Heading **Screens**, then a responsive grid of compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). Topics that lack the selected combo are omitted. No topic picker.
+- **Actions:** Switch viewport/theme when available (applies to every card), open a preview at full size, copy a card deep link, follow a hash deep link to a card, return to the hub.
+- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookFigure`, `HandbookLightbox`, `HandbookIntro`, `HandbookCopyLink`, `topicAnchor`, `parseScreenVariantDescriptions`.
 
 ### Variant: default
 
-Stacked list of topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog.
+Grid of compact thumbnail cards for topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog — not stacked full-width shots.
 
 ![21.gifts handbook screens](images/handbook-screens.png)
 
 ### Variant: mobile
 
-**Mobile** selected; every visible row shows that mobile combo.
+**Mobile** selected; every visible thumbnail card shows that mobile combo.
 
 ![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
 
 ### Variant: dark
 
-**Dark** selected; every visible row shows that dark combo.
+**Dark** selected; every visible thumbnail card shows that dark combo.
 
 ![21.gifts handbook screens dark](images/handbook-screens-dark.png)
 

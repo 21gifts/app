@@ -52,7 +52,7 @@
 
 ## Function: HandbookMarkdown
 
-- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images. Every heading has a sibling `HandbookCopyLink`.
+- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images. Every heading has a sibling `HandbookCopyLink`. A paragraph whose only inline is an image becomes a `HandbookFigure` (thumbnail, lightbox, deep link) instead of `<p><img>`.
 - **Inputs:** `markdown` string and `idPrefix` for heading ids.
 - **Returns / side effects:** React fragment. No network.
 - **Used by:** `HandbookFunctionsPage` and `HandbookEndpointsPage`.
@@ -1514,7 +1514,7 @@
 
 ## Function: HandbookScreensPage
 
-- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics and renders the stacked `HandbookImageViewer`.
+- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics (with English descriptions from `screens.md` via `parseScreenVariantDescriptions`) and renders the compact-card `HandbookImageViewer`.
 - **Inputs:** None.
 - **Returns / side effects:** The screens handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook/screens`.
@@ -1535,10 +1535,39 @@
 
 ## Function: HandbookImageViewer
 
-- **Purpose:** Client stacked baseline viewer. Stacked rows are the **selected** combo only (`makeCombo(viewport, theme)`); a topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist.
-- **Inputs:** `topics` (`HandbookTopic[]`).
+- **Purpose:** Client grid of compact `HandbookFigure` cards for the **selected** combo only (`makeCombo(viewport, theme)`); a topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist. Layout is `grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3`.
+- **Inputs:** `topics` (`HandbookTopic[]` with required `description`).
 - **Returns / side effects:** React element or `null` when no topic has combos. Empty visible list still shows switches when remaining is non-empty. No network.
 - **Used by:** `HandbookScreensPage`.
+
+## Function: HandbookFigure
+
+- **Purpose:** Compact handbook image card: permalink label + `HandbookCopyLink`, ~220px preview button that opens `HandbookLightbox`, and a written description. Scrolls into view when `location.hash` matches `#id`.
+- **Inputs:** `id`, `label`, `description`, `src`, `alt`.
+- **Visible UI:** Label link, copy-link icon, thumbnail image inside an aria-labeled open button (no visible open-image catalog string), description paragraph, optional lightbox.
+- **Returns / side effects:** An `<article>` with `id`. Hash scroll on mount/`hashchange`. No network.
+- **Used by:** `HandbookImageViewer` and `HandbookMarkdown` (image-only paragraphs).
+
+## Function: HandbookLightbox
+
+- **Purpose:** Full-size handbook image overlay matching `RequirementsOverlay` chrome (`bg-app-card`, ghost `IconButton` + `X`). Close via X, backdrop click, or Escape. Focuses the close control on open. Not a native `<dialog>`.
+- **Inputs:** `open`, `src`, `alt`, `onClose`.
+- **Returns / side effects:** `role="dialog"` overlay when `open`, otherwise `null`. Document keydown while open. No network.
+- **Used by:** `HandbookFigure`.
+
+## Function: topicAnchor
+
+- **Purpose:** Stable DOM/hash id from a catalog topic id (`${route}:${variant}`). Path `/` → `root`; other paths drop the leading `/` and replace remaining `/` with `-`; variant is the segment after the last `:`.
+- **Inputs:** Catalog topic id string (`/:default`, `/welcome:pay-qr`, `/handbook/screens:dark`, …).
+- **Returns / side effects:** Anchor string (`root-default`, `welcome-pay-qr`, `handbook-screens-dark`, …). No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: parseScreenVariantDescriptions
+
+- **Purpose:** Parse `docs/handbook/screens.md` into a map of catalog topic id → English description. Under each `## Screen:` / `### Variant:`, collect paragraphs (excluding image-only lines), unwrap `**bold**` and `` `code` ``, join with a blank line; skip empty strings.
+- **Inputs:** Raw screens handbook markdown string.
+- **Returns / side effects:** `ReadonlyMap<string, string>` keyed as `<path>:<variantId>`. No network.
+- **Used by:** `HandbookScreensPage` (`loadScreenTopics`).
 
 ## Function: topicImageSrc
 

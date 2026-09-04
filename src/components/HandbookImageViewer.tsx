@@ -2,6 +2,7 @@
 
 import { Monitor, Moon, Smartphone, Sun } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
+import { HandbookFigure } from '@/components/HandbookFigure';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card, IconButton } from '@/components/ui';
 import {
@@ -10,6 +11,7 @@ import {
   comboViewport,
   defaultCombo,
   makeCombo,
+  topicAnchor,
   topicImageSrc,
   type HandbookTopic,
 } from '@/lib/handbook-topics';
@@ -21,9 +23,9 @@ export interface HandbookImageViewerProps {
 }
 
 /**
- * Stacked baseline viewer: every topic that has the selected combo under global
- * Desktop/Mobile and Light/Dark switches. Topics missing that combo are omitted.
- * Switch visibility uses the union of remaining topics.
+ * Grid of compact handbook figures for every topic that has the selected combo
+ * under global Desktop/Mobile and Light/Dark switches. Topics missing that
+ * combo are omitted. Switch visibility uses the union of remaining topics.
  *
  * @param props - Topic catalog.
  * @returns The viewer, or `null` when no topic has combos.
@@ -121,17 +123,18 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
           ) : null}
         </Card>
       ) : null}
-      {visible.map((topic) => (
-        <section key={topic.id} className="flex flex-col gap-3">
-          <h3 className="text-base font-semibold text-app-fg">{topic.label}</h3>
-          {/* eslint-disable-next-line @next/next/no-img-element -- static handbook baseline PNG */}
-          <img
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {visible.map((topic) => (
+          <HandbookFigure
+            key={topic.id}
+            id={topicAnchor(topic.id)}
+            label={topic.label}
+            description={topic.description}
             src={topicImageSrc(topic, combo)}
             alt={topic.label}
-            className="max-w-full rounded-lg border border-app-border"
           />
-        </section>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

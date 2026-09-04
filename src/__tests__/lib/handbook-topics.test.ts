@@ -5,6 +5,7 @@ import {
   defaultCombo,
   HANDBOOK_COMBOS,
   makeCombo,
+  topicAnchor,
   topicImageSrc,
   type HandbookTopic,
 } from '@/lib/handbook-topics';
@@ -12,6 +13,7 @@ import {
 const topic: HandbookTopic = {
   id: 'root:default',
   label: '/ default',
+  description: 'Desktop/wide layout without the hamburger.',
   visual: 'screen-root',
   combos: [...HANDBOOK_COMBOS],
 };
@@ -32,5 +34,12 @@ describe('handbook-topics', () => {
     expect(defaultCombo([...HANDBOOK_COMBOS])).toBe('desktop-light');
     expect(defaultCombo(['mobile-dark'])).toBe('mobile-dark');
     expect(defaultCombo([])).toBeNull();
+  });
+
+  it('builds stable topic anchors from catalog ids', () => {
+    expect(topicAnchor('/:default')).toBe('root-default');
+    expect(topicAnchor('/welcome:pay-qr')).toBe('welcome-pay-qr');
+    expect(topicAnchor('/handbook/screens:dark')).toBe('handbook-screens-dark');
+    expect(topicAnchor('no-colon')).toBe('no-colon');
   });
 });

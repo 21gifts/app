@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
+import { HandbookFigure } from '@/components/HandbookFigure';
 
 /** Inline node produced by `parseHandbookMarkdown`. */
 export type HandbookInline =
@@ -377,11 +378,13 @@ function HeadingWithCopy({
 
 /**
  * Render parsed handbook markdown as Tailwind-styled elements. Every heading
- * has a sibling copy-link button that copies the absolute `#id` URL.
+ * has a sibling copy-link button that copies the absolute `#id` URL. A
+ * paragraph whose only inline is an image becomes a {@link HandbookFigure}
+ * (thumbnail, lightbox, deep link) instead of `<p><img>`.
  *
  * @param markdown - Raw markdown.
  * @param idPrefix - Prefix for heading ids.
- * @returns A fragment of headings, paragraphs, and lists.
+ * @returns A fragment of headings, paragraphs, figures, and lists.
  */
 export function HandbookMarkdown({
   markdown,
@@ -406,6 +409,20 @@ export function HandbookMarkdown({
           );
         }
         if (block.type === 'paragraph') {
+          const only = block.inlines[0];
+          if (block.inlines.length === 1 && only !== undefined && only.type === 'img') {
+            const figureId = `${idPrefix}-image-${slug(only.alt)}`;
+            return (
+              <HandbookFigure
+                key={index}
+                id={figureId}
+                label={only.alt}
+                description={only.alt}
+                src={only.src}
+                alt={only.alt}
+              />
+            );
+          }
           return (
             <p key={index} className="mt-2 mb-4 text-paper/60">
               {block.inlines.map((inline, i) => renderInline(inline, i))}

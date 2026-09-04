@@ -1030,7 +1030,7 @@ Back link `text-accent underline` “All stats” → display “Gifts on YYYY-M
 
 #### `/handbook` (+ screens/functions/endpoints) — **keep**
 
-Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, orange section links. Handbook markdown is English (catalog exception). Fix: `text-accent` token. FullPage visual unsticks sticky header (already).
+Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, orange section links. Screens page: compact cards with ~220px thumbs, description, permalink/copy-link, and click-to-lightbox full size. Handbook markdown is English (catalog exception). Fix: `text-accent` token. FullPage visual unsticks sticky header (already).
 
 #### `/login` — **chrome + card-title** (title stack already gone in SHA source)
 

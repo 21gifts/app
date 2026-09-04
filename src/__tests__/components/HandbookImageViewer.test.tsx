@@ -9,6 +9,7 @@ afterEach(cleanup);
 const ALL: HandbookTopic = {
   id: 'welcome:default',
   label: '/welcome default',
+  description: 'Welcome default description.',
   visual: 'screen-welcome',
   combos: ['desktop-light', 'desktop-dark', 'mobile-light', 'mobile-dark'],
 };
@@ -16,6 +17,7 @@ const ALL: HandbookTopic = {
 const MOBILE_ONLY: HandbookTopic = {
   id: 'root:mobile-nav',
   label: '/ mobile-nav',
+  description: 'Mobile nav description.',
   visual: 'state-root-mobile-nav',
   combos: ['mobile-light', 'mobile-dark'],
 };
@@ -23,6 +25,7 @@ const MOBILE_ONLY: HandbookTopic = {
 const LIGHT_ONLY: HandbookTopic = {
   id: 'pay:qr',
   label: '/welcome pay-qr',
+  description: 'Pay QR description.',
   visual: 'state-welcome-pay-qr',
   combos: ['desktop-light'],
 };
@@ -30,6 +33,7 @@ const LIGHT_ONLY: HandbookTopic = {
 const DARK_ONLY: HandbookTopic = {
   id: 'pay:qr-dark',
   label: '/welcome pay-qr-dark',
+  description: 'Pay QR dark description.',
   visual: 'state-welcome-pay-qr',
   combos: ['desktop-dark'],
 };
@@ -37,6 +41,7 @@ const DARK_ONLY: HandbookTopic = {
 const BOTH_VIEWPORTS_LIGHT_ONLY: HandbookTopic = {
   id: 'welcome:light-viewports',
   label: '/welcome light-viewports',
+  description: 'Light viewports description.',
   visual: 'screen-welcome',
   combos: ['desktop-light', 'mobile-light'],
 };
@@ -51,6 +56,7 @@ describe('HandbookImageViewer', () => {
     const EMPTY: HandbookTopic = {
       id: 'empty',
       label: 'Empty',
+      description: 'Empty topic.',
       visual: 'function-Empty',
       combos: [],
     };
@@ -58,10 +64,11 @@ describe('HandbookImageViewer', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('stacks only topics that have the selected combo; omits missing combos', () => {
+  it('grids only topics that have the selected combo; omits missing combos', () => {
     renderWithLocale(<HandbookImageViewer topics={[ALL, MOBILE_ONLY]} />);
     expect(screen.queryByLabelText('Topic')).toBeNull();
     expect(screen.getByAltText('/welcome default')).toBeTruthy();
+    expect(screen.getByText('Welcome default description.')).toBeTruthy();
     expect(screen.queryByAltText('/ mobile-nav')).toBeNull();
     expect(screen.getByRole('button', { name: 'Desktop' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mobile' })).toBeTruthy();
@@ -74,10 +81,12 @@ describe('HandbookImageViewer', () => {
 
     const allImg = screen.getByAltText('/welcome default') as HTMLImageElement;
     expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
+    expect(document.getElementById('welcome-default')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
     expect(screen.getByAltText('/welcome default')).toBeTruthy();
     expect(screen.getByAltText('/ mobile-nav')).toBeTruthy();
+    expect(screen.getByText('Mobile nav description.')).toBeTruthy();
     expect((screen.getByAltText('/welcome default') as HTMLImageElement).getAttribute('src')).toBe(
       '/handbook-images/screen-welcome-mobile-light.png',
     );
@@ -160,10 +169,11 @@ describe('HandbookImageViewer', () => {
     expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-light.png');
   });
 
-  it('skips topics with empty combos while stacking the rest', () => {
+  it('skips topics with empty combos while gridding the rest', () => {
     const EMPTY: HandbookTopic = {
       id: 'empty',
       label: 'Empty',
+      description: 'Empty topic.',
       visual: 'function-Empty',
       combos: [],
     };

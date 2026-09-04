@@ -132,7 +132,7 @@ describe('parseHandbookMarkdown', () => {
 });
 
 describe('HandbookMarkdown', () => {
-  it('renders headings, a list, a link, code, strong, and an image', () => {
+  it('renders headings, a list, a link, code, strong, and an image figure', () => {
     renderWithLocale(
       <HandbookMarkdown
         markdown={
@@ -154,6 +154,19 @@ describe('HandbookMarkdown', () => {
     expect(screen.getByText('y')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'z' }).getAttribute('href')).toBe('/legal');
     expect(screen.getByAltText('login').getAttribute('src')).toBe('/handbook-images/login.png');
+    expect(document.getElementById('screens-image-login')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link to login' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open login at full size' })).toBeTruthy();
+    expect(screen.queryByText('Open login at full size')).toBeNull();
+  });
+
+  it('keeps mixed text+image paragraphs as a normal paragraph', () => {
+    renderWithLocale(
+      <HandbookMarkdown markdown={'Before ![shot](images/x.png) after\n'} idPrefix="x" />,
+    );
+    expect(screen.getByText(/Before/)).toBeTruthy();
+    expect(screen.getByAltText('shot').getAttribute('src')).toBe('/handbook-images/x.png');
+    expect(document.getElementById('x-image-shot')).toBeNull();
   });
 
   it('uses link text and image alt as the copy-link label', () => {

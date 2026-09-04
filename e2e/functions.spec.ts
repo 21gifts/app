@@ -1259,6 +1259,31 @@ test('Function: HandbookImageViewer — stacked baselines and a viewport switch'
   await expect(page.getByRole('button', { name: 'Mobile' })).toBeVisible();
 });
 
+test('Function: HandbookFigure — card description and copy link', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByText(/Desktop\/wide layout/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy link to / default' })).toBeVisible();
+});
+
+test('Function: HandbookLightbox — preview opens full size dialog', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await page.getByRole('button', { name: 'Open / default at full size' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close image' })).toBeVisible();
+});
+
+test('Function: topicAnchor — hash targets the root-default card', async ({ page }) => {
+  await page.goto('/handbook/screens#root-default');
+  await expect(page.locator('#root-default')).toBeVisible();
+});
+
+test('Function: parseScreenVariantDescriptions — pay-qr description is visible', async ({
+  page,
+}) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByText(/Bitcoin payment QR/)).toBeVisible();
+});
+
 test('Function: topicImageSrc — screens viewer shows an image', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(page.locator('img[src*="/handbook-images/"]').first()).toBeVisible();
