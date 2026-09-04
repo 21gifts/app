@@ -36,7 +36,7 @@ describe('HandbookScreensPage', () => {
     expect(screen.getByAltText('/ mobile-nav')).toBeTruthy();
     expect(document.getElementById('root-default')).toBeTruthy();
     expect(screen.getByRole('navigation', { name: 'Contents' })).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 2, name: '/' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: /^\/$/ })).toBeTruthy();
     expect(document.getElementById('chapter-root')).toBeTruthy();
     expect(document.getElementById('screen-root')).toBeTruthy();
     expect(screen.getByText(/Desktop\/wide layout/)).toBeTruthy();

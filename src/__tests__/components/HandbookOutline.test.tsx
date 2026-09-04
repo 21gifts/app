@@ -40,11 +40,9 @@ describe('HandbookOutline', () => {
       />,
     );
     expect(screen.getByRole('navigation', { name: 'Contents' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: '/welcome' }).getAttribute('href')).toBe(
-      '#chapter-welcome',
-    );
-    const screenLinks = screen.getAllByRole('link', { name: '/welcome' });
-    expect(screenLinks[1]?.getAttribute('href')).toBe('#screen-welcome');
+    const welcomeLinks = screen.getAllByRole('link', { name: '/welcome' });
+    expect(welcomeLinks[0]?.getAttribute('href')).toBe('#chapter-welcome');
+    expect(welcomeLinks[1]?.getAttribute('href')).toBe('#screen-welcome');
     expect(screen.getByRole('link', { name: 'pay-qr' }).getAttribute('href')).toBe(
       '#welcome-pay-qr',
     );

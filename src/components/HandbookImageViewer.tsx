@@ -107,7 +107,10 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
     if (activeId === null) {
       return;
     }
-    document.getElementById(activeId)?.scrollIntoView({ block: 'nearest' });
+    const node = document.getElementById(activeId);
+    if (node !== null && typeof node.scrollIntoView === 'function') {
+      node.scrollIntoView({ block: 'nearest' });
+    }
   }, [activeId]);
 
   useEffect(() => {

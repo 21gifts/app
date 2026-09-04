@@ -1269,7 +1269,7 @@ test('Function: HandbookOutline — contents lists chapter screen and variant', 
 
 test('Function: HandbookSectionHeading — chapter heading is present', async ({ page }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByRole('heading', { level: 2, name: '/' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: '/', exact: true })).toBeVisible();
 });
 
 test('Function: buildHandbookOutline — setup chapter groups name and rules', async ({ page }) => {
