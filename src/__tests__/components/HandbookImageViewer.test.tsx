@@ -67,6 +67,9 @@ describe('HandbookImageViewer', () => {
   it('grids only topics that have the selected combo; omits missing combos', () => {
     renderWithLocale(<HandbookImageViewer topics={[ALL, MOBILE_ONLY]} />);
     expect(screen.queryByLabelText('Topic')).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Contents' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'welcome' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3, name: 'welcome' })).toBeTruthy();
     expect(screen.getByAltText('/welcome default')).toBeTruthy();
     expect(screen.getByText('Welcome default description.')).toBeTruthy();
     expect(screen.queryByAltText('/ mobile-nav')).toBeNull();

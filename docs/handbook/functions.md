@@ -1535,10 +1535,59 @@
 
 ## Function: HandbookImageViewer
 
-- **Purpose:** Client grid of compact `HandbookFigure` cards for the **selected** combo only (`makeCombo(viewport, theme)`); a topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist. Layout is `grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3`.
+- **Purpose:** Nested handbook screens for the **selected** combo only (`makeCombo(viewport, theme)`): three-level contents (chapter → screen → variant) and compact `HandbookFigure` cards. A topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist.
 - **Inputs:** `topics` (`HandbookTopic[]` with required `description`).
 - **Returns / side effects:** React element or `null` when no topic has combos. Empty visible list still shows switches when remaining is non-empty. No network.
 - **Used by:** `HandbookScreensPage`.
+
+## Function: HandbookOutline
+
+- **Purpose:** Sticky three-level table of contents: chapter (first path segment), screen route, variant id. Links to `#chapter-…`, `#screen-…`, and the figure hash.
+- **Inputs:** `chapters` (`HandbookOutlineChapter[]`).
+- **Returns / side effects:** Nav labeled **Contents**, or `null` when empty. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: HandbookSectionHeading
+
+- **Purpose:** Chapter (`h2`) or screen (`h3`) permalink heading with `HandbookCopyLink`.
+- **Inputs:** `level` (2 or 3), `id`, `label`.
+- **Returns / side effects:** Heading row. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: buildHandbookOutline
+
+- **Purpose:** Group topics into chapter → screen → variant, preserving catalog order. Skips empty `combos`. Chapter is `screenChapter` (first path segment; `/` stays `/`).
+- **Inputs:** `topics` (`HandbookTopic[]`).
+- **Returns / side effects:** `HandbookOutlineChapter[]`. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: topicPath
+
+- **Purpose:** Route half of a catalog topic id.
+- **Inputs:** Catalog topic id.
+- **Returns / side effects:** Path string. No network.
+- **Used by:** `buildHandbookOutline`.
+
+## Function: topicVariant
+
+- **Purpose:** Variant half of a catalog topic id.
+- **Inputs:** Catalog topic id.
+- **Returns / side effects:** Variant string, or empty. No network.
+- **Used by:** `buildHandbookOutline`.
+
+## Function: screenChapter
+
+- **Purpose:** Chapter key for a screen path (`/setup/rules` → `/setup`; `/` → `/`).
+- **Inputs:** Screen route.
+- **Returns / side effects:** Chapter label. No network.
+- **Used by:** `buildHandbookOutline`.
+
+## Function: pathAnchor
+
+- **Purpose:** Hyphenated hash fragment for a screen path (`/` → `root`, `/setup/rules` → `setup-rules`).
+- **Inputs:** Route string.
+- **Returns / side effects:** Anchor string. No network.
+- **Used by:** `topicAnchor`, `buildHandbookOutline`.
 
 ## Function: HandbookFigure
 

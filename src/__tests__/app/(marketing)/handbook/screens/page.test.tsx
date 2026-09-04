@@ -35,6 +35,10 @@ describe('HandbookScreensPage', () => {
     expect(screen.getByAltText('/ default')).toBeTruthy();
     expect(screen.getByAltText('/ mobile-nav')).toBeTruthy();
     expect(document.getElementById('root-default')).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Contents' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: '/' })).toBeTruthy();
+    expect(document.getElementById('chapter-root')).toBeTruthy();
+    expect(document.getElementById('screen-root')).toBeTruthy();
     expect(screen.getByText(/Desktop\/wide layout/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to / default' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open / default at full size' })).toBeTruthy();

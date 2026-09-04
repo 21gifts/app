@@ -5,6 +5,7 @@ import {
   defaultCombo,
   HANDBOOK_COMBOS,
   makeCombo,
+  pathAnchor,
   topicAnchor,
   topicImageSrc,
   type HandbookTopic,
@@ -37,6 +38,8 @@ describe('handbook-topics', () => {
   });
 
   it('builds stable topic anchors from catalog ids', () => {
+    expect(pathAnchor('/')).toBe('root');
+    expect(pathAnchor('/setup/rules')).toBe('setup-rules');
     expect(topicAnchor('/:default')).toBe('root-default');
     expect(topicAnchor('/welcome:pay-qr')).toBe('welcome-pay-qr');
     expect(topicAnchor('/handbook/screens:dark')).toBe('handbook-screens-dark');

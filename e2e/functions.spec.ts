@@ -1259,6 +1259,48 @@ test('Function: HandbookImageViewer — stacked baselines and a viewport switch'
   await expect(page.getByRole('button', { name: 'Mobile', exact: true })).toBeVisible();
 });
 
+test('Function: HandbookOutline — contents lists chapter screen and variant', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  const nav = page.getByRole('navigation', { name: 'Contents' });
+  await expect(nav).toBeVisible();
+  await expect(nav.getByRole('link', { name: '/', exact: true }).first()).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'default' }).first()).toBeVisible();
+});
+
+test('Function: HandbookSectionHeading — chapter heading is present', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('heading', { level: 2, name: '/' })).toBeVisible();
+});
+
+test('Function: buildHandbookOutline — setup chapter groups name and rules', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.locator('#chapter-setup')).toBeVisible();
+  await expect(page.locator('#screen-setup-name')).toBeVisible();
+  await expect(page.locator('#screen-setup-rules')).toBeVisible();
+});
+
+test('Function: topicPath — welcome chapter heading is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('heading', { level: 2, name: '/welcome' })).toBeVisible();
+});
+
+test('Function: topicVariant — pay-qr contents link is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(
+    page.getByRole('navigation', { name: 'Contents' }).getByRole('link', { name: 'pay-qr' }),
+  ).toBeVisible();
+});
+
+test('Function: screenChapter — handbook chapter heading is visible', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('heading', { level: 2, name: '/handbook' })).toBeVisible();
+});
+
+test('Function: pathAnchor — chapter-root id is present', async ({ page }) => {
+  await page.goto('/handbook/screens#chapter-root');
+  await expect(page.locator('#chapter-root')).toBeVisible();
+});
+
 test('Function: HandbookFigure — card description and copy link', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(page.getByText(/Desktop\/wide layout/)).toBeVisible();

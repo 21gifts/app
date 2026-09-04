@@ -27,6 +27,22 @@ export type HandbookTopic = {
 };
 
 /**
+ * Hyphenated hash fragment for a screen path.
+ *
+ * `/` becomes `root`; other paths drop the leading `/` and replace remaining
+ * `/` with `-`.
+ *
+ * @param path - Route (`/`, `/setup/rules`, …).
+ * @returns `root`, `setup-rules`, …
+ */
+export function pathAnchor(path: string): string {
+  if (path === '/' || path === '') {
+    return 'root';
+  }
+  return path.replace(/^\//, '').replace(/\//g, '-');
+}
+
+/**
  * Stable DOM / hash id from a catalog topic id (`${route}:${variant}`).
  *
  * Path `/` becomes `root`; other paths drop the leading `/` and replace
@@ -39,7 +55,7 @@ export function topicAnchor(id: string): string {
   const colon = id.lastIndexOf(':');
   const path = colon < 0 ? id : id.slice(0, colon);
   const variant = colon < 0 ? '' : id.slice(colon + 1);
-  const pathPart = path === '/' ? 'root' : path.replace(/^\//, '').replace(/\//g, '-');
+  const pathPart = pathAnchor(path);
   return variant === '' ? pathPart : `${pathPart}-${variant}`;
 }
 

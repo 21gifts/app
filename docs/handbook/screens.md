@@ -730,13 +730,13 @@ After tapping the link icon on the Handbook heading, that button shows the check
 ## Screen: /handbook/screens
 
 - **URL:** `/handbook/screens` — public screens handbook (no auth gate).
-- **What the user sees:** Heading **Screens**, then a responsive grid of compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). Topics that lack the selected combo are omitted. No topic picker.
-- **Actions:** Switch viewport/theme when available (applies to every card), open a preview at full size, copy a card deep link, follow a hash deep link to a card, return to the hub.
-- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookFigure`, `HandbookLightbox`, `HandbookIntro`, `HandbookCopyLink`, `topicAnchor`, `parseScreenVariantDescriptions`.
+- **What the user sees:** Heading **Screens**, a three-level table of contents (chapter = first path segment, screen, variant), and nested compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). Topics that lack the selected combo are omitted. No topic picker.
+- **Actions:** Jump via the contents nav, switch viewport/theme when available (applies to every card), open a preview at full size, copy a chapter/screen/card deep link, follow a hash deep link, return to the hub.
+- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookOutline`, `HandbookSectionHeading`, `HandbookFigure`, `HandbookLightbox`, `HandbookIntro`, `HandbookCopyLink`, `buildHandbookOutline`, `topicAnchor`, `parseScreenVariantDescriptions`.
 
 ### Variant: default
 
-Grid of compact thumbnail cards for topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog — not stacked full-width shots.
+Contents nav plus nested thumbnail cards for topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog — not stacked full-width shots.
 
 ![21.gifts handbook screens](images/handbook-screens.png)
 

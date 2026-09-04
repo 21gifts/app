@@ -3,15 +3,17 @@
 import { Monitor, Moon, Smartphone, Sun } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 import { HandbookFigure } from '@/components/HandbookFigure';
+import { HandbookOutline } from '@/components/HandbookOutline';
+import { HandbookSectionHeading } from '@/components/HandbookSectionHeading';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card, IconButton } from '@/components/ui';
+import { buildHandbookOutline } from '@/lib/handbook-outline';
 import {
   HANDBOOK_COMBOS,
   comboTheme,
   comboViewport,
   defaultCombo,
   makeCombo,
-  topicAnchor,
   topicImageSrc,
   type HandbookTopic,
 } from '@/lib/handbook-topics';
@@ -23,9 +25,10 @@ export interface HandbookImageViewerProps {
 }
 
 /**
- * Grid of compact handbook figures for every topic that has the selected combo
- * under global Desktop/Mobile and Light/Dark switches. Topics missing that
- * combo are omitted. Switch visibility uses the union of remaining topics.
+ * Nested handbook screens: table of contents (chapter → screen → variant) and
+ * compact figures for every topic that has the selected combo under global
+ * Desktop/Mobile and Light/Dark switches. Topics missing that combo are
+ * omitted. Switch visibility uses the union of remaining topics.
  *
  * @param props - Topic catalog.
  * @returns The viewer, or `null` when no topic has combos.
@@ -64,6 +67,7 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
 
   const combo = makeCombo(viewport, theme);
   const visible = remaining.filter((topic) => topic.combos.includes(combo));
+  const outline = buildHandbookOutline(visible);
 
   if (remaining.length === 0) {
     return null;
@@ -123,17 +127,32 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
           ) : null}
         </Card>
       ) : null}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {visible.map((topic) => (
-          <HandbookFigure
-            key={topic.id}
-            id={topicAnchor(topic.id)}
-            label={topic.label}
-            description={topic.description}
-            src={topicImageSrc(topic, combo)}
-            alt={topic.label}
-          />
-        ))}
+      <div className="lg:grid lg:grid-cols-[minmax(12rem,16rem)_1fr] lg:items-start lg:gap-10">
+        <HandbookOutline chapters={outline} />
+        <div className="mt-8 flex flex-col gap-12 lg:mt-0">
+          {outline.map((chapter) => (
+            <section key={chapter.id} className="flex flex-col gap-8">
+              <HandbookSectionHeading level={2} id={chapter.id} label={chapter.label} />
+              {chapter.screens.map((screen) => (
+                <section key={screen.id} className="flex flex-col gap-4">
+                  <HandbookSectionHeading level={3} id={screen.id} label={screen.label} />
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {screen.topics.map((leaf) => (
+                      <HandbookFigure
+                        key={leaf.topic.id}
+                        id={leaf.id}
+                        label={leaf.topic.label}
+                        description={leaf.topic.description}
+                        src={topicImageSrc(leaf.topic, combo)}
+                        alt={leaf.topic.label}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </section>
+          ))}
+        </div>
       </div>
     </div>
   );

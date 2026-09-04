@@ -17,9 +17,10 @@ Every screen **variant** needs Playwright Linux Chromium baselines for each
 combo in `BASELINE_COMBOS` (desktop/mobile × light/dark), named
 `${visual}-${combo.id}-linux.png`. Exported **functions** need a `## Function:`
 section and an e2e `Function:` needle, not a screenshot of that markdown.
-On `/handbook/screens`, variants render as small preview cards (~220px) with a
-written description and a copyable deep link; clicking a preview opens the PNG
-at full size. Markdown keeps `images/<file>.png` references; those bytes are
+On `/handbook/screens`, variants sit in a three-level table of contents
+(chapter, screen, variant) as small preview cards (~220px) with a written
+description and a copyable deep link; clicking a preview opens the PNG at
+full size. Markdown keeps `images/<file>.png` references; those bytes are
 copied to `public/handbook-images/` by `npm run handbook:images` / `prebuild` /
 `predev` from the desktop-light baseline. Do not commit PNGs under
 `docs/handbook/images/`.

@@ -108,7 +108,7 @@ const en = {
   'handbook.chapterLabel': '{title} chapter',
   'handbook.screensTitle': 'Screens',
   'handbook.screensLead':
-    'Small preview cards for each screen state at the selected Desktop/Mobile and Light/Dark combo — click a preview for full size, with a written description and a copyable link.',
+    'Table of contents in three levels (chapter, screen, variant). Small preview cards at the selected Desktop/Mobile and Light/Dark combo — click a preview for full size, with a written description and a copyable link.',
   'handbook.functionsTitle': 'Functions',
   'handbook.functionsLead': 'Each exported function.',
   'handbook.endpointsTitle': 'Endpoints',
@@ -122,6 +122,7 @@ const en = {
   'handbook.appearance': 'Appearance',
   'handbook.openImage': 'Open {label} at full size',
   'handbook.closeImage': 'Close image',
+  'handbook.contents': 'Contents',
 
   'login.pageTitle': 'Log in to 21.gifts',
   'login.heading': 'Log in with your device',
@@ -502,7 +503,7 @@ const de = {
   'handbook.chapterLabel': 'Kapitel {title}',
   'handbook.screensTitle': 'Screens',
   'handbook.screensLead':
-    'Kleine Vorschaubilder für jeden Screen-Zustand beim gewählten Desktop/Mobil- und Hell/Dunkel-Combo — Klick für Vollgrösse, mit Beschreibung und kopierbarem Link.',
+    'Inhaltsverzeichnis in drei Stufen (Kapitel, Screen, Variante). Kleine Vorschaubilder beim gewählten Desktop/Mobil- und Hell/Dunkel-Combo — Klick für Vollgrösse, mit Beschreibung und kopierbarem Link.',
   'handbook.functionsTitle': 'Funktionen',
   'handbook.functionsLead': 'Jede exportierte Funktion.',
   'handbook.endpointsTitle': 'Endpunkte',
@@ -516,6 +517,7 @@ const de = {
   'handbook.appearance': 'Erscheinungsbild',
   'handbook.openImage': '{label} in voller Grösse öffnen',
   'handbook.closeImage': 'Bild schliessen',
+  'handbook.contents': 'Inhaltsverzeichnis',
   'login.pageTitle': 'Bei 21.gifts anmelden',
   'login.heading': 'Mit Ihrem Gerät anmelden',
   'login.submit': 'Anmelden',
@@ -896,7 +898,7 @@ const es = {
   'handbook.chapterLabel': 'Capítulo {title}',
   'handbook.screensTitle': 'Pantallas',
   'handbook.screensLead':
-    'Tarjetas de vista previa compactas para cada estado de pantalla en la combinación Escritorio/Móvil y Claro/Oscuro seleccionada — haz clic para tamaño completo, con descripción y enlace copiable.',
+    'Índice en tres niveles (capítulo, pantalla, variante). Tarjetas de vista previa en la combinación Escritorio/Móvil y Claro/Oscuro seleccionada — haz clic para tamaño completo, con descripción y enlace copiable.',
   'handbook.functionsTitle': 'Funciones',
   'handbook.functionsLead': 'Cada función exportada.',
   'handbook.endpointsTitle': 'Endpoints',
@@ -910,6 +912,7 @@ const es = {
   'handbook.appearance': 'Apariencia',
   'handbook.openImage': 'Abrir {label} a tamaño completo',
   'handbook.closeImage': 'Cerrar imagen',
+  'handbook.contents': 'Índice',
   'login.pageTitle': 'Inicia sesión en 21.gifts',
   'login.heading': 'Inicia sesión con tu dispositivo',
   'login.submit': 'Iniciar sesión',
@@ -1281,7 +1284,7 @@ const fil = {
   'handbook.chapterLabel': 'Kabanata {title}',
   'handbook.screensTitle': 'Screens',
   'handbook.screensLead':
-    'Maliit na preview cards para sa bawat screen state sa napiling Desktop/Mobile at Light/Dark combo — i-click para sa buong laki, may description at copyable link.',
+    'Talaan ng nilalaman sa tatlong antas (kabanata, screen, variant). Maliit na preview cards sa napiling Desktop/Mobile at Light/Dark combo — i-click para sa buong laki, may description at copyable link.',
   'handbook.functionsTitle': 'Functions',
   'handbook.functionsLead': 'Bawat exported function.',
   'handbook.endpointsTitle': 'Endpoints',
@@ -1295,6 +1298,7 @@ const fil = {
   'handbook.appearance': 'Itsura',
   'handbook.openImage': 'Buksan ang {label} sa buong laki',
   'handbook.closeImage': 'Isara ang larawan',
+  'handbook.contents': 'Talaan ng nilalaman',
   'login.pageTitle': 'Mag-log in sa 21.gifts',
   'login.heading': 'Mag-log in gamit ang device mo',
   'login.submit': 'Mag-log in',
