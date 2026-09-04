@@ -1598,8 +1598,8 @@
 
 ## Function: HandbookFigure
 
-- **Purpose:** Compact handbook image card: permalink label + `HandbookCopyLink`, ~220px preview button that opens `HandbookLightbox`, and a written description. Scrolls into view when `location.hash` matches `#id`.
-- **Inputs:** `id`, `label`, `description`, `src`, `alt`.
+- **Purpose:** Compact handbook image card: permalink label + `HandbookCopyLink`, ~220px preview button that opens `HandbookLightbox` unless `onOpen` is set, and a written description. Scrolls into view when `location.hash` matches `#id`.
+- **Inputs:** `id`, `label`, `description`, `src`, `alt`, optional `onOpen` (when set, the preview delegates and skips the local lightbox).
 - **Visible UI:** Label link, copy-link icon, thumbnail image inside an aria-labeled open button (no visible open-image catalog string), description paragraph, optional lightbox.
 - **Returns / side effects:** An `<article>` with `id`. Hash scroll on mount/`hashchange`. No network.
 - **Used by:** `HandbookImageViewer` and `HandbookMarkdown` (image-only paragraphs).
@@ -1607,16 +1607,16 @@
 ## Function: HandbookLightbox
 
 - **Purpose:** Full-size handbook image overlay matching `RequirementsOverlay` chrome (`bg-app-card`, ghost `IconButton` + `X`). Close via X, backdrop click, or Escape. Optional previous/next chevrons when `onPrevious`/`onNext` are set. Focuses the close control on open. Not a native `<dialog>`.
-- **Inputs:** `open`, `src`, `alt`, `onClose`.
+- **Inputs:** `open`, `src`, `alt`, `onClose`, optional `onPrevious`, optional `onNext`.
 - **Returns / side effects:** `role="dialog"` overlay when `open`, otherwise `null`. Document keydown while open. No network.
-- **Used by:** `HandbookFigure`.
+- **Used by:** `HandbookFigure`, `HandbookImageViewer`.
 
 ## Function: topicAnchor
 
 - **Purpose:** Stable DOM/hash id from a catalog topic id (`${route}:${variant}`). Path `/` → `root`; other paths drop the leading `/` and replace remaining `/` with `-`; variant is the segment after the last `:`.
 - **Inputs:** Catalog topic id string (`/:default`, `/welcome:pay-qr`, `/handbook/screens:dark`, …).
 - **Returns / side effects:** Anchor string (`root-default`, `welcome-pay-qr`, `handbook-screens-dark`, …). No network.
-- **Used by:** `HandbookImageViewer`.
+- **Used by:** `buildHandbookOutline`.
 
 ## Function: parseScreenVariantDescriptions
 
