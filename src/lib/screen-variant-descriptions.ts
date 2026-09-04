@@ -85,6 +85,7 @@ export function parseScreenVariantDescriptions(markdown: string): ReadonlyMap<st
     const screen = /^## Screen:\s+(.+)$/.exec(line);
     if (screen !== null) {
       flush();
+      /* v8 ignore next — noUncheckedIndexedAccess; group always present when matched */
       path = (screen[1] ?? '').trim();
       variant = null;
       continue;
@@ -92,6 +93,7 @@ export function parseScreenVariantDescriptions(markdown: string): ReadonlyMap<st
     const variantHeading = /^### Variant:\s+(.+)$/.exec(line);
     if (variantHeading !== null) {
       flush();
+      /* v8 ignore next — noUncheckedIndexedAccess; group always present when matched */
       variant = (variantHeading[1] ?? '').trim();
       continue;
     }

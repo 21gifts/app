@@ -1256,7 +1256,7 @@ test('Function: HandbookImageViewer — stacked baselines and a viewport switch'
   await page.goto('/handbook/screens');
   await expect(page.getByAltText('/ default')).toBeVisible();
   await expect(page.getByAltText('/ mobile-nav')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Mobile' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mobile', exact: true })).toBeVisible();
 });
 
 test('Function: HandbookFigure — card description and copy link', async ({ page }) => {
@@ -1291,17 +1291,17 @@ test('Function: topicImageSrc — screens viewer shows an image', async ({ page 
 
 test('Function: comboViewport — Desktop switch is visible', async ({ page }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByRole('button', { name: 'Desktop' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Desktop', exact: true })).toBeVisible();
 });
 
 test('Function: comboTheme — Light switch is visible', async ({ page }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByRole('button', { name: 'Light' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Light', exact: true })).toBeVisible();
 });
 
 test('Function: makeCombo — Mobile switch is visible', async ({ page }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByRole('button', { name: 'Mobile' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mobile', exact: true })).toBeVisible();
 });
 
 test('Function: defaultCombo — first topic image is visible', async ({ page }) => {
