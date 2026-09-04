@@ -58,11 +58,11 @@ describe('HandbookImageViewer', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('stacks every topic and applies global switches with per-topic fallback', () => {
+  it('stacks only topics that have the selected combo; omits missing combos', () => {
     renderWithLocale(<HandbookImageViewer topics={[ALL, MOBILE_ONLY]} />);
     expect(screen.queryByLabelText('Topic')).toBeNull();
     expect(screen.getByAltText('/welcome default')).toBeTruthy();
-    expect(screen.getByAltText('/ mobile-nav')).toBeTruthy();
+    expect(screen.queryByAltText('/ mobile-nav')).toBeNull();
     expect(screen.getByRole('button', { name: 'Desktop' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mobile' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Light' })).toBeTruthy();
@@ -73,44 +73,46 @@ describe('HandbookImageViewer', () => {
     expect(screen.queryByText('Dark')).toBeNull();
 
     const allImg = screen.getByAltText('/welcome default') as HTMLImageElement;
-    const mobileImg = screen.getByAltText('/ mobile-nav') as HTMLImageElement;
     expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
-    expect(mobileImg.getAttribute('src')).toBe(
-      '/handbook-images/state-root-mobile-nav-mobile-light.png',
-    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
-    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-light.png');
-    expect(mobileImg.getAttribute('src')).toBe(
+    expect(screen.getByAltText('/welcome default')).toBeTruthy();
+    expect(screen.getByAltText('/ mobile-nav')).toBeTruthy();
+    expect((screen.getByAltText('/welcome default') as HTMLImageElement).getAttribute('src')).toBe(
+      '/handbook-images/screen-welcome-mobile-light.png',
+    );
+    expect((screen.getByAltText('/ mobile-nav') as HTMLImageElement).getAttribute('src')).toBe(
       '/handbook-images/state-root-mobile-nav-mobile-light.png',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
-    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-dark.png');
-    expect(mobileImg.getAttribute('src')).toBe(
+    expect((screen.getByAltText('/welcome default') as HTMLImageElement).getAttribute('src')).toBe(
+      '/handbook-images/screen-welcome-mobile-dark.png',
+    );
+    expect((screen.getByAltText('/ mobile-nav') as HTMLImageElement).getAttribute('src')).toBe(
       '/handbook-images/state-root-mobile-nav-mobile-dark.png',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Desktop' }));
-    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-dark.png');
-    expect(mobileImg.getAttribute('src')).toBe(
-      '/handbook-images/state-root-mobile-nav-mobile-dark.png',
+    expect(screen.getByAltText('/welcome default')).toBeTruthy();
+    expect(screen.queryByAltText('/ mobile-nav')).toBeNull();
+    expect((screen.getByAltText('/welcome default') as HTMLImageElement).getAttribute('src')).toBe(
+      '/handbook-images/screen-welcome-desktop-dark.png',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Light' }));
-    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
-    expect(mobileImg.getAttribute('src')).toBe(
-      '/handbook-images/state-root-mobile-nav-mobile-light.png',
+    expect((screen.getByAltText('/welcome default') as HTMLImageElement).getAttribute('src')).toBe(
+      '/handbook-images/screen-welcome-desktop-light.png',
     );
+    expect(screen.queryByAltText('/ mobile-nav')).toBeNull();
   });
 
-  it('initializes Desktop/Light from the catalog union when the first remaining topic is mobile-only', () => {
+  it('initializes Desktop/Light from the catalog union and omits mobile-only rows while Desktop is selected', () => {
     renderWithLocale(<HandbookImageViewer topics={[MOBILE_ONLY, ALL]} />);
-    const allImg = screen.getByAltText('/welcome default') as HTMLImageElement;
-    const mobileImg = screen.getByAltText('/ mobile-nav') as HTMLImageElement;
-    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
-    expect(mobileImg.getAttribute('src')).toBe(
-      '/handbook-images/state-root-mobile-nav-mobile-light.png',
+    expect(screen.getByAltText('/welcome default')).toBeTruthy();
+    expect(screen.queryByAltText('/ mobile-nav')).toBeNull();
+    expect((screen.getByAltText('/welcome default') as HTMLImageElement).getAttribute('src')).toBe(
+      '/handbook-images/screen-welcome-desktop-light.png',
     );
     expect(screen.getByRole('button', { name: 'Desktop' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mobile' })).toBeTruthy();

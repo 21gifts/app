@@ -11,7 +11,6 @@ import {
   defaultCombo,
   makeCombo,
   topicImageSrc,
-  type HandbookComboId,
   type HandbookTopic,
 } from '@/lib/handbook-topics';
 
@@ -22,35 +21,9 @@ export interface HandbookImageViewerProps {
 }
 
 /**
- * Resolve the combo for one topic under the global viewport/theme selection.
- * Prefers the selected viewport/theme when that topic has both; otherwise the
- * one it has. Returns {@link makeCombo} of the viewport/theme that topic
- * actually has.
- *
- * @param topic - Topic with a non-empty `combos` list.
- * @param viewport - Global viewport selection.
- * @param theme - Global theme selection.
- * @returns Combo id to render.
- */
-function resolveTopicCombo(
-  topic: HandbookTopic,
-  viewport: 'desktop' | 'mobile',
-  theme: 'light' | 'dark',
-): HandbookComboId {
-  const hasDesktop = topic.combos.some((combo) => comboViewport(combo) === 'desktop');
-  const hasMobile = topic.combos.some((combo) => comboViewport(combo) === 'mobile');
-  const nextViewport = hasDesktop && hasMobile ? viewport : hasMobile ? 'mobile' : 'desktop';
-  const themeCombos = topic.combos.filter((combo) => comboViewport(combo) === nextViewport);
-  const hasLight = themeCombos.some((combo) => comboTheme(combo) === 'light');
-  const hasDark = themeCombos.some((combo) => comboTheme(combo) === 'dark');
-  const nextTheme = hasLight && hasDark ? theme : hasDark ? 'dark' : 'light';
-  const combo = makeCombo(nextViewport, nextTheme);
-  return combo;
-}
-
-/**
- * Stacked baseline viewer: every topic with combos under global Desktop/Mobile
- * and Light/Dark switches. Switch visibility uses the union of remaining topics.
+ * Stacked baseline viewer: every topic that has the selected combo under global
+ * Desktop/Mobile and Light/Dark switches. Topics missing that combo are omitted.
+ * Switch visibility uses the union of remaining topics.
  *
  * @param props - Topic catalog.
  * @returns The viewer, or `null` when no topic has combos.
@@ -86,6 +59,9 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
     );
     return hasLight && hasDark;
   }, [remaining]);
+
+  const combo = makeCombo(viewport, theme);
+  const visible = remaining.filter((topic) => topic.combos.includes(combo));
 
   if (remaining.length === 0) {
     return null;
@@ -145,20 +121,17 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
           ) : null}
         </Card>
       ) : null}
-      {remaining.map((topic) => {
-        const combo = resolveTopicCombo(topic, viewport, theme);
-        return (
-          <section key={topic.id} className="flex flex-col gap-3">
-            <h3 className="text-base font-semibold text-app-fg">{topic.label}</h3>
-            {/* eslint-disable-next-line @next/next/no-img-element -- static handbook baseline PNG */}
-            <img
-              src={topicImageSrc(topic, combo)}
-              alt={topic.label}
-              className="max-w-full rounded-lg border border-app-border"
-            />
-          </section>
-        );
-      })}
+      {visible.map((topic) => (
+        <section key={topic.id} className="flex flex-col gap-3">
+          <h3 className="text-base font-semibold text-app-fg">{topic.label}</h3>
+          {/* eslint-disable-next-line @next/next/no-img-element -- static handbook baseline PNG */}
+          <img
+            src={topicImageSrc(topic, combo)}
+            alt={topic.label}
+            className="max-w-full rounded-lg border border-app-border"
+          />
+        </section>
+      ))}
     </div>
   );
 }

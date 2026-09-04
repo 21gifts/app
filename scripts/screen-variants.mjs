@@ -5,11 +5,12 @@
  *
  * `needle` must appear in e2e/*.spec.ts (the behavioral assertion for that state).
  * `image` is the handbook filename (URL `/handbook-images/<file>`), filled from
- * the desktop-light baseline (or the first combo listed on the variant).
- * `visual` is the Playwright screenshot arg. Each variant is captured in every
- * {@link BASELINE_COMBOS} entry unless `combos` restricts it:
+ * the desktop-light baseline.
+ * `visual` is the Playwright screenshot arg. Every production variant is captured
+ * in all four {@link BASELINE_COMBOS} entries:
  *   e2e/visual.spec.ts-snapshots/${visual}-${combo.id}-linux.png
- * `combos` is optional; omit it for all four desktop/mobile × light/dark shots.
+ * `variantComboIds` still honours an explicit `combos` list when present (tests);
+ * do not restrict production variants that way.
  */
 
 /** One required visual baseline combo: viewport × theme. */
@@ -61,7 +62,6 @@ export const SCREEN_VARIANTS = [
     image: 'root-mobile-nav.png',
     visual: 'state-root-mobile-nav',
     needle: "getByRole('button', { name: 'Menu' })",
-    combos: ['mobile-light', 'mobile-dark'],
   },
   {
     route: '/',
@@ -419,7 +419,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
     needle: 'Bitcoin payment QR code',
-    combos: ['desktop-light', 'desktop-dark'],
   },
   {
     route: '/welcome',
@@ -427,7 +426,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-pay-smartphone.png',
     visual: 'state-welcome-pay-smartphone',
     needle: 'iPhone pay sheet has no QR',
-    combos: ['mobile-light', 'mobile-dark'],
   },
   {
     route: '/welcome',

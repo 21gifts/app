@@ -424,8 +424,7 @@ Visual specs run in four projects (`desktop-light`, `desktop-dark`,
 `${arg}-${combo}-linux.png`. Handbook Markdown keeps `images/<name>.png`
 references; those bytes are filled into `public/handbook-images/` by
 `npm run handbook:images` / `prebuild` / `predev` from the desktop-light
-baseline when that combo is allowed for the variant, otherwise from the
-variant’s first listed combo. Do not commit PNGs under
+baseline. Do not commit PNGs under
 `docs/handbook/images/` or `public/handbook-images/`.
 
 Every **distinct UI state** of every screen **must** be listed in
@@ -440,12 +439,11 @@ Every listed variant **must** have, in the **same PR**:
 - a handbook `### Variant: id` with `![…](images/<image>)`
 - its `needle` string in `e2e/`
 - `shotScreen` / `toHaveScreenshot('<visual>')` in `e2e/visual.spec.ts`
-- a Playwright Linux baseline for **each** combo in `BASELINE_COMBOS` (or the
-  variant’s `combos` list): `${visual}-${combo.id}-linux.png`
+- a Playwright Linux baseline for **each** combo in `BASELINE_COMBOS`:
+  `${visual}-${combo.id}-linux.png`
 
 Default screen shots use the `screen-…` args; extra states use `state-…` args.
-Restrict `combos` only when the UI cannot exist (hamburger nav on desktop,
-payment QR on a smartphone, smartphone pay sheet on desktop).
+Every variant needs all four `BASELINE_COMBOS`.
 
 Adding a screen or UI state without updating the baselines in the **same PR**
 is rejected. `npm run screenshot:check` (and CI) fails when a PNG is missing or

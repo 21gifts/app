@@ -1293,7 +1293,7 @@ This is a visual system, not a metrics pipeline.
 | `docs/handbook/screens.md`          | Update **only when that screen actually changes**                                                                                                  |
 | `docs/handbook/functions.md`        | `## Function: <Name>` for **every new or changed export** in the **same PR**                                                                       |
 | `e2e/` `test('Function: <Name> …')` | Required for every new export (CONTRIBUTING E2E)                                                                                                   |
-| `npm run handbook:images`           | Copies desktop-light (or first allowed combo) into `public/handbook-images/`                                                                       |
+| `npm run handbook:images`           | Copies desktop-light into `public/handbook-images/`                                                                                                |
 
 **Never** regenerate goldens on the session host. Regen is CI / Linux `docker run --platform linux/amd64 mcr.microsoft.com/playwright:v1.61.1-noble`. A font/token PR will rewrite many PNGs — isolate that (PR 2). New primitives (`ButtonLink`, `Wordmark`, `SegmentedControl`) are full export-surface PRs: unit test + handbook Function + `Function:` e2e, not “CSS only.”
 
@@ -1383,7 +1383,7 @@ Orange is decided: **shell-split**, not gift-only. Marketing Log in stays orange
 
 ## Visual regression
 
-Four Playwright projects: `desktop-light`, `desktop-dark`, `mobile-light`, `mobile-dark`. Filenames `${visual}-${combo}-linux.png`. Marketing pages are visually identical in “light” and “dark” jobs (always ink) — that duplication is accepted; do not special-case combos except where UI cannot exist (`state-root-mobile-nav` mobile-only; `state-welcome-pay-qr` desktop-only; `state-welcome-pay-smartphone` mobile-only).
+Four Playwright projects: `desktop-light`, `desktop-dark`, `mobile-light`, `mobile-dark`. Filenames `${visual}-${combo}-linux.png`. Marketing pages are visually identical in “light” and “dark” jobs (always ink) — that duplication is accepted.
 
 Font + token PR: expect hundreds of PNG diffs. Budget CI visual jobs (10 minutes each) accordingly. `screenshot:check` still runs in Check.
 
