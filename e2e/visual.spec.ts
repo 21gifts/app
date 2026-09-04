@@ -267,10 +267,17 @@ test.describe('screen baselines', () => {
   });
 
   test('state / mobile-nav', async ({ page }, testInfo) => {
-    test.skip(!isMobileProject(testInfo), 'hamburger nav is md:hidden on desktop');
     await page.goto('/');
-    await page.getByRole('button', { name: 'Menu' }).click();
-    await expect(page.getByLabel('Primary').getByRole('link', { name: 'Handbook' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+      await expect(
+        page.getByLabel('Primary').getByRole('link', { name: 'Handbook' }),
+      ).toBeVisible();
+    } else {
+      await expect(
+        page.getByRole('heading', { name: /Direct human-to-human gifts/i }),
+      ).toBeVisible();
+    }
     await shotScreen(page, 'state-root-mobile-nav');
   });
 
@@ -1883,21 +1890,27 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome pay-qr', async ({ page }, testInfo) => {
-    test.skip(isMobileProject(testInfo), 'payment QR is desktop-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
     await shotScreen(page, 'state-welcome-pay-qr');
   });
 
   test('welcome pay-smartphone', async ({ page }, testInfo) => {
-    test.skip(!isMobileProject(testInfo), 'smartphone pay sheet is mobile-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
     await shotScreen(page, 'state-welcome-pay-smartphone');
   });
 

@@ -1,6 +1,6 @@
 # Screens
 
-Every variant below is captured in the four Linux Chromium combos (desktop/mobile × light/dark), except UI that cannot exist: the header hamburger (mobile only), the payment QR (desktop only), and the smartphone pay sheet (mobile only). Markdown images are the desktop-light shot, or the first allowed combo when desktop-light does not apply. The other combo PNGs are visual-test baselines only.
+Every variant below is captured in all four Linux Chromium combos (desktop/mobile × light/dark). Markdown images are the desktop-light shot. The other combo PNGs are visual-test baselines only.
 
 ## Screen: /
 
@@ -17,7 +17,7 @@ Desktop/wide layout: section nav is visible in the header (How it works, Why, FA
 
 ### Variant: mobile-nav
 
-Narrow viewport: header shows the Menu button. Open it to reveal the same links stacked. Tapping a link closes the menu.
+Captured at desktop and mobile. On mobile the header shows the Menu button; open it to reveal the same links stacked (tapping a link closes the menu). On desktop this is the landing without the hamburger.
 
 ![21.gifts home mobile nav](images/root-mobile-nav.png)
 
@@ -459,13 +459,13 @@ After **Menu**, click **Theme** → System / Light / Dark expand in flow under t
 
 ### Variant: pay-qr
 
-Payable note, amount submitted. On a computer the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon.
+Payable note, amount submitted. Captured at desktop and mobile. On desktop the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same sheet has no QR.
 
 ![21.gifts welcome pay QR](images/welcome-pay-qr.png)
 
 ### Variant: pay-smartphone
 
-Same pay sheet on a smartphone user-agent: **Pay** button with the Wallet of Satoshi icon only, no QR, plus the top-left back control.
+Same pay sheet captured at desktop and mobile. On a smartphone user-agent: **Pay** button with the Wallet of Satoshi icon only, no QR, plus the top-left back control. On desktop this scenario shows the QR.
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
@@ -730,25 +730,25 @@ After tapping the link icon on the Handbook heading, that button shows the check
 ## Screen: /handbook/screens
 
 - **URL:** `/handbook/screens` — public screens handbook (no auth gate).
-- **What the user sees:** Heading **Screens**, then a stacked list of every screen/UI-state topic (`HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each row shows its label and one image for the current combo (per-topic fallback when a topic lacks that viewport or theme). No topic picker.
+- **What the user sees:** Heading **Screens**, then a stacked list of every screen/UI-state topic (`HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each row shows its label and the selected combo image; topics that lack that combo are omitted. No topic picker.
 - **Actions:** Switch viewport/theme when available (applies to every row), return to the hub.
 - **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookIntro`, `HandbookCopyLink`.
 
 ### Variant: default
 
-Stacked list, desktop-light images where available, **Desktop** and **Light** selected when those combos exist in the catalog.
+Stacked list of topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog.
 
 ![21.gifts handbook screens](images/handbook-screens.png)
 
 ### Variant: mobile
 
-**Mobile** selected; every row shows its mobile baseline (or the only viewport it has).
+**Mobile** selected; every visible row shows that mobile combo.
 
 ![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
 
 ### Variant: dark
 
-**Dark** selected; every row shows its dark baseline (or the only theme it has).
+**Dark** selected; every visible row shows that dark combo.
 
 ![21.gifts handbook screens dark](images/handbook-screens-dark.png)
 

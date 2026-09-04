@@ -1535,9 +1535,9 @@
 
 ## Function: HandbookImageViewer
 
-- **Purpose:** Client stacked baseline viewer. Every topic with combos is listed under global Desktop/Mobile and Light/Dark switches; switches use the union of remaining topics and appear only when both sides exist.
+- **Purpose:** Client stacked baseline viewer. Stacked rows are the **selected** combo only (`makeCombo(viewport, theme)`); a topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist.
 - **Inputs:** `topics` (`HandbookTopic[]`).
-- **Returns / side effects:** React element or `null` when no topic has combos. No network.
+- **Returns / side effects:** React element or `null` when no topic has combos. Empty visible list still shows switches when remaining is non-empty. No network.
 - **Used by:** `HandbookScreensPage`.
 
 ## Function: topicImageSrc

@@ -200,5 +200,5 @@ if (missing.length) {
 }
 
 console.log(
-  `Screenshots complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants × 4 combos (restricted where listed), ${snapFiles.length} PNG baselines.`,
+  `Screenshots complete: ${screens.size} screens, ${SCREEN_VARIANTS.length} variants × 4 combos, ${snapFiles.length} PNG baselines.`,
 );

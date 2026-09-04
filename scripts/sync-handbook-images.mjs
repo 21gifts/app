@@ -4,9 +4,9 @@
  * handbook Markdown URLs and the per-topic baseline viewer. Run from the repo
  * root (also via prebuild/predev).
  *
- * Markdown still uses one image per variant (desktop-light, or the first
- * listed combo). The viewer also copies `${visual}-${comboId}.png` for every
- * combo that exists.
+ * Markdown uses one image per variant from desktop-light only
+ * (`HANDBOOK_COMBO_ID`). The viewer also copies `${visual}-${comboId}.png`
+ * for every combo that exists.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -34,16 +34,15 @@ let copied = 0;
 
 for (const variant of SCREEN_VARIANTS) {
   const comboIds = variantComboIds(variant);
-  const comboId = comboIds.includes(HANDBOOK_COMBO_ID) ? HANDBOOK_COMBO_ID : comboIds[0];
-  const stem = comboSnapshotStem(variant.visual, comboId);
+  const stem = comboSnapshotStem(variant.visual, HANDBOOK_COMBO_ID);
   const source = path.join(SNAP_DIR, `${stem}-linux.png`);
   const dest = path.join(DEST_DIR, variant.image);
   if (!fs.existsSync(source)) {
     missing.push(`${stem}-linux.png → ${variant.image}`);
-    continue;
+  } else {
+    fs.copyFileSync(source, dest);
+    copied += 1;
   }
-  fs.copyFileSync(source, dest);
-  copied += 1;
   for (const id of comboIds) {
     const comboStem = comboSnapshotStem(variant.visual, id);
     const comboSource = path.join(SNAP_DIR, `${comboStem}-linux.png`);
