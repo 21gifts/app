@@ -436,7 +436,7 @@
 - **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`). `sm` is 24px paint with a 44px `::before` hit slop; `md` is 44px; `lg` is 48px.
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
-- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `ContactScreen`, `NameForm`, `RulesSetup`.
+- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `HandbookLightbox`, `ContactScreen`, `NameForm`, `RulesSetup`.
 
 ## Function: Card
 
@@ -1041,7 +1041,7 @@
 - **Purpose:** Read the four app handbook markdown files from disk (README, screens, functions, endpoints).
 - **Inputs:** Optional `rootDir`; defaults to `<cwd>/docs/handbook`.
 - **Returns / side effects:** `HandbookDocument[]` in that order. Throws when the directory or a required file is missing.
-- **Used by:** `HandbookPage`.
+- **Used by:** `HandbookScreensPage`, `HandbookFunctionsPage`, `HandbookEndpointsPage`.
 
 ## Function: loadSession
 
