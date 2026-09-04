@@ -37,6 +37,26 @@ function slug(text: string): string {
 }
 
 /**
+ * First unused DOM id derived from `base` (appends `-2`, `-3`, …).
+ *
+ * @param base - Preferred id.
+ * @param used - Ids already taken in this document.
+ * @returns A unique id, recorded in `used`.
+ */
+function uniqueDomId(base: string, used: Set<string>): string {
+  const cleaned = base.replace(/^-+|-+$/g, '');
+  const stem = cleaned === '' ? 'image' : cleaned;
+  let id = stem;
+  let n = 2;
+  while (used.has(id)) {
+    id = `${stem}-${n}`;
+    n += 1;
+  }
+  used.add(id);
+  return id;
+}
+
+/**
  * Resolve a markdown href into a safe in-page, absolute, or image URL.
  *
  * @param rawHref - Raw `(…)` target.
@@ -198,17 +218,8 @@ export function parseHandbookMarkdown(markdown: string, idPrefix: string): Handb
   let para: string[] = [];
   let listItems: HandbookInline[][] = [];
 
-  const uniqueHeadingId = (text: string): string => {
-    const base = `${idPrefix}-${slug(text)}`;
-    let id = base;
-    let n = 2;
-    while (usedIds.has(id)) {
-      id = `${base}-${n}`;
-      n += 1;
-    }
-    usedIds.add(id);
-    return id;
-  };
+  const uniqueHeadingId = (text: string): string =>
+    uniqueDomId(`${idPrefix}-${slug(text)}`, usedIds);
 
   const flushPara = (): void => {
     if (para.length > 0) {
@@ -394,6 +405,13 @@ export function HandbookMarkdown({
   idPrefix: string;
 }): ReactElement {
   const blocks = parseHandbookMarkdown(markdown, idPrefix);
+  const usedIds = new Set(
+    blocks
+      .filter(
+        (block): block is Extract<HandbookBlock, { type: 'heading' }> => block.type === 'heading',
+      )
+      .map((block) => block.id),
+  );
   return (
     <>
       {blocks.map((block, index) => {
@@ -411,7 +429,11 @@ export function HandbookMarkdown({
         if (block.type === 'paragraph') {
           const only = block.inlines[0];
           if (block.inlines.length === 1 && only !== undefined && only.type === 'img') {
-            const figureId = `${idPrefix}-image-${slug(only.alt)}`;
+            const altSlug = slug(only.alt);
+            const figureId = uniqueDomId(
+              `${idPrefix}-image-${altSlug === '' ? 'untitled' : altSlug}`,
+              usedIds,
+            );
             return (
               <HandbookFigure
                 key={index}

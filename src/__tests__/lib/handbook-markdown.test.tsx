@@ -160,6 +160,18 @@ describe('HandbookMarkdown', () => {
     expect(screen.queryByText('Open login at full size')).toBeNull();
   });
 
+  it('uniquifies duplicate image-figure ids and empty alts', () => {
+    renderWithLocale(
+      <HandbookMarkdown
+        markdown={'![login](images/a.png)\n\n![login](images/b.png)\n\n![](images/c.png)\n'}
+        idPrefix="screens"
+      />,
+    );
+    expect(document.getElementById('screens-image-login')).toBeTruthy();
+    expect(document.getElementById('screens-image-login-2')).toBeTruthy();
+    expect(document.getElementById('screens-image-untitled')).toBeTruthy();
+  });
+
   it('keeps mixed text+image paragraphs as a normal paragraph', () => {
     renderWithLocale(
       <HandbookMarkdown markdown={'Before ![shot](images/x.png) after\n'} idPrefix="x" />,
