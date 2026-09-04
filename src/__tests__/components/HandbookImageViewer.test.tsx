@@ -27,37 +27,116 @@ const LIGHT_ONLY: HandbookTopic = {
   combos: ['desktop-light'],
 };
 
+const DARK_ONLY: HandbookTopic = {
+  id: 'pay:qr-dark',
+  label: '/welcome pay-qr-dark',
+  visual: 'state-welcome-pay-qr',
+  combos: ['desktop-dark'],
+};
+
+const BOTH_VIEWPORTS_LIGHT_ONLY: HandbookTopic = {
+  id: 'welcome:light-viewports',
+  label: '/welcome light-viewports',
+  visual: 'screen-welcome',
+  combos: ['desktop-light', 'mobile-light'],
+};
+
 describe('HandbookImageViewer', () => {
   it('renders nothing when there are no topics', () => {
     const { container } = renderWithLocale(<HandbookImageViewer topics={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('switches viewport and theme when both exist', () => {
+  it('renders nothing when every topic has empty combos', () => {
+    const EMPTY: HandbookTopic = {
+      id: 'empty',
+      label: 'Empty',
+      visual: 'function-Empty',
+      combos: [],
+    };
+    const { container } = renderWithLocale(<HandbookImageViewer topics={[EMPTY]} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('stacks every topic and applies global switches with per-topic fallback', () => {
     renderWithLocale(<HandbookImageViewer topics={[ALL, MOBILE_ONLY]} />);
-    const img = screen.getByAltText('/welcome default') as HTMLImageElement;
-    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
-    fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
-    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-light.png');
-    fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
-    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-dark.png');
-    fireEvent.click(screen.getByRole('button', { name: 'Desktop' }));
-    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-dark.png');
-    fireEvent.click(screen.getByRole('button', { name: 'Light' }));
-    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
+    expect(screen.queryByLabelText('Topic')).toBeNull();
+    expect(screen.getByAltText('/welcome default')).toBeTruthy();
+    expect(screen.getByAltText('/ mobile-nav')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Desktop' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mobile' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Light' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dark' })).toBeTruthy();
     expect(screen.queryByText('Desktop')).toBeNull();
     expect(screen.queryByText('Mobile')).toBeNull();
     expect(screen.queryByText('Light')).toBeNull();
     expect(screen.queryByText('Dark')).toBeNull();
+
+    const allImg = screen.getByAltText('/welcome default') as HTMLImageElement;
+    const mobileImg = screen.getByAltText('/ mobile-nav') as HTMLImageElement;
+    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
+    expect(mobileImg.getAttribute('src')).toBe(
+      '/handbook-images/state-root-mobile-nav-mobile-light.png',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
+    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-light.png');
+    expect(mobileImg.getAttribute('src')).toBe(
+      '/handbook-images/state-root-mobile-nav-mobile-light.png',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
+    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-dark.png');
+    expect(mobileImg.getAttribute('src')).toBe(
+      '/handbook-images/state-root-mobile-nav-mobile-dark.png',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Desktop' }));
+    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-dark.png');
+    expect(mobileImg.getAttribute('src')).toBe(
+      '/handbook-images/state-root-mobile-nav-mobile-dark.png',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Light' }));
+    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
+    expect(mobileImg.getAttribute('src')).toBe(
+      '/handbook-images/state-root-mobile-nav-mobile-light.png',
+    );
   });
 
-  it('hides the theme switch when only one combo exists', () => {
+  it('initializes Desktop/Light from the catalog union when the first remaining topic is mobile-only', () => {
+    renderWithLocale(<HandbookImageViewer topics={[MOBILE_ONLY, ALL]} />);
+    const allImg = screen.getByAltText('/welcome default') as HTMLImageElement;
+    const mobileImg = screen.getByAltText('/ mobile-nav') as HTMLImageElement;
+    expect(allImg.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
+    expect(mobileImg.getAttribute('src')).toBe(
+      '/handbook-images/state-root-mobile-nav-mobile-light.png',
+    );
+    expect(screen.getByRole('button', { name: 'Desktop' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mobile' })).toBeTruthy();
+  });
+
+  it('hides Dark and Mobile when only desktop-light exists', () => {
     renderWithLocale(<HandbookImageViewer topics={[LIGHT_ONLY]} />);
     expect(screen.queryByRole('button', { name: 'Dark' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mobile' })).toBeNull();
+    expect((screen.getByAltText('/welcome pay-qr') as HTMLImageElement).getAttribute('src')).toBe(
+      '/handbook-images/state-welcome-pay-qr-desktop-light.png',
+    );
   });
 
-  it('hides the desktop switch when only mobile combos exist', () => {
+  it('hides Light/Dark and Desktop/Mobile when only desktop-dark exists', () => {
+    renderWithLocale(<HandbookImageViewer topics={[DARK_ONLY]} />);
+    expect(screen.queryByRole('button', { name: 'Desktop' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mobile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Light' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dark' })).toBeNull();
+    expect(
+      (screen.getByAltText('/welcome pay-qr-dark') as HTMLImageElement).getAttribute('src'),
+    ).toBe('/handbook-images/state-welcome-pay-qr-desktop-dark.png');
+  });
+
+  it('hides Desktop when only mobile combos exist', () => {
     renderWithLocale(<HandbookImageViewer topics={[MOBILE_ONLY]} />);
     expect(screen.queryByRole('button', { name: 'Desktop' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Dark' })).toBeTruthy();
@@ -66,44 +145,28 @@ describe('HandbookImageViewer', () => {
     );
   });
 
-  it('selects another topic and resets to its default combo', () => {
-    renderWithLocale(<HandbookImageViewer topics={[ALL, MOBILE_ONLY]} />);
-    fireEvent.change(screen.getByLabelText('Topic'), { target: { value: MOBILE_ONLY.id } });
-    expect((screen.getByAltText('/ mobile-nav') as HTMLImageElement).getAttribute('src')).toBe(
-      '/handbook-images/state-root-mobile-nav-mobile-light.png',
-    );
+  it('shows Desktop and Mobile but hides Dark when only light combos exist for both viewports', () => {
+    renderWithLocale(<HandbookImageViewer topics={[BOTH_VIEWPORTS_LIGHT_ONLY]} />);
+    expect(screen.getByRole('button', { name: 'Desktop' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mobile' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Dark' })).toBeNull();
+
+    const img = screen.getByAltText('/welcome light-viewports') as HTMLImageElement;
+    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-desktop-light.png');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mobile' }));
+    expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-light.png');
   });
 
-  it('uses dark when the selected viewport has no light combo', () => {
-    const DARK_ONLY: HandbookTopic = {
-      id: 'dark-only',
-      label: 'Dark only',
-      visual: 'function-DarkOnly',
-      combos: ['desktop-dark'],
-    };
-    renderWithLocale(<HandbookImageViewer topics={[DARK_ONLY]} />);
-    expect(screen.getByLabelText('Topic')).toBeTruthy();
-  });
-
-  it('uses light when the selected viewport has no dark combo', () => {
-    const LIGHT_ONLY: HandbookTopic = {
-      id: 'light-only',
-      label: 'Light only',
-      visual: 'function-LightOnly',
-      combos: ['desktop-light'],
-    };
-    renderWithLocale(<HandbookImageViewer topics={[LIGHT_ONLY]} />);
-    expect(screen.getByLabelText('Topic')).toBeTruthy();
-  });
-
-  it('falls back to desktop-light when a topic has no combos', () => {
+  it('skips topics with empty combos while stacking the rest', () => {
     const EMPTY: HandbookTopic = {
       id: 'empty',
       label: 'Empty',
       visual: 'function-Empty',
       combos: [],
     };
-    renderWithLocale(<HandbookImageViewer topics={[EMPTY]} />);
-    expect(screen.getByLabelText('Topic')).toBeTruthy();
+    renderWithLocale(<HandbookImageViewer topics={[EMPTY, ALL]} />);
+    expect(screen.queryByAltText('Empty')).toBeNull();
+    expect(screen.getByAltText('/welcome default')).toBeTruthy();
   });
 });

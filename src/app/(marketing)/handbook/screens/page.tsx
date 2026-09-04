@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Async screens handbook page: one topic viewer with Desktop/Mobile and
- * Light/Dark switches for existing combos only.
+ * Async screens handbook page: stacked screen variants under global
+ * Desktop/Mobile and Light/Dark switches for existing combos only.
  *
  * @returns The screens handbook screen.
  */

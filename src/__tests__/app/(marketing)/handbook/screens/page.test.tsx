@@ -17,9 +17,13 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('HandbookScreensPage', () => {
-  it('renders the Screens heading and a topic picker', async () => {
+  it('renders the Screens heading, stacked baselines, and viewport switches', async () => {
     renderWithLocale(await HandbookScreensPage());
     expect(screen.getByRole('heading', { name: 'Screens' })).toBeTruthy();
-    expect(screen.getByLabelText('Topic')).toBeTruthy();
+    expect(screen.queryByLabelText('Topic')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Desktop' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mobile' })).toBeTruthy();
+    expect(screen.getByAltText('/ default')).toBeTruthy();
+    expect(screen.getByAltText('/ mobile-nav')).toBeTruthy();
   });
 });

@@ -730,25 +730,25 @@ After tapping the link icon on the Handbook heading, that button shows the check
 ## Screen: /handbook/screens
 
 - **URL:** `/handbook/screens` — public screens handbook (no auth gate).
-- **What the user sees:** Heading **Screens**, a one-topic baseline viewer (`HandbookImageViewer`) with a topic picker. **Desktop** / **Mobile** and **Light** / **Dark** switches appear only when those baselines exist for the selected topic. One image at a time.
-- **Actions:** Pick a topic, switch viewport/theme when available, return to the hub.
+- **What the user sees:** Heading **Screens**, then a stacked list of every screen/UI-state topic (`HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each row shows its label and one image for the current combo (per-topic fallback when a topic lacks that viewport or theme). No topic picker.
+- **Actions:** Switch viewport/theme when available (applies to every row), return to the hub.
 - **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookIntro`, `HandbookCopyLink`.
 
 ### Variant: default
 
-First topic, desktop-light image, **Desktop** and **Light** selected when those combos exist.
+Stacked list, desktop-light images where available, **Desktop** and **Light** selected when those combos exist in the catalog.
 
 ![21.gifts handbook screens](images/handbook-screens.png)
 
 ### Variant: mobile
 
-**Mobile** selected on a topic that has both viewports.
+**Mobile** selected; every row shows its mobile baseline (or the only viewport it has).
 
 ![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
 
 ### Variant: dark
 
-**Dark** selected on a topic that has both themes.
+**Dark** selected; every row shows its dark baseline (or the only theme it has).
 
 ![21.gifts handbook screens dark](images/handbook-screens-dark.png)
 
