@@ -17,6 +17,11 @@ export interface HandbookFigureProps {
   src: string;
   /** Image alt text. */
   alt: string;
+  /**
+   * When set, the preview calls this instead of opening a local lightbox
+   * (used by the screens gallery so arrow keys can step through slides).
+   */
+  onOpen?: () => void;
 }
 
 /**
@@ -33,6 +38,7 @@ export function HandbookFigure({
   description,
   src,
   alt,
+  onOpen,
 }: HandbookFigureProps): ReactElement {
   const { t } = useTranslations();
   const [open, setOpen] = useState(false);
@@ -71,6 +77,10 @@ export function HandbookFigure({
           aria-label={openLabel}
           className="rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={() => {
+            if (onOpen !== undefined) {
+              onOpen();
+              return;
+            }
             setOpen(true);
           }}
         >
@@ -83,14 +93,16 @@ export function HandbookFigure({
         </button>
       </div>
       <p className="px-3 pb-3 text-sm text-app-muted">{description}</p>
-      <HandbookLightbox
-        open={open}
-        src={src}
-        alt={alt}
-        onClose={() => {
-          setOpen(false);
-        }}
-      />
+      {onOpen === undefined ? (
+        <HandbookLightbox
+          open={open}
+          src={src}
+          alt={alt}
+          onClose={() => {
+            setOpen(false);
+          }}
+        />
+      ) : null}
     </article>
   );
 }

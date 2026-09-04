@@ -172,6 +172,32 @@ describe('HandbookImageViewer', () => {
     expect(img.getAttribute('src')).toBe('/handbook-images/screen-welcome-mobile-light.png');
   });
 
+  it('steps through visible slides with Left and Right arrows', () => {
+    renderWithLocale(<HandbookImageViewer topics={[ALL, LIGHT_ONLY]} />);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByRole('dialog', { name: '/welcome default' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByRole('dialog', { name: '/welcome pay-qr' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByRole('dialog', { name: '/welcome default' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'ArrowLeft' });
+    expect(screen.getByRole('dialog', { name: '/welcome pay-qr' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close image' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.keyDown(document, { key: 'ArrowLeft' });
+    expect(screen.getByRole('dialog', { name: '/welcome pay-qr' })).toBeTruthy();
+  });
+
+  it('ignores arrows while typing in a field', () => {
+    renderWithLocale(<HandbookImageViewer topics={[ALL, LIGHT_ONLY]} />);
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    fireEvent.keyDown(field, { key: 'ArrowRight' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    field.remove();
+  });
+
   it('skips topics with empty combos while gridding the rest', () => {
     const EMPTY: HandbookTopic = {
       id: 'empty',

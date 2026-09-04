@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildHandbookOutline,
+  nextOutlineIndex,
   screenChapter,
   topicPath,
   topicVariant,
@@ -54,5 +55,14 @@ describe('handbook-outline', () => {
     expect(outline[1]?.id).toBe('chapter-root');
     expect(outline[1]?.screens[0]?.id).toBe('screen-root');
     expect(outline[2]?.screens[0]?.topics[0]?.id).toBe('handbook-screens-dark');
+  });
+
+  it('steps through a closed or wrapping slide list', () => {
+    expect(nextOutlineIndex(0, null, 1)).toBe(0);
+    expect(nextOutlineIndex(3, null, 1)).toBe(0);
+    expect(nextOutlineIndex(3, null, -1)).toBe(2);
+    expect(nextOutlineIndex(3, 0, -1)).toBe(2);
+    expect(nextOutlineIndex(3, 2, 1)).toBe(0);
+    expect(nextOutlineIndex(3, 1, 1)).toBe(2);
   });
 });

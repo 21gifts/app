@@ -58,6 +58,27 @@ describe('HandbookLightbox', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('shows previous and next controls when gallery callbacks are set', () => {
+    const onPrevious = vi.fn();
+    const onNext = vi.fn();
+    renderWithLocale(
+      <HandbookLightbox
+        open
+        src="/handbook-images/x.png"
+        alt="Shot"
+        onClose={vi.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Previous screen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next screen' }));
+    expect(onPrevious).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Previous screen')).toBeNull();
+    expect(screen.queryByText('Next screen')).toBeNull();
+  });
+
   it('removes the Escape listener when closed', () => {
     const onClose = vi.fn();
     const { unmount } = renderWithLocale(

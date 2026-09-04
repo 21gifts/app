@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui';
@@ -15,6 +15,10 @@ export interface HandbookLightboxProps {
   alt: string;
   /** Closes the overlay (X, backdrop, or Escape). */
   onClose: () => void;
+  /** Previous slide (optional gallery chrome). */
+  onPrevious?: () => void;
+  /** Next slide (optional gallery chrome). */
+  onNext?: () => void;
 }
 
 /**
@@ -29,6 +33,8 @@ export function HandbookLightbox({
   src,
   alt,
   onClose,
+  onPrevious,
+  onNext,
 }: HandbookLightboxProps): ReactElement | null {
   const { t } = useTranslations();
 
@@ -65,7 +71,35 @@ export function HandbookLightbox({
           event.stopPropagation();
         }}
       >
-        <div className="mb-2 flex justify-end">
+        <div className="mb-2 flex items-center justify-end gap-1">
+          {onPrevious !== undefined ? (
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="md"
+              aria-label={t('handbook.previousImage')}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPrevious();
+              }}
+            >
+              <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          ) : null}
+          {onNext !== undefined ? (
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="md"
+              aria-label={t('handbook.nextImage')}
+              onClick={(event) => {
+                event.stopPropagation();
+                onNext();
+              }}
+            >
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          ) : null}
           <IconButton
             type="button"
             variant="ghost"

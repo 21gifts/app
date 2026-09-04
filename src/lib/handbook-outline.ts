@@ -71,6 +71,31 @@ export function screenChapter(path: string): string {
 }
 
 /**
+ * Next index when stepping through a flat slide list with the arrow keys.
+ *
+ * `null` current means the gallery is closed: Right opens the first slide,
+ * Left opens the last. Empty lists stay at 0.
+ *
+ * @param length - Number of slides.
+ * @param current - Current index, or `null` when closed.
+ * @param direction - `1` (Right) or `-1` (Left).
+ * @returns Index in `0 … length-1`, or `0` when `length` is 0.
+ */
+export function nextOutlineIndex(
+  length: number,
+  current: number | null,
+  direction: 1 | -1,
+): number {
+  if (length <= 0) {
+    return 0;
+  }
+  if (current === null) {
+    return direction === 1 ? 0 : length - 1;
+  }
+  return (current + direction + length) % length;
+}
+
+/**
  * Group topics into chapter → screen → variant, preserving catalog order.
  * Topics with empty `combos` are omitted.
  *

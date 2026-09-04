@@ -1535,7 +1535,7 @@
 
 ## Function: HandbookImageViewer
 
-- **Purpose:** Nested handbook screens for the **selected** combo only (`makeCombo(viewport, theme)`): three-level contents (chapter → screen → variant) and compact `HandbookFigure` cards. A topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist.
+- **Purpose:** Nested handbook screens for the **selected** combo only (`makeCombo(viewport, theme)`): three-level contents (chapter → screen → variant) and compact `HandbookFigure` cards. Left/Right arrows (and lightbox chevrons) step through every visible variant in a shared lightbox. A topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist.
 - **Inputs:** `topics` (`HandbookTopic[]` with required `description`).
 - **Returns / side effects:** React element or `null` when no topic has combos. Empty visible list still shows switches when remaining is non-empty. No network.
 - **Used by:** `HandbookScreensPage`.
@@ -1559,6 +1559,13 @@
 - **Purpose:** Group topics into chapter → screen → variant, preserving catalog order. Skips empty `combos`. Chapter is `screenChapter` (first path segment; `/` stays `/`).
 - **Inputs:** `topics` (`HandbookTopic[]`).
 - **Returns / side effects:** `HandbookOutlineChapter[]`. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: nextOutlineIndex
+
+- **Purpose:** Next slide index for Left/Right gallery stepping. Closed gallery (`current === null`): Right → 0, Left → last. Wraps. Empty list stays 0.
+- **Inputs:** `length`, `current` (`number | null`), `direction` (`1` or `-1`).
+- **Returns / side effects:** Index. No network.
 - **Used by:** `HandbookImageViewer`.
 
 ## Function: topicPath
@@ -1599,7 +1606,7 @@
 
 ## Function: HandbookLightbox
 
-- **Purpose:** Full-size handbook image overlay matching `RequirementsOverlay` chrome (`bg-app-card`, ghost `IconButton` + `X`). Close via X, backdrop click, or Escape. Focuses the close control on open. Not a native `<dialog>`.
+- **Purpose:** Full-size handbook image overlay matching `RequirementsOverlay` chrome (`bg-app-card`, ghost `IconButton` + `X`). Close via X, backdrop click, or Escape. Optional previous/next chevrons when `onPrevious`/`onNext` are set. Focuses the close control on open. Not a native `<dialog>`.
 - **Inputs:** `open`, `src`, `alt`, `onClose`.
 - **Returns / side effects:** `role="dialog"` overlay when `open`, otherwise `null`. Document keydown while open. No network.
 - **Used by:** `HandbookFigure`.

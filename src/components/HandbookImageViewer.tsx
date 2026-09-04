@@ -1,13 +1,14 @@
 'use client';
 
 import { Monitor, Moon, Smartphone, Sun } from 'lucide-react';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { HandbookFigure } from '@/components/HandbookFigure';
+import { HandbookLightbox } from '@/components/HandbookLightbox';
 import { HandbookOutline } from '@/components/HandbookOutline';
 import { HandbookSectionHeading } from '@/components/HandbookSectionHeading';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card, IconButton } from '@/components/ui';
-import { buildHandbookOutline } from '@/lib/handbook-outline';
+import { buildHandbookOutline, nextOutlineIndex } from '@/lib/handbook-outline';
 import {
   HANDBOOK_COMBOS,
   comboTheme,
@@ -27,7 +28,8 @@ export interface HandbookImageViewerProps {
 /**
  * Nested handbook screens: table of contents (chapter → screen → variant) and
  * compact figures for every topic that has the selected combo under global
- * Desktop/Mobile and Light/Dark switches. Topics missing that combo are
+ * Desktop/Mobile and Light/Dark switches. Left/Right arrows step through
+ * every visible variant in a shared lightbox. Topics missing that combo are
  * omitted. Switch visibility uses the union of remaining topics.
  *
  * @param props - Topic catalog.
@@ -68,6 +70,72 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
   const combo = makeCombo(viewport, theme);
   const visible = remaining.filter((topic) => topic.combos.includes(combo));
   const outline = buildHandbookOutline(visible);
+  const slides = useMemo(
+    () => outline.flatMap((chapter) => chapter.screens.flatMap((screen) => screen.topics)),
+    [outline],
+  );
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const activeIndex = activeId === null ? -1 : slides.findIndex((slide) => slide.id === activeId);
+  const activeSlide = activeIndex >= 0 ? (slides[activeIndex] ?? null) : null;
+
+  const step = useCallback(
+    (direction: 1 | -1): void => {
+      if (slides.length === 0) {
+        return;
+      }
+      const current = activeIndex >= 0 ? activeIndex : null;
+      const next = nextOutlineIndex(slides.length, current, direction);
+      const slide = slides[next];
+      if (slide !== undefined) {
+        setActiveId(slide.id);
+      }
+    },
+    [activeIndex, slides],
+  );
+
+  const closeGallery = useCallback((): void => {
+    setActiveId(null);
+  }, []);
+
+  useEffect(() => {
+    if (activeId !== null && !slides.some((slide) => slide.id === activeId)) {
+      setActiveId(null);
+    }
+  }, [activeId, slides]);
+
+  useEffect(() => {
+    if (activeId === null) {
+      return;
+    }
+    document.getElementById(activeId)?.scrollIntoView({ block: 'nearest' });
+  }, [activeId]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+        return;
+      }
+      if (event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) {
+          return;
+        }
+      }
+      if (slides.length === 0) {
+        return;
+      }
+      event.preventDefault();
+      step(event.key === 'ArrowRight' ? 1 : -1);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [slides.length, step]);
 
   if (remaining.length === 0) {
     return null;
@@ -145,6 +213,9 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
                         description={leaf.topic.description}
                         src={topicImageSrc(leaf.topic, combo)}
                         alt={leaf.topic.label}
+                        onOpen={() => {
+                          setActiveId(leaf.id);
+                        }}
                       />
                     ))}
                   </div>
@@ -154,6 +225,13 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
           ))}
         </div>
       </div>
+      <HandbookLightbox
+        open={activeSlide !== null}
+        src={activeSlide === null ? '' : topicImageSrc(activeSlide.topic, combo)}
+        alt={activeSlide === null ? '' : activeSlide.topic.label}
+        onClose={closeGallery}
+        {...(slides.length > 1 ? { onPrevious: () => step(-1), onNext: () => step(1) } : {})}
+      />
     </div>
   );
 }

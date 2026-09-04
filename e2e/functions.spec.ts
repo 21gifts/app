@@ -1296,6 +1296,12 @@ test('Function: screenChapter — handbook chapter heading is visible', async ({
   await expect(page.getByRole('heading', { level: 2, name: '/handbook' })).toBeVisible();
 });
 
+test('Function: nextOutlineIndex — ArrowRight opens the first screen', async ({ page }) => {
+  await page.goto('/handbook/screens');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
+
 test('Function: pathAnchor — chapter-root id is present', async ({ page }) => {
   await page.goto('/handbook/screens#chapter-root');
   await expect(page.locator('#chapter-root')).toBeVisible();

@@ -92,6 +92,23 @@ describe('HandbookFigure', () => {
     }
   });
 
+  it('calls onOpen instead of opening a local lightbox', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <HandbookFigure
+        id="root-default"
+        label="/ default"
+        description="Desc"
+        src="/handbook-images/x.png"
+        alt="/ default"
+        onOpen={onOpen}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Open / default at full size' }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('does not scroll when the hash targets another id', () => {
     const scrollIntoView = vi.fn();
     window.location.hash = '#other';
