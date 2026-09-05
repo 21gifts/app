@@ -1,27 +1,24 @@
-'use client';
-
 import type { ReactElement } from 'react';
-import { useTranslations } from '@/components/LocaleProvider';
 import type { HandbookOutlineChapter } from '@/lib/handbook-outline';
 
 /** Props for {@link HandbookOutline}. */
 export interface HandbookOutlineProps {
   /** Nested chapter → screen → variant tree (visible combo only). */
   chapters: HandbookOutlineChapter[];
+  /** Accessible nav name and heading (already translated). */
+  title: string;
 }
 
 /**
  * Three-level table of contents for handbook screens: chapter, screen, variant.
  *
- * @param props - Outline chapters.
+ * @param props - Outline chapters and translated title.
  * @returns A sticky nav, or `null` when `chapters` is empty.
  */
-export function HandbookOutline({ chapters }: HandbookOutlineProps): ReactElement | null {
-  const { t } = useTranslations();
+export function HandbookOutline({ chapters, title }: HandbookOutlineProps): ReactElement | null {
   if (chapters.length === 0) {
     return null;
   }
-  const title = t('handbook.contents');
   return (
     <nav
       aria-label={title}

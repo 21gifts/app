@@ -1543,7 +1543,7 @@
 ## Function: HandbookOutline
 
 - **Purpose:** Sticky three-level table of contents: chapter (first path segment), screen route, variant id. Links to `#chapter-…`, `#screen-…`, and the figure hash.
-- **Inputs:** `chapters` (`HandbookOutlineChapter[]`).
+- **Inputs:** `chapters` (`HandbookOutlineChapter[]`), `title` (already translated Contents label).
 - **Returns / side effects:** Nav labeled **Contents**, or `null` when empty. No network.
 - **Used by:** `HandbookImageViewer`.
 

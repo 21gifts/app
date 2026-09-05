@@ -7,7 +7,7 @@ import { HandbookLightbox } from '@/components/HandbookLightbox';
 import { HandbookOutline } from '@/components/HandbookOutline';
 import { HandbookSectionHeading } from '@/components/HandbookSectionHeading';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Card, IconButton } from '@/components/ui';
+import { IconButton } from '@/components/ui';
 import { buildHandbookOutline, nextOutlineIndex } from '@/lib/handbook-outline';
 import {
   HANDBOOK_COMBOS,
@@ -149,12 +149,17 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
   return (
     <div className="mt-8 flex flex-col gap-8">
       {showViewport || showTheme ? (
-        <Card maxWidth="xl" className="items-stretch">
+        <div className="flex flex-wrap items-center gap-4 rounded-3xl border border-paper/10 p-4">
           {showViewport ? (
             <div role="group" aria-label={t('handbook.viewport')} className="flex gap-2">
               <IconButton
                 type="button"
-                variant={viewport === 'desktop' ? 'primary' : 'secondary'}
+                variant={viewport === 'desktop' ? 'primary' : 'ghost'}
+                className={
+                  viewport === 'desktop'
+                    ? 'bg-accent text-ink hover:bg-accent'
+                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                }
                 aria-label={t('handbook.desktop')}
                 onClick={() => {
                   setViewport('desktop');
@@ -164,7 +169,12 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
               </IconButton>
               <IconButton
                 type="button"
-                variant={viewport === 'mobile' ? 'primary' : 'secondary'}
+                variant={viewport === 'mobile' ? 'primary' : 'ghost'}
+                className={
+                  viewport === 'mobile'
+                    ? 'bg-accent text-ink hover:bg-accent'
+                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                }
                 aria-label={t('handbook.mobile')}
                 onClick={() => {
                   setViewport('mobile');
@@ -178,7 +188,12 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
             <div role="group" aria-label={t('handbook.appearance')} className="flex gap-2">
               <IconButton
                 type="button"
-                variant={theme === 'light' ? 'primary' : 'secondary'}
+                variant={theme === 'light' ? 'primary' : 'ghost'}
+                className={
+                  theme === 'light'
+                    ? 'bg-accent text-ink hover:bg-accent'
+                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                }
                 aria-label={t('handbook.light')}
                 onClick={() => {
                   setTheme('light');
@@ -188,7 +203,12 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
               </IconButton>
               <IconButton
                 type="button"
-                variant={theme === 'dark' ? 'primary' : 'secondary'}
+                variant={theme === 'dark' ? 'primary' : 'ghost'}
+                className={
+                  theme === 'dark'
+                    ? 'bg-accent text-ink hover:bg-accent'
+                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                }
                 aria-label={t('handbook.dark')}
                 onClick={() => {
                   setTheme('dark');
@@ -198,10 +218,10 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
               </IconButton>
             </div>
           ) : null}
-        </Card>
+        </div>
       ) : null}
       <div className="lg:grid lg:grid-cols-[minmax(12rem,16rem)_1fr] lg:items-start lg:gap-10">
-        <HandbookOutline chapters={outline} />
+        <HandbookOutline chapters={outline} title={t('handbook.contents')} />
         <div className="mt-8 flex flex-col gap-12 lg:mt-0">
           {outline.map((chapter) => (
             <section key={chapter.id} className="flex flex-col gap-8">

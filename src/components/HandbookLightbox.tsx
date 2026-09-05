@@ -77,6 +77,7 @@ export function HandbookLightbox({
               type="button"
               variant="ghost"
               size="md"
+              className="text-paper/60 hover:bg-paper/10 hover:text-paper"
               aria-label={t('handbook.previousImage')}
               onClick={(event) => {
                 event.stopPropagation();
@@ -91,6 +92,7 @@ export function HandbookLightbox({
               type="button"
               variant="ghost"
               size="md"
+              className="text-paper/60 hover:bg-paper/10 hover:text-paper"
               aria-label={t('handbook.nextImage')}
               onClick={(event) => {
                 event.stopPropagation();
@@ -104,6 +106,7 @@ export function HandbookLightbox({
             type="button"
             variant="ghost"
             size="md"
+            className="text-paper/60 hover:bg-paper/10 hover:text-paper"
             aria-label={t('handbook.closeImage')}
             autoFocus
             onClick={onClose}

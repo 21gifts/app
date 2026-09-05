@@ -16,13 +16,14 @@ const topic: HandbookTopic = {
 
 describe('HandbookOutline', () => {
   it('renders nothing when there are no chapters', () => {
-    const { container } = renderWithLocale(<HandbookOutline chapters={[]} />);
+    const { container } = renderWithLocale(<HandbookOutline chapters={[]} title="Contents" />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders three nested link levels', () => {
     renderWithLocale(
       <HandbookOutline
+        title="Contents"
         chapters={[
           {
             id: 'chapter-welcome',

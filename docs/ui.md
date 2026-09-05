@@ -401,7 +401,7 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 | 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes |
 | 1       | `border border-app-border shadow-sm` | `Card`                                               |
 | 2       | `border border-app-border shadow-lg` | Menu, language/theme listbox                         |
-| Overlay | `bg-app-overlay`                     | Not used on current screens; reserved                |
+| Overlay | `bg-app-overlay`                     | `HandbookLightbox` scrim                             |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
