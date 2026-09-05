@@ -39,7 +39,12 @@ export function pathAnchor(path: string): string {
   if (path === '/' || path === '') {
     return 'root';
   }
-  return path.replace(/^\//, '').replace(/\//g, '-');
+  return path
+    .replace(/^\//, '')
+    .replace(/\//g, '-')
+    .replace(/[^a-z0-9-]+/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 /**

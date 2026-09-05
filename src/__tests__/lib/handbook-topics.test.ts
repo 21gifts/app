@@ -40,6 +40,8 @@ describe('handbook-topics', () => {
   it('builds stable topic anchors from catalog ids', () => {
     expect(pathAnchor('/')).toBe('root');
     expect(pathAnchor('/setup/rules')).toBe('setup-rules');
+    expect(pathAnchor('/members/[accountId]')).toBe('members-accountId');
+    expect(topicAnchor('/members/[accountId]:default')).toBe('members-accountId-default');
     expect(topicAnchor('/:default')).toBe('root-default');
     expect(topicAnchor('/welcome:pay-qr')).toBe('welcome-pay-qr');
     expect(topicAnchor('/handbook/screens:dark')).toBe('handbook-screens-dark');

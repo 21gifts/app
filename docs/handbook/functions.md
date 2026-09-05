@@ -1591,7 +1591,7 @@
 
 ## Function: pathAnchor
 
-- **Purpose:** Hyphenated hash fragment for a screen path (`/` → `root`, `/setup/rules` → `setup-rules`).
+- **Purpose:** Hyphenated hash fragment for a screen path (`/` → `root`, `/setup/rules` → `setup-rules`). Dynamic segments like `[accountId]` become `accountId`.
 - **Inputs:** Route string.
 - **Returns / side effects:** Anchor string. No network.
 - **Used by:** `topicAnchor`, `buildHandbookOutline`.
