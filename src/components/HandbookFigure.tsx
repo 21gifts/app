@@ -75,7 +75,7 @@ export function HandbookFigure({
         <button
           type="button"
           aria-label={openLabel}
-          className="rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
           onClick={() => {
             if (onOpen !== undefined) {
               onOpen();
