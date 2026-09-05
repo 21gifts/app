@@ -1296,6 +1296,8 @@ test('Function: screenChapter — handbook chapter heading is visible', async ({
 
 test('Function: nextOutlineIndex — ArrowRight opens the first screen', async ({ page }) => {
   await page.goto('/handbook/screens');
+  await expect(page.getByRole('button', { name: 'Open / default at full size' })).toBeVisible();
+  await page.locator('main').click({ position: { x: 8, y: 8 } });
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('dialog')).toBeVisible();
 });
