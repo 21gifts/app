@@ -1570,9 +1570,9 @@
 
 ## Function: topicPath
 
-- **Purpose:** Route half of a catalog topic id.
+- **Purpose:** Route half of a catalog topic id. An empty slice (`:variant`) is `/`.
 - **Inputs:** Catalog topic id.
-- **Returns / side effects:** Path string. No network.
+- **Returns / side effects:** Path string (`/` when the slice is empty). No network.
 - **Used by:** `buildHandbookOutline`.
 
 ## Function: topicVariant

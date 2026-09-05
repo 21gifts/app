@@ -36,7 +36,8 @@ export type HandbookOutlineChapter = {
  * Route half of a catalog topic id (`${route}:${variant}`).
  *
  * @param id - Catalog topic id.
- * @returns The path before the last `:`, or the whole id when there is none.
+ * @returns The path before the last `:`, `/` when that slice is empty
+ *   (`:variant`), or the whole id when there is no colon.
  */
 export function topicPath(id: string): string {
   const colon = id.lastIndexOf(':');
@@ -134,7 +135,7 @@ export function buildHandbookOutline(topics: readonly HandbookTopic[]): Handbook
       screen = {
         id: `screen-${pathAnchor(path)}`,
         path,
-        label: path === '' ? '/' : path,
+        label: path,
         topics: [],
       };
       screenByPath.set(path, screen);
