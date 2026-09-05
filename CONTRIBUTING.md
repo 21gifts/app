@@ -133,7 +133,7 @@ app/
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM + author profile links
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/PM/requirements-overlay state for /welcome forum
-│   │   ├── HandbookImageViewer.tsx # handbook stacked baselines (viewport/theme switches)
+│   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
 │   │   ├── PublicMessageLoader.tsx # read-only public forum note on `/messages/[id]`

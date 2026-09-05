@@ -362,13 +362,13 @@ test.describe('screen baselines', () => {
 
   test('state /handbook/screens mobile', async ({ page }) => {
     await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Mobile' }).click();
+    await page.getByRole('button', { name: 'Mobile', exact: true }).click();
     await shotScreen(page, 'state-handbook-screens-mobile', false);
   });
 
   test('state /handbook/screens dark', async ({ page }) => {
     await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Dark' }).click();
+    await page.getByRole('button', { name: 'Dark', exact: true }).click();
     await shotScreen(page, 'state-handbook-screens-dark', false);
   });
 

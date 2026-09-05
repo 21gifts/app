@@ -670,14 +670,14 @@ export const SCREEN_VARIANTS = [
     id: 'mobile',
     image: 'handbook-screens-mobile.png',
     visual: 'state-handbook-screens-mobile',
-    needle: "getByRole('button', { name: 'Mobile' })",
+    needle: "getByRole('button', { name: 'Mobile', exact: true })",
   },
   {
     route: '/handbook/screens',
     id: 'dark',
     image: 'handbook-screens-dark.png',
     visual: 'state-handbook-screens-dark',
-    needle: "getByRole('button', { name: 'Dark' })",
+    needle: "getByRole('button', { name: 'Dark', exact: true })",
   },
   {
     route: '/handbook/functions',

@@ -401,7 +401,7 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 | 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes |
 | 1       | `border border-app-border shadow-sm` | `Card`                                               |
 | 2       | `border border-app-border shadow-lg` | Menu, language/theme listbox                         |
-| Overlay | `bg-app-overlay`                     | Not used on current screens; reserved                |
+| Overlay | `bg-app-overlay`                     | `HandbookLightbox` scrim                             |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
@@ -1030,7 +1030,7 @@ Back link `text-accent underline` “All stats” → display “Gifts on YYYY-M
 
 #### `/handbook` (+ screens/functions/endpoints) — **keep**
 
-Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, orange section links. Handbook markdown is English (catalog exception). Fix: `text-accent` token. FullPage visual unsticks sticky header (already).
+Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, orange section links. Screens page: three-level contents (chapter / screen / variant), compact cards with ~220px thumbs, description, permalink/copy-link, and click-to-lightbox full size. Handbook markdown is English (catalog exception). Fix: `text-accent` token. FullPage visual unsticks sticky header (already).
 
 #### `/login` — **chrome + card-title** (title stack already gone in SHA source)
 
