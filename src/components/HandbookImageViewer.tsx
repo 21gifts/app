@@ -154,11 +154,11 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
             <div role="group" aria-label={t('handbook.viewport')} className="flex gap-2">
               <IconButton
                 type="button"
-                variant={viewport === 'desktop' ? 'primary' : 'ghost'}
+                variant="ghost"
                 className={
                   viewport === 'desktop'
-                    ? 'bg-accent text-ink hover:bg-accent'
-                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
                 }
                 aria-label={t('handbook.desktop')}
                 onClick={() => {
@@ -169,11 +169,11 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
               </IconButton>
               <IconButton
                 type="button"
-                variant={viewport === 'mobile' ? 'primary' : 'ghost'}
+                variant="ghost"
                 className={
                   viewport === 'mobile'
-                    ? 'bg-accent text-ink hover:bg-accent'
-                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
                 }
                 aria-label={t('handbook.mobile')}
                 onClick={() => {
@@ -188,11 +188,11 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
             <div role="group" aria-label={t('handbook.appearance')} className="flex gap-2">
               <IconButton
                 type="button"
-                variant={theme === 'light' ? 'primary' : 'ghost'}
+                variant="ghost"
                 className={
                   theme === 'light'
-                    ? 'bg-accent text-ink hover:bg-accent'
-                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
                 }
                 aria-label={t('handbook.light')}
                 onClick={() => {
@@ -203,11 +203,11 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
               </IconButton>
               <IconButton
                 type="button"
-                variant={theme === 'dark' ? 'primary' : 'ghost'}
+                variant="ghost"
                 className={
                   theme === 'dark'
-                    ? 'bg-accent text-ink hover:bg-accent'
-                    : 'text-paper/60 hover:bg-paper/10 hover:text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
                 }
                 aria-label={t('handbook.dark')}
                 onClick={() => {

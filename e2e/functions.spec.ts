@@ -1250,9 +1250,7 @@ test('Function: HandbookEndpointsPage — endpoints heading is visible', async (
   await expect(page.getByRole('heading', { name: 'Endpoints' }).first()).toBeVisible();
 });
 
-test('Function: HandbookImageViewer — stacked baselines and a viewport switch', async ({
-  page,
-}) => {
+test('Function: HandbookImageViewer — compact cards and a viewport switch', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(page.getByAltText('/ default')).toBeVisible();
   await expect(page.getByAltText('/ mobile-nav')).toBeVisible();
