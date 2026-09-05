@@ -235,6 +235,17 @@ describe('HandbookImageViewer', () => {
     fireEvent.keyDown(field, { key: 'ArrowRight' });
     expect(screen.queryByRole('dialog')).toBeNull();
     field.remove();
+    const area = document.createElement('textarea');
+    document.body.appendChild(area);
+    fireEvent.keyDown(area, { key: 'ArrowRight' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    area.remove();
+    const editable = document.createElement('div');
+    editable.contentEditable = 'true';
+    document.body.appendChild(editable);
+    fireEvent.keyDown(editable, { key: 'ArrowRight' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    editable.remove();
     fireEvent.keyDown(document, { key: 'ArrowRight', ctrlKey: true });
     expect(screen.queryByRole('dialog')).toBeNull();
   });

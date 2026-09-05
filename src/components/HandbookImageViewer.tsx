@@ -76,6 +76,7 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
   );
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeIndex = activeId === null ? -1 : slides.findIndex((slide) => slide.id === activeId);
+  /* v8 ignore next — findIndex match is always in-range */
   const activeSlide = activeIndex >= 0 ? (slides[activeIndex] ?? null) : null;
 
   const step = useCallback(
