@@ -66,7 +66,10 @@ export function HandbookFigure({
       className="scroll-mt-24 target:outline target:outline-2 target:outline-offset-[-1px] target:outline-accent overflow-hidden rounded-lg border border-paper/10 bg-ink"
     >
       <div className="flex flex-wrap items-baseline gap-2 px-3 pt-3">
-        <a href={`#${id}`} className="font-semibold text-paper">
+        <a
+          href={`#${id}`}
+          className="font-semibold text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
+        >
           {label}
         </a>
         <HandbookCopyLink targetId={id} label={label} />

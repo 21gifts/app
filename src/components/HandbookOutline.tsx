@@ -28,13 +28,19 @@ export function HandbookOutline({ chapters, title }: HandbookOutlineProps): Reac
       <ol className="mt-3 flex flex-col gap-2 text-sm">
         {chapters.map((chapter) => (
           <li key={chapter.id}>
-            <a href={`#${chapter.id}`} className="text-accent underline underline-offset-2">
+            <a
+              href={`#${chapter.id}`}
+              className="text-accent underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
+            >
               {chapter.label}
             </a>
             <ol className="mt-1 ml-4 flex flex-col gap-1">
               {chapter.screens.map((screen) => (
                 <li key={screen.id}>
-                  <a href={`#${screen.id}`} className="text-paper/80 underline underline-offset-2">
+                  <a
+                    href={`#${screen.id}`}
+                    className="text-paper/80 underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
+                  >
                     {screen.label}
                   </a>
                   <ol className="mt-1 ml-4 flex flex-col gap-0.5">
@@ -42,7 +48,7 @@ export function HandbookOutline({ chapters, title }: HandbookOutlineProps): Reac
                       <li key={leaf.id}>
                         <a
                           href={`#${leaf.id}`}
-                          className="text-paper/60 underline underline-offset-2"
+                          className="text-paper/60 underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
                         >
                           {leaf.label}
                         </a>

@@ -31,7 +31,12 @@ export function HandbookSectionHeading({
   return (
     <div className="flex flex-wrap items-baseline gap-2">
       <Tag id={id} className={HEADING_CLASS[level]}>
-        <a href={`#${id}`}>{label}</a>
+        <a
+          href={`#${id}`}
+          className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
+        >
+          {label}
+        </a>
       </Tag>
       <HandbookCopyLink targetId={id} label={label} />
     </div>
