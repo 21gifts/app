@@ -63,10 +63,10 @@ export default async function HandbookScreensPage(): Promise<ReactElement> {
 function loadScreenTopics(): HandbookTopic[] {
   const allowed = new Set<string>(HANDBOOK_COMBOS);
   const screensDoc = loadHandbookDocuments().find((doc) => doc.id === 'screens');
-  const descriptions =
-    screensDoc === undefined
-      ? new Map<string, string>()
-      : parseScreenVariantDescriptions(screensDoc.markdown);
+  if (screensDoc === undefined) {
+    throw new Error('Handbook screens document missing');
+  }
+  const descriptions = parseScreenVariantDescriptions(screensDoc.markdown);
   return screenVariantCatalog
     .map((row) => ({
       id: row.id,
