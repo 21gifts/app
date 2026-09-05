@@ -40,7 +40,8 @@ export type HandbookOutlineChapter = {
  */
 export function topicPath(id: string): string {
   const colon = id.lastIndexOf(':');
-  return colon < 0 ? id : id.slice(0, colon);
+  const path = colon < 0 ? id : id.slice(0, colon);
+  return path === '' ? '/' : path;
 }
 
 /**

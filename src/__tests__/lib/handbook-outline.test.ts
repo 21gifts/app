@@ -57,11 +57,12 @@ describe('handbook-outline', () => {
     expect(outline[2]?.screens[0]?.topics[0]?.id).toBe('handbook-screens-dark');
   });
 
-  it('uses the topic label when the id has no variant and maps an empty path', () => {
-    const outline = buildHandbookOutline([topic('nocolon'), topic(':only')]);
-    expect(outline.some((chapter) => chapter.screens.some((screen) => screen.path === ''))).toBe(
-      true,
-    );
+  it('uses the topic label when the id has no variant and treats an empty path as /', () => {
+    expect(topicPath(':only')).toBe('/');
+    const outline = buildHandbookOutline([topic('nocolon'), topic(':only'), topic('/:default')]);
+    const root = outline.find((chapter) => chapter.label === '/');
+    expect(root?.screens).toHaveLength(1);
+    expect(root?.screens[0]?.id).toBe('screen-root');
     const leaf = outline
       .flatMap((chapter) => chapter.screens)
       .flatMap((screen) => screen.topics)
