@@ -13,7 +13,7 @@ export interface HandbookSectionHeadingProps {
 
 const HEADING_CLASS: Record<2 | 3, string> = {
   2: 'scroll-mt-24 text-xl font-semibold text-accent',
-  3: 'scroll-mt-24 text-lg font-semibold text-app-fg',
+  3: 'scroll-mt-24 text-lg font-semibold text-paper',
 };
 
 /**

@@ -23,7 +23,7 @@ export interface HandbookLightboxProps {
 
 /**
  * Full-size handbook image overlay. Matches {@link RequirementsOverlay} chrome
- * (`bg-app-card`, ghost close, backdrop). Not a native `<dialog>`.
+ * (`bg-ink`, ghost close, `bg-app-overlay`). Not a native `<dialog>`.
  *
  * @param props - See {@link HandbookLightboxProps}.
  * @returns The dialog when `open`, otherwise `null`.
@@ -62,11 +62,11 @@ export function HandbookLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={alt}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
       onClick={onClose}
     >
       <div
-        className="relative max-h-[90vh] max-w-[min(1100px,100%)] overflow-auto rounded-3xl border border-app-border bg-app-card p-4 shadow-lg"
+        className="relative max-h-[90vh] max-w-[min(1100px,100%)] overflow-auto rounded-3xl border border-paper/10 bg-ink p-4"
         onClick={(event) => {
           event.stopPropagation();
         }}

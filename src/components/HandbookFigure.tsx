@@ -63,10 +63,10 @@ export function HandbookFigure({
     <article
       ref={articleRef}
       id={id}
-      className="scroll-mt-24 target:outline target:outline-2 target:outline-offset-[-1px] target:outline-accent overflow-hidden rounded-lg border border-app-border bg-app-card"
+      className="scroll-mt-24 target:outline target:outline-2 target:outline-offset-[-1px] target:outline-accent overflow-hidden rounded-lg border border-paper/10 bg-ink"
     >
       <div className="flex flex-wrap items-baseline gap-2 px-3 pt-3">
-        <a href={`#${id}`} className="font-semibold text-app-fg">
+        <a href={`#${id}`} className="font-semibold text-paper">
           {label}
         </a>
         <HandbookCopyLink targetId={id} label={label} />
@@ -88,11 +88,11 @@ export function HandbookFigure({
           <img
             src={src}
             alt={alt}
-            className="h-auto max-w-[220px] rounded-md border border-app-border"
+            className="h-auto max-w-[220px] rounded-md border border-paper/10"
           />
         </button>
       </div>
-      <p className="px-3 pb-3 text-sm text-app-muted">{description}</p>
+      <p className="px-3 pb-3 text-sm text-paper/60">{description}</p>
       {onOpen === undefined ? (
         <HandbookLightbox
           open={open}
