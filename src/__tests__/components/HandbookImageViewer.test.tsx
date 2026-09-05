@@ -241,7 +241,7 @@ describe('HandbookImageViewer', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     area.remove();
     const editable = document.createElement('div');
-    editable.contentEditable = 'true';
+    Object.defineProperty(editable, 'isContentEditable', { configurable: true, get: () => true });
     document.body.appendChild(editable);
     fireEvent.keyDown(editable, { key: 'ArrowRight' });
     expect(screen.queryByRole('dialog')).toBeNull();
