@@ -199,6 +199,8 @@ describe('HandbookImageViewer', () => {
       expect(screen.queryByRole('dialog')).toBeNull();
       fireEvent.keyDown(document, { key: 'ArrowRight', altKey: true });
       expect(screen.queryByRole('dialog')).toBeNull();
+      fireEvent.keyDown(document, { key: 'ArrowRight', shiftKey: true });
+      expect(screen.queryByRole('dialog')).toBeNull();
       fireEvent.keyDown(document, { key: 'ArrowRight' });
       expect(screen.getByRole('dialog')).toBeTruthy();
       expect(scrollIntoView).toHaveBeenCalled();

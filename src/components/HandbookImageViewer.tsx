@@ -121,7 +121,7 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
         return;
       }
-      if (event.altKey || event.ctrlKey || event.metaKey) {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
         return;
       }
       const target = event.target;
