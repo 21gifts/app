@@ -1,6 +1,6 @@
 # Screens
 
-Every variant below is captured in the four Linux Chromium combos (desktop/mobile × light/dark), except UI that cannot exist: the header hamburger (mobile only), the payment QR (desktop only), and the smartphone pay sheet (mobile only). Markdown images are the desktop-light shot, or the first allowed combo when desktop-light does not apply. The other combo PNGs are visual-test baselines only.
+Every variant below is captured in all four Linux Chromium combos (desktop/mobile × light/dark). Markdown images are the desktop-light shot. The other combo PNGs are visual-test baselines only.
 
 ## Screen: /
 
@@ -17,7 +17,7 @@ Desktop/wide layout: section nav is visible in the header (How it works, Why, FA
 
 ### Variant: mobile-nav
 
-Narrow viewport: header shows the Menu button. Open it to reveal the same links stacked. Tapping a link closes the menu.
+Captured at desktop and mobile. On mobile the header shows the Menu button; open it to reveal the same links stacked (tapping a link closes the menu). On desktop this is the landing without the hamburger.
 
 ![21.gifts home mobile nav](images/root-mobile-nav.png)
 
@@ -459,13 +459,13 @@ After **Menu**, click **Theme** → System / Light / Dark expand in flow under t
 
 ### Variant: pay-qr
 
-Payable note, amount submitted. On a computer the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon.
+Payable note, amount submitted. Captured at desktop and mobile. On desktop the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same sheet has no QR.
 
 ![21.gifts welcome pay QR](images/welcome-pay-qr.png)
 
 ### Variant: pay-smartphone
 
-Same pay sheet on a smartphone user-agent: **Pay** button with the Wallet of Satoshi icon only, no QR, plus the top-left back control.
+Same pay sheet captured at desktop and mobile. On a smartphone user-agent: **Pay** button with the Wallet of Satoshi icon only, no QR, plus the top-left back control. On desktop this scenario shows the QR.
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
@@ -730,25 +730,25 @@ After tapping the link icon on the Handbook heading, that button shows the check
 ## Screen: /handbook/screens
 
 - **URL:** `/handbook/screens` — public screens handbook (no auth gate).
-- **What the user sees:** Heading **Screens**, a one-topic baseline viewer (`HandbookImageViewer`) with a topic picker. **Desktop** / **Mobile** and **Light** / **Dark** switches appear only when those baselines exist for the selected topic. One image at a time.
-- **Actions:** Pick a topic, switch viewport/theme when available, return to the hub.
-- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookIntro`, `HandbookCopyLink`.
+- **What the user sees:** Heading **Screens**, a three-level table of contents (chapter = first path segment, screen, variant), and nested compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). Topics that lack the selected combo are omitted. No topic picker.
+- **Actions:** Jump via the contents nav, switch viewport/theme when available (applies to every card), open a preview at full size, step through every visible variant with Left/Right arrows or lightbox chevrons, copy a chapter/screen/card deep link, follow a hash deep link, return to the hub.
+- **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookOutline`, `HandbookSectionHeading`, `HandbookFigure`, `HandbookLightbox`, `HandbookIntro`, `HandbookCopyLink`, `buildHandbookOutline`, `nextOutlineIndex`, `topicAnchor`, `parseScreenVariantDescriptions`, `loadHandbookDocuments`.
 
 ### Variant: default
 
-First topic, desktop-light image, **Desktop** and **Light** selected when those combos exist.
+Contents nav plus nested thumbnail cards for topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog — not stacked full-width shots.
 
 ![21.gifts handbook screens](images/handbook-screens.png)
 
 ### Variant: mobile
 
-**Mobile** selected on a topic that has both viewports.
+**Mobile** selected; every visible thumbnail card shows that mobile combo.
 
 ![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
 
 ### Variant: dark
 
-**Dark** selected on a topic that has both themes.
+**Dark** selected; every visible thumbnail card shows that dark combo.
 
 ![21.gifts handbook screens dark](images/handbook-screens-dark.png)
 

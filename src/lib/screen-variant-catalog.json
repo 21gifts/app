@@ -9,7 +9,7 @@
     "id": "/:mobile-nav",
     "label": "/ mobile-nav",
     "visual": "state-root-mobile-nav",
-    "combos": ["mobile-light", "mobile-dark"]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/:language-open",
@@ -315,13 +315,13 @@
     "id": "/welcome:pay-qr",
     "label": "/welcome pay-qr",
     "visual": "state-welcome-pay-qr",
-    "combos": ["desktop-light", "desktop-dark"]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-smartphone",
     "label": "/welcome pay-smartphone",
     "visual": "state-welcome-pay-smartphone",
-    "combos": ["mobile-light", "mobile-dark"]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-author-wallet",

@@ -17,8 +17,8 @@ test('copy link flashes Copied on a handbook heading', async ({ page, context })
 test('handbook screens heading is Screens', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(page.getByRole('heading', { name: 'Screens' }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Mobile' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Dark' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mobile', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Dark', exact: true })).toBeVisible();
 });
 
 test('handbook functions heading is Functions', async ({ page }) => {

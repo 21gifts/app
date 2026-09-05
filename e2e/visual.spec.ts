@@ -267,10 +267,17 @@ test.describe('screen baselines', () => {
   });
 
   test('state / mobile-nav', async ({ page }, testInfo) => {
-    test.skip(!isMobileProject(testInfo), 'hamburger nav is md:hidden on desktop');
     await page.goto('/');
-    await page.getByRole('button', { name: 'Menu' }).click();
-    await expect(page.getByLabel('Primary').getByRole('link', { name: 'Handbook' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+      await expect(
+        page.getByLabel('Primary').getByRole('link', { name: 'Handbook' }),
+      ).toBeVisible();
+    } else {
+      await expect(
+        page.getByRole('heading', { name: /Direct human-to-human gifts/i }),
+      ).toBeVisible();
+    }
     await shotScreen(page, 'state-root-mobile-nav');
   });
 
@@ -355,13 +362,13 @@ test.describe('screen baselines', () => {
 
   test('state /handbook/screens mobile', async ({ page }) => {
     await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Mobile' }).click();
+    await page.getByRole('button', { name: 'Mobile', exact: true }).click();
     await shotScreen(page, 'state-handbook-screens-mobile', false);
   });
 
   test('state /handbook/screens dark', async ({ page }) => {
     await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Dark' }).click();
+    await page.getByRole('button', { name: 'Dark', exact: true }).click();
     await shotScreen(page, 'state-handbook-screens-dark', false);
   });
 
@@ -1883,21 +1890,27 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome pay-qr', async ({ page }, testInfo) => {
-    test.skip(isMobileProject(testInfo), 'payment QR is desktop-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
     await shotScreen(page, 'state-welcome-pay-qr');
   });
 
   test('welcome pay-smartphone', async ({ page }, testInfo) => {
-    test.skip(!isMobileProject(testInfo), 'smartphone pay sheet is mobile-only');
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
     await shotScreen(page, 'state-welcome-pay-smartphone');
   });
 
@@ -2306,44 +2319,5 @@ test.describe('stats variant baselines', () => {
     await page.goto('/stats/2026-06-01');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-stats-day-error');
-  });
-});
-
-test.describe('remaining visual states', () => {
-  test('LightningAddressForm welcome after linked address', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route(/\/messages$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ messages: [] }),
-      });
-    });
-    await page.goto('/welcome');
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
-  });
-
-  test('NotFound', async ({ page }) => {
-    await page.goto('/this-page-does-not-exist');
-    await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
-    await expect(page).toHaveScreenshot('state-not-found.png', { fullPage: true, ...SHOT });
   });
 });

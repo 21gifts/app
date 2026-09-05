@@ -401,7 +401,7 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 | 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes |
 | 1       | `border border-app-border shadow-sm` | `Card`                                               |
 | 2       | `border border-app-border shadow-lg` | Menu, language/theme listbox                         |
-| Overlay | `bg-app-overlay`                     | Not used on current screens; reserved                |
+| Overlay | `bg-app-overlay`                     | `HandbookLightbox` scrim                             |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
@@ -1030,7 +1030,7 @@ Back link `text-accent underline` “All stats” → display “Gifts on YYYY-M
 
 #### `/handbook` (+ screens/functions/endpoints) — **keep**
 
-Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, orange section links. Handbook markdown is English (catalog exception). Fix: `text-accent` token. FullPage visual unsticks sticky header (already).
+Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, orange section links. Screens page: three-level contents (chapter / screen / variant), compact cards with ~220px thumbs, description, permalink/copy-link, and click-to-lightbox full size. Handbook markdown is English (catalog exception). Fix: `text-accent` token. FullPage visual unsticks sticky header (already).
 
 #### `/login` — **chrome + card-title** (title stack already gone in SHA source)
 
@@ -1287,13 +1287,13 @@ This is a visual system, not a metrics pipeline.
 | Gate                                | What it proves                                                                                                                                     |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `e2e/visual.spec.ts`                | Four combos: desktop/mobile × light/dark. Linux Chromium goldens under `e2e/visual.spec.ts-snapshots/`. `maxDiffPixelRatio` 0 except handbook 0.05 |
-| `npm run screenshot:check`          | Every screen/variant has a PNG; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`)                                        |
+| `npm run screenshot:check`          | Every screen/variant has a PNG; no unexpected PNGs; every variant has a `visual.spec.ts` shot (`scripts/check-screenshots.mjs`)                    |
 | `scripts/screen-variants.mjs`       | Closed list of UI states; omitting a state is an undeclared deviation                                                                              |
 | `npm run handbook:check`            | Every screen/function/endpoint has a handbook section                                                                                              |
 | `docs/handbook/screens.md`          | Update **only when that screen actually changes**                                                                                                  |
 | `docs/handbook/functions.md`        | `## Function: <Name>` for **every new or changed export** in the **same PR**                                                                       |
 | `e2e/` `test('Function: <Name> …')` | Required for every new export (CONTRIBUTING E2E)                                                                                                   |
-| `npm run handbook:images`           | Copies desktop-light (or first allowed combo) into `public/handbook-images/`                                                                       |
+| `npm run handbook:images`           | Copies desktop-light into `public/handbook-images/`                                                                                                |
 
 **Never** regenerate goldens on the session host. Regen is CI / Linux `docker run --platform linux/amd64 mcr.microsoft.com/playwright:v1.61.1-noble`. A font/token PR will rewrite many PNGs — isolate that (PR 2). New primitives (`ButtonLink`, `Wordmark`, `SegmentedControl`) are full export-surface PRs: unit test + handbook Function + `Function:` e2e, not “CSS only.”
 
@@ -1383,7 +1383,7 @@ Orange is decided: **shell-split**, not gift-only. Marketing Log in stays orange
 
 ## Visual regression
 
-Four Playwright projects: `desktop-light`, `desktop-dark`, `mobile-light`, `mobile-dark`. Filenames `${visual}-${combo}-linux.png`. Marketing pages are visually identical in “light” and “dark” jobs (always ink) — that duplication is accepted; do not special-case combos except where UI cannot exist (`state-root-mobile-nav` mobile-only; `state-welcome-pay-qr` desktop-only; `state-welcome-pay-smartphone` mobile-only).
+Four Playwright projects: `desktop-light`, `desktop-dark`, `mobile-light`, `mobile-dark`. Filenames `${visual}-${combo}-linux.png`. Marketing pages are visually identical in “light” and “dark” jobs (always ink) — that duplication is accepted.
 
 Font + token PR: expect hundreds of PNG diffs. Budget CI visual jobs (10 minutes each) accordingly. `screenshot:check` still runs in Check.
 

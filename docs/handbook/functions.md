@@ -44,15 +44,15 @@
 
 ## Function: HandbookCopyLink
 
-- **Purpose:** Client button beside a handbook heading or chapter. Copies `origin + pathname + #id` to the clipboard, sets `location.hash`, and flashes a check icon for 1.2s (textarea `execCommand` fallback).
+- **Purpose:** Client button beside a handbook heading, chapter, screen heading, or figure-card permalink. Copies `origin + pathname + #id` to the clipboard, sets `location.hash`, and flashes a check icon for 1.2s (textarea `execCommand` fallback).
 - **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`).
 - **Visible UI:** Idle `Link2` icon; copied `Check` icon. No visible "Copy link" or "Copied" text (`title` and `aria-label` keep the accessible name).
 - **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
-- **Used by:** `HandbookPage` (page title) and `HandbookMarkdown` (every heading).
+- **Used by:** `HandbookPage` (page title), `HandbookMarkdown` (every heading), `HandbookFigure`, and `HandbookSectionHeading`.
 
 ## Function: HandbookMarkdown
 
-- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images. Every heading has a sibling `HandbookCopyLink`.
+- **Purpose:** Render parsed handbook markdown as Tailwind-styled headings, paragraphs, lists, links, and images. Every heading has a sibling `HandbookCopyLink`. A paragraph whose only inline is an image becomes a `HandbookFigure` (thumbnail, lightbox, deep link) instead of `<p><img>`.
 - **Inputs:** `markdown` string and `idPrefix` for heading ids.
 - **Returns / side effects:** React fragment. No network.
 - **Used by:** `HandbookFunctionsPage` and `HandbookEndpointsPage`.
@@ -436,7 +436,7 @@
 - **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), and size (`sm` / `md` / `lg`). `sm` is 24px paint with a 44px `::before` hit slop; `md` is 44px; `lg` is 48px.
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board.
-- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `ContactScreen`, `NameForm`, `RulesSetup`.
+- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `HandbookLightbox`, `ContactScreen`, `NameForm`, `RulesSetup`.
 
 ## Function: Card
 
@@ -1041,7 +1041,7 @@
 - **Purpose:** Read the four app handbook markdown files from disk (README, screens, functions, endpoints).
 - **Inputs:** Optional `rootDir`; defaults to `<cwd>/docs/handbook`.
 - **Returns / side effects:** `HandbookDocument[]` in that order. Throws when the directory or a required file is missing.
-- **Used by:** `HandbookPage`.
+- **Used by:** `HandbookScreensPage`, `HandbookFunctionsPage`, `HandbookEndpointsPage`.
 
 ## Function: loadSession
 
@@ -1514,7 +1514,7 @@
 
 ## Function: HandbookScreensPage
 
-- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics and renders `HandbookImageViewer`.
+- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics (with English descriptions from `screens.md` via `parseScreenVariantDescriptions`) and renders the compact-card `HandbookImageViewer`.
 - **Inputs:** None.
 - **Returns / side effects:** The screens handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook/screens`.
@@ -1535,10 +1535,95 @@
 
 ## Function: HandbookImageViewer
 
-- **Purpose:** Client one-topic baseline viewer. Desktop/Mobile and Light/Dark switches only when those combo files exist.
-- **Inputs:** `topics` (`HandbookTopic[]`).
-- **Returns / side effects:** React element or `null` when `topics` is empty. No network.
+- **Purpose:** Nested handbook screens for the **selected** combo only (`makeCombo(viewport, theme)`): three-level contents (chapter → screen → variant) and compact `HandbookFigure` cards. Left/Right arrows (and lightbox chevrons) step through every visible variant in a shared lightbox. A topic missing that combo is omitted. Global Desktop/Mobile and Light/Dark switches use the union of remaining topics and appear only when both sides exist.
+- **Inputs:** `topics` (`HandbookTopic[]` with required `description`).
+- **Returns / side effects:** React element or `null` when no topic has combos. Empty visible list still shows switches when remaining is non-empty. No network.
 - **Used by:** `HandbookScreensPage`.
+
+## Function: HandbookOutline
+
+- **Purpose:** Sticky three-level table of contents: chapter (first path segment), screen route, variant id. Links to `#chapter-…`, `#screen-…`, and the figure hash.
+- **Inputs:** `chapters` (`HandbookOutlineChapter[]`), `title` (already translated Contents label).
+- **Returns / side effects:** Nav labeled **Contents**, or `null` when empty. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: HandbookSectionHeading
+
+- **Purpose:** Chapter (`h2`) or screen (`h3`) permalink heading with `HandbookCopyLink`.
+- **Inputs:** `level` (2 or 3), `id`, `label`.
+- **Returns / side effects:** Heading row. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: buildHandbookOutline
+
+- **Purpose:** Group topics into chapter → screen → variant, preserving catalog order. Skips empty `combos`. Chapter is `screenChapter` (first path segment; `/` stays `/`).
+- **Inputs:** `topics` (`HandbookTopic[]`).
+- **Returns / side effects:** `HandbookOutlineChapter[]`. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: nextOutlineIndex
+
+- **Purpose:** Next slide index for Left/Right gallery stepping. Closed gallery (`current === null`): Right → 0, Left → last. Wraps. Empty list stays 0.
+- **Inputs:** `length`, `current` (`number | null`), `direction` (`1` or `-1`).
+- **Returns / side effects:** Index. No network.
+- **Used by:** `HandbookImageViewer`.
+
+## Function: topicPath
+
+- **Purpose:** Route half of a catalog topic id. An empty slice (`:variant`) is `/`.
+- **Inputs:** Catalog topic id.
+- **Returns / side effects:** Path string (`/` when the slice is empty). No network.
+- **Used by:** `buildHandbookOutline`.
+
+## Function: topicVariant
+
+- **Purpose:** Variant half of a catalog topic id.
+- **Inputs:** Catalog topic id.
+- **Returns / side effects:** Variant string, or empty. No network.
+- **Used by:** `buildHandbookOutline`.
+
+## Function: screenChapter
+
+- **Purpose:** Chapter key for a screen path (`/setup/rules` → `/setup`; `/` → `/`).
+- **Inputs:** Screen route.
+- **Returns / side effects:** Chapter label. No network.
+- **Used by:** `buildHandbookOutline`.
+
+## Function: pathAnchor
+
+- **Purpose:** Hyphenated hash fragment for a screen path (`/` → `root`, `/setup/rules` → `setup-rules`). Dynamic segments like `[accountId]` become `accountId`.
+- **Inputs:** Route string.
+- **Returns / side effects:** Anchor string. No network.
+- **Used by:** `topicAnchor`, `buildHandbookOutline`.
+
+## Function: HandbookFigure
+
+- **Purpose:** Compact handbook image card: permalink label + `HandbookCopyLink`, ~220px preview button that opens `HandbookLightbox` unless `onOpen` is set, and a written description. Scrolls into view when `location.hash` matches `#id`.
+- **Inputs:** `id`, `label`, `description`, `src`, `alt`, optional `onOpen` (when set, the preview delegates and skips the local lightbox).
+- **Visible UI:** Label link, copy-link icon, thumbnail image inside an aria-labeled open button (no visible open-image catalog string), description paragraph, optional lightbox.
+- **Returns / side effects:** An `<article>` with `id`. Hash scroll on mount/`hashchange`. No network.
+- **Used by:** `HandbookImageViewer` and `HandbookMarkdown` (image-only paragraphs).
+
+## Function: HandbookLightbox
+
+- **Purpose:** Full-size handbook image overlay on marketing tokens (`bg-ink`, `border-paper/10`, `bg-app-overlay` scrim, ghost `IconButton` + `X`). Close via X, backdrop click, or Escape. Optional previous/next chevrons when `onPrevious`/`onNext` are set. Focuses the close control on open. Not a native `<dialog>`.
+- **Inputs:** `open`, `src`, `alt`, `onClose`, optional `onPrevious`, optional `onNext`.
+- **Returns / side effects:** `role="dialog"` overlay when `open`, otherwise `null`. Document keydown while open. No network.
+- **Used by:** `HandbookFigure`, `HandbookImageViewer`.
+
+## Function: topicAnchor
+
+- **Purpose:** Stable DOM/hash id from a catalog topic id (`${route}:${variant}`). Path `/` → `root`; other paths drop the leading `/` and replace remaining `/` with `-`; variant is the segment after the last `:`.
+- **Inputs:** Catalog topic id string (`/:default`, `/welcome:pay-qr`, `/handbook/screens:dark`, …).
+- **Returns / side effects:** Anchor string (`root-default`, `welcome-pay-qr`, `handbook-screens-dark`, …). No network.
+- **Used by:** `buildHandbookOutline`.
+
+## Function: parseScreenVariantDescriptions
+
+- **Purpose:** Parse `docs/handbook/screens.md` into a map of catalog topic id → English description. Under each `## Screen:` / `### Variant:`, collect paragraphs (excluding image-only lines), unwrap `**bold**` and `` `code` ``, join with a blank line; skip empty strings.
+- **Inputs:** Raw screens handbook markdown string.
+- **Returns / side effects:** `ReadonlyMap<string, string>` keyed as `<path>:<variantId>`. No network.
+- **Used by:** `HandbookScreensPage` (`loadScreenTopics`).
 
 ## Function: topicImageSrc
 

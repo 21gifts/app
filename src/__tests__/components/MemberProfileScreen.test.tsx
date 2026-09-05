@@ -80,6 +80,10 @@ async function expandNote(): Promise<void> {
   fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
   await waitFor(() => {
     expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 }
 

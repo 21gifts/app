@@ -15,16 +15,16 @@ handbook in the same PR. Undeclared gaps are rejected, not discussed.
 
 Every screen **variant** needs Playwright Linux Chromium baselines for each
 combo in `BASELINE_COMBOS` (desktop/mobile × light/dark), named
-`${visual}-${combo.id}-linux.png`, except UI that cannot exist (header
-hamburger on desktop, payment QR on a smartphone, smartphone pay sheet on
-desktop). Exported **functions** need a `## Function:` section and an e2e
-`Function:` needle, not a screenshot of that markdown. Markdown keeps
-`images/<file>.png` references; those bytes are copied to
-`public/handbook-images/` by `npm run handbook:images` / `prebuild` /
-`predev` from the desktop-light baseline, or the variant’s first listed combo
-when desktop-light is not allowed. Do not commit PNGs under
+`${visual}-${combo.id}-linux.png`. Exported **functions** need a `## Function:`
+section and an e2e `Function:` needle, not a screenshot of that markdown.
+On `/handbook/screens`, variants sit in a three-level table of contents
+(chapter, screen, variant) as small preview cards (~220px) with a written
+description and a copyable deep link; clicking a preview opens the PNG at
+full size. Markdown keeps `images/<file>.png` references; those bytes are
+copied to `public/handbook-images/` by `npm run handbook:images` / `prebuild` /
+`predev` from the desktop-light baseline. Do not commit PNGs under
 `docs/handbook/images/`.
-`npm run screenshot:check` fails the PR when a baseline is missing.
+`npm run screenshot:check` fails the PR when a baseline is missing or an unexpected PNG is present.
 
 See [screens.md](screens.md), [functions.md](functions.md), and
 [endpoints.md](endpoints.md).
