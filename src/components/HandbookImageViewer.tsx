@@ -157,8 +157,8 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
                 variant="ghost"
                 className={
                   viewport === 'desktop'
-                    ? '!bg-accent !text-ink hover:!bg-accent'
-                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
                 }
                 aria-label={t('handbook.desktop')}
                 onClick={() => {
@@ -172,8 +172,8 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
                 variant="ghost"
                 className={
                   viewport === 'mobile'
-                    ? '!bg-accent !text-ink hover:!bg-accent'
-                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
                 }
                 aria-label={t('handbook.mobile')}
                 onClick={() => {
@@ -191,8 +191,8 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
                 variant="ghost"
                 className={
                   theme === 'light'
-                    ? '!bg-accent !text-ink hover:!bg-accent'
-                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
                 }
                 aria-label={t('handbook.light')}
                 onClick={() => {
@@ -206,8 +206,8 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
                 variant="ghost"
                 className={
                   theme === 'dark'
-                    ? '!bg-accent !text-ink hover:!bg-accent'
-                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper'
+                    ? '!bg-accent !text-ink hover:!bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
+                    : '!text-paper/60 hover:!bg-paper/10 hover:!text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
                 }
                 aria-label={t('handbook.dark')}
                 onClick={() => {

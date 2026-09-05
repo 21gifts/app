@@ -77,7 +77,7 @@ export function HandbookLightbox({
               type="button"
               variant="ghost"
               size="md"
-              className="text-paper/60 hover:bg-paper/10 hover:text-paper"
+              className="text-paper/60 hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
               aria-label={t('handbook.previousImage')}
               onClick={(event) => {
                 event.stopPropagation();
@@ -92,7 +92,7 @@ export function HandbookLightbox({
               type="button"
               variant="ghost"
               size="md"
-              className="text-paper/60 hover:bg-paper/10 hover:text-paper"
+              className="text-paper/60 hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
               aria-label={t('handbook.nextImage')}
               onClick={(event) => {
                 event.stopPropagation();
@@ -106,7 +106,7 @@ export function HandbookLightbox({
             type="button"
             variant="ghost"
             size="md"
-            className="text-paper/60 hover:bg-paper/10 hover:text-paper"
+            className="text-paper/60 hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
             aria-label={t('handbook.closeImage')}
             autoFocus
             onClick={onClose}
