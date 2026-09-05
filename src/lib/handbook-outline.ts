@@ -69,7 +69,7 @@ export function screenChapter(path: string): string {
   }
   const stripped = path.replace(/^\//, '');
   const first = stripped.split('/')[0];
-  /* v8 ignore next — split of a non-empty path always yields a first segment */
+  /* v8 ignore next 3 — split of a non-empty path always yields a first segment */
   if (first === undefined) {
     return path.startsWith('/') ? '/' : path;
   }

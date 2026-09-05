@@ -209,6 +209,15 @@ describe('HandbookImageViewer', () => {
     }
   });
 
+  it('closes the lightbox when the active slide is omitted by a combo switch', () => {
+    renderWithLocale(<HandbookImageViewer topics={[ALL, LIGHT_ONLY]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open /welcome pay-qr at full size' }));
+    expect(screen.getByRole('dialog', { name: '/welcome pay-qr' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByAltText('/welcome pay-qr')).toBeNull();
+  });
+
   it('opens the shared lightbox from a card preview and steps with chevrons', () => {
     renderWithLocale(<HandbookImageViewer topics={[ALL, LIGHT_ONLY]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Open /welcome default at full size' }));

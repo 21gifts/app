@@ -80,6 +80,7 @@ export function HandbookImageViewer({ topics }: HandbookImageViewerProps): React
 
   const step = useCallback(
     (direction: 1 | -1): void => {
+      /* v8 ignore next 3 — keydown and chevrons only fire when slides exist */
       if (slides.length === 0) {
         return;
       }
