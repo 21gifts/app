@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HandbookImageViewer } from '@/components/HandbookImageViewer';
 import type { HandbookTopic } from '@/lib/handbook-topics';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -187,6 +187,24 @@ describe('HandbookImageViewer', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.keyDown(document, { key: 'ArrowLeft' });
     expect(screen.getByRole('dialog', { name: '/welcome pay-qr' })).toBeTruthy();
+  });
+
+  it('scrolls the active card into view and ignores non-arrow keys', () => {
+    const scrollIntoView = vi.fn();
+    const original = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    try {
+      renderWithLocale(<HandbookImageViewer topics={[ALL, LIGHT_ONLY]} />);
+      fireEvent.keyDown(document, { key: 'Enter' });
+      expect(screen.queryByRole('dialog')).toBeNull();
+      fireEvent.keyDown(document, { key: 'ArrowRight', altKey: true });
+      expect(screen.queryByRole('dialog')).toBeNull();
+      fireEvent.keyDown(document, { key: 'ArrowRight' });
+      expect(screen.getByRole('dialog')).toBeTruthy();
+      expect(scrollIntoView).toHaveBeenCalled();
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original;
+    }
   });
 
   it('opens the shared lightbox from a card preview and steps with chevrons', () => {

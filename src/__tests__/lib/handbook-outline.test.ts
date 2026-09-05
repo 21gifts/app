@@ -57,6 +57,18 @@ describe('handbook-outline', () => {
     expect(outline[2]?.screens[0]?.topics[0]?.id).toBe('handbook-screens-dark');
   });
 
+  it('uses the topic label when the id has no variant and maps an empty path', () => {
+    const outline = buildHandbookOutline([topic('nocolon'), topic(':only')]);
+    expect(outline.some((chapter) => chapter.screens.some((screen) => screen.path === ''))).toBe(
+      true,
+    );
+    const leaf = outline
+      .flatMap((chapter) => chapter.screens)
+      .flatMap((screen) => screen.topics)
+      .find((item) => item.topic.id === 'nocolon');
+    expect(leaf?.label).toBe('nocolon');
+  });
+
   it('steps through a closed or wrapping slide list', () => {
     expect(nextOutlineIndex(0, null, 1)).toBe(0);
     expect(nextOutlineIndex(3, null, 1)).toBe(0);
