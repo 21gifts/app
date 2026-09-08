@@ -1428,3 +1428,7 @@ PRs 1–5 in the original sequence **shipped in 21gifts/app#125** (Outfit, token
 ---
 
 The forum mode selector uses a two-column grid: Active / No gifts yet, then All / Most popular. No gifts yet includes loaded zero-sat notes; its empty state uses forum.emptyUnpaid.
+
+### Post moderation
+
+Founder and moderator sessions have an icon-only Trash2 control below each forum post. An inline confirmation names the post/replies removal from 21.gifts; Check confirms, X cancels. These card actions use IconButton with translated accessible labels. Pending disables both controls; failure preserves the post and provides a retry. Other roles see no control; the API enforces the live role independently.

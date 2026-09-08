@@ -16,6 +16,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { DeletePostControl } from '@/components/DeletePostControl';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
@@ -157,6 +158,8 @@ export interface ForumBoardProps {
   pmBusyId: string | null;
   /** When true, hide the board-bottom new-note composer (profile note card). */
   composerHidden?: boolean;
+  /** Remove a moderated post after a successful server deletion. */
+  onDeleted?: (messageId: string) => void;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -275,6 +278,7 @@ export function ForumBoard({
   onPm,
   pmBusyId,
   composerHidden = false,
+  onDeleted,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
@@ -691,6 +695,10 @@ export function ForumBoard({
                   </span>
                 </div>
               </div>
+
+              {onDeleted !== undefined ? (
+                <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
+              ) : null}
 
               {sheetOpen && invoiceForCard === null ? (
                 <form

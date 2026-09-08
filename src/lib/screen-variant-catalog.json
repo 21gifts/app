@@ -150,6 +150,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:moderation",
+    "label": "/welcome moderation",
+    "visual": "state-welcome-moderation",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:delete-confirm",
+    "label": "/welcome delete-confirm",
+    "visual": "state-welcome-delete-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:deleting",
+    "label": "/welcome deleting",
+    "visual": "state-welcome-deleting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:delete-error",
+    "label": "/welcome delete-error",
+    "visual": "state-welcome-delete-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:all",
     "label": "/welcome all",
     "visual": "state-welcome-all",

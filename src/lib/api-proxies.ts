@@ -340,3 +340,14 @@ export async function proxyMePushSubscriptionsPost(request: Request): Promise<Re
 export async function proxyMePushSubscriptionsDelete(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/push-subscriptions');
 }
+
+/**
+ * Proxies a moderator's DELETE /messages/:id request.
+ *
+ * @param request - Incoming Bearer request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesDelete(request: Request, messageId: string): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}`);
+}

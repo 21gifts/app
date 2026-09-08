@@ -237,3 +237,10 @@
 - **Errors:** Upstream 400, 401, 404, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
 - **Used by:** `deletePushSubscription` via `disablePush` on `/profile`.
 - **Auth:** Bearer.
+
+## Endpoint: DELETE /forum/messages/[id]
+
+- **Purpose:** Same-origin moderation proxy to DELETE /messages/:id.
+- **Auth:** Forwards Bearer authorization; the API requires live founder or moderator role.
+- **Returns:** Upstream 204, 401, 403, 404 or 503; proxy failures return 502.
+- **Side effects:** Deletes the post, direct replies and stored media on 21.gifts. Does not refund gifts or erase external Nostr relay copies.

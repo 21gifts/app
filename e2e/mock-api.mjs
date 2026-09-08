@@ -190,6 +190,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
+    json(res, bearer(req) === null ? 401 : 403, { error: 'Deletion denied by mock API' });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/messages') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
