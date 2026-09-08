@@ -1,13 +1,13 @@
 import type { ForumMessage } from '@/lib/api-types';
 
 /** Client-side forum list filter / sort mode. */
-export type ForumFeedMode = 'active' | 'all' | 'popular';
+export type ForumFeedMode = 'active' | 'unpaid' | 'all' | 'popular';
 
 /** Default feed mode on the welcome forum (paid notes, newest-first). */
 export const DEFAULT_FORUM_FEED_MODE: ForumFeedMode = 'active';
 
-/** Selector button order: Active, All, Most popular. */
-export const FORUM_FEED_MODES: readonly ForumFeedMode[] = ['active', 'all', 'popular'];
+/** Selector button order: Active, No gifts yet, All, Most popular. */
+export const FORUM_FEED_MODES: readonly ForumFeedMode[] = ['active', 'unpaid', 'all', 'popular'];
 
 /**
  * Filters and sorts a loaded forum thread for the selected feed mode.
@@ -15,7 +15,7 @@ export const FORUM_FEED_MODES: readonly ForumFeedMode[] = ['active', 'all', 'pop
  * Ranking is among the already-loaded messages only. Does not mutate `messages`.
  *
  * @param messages - Newest-first list from the api / loader merge.
- * @param mode - Active (paid, newest-first), All (unchanged), or Most popular (paid, sats desc).
+ * @param mode - Active (paid, newest-first), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
  * @returns A new array of visible messages for the mode.
  */
 export function visibleForumMessages(
@@ -24,6 +24,10 @@ export function visibleForumMessages(
 ): ForumMessage[] {
   if (mode === 'all') {
     return [...messages];
+  }
+
+  if (mode === 'unpaid') {
+    return messages.filter((message) => message.sats === 0);
   }
 
   const paid = messages.filter((message) => message.sats > 0);

@@ -236,7 +236,7 @@ This is **not** “Log in is a gift.” It is “ink pages have one filled accen
 | Orange                                                               | Not orange                                                                                                                                    |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, **Open Wallet of Satoshi** (`app-btn`) |
-| Charts: received series, ₿ selected in ₿\|USD                        | Forum Active/All/Most popular selected (`app-btn`)                                                                                            |
+| Charts: received series, ₿ selected in ₿\|USD                        | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                               |
 |                                                                      | Menu, language/theme, app body links (`text-app-fg underline`)                                                                                |
 |                                                                      | **Rules kickers and ticks** — see (B′)                                                                                                        |
 
@@ -577,7 +577,7 @@ Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet
 | Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                             |
 | Labels     | `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name                         |
 
-Forum Active/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
+Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
 ---
 
@@ -876,11 +876,11 @@ export function SegmentedControl<T extends string>(props: {
 }): ReactElement;
 ```
 
-| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                               |
-| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | --------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿\|USD                    |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿\|USD                      |
-| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / All / Most popular |
+| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                              |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ------------------------------------------------ |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿\|USD                                   |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿\|USD                                     |
+| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular |
 
 Gift options: `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop. Each option: `type="button"` `aria-pressed`. Forum: `tone="neutral"`. Profile: `tone="gift"` (omit `shell`). Stats: `tone="gift" shell="dark"`.
 
@@ -1062,7 +1062,7 @@ Back `IconButton` (when index > 0) + Wordmark + Menu. `h1` Living room rules. Pr
 
 - SHA `WelcomeScreen`: “Forum heading is omitted on the board.” Do not re-add it. Do not re-add a Forum heading.
 - Laws `Banner`.
-- `SegmentedControl tone="neutral"` Active / All / Most popular.
+- `SegmentedControl tone="neutral"` Active / No gifts yet / All / Most popular.
 - Note cards; **fix** `₿21 ₿` → amount + Gift pay (`forum.pay` = “Send Bitcoin”).
 - Composer.
 - Empty/loading/error recipes.
@@ -1417,7 +1417,7 @@ PRs 1–5 in the original sequence **shipped in 21gifts/app#125** (Outfit, token
 
 **This PR** finishes the remaining target:
 
-- `SegmentedControl` primitive (`tone` gift|neutral, optional `shell` app|dark) wired to forum Active/All/Most popular, profile ₿|USD, and stats ₿|USD.
+- `SegmentedControl` primitive (`tone` gift|neutral, optional `shell` app|dark) wired to forum Active/No gifts yet/All/Most popular, profile ₿|USD, and stats ₿|USD.
 - `Button.tone` (`app` | `dark`) so marketing PwaInstall header/hero is a real dark secondary, not class soup.
 - Marketing leftover `text-white` / `#f7931a` → `paper` / `accent` on legal, handbook, stats, day table.
 - PwaInstall documented on marketing header, `/` hero, and signed-in menu.
@@ -1426,3 +1426,5 @@ PRs 1–5 in the original sequence **shipped in 21gifts/app#125** (Outfit, token
 **Later, not in this program:** profile photo/story slot (blocked on HTTP); Figma; safe-area; optional Figtree/Instrument swap if Outfit goldens fail the “same grotesque as marketing” test.
 
 ---
+
+The forum mode selector uses a two-column grid: Active / No gifts yet, then All / Most popular. No gifts yet includes loaded zero-sat notes; its empty state uses forum.emptyUnpaid.
