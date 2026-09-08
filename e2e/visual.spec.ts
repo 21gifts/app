@@ -1426,9 +1426,11 @@ test.describe('welcome forum variants', () => {
         if (state === 'deleting') {
           await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeDisabled();
         } else {
-          await expect(page.getByRole('alert')).toHaveText(
-            'Could not delete the post. Please try again.',
-          );
+          await expect(
+            page
+              .getByRole('group', { name: 'Delete this post and its replies from 21.gifts?' })
+              .getByRole('alert'),
+          ).toHaveText('Could not delete the post. Please try again.');
         }
       }
       if (state === 'moderation') await shotScreen(page, 'state-welcome-moderation');

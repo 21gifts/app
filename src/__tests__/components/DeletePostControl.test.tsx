@@ -82,7 +82,12 @@ describe('DeletePostControl', () => {
     const onDeleted = vi.fn();
     renderWithLocale(<DeletePostControl messageId="post" onDeleted={onDeleted} />);
     fireEvent.click(screen.getByRole('button', { name: 'Delete post' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
+    act(() => {
+      const button = screen.getByRole('button', { name: 'Confirm deletion' });
+      button.click();
+      button.click();
+    });
+    expect(deleteMessage).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Confirm deletion' }).hasAttribute('disabled')).toBe(
       true,
     );
