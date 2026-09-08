@@ -1263,7 +1263,7 @@ test.describe('profile activity chart variants', () => {
 });
 
 test.describe('welcome forum variants', () => {
-  async function seedAda(page: Page): Promise<void> {
+  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -1273,6 +1273,7 @@ test.describe('welcome forum variants', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           ...E2E_ACCOUNT,
+          role,
           name: 'Ada',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
@@ -1326,6 +1327,50 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  }
+
+  for (const state of ['moderation', 'delete-confirm', 'deleting', 'delete-error'] as const) {
+    test('welcome ' + state, async ({ page }) => {
+      await seedAda(page, 'moderator');
+      await fulfillMixedSatsMessages(page);
+      let release: () => void = () => undefined;
+      await page.route('**/forum/messages/m1', async (route) => {
+        if (state === 'deleting') {
+          await new Promise<void>((resolve) => {
+            release = resolve;
+          });
+        }
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: '{"error":"Unavailable"}',
+        });
+      });
+      await page.goto('/welcome');
+      await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toBeVisible();
+      if (state !== 'moderation') {
+        await page.getByRole('button', { name: 'Delete post', exact: true }).click();
+        await expect(
+          page.getByRole('group', { name: 'Delete this post and its replies from 21.gifts?' }),
+        ).toBeVisible();
+      }
+      if (state === 'deleting' || state === 'delete-error') {
+        await page.getByRole('button', { name: 'Confirm deletion' }).click();
+        if (state === 'deleting') {
+          await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeDisabled();
+        } else {
+          await expect(page.getByRole('alert')).toHaveText(
+            'Could not delete the post. Please try again.',
+          );
+        }
+      }
+      if (state === 'moderation') await shotScreen(page, 'state-welcome-moderation');
+      if (state === 'delete-confirm') await shotScreen(page, 'state-welcome-delete-confirm');
+      if (state === 'deleting') await shotScreen(page, 'state-welcome-deleting');
+      if (state === 'delete-error') await shotScreen(page, 'state-welcome-delete-error');
+      release();
+    });
   }
 
   test('welcome all', async ({ page }) => {
@@ -2062,7 +2107,7 @@ test.describe('welcome forum variants', () => {
 });
 
 test.describe('contact screens', () => {
-  async function seedAda(page: Page): Promise<void> {
+  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -2165,7 +2210,7 @@ test.describe('contact screens', () => {
 });
 
 test.describe('inbox screens', () => {
-  async function seedAda(page: Page): Promise<void> {
+  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });

@@ -277,6 +277,30 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, with the dismissi
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: moderation
+
+A founder or moderator sees an icon-only Delete post control under each post. Other roles do not see it. The server independently checks the live role.
+
+![21.gifts moderation](images/welcome-moderation.png)
+
+### Variant: delete-confirm
+
+Delete post opens an inline confirmation: Delete this post and its replies from 21.gifts? Confirm deletion (check) and Cancel deletion (X) are icon-only controls. Cancel sends no request.
+
+![21.gifts delete-confirm](images/welcome-delete-confirm.png)
+
+### Variant: deleting
+
+While DELETE is pending, confirmation and cancellation are disabled and a spinner replaces the check. Successful deletion removes the post; stale refresh payloads cannot restore it in this session.
+
+![21.gifts deleting](images/welcome-deleting.png)
+
+### Variant: delete-error
+
+A failed deletion keeps the post and confirmation visible with an error and retry. Already missing posts (404) are removed from the local view.
+
+![21.gifts delete-error](images/welcome-delete-error.png)
+
 ### Variant: all
 
 Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) is visible with Ada and Carol.

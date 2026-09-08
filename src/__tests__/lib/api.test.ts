@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  deleteMessage,
   deletePushSubscription,
   dismissForumLaws,
   fetchConversation,
@@ -1540,5 +1541,25 @@ describe('finishPasskeyAuthentication', () => {
     await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
       'Failed to finish passkey authentication: 400',
     );
+  });
+});
+
+describe('deleteMessage', () => {
+  it.each([204, 404])('accepts %s as deleted', async (status) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(deleteMessage('token', 'a/b')).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb', {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer token' },
+    });
+  });
+  it.each([401, 403, 503, 200])('rejects status %s', async (status) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status })));
+    await expect(deleteMessage('token', 'post')).rejects.toThrow('Message deletion failed');
+  });
+  it('rejects network errors', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(deleteMessage('token', 'post')).rejects.toThrow('offline');
   });
 });

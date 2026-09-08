@@ -1171,6 +1171,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream api `Response`.
 - **Used by:** Same-origin `unlinkLightningAddress` and `deletePushSubscription` / `disablePush`.
 
+Also handles DELETE /forum/messages/[id] through proxyMessagesDelete, forwarding the moderator session to the API.
+
 ## Function: LegalPage
 
 - **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`.
@@ -1661,3 +1663,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Combo id list.
 - **Returns / side effects:** Combo id or `null`.
 - **Used by:** `HandbookImageViewer`.
+
+## Function: DeletePostControl
+
+- **Purpose:** Inline founder/moderator post deletion with confirmation, pending and error states.
+- **Inputs:** messageId, onDeleted; reads the current account and Bearer session.
+- **Returns / side effects:** Hidden for other roles; calls deleteMessage on explicit confirmation, then onDeleted. Error keeps the post and permits retry.
+
+## Function: deleteMessage
+
+- **Purpose:** Send a moderator deletion request.
+- **Inputs:** sessionToken and messageId.
+- **Returns / side effects:** DELETE /forum/messages/:id; resolves on 204 or already-missing 404, throws on other statuses or network errors.
+
+## Function: proxyMessagesDelete
+
+- **Purpose:** Forward a moderation DELETE to the API.
+- **Inputs:** Incoming Request and messageId.
+- **Returns / side effects:** Proxied DELETE /messages/:id, with encoded id, authorization and upstream status.

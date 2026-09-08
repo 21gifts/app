@@ -127,6 +127,7 @@ export function ForumLoader(): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const router = useRouter();
   const setAccount = useAuthStore((state) => state.setAccount);
+  const deletedIds = useRef(new Set<string>());
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -205,7 +206,7 @@ export function ForumLoader(): ReactElement | null {
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
    * Stop uses `messagesRef` + merge outside setState (empty GET keeps local unsigned extras);
-   * store update is `setMessages((prev) => mergeMessages(prev, next))`.
+   * store update is `setMessages((prev) => mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)))`.
    *
    * @param activeSession - Session token for the fetch.
    */
@@ -225,7 +226,9 @@ export function ForumLoader(): ReactElement | null {
             return;
           }
           const merged = mergeMessages(messagesRef.current, next);
-          setMessages((prev) => mergeMessages(prev, next));
+          setMessages((prev) =>
+            mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)),
+          );
           if (merged.length > 0 && merged.every((message) => message.payable)) {
             return;
           }
@@ -252,7 +255,9 @@ export function ForumLoader(): ReactElement | null {
       if (!shouldContinue()) {
         return 'aborted';
       }
-      setMessages((prev) => mergeMessages(prev, next));
+      setMessages((prev) =>
+        mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)),
+      );
       if (next.some((message) => message.payable === false)) {
         startPayablePoll(activeSession);
       }
@@ -577,7 +582,9 @@ export function ForumLoader(): ReactElement | null {
           if (generation !== payPollGeneration.current) {
             return;
           }
-          setMessages((prev) => mergeMessages(prev, next));
+          setMessages((prev) =>
+            mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)),
+          );
           const updated = next.find((message) => message.id === messageId);
           if (updated !== undefined && updated.sats > baselineSats) {
             setPayWaiting(false);
@@ -998,6 +1005,17 @@ export function ForumLoader(): ReactElement | null {
       ) : null}
       <ForumBoard
         messages={messages}
+        onDeleted={(messageId) => {
+          deletedIds.current.add(messageId);
+          setMessages((prev) => prev!.filter((row) => row.id !== messageId));
+          if (expandedId === messageId) {
+            setExpandedId(null);
+            setReplies(null);
+          }
+          if (payMessageId === messageId) {
+            clearPaySheet();
+          }
+        }}
         error={error}
         loading={loading}
         refreshing={refreshing}

@@ -153,7 +153,7 @@ async function openSignedInMenu(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Menu' }).click();
 }
 
-async function seedAdaSession(page: Page): Promise<void> {
+async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -164,7 +164,7 @@ async function seedAdaSession(page: Page): Promise<void> {
       body: JSON.stringify({
         id: 'acc_e2e',
         linkingKey: null,
-        role: 'basis',
+        role,
         name: 'Ada',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
@@ -3787,4 +3787,59 @@ test('Endpoint: OPTIONS /.well-known/nostr.json — checker literals', async ({ 
   // Playwright has no request.options; e2e:check requires this literal.
   // @ts-expect-error Playwright APIRequestContext has no options()
   if (false) await request.options('/.well-known/nostr.json');
+});
+
+test('Function: deleteMessage — moderator cancels then deletes a post', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      json: {
+        messages: [
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            accountId: 'other',
+            name: 'Bob',
+            text: 'Post to moderate',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      },
+    });
+  });
+  let deletes = 0;
+  await page.route('**/forum/messages/11111111-1111-4111-8111-111111111111', async (route) => {
+    expect(route.request().method()).toBe('DELETE');
+    deletes += 1;
+    await route.fulfill({ status: 204 });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete post', exact: true }).click();
+  await page.getByRole('button', { name: 'Cancel deletion' }).click();
+  expect(deletes).toBe(0);
+  await expect(page.getByText('Post to moderate')).toBeVisible();
+  await page.getByRole('button', { name: 'Delete post', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm deletion' }).click();
+  await expect(page.getByText('Post to moderate')).not.toBeVisible();
+  expect(deletes).toBe(1);
+});
+
+test('Function: proxyMessagesDelete — unauthenticated deletion is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.delete('/forum/messages/[id]');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: DeletePostControl — ordinary members have no delete action', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
 });
