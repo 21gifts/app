@@ -518,11 +518,11 @@ flowchart TB
 | 20    | 20  | `h-5 w-5`     | IconButton md/lg default, profile back              |
 | 24    | 24  | `h-6 w-6`     | unused in chrome; skip                              |
 | 32    | 32  | `h-8 w-8`     | Login fingerprint / error / spinner                 |
-| 48    | 48  | `h-12 w-12`   | Welcome `Gift`                                      |
+| 48    | 48  | `h-12 w-12`   | Welcome gift-and-Bitcoin SVG                        |
 
 **Decorative vs control.** Decorative: `aria-hidden="true"` (gift-and-Bitcoin SVG on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. Indicators (given/received arrows in Menu): `aria-label` on the wrapping `span`, not a button — already correct in `SignedInChrome`.
 
-**Welcome Gift glyph.** **Keep.** Lucide `Gift`, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome.
+**Welcome gift-and-Bitcoin glyph.** Combined gift outline and Bitcoin symbol, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome.
 
 **Pay control glyph.** Lucide **`Gift`**, not `Bitcoin`. Accessible name stays catalog `forum.pay` = **“Send Bitcoin”** (`de` Bitcoin senden, `es` Enviar Bitcoin, `fil` Magpadala ng Bitcoin). Do **not** retune that string to “Pay” in the pay PR (`e2e/visual.spec.ts` uses `getByRole('button', { name: 'Send Bitcoin' })`). The `/welcome` heading uses a 48px decorative gift-and-Bitcoin SVG; the in-card pay control remains a 16px `Gift`. Sizes + `aria-hidden` vs `aria-label` prevent collision. A labeled **Pay** control was considered and rejected (see Alternatives I).
 
