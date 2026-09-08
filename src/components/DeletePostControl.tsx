@@ -38,7 +38,6 @@ export function DeletePostControl({
   }
 
   async function remove(): Promise<void> {
-    /* v8 ignore next 3 -- synchronous guard against duplicate clicks before React commits disabled */
     if (inFlight.current) {
       return;
     }
