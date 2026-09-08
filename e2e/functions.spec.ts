@@ -2736,6 +2736,11 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
 
+  await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+  await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
+  await expect(page.getByText('Thank you both — that helps.')).not.toBeVisible();
+  await expect(page.getByText('I can send a small gift tomorrow.')).not.toBeVisible();
+
   await page.getByRole('button', { name: 'Most popular' }).click();
   const items = page.getByRole('listitem');
   await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');

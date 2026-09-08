@@ -1337,6 +1337,51 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-all');
   });
 
+  test('welcome unpaid', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'No gifts yet', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
+    await expect(page.getByText('Thank you both — that helps.')).not.toBeVisible();
+    await expect(page.getByText('I can send a small gift tomorrow.')).not.toBeVisible();
+    await shotScreen(page, 'state-welcome-unpaid');
+  });
+
+  test('welcome empty-unpaid', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Thank you!',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+    await expect(
+      page.getByText('Every loaded message has already received Bitcoin.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-empty-unpaid');
+  });
+
   test('welcome popular', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);

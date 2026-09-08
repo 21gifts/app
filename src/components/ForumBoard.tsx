@@ -161,9 +161,10 @@ export interface ForumBoardProps {
 
 const MODE_LABEL_KEY: Record<
   ForumFeedMode,
-  'forum.modeActive' | 'forum.modeAll' | 'forum.modePopular'
+  'forum.modeActive' | 'forum.modeUnpaid' | 'forum.modeAll' | 'forum.modePopular'
 > = {
   active: 'forum.modeActive',
+  unpaid: 'forum.modeUnpaid',
   all: 'forum.modeAll',
   popular: 'forum.modePopular',
 };
@@ -215,7 +216,7 @@ function showForumPm(
 
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
- * Active/All/Most popular selector, list or empty/loading/error, board-bottom
+ * Active/No gifts yet/All/Most popular selector, list or empty/loading/error, board-bottom
  * composer (new notes only, photo or video attach), per-card expand for replies
  * + reply composer, copy-link control, PM control on other people's notes,
  * pay-on-note sheet, optional inline photos, and optional inline videos.
@@ -490,7 +491,11 @@ export function ForumBoard({
   } else if (messages !== null && messages.length === 0) {
     middle = <p className="text-center text-sm text-app-muted">{t('forum.empty')}</p>;
   } else if (messages !== null && visible !== null && visible.length === 0) {
-    middle = <p className="text-center text-sm text-app-muted">{t('forum.emptyPaid')}</p>;
+    middle = (
+      <p className="text-center text-sm text-app-muted">
+        {t(mode === 'unpaid' ? 'forum.emptyUnpaid' : 'forum.emptyPaid')}
+      </p>
+    );
   } else if (messages !== null && visible !== null) {
     const displayed = mode === 'popular' ? visible : visible.slice().reverse();
     middle = (
@@ -995,6 +1000,7 @@ export function ForumBoard({
           onChange={onModeChange}
           ariaLabel={t('forum.modeLabel')}
           tone="neutral"
+          className="!grid grid-cols-2 !rounded-2xl"
         />
       ) : null}
 

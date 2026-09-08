@@ -458,6 +458,26 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('No messages yet — be the first to write one.')).toBeNull();
   });
 
+  it('shows the specific empty state when no zero-sat notes remain', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('unpaid')}
+      />,
+    );
+    expect(screen.getByText('Every loaded message has already received Bitcoin.')).toBeTruthy();
+    expect(screen.queryByText('No messages yet — be the first to write one.')).toBeNull();
+  });
+
   it('lists both messages on All including zero-sat SAMPLE', () => {
     renderWithLocale(
       <ForumBoard

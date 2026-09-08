@@ -87,9 +87,9 @@ const TIE_SAME_TIME_LOW_ID: ForumMessage = {
 };
 
 describe('forum-feed', () => {
-  it('defaults to active and lists modes Active → All → Most popular', () => {
+  it('defaults to active and lists modes Active → No gifts yet → All → Most popular', () => {
     expect(DEFAULT_FORUM_FEED_MODE).toBe('active');
-    expect(FORUM_FEED_MODES).toEqual(['active', 'all', 'popular']);
+    expect(FORUM_FEED_MODES).toEqual(['active', 'unpaid', 'all', 'popular']);
   });
 
   it('all preserves order including zero-sat rows', () => {
@@ -99,6 +99,14 @@ describe('forum-feed', () => {
 
   it('active drops zero-sat rows and keeps relative order', () => {
     expect(visibleForumMessages([ADA, CAROL, BOB], 'active')).toEqual([ADA, CAROL]);
+  });
+
+  it('unpaid keeps only zero-sat rows in order, including notes without a wallet', () => {
+    const other = { ...BOB, id: 'other', payable: false };
+    const input = Object.freeze([ADA, BOB, CAROL, other]);
+    expect(visibleForumMessages(input, 'unpaid')).toEqual([BOB, other]);
+    expect(visibleForumMessages([ADA, CAROL], 'unpaid')).toEqual([]);
+    expect(visibleForumMessages([], 'unpaid')).toEqual([]);
   });
 
   it('popular drops zero-sat rows and sorts by sats descending', () => {

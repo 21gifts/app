@@ -233,6 +233,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'unpaid',
+    image: 'welcome-unpaid.png',
+    visual: 'state-welcome-unpaid',
+    needle: 'No gifts yet',
+  },
+  {
+    route: '/welcome',
+    id: 'empty-unpaid',
+    image: 'welcome-empty-unpaid.png',
+    visual: 'state-welcome-empty-unpaid',
+    needle: 'Every loaded message has already received Bitcoin.',
+  },
+  {
+    route: '/welcome',
     id: 'popular',
     image: 'welcome-popular.png',
     visual: 'state-welcome-popular',
