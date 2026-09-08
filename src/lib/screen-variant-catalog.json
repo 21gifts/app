@@ -156,6 +156,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:unpaid",
+    "label": "/welcome unpaid",
+    "visual": "state-welcome-unpaid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:empty-unpaid",
+    "label": "/welcome empty-unpaid",
+    "visual": "state-welcome-empty-unpaid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:popular",
     "label": "/welcome popular",
     "visual": "state-welcome-popular",
