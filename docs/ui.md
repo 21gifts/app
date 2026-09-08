@@ -98,7 +98,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 **Clear space.** Minimum 8px (`spacing-2`) on all sides of the glyph bounds. Do not place controls closer than 12px (`spacing-3`) to the wordmark.
 
-**Do not.** Orange wordmark, outline wordmark, stacked “21” over “gifts”, a gift-box logo next to the wordmark in chrome. The lucide `Gift` on `/welcome` is a **page glyph**, not the brand mark.
+**Do not.** Orange wordmark, outline wordmark, stacked “21” over “gifts”, a gift-box logo next to the wordmark in chrome. The combined gift-and-Bitcoin SVG on `/welcome` is a **page glyph**, not the brand mark.
 
 **Favicon / apple-touch / OG (keep).**
 
@@ -518,13 +518,13 @@ flowchart TB
 | 20    | 20  | `h-5 w-5`     | IconButton md/lg default, profile back              |
 | 24    | 24  | `h-6 w-6`     | unused in chrome; skip                              |
 | 32    | 32  | `h-8 w-8`     | Login fingerprint / error / spinner                 |
-| 48    | 48  | `h-12 w-12`   | Welcome `Gift`                                      |
+| 48    | 48  | `h-12 w-12`   | Welcome gift-and-Bitcoin SVG                        |
 
-**Decorative vs control.** Decorative: `aria-hidden="true"` (Gift on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. Indicators (given/received arrows in Menu): `aria-label` on the wrapping `span`, not a button — already correct in `SignedInChrome`.
+**Decorative vs control.** Decorative: `aria-hidden="true"` (gift-and-Bitcoin SVG on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. Indicators (given/received arrows in Menu): `aria-label` on the wrapping `span`, not a button — already correct in `SignedInChrome`.
 
-**Welcome Gift glyph.** **Keep.** Lucide `Gift`, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome.
+**Welcome gift-and-Bitcoin glyph.** Combined gift outline and Bitcoin symbol, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome.
 
-**Pay control glyph.** Lucide **`Gift`**, not `Bitcoin`. Accessible name stays catalog `forum.pay` = **“Send Bitcoin”** (`de` Bitcoin senden, `es` Enviar Bitcoin, `fil` Magpadala ng Bitcoin). Do **not** retune that string to “Pay” in the pay PR (`e2e/visual.spec.ts` uses `getByRole('button', { name: 'Send Bitcoin' })`). Two Gift glyphs on `/welcome` is intentional: 48px decorative identity vs 16px in-card control with a different name. Sizes + `aria-hidden` vs `aria-label` prevent collision. A labeled **Pay** control was considered and rejected (see Alternatives I).
+**Pay control glyph.** Lucide **`Gift`**, not `Bitcoin`. Accessible name stays catalog `forum.pay` = **“Send Bitcoin”** (`de` Bitcoin senden, `es` Enviar Bitcoin, `fil` Magpadala ng Bitcoin). Do **not** retune that string to “Pay” in the pay PR (`e2e/visual.spec.ts` uses `getByRole('button', { name: 'Send Bitcoin' })`). The `/welcome` heading uses a 48px decorative gift-and-Bitcoin SVG; the in-card pay control remains a 16px `Gift`. Sizes + `aria-hidden` vs `aria-label` prevent collision. A labeled **Pay** control was considered and rejected (see Alternatives I).
 
 **Hit targets.** WCAG 2.2 AA 2.5.8 is **24×24px**. Today’s `IconButton` `sm` `h-6 w-6` **meets AA**. 44×44 is 2.5.5 AAA. Target: **44px minimum hit** for every `IconButton`, but in-card `sm` must **not** become a 44px _painted_ circle (forum note footers: pay + copy + PM). See §10.
 
@@ -996,7 +996,7 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 | View missing       | `view.missing`                                   | None                      |
 | 404                | `notFound.body`                                  | Accent **Back home**      |
 
-Do not illustrate empty states with extra glyphs except the welcome `Gift` which is always present.
+Do not illustrate empty states with extra glyphs except the welcome gift-and-Bitcoin SVG which is always present.
 
 ---
 
@@ -1058,7 +1058,7 @@ Back `IconButton` (when index > 0) + Wordmark + Menu. `h1` Living room rules. Pr
 
 #### `/welcome` (forum) — **pay + chrome** (Forum heading already gone in SHA source)
 
-`PageChrome` Wordmark + Menu → `Card max-w-xl` → decorative `Gift` 48px → **one** `h1` “Welcome, {name}” → `ForumLoader`/`ForumBoard`:
+`PageChrome` Wordmark + Menu → `Card max-w-xl` → decorative gift-and-Bitcoin SVG 48px → **one** `h1` “Welcome, {name}” → `ForumLoader`/`ForumBoard`:
 
 - SHA `WelcomeScreen`: “Forum heading is omitted on the board.” Do not re-add it. Do not re-add a Forum heading.
 - Laws `Banner`.
@@ -1257,7 +1257,7 @@ Slightly better tabular figures from IBM Plex.
 ### I — Pay as labeled **Pay** vs Gift icon
 
 - **Labeled Pay:** no second ₿, no Gift-on-Gift. **Against:** in-card grammar says icon-only; four-locale copy + needles if `forum.pay` changes.
-- **Gift icon + frozen “Send Bitcoin” (chosen):** glyph change only in PR 4. Decorative 48px Gift vs 16px control. Do not rename `forum.pay`.
+- **Gift icon + frozen “Send Bitcoin” (chosen):** glyph change only in PR 4. Decorative 48px gift-and-Bitcoin SVG vs 16px Gift control. Do not rename `forum.pay`.
 
 ### J — Figtree or Instrument Sans as the first face (not only an escape hatch)
 
