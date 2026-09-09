@@ -1893,6 +1893,44 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
+  it('keeps list order when a public pay fetch updates the first of two notes', async () => {
+    vi.useFakeTimers();
+    const second: ForumMessage = {
+      id: 'm2',
+      name: 'Bob',
+      text: 'Hello from Bob',
+      createdAt: '2026-08-28T11:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    fetchMock.mockResolvedValue([SAMPLE, second]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]!.textContent).toContain('Hello from Ada');
+    expect(items[1]!.textContent).toContain('Hello from Bob');
+  });
+
   it('ignores a public pay fetch that resolves after Back', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);

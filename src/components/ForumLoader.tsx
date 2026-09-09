@@ -601,9 +601,23 @@ export function ForumLoader(): ReactElement | null {
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            setMessages((prev) =>
-              mergeMessages(prev, [next]).filter((row) => !deletedIds.current.has(row.id)),
-            );
+            setMessages((prev) => {
+              /* v8 ignore next 3 -- pay poll only runs after the list has loaded */
+              if (prev === null) {
+                return prev;
+              }
+              return prev
+                .map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                )
+                .filter((row) => !deletedIds.current.has(row.id));
+            });
             setPayWaiting(false);
             setPayInvoice(null);
             setPayMessageId(null);

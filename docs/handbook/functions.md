@@ -870,7 +870,7 @@
 
 ## Function: fetchPublicMessage
 
-- **Purpose:** GET `/public-messages/:id` without a session, parse `forumMessageSchema`, and return one public forum note for the HTML note page. Optional `sinceSats` appends `?sinceSats=` so the api can wait until the note has more sats (desktop pay poll).
+- **Purpose:** GET `/public-messages/:id` without a session, parse `forumMessageSchema`, and return one public forum note for the HTML note page. Optional `sinceSats` appends `?sinceSats=` so the api can wait until the note has more sats (pay poll).
 - **Inputs:** Forum message `id` (UUID string). Optional `opts` with `sinceSats` (finite integer ≥ 0; omitted / NaN / Infinity / negatives / non-integers skip the query) and `signal` (`AbortSignal` passed to `fetch` when provided).
 - **Returns / side effects:** `ForumMessage`, or `null` on 404 or abort (`AbortError` / already-aborted signal). Throws visitor copy (`Could not load messages. Please try again.`) on other non-ok, network, or zod failures.
 - **Used by:** `PublicMessageLoader`, `ForumLoader`.
