@@ -848,7 +848,7 @@ Promote shared listbox styles only if a third switcher appears; until then, keep
 
 **Panel.** `absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`.
 
-**Rows.** `flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline hover:bg-app-hover min-h-11`. Leading lucide 14px. Profile row: name + given/received `formatBitcoin` with `ArrowUpRight` / `ArrowDownLeft` (indicators, not buttons).
+**Rows.** `flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline hover:bg-app-hover min-h-11`. Leading lucide 14px. Profile row: name + given/received `formatBitcoin` indicators (`ArrowUpRight` / `ArrowDownLeft`, not buttons) only when the matching sat total is `> 0`.
 
 **Order (keep):** Profile, Living room rules, Messages (inbox), Contact, optional Install app, Language, Theme, Log out.
 

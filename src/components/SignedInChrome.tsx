@@ -21,8 +21,9 @@ import { formatBitcoin } from '@/lib/stats-money';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Profile with same-line given/received totals, living-room rules,
- * messages, contact, optional PWA install, language, theme, and log out).
+ * rows (Profile with same-line given/received amounts only when that side is
+ * non-zero, living-room rules, messages, contact, optional PWA install,
+ * language, theme, and log out).
  *
  * @returns The signed-in Menu chrome.
  */
@@ -66,6 +67,9 @@ export function SignedInChrome(): ReactElement {
 
   const givenAmount = formatBitcoin(donatedSats, locale);
   const receivedAmount = formatBitcoin(receivedSats, locale);
+  const showGiven = donatedSats > 0;
+  const showReceived = receivedSats > 0;
+  const showTotalsCluster = loading || showGiven || showReceived;
 
   return (
     <div ref={rootRef} className="relative">
@@ -97,31 +101,39 @@ export function SignedInChrome(): ReactElement {
         >
           <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           <span className="font-medium">{t('profile.title')}</span>
-          <span className="ml-auto flex items-center gap-2 text-app-muted">
-            {loading ? (
-              t('forum.loading')
-            ) : (
-              <>
-                <span
-                  className="inline-flex items-center gap-1"
-                  aria-label={t('profile.given', { amount: givenAmount })}
-                  title={t('profile.given', { amount: givenAmount })}
-                >
-                  <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                  {givenAmount}
-                </span>
-                <span aria-hidden="true">·</span>
-                <span
-                  className="inline-flex items-center gap-1"
-                  aria-label={t('profile.received', { amount: receivedAmount })}
-                  title={t('profile.received', { amount: receivedAmount })}
-                >
-                  <ArrowDownLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                  {receivedAmount}
-                </span>
-              </>
-            )}
-          </span>
+          {showTotalsCluster ? (
+            <span className="ml-auto flex items-center gap-2 text-app-muted">
+              {loading ? (
+                t('forum.loading')
+              ) : (
+                <>
+                  {showGiven ? (
+                    <span
+                      className="inline-flex items-center gap-1"
+                      aria-label={t('profile.given', { amount: givenAmount })}
+                      title={t('profile.given', { amount: givenAmount })}
+                    >
+                      <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                      <span className="font-semibold tabular-nums lining-nums">{givenAmount}</span>
+                    </span>
+                  ) : null}
+                  {showGiven && showReceived ? <span aria-hidden="true">·</span> : null}
+                  {showReceived ? (
+                    <span
+                      className="inline-flex items-center gap-1"
+                      aria-label={t('profile.received', { amount: receivedAmount })}
+                      title={t('profile.received', { amount: receivedAmount })}
+                    >
+                      <ArrowDownLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                      <span className="font-semibold tabular-nums lining-nums">
+                        {receivedAmount}
+                      </span>
+                    </span>
+                  ) : null}
+                </>
+              )}
+            </span>
+          ) : null}
         </Link>
         <Link
           href="/rules"
