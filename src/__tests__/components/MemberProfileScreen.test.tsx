@@ -588,7 +588,10 @@ describe('MemberProfileScreen', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
     await waitFor(() => {
-      expect(openConversation).toHaveBeenCalled();
+      expect(openConversation).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      await Promise.resolve();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
     await waitFor(() => {
