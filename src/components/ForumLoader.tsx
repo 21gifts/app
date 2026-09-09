@@ -41,6 +41,9 @@ const PAY_POLL_ATTEMPTS = 8;
 /** Delay between `GET /messages` polls (ms). */
 const PAY_POLL_MS = 2000;
 
+/** Default invoice amount when the pay sheet amount field is empty or whitespace-only. */
+const DEFAULT_FORUM_PAY_SATS = 21;
+
 /**
  * True when a thrown value is the api rate-limit copy for posts or payments.
  *
@@ -780,17 +783,19 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const rawAmount = payDraft.trim();
-    /* v8 ignore start -- native submit blocked; button disabled when draft empty */
-    if (rawAmount === '' || !/^\d+$/.test(rawAmount)) {
+    let sats: number;
+    if (rawAmount === '') {
+      sats = DEFAULT_FORUM_PAY_SATS;
+    } else if (!/^\d+$/.test(rawAmount)) {
       setPayError('amount');
       return;
-    }
-    /* v8 ignore stop */
-    const sats = Number.parseInt(rawAmount, 10);
-    /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
-    if (sats <= 0 || !Number.isSafeInteger(sats)) {
-      setPayError('amount');
-      return;
+    } else {
+      sats = Number.parseInt(rawAmount, 10);
+      /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
+      if (sats <= 0 || !Number.isSafeInteger(sats)) {
+        setPayError('amount');
+        return;
+      }
     }
     const messageId = payMessageId;
     const baseline = listed.sats;
