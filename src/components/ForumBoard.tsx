@@ -216,8 +216,9 @@ function showForumPm(
 
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
- * Active/No gifts yet/All/Most popular selector, list or empty/loading/error, board-bottom
- * composer (new notes only, photo or video attach), per-card expand for replies
+ * Active/No gifts yet/All/Most popular selector, newest-first list (social feed)
+ * or empty/loading/error, board-bottom composer (new notes only, photo or video
+ * attach; stays at the bottom), per-card expand for oldest-first replies
  * + reply composer, copy-link control, PM control on other people's notes,
  * pay-on-note sheet, optional inline photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
@@ -300,11 +301,13 @@ export function ForumBoard({
       return;
     }
     // Read refreshing via ref so clearing refreshing after a silent refresh
-    // does not re-run this effect and jump to the composer.
+    // does not re-run this effect and jump to the newest note.
     if (refreshingRef.current) {
       return;
     }
-    composerRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
+    rootRef.current
+      ?.querySelector(`[data-message-id="${newestId}"]`)
+      ?.scrollIntoView({ block: 'start', behavior: 'auto' });
   }, [composerHidden, newestId]);
 
   useEffect(() => {
@@ -497,7 +500,7 @@ export function ForumBoard({
       </p>
     );
   } else if (messages !== null && visible !== null) {
-    const displayed = mode === 'popular' ? visible : visible.slice().reverse();
+    const displayed = visible;
     middle = (
       <ul
         aria-label={t('forum.listLabel')}

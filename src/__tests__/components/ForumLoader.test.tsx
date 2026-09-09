@@ -1713,7 +1713,7 @@ describe('ForumLoader', () => {
     expect(screen.getAllByText('Hello from Ada')).toHaveLength(1);
   });
 
-  it('posts a trimmed message, shows it as the newest row at the bottom, and clears the draft', async () => {
+  it('posts a trimmed message, shows it as the newest row, and clears the draft', async () => {
     fetchMock.mockResolvedValue([]);
     const created: ForumMessage = {
       id: 'm2',
@@ -1747,7 +1747,7 @@ describe('ForumLoader', () => {
     expect(items[0]!.textContent).toContain('Hello');
   });
 
-  it('keeps an existing note above a newly posted note in the list', async () => {
+  it('shows a newly posted note above existing notes', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     const created: ForumMessage = {
       id: 'm2',
@@ -1780,8 +1780,8 @@ describe('ForumLoader', () => {
     });
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(2);
-    expect(items[0]!.textContent).toContain('Hello from Ada');
-    expect(items[1]!.textContent).toContain('New note');
+    expect(items[0]!.textContent).toContain('New note');
+    expect(items[1]!.textContent).toContain('Hello from Ada');
   });
 
   it('shows a post error when posting fails', async () => {
@@ -2738,7 +2738,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm-bob' });
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
       expect(screen.getByText('Fresh reply')).toBeTruthy();
       expect(screen.getByText('1 replies')).toBeTruthy();
       expect(screen.getByText('0 replies')).toBeTruthy();
@@ -3169,7 +3169,7 @@ describe('ForumLoader', () => {
     expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
   });
 
-  it('does not scroll the composer into view when refresh adds a newer message id', async () => {
+  it('does not scroll the newest note into view when refresh adds a newer message id', async () => {
     fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
       {
         id: 'm-newer',

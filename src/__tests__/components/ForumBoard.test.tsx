@@ -508,7 +508,7 @@ describe('ForumBoard', () => {
     expect(preWrap.className).toContain('whitespace-pre-wrap');
   });
 
-  it('renders newest-first props as chronological listitems (oldest top, newest bottom)', () => {
+  it('renders newest-first props with newest listitem at the top', () => {
     renderWithLocale(
       <ForumBoard
         messages={[MULTILINE, SAMPLE]}
@@ -527,12 +527,12 @@ describe('ForumBoard', () => {
 
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(2);
-    expect(items[0]!.textContent).toContain('Ada');
-    expect(items[0]!.textContent).toContain('Hello from Ada');
-    expect(items[1]!.textContent).toContain('Bob');
-    expect(items[1]!.textContent).toContain('Line one');
+    expect(items[0]!.textContent).toContain('Bob');
+    expect(items[0]!.textContent).toContain('Line one');
+    expect(items[1]!.textContent).toContain('Ada');
+    expect(items[1]!.textContent).toContain('Hello from Ada');
     expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
-      block: 'end',
+      block: 'start',
       behavior: 'auto',
     });
   });
@@ -560,7 +560,7 @@ describe('ForumBoard', () => {
     expect(items[1]?.textContent).toContain('₿5');
   });
 
-  it('does not scroll the composer when messages are empty', () => {
+  it('does not scroll when messages are empty', () => {
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -2383,7 +2383,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status', { name: 'Refreshing messages' })).toBeTruthy();
   });
 
-  it('skips composer scroll while refreshing when newestId changes', () => {
+  it('skips newest-note scroll while refreshing when newestId changes', () => {
     const { rerender } = renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
