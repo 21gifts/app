@@ -1013,3 +1013,21 @@ export async function finishPasskeyAuthentication(
   }
   return passkeySessionSchema.parse(await response.json());
 }
+
+/**
+ * Deletes a forum post and its replies using a moderator or founder session.
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum post UUID.
+ * @returns Resolves after deletion (an already missing post is also complete).
+ * @throws Error on denied or failed deletion.
+ */
+export async function deleteMessage(sessionToken: string, messageId: string): Promise<void> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status !== 204 && response.status !== 404) {
+    throw new Error('Message deletion failed');
+  }
+}
