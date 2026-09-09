@@ -113,7 +113,9 @@ export function MemberProfileScreen({
   const [replyDraft, setReplyDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
-  const [overlayRequirement, setOverlayRequirement] = useState<'name' | 'rules' | null>(null);
+  const [overlayRequirement, setOverlayRequirement] = useState<
+    'name' | 'rules' | 'lightning-address' | null
+  >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const [listedNote, setListedNote] = useState(profile.profileMessage);
   const address = profile.lightningAddress;

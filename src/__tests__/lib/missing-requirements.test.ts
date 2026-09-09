@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MissingRequirementsError,
+  nextContactRequirement,
   nextPostRequirement,
   parseMissingRequirements,
 } from '@/lib/missing-requirements';
@@ -26,10 +27,20 @@ describe('parseMissingRequirements', () => {
 });
 
 describe('nextPostRequirement', () => {
-  it('prefers rules over name', () => {
-    expect(nextPostRequirement(['name', 'rules'])).toBe('rules');
-    expect(nextPostRequirement(['name'])).toBe('name');
-    expect(nextPostRequirement(['lightning-address'])).toBeNull();
+  it('prefers rules, then name, then lightning-address', () => {
+    expect(nextPostRequirement(['name', 'rules', 'lightning-address'])).toBe('rules');
+    expect(nextPostRequirement(['name', 'lightning-address'])).toBe('name');
+    expect(nextPostRequirement(['lightning-address'])).toBe('lightning-address');
     expect(nextPostRequirement([])).toBeNull();
+  });
+});
+
+describe('nextContactRequirement', () => {
+  it('prefers rules over name and ignores lightning-address', () => {
+    expect(nextContactRequirement(['name', 'rules'])).toBe('rules');
+    expect(nextContactRequirement(['name'])).toBe('name');
+    expect(nextContactRequirement(['lightning-address'])).toBeNull();
+    expect(nextContactRequirement(['name', 'lightning-address'])).toBe('name');
+    expect(nextContactRequirement([])).toBeNull();
   });
 });

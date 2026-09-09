@@ -47,13 +47,35 @@ export function parseMissingRequirements(body: unknown): MissingRequirementsErro
 }
 
 /**
- * Next overlay field to collect before a post: rules before name.
- * Lightning-address-only gaps do not open an overlay.
+ * Next overlay field to collect before a forum post: rules, then name, then
+ * lightning-address.
  *
  * @param missing - Account or 409 missing list.
- * @returns `'rules'`, `'name'`, or `null` when posting may proceed.
+ * @returns `'rules'`, `'name'`, `'lightning-address'`, or `null` when posting may proceed.
  */
 export function nextPostRequirement(
+  missing: readonly MissingRequirement[],
+): 'rules' | 'name' | 'lightning-address' | null {
+  if (missing.includes('rules')) {
+    return 'rules';
+  }
+  if (missing.includes('name')) {
+    return 'name';
+  }
+  if (missing.includes('lightning-address')) {
+    return 'lightning-address';
+  }
+  return null;
+}
+
+/**
+ * Next overlay field to collect before a contact send: rules, then name.
+ * Lightning-address gaps do not open an overlay for contact.
+ *
+ * @param missing - Account or 409 missing list.
+ * @returns `'rules'`, `'name'`, or `null` when the send may proceed.
+ */
+export function nextContactRequirement(
   missing: readonly MissingRequirement[],
 ): 'rules' | 'name' | null {
   if (missing.includes('rules')) {

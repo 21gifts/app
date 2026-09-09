@@ -30,6 +30,7 @@ vi.mock('@/lib/api', () => ({
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
+  setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
 
@@ -52,6 +53,7 @@ import {
   postMessage,
   postMessageInvoice,
   postMessageVideo,
+  setLightningAddress,
   setName,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -1711,7 +1713,7 @@ describe('ForumLoader', () => {
     expect(screen.getAllByText('Hello from Ada')).toHaveLength(1);
   });
 
-  it('posts a trimmed message, shows it as the newest row at the bottom, and clears the draft', async () => {
+  it('posts a trimmed message, shows it as the newest row, and clears the draft', async () => {
     fetchMock.mockResolvedValue([]);
     const created: ForumMessage = {
       id: 'm2',
@@ -1745,7 +1747,7 @@ describe('ForumLoader', () => {
     expect(items[0]!.textContent).toContain('Hello');
   });
 
-  it('keeps an existing note above a newly posted note in the list', async () => {
+  it('shows a newly posted note above existing notes', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     const created: ForumMessage = {
       id: 'm2',
@@ -1778,8 +1780,8 @@ describe('ForumLoader', () => {
     });
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(2);
-    expect(items[0]!.textContent).toContain('Hello from Ada');
-    expect(items[1]!.textContent).toContain('New note');
+    expect(items[0]!.textContent).toContain('New note');
+    expect(items[1]!.textContent).toContain('Hello from Ada');
   });
 
   it('shows a post error when posting fails', async () => {
@@ -2736,7 +2738,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm-bob' });
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
       expect(screen.getByText('Fresh reply')).toBeTruthy();
       expect(screen.getByText('1 replies')).toBeTruthy();
       expect(screen.getByText('0 replies')).toBeTruthy();
@@ -3167,7 +3169,7 @@ describe('ForumLoader', () => {
     expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
   });
 
-  it('does not scroll the composer into view when refresh adds a newer message id', async () => {
+  it('does not scroll the newest note into view when refresh adds a newer message id', async () => {
     fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
       {
         id: 'm-newer',
@@ -3328,6 +3330,28 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('opens the requirements overlay when posting with a missing lightning-address', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        lightningAddress: null,
+        missing: ['lightning-address'],
+        forumLawsDismissed: true,
+      },
+    });
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
   it('opens the overlay when posting returns missing_requirements', async () => {
     fetchMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new MissingRequirementsError(['name']));
@@ -3338,6 +3362,55 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+  });
+
+  it('opens the overlay when posting returns a lightning-address missing_requirements', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['lightning-address']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+  });
+
+  it('retries the post after the lightning-address overlay is satisfied', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        lightningAddress: null,
+        missing: ['lightning-address'],
+        forumLawsDismissed: true,
+      },
+    });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    vi.mocked(setLightningAddress).mockResolvedValue({
+      ...account,
+      lightningAddress: 'alice@walletofsatoshi.com',
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
+      target: { value: 'alice@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
   });
 
   it('retries the post after the name overlay is satisfied', async () => {

@@ -794,7 +794,97 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
-test('Function: nextPostRequirement — rules before name for the overlay order', async ({
+test('Function: RequirementsOverlay — forum post without a lightning-address opens the overlay', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await page.getByLabel('Your message').fill('Hello');
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
+});
+
+test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay', async ({
+  page,
+}) => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  const noteId = '33333333-3333-4333-8333-333333333333';
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: ['lightning-address'],
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Carol',
+        role: 'verified',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: {
+          id: noteId,
+          accountId: memberId,
+          name: 'Carol',
+          text: 'Hello from my profile note.',
+          createdAt: '2026-08-01T10:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          role: 'verified',
+          replyCount: 0,
+        },
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+  await page.getByRole('button', { name: 'Show replies' }).click();
+  await expect(page.getByLabel('Your reply')).toBeVisible();
+  await page.getByLabel('Your reply').fill('Hello');
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
+});
+
+test('Function: nextPostRequirement — rules before name before lightning-address for forum overlay order', async ({
   page,
   request,
 }) => {
@@ -807,6 +897,23 @@ test('Function: nextPostRequirement — rules before name for the overlay order'
   const chapter = `1 of ${RULES_CHAPTER_IDS.length}`;
   await expect(page.getByText(chapter, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('Function: nextContactRequirement — contact still opens name overlay without requiring lightning-address', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await page.goto('/contact');
+  await page.getByRole('textbox', { name: 'Your message' }).fill('Need a name first');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByRole('dialog', { name: 'Add your name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
 test('Function: MemberProfilePage — member page heading is visible', async ({ page, request }) => {

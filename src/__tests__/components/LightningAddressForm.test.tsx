@@ -117,6 +117,25 @@ describe('LightningAddressForm', () => {
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 
+  it('calls onSaved after a successful address save', async () => {
+    const onSaved = vi.fn();
+    const updated: Account = {
+      ...baseAccount,
+      lightningAddress: 'me@walletofsatoshi.com',
+      missing: ['rules'],
+      setup: 'rules',
+    };
+    vi.mocked(setLightningAddress).mockResolvedValue(updated);
+    renderWithLocale(<LightningAddressForm variant="profile" onSaved={onSaved} />);
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'me@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /link address/i }));
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalled();
+    });
+  });
+
   it('shows the link prompt for a whitespace-only address instead of display/unlink', () => {
     useAuthStore.setState({
       session: 'sess',

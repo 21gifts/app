@@ -148,8 +148,17 @@ const E2E_MEMBER_PROFILE = {
   },
 };
 
-/** True when a write (forum/contact post) needs name or rules. */
-function missingPostRequirements(account) {
+/** True when a forum POST needs name, rules, or lightning-address. */
+function missingForumPostRequirements(account) {
+  return (
+    account.missing.includes('name') ||
+    account.missing.includes('rules') ||
+    account.missing.includes('lightning-address')
+  );
+}
+
+/** True when a contact POST needs name or rules (not lightning-address). */
+function missingContactRequirements(account) {
   return account.missing.includes('name') || account.missing.includes('rules');
 }
 
@@ -203,7 +212,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (missingPostRequirements(account)) {
+    if (missingForumPostRequirements(account)) {
       json(res, 409, { error: 'missing_requirements', missing: account.missing });
       return;
     }
@@ -295,7 +304,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (missingPostRequirements(account)) {
+    if (missingContactRequirements(account)) {
       json(res, 409, { error: 'missing_requirements', missing: account.missing });
       return;
     }

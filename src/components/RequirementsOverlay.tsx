@@ -2,6 +2,7 @@
 
 import { Loader2, X } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
+import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
 import { Button, IconButton } from '@/components/ui';
@@ -11,7 +12,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /** Props for {@link RequirementsOverlay}. */
 export interface RequirementsOverlayProps {
   /** Field the visitor must add before the pending post retries. */
-  requirement: 'name' | 'rules';
+  requirement: 'name' | 'rules' | 'lightning-address';
   /** Closes the overlay without posting. */
   onDismiss: () => void;
   /** Called after the requirement is saved so the loader can retry. */
@@ -19,8 +20,8 @@ export interface RequirementsOverlayProps {
 }
 
 /**
- * Modal to add a missing name or living-room rules agreement before retrying a
- * forum or contact post. No Skip control.
+ * Modal to add a missing name, Lightning Address, or living-room rules
+ * agreement before retrying a forum or contact post. No Skip control.
  *
  * @param props - See {@link RequirementsOverlayProps}.
  * @returns The overlay dialog.
@@ -35,6 +36,13 @@ export function RequirementsOverlay({
   const setAccount = useAuthStore((state) => state.setAccount);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+
+  const titleKey =
+    requirement === 'name'
+      ? 'requirements.nameTitle'
+      : requirement === 'rules'
+        ? 'requirements.rulesTitle'
+        : 'requirements.addressTitle';
 
   const handleAgree = (): void => {
     if (session === null || busy) {
@@ -71,16 +79,12 @@ export function RequirementsOverlay({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={
-        requirement === 'name' ? t('requirements.nameTitle') : t('requirements.rulesTitle')
-      }
+      aria-label={t(titleKey)}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
     >
       <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-3xl border border-app-border bg-app-card p-6 shadow-lg">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-lg font-semibold tracking-tight text-app-fg">
-            {requirement === 'name' ? t('requirements.nameTitle') : t('requirements.rulesTitle')}
-          </h2>
+          <h2 className="text-lg font-semibold tracking-tight text-app-fg">{t(titleKey)}</h2>
           <IconButton
             type="button"
             variant="ghost"
@@ -94,6 +98,8 @@ export function RequirementsOverlay({
         </div>
         {requirement === 'name' ? (
           <NameForm variant="profile" onSaved={onSatisfied} />
+        ) : requirement === 'lightning-address' ? (
+          <LightningAddressForm variant="profile" onSaved={onSatisfied} />
         ) : (
           <div className="flex flex-col items-stretch gap-3">
             <p className="text-center text-sm text-app-muted">{t('setup.rulesPromptLast')}</p>
