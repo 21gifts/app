@@ -12,6 +12,9 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Public `/rules` chrome: signed-in shell when a session is hydrated, else
  * marketing-like unsigned chrome.
+ *
+ * @param children - Heading and rules document from {@link RulesPage}.
+ * @returns The page chrome around `children`.
  */
 export function RulesPageChrome({ children }: { children: ReactNode }): ReactElement {
   const { ready } = useHydrateSession();
