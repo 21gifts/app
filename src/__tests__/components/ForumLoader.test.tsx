@@ -2030,10 +2030,52 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
 
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
     });
+  });
+
+  it('defaults a whitespace-only pay amount to 21 sats without filling the draft', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('   ');
+
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
+    });
+  });
+
+  it('rejects a non-numeric pay amount before calling the api', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('x');
   });
 
   it('rejects a non-positive pay amount before calling the api', async () => {
