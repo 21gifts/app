@@ -174,6 +174,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
+    expect(screen.getByRole('link', { name: 'Home' }).getAttribute('href')).toBe('/welcome');
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
@@ -196,6 +197,7 @@ describe('SignedInChrome', () => {
     expect(profile.querySelector('[aria-label="Received ₿0"]')).toBeNull();
     expect(profile.textContent?.includes('·')).toBe(false);
     expect(profile.querySelector('svg')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Home' }).querySelector('svg')).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'Living room rules' }).querySelector('svg'),
     ).toBeTruthy();
@@ -367,6 +369,14 @@ describe('SignedInChrome', () => {
     expect(screen.getByLabelText('Received ₿1,000')).toBeTruthy();
     const profile = screen.getByRole('link', { name: /Profile/ });
     expect(profile.textContent?.includes('·')).toBe(true);
+  });
+
+  it('closes the menu when Home is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+    expectMenuClosed();
   });
 
   it('closes the menu when Profile is clicked', () => {

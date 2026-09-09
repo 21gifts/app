@@ -3,8 +3,8 @@ import { Suspense } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { InboxLoader } from '@/components/InboxLoader';
 import { OnboardingGate } from '@/components/OnboardingGate';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { Wordmark } from '@/components/ui';
 
 /**
  * `/messages` — signed-in private-message inbox.
@@ -22,7 +22,7 @@ export default function MessagesPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<Wordmark href="/welcome" />}
+      topLeft={<ProfileChromeLeft />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">
