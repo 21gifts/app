@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { deleteMessage } from '@/lib/api';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumLoader } from '@/components/ForumLoader';
@@ -20,6 +21,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({
+  deleteMessage: vi.fn(),
   fetchMessages: vi.fn(),
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
@@ -3657,4 +3659,31 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledTimes(2);
     });
   });
+});
+
+it('removes a moderated open post, closes its pay/reply state, and prevents stale refresh restoration', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue([SAMPLE, { ...SAMPLE, id: 'keep', text: 'Keep this post' }]);
+  repliesMock.mockResolvedValue([]);
+  vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  await screen.findByText('Hello from Ada');
+  fireEvent.click(screen.getByText('Hello from Ada'));
+  await screen.findByLabelText('Your reply');
+  const postCard = screen.getByText('Hello from Ada').closest('li')!;
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Send Bitcoin' }));
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Delete post' }));
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Confirm deletion' }));
+  await waitFor(() => expect(screen.queryByText('Hello from Ada')).toBeNull());
+  expect(screen.getByText('Keep this post')).toBeTruthy();
+  expect(screen.queryByLabelText('Your reply')).toBeNull();
+  expect(screen.queryByLabelText('Amount')).toBeNull();
+  const before = fetchMock.mock.calls.length;
+  const event = new Event('pageshow');
+  Object.defineProperty(event, 'persisted', { value: true });
+  fireEvent(window, event);
+  await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+  expect(screen.queryByText('Hello from Ada')).toBeNull();
 });

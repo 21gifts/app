@@ -16,7 +16,7 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string }>} */
+/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
@@ -190,6 +190,39 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.role !== 'founder' && account.role !== 'moderator') {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    const id = decodeURIComponent(pathName.slice('/messages/'.length));
+    const row = forumMessages.find((message) => message.id === id);
+    if (row === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const deletedAt = new Date().toISOString();
+    row.deletedAt = deletedAt;
+    for (const message of forumMessages) {
+      if (message.inReplyTo === id || message.parent === id) {
+        message.deletedAt = deletedAt;
+      }
+    }
+    res.writeHead(204, {
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, content-type, user-agent',
+      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    });
+    res.end();
+    return;
+  }
+
   if (method === 'GET' && pathName === '/messages') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -201,7 +234,9 @@ const server = http.createServer(async (req, res) => {
       json(res, 409, { error: 'missing_requirements', missing: account.missing });
       return;
     }
-    json(res, 200, { messages: [...forumMessages] });
+    json(res, 200, {
+      messages: forumMessages.filter((message) => message.deletedAt === undefined),
+    });
     return;
   }
 
@@ -478,6 +513,11 @@ const server = http.createServer(async (req, res) => {
   const photoMatch = pathName.match(/^\/messages\/([^/]+)\/photo$/);
   if (method === 'GET' && photoMatch) {
     const id = decodeURIComponent(photoMatch[1]);
+    const tagged = forumMessages.find((message) => message.id === id);
+    if (tagged !== undefined && tagged.deletedAt !== undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
     const bytes = forumPhotos.get(id);
     if (bytes === undefined) {
       json(res, 404, { error: 'Not found' });
@@ -497,7 +537,7 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && publicMessageMatch) {
     const id = decodeURIComponent(publicMessageMatch[1]);
     const row = forumMessages.find((message) => message.id === id);
-    if (row === undefined) {
+    if (row === undefined || row.deletedAt !== undefined) {
       json(res, 404, { error: 'Not found' });
       return;
     }
