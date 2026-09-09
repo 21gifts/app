@@ -155,7 +155,7 @@ export interface ForumBoardProps {
   onPm: (messageId: string) => void;
   /** Forum message id whose PM request is in flight, or `null`. */
   pmBusyId: string | null;
-  /** When true, hide the board-bottom new-note composer (profile note card). */
+  /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
 }
 
@@ -216,11 +216,12 @@ function showForumPm(
 
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
- * Active/No gifts yet/All/Most popular selector, newest-first list (social feed)
- * or empty/loading/error, board-bottom composer (new notes only, photo or video
- * attach; stays at the bottom), per-card expand for oldest-first replies
- * + reply composer, copy-link control, PM control on other people's notes,
- * pay-on-note sheet, optional inline photos, and optional inline videos.
+ * Active/No gifts yet/All/Most popular selector, composer under the mode
+ * filters above the newest-first list (new notes only, photo or video
+ * attach), newest-first list (social feed) or empty/loading/error, per-card
+ * expand for oldest-first replies + reply composer, copy-link control,
+ * PM control on other people's notes, pay-on-note sheet, optional inline
+ * photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
  *
@@ -279,9 +280,7 @@ export function ForumBoard({
   const { t, locale } = useTranslations();
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
-  const composerRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const newestId = messages?.[0]?.id ?? null;
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -295,20 +294,6 @@ export function ForumBoard({
   loadingRef.current = loading;
   const onRefreshRef = useRef(onRefresh);
   onRefreshRef.current = onRefresh;
-
-  useEffect(() => {
-    if (composerHidden || newestId === null) {
-      return;
-    }
-    // Read refreshing via ref so clearing refreshing after a silent refresh
-    // does not re-run this effect and jump to the newest note.
-    if (refreshingRef.current) {
-      return;
-    }
-    rootRef.current
-      ?.querySelector(`[data-message-id="${newestId}"]`)
-      ?.scrollIntoView({ block: 'start', behavior: 'auto' });
-  }, [composerHidden, newestId]);
 
   useEffect(() => {
     if (onRefresh === undefined) {
@@ -1007,11 +992,8 @@ export function ForumBoard({
         />
       ) : null}
 
-      {middle}
-      {error && messages !== null ? errorBlock : null}
-
       {!composerHidden ? (
-        <form ref={composerRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <IconButton
               type="button"
@@ -1131,6 +1113,9 @@ export function ForumBoard({
           {t('forum.errorTooLarge')}
         </p>
       ) : null}
+
+      {middle}
+      {error && messages !== null ? errorBlock : null}
     </div>
   );
 }
