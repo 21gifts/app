@@ -794,6 +794,23 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
+test('Function: RequirementsOverlay — forum post without a lightning-address opens the overlay', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await page.getByLabel('Your message').fill('Hello');
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
+});
+
 test('Function: nextPostRequirement — rules before name before lightning-address for forum overlay order', async ({
   page,
   request,

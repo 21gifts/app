@@ -493,6 +493,12 @@ Carol's **Verified** tag clicked; the explanation under that card header is visi
 
 ![21.gifts welcome role hint](images/welcome-role-hint.png)
 
+### Variant: overlay-address
+
+Named member with living-room rules agreed and no Wallet of Satoshi address. Composer filled, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field (`LightningAddressForm variant=profile`). No **Skip**. Close (X) is present.
+
+![21.gifts welcome overlay address](images/welcome-overlay-address.png)
+
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate.

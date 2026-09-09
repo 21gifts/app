@@ -456,6 +456,13 @@ export const SCREEN_VARIANTS = [
     needle: 'A moderator has met this person in real life and confirmed they are real.',
   },
   {
+    route: '/welcome',
+    id: 'overlay-address',
+    image: 'welcome-overlay-address.png',
+    visual: 'state-welcome-overlay-address',
+    needle: "getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })",
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',

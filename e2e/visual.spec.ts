@@ -2059,6 +2059,37 @@ test.describe('welcome forum variants', () => {
     ).toBeVisible();
     await shotScreen(page, 'state-welcome-role-hint');
   });
+
+  test('welcome overlay-address', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: ['lightning-address'],
+        }),
+      });
+    });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello');
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-overlay-address');
+  });
 });
 
 test.describe('contact screens', () => {
