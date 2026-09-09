@@ -1934,6 +1934,103 @@ test('Function: isUtcDay — invalid day is 404', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
 });
 
+test('Function: ForumTodayGifts — collapsed strip expands with day link', async ({ page }) => {
+  await seedAdaSession(page);
+  const day = new Date().toISOString().slice(0, 10);
+  let giftsDayQuery: string | null = null;
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/gifts\?day=/, async (route) => {
+    const url = new URL(route.request().url());
+    giftsDayQuery = url.searchParams.get('day');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        day,
+        giftCount: 2,
+        totalSats: 4000,
+        totalBtc: '0.00004000',
+        totalUsd: '4.00',
+        gifts: [
+          {
+            paidAt: `${day}T10:00:00.000Z`,
+            amountSats: 3000,
+            amountBtc: '0.00003000',
+            amountUsd: '3.00',
+            recipient: 'alice',
+          },
+          {
+            paidAt: `${day}T11:00:00.000Z`,
+            amountSats: 1000,
+            amountBtc: '0.00001000',
+            amountUsd: '1.00',
+            recipient: 'bob',
+          },
+        ],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+        },
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Today 2 gifts · $4.00')).toBeVisible();
+  expect(giftsDayQuery).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(giftsDayQuery).toBe(day);
+  await page.getByRole('button', { name: 'Show today’s gifts' }).click();
+  await expect(page.getByText('alice · $3.00')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'All gifts this day' })).toHaveAttribute(
+    'href',
+    `/stats/${day}`,
+  );
+});
+
+test('Function: utcCalendarDay — gifts day query is UTC YYYY-MM-DD', async ({ page }) => {
+  await seedAdaSession(page);
+  const day = new Date().toISOString().slice(0, 10);
+  let giftsDayQuery: string | null = null;
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/gifts\?day=/, async (route) => {
+    const url = new URL(route.request().url());
+    giftsDayQuery = url.searchParams.get('day');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        day,
+        giftCount: 0,
+        totalSats: 0,
+        totalBtc: '0.00000000',
+        totalUsd: '0.00',
+        gifts: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+        },
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('textbox', { name: 'Your message' })).toBeVisible();
+  expect(giftsDayQuery).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(giftsDayQuery).toBe(day);
+});
+
 test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ request }) => {
   const res = await request.get('/gifts/stats');
   expect(res.status()).toBe(200);

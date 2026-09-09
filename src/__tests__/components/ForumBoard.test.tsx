@@ -4,13 +4,42 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type GiftDay } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import type { ForumFeedMode } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const TODAY_GIFTS: GiftDay = {
+  day: '2026-09-09',
+  giftCount: 2,
+  totalSats: 4000,
+  totalBtc: '0.00004000',
+  totalUsd: '4.00',
+  gifts: [
+    {
+      paidAt: '2026-09-09T10:00:00.000Z',
+      amountSats: 3000,
+      amountBtc: '0.00003000',
+      amountUsd: '3.00',
+      recipient: 'alice',
+    },
+    {
+      paidAt: '2026-09-09T11:00:00.000Z',
+      amountSats: 1000,
+      amountBtc: '0.00001000',
+      amountUsd: '1.00',
+      recipient: 'bob',
+    },
+  ],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
 
 const push = vi.fn();
 
@@ -2584,5 +2613,87 @@ describe('ForumBoard', () => {
     fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
     fireEvent.touchEnd(window);
     expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('shows today’s gifts strip when giftCount is positive', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        todayGifts={TODAY_GIFTS}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('Today 2 gifts · $4.00')).toBeTruthy();
+  });
+
+  it('hides today’s gifts strip when todayGifts is null', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        todayGifts={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByText(/Today \d+ gifts/)).toBeNull();
+  });
+
+  it('hides today’s gifts strip when giftCount is zero', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        todayGifts={{ ...TODAY_GIFTS, giftCount: 0, gifts: [], totalUsd: '0.00' }}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByText(/Today \d+ gifts/)).toBeNull();
+  });
+
+  it('hides today’s gifts strip when composerHidden', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerHidden
+        todayGifts={TODAY_GIFTS}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByText('Today 2 gifts · $4.00')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Forum view' })).toBeNull();
   });
 });

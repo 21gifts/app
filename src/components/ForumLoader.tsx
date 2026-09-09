@@ -12,6 +12,7 @@ import {
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import {
   dismissForumLaws,
+  fetchGiftDay,
   fetchMessagePhoto,
   fetchMessages,
   fetchReplies,
@@ -20,7 +21,7 @@ import {
   postMessageInvoice,
   postMessageVideo,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type GiftDay } from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
   type ForumFeedMode,
@@ -33,6 +34,7 @@ import {
   nextPostRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
+import { utcCalendarDay } from '@/lib/utc-day';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for pay confirmation or payable status. */
@@ -114,11 +116,14 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * (`fetchReplies`, reply composer via `postMessage` with `inReplyTo`), PM
  * (`openConversation` → `/messages?c=`), and persists dismiss of the
  * living-room laws hint on the account. Also polls until unsigned notes
- * become payable. Silently re-fetches when the document becomes visible again
- * (`visibilitychange` hidden→visible, `pageshow` with `persisted`) and when
- * the board pull-to-refresh fires; silent refresh keeps an existing list on
- * screen (no loading copy) and does not auto-scroll the composer. Renders
- * nothing when there is no session.
+ * become payable. On mount and board retry, fetches today’s
+ * {@link GiftDay} via `fetchGiftDay(utcCalendarDay())` and passes it to the
+ * board when `giftCount > 0` (loading, failure, or empty day hide the strip
+ * without affecting the messages error flag). Silently re-fetches messages
+ * when the document becomes visible again (`visibilitychange` hidden→visible,
+ * `pageshow` with `persisted`) and when the board pull-to-refresh fires;
+ * silent refresh keeps an existing list on screen (no loading copy) and does
+ * not auto-scroll the composer. Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
@@ -132,6 +137,7 @@ export function ForumLoader(): ReactElement | null {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [todayGifts, setTodayGifts] = useState<GiftDay | null>(null);
   const [draft, setDraft] = useState('');
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
   const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
@@ -364,6 +370,29 @@ export function ForumLoader(): ReactElement | null {
       cancelled = true;
     };
     /* router.replace is used on 409; next/navigation's identity is not stable */
+  }, [attempt, session]);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    let cancelled = false;
+    setTodayGifts(null);
+    void (async () => {
+      try {
+        const day = await fetchGiftDay(utcCalendarDay());
+        if (!cancelled) {
+          setTodayGifts(day.giftCount > 0 ? day : null);
+        }
+      } catch {
+        if (!cancelled) {
+          setTodayGifts(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [attempt, session]);
 
   useEffect(() => {
@@ -1068,6 +1097,7 @@ export function ForumLoader(): ReactElement | null {
         replyFormError={replyFormError}
         ownName={account?.name ?? null}
         ownAccountId={account?.id ?? null}
+        todayGifts={todayGifts}
         pmBusyId={pmBusyId}
         onPm={(messageId) => {
           /* v8 ignore next 3 -- second PM click while the first is in flight */

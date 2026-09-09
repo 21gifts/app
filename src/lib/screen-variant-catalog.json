@@ -640,5 +640,17 @@
     "label": "/welcome pm",
     "visual": "state-welcome-pm",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:today-gifts",
+    "label": "/welcome today-gifts",
+    "visual": "state-welcome-today-gifts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:today-gifts-open",
+    "label": "/welcome today-gifts-open",
+    "visual": "state-welcome-today-gifts-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

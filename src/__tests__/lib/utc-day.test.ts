@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { isUtcDay } from '@/lib/utc-day';
+import { isUtcDay, utcCalendarDay } from '@/lib/utc-day';
+
+describe('utcCalendarDay', () => {
+  it('returns YYYY-MM-DD for a fixed instant', () => {
+    expect(utcCalendarDay(new Date('2026-09-09T15:30:00.000Z'))).toBe('2026-09-09');
+  });
+});
 
 describe('isUtcDay', () => {
   it('accepts a real calendar day', () => {

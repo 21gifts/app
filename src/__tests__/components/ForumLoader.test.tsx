@@ -21,6 +21,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
+  fetchGiftDay: vi.fn(),
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   postMessageInvoice: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock('@/lib/forum-video', () => ({
 import {
   agreeToRules,
   dismissForumLaws,
+  fetchGiftDay,
   fetchMessagePhoto,
   fetchMessages,
   fetchReplies,
@@ -54,11 +56,13 @@ import {
   postMessageVideo,
   setName,
 } from '@/lib/api';
+import type { GiftDay } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
 const fetchMock = vi.mocked(fetchMessages);
+const fetchGiftDayMock = vi.mocked(fetchGiftDay);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
@@ -69,6 +73,44 @@ const prepareMock = vi.mocked(prepareForumPhoto);
 const isVideoMock = vi.mocked(isForumVideoFile);
 const prepareVideoMock = vi.mocked(prepareForumVideo);
 const postVideoMock = vi.mocked(postMessageVideo);
+
+const EMPTY_TODAY: GiftDay = {
+  day: '2026-09-09',
+  giftCount: 0,
+  totalSats: 0,
+  totalBtc: '0.00000000',
+  totalUsd: '0.00',
+  gifts: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+  },
+};
+
+const POPULATED_TODAY: GiftDay = {
+  ...EMPTY_TODAY,
+  giftCount: 2,
+  totalSats: 4000,
+  totalBtc: '0.00004000',
+  totalUsd: '4.00',
+  gifts: [
+    {
+      paidAt: '2026-09-09T10:00:00.000Z',
+      amountSats: 3000,
+      amountBtc: '0.00003000',
+      amountUsd: '3.00',
+      recipient: 'alice',
+    },
+    {
+      paidAt: '2026-09-09T11:00:00.000Z',
+      amountSats: 1000,
+      amountBtc: '0.00001000',
+      amountUsd: '1.00',
+      recipient: 'bob',
+    },
+  ],
+};
 
 const account: Account = {
   id: 'acc_1',
@@ -113,6 +155,7 @@ beforeEach(() => {
   HTMLElement.prototype.scrollIntoView = vi.fn();
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+  fetchGiftDayMock.mockResolvedValue(EMPTY_TODAY);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -137,6 +180,7 @@ afterEach(() => {
     get: () => 'visible',
   });
   fetchMock.mockReset();
+  fetchGiftDayMock.mockReset();
   postMock.mockReset();
   invoiceMock.mockReset();
   dismissLawsMock.mockReset();
@@ -3583,5 +3627,26 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('passes today’s gifts strip when fetchGiftDay returns giftCount > 0', async () => {
+    fetchMock.mockResolvedValue([]);
+    fetchGiftDayMock.mockResolvedValue(POPULATED_TODAY);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Today 2 gifts · $4.00')).toBeTruthy();
+    });
+    expect(fetchGiftDayMock).toHaveBeenCalled();
+  });
+
+  it('keeps the board usable without a strip when fetchGiftDay rejects', async () => {
+    fetchMock.mockResolvedValue([]);
+    fetchGiftDayMock.mockRejectedValue(new Error('Could not load gift stats. Please try again.'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    expect(screen.queryByText(/Today \d+ gifts/)).toBeNull();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
   });
 });

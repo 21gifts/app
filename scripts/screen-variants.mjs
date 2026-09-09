@@ -456,6 +456,20 @@ export const SCREEN_VARIANTS = [
     needle: 'A moderator has met this person in real life and confirmed they are real.',
   },
   {
+    route: '/welcome',
+    id: 'today-gifts',
+    image: 'welcome-today-gifts.png',
+    visual: 'state-welcome-today-gifts',
+    needle: 'Today 2 gifts',
+  },
+  {
+    route: '/welcome',
+    id: 'today-gifts-open',
+    image: 'welcome-today-gifts-open.png',
+    visual: 'state-welcome-today-gifts-open',
+    needle: 'alice · $3.00',
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',

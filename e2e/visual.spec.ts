@@ -2059,6 +2059,71 @@ test.describe('welcome forum variants', () => {
     ).toBeVisible();
     await shotScreen(page, 'state-welcome-role-hint');
   });
+
+  async function stubTodayGifts(page: Page): Promise<string> {
+    const day = new Date().toISOString().slice(0, 10);
+    await page.route(/\/gifts\?day=/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          day,
+          giftCount: 2,
+          totalSats: 4000,
+          totalBtc: '0.00004000',
+          totalUsd: '4.00',
+          gifts: [
+            {
+              paidAt: `${day}T10:00:00.000Z`,
+              amountSats: 3000,
+              amountBtc: '0.00003000',
+              amountUsd: '3.00',
+              recipient: 'alice',
+            },
+            {
+              paidAt: `${day}T11:00:00.000Z`,
+              amountSats: 1000,
+              amountBtc: '0.00001000',
+              amountUsd: '1.00',
+              recipient: 'bob',
+            },
+          ],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+          },
+        }),
+      });
+    });
+    return day;
+  }
+
+  test('welcome today-gifts', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await stubTodayGifts(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('Today 2 gifts · $4.00')).toBeVisible();
+    await expect(page.getByText('alice · $3.00')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-today-gifts');
+  });
+
+  test('welcome today-gifts-open', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    const day = await stubTodayGifts(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('Today 2 gifts')).toBeVisible();
+    await page.getByRole('button', { name: 'Show today’s gifts' }).click();
+    await expect(page.getByText('alice · $3.00')).toBeVisible();
+    await expect(page.getByText('bob · $1.00')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'All gifts this day' })).toHaveAttribute(
+      'href',
+      `/stats/${day}`,
+    );
+    await shotScreen(page, 'state-welcome-today-gifts-open');
+  });
 });
 
 test.describe('contact screens', () => {

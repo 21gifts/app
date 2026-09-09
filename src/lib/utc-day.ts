@@ -1,4 +1,14 @@
 /**
+ * UTC calendar day `YYYY-MM-DD` for `now` (default: current instant).
+ *
+ * @param now - Instant to convert; defaults to `new Date()`.
+ * @returns UTC calendar day as `YYYY-MM-DD`.
+ */
+export function utcCalendarDay(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/**
  * Whether `day` is a real UTC calendar date as `YYYY-MM-DD`.
  *
  * @param day - Candidate day string.

@@ -13,9 +13,10 @@ import {
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { ForumTodayGifts } from '@/components/ForumTodayGifts';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type GiftDay } from '@/lib/api-types';
 import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
@@ -157,6 +158,8 @@ export interface ForumBoardProps {
   pmBusyId: string | null;
   /** When true, hide the board-bottom new-note composer (profile note card). */
   composerHidden?: boolean;
+  /** Today’s outbound gifts; omit or `null` hides the strip. */
+  todayGifts?: GiftDay | null;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -216,12 +219,14 @@ function showForumPm(
 
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
- * Active/No gifts yet/All/Most popular selector, list or empty/loading/error, board-bottom
- * composer (new notes only, photo or video attach), per-card expand for replies
- * + reply composer, copy-link control, PM control on other people's notes,
- * pay-on-note sheet, optional inline photos, and optional inline videos.
- * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
- * visually hidden (`sr-only`) refresh status without changing idle markup.
+ * optional one-line today’s outbound gifts strip (`todayGifts` when
+ * `giftCount > 0` and the composer is shown), Active/No gifts yet/All/Most
+ * popular selector, list or empty/loading/error, board-bottom composer (new
+ * notes only, photo or video attach), per-card expand for replies + reply
+ * composer, copy-link control, PM control on other people's notes, pay-on-note
+ * sheet, optional inline photos, and optional inline videos. When `onRefresh`
+ * is passed, supports pull-to-refresh; `refreshing` shows a visually hidden
+ * (`sr-only`) refresh status without changing idle markup.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
@@ -274,6 +279,7 @@ export function ForumBoard({
   onPm,
   pmBusyId,
   composerHidden = false,
+  todayGifts = null,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
@@ -988,6 +994,13 @@ export function ForumBoard({
             </nav>
           </div>
         </div>
+      ) : null}
+
+      {!composerHidden &&
+      todayGifts !== null &&
+      todayGifts !== undefined &&
+      todayGifts.giftCount > 0 ? (
+        <ForumTodayGifts day={todayGifts} />
       ) : null}
 
       {!composerHidden ? (
