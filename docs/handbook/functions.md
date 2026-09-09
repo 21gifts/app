@@ -157,10 +157,10 @@
 
 ## Function: LightningAddressForm
 
-- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile: icon-only actions (no Skip).
+- **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile / overlay: icon-only actions (no Skip). Optional `onSaved` after a successful address save (not Skip or unlink).
 - **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, request, and `notZap` failures are typed keys (`la.errorEmpty`, `la.errorNotFound`, `la.errorRequest`, `la.errorNotZap`) so they re-render after a locale change. After `notZap`, Continue/Save stays disabled while the trimmed draft equals the blocked address; changing the draft clears the alert and re-enables; restoring the blocked address re-locks. Inline alerts (`empty` / `notFound` / `request` / `notZap`) are not separate screen variants.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/lightning-address` on save; POST `/me/setup/skip` on Skip. Merges address fields plus `setup` and `missing`.
-- **Used by:** `AddressSetup` on `/setup/address` and `ProfileScreen` on `/profile`.
+- **Used by:** `AddressSetup` on `/setup/address`, `ProfileScreen` on `/profile`, and `RequirementsOverlay`.
 
 ## Function: LocaleProvider
 
@@ -660,7 +660,7 @@
 
 ## Function: ContactLoader
 
-- **Purpose:** Client loader for in-app contact on `/contact`. Session from `useAuthStore`; returns null without a session. Posts via `postContact`. On success fetches conversations and navigates to `/messages` or `/messages?c=` for the official 21.gifts thread. No local success-hide of the form.
+- **Purpose:** Client loader for in-app contact on `/contact`. Session from `useAuthStore`; returns null without a session. Posts via `postContact`. On success fetches conversations and navigates to `/messages` or `/messages?c=` for the official 21.gifts thread. No local success-hide of the form. Uses `nextContactRequirement` so missing name/rules open `RequirementsOverlay` (no Skip); Lightning Address is not required for contact.
 - **Inputs:** None (reads session from the auth store).
 - **Returns / side effects:** React element wrapping `ContactScreen`, or `null`. Owns draft/posting/formError. Empty or whitespace drafts set `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postContact`. After a successful post, `fetchConversations` then `router.push` to the inbox and `posting` stays true until unmount. A failed post sets `request` and clears `posting` so Send can retry.
 - **Used by:** Screen `/contact`.
@@ -695,7 +695,7 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip), prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/No gifts yet/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /forum/messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Silently re-fetches on `visibilitychange` (hidden→visible), on `pageshow` when `persisted` is true, and when the board pull-to-refresh calls `onRefresh` — shared load path with mount/retry; silent refresh does not flip the board to the loading copy when a list already exists, keeps the list when a silent refresh fails, and does not auto-scroll the composer when a newer note arrives from refresh. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present). Owns expand/replies (`fetchReplies`, retry, reply composer via `postMessage` with `inReplyTo`; expand is ignored while a reply posts) and PM (`openConversation` then `/messages?c=`).
+- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip), prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` and polls sats after pay; owns Active/No gifts yet/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /forum/messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Silently re-fetches on `visibilitychange` (hidden→visible), on `pageshow` when `persisted` is true, and when the board pull-to-refresh calls `onRefresh` — shared load path with mount/retry; silent refresh does not flip the board to the loading copy when a list already exists, keeps the list when a silent refresh fails, and does not auto-scroll the composer when a newer note arrives from refresh. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present). Owns expand/replies (`fetchReplies`, retry, reply composer via `postMessage` with `inReplyTo`; expand is ignored while a reply posts) and PM (`openConversation` then `/messages?c=`). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries.
 - **Inputs:** None (reads session and account from the auth store).
 - **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/videoDraft/photoUrls/videoUrls/posting/formError/feedMode/pay/expand/replies/PM/`refreshing` state and retry attempts. Empty text without a photo and without a video sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage` / `postMessageVideo`. Photo-only and video-only posts are allowed. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A failed silent refresh with an existing list does not set the error flag. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes photo and video blob URLs on unmount. May POST `/me/forum-laws-dismissed`. Passes `lawsVisible` / `onDismissLaws`, `mode` / `onModeChange`, and `refreshing` / `onRefresh` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
@@ -758,17 +758,24 @@
 
 ## Function: nextPostRequirement
 
-- **Purpose:** Picks the next field to collect before a forum or contact post (`rules` before `name`). Lightning-address-only gaps return `null`.
+- **Purpose:** Picks the next field to collect before a forum post (`rules`, then `name`, then `lightning-address`).
+- **Inputs:** `missing` array from the account or a 409 body.
+- **Returns / side effects:** `'rules'`, `'name'`, `'lightning-address'`, or `null`. No side effects.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`, `RequirementsOverlay` flow.
+
+## Function: nextContactRequirement
+
+- **Purpose:** Picks the next field to collect before a contact send (`rules` before `name`). Lightning-address gaps return `null` — contact does not require a Lightning Address.
 - **Inputs:** `missing` array from the account or a 409 body.
 - **Returns / side effects:** `'rules'`, `'name'`, or `null`. No side effects.
-- **Used by:** `ForumLoader`, `ContactLoader`, `RequirementsOverlay` flow.
+- **Used by:** `ContactLoader`, `RequirementsOverlay` flow.
 
 ## Function: RequirementsOverlay
 
-- **Purpose:** Modal to add a missing name (`NameForm` profile) or agree to rules before retrying a post. No Skip.
-- **Inputs:** `requirement` (`name` | `rules`), `onDismiss`, `onSatisfied`.
-- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`.
-- **Used by:** `ForumLoader`, `ContactLoader`.
+- **Purpose:** Modal to add a missing name (`NameForm` profile), Lightning Address (`LightningAddressForm` profile), or agree to rules before retrying a post. No Skip.
+- **Inputs:** `requirement` (`name` | `rules` | `lightning-address`), `onDismiss`, `onSatisfied`.
+- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`. Title/`aria-label` from `requirements.nameTitle`, `requirements.rulesTitle`, or `requirements.addressTitle`.
+- **Used by:** `ForumLoader`, `ContactLoader`, `MemberProfileScreen`.
 
 ## Function: MemberProfileLoader
 
@@ -779,7 +786,7 @@
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note.
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
 - **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
 - **Returns / side effects:** React tree; may `POST` invoice/conversation/replies and navigate to `/messages?c=`.
 - **Used by:** `MemberProfileLoader`.

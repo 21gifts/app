@@ -30,6 +30,7 @@ vi.mock('@/lib/api', () => ({
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
+  setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
 
@@ -52,6 +53,7 @@ import {
   postMessage,
   postMessageInvoice,
   postMessageVideo,
+  setLightningAddress,
   setName,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -3328,6 +3330,28 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('opens the requirements overlay when posting with a missing lightning-address', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        lightningAddress: null,
+        missing: ['lightning-address'],
+        forumLawsDismissed: true,
+      },
+    });
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
   it('opens the overlay when posting returns missing_requirements', async () => {
     fetchMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new MissingRequirementsError(['name']));
@@ -3338,6 +3362,55 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+  });
+
+  it('opens the overlay when posting returns a lightning-address missing_requirements', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new MissingRequirementsError(['lightning-address']));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+  });
+
+  it('retries the post after the lightning-address overlay is satisfied', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        lightningAddress: null,
+        missing: ['lightning-address'],
+        forumLawsDismissed: true,
+      },
+    });
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    vi.mocked(setLightningAddress).mockResolvedValue({
+      ...account,
+      lightningAddress: 'alice@walletofsatoshi.com',
+      missing: [],
+      setup: null,
+      forumLawsDismissed: true,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
+      target: { value: 'alice@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
   });
 
   it('retries the post after the name overlay is satisfied', async () => {

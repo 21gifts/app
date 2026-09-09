@@ -168,7 +168,9 @@ export function ForumLoader(): ReactElement | null {
   const [replyPosting, setReplyPosting] = useState(false);
   const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
-  const [overlayRequirement, setOverlayRequirement] = useState<'name' | 'rules' | null>(null);
+  const [overlayRequirement, setOverlayRequirement] = useState<
+    'name' | 'rules' | 'lightning-address' | null
+  >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const payPollGeneration = useRef(0);
   const payablePollGeneration = useRef(0);
