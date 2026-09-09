@@ -904,7 +904,7 @@ Do not use orange. This is law, not a gift CTA.
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`).
 4. Body `text-sm text-app-fg whitespace-pre-wrap`.
-5. Footer: `flex items-center gap-5` (20px — required so `sm` 44px hits do not overlap; SHA is `gap-1.5`) + amount + IconButtons (pay, copy, PM) + reply count `ml-auto text-xs text-app-subtle`.
+5. Footer: `flex flex-wrap items-center gap-5` (20px — required so `sm` 44px hits do not overlap; SHA is `gap-1.5`) + amount + IconButtons (pay, copy, PM, delete when present) + reply count `ml-auto text-xs text-app-subtle`. Confirming delete uses `basis-full w-full` so the bordered confirm group wraps to the next line.
 
 Expand: the whole card is `role="button"` today (click to expand replies). Keep the behavior; ensure inner controls `stopPropagation` (already). Focus ring on the expandable region.
 

@@ -618,7 +618,7 @@ export function ForumBoard({
                 {message.text !== '' ? (
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
-                <div className="mt-3 flex items-center gap-5">
+                <div className="mt-3 flex flex-wrap items-center gap-5">
                   <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
                     {formatBitcoin(message.sats, locale)}
                   </p>
@@ -675,15 +675,14 @@ export function ForumBoard({
                       )}
                     </IconButton>
                   ) : null}
+                  {onDeleted !== undefined ? (
+                    <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
+                  ) : null}
                   <span className="ml-auto text-xs text-app-subtle">
                     {t('forum.replyCount', { count: String(message.replyCount) })}
                   </span>
                 </div>
               </div>
-
-              {onDeleted !== undefined ? (
-                <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
-              ) : null}
 
               {sheetOpen && invoiceForCard === null ? (
                 <form
