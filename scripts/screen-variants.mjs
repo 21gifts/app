@@ -533,6 +533,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state-members-own',
   },
   {
+    route: '/members/[accountId]',
+    id: 'overlay-address',
+    image: 'members-overlay-address.png',
+    visual: 'state-members-overlay-address',
+    needle: 'state-members-overlay-address',
+  },
+  {
     route: '/profile',
     id: 'receive',
     image: 'profile-receive.png',

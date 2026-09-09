@@ -577,6 +577,12 @@ Signed-in visitor viewing their own `/members/:id` card.
 
 ![21.gifts member profile own](images/members-own.png)
 
+### Variant: overlay-address
+
+Named visitor with living-room rules agreed and no Wallet of Satoshi address. Member profile note expanded, reply filled, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
+
+![21.gifts member overlay address](images/members-overlay-address.png)
+
 ## Screen: /profile
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (`SegmentedControl tone="gift"` for ₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes skip an OS banner when any window client is focused; background-only clients still show it), copy the public view-key link via an icon-only control, return to the forum via an icon-only back control. Menu still shows icon+amount totals.
