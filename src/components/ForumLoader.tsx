@@ -127,6 +127,7 @@ export function ForumLoader(): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const router = useRouter();
   const setAccount = useAuthStore((state) => state.setAccount);
+  /** Session-local hidden post ids so a stale GET cannot resurrect a post already hidden this session. */
   const deletedIds = useRef(new Set<string>());
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
@@ -207,8 +208,8 @@ export function ForumLoader(): ReactElement | null {
 
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
-   * Stop uses `messagesRef` + merge outside setState (empty GET keeps local unsigned extras);
-   * store update is `setMessages((prev) => mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)))`.
+   * Stop uses `messagesRef` + merge outside setState (empty GET keeps local unsigned extras).
+   * Excludes ids in `deletedIds` so a stale GET cannot restore a post already hidden this session.
    *
    * @param activeSession - Session token for the fetch.
    */

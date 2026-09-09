@@ -1173,12 +1173,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: DELETE
 
-- **Purpose:** Shared App Router DELETE export name. `/me/lightning-address` re-exports `proxyMeLightningAddressDelete`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsDelete`.
-- **Inputs:** Incoming `Request`.
+- **Purpose:** Shared App Router DELETE export name. `/me/lightning-address` re-exports `proxyMeLightningAddressDelete`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsDelete`; `/forum/messages/[id]` re-exports `proxyMessagesDelete`.
+- **Inputs:** Incoming `Request`. For `/forum/messages/[id]`, also async route `params` with the message id.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin `unlinkLightningAddress` and `deletePushSubscription` / `disablePush`.
-
-Also handles DELETE /forum/messages/[id] through proxyMessagesDelete, forwarding the moderator session to the API.
+- **Used by:** Same-origin `unlinkLightningAddress`, `deletePushSubscription` / `disablePush`, and same-origin forum moderation delete (`deleteMessage`).
 
 ## Function: LegalPage
 
@@ -1679,12 +1677,14 @@ Also handles DELETE /forum/messages/[id] through proxyMessagesDelete, forwarding
 
 ## Function: deleteMessage
 
-- **Purpose:** Send a moderator deletion request.
+- **Purpose:** Send a moderator hide request for a forum post.
 - **Inputs:** sessionToken and messageId.
-- **Returns / side effects:** DELETE /forum/messages/:id; resolves on 204 or already-missing 404, throws on other statuses or network errors.
+- **Returns / side effects:** DELETE `/forum/messages/:id`; resolves on 204 or already-missing 404, throws on other statuses or network errors. Hide/omit semantics: the API keeps the row with `deleted_at` and omits it from GET.
+- **Used by:** `DeletePostControl`.
 
 ## Function: proxyMessagesDelete
 
 - **Purpose:** Forward a moderation DELETE to the API.
 - **Inputs:** Incoming Request and messageId.
-- **Returns / side effects:** Proxied DELETE /messages/:id, with encoded id, authorization and upstream status.
+- **Returns / side effects:** Proxied DELETE `/messages/:id`, with encoded id, authorization and upstream status. Upstream 204 hides the row (`deleted_at`); the row stays and is omitted from GET.
+- **Used by:** App Router `DELETE` on `/forum/messages/[id]`.

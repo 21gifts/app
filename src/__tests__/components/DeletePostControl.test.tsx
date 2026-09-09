@@ -53,7 +53,10 @@ describe('DeletePostControl', () => {
         <DeletePostControl messageId="post" onDeleted={onDeleted} />
       </div>,
     );
+    expect(screen.queryByText('Delete post')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Delete post' }));
+    expect(screen.queryByText('Confirm deletion')).toBeNull();
+    expect(screen.queryByText('Cancel deletion')).toBeNull();
     expect(deleteMessage).not.toHaveBeenCalled();
     fireEvent.keyDown(screen.getByRole('button', { name: 'Confirm deletion' }), { key: 'Enter' });
     expect(parentClick).not.toHaveBeenCalled();
@@ -65,7 +68,10 @@ describe('DeletePostControl', () => {
   it('cancels without deleting and supports German labels', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<DeletePostControl messageId="post" onDeleted={vi.fn()} />, 'de');
+    expect(screen.queryByText('Beitrag löschen')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Beitrag löschen' }));
+    expect(screen.queryByText('Löschen bestätigen')).toBeNull();
+    expect(screen.queryByText('Löschen abbrechen')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Löschen abbrechen' }));
     expect(screen.getByRole('button', { name: 'Beitrag löschen' })).toBeTruthy();
     expect(deleteMessage).not.toHaveBeenCalled();
