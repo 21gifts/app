@@ -1011,11 +1011,11 @@ export function ForumLoader(): ReactElement | null {
         onDeleted={(messageId) => {
           deletedIds.current.add(messageId);
           setMessages((prev) => prev!.filter((row) => row.id !== messageId));
-          if (expandedId === messageId) {
+          if (expandedIdRef.current === messageId) {
             setExpandedId(null);
             setReplies(null);
           }
-          if (payMessageId === messageId) {
+          if (payMessageIdRef.current === messageId) {
             clearPaySheet();
           }
         }}
