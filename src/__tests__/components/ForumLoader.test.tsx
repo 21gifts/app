@@ -23,6 +23,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
   fetchMessages: vi.fn(),
+  fetchPublicMessage: vi.fn(),
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   postMessageInvoice: vi.fn(),
@@ -50,6 +51,7 @@ import {
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
+  fetchPublicMessage,
   fetchReplies,
   openConversation,
   postMessage,
@@ -63,6 +65,7 @@ import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
 const fetchMock = vi.mocked(fetchMessages);
+const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
@@ -117,6 +120,7 @@ beforeEach(() => {
   HTMLElement.prototype.scrollIntoView = vi.fn();
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+  publicFetchMock.mockResolvedValue(SAMPLE);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -141,6 +145,7 @@ afterEach(() => {
     get: () => 'visible',
   });
   fetchMock.mockReset();
+  publicFetchMock.mockReset();
   postMock.mockReset();
   invoiceMock.mockReset();
   dismissLawsMock.mockReset();
@@ -1860,10 +1865,11 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('clears the pay sheet when a poll sees more sats', async () => {
+  it('clears the pay sheet when a public fetch returns more sats', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 21 });
     renderWithLocale(<ForumLoader />);
     await act(async () => {
       await Promise.resolve();
@@ -1877,50 +1883,27 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
-    fetchMock.mockResolvedValue([{ ...SAMPLE, sats: 21 }]);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
+    expect(publicFetchMock).toHaveBeenCalledWith(
+      'm1',
+      expect.objectContaining({
+        sinceSats: 0,
+        signal: expect.any(AbortSignal),
+      }),
+    );
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
-  it('ignores a pay poll fetch that resolves after cancel', async () => {
+  it('ignores a public pay fetch that resolves after Back', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
-    let resolvePoll: ((value: ForumMessage[]) => void) | undefined;
-    renderWithLocale(<ForumLoader />);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    fetchMock.mockImplementationOnce(
+    let resolvePoll: ((value: ForumMessage | null) => void) | undefined;
+    publicFetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolvePoll = resolve;
         }),
     );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    await act(async () => {
-      resolvePoll?.([{ ...SAMPLE, sats: 21 }]);
-      await Promise.resolve();
-    });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
-  });
-
-  it('aborts pay poll after cancel', async () => {
-    vi.useFakeTimers();
-    fetchMock.mockResolvedValue([SAMPLE]);
-    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
     await act(async () => {
       await Promise.resolve();
@@ -1933,17 +1916,25 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fetchMock.mockResolvedValue([{ ...SAMPLE, sats: 21 }]);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
+      resolvePoll?.({ ...SAMPLE, sats: 21 });
+      await Promise.resolve();
     });
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
-  it('keeps polling when a pay poll fetch fails', async () => {
+  it('aborts the public pay poll signal on Back so a late higher-sats resolve does not keep the QR', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    let resolvePoll: ((value: ForumMessage | null) => void) | undefined;
+    let seenSignal: AbortSignal | undefined;
+    publicFetchMock.mockImplementationOnce((_id, opts) => {
+      seenSignal = opts?.signal;
+      return new Promise((resolve) => {
+        resolvePoll = resolve;
+      });
+    });
     renderWithLocale(<ForumLoader />);
     await act(async () => {
       await Promise.resolve();
@@ -1955,10 +1946,33 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    fetchMock.mockRejectedValueOnce(new Error('poll failed'));
-    fetchMock.mockResolvedValueOnce([{ ...SAMPLE, sats: 21 }]);
+    expect(seenSignal).toBeDefined();
+    expect(seenSignal?.aborted).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(seenSignal?.aborted).toBe(true);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
+      resolvePoll?.({ ...SAMPLE, sats: 21 });
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('keeps the QR and retries after a failed public fetch, then closes when sats increase', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockRejectedValueOnce(new Error('poll failed'));
+    publicFetchMock.mockResolvedValueOnce({ ...SAMPLE, sats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     await act(async () => {
@@ -1967,10 +1981,17 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
-  it('stops waiting after pay poll attempts are exhausted', async () => {
+  it('does not close via later sats after Back during a rejected public pay fetch', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('poll failed')), 1);
+        }),
+    );
+    publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 21 });
     renderWithLocale(<ForumLoader />);
     await act(async () => {
       await Promise.resolve();
@@ -1982,11 +2003,65 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(publicFetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the QR after 16s of unpaid public fetches', async () => {
+    vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(16_000);
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
+  });
+
+  it('closes the QR when a later public fetch reports sats 21 after unpaid waits', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 21 });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
   it('requests an invoice and shows the QR', async () => {

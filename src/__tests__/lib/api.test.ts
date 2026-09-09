@@ -1058,6 +1058,68 @@ describe('fetchPublicMessage', () => {
     expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid');
   });
 
+  it('appends sinceSats=0 when sinceSats is 0', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(fetchPublicMessage('uuid', { sinceSats: 0 })).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid?sinceSats=0');
+  });
+
+  it('appends a positive integer sinceSats query', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(fetchPublicMessage('uuid', { sinceSats: 21 })).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid?sinceSats=21');
+  });
+
+  it('does not append sinceSats for non-integers, negatives, NaN, or Infinity', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await fetchPublicMessage('uuid', { sinceSats: 1.5 });
+    await fetchPublicMessage('uuid', { sinceSats: -1 });
+    await fetchPublicMessage('uuid', { sinceSats: Number.NaN });
+    await fetchPublicMessage('uuid', { sinceSats: Number.POSITIVE_INFINITY });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/public-messages/uuid');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/public-messages/uuid');
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/public-messages/uuid');
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/public-messages/uuid');
+  });
+
+  it('passes signal to fetch when provided', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    const controller = new AbortController();
+    await expect(fetchPublicMessage('uuid', { signal: controller.signal })).resolves.toEqual(
+      forumMessage,
+    );
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid', {
+      signal: controller.signal,
+    });
+  });
+
+  it('returns null when the signal is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new DOMException('The operation was aborted.', 'AbortError')),
+    );
+    await expect(fetchPublicMessage('uuid', { signal: controller.signal })).resolves.toBeNull();
+  });
+
+  it('returns null when fetch rejects with AbortError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new DOMException('The operation was aborted.', 'AbortError')),
+    );
+    await expect(
+      fetchPublicMessage('uuid', { signal: new AbortController().signal }),
+    ).resolves.toBeNull();
+  });
+
+  it('returns null when fetch rejects with a non-AbortError and the signal is already aborted', async () => {
+    const c = new AbortController();
+    c.abort();
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPublicMessage('uuid', { signal: c.signal })).resolves.toBeNull();
+  });
+
   it('returns null on 404', async () => {
     stubFetch({ ok: false, status: 404, body: {} });
     await expect(fetchPublicMessage('uuid')).resolves.toBeNull();
