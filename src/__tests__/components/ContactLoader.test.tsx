@@ -216,6 +216,27 @@ describe('ContactLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('does not require a lightning-address for contact and posts', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
+    });
+    postMock.mockResolvedValue({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hi',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockResolvedValue([]);
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'Hi');
+    });
+  });
+
   it('dismisses the overlay without posting', () => {
     useAuthStore.setState({
       session: 'sess',

@@ -794,7 +794,7 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
-test('Function: nextPostRequirement — rules before name for the overlay order', async ({
+test('Function: nextPostRequirement — rules before name before lightning-address for forum overlay order', async ({
   page,
   request,
 }) => {
@@ -807,6 +807,23 @@ test('Function: nextPostRequirement — rules before name for the overlay order'
   const chapter = `1 of ${RULES_CHAPTER_IDS.length}`;
   await expect(page.getByText(chapter, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('Function: nextContactRequirement — contact still opens name overlay without requiring lightning-address', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await page.goto('/contact');
+  await page.getByRole('textbox', { name: 'Your message' }).fill('Need a name first');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByRole('dialog', { name: 'Add your name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
 test('Function: MemberProfilePage — member page heading is visible', async ({ page, request }) => {

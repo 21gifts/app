@@ -8,7 +8,7 @@ import { fetchConversations, postContact } from '@/lib/api';
 import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import {
   MissingRequirementsError,
-  nextPostRequirement,
+  nextContactRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
@@ -21,7 +21,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * (`/messages?c=`) and keeps Send disabled until unmount. A failed post
  * clears `posting` so Send can retry. Missing name/rules open
  * {@link RequirementsOverlay} and retry the same send after the field is
- * added. Renders nothing when there is no session.
+ * added. Lightning Address is not required for contact. Renders nothing when
+ * there is no session.
  *
  * @returns The contact screen, or `null` without a session.
  */
@@ -40,7 +41,7 @@ export function ContactLoader(): ReactElement | null {
   }
 
   const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
-    const next = nextPostRequirement(missing);
+    const next = nextContactRequirement(missing);
     if (next === null) {
       return false;
     }
@@ -111,7 +112,7 @@ export function ContactLoader(): ReactElement | null {
       setOverlayRequirement(null);
       return;
     }
-    const still = nextPostRequirement(current.missing);
+    const still = nextContactRequirement(current.missing);
     if (still !== null) {
       setOverlayRequirement(still);
       return;

@@ -47,9 +47,19 @@ describe('getCatalog', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
       for (const [key, value] of Object.entries(catalog)) {
+        if (key === 'requirements.addressTitle') {
+          continue;
+        }
         expect(value, `${locale}.${key}`).not.toMatch(jargon);
       }
     }
+  });
+
+  it('keeps the requirements.addressTitle Lightning Address copy', () => {
+    expect(getCatalog('en')['requirements.addressTitle']).toBe('Add your Lightning Address');
+    expect(getCatalog('de')['requirements.addressTitle']).toBe('Lightning-Adresse hinzufügen');
+    expect(getCatalog('es')['requirements.addressTitle']).toBe('Añade tu Lightning Address');
+    expect(getCatalog('fil')['requirements.addressTitle']).toBe('Idagdag ang Lightning Address');
   });
 
   it('prefixes home.step2BodyAfter with a period in every locale', () => {

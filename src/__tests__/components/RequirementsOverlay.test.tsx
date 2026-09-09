@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import { agreeToRules } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -9,8 +8,11 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('@/lib/api', () => ({
   agreeToRules: vi.fn(),
   setName: vi.fn(),
+  setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
+
+import { agreeToRules, setLightningAddress } from '@/lib/api';
 
 const account: Account = {
   id: 'acc_1',
@@ -41,6 +43,51 @@ describe('RequirementsOverlay', () => {
     );
     expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+  });
+
+  it('shows the Lightning Address form without a Skip control', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
+    });
+    renderWithLocale(
+      <RequirementsOverlay
+        requirement="lightning-address"
+        onDismiss={vi.fn()}
+        onSatisfied={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('dialog', { name: 'Add your Lightning Address' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+  });
+
+  it('saves a Lightning Address and calls onSatisfied', async () => {
+    const onSatisfied = vi.fn();
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
+    });
+    vi.mocked(setLightningAddress).mockResolvedValue({
+      ...account,
+      lightningAddress: 'alice@walletofsatoshi.com',
+      missing: [],
+      setup: null,
+    });
+    renderWithLocale(
+      <RequirementsOverlay
+        requirement="lightning-address"
+        onDismiss={vi.fn()}
+        onSatisfied={onSatisfied}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
+      target: { value: 'alice@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
+    await waitFor(() => {
+      expect(onSatisfied).toHaveBeenCalled();
+    });
+    expect(useAuthStore.getState().account?.lightningAddress).toBe('alice@walletofsatoshi.com');
   });
 
   it('agrees to rules and calls onSatisfied', async () => {

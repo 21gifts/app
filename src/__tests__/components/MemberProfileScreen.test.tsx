@@ -7,6 +7,7 @@ import {
   openConversation,
   postMessage,
   postMessageInvoice,
+  setLightningAddress,
   setName,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type Account, type MemberProfile } from '@/lib/api-types';
@@ -34,6 +35,7 @@ vi.mock('@/lib/api', () => ({
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
+  setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
 
@@ -360,6 +362,48 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('opens the requirements overlay when a reply is missing a lightning-address', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: 'Add your Lightning Address' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('retries the reply after the lightning-address overlay is satisfied', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
+    });
+    vi.mocked(setLightningAddress).mockResolvedValue({
+      ...account,
+      lightningAddress: 'alice@walletofsatoshi.com',
+      missing: [],
+      setup: null,
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
+      target: { value: 'alice@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
   });
 
   it('dismisses the reply overlay without posting', async () => {

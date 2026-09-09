@@ -44,11 +44,12 @@ function lightningAddressErrorKey(
  *   field (no Skip). Defaults from whether an address is already linked. After
  *   `notZap`, Continue/Save stay disabled while the trimmed draft equals the
  *   blocked address; changing the draft clears the alert and re-enables;
- *   restoring the blocked address re-locks.
+ *   restoring the blocked address re-locks. Optional `onSaved` runs after a
+ *   successful address save (not Skip or unlink).
  * @returns The Lightning Address section, or `null` when there is nothing to show.
  */
 export function LightningAddressForm(
-  props: { variant?: 'onboarding' | 'profile' } = {},
+  props: { variant?: 'onboarding' | 'profile'; onSaved?: () => void } = {},
 ): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
@@ -120,7 +121,10 @@ export function LightningAddressForm(
    *
    * @param action - The api call to run with the session token.
    */
-  const run = async (action: (token: string) => Promise<Account>): Promise<void> => {
+  const run = async (
+    action: (token: string) => Promise<Account>,
+    options: { notifySaved?: boolean } = {},
+  ): Promise<void> => {
     await runGuarded(action, (updated) => {
       const current = useAuthStore.getState().account;
       if (current === null) {
@@ -136,6 +140,9 @@ export function LightningAddressForm(
       setEditing(false);
       if (updated.lightningAddress === null) {
         setDraft('');
+      }
+      if (options.notifySaved === true) {
+        props.onSaved?.();
       }
     });
   };
@@ -168,7 +175,7 @@ export function LightningAddressForm(
       setError({ type: 'notZap' });
       return;
     }
-    void run((token) => setLightningAddress(token, trimmed));
+    void run((token) => setLightningAddress(token, trimmed), { notifySaved: true });
   };
 
   const submitIcon = busy ? (

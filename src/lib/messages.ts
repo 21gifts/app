@@ -234,6 +234,7 @@ const en = {
 
   'requirements.nameTitle': 'Add your name',
   'requirements.rulesTitle': 'Agree to the living room rules',
+  'requirements.addressTitle': 'Add your Lightning Address',
   'requirements.close': 'Close',
 
   'profile.title': 'Profile',
@@ -633,6 +634,7 @@ const de = {
 
   'requirements.nameTitle': 'Namen hinzufügen',
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
+  'requirements.addressTitle': 'Lightning-Adresse hinzufügen',
   'requirements.close': 'Schließen',
 
   'profile.title': 'Profil',
@@ -1027,6 +1029,7 @@ const es = {
 
   'requirements.nameTitle': 'Añade tu nombre',
   'requirements.rulesTitle': 'Acepta las reglas del salón',
+  'requirements.addressTitle': 'Añade tu Lightning Address',
   'requirements.close': 'Cerrar',
 
   'profile.title': 'Perfil',
@@ -1419,6 +1422,7 @@ const fil = {
 
   'requirements.nameTitle': 'Idagdag ang pangalan mo',
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',
+  'requirements.addressTitle': 'Idagdag ang Lightning Address',
   'requirements.close': 'Isara',
 
   'profile.title': 'Profile',
