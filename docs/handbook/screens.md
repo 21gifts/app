@@ -537,6 +537,12 @@ Full rules body with rule card **Only free donations** visible.
 
 ![21.gifts living room rules](images/rules.png)
 
+### Variant: signed-in
+
+Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Rule card **Only free donations** still visible.
+
+![21.gifts living room rules signed in](images/rules-signed-in.png)
+
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (`account.setup` null; name and address may be skipped; living-room rules agreement required).

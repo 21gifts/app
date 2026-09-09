@@ -331,6 +331,30 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-rules');
   });
 
+  test('rules signed-in', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/rules');
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await shotScreen(page, 'state-rules-signed-in');
+  });
+
   test('screen /404', async ({ page }) => {
     await page.goto('/404');
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
