@@ -128,7 +128,7 @@ app/
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
 │   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + filtered spendOverTime
 │   │   ├── MemberProfileScreen.tsx # Member identity card + optional profile note
-│   │   ├── RequirementsOverlay.tsx # Add name or agree to rules before retrying a post
+│   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + PM + author profile links
