@@ -3347,7 +3347,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('dialog', { name: 'Add your Lightning Address' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -3373,7 +3373,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('dialog', { name: 'Add your Lightning Address' })).toBeTruthy();
+    expect(await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 

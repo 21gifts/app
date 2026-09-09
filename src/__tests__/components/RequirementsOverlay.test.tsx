@@ -57,7 +57,7 @@ describe('RequirementsOverlay', () => {
         onSatisfied={vi.fn()}
       />,
     );
-    expect(screen.getByRole('dialog', { name: 'Add your Lightning Address' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 

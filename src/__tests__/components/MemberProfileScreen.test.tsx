@@ -375,7 +375,7 @@ describe('MemberProfileScreen', () => {
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('dialog', { name: 'Add your Lightning Address' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(postMessage).not.toHaveBeenCalled();
   });
