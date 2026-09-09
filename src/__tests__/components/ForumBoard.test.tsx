@@ -531,10 +531,10 @@ describe('ForumBoard', () => {
     expect(items[0]!.textContent).toContain('Line one');
     expect(items[1]!.textContent).toContain('Ada');
     expect(items[1]!.textContent).toContain('Hello from Ada');
-    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
-      block: 'start',
-      behavior: 'auto',
-    });
+    const composer = screen.getByLabelText('Your message');
+    expect(composer.compareDocumentPosition(items[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('orders popular by sats descending when input is newest-first', () => {
