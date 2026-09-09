@@ -117,7 +117,7 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * become payable. Silently re-fetches when the document becomes visible again
  * (`visibilitychange` hidden→visible, `pageshow` with `persisted`) and when
  * the board pull-to-refresh fires; silent refresh keeps an existing list on
- * screen (no loading copy) and does not auto-scroll the composer. Renders
+ * screen (no loading copy) and does not auto-scroll the newest note. Renders
  * nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
@@ -312,7 +312,7 @@ export function ForumLoader(): ReactElement | null {
         return;
       }
       // Commit setMessages from loadMessagesOnce while refreshing is still true
-      // so ForumBoard's newestId effect skips composer scroll.
+      // so ForumBoard's newestId effect skips newest-note scroll.
       flushSync(() => {
         if (result === 'ok') {
           setError(false);
