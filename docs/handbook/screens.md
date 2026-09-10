@@ -279,7 +279,7 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, with the dismissi
 
 ### Variant: moderation
 
-A founder or moderator sees an icon-only Delete post control under each post. Other roles do not see it. The server independently checks the live role.
+A founder or moderator sees an icon-only Delete post control in the note footer icon row with pay/copy/PM; confirming wraps to the next line. Other roles do not see it. The server independently checks the live role.
 
 ![21.gifts moderation](images/welcome-moderation.png)
 

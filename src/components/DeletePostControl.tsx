@@ -59,7 +59,7 @@ export function DeletePostControl({
     <div
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
-      className="mt-2"
+      className={confirming ? 'order-last mt-2 w-full basis-full' : undefined}
     >
       {confirming ? (
         <div

@@ -904,7 +904,7 @@ Do not use orange. This is law, not a gift CTA.
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`).
 4. Body `text-sm text-app-fg whitespace-pre-wrap`.
-5. Footer: `flex items-center gap-5` (20px — required so `sm` 44px hits do not overlap; SHA is `gap-1.5`) + amount + IconButtons (pay, copy, PM) + reply count `ml-auto text-xs text-app-subtle`.
+5. Footer: `flex flex-wrap items-center gap-5` (20px — required so `sm` 44px hits do not overlap; SHA is `gap-1.5`) + amount + IconButtons (pay, copy, PM, delete when present) + reply count `ml-auto text-xs text-app-subtle`. Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
 Expand: the whole card is `role="button"` today (click to expand replies). Keep the behavior; ensure inner controls `stopPropagation` (already). Focus ring on the expandable region.
 
@@ -1431,4 +1431,4 @@ The forum mode selector uses a two-column grid: Active / No gifts yet, then All 
 
 ### Post moderation
 
-Founder and moderator sessions have an icon-only Trash2 control below each forum post. An inline confirmation names the post/replies removal from 21.gifts; Check confirms, X cancels. These card actions use IconButton with translated accessible labels. Pending disables both controls; failure preserves the post and provides a retry. Other roles see no control; the API enforces the live role independently.
+Founder and moderator sessions have an icon-only Trash2 control in the footer icon row together with pay / copy / PM when those are present. An inline confirmation wraps below that row and names the post/replies removal from 21.gifts; Check confirms, X cancels. These card actions use IconButton with translated accessible labels. Pending disables both controls; failure preserves the post and provides a retry. Other roles see no control; the API enforces the live role independently.

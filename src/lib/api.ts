@@ -433,14 +433,27 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
 
 /**
  * Fetches one public forum message without a session (HTML note page).
+ * Optional `sinceSats` waits on the api until the note has more sats (pay poll).
  *
  * @param id - Forum message UUID.
- * @returns The {@link ForumMessage}, or `null` when the id is unknown (404).
+ * @param opts - Optional `sinceSats` query and `AbortSignal` for the fetch.
+ * @returns The {@link ForumMessage}, or `null` when the id is unknown (404) or
+ * the request was aborted.
  * @throws Error with visitor-facing copy on other failures or schema mismatch.
  */
-export async function fetchPublicMessage(id: string): Promise<ForumMessage | null> {
+export async function fetchPublicMessage(
+  id: string,
+  opts?: { sinceSats?: number; signal?: AbortSignal },
+): Promise<ForumMessage | null> {
   try {
-    const response = await fetch(`/public-messages/${encodeURIComponent(id)}`);
+    const sinceSats = opts?.sinceSats;
+    const path = `/public-messages/${encodeURIComponent(id)}`;
+    const url =
+      sinceSats !== undefined && Number.isInteger(sinceSats) && sinceSats >= 0
+        ? `${path}?sinceSats=${sinceSats}`
+        : path;
+    const signal = opts?.signal;
+    const response = signal !== undefined ? await fetch(url, { signal }) : await fetch(url);
     if (response.status === 404) {
       return null;
     }
@@ -449,6 +462,9 @@ export async function fetchPublicMessage(id: string): Promise<ForumMessage | nul
     }
     return forumMessageSchema.parse(await response.json());
   } catch (err) {
+    if ((err instanceof Error && err.name === 'AbortError') || opts?.signal?.aborted) {
+      return null;
+    }
     if (err instanceof Error && err.message === 'Could not load messages. Please try again.') {
       throw err;
     }
