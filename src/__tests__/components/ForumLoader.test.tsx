@@ -1865,7 +1865,7 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('ignores a second Post click while the first note POST is in flight', async () => {
+  it('ignores a second composer submit while the first note POST is in flight', async () => {
     fetchMock.mockResolvedValue([]);
     let resolvePost!: (value: ForumMessage) => void;
     const pending = new Promise<ForumMessage>((resolve) => {
@@ -1878,9 +1878,10 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-
+    const form = screen.getByLabelText('Your message').closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form!);
+    fireEvent.submit(form!);
     expect(postMock).toHaveBeenCalledTimes(1);
 
     await act(async () => {
