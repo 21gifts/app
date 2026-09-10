@@ -116,10 +116,10 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 [                         children                                      ]
 ```
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules`, `/messages/[id]`, `/view/*`)                                                                                                            | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`)                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `topLeft`  | `Wordmark` → `/`                                                                                                                                                                     | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile` and `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
-| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                                                          |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                                            | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`; `/rules` with hydrated session)                                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `topLeft`  | `Wordmark` → `/`                                                                                                                                                                     | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/contact`, `/messages`, and signed-in `/rules`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
+| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                                                                                                                                                      |
 
 App shell today (`src/components/AppShell.tsx`); `PageChrome` is a thin `mode="flow"` wrapper:
 
@@ -848,9 +848,9 @@ Promote shared listbox styles only if a third switcher appears; until then, keep
 
 **Panel.** `absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`.
 
-**Rows.** `flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline hover:bg-app-hover min-h-11`. Leading lucide 14px. Profile row: name + given/received `formatBitcoin` with `ArrowUpRight` / `ArrowDownLeft` (indicators, not buttons).
+**Rows.** `flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline hover:bg-app-hover min-h-11`. Leading lucide 14px. Profile row: name + given/received `formatBitcoin` indicators (`ArrowUpRight` / `ArrowDownLeft`, not buttons) only when the matching sat total is `> 0`.
 
-**Order (keep):** Profile, Living room rules, Messages (inbox), Contact, optional Install app, Language, Theme, Log out.
+**Order (keep):** Home, Profile, Living room rules, Messages (inbox), Contact, optional Install app, Language, Theme, Log out.
 
 Escape and outside-click already implemented — keep.
 
@@ -1075,15 +1075,15 @@ NameForm profile still uses raw 40×40 rounded-2xl buttons — **fix** to `IconB
 
 #### `/contact` — **fix Send to icon, add wordmark**
 
-`PageChrome` Wordmark + Menu → `Card xl` → `h1` Contact → lead → rules link → Composer (textarea + `IconButton` Send). Alerts. Success navigates to inbox (product; do not invent a success card unless already shipped).
+`PageChrome` back + Wordmark + Menu (`ProfileChromeLeft`) → `Card xl` → `h1` Contact → lead → rules link → Composer (textarea + `IconButton` Send). Alerts. Success navigates to inbox (product; do not invent a success card unless already shipped).
 
 #### `/rules` — **fix chrome primitive**
 
-Unsigned `PageChrome` Wordmark + Theme + Language (today absolute switchers, no wordmark). `h1-lg` Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, CTA pair **Contact 21.gifts** primary + **Back to the forum** secondary). Keep content. **Fix (B′):** “RULE n” / “THE TEST” overlines → `text-app-subtle`; Welcome `Check` → `text-app-fg`; keep only the THE TEST `border-l-2 border-app-accent`. Do not tokenize those overlines as `text-accent`.
+Unsigned: Wordmark + Theme + Language. Signed-in: back + Wordmark + Menu. `h1-lg` Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, CTA pair **Contact 21.gifts** primary + **Back to the forum** secondary). Keep content. **Fix (B′):** “RULE n” / “THE TEST” overlines → `text-app-subtle`; Welcome `Check` → `text-app-fg`; keep only the THE TEST `border-l-2 border-app-accent`. Do not tokenize those overlines as `text-accent`.
 
 #### `/messages` — **add wordmark**
 
-`PageChrome` Wordmark + Menu → `Card xl` `InboxScreen`: `h1` + list of note-like rows, or thread with back `IconButton` + composer icon send. Empty/loading/error as catalog.
+`PageChrome` back + Wordmark + Menu (`ProfileChromeLeft`) → `Card xl` `InboxScreen`: `h1` + list of note-like rows, or thread with back `IconButton` + composer icon send. Empty/loading/error as catalog.
 
 #### `/messages/[id]` — **add wordmark + ThemeSwitcher**
 

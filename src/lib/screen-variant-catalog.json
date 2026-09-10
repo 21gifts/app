@@ -378,6 +378,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/rules:signed-in",
+    "label": "/rules signed-in",
+    "visual": "state-rules-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/contact:default",
     "label": "/contact default",
     "visual": "screen-contact",

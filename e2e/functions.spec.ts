@@ -1983,6 +1983,25 @@ test('Function: RulesPage — rules heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Living room rules', level: 1 })).toBeVisible();
 });
 
+test('Function: RulesPageChrome — unsigned rules keeps public chrome', async ({ page }) => {
+  await page.goto('/rules');
+  await expect(page.getByRole('link', { name: '21.gifts', exact: true })).toHaveAttribute(
+    'href',
+    '/',
+  );
+  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+});
+
+test('Function: RulesPageChrome — signed-in rules shows back and Menu', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/rules');
+  await expect(page.getByRole('link', { name: 'Back to the forum' }).first()).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+});
+
 test('Function: RulesDocument — only free donations rule is visible', async ({ page }) => {
   await page.goto('/rules');
   await expect(page.getByRole('heading', { name: 'Only free donations' })).toBeVisible();
@@ -2963,6 +2982,7 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/welcome');
   await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
     'href',
