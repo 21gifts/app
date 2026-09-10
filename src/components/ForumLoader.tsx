@@ -14,6 +14,7 @@ import {
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
+  fetchPublicMessage,
   fetchReplies,
   openConversation,
   postMessage,
@@ -35,11 +36,14 @@ import {
 } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** How many times to poll `GET /messages` for pay confirmation or payable status. */
+/** How many times to poll `GET /messages` for payable status. */
 const PAY_POLL_ATTEMPTS = 8;
 
-/** Delay between `GET /messages` polls (ms). */
+/** Delay between pay / payable polls (ms). */
 const PAY_POLL_MS = 2000;
+
+/** Default invoice amount when the pay sheet amount field is empty or whitespace-only. */
+const DEFAULT_FORUM_PAY_SATS = 21;
 
 /**
  * True when a thrown value is the api rate-limit copy for posts or payments.
@@ -175,7 +179,15 @@ export function ForumLoader(): ReactElement | null {
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const payPollGeneration = useRef(0);
+  const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
+
+  const bumpPayPollGeneration = (): number => {
+    payPollAbortRef.current?.abort();
+    payPollAbortRef.current = new AbortController();
+    payPollGeneration.current += 1;
+    return payPollGeneration.current;
+  };
   const refreshGeneration = useRef(0);
   const wasHiddenRef = useRef(false);
   const pendingRefreshRef = useRef(false);
@@ -470,7 +482,7 @@ export function ForumLoader(): ReactElement | null {
 
   useEffect(() => {
     return () => {
-      payPollGeneration.current += 1;
+      bumpPayPollGeneration();
       payablePollGeneration.current += 1;
       refreshGeneration.current += 1;
       pickGeneration.current += 1;
@@ -560,7 +572,7 @@ export function ForumLoader(): ReactElement | null {
   }
 
   const clearPaySheet = (): void => {
-    payPollGeneration.current += 1;
+    bumpPayPollGeneration();
     setPayMessageId(null);
     setPayDraft('');
     setPayBusy(false);
@@ -570,26 +582,42 @@ export function ForumLoader(): ReactElement | null {
   };
 
   const startPayPoll = (messageId: string, baselineSats: number): void => {
-    const generation = ++payPollGeneration.current;
+    const generation = bumpPayPollGeneration();
+    const controller = payPollAbortRef.current;
+    /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
+    if (controller === null) {
+      return;
+    }
+    const signal = controller.signal;
     setPayWaiting(true);
     void (async () => {
-      for (let i = 0; i < PAY_POLL_ATTEMPTS; i += 1) {
-        await new Promise((resolve) => {
-          setTimeout(resolve, PAY_POLL_MS);
-        });
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
+      for (;;) {
         try {
-          const next = await fetchMessages(session);
-          if (generation !== payPollGeneration.current) {
+          const next = await fetchPublicMessage(messageId, {
+            sinceSats: baselineSats,
+            signal,
+          });
+          if (generation !== payPollGeneration.current || signal.aborted) {
             return;
           }
-          setMessages((prev) =>
-            mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)),
-          );
-          const updated = next.find((message) => message.id === messageId);
-          if (updated !== undefined && updated.sats > baselineSats) {
+          if (next !== null && next.sats > baselineSats) {
+            setMessages((prev) => {
+              /* v8 ignore next 3 -- pay poll only runs after the list has loaded */
+              if (prev === null) {
+                return prev;
+              }
+              return prev
+                .map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                )
+                .filter((row) => !deletedIds.current.has(row.id));
+            });
             setPayWaiting(false);
             setPayInvoice(null);
             setPayMessageId(null);
@@ -598,11 +626,17 @@ export function ForumLoader(): ReactElement | null {
             return;
           }
         } catch {
-          // Keep polling until attempts are exhausted; generic retry is the board load path.
+          // Keep waiting while the sheet is open; generic retry is the board load path.
         }
-      }
-      if (generation === payPollGeneration.current) {
-        setPayWaiting(false);
+        if (generation !== payPollGeneration.current || signal.aborted) {
+          return;
+        }
+        await new Promise((resolve) => {
+          setTimeout(resolve, PAY_POLL_MS);
+        });
+        if (generation !== payPollGeneration.current || signal.aborted) {
+          return;
+        }
       }
     })();
   };
@@ -780,17 +814,19 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const rawAmount = payDraft.trim();
-    /* v8 ignore start -- native submit blocked; button disabled when draft empty */
-    if (rawAmount === '' || !/^\d+$/.test(rawAmount)) {
+    let sats: number;
+    if (rawAmount === '') {
+      sats = DEFAULT_FORUM_PAY_SATS;
+    } else if (!/^\d+$/.test(rawAmount)) {
       setPayError('amount');
       return;
-    }
-    /* v8 ignore stop */
-    const sats = Number.parseInt(rawAmount, 10);
-    /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
-    if (sats <= 0 || !Number.isSafeInteger(sats)) {
-      setPayError('amount');
-      return;
+    } else {
+      sats = Number.parseInt(rawAmount, 10);
+      /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
+      if (sats <= 0 || !Number.isSafeInteger(sats)) {
+        setPayError('amount');
+        return;
+      }
     }
     const messageId = payMessageId;
     const baseline = listed.sats;
@@ -1053,7 +1089,7 @@ export function ForumLoader(): ReactElement | null {
         payInvoice={payInvoice}
         payWaiting={payWaiting}
         onPayOpen={(messageId) => {
-          payPollGeneration.current += 1;
+          bumpPayPollGeneration();
           setPayMessageId(messageId);
           setPayDraft('');
           setPayError(null);
