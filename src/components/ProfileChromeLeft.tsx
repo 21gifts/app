@@ -7,11 +7,11 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Wordmark } from '@/components/ui';
 
 /**
- * Icon-only forum back plus wordmark for `/profile` `AppShell` `topLeft`.
+ * Shared signed-in top-left chrome: icon-only forum back plus wordmark to `/welcome`.
  *
  * Back stays a link (navigation), with IconButton `md` geometry.
  *
- * @returns The profile top-left chrome.
+ * @returns The back link and wordmark.
  */
 export function ProfileChromeLeft(): ReactElement {
   const { t } = useTranslations();

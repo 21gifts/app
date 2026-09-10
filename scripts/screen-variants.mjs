@@ -498,6 +498,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Only free donations',
   },
   {
+    route: '/rules',
+    id: 'signed-in',
+    image: 'rules-signed-in.png',
+    visual: 'state-rules-signed-in',
+    needle: "getByRole('button', { name: 'Menu' })",
+  },
+  {
     route: '/contact',
     id: 'default',
     image: 'contact.png',
