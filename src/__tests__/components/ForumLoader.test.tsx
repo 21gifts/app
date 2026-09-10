@@ -1865,6 +1865,45 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('ignores a second Post click while the first note POST is in flight', async () => {
+    fetchMock.mockResolvedValue([]);
+    let resolvePost!: (value: ForumMessage) => void;
+    const pending = new Promise<ForumMessage>((resolve) => {
+      resolvePost = resolve;
+    });
+    postMock.mockReturnValue(pending);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+
+    expect(postMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolvePost({
+        id: 'm3',
+        name: 'Ada',
+        text: 'Hello',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    });
+  });
+
   it('clears the pay sheet when a public fetch returns more sats', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);

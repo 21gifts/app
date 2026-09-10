@@ -151,6 +151,8 @@ export function ForumLoader(): ReactElement | null {
   videoUrlsRef.current = videoUrls;
   const pickGeneration = useRef(0);
   const [posting, setPosting] = useState(false);
+  // Sync guard: posting state alone updates only after render.
+  const notePostInFlightRef = useRef(false);
   const [preparing, setPreparing] = useState(false);
   const [formError, setFormError] = useState<ForumFormError>(null);
   const [feedMode, setFeedMode] = useState<ForumFeedMode>(DEFAULT_FORUM_FEED_MODE);
@@ -768,7 +770,10 @@ export function ForumLoader(): ReactElement | null {
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runNotePost(trimmed, pendingPhoto, pendingVideo, true);
+          pendingPostRef.current = () => {
+            startNotePost(trimmed, pendingPhoto, pendingVideo, true);
+            return Promise.resolve();
+          };
           return;
         }
         setFormError('request');
@@ -776,8 +781,20 @@ export function ForumLoader(): ReactElement | null {
       }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
+      notePostInFlightRef.current = false;
       setPosting(false);
     }
+  };
+
+  const startNotePost = (
+    trimmed: string,
+    pendingPhoto: ForumPhotoPayload | null,
+    pendingVideo: ForumVideoPayload | null,
+    isRetry: boolean,
+  ): void => {
+    if (notePostInFlightRef.current) return;
+    notePostInFlightRef.current = true;
+    void runNotePost(trimmed, pendingPhoto, pendingVideo, isRetry);
   };
 
   const onPost = (): void => {
@@ -794,13 +811,16 @@ export function ForumLoader(): ReactElement | null {
     if (openOverlayForMissing(missing)) {
       const pendingPhoto = photoDraft;
       const pendingVideo = videoDraft;
-      pendingPostRef.current = () => runNotePost(trimmed, pendingPhoto, pendingVideo, true);
+      pendingPostRef.current = () => {
+        startNotePost(trimmed, pendingPhoto, pendingVideo, true);
+        return Promise.resolve();
+      };
       return;
     }
     pickGeneration.current += 1;
     const pendingPhoto = photoDraft;
     const pendingVideo = videoDraft;
-    void runNotePost(trimmed, pendingPhoto, pendingVideo, false);
+    startNotePost(trimmed, pendingPhoto, pendingVideo, false);
   };
 
   const onPaySubmit = (): void => {
