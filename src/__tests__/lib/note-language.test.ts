@@ -25,6 +25,10 @@ describe('detectNoteLanguage', () => {
     },
   );
 
+  it('returns null for punctuation-only text', () => {
+    expect(detectNoteLanguage('.............')).toBeNull();
+  });
+
   it.each([
     ['Kann mir jemand diese Woche ein paar Satoshi leihen?', 'de'],
     ['Für uns ist das wirklich schön und nützlich', 'de'],
@@ -85,6 +89,10 @@ describe('shouldOfferNoteTranslate', () => {
 
   it('does not offer translation for text that is too short to detect', () => {
     expect(shouldOfferNoteTranslate('hi', 'en')).toBe(false);
+  });
+
+  it('does not offer translation for punctuation-only text', () => {
+    expect(shouldOfferNoteTranslate('.............', 'en')).toBe(false);
   });
 
   it('offers Spanish with a shared particle in the English UI', () => {
