@@ -65,11 +65,12 @@ function styleAt(index: number): NumberFormatStyle {
  * Embedded: Menu-row disclosure; format options appear only after clicking
  * Number format.
  *
- * Marketing passes `tone="dark"`. App pages pass `tone="light"` so chrome
- * follows semantic theme tokens.
+ * Production mounts only `SignedInChrome` (`tone="light"`, `embedded`).
+ * `tone="dark"` and the standalone Hash pill exist for tests; marketing
+ * never mounts this control.
  *
- * @param props - Visual tone for marketing (`dark`) or app chrome (`light`),
- *   and optional `embedded` when shown inside the signed-in Menu dropdown.
+ * @param props - `tone` for the trigger (`light` in production Menu;
+ *   `dark` is test-only) and optional `embedded` for the signed-in Menu row.
  * @returns The number-format switcher element.
  */
 export function NumberFormatSwitcher(props: {
