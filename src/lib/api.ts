@@ -8,7 +8,6 @@ import {
   conversationThreadSchema,
   forumListSchema,
   forumMessageSchema,
-  forumRepliesSchema,
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
@@ -479,8 +478,10 @@ export async function fetchPublicMessage(
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Parent forum message UUID.
  * @returns Reply list (Damus authors may omit role; schema defaults to basis).
- * @throws Error with visitor-facing copy when the api is unavailable or the
- * body fails {@link forumRepliesSchema}.
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * body is not JSON, or the body is not `{ messages: array }`.
  */
 export async function fetchReplies(sessionToken: string, id: string): Promise<ForumMessage[]> {
   try {
@@ -490,7 +491,23 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }
-    return forumRepliesSchema.parse(await response.json()).messages;
+    const body: unknown = await response.json();
+    if (
+      typeof body !== 'object' ||
+      body === null ||
+      !('messages' in body) ||
+      !Array.isArray(body.messages)
+    ) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const kept: ForumMessage[] = [];
+    for (const item of body.messages) {
+      const parsed = forumMessageSchema.safeParse(item);
+      if (parsed.success) {
+        kept.push(parsed.data);
+      }
+    }
+    return kept;
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }

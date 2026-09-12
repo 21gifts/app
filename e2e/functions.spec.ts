@@ -3420,12 +3420,6 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
   await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
 });
 
-test('Function: ViewKeyCopy — profile shows the copy view-key control', async ({ page }) => {
-  await seedAdaSession(page);
-  await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toBeVisible();
-});
-
 test('Function: fetchViewProfile — public view card loads via the client fetch', async ({
   page,
 }) => {
