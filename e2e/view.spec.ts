@@ -206,7 +206,7 @@ test('public view profile error shows Try again and retries', async ({ page }) =
   await expect(page.getByText('Ada')).toBeVisible();
 });
 
-test('signed-in profile shows the copy control without the view-key URL', async ({ page }) => {
+test('signed-in profile does not show the copy control or the view-key URL', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -238,7 +238,7 @@ test('signed-in profile shows the copy control without the view-key URL', async 
     });
   });
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'View key' })).toHaveCount(0);
   await expect(page.getByText(new RegExp(`/view/${KEY}`))).toHaveCount(0);
   await expect(page.getByText(KEY)).toHaveCount(0);

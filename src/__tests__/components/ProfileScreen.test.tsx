@@ -160,20 +160,12 @@ describe('ProfileScreen', () => {
     expect(screen.queryByLabelText('Received ₿1,500')).toBeNull();
   });
 
-  it('shows the icon-only view-key copy control without the URL or key', async () => {
+  it('does not show a copy view-only link control, View key heading, view URL, or raw key', () => {
     renderWithLocale(<ProfileScreen />);
-    expect(screen.getByRole('button', { name: 'Copy view-only link' })).toBeTruthy();
-    expect(screen.queryByText('Copy view-only link')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
     expect(screen.queryByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeNull();
     expect(screen.queryByText(VIEW_KEY)).toBeNull();
     expect(screen.queryByText(`/view/${VIEW_KEY}`)).toBeNull();
-  });
-
-  it('hides the view-key section when account is null', () => {
-    useAuthStore.setState({ session: 'tok', account: null });
-    renderWithLocale(<ProfileScreen />);
-    expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
   });
 });

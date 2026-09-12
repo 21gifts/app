@@ -1069,7 +1069,7 @@ Back `IconButton` (when index > 0) + Wordmark + Menu. `h1` Living room rules. Pr
 
 #### `/profile` — **fix empty chart, chrome, icon size**
 
-`PageChrome` back + Wordmark + Menu → `Card sm` → `h1` Profile → `AccountActivityChart` (empty state, not ₿0 axis) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` bell → `ViewKeyCopy` link icon. ₿\|USD `tone="gift"`. Given/Received labels stay so color is not the only encoding.
+`PageChrome` back + Wordmark + Menu → `Card sm` → `h1` Profile → `AccountActivityChart` (empty state, not ₿0 axis) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` bell. ₿\|USD `tone="gift"`. Given/Received labels stay so color is not the only encoding.
 
 NameForm profile still uses raw 40×40 rounded-2xl buttons — **fix** to `IconButton` (LightningAddressForm already did).
 
@@ -1271,7 +1271,7 @@ Slightly better tabular figures from IBM Plex.
 ## Security & Privacy Considerations
 
 - **QR scannability.** QR stays high-contrast black on white in both themes, 232px plus 16px quiet zone. Never render a payment QR on a smartphone UA (`isSmartphoneUserAgent`). A QR the visitor would need to scan with the same device is a product defect.
-- **View key.** `/view/[viewKey]` already sets `referrer: 'no-referrer'`. Copy control copies the URL, never displays the raw key (`ViewKeyCopy`). Do not add the key to visible chrome.
+- **View key.** `/view/[viewKey]` already sets `referrer: 'no-referrer'`. Signed-in `/profile` has no copy control for the public view URL. Do not add the key to visible chrome.
 - **Passkey copy.** Login says “Log in with your device” / “Log in”. Do not mention WebAuthn, PRF, or credentials. In-app browsers get `InAppBrowserView` (open in browser / copy link) — keep.
 - **No secrets in UI.** Session token stays in `localStorage`; never print it. BOLT11 in the QR is a payment request, not a key.
 - **Activation banner.** Invite claim is a labeled **Activate** (consent-level), not an icon.

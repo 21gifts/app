@@ -260,7 +260,6 @@ const en = {
   'profile.push.disable': 'Disable notifications',
   'profile.push.installHint': 'On iPhone, add 21.gifts to your Home Screen to get notifications.',
   'profile.push.unavailable': 'Notifications are not available in this browser.',
-  'profile.viewKeyCopy': 'Copy view-only link',
 
   'view.unnamed': 'Unnamed',
   'view.noAddress': 'No Wallet of Satoshi address',
@@ -667,7 +666,6 @@ const de = {
   'profile.push.installHint':
     'Fügen Sie 21.gifts auf dem iPhone zum Home-Bildschirm hinzu, um Benachrichtigungen zu erhalten.',
   'profile.push.unavailable': 'Benachrichtigungen sind in diesem Browser nicht verfügbar.',
-  'profile.viewKeyCopy': 'Nur-Lese-Link kopieren',
 
   'view.unnamed': 'Unbenannt',
   'view.noAddress': 'Keine Wallet of Satoshi address',
@@ -1068,7 +1066,6 @@ const es = {
   'profile.push.installHint':
     'En iPhone, añade 21.gifts a la pantalla de inicio para recibir notificaciones.',
   'profile.push.unavailable': 'Las notificaciones no están disponibles en este navegador.',
-  'profile.viewKeyCopy': 'Copiar enlace de solo lectura',
 
   'view.unnamed': 'Sin nombre',
   'view.noAddress': 'Sin Wallet of Satoshi address',
@@ -1467,7 +1464,6 @@ const fil = {
   'profile.push.installHint':
     'Sa iPhone, idagdag ang 21.gifts sa Home Screen para makatanggap ng notification.',
   'profile.push.unavailable': 'Hindi available ang mga notification sa browser na ito.',
-  'profile.viewKeyCopy': 'Kopyahin ang view-only link',
 
   'view.unnamed': 'Walang pangalan',
   'view.noAddress': 'Walang Wallet of Satoshi address',
