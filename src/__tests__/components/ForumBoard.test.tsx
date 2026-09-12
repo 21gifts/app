@@ -1339,6 +1339,37 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
   });
 
+  it('shows Founder, Moderator, and Verified tags on replies', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 3 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          { ...SAMPLE, id: 'r-founder', name: 'Ada', role: 'founder', replyCount: 0 },
+          { ...SAMPLE, id: 'r-mod', name: 'Bob', role: 'moderator', replyCount: 0 },
+          { ...SAMPLE, id: 'r-ver', name: 'Carol', role: 'verified', replyCount: 0 },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Founder' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Founder' }));
+    expect(screen.getByRole('status').textContent).toContain('founded 21.gifts');
+    fireEvent.click(screen.getByRole('button', { name: 'Founder' }));
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('opens a role hint on click and closes it when the same tag is clicked again', () => {
     renderWithLocale(
       <ForumBoard
