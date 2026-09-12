@@ -1,7 +1,13 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LocaleProvider } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
+import { NumberFormatProvider } from '@/components/NumberFormatProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import type { Locale } from '@/lib/locale';
+import { getCatalog } from '@/lib/messages';
+import { DEFAULT_NUMBER_FORMAT } from '@/lib/number-format';
 import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -117,6 +123,70 @@ describe('NoteTranslate', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Translate' }));
     expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
     expect(translateNote).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears a finished translation when the UI locale changes', async () => {
+    vi.mocked(translateNote).mockResolvedValue('Can anyone lend me a few satoshi this week?');
+    function tree(locale: Locale): ReactElement {
+      return (
+        <LocaleProvider locale={locale} messages={getCatalog(locale)}>
+          <NumberFormatProvider initial={DEFAULT_NUMBER_FORMAT}>
+            <ThemeProvider>
+              <NoteTranslate text={german} />
+            </ThemeProvider>
+          </NumberFormatProvider>
+        </LocaleProvider>
+      );
+    }
+    const { rerender } = render(tree('en'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
+    rerender(tree('es'));
+    expect(screen.queryByText('Can anyone lend me a few satoshi this week?')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Traducir' })).toBeTruthy();
+  });
+
+  it('ignores in-flight success and failure after the UI locale changes', async () => {
+    let resolveTranslation: ((text: string) => void) | undefined;
+    let rejectTranslation: ((error: Error) => void) | undefined;
+    vi.mocked(translateNote)
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((resolve) => {
+            resolveTranslation = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            rejectTranslation = reject;
+          }),
+      );
+    function tree(locale: Locale): ReactElement {
+      return (
+        <LocaleProvider locale={locale} messages={getCatalog(locale)}>
+          <NumberFormatProvider initial={DEFAULT_NUMBER_FORMAT}>
+            <ThemeProvider>
+              <NoteTranslate text={german} />
+            </ThemeProvider>
+          </NumberFormatProvider>
+        </LocaleProvider>
+      );
+    }
+    const { rerender } = render(tree('en'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    rerender(tree('es'));
+    await act(async () => {
+      resolveTranslation?.('stale success');
+    });
+    expect(screen.queryByText('stale success')).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Traducir' }));
+    rerender(tree('en'));
+    await act(async () => {
+      rejectTranslation?.(new Error('stale failure'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Translate' })).toBeTruthy();
   });
 
   it('stops click and keydown events at its wrapper', async () => {

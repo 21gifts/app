@@ -1,7 +1,14 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactElement,
+} from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
 import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
@@ -25,6 +32,7 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
+  const requestId = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -37,6 +45,13 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    requestId.current += 1;
+    setStatus('idle');
+    setTranslatedText(null);
+    setShowTranslation(true);
+  }, [text, locale]);
 
   if (text.trim() === '' || available !== true || !shouldOfferNoteTranslate(text, locale)) {
     return null;
@@ -52,12 +67,20 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
     setStatus('loading');
     setTranslatedText(null);
     setShowTranslation(true);
+    const id = requestId.current + 1;
+    requestId.current = id;
     void translateNote(text, locale)
       .then((next) => {
+        if (id !== requestId.current) {
+          return;
+        }
         setTranslatedText(next);
         setStatus('success');
       })
       .catch(() => {
+        if (id !== requestId.current) {
+          return;
+        }
         setStatus('error');
       });
   };
