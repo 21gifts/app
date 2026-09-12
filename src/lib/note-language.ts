@@ -76,7 +76,6 @@ const STOPWORDS: Record<Locale, ReadonlySet<string>> = {
     'jemand',
     'woche',
     'kann',
-    'in',
   ]),
   es: new Set([
     'el',
