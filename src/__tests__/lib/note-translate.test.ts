@@ -1,17 +1,23 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  fetchTranslateAvailable,
-  resetTranslateAvailableCache,
-  translateNote,
-} from '@/lib/note-translate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { translateNote } from '@/lib/note-translate';
 
 afterEach(() => {
-  resetTranslateAvailableCache();
   vi.unstubAllGlobals();
 });
 
-describe('resetTranslateAvailableCache and fetchTranslateAvailable', () => {
-  it('caches a successful availability request until reset', async () => {
+describe('fetchTranslateAvailable', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  async function loadAvailable(): Promise<
+    (typeof import('@/lib/note-translate'))['fetchTranslateAvailable']
+  > {
+    const mod = await import('@/lib/note-translate');
+    return mod.fetchTranslateAvailable;
+  }
+
+  it('caches a successful availability request for the module lifetime', async () => {
     const fetchMock = vi.fn(
       async () =>
         new Response(JSON.stringify({ available: true }), {
@@ -19,15 +25,12 @@ describe('resetTranslateAvailableCache and fetchTranslateAvailable', () => {
         }),
     );
     vi.stubGlobal('fetch', fetchMock);
+    const fetchAvailable = await loadAvailable();
 
-    await expect(fetchTranslateAvailable()).resolves.toBe(true);
-    await expect(fetchTranslateAvailable()).resolves.toBe(true);
+    await expect(fetchAvailable()).resolves.toBe(true);
+    await expect(fetchAvailable()).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith('/translate');
-
-    resetTranslateAvailableCache();
-    await expect(fetchTranslateAvailable()).resolves.toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('shares one in-flight availability request between concurrent callers', async () => {
@@ -39,9 +42,10 @@ describe('resetTranslateAvailableCache and fetchTranslateAvailable', () => {
         }),
     );
     vi.stubGlobal('fetch', fetchMock);
+    const fetchAvailable = await loadAvailable();
 
-    const first = fetchTranslateAvailable();
-    const second = fetchTranslateAvailable();
+    const first = fetchAvailable();
+    const second = fetchAvailable();
     expect(first).toBe(second);
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -51,16 +55,19 @@ describe('resetTranslateAvailableCache and fetchTranslateAvailable', () => {
 
   it('returns false for a non-success response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
-    await expect(fetchTranslateAvailable()).resolves.toBe(false);
+    const fetchAvailable = await loadAvailable();
+    await expect(fetchAvailable()).resolves.toBe(false);
   });
 
   it('returns false when the request or JSON parsing fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
-    await expect(fetchTranslateAvailable()).resolves.toBe(false);
+    const fetchOffline = await loadAvailable();
+    await expect(fetchOffline()).resolves.toBe(false);
 
-    resetTranslateAvailableCache();
+    vi.resetModules();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not json', { status: 200 })));
-    await expect(fetchTranslateAvailable()).resolves.toBe(false);
+    const fetchInvalidJson = await loadAvailable();
+    await expect(fetchInvalidJson()).resolves.toBe(false);
   });
 
   it.each([null, 'yes', {}, { available: false }])(
@@ -70,7 +77,8 @@ describe('resetTranslateAvailableCache and fetchTranslateAvailable', () => {
         'fetch',
         vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
       );
-      await expect(fetchTranslateAvailable()).resolves.toBe(false);
+      const fetchAvailable = await loadAvailable();
+      await expect(fetchAvailable()).resolves.toBe(false);
     },
   );
 });

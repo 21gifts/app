@@ -125,6 +125,7 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
             type="button"
             className={controlClass}
             disabled={status === 'loading'}
+            aria-busy={status === 'loading'}
             onClick={requestTranslation}
           >
             {status === 'loading' ? (

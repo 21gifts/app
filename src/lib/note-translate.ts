@@ -3,16 +3,6 @@ import type { Locale } from '@/lib/locale';
 let availablePromise: Promise<boolean> | null = null;
 
 /**
- * Reset the GET `/translate` availability cache. Tests only.
- *
- * @returns Nothing.
- * @throws Does not throw.
- */
-export function resetTranslateAvailableCache(): void {
-  availablePromise = null;
-}
-
-/**
  * Query the same-origin translation route, sharing and caching the request.
  *
  * @returns Whether translation is configured; request and parsing failures resolve to false.

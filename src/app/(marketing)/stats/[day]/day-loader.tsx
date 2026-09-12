@@ -8,6 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
+import { formatGroupedNumber } from '@/lib/number-format';
 import type { GiftDay } from '@/lib/api-types';
 import {
   defaultFiatForLocale,
@@ -125,8 +126,8 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
         <div className="mt-8 space-y-4">
           <FiatPicker value={fiat} onChange={setFiat} />
           <p className="text-paper/60">
-            {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
-            {formatBitcoin(payload.totalSats, numberFormat)} ·{' '}
+            {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
+            {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)} ·{' '}
             {formatFiatDisplay(dayTotal(payload, fiat), fiat, numberFormat)}
           </p>
           <GiftDayTable day={payload} fiat={fiat} numberFormat={numberFormat} />

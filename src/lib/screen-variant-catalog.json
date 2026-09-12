@@ -708,9 +708,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:translate-loading",
+    "label": "/welcome translate-loading",
+    "visual": "state-welcome-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:translate-done",
     "label": "/welcome translate-done",
     "visual": "state-welcome-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-hidden",
+    "label": "/welcome translate-hidden",
+    "visual": "state-welcome-translate-hidden",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -726,9 +738,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:translate-loading",
+    "label": "/messages/[id] translate-loading",
+    "visual": "state-messages-id-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:translate-done",
     "label": "/messages/[id] translate-done",
     "visual": "state-messages-id-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate-hidden",
+    "label": "/messages/[id] translate-hidden",
+    "visual": "state-messages-id-translate-hidden",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
