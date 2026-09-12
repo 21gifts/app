@@ -142,7 +142,8 @@ const DETECTABLE_LOCALES: readonly Locale[] = ['en', 'de', 'es', 'fil'];
  *
  * @param text - Raw note body.
  * @returns `en`/`de`/`es`/`fil` when a UI locale wins, `other` when the
- * text is long enough but not those four, or `null` when empty or too short.
+ * text is long enough but not those four, or `null` when empty or too short
+ * (fewer than 12 Unicode letters or digits after stripping URLs and invoices).
  * @throws Does not throw.
  */
 export function detectNoteLanguage(text: string): NoteLanguage | null {
@@ -151,7 +152,7 @@ export function detectNoteLanguage(text: string): NoteLanguage | null {
     .replace(/\blnbc[a-z0-9]+\b/giu, '')
     .trim();
 
-  if (remaining.length < 12) {
+  if ((remaining.match(/[\p{L}\p{N}]/gu) ?? []).length < 12) {
     return null;
   }
 

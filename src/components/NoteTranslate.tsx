@@ -33,6 +33,15 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
   const requestId = useRef(0);
+  const identity = `${text}\0${locale}`;
+  const [seenIdentity, setSeenIdentity] = useState(identity);
+  if (identity !== seenIdentity) {
+    setSeenIdentity(identity);
+    setStatus('idle');
+    setTranslatedText(null);
+    setShowTranslation(true);
+    requestId.current += 1;
+  }
 
   useEffect(() => {
     let active = true;
@@ -45,13 +54,6 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
       active = false;
     };
   }, []);
-
-  useEffect(() => {
-    requestId.current += 1;
-    setStatus('idle');
-    setTranslatedText(null);
-    setShowTranslation(true);
-  }, [text, locale]);
 
   if (text.trim() === '' || available !== true || !shouldOfferNoteTranslate(text, locale)) {
     return null;
