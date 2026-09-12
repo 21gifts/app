@@ -119,6 +119,10 @@ export default async function Home(): Promise<ReactElement> {
             <p className="mt-3 text-paper/60">{t('home.faq1A')}</p>
           </details>
           <details className="border-b border-paper/10 py-4">
+            <summary className="cursor-pointer font-medium">{t('home.faqFaithQ')}</summary>
+            <p className="mt-3 text-paper/60">{t('home.faqFaithA')}</p>
+          </details>
+          <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq2Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq2A')}</p>
           </details>
