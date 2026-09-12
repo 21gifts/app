@@ -18,6 +18,9 @@ const STATS: GiftStats = {
   totalSats: 1000,
   totalBtc: '0.00001000',
   totalUsd: '0.95',
+  totalChf: '0.80',
+  totalEur: '0.86',
+  totalPhp: '53.00',
   giftCount: 2,
   recipientCount: 1,
   firstPaidAt: null,
@@ -31,14 +34,37 @@ const STATS: GiftStats = {
       cumulativeBtc: '0.00001000',
       usd: '0.95',
       cumulativeUsd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '0.80',
+      cumulativeEur: '0.86',
+      cumulativePhp: '53.00',
     },
   ],
-  byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+  byRecipient: [
+    {
+      recipient: 'alice',
+      giftCount: 2,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
+  ],
   byMonth: [],
   fx: {
     quote: 'BTC-USD',
     dayBasis: 'utc',
     source: 'coinbase-exchange-daily-close',
+    quotes: [
+      { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+      { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+      { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+      { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+    ],
   },
 };
 
@@ -224,7 +250,16 @@ describe('useAccountTotals', () => {
         ...STATS,
         spendOverTime: [],
         byRecipient: [
-          { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
+          {
+            recipient: 'bob',
+            giftCount: 1,
+            sats: 500,
+            btc: '0.00000500',
+            usd: '0.48',
+            chf: '0.40',
+            eur: '0.44',
+            php: '27.00',
+          },
         ],
       });
     });
@@ -245,7 +280,18 @@ describe('useAccountTotals', () => {
     fetchMock.mockResolvedValueOnce({
       ...STATS,
       spendOverTime: [],
-      byRecipient: [{ recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' }],
+      byRecipient: [
+        {
+          recipient: 'bob',
+          giftCount: 1,
+          sats: 500,
+          btc: '0.00000500',
+          usd: '0.48',
+          chf: '0.40',
+          eur: '0.44',
+          php: '27.00',
+        },
+      ],
     });
 
     renderWithLocale(<Probe />);
@@ -291,7 +337,18 @@ describe('useAccountTotals', () => {
     fetchMock.mockResolvedValueOnce({
       ...STATS,
       spendOverTime: [],
-      byRecipient: [{ recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' }],
+      byRecipient: [
+        {
+          recipient: 'bob',
+          giftCount: 1,
+          sats: 500,
+          btc: '0.00000500',
+          usd: '0.48',
+          chf: '0.40',
+          eur: '0.44',
+          php: '27.00',
+        },
+      ],
     });
 
     renderWithLocale(<Probe />);
