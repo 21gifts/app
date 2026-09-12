@@ -427,7 +427,7 @@ flowchart LR
   subgraph marketingShell [Marketing shell — always ink]
     MH[MarketingHeader: Wordmark + nav + orange Log in + Language]
     MC[Page]
-    MF[MarketingFooter: Wordmark + links + GitHub]
+    MF[MarketingFooter: Wordmark + links + verse + GitHub]
   end
   subgraph appShell [App shell — themeable]
     PL[AppShell.topLeft: Wordmark]
@@ -801,11 +801,11 @@ Load and request failures next to labeled **Try again** use this grammar (`login
 
 ### Marketing header / footer / CTA pair
 
-**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark tone="dark"`. Right: `nav` (how, why, faq, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
+**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
 
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile.
 
-**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `max-w-[1100px]` flex wrap. Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4`. GitHub `text-sm text-paper/70`.
+**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `max-w-[1100px]` flex wrap. Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
 
 **Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`.
 
@@ -848,6 +848,10 @@ Composition is top-to-bottom. Source of visual composition: the `page.tsx` plus 
 `MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#why` (kicker, h2, 2×2 h3+body) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
 
 Handbook states: live marketing home.
+
+### `/about`
+
+`MarketingHeader` → `main` → first section `px-5 pt-28 pb-12 sm:pt-36` `max-w-3xl` (accent kicker, display H1, `body-lg` lead, `blockquote border-l-2 border-accent` italic verse + uppercase accent reference) → second section `max-w-3xl px-5 py-16` (accent kicker, h2 origin title, three `text-paper/60` body paragraphs, `ButtonLink href="/welcome" variant="accent" tone="dark"` **Open the living room**) → `MarketingFooter`. Visitor copy is catalogized; English `title`/`description` metadata is the documented exception. Do not add a second typeface or a cross.
 
 ### `/legal`
 
