@@ -43,10 +43,10 @@ export default async function AboutPage(): Promise<ReactElement> {
         </div>
       </section>
       <section className="mx-auto max-w-3xl px-5 py-16">
-        <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
+        <p className="text-sm font-medium tracking-widest text-accent uppercase">
           {t('about.originKicker')}
-        </h2>
-        <p className="mt-3 text-2xl font-semibold">{t('about.originTitle')}</p>
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold">{t('about.originTitle')}</h2>
         <div className="mt-8 space-y-6 text-paper/60">
           <p>{t('about.originBody1')}</p>
           <p>{t('about.originBody2')}</p>
