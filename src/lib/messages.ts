@@ -68,6 +68,10 @@ const en = {
   'home.why4Title': 'Non-profit by design',
   'home.why4Body':
     'There is no take rate, no platform fee, and no funding round to pay back. The project covers its own infrastructure costs and nothing more.',
+  'home.projectKicker': 'The project',
+  'home.projectTitle': 'Donate to this project',
+  'home.projectLead':
+    'Gifts in the forum go to the person who wrote the post. To help run 21.gifts itself, send Bitcoin to this Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Common questions, answered briefly',
   'home.faq1Q': 'Who can use this?',
@@ -476,6 +480,10 @@ const de = {
   'home.why4Title': 'Gemeinnützig von Grund auf',
   'home.why4Body':
     'Keine Provision, keine Plattformgebühr, keine Finanzierungsrunde, die zurückverdient werden müsste. Das Projekt trägt seine eigenen Infrastrukturkosten und sonst nichts.',
+  'home.projectKicker': 'Das Projekt',
+  'home.projectTitle': 'An dieses Projekt spenden',
+  'home.projectLead':
+    'Geschenke im Forum gehen an die Person, die den Beitrag geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an diese Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
   'home.faq1Q': 'Wer kann das nutzen?',
@@ -881,6 +889,10 @@ const es = {
   'home.why4Title': 'Sin ánimo de lucro por diseño',
   'home.why4Body':
     'No hay comisión, ni tarifa de plataforma, ni ronda de inversión que devolver. El proyecto cubre sus propios costes de infraestructura y nada más.',
+  'home.projectKicker': 'El proyecto',
+  'home.projectTitle': 'Dona a este proyecto',
+  'home.projectLead':
+    'Los regalos del foro van a la persona que escribió la publicación. Para ayudar a mantener 21.gifts, envía Bitcoin a esta Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Preguntas frecuentes, en breve',
   'home.faq1Q': '¿Quién puede usarlo?',
@@ -1277,6 +1289,10 @@ const fil = {
   'home.why4Title': 'Non-profit mula sa simula',
   'home.why4Body':
     'Walang komisyon, walang platform fee, at walang funding round na kailangang bawiin. Sinasagot ng proyekto ang sarili nitong gastos sa infrastructure at wala nang iba.',
+  'home.projectKicker': 'Ang proyekto',
+  'home.projectTitle': 'Mag-donate sa proyektong ito',
+  'home.projectLead':
+    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng post. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa Wallet of Satoshi address na ito.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Mga karaniwang tanong, maikling sagot',
   'home.faq1Q': 'Sino ang puwedeng gumamit nito?',

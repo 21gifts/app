@@ -6,6 +6,15 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
 });
 
+test('landing shows the project donate address', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
+    'href',
+    'lightning:21gifts@walletofsatoshi.com',
+  );
+});
+
 test('legal page is reachable', async ({ page }) => {
   await page.goto('/legal');
   await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();

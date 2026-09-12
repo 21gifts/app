@@ -3,11 +3,12 @@ import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog, type MessageKey } from '@/lib/messages';
+import { PROJECT_DONATE_ADDRESS } from '@/lib/project-donate';
 import { translate } from '@/lib/translate';
 
 /**
- * Marketing landing at `/`: pitch, how it works, why, FAQ, CTAs into the app,
- * and an optional PWA install control after Send help.
+ * Marketing landing at `/`: pitch, how it works, why, project donate (`#project`),
+ * FAQ, CTAs into the app, and an optional PWA install control after Send help.
  *
  * @returns The home screen.
  */
@@ -89,6 +90,19 @@ export default async function Home(): Promise<ReactElement> {
             <p className="mt-2 text-paper/60">{t('home.why4Body')}</p>
           </div>
         </div>
+      </section>
+
+      <section id="project" className="mx-auto max-w-[1100px] px-5 py-20">
+        <p className="text-sm font-medium tracking-widest text-accent uppercase">
+          {t('home.projectKicker')}
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold">{t('home.projectTitle')}</h2>
+        <p className="mt-4 max-w-3xl text-paper/60">{t('home.projectLead')}</p>
+        <p className="mt-6">
+          <a href={`lightning:${PROJECT_DONATE_ADDRESS}`}>
+            <code>{PROJECT_DONATE_ADDRESS}</code>
+          </a>
+        </p>
       </section>
 
       <section id="faq" className="mx-auto max-w-[1100px] px-5 py-20">
