@@ -376,6 +376,26 @@ test('Function: proxyConversationPost — POST /conversations/[id] without beare
   ).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyNotificationsGet — GET /forum/notifications without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/notifications')).status()).toBe(401);
+});
+
+test('Function: proxyNotificationsReadAllPost — POST /forum/notifications/read-all without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-all')).status()).toBe(401);
+});
+
+test('Function: proxyNotificationReadPost — POST /forum/notifications/[id]/read without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.post('/forum/notifications/[id]/read', { data: {} })).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without a file is 404', async ({
   request,
 }) => {
@@ -1467,6 +1487,218 @@ test('Function: makeCombo — Mobile switch is visible', async ({ page }) => {
 test('Function: defaultCombo — first topic image is visible', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(page.locator('img[src*="/handbook-images/"]').first()).toBeVisible();
+});
+
+test('Function: NotificationsPage — notifications heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
+});
+
+test('Function: NotificationsLoader — empty notifications copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByText('No notifications yet.')).toBeVisible();
+});
+
+test('Function: NotificationsScreen — empty notifications copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByText('No notifications yet.')).toBeVisible();
+});
+
+test('Function: fetchNotifications — empty notifications copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByText('No notifications yet.')).toBeVisible();
+});
+
+test('Function: markNotificationRead — empty notifications copy is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByText('No notifications yet.')).toBeVisible();
+});
+
+test('Function: markAllNotificationsRead — empty notifications copy is visible', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByText('No notifications yet.')).toBeVisible();
 });
 
 test('Function: MessagesPage — inbox heading is visible', async ({ page }) => {
@@ -2992,6 +3224,10 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
     'href',
     '/rules',
+  );
+  await expect(page.getByRole('link', { name: 'Notifications' })).toHaveAttribute(
+    'href',
+    '/notifications',
   );
   await expect(page.getByRole('link', { name: 'Messages' })).toHaveAttribute('href', '/messages');
   await expect(page.getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');

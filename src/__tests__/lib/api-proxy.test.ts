@@ -74,6 +74,22 @@ describe('proxyApiRequest', () => {
     expect(headers.get('transfer-encoding')).toBeNull();
   });
 
+  it('forwards an empty POST without a duplex body', async () => {
+    const fetchMock = stubFetch(new Response('{"error":"Unauthorized"}', { status: 401 }));
+    const request = new Request('http://localhost/forum/notifications/read-all', {
+      method: 'POST',
+      headers: { 'content-length': '0' },
+    });
+
+    const res = await proxyApiRequest(request, '/notifications/read-all');
+
+    expect(res.status).toBe(401);
+    const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit & { duplex?: string }];
+    expect(init.method).toBe('POST');
+    expect(init.body).toBeUndefined();
+    expect(init.duplex).toBeUndefined();
+  });
+
   it('forwards Range on GET and still drops x-ignored', async () => {
     const fetchMock = stubFetch(
       new Response('ab', { status: 206, headers: { 'content-type': 'video/mp4' } }),

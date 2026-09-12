@@ -179,7 +179,11 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
-    expect(screen.getByRole('link', { name: 'Messages' }).getAttribute('href')).toBe('/messages');
+    const notifications = screen.getByRole('link', { name: 'Notifications' });
+    const messages = screen.getByRole('link', { name: 'Messages' });
+    expect(notifications.getAttribute('href')).toBe('/notifications');
+    expect(messages.getAttribute('href')).toBe('/messages');
+    expect(notifications.nextElementSibling).toBe(messages);
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByLabelText('Theme')).toBeTruthy();
@@ -201,6 +205,7 @@ describe('SignedInChrome', () => {
     expect(
       screen.getByRole('link', { name: 'Living room rules' }).querySelector('svg'),
     ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Notifications' }).querySelector('svg')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Contact' }).querySelector('svg')).toBeTruthy();
   });
 
@@ -401,6 +406,14 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Contact' }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Notifications is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
     expectMenuClosed();
   });
 
