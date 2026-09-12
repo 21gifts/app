@@ -1,19 +1,24 @@
 'use client';
 
-import { Bell } from 'lucide-react';
+import { Bell, BellOff } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { IconButton } from '@/components/ui';
 import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 
 type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
 
 /**
- * Icon-only Bell control on the signed-in profile card to enable or disable
- * Web Push. Renders nothing without a session or when Push/Service Worker APIs
- * are missing. On iPhone Safari outside standalone, also shows an install hint.
+ * Profile identity-card row matching the name and address chrome: uppercase
+ * heading, visible On/Off value, and an icon-only Bell `IconButton` to enable
+ * or disable Web Push. Off is a secondary outline BellOff; on is a primary
+ * filled Bell (`fill="currentColor"`). The button stays icon-only — On/Off is
+ * the visible state, not a labeled button. Renders nothing without a session
+ * or when Push/Service Worker APIs are missing. On iPhone Safari outside
+ * standalone, also shows an install hint.
  *
- * @returns The bell button (and optional iOS hint), or `null`.
+ * @returns The notifications row (and optional iOS hint), or `null`.
  */
 export function PushToggle(): ReactElement | null {
   const { t } = useTranslations();
@@ -94,25 +99,34 @@ export function PushToggle(): ReactElement | null {
   const ariaName = subscribed ? t('profile.push.disable') : t('profile.push.enable');
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-2">
+    <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+        {t('profile.push.heading')}
+      </p>
       {showInstallHint ? (
         <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
       ) : null}
       {errorKey !== null ? <p className="text-sm text-app-muted">{t(errorKey)}</p> : null}
-      <div className="flex w-full justify-end">
-        <button
-          type="button"
-          onClick={() => {
-            void onToggle();
-          }}
-          disabled={busy}
+      <div className="flex items-center gap-2">
+        <p className="min-w-0 flex-1 truncate text-sm text-app-fg">
+          {subscribed ? t('profile.push.on') : t('profile.push.off')}
+        </p>
+        <IconButton
+          variant={subscribed ? 'primary' : 'secondary'}
           aria-label={ariaName}
           title={ariaName}
           aria-pressed={subscribed}
-          className="inline-flex items-center shrink-0 rounded p-2 text-app-subtle transition hover:text-app-fg disabled:opacity-50"
+          disabled={busy}
+          onClick={() => {
+            void onToggle();
+          }}
         >
-          <Bell aria-hidden="true" className="h-4 w-4" />
-        </button>
+          {subscribed ? (
+            <Bell aria-hidden="true" className="h-4 w-4" fill="currentColor" />
+          ) : (
+            <BellOff aria-hidden="true" className="h-4 w-4" />
+          )}
+        </IconButton>
       </div>
     </div>
   );
