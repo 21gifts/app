@@ -65,4 +65,20 @@ describe('Home', () => {
     const link = screen.getByRole('link', { name: 'Send help' });
     expect(link.getAttribute('href')).toBe('/donate');
   });
+
+  it('renders a donate-to-project heading', async () => {
+    renderWithLocale(await Home());
+    expect(screen.getByRole('heading', { name: 'Donate to this project' })).toBeTruthy();
+  });
+
+  it('exposes the project Wallet of Satoshi address as a lightning link', async () => {
+    renderWithLocale(await Home());
+    const link = screen.getByRole('link', { name: '21gifts@walletofsatoshi.com' });
+    expect(link.getAttribute('href')).toBe('lightning:21gifts@walletofsatoshi.com');
+    expect(link.className).toContain('text-accent');
+    expect(link.className).toContain('underline-offset-2');
+    const code = link.querySelector('code');
+    expect(code?.textContent).toBe('21gifts@walletofsatoshi.com');
+    expect(code?.className).toContain('font-mono');
+  });
 });
