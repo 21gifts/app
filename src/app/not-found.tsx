@@ -19,7 +19,7 @@ export default async function NotFound(): Promise<ReactElement> {
 
   return (
     <div className="min-h-[var(--app-height)] bg-ink text-paper [color-scheme:dark]">
-      <MarketingHeader />
+      <MarketingHeader showNumberFormat={false} />
       <main className="mx-auto flex max-w-[1100px] flex-col items-start px-5 py-28">
         <h1 className="text-5xl font-semibold">404</h1>
         <p className="mt-4 text-paper/60">{translate(messages, 'notFound.body')}</p>

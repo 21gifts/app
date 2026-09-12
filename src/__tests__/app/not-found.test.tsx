@@ -25,5 +25,6 @@ describe('NotFound', () => {
     renderWithLocale(await NotFound());
     expect(screen.getByRole('heading', { name: '404' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Back home' }).getAttribute('href')).toBe('/');
+    expect(screen.queryByLabelText('Number format')).toBeNull();
   });
 });
