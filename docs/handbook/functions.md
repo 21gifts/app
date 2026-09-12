@@ -950,7 +950,7 @@
 - **Purpose:** Groups the integer part of `value` in threes from the right and emits `fractionDigits` decimal digits using `separatorsFor`. Non-finite values are treated as 0. Rounding uses `Math.round` at `fractionDigits`.
 - **Inputs:** `value` number, `style` `NumberFormatStyle`, `fractionDigits` (0 omits the decimal part).
 - **Returns / side effects:** Grouped numeric string without a currency or ₿ prefix (for example `1'500` or `10'000.23`). Negative values keep a leading minus.
-- **Used by:** `formatBitcoin`, `formatUsdDisplay`, `formatUsdTick`, and `NumberFormatSwitcher` sample labels.
+- **Used by:** `formatBitcoin`, `formatUsdDisplay`, `formatUsdTick`, `NumberFormatSwitcher` sample labels, `DayLoader`, `GiftDayTable`, and `StatsDashboard`.
 
 ## Function: formatBitcoin
 
