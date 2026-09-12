@@ -1313,6 +1313,7 @@ describe('postContact', () => {
 
 const conversation = {
   id: 'conv-1',
+  kind: 'member_platform',
   name: '21.gifts',
   lastText: 'Hello',
   lastAt: '2026-08-28T12:00:00.000Z',

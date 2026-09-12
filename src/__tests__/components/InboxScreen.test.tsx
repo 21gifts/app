@@ -11,6 +11,7 @@ afterEach(cleanup);
 
 const THREAD: Conversation = {
   id: 'conv-1',
+  kind: 'member_platform',
   name: '21.gifts',
   lastText: 'Hello team',
   lastAt: '2026-08-28T12:00:00.000Z',
@@ -135,9 +136,17 @@ describe('InboxScreen', () => {
           THREAD,
           {
             id: 'conv-2',
+            kind: 'member_member',
             name: 'Bob',
             lastText: 'Later',
             lastAt: '2026-08-28T13:00:00.000Z',
+          },
+          {
+            id: 'conv-3',
+            kind: 'member_damus',
+            name: 'npub1abc…xyz',
+            lastText: 'Hi',
+            lastAt: '2026-08-28T14:00:00.000Z',
           },
         ]}
         error={false}
@@ -162,6 +171,18 @@ describe('InboxScreen', () => {
     expect(list.textContent).toContain('Hello team');
     expect(list.textContent).toContain('Bob');
     expect(list.textContent).toContain('Later');
+    const giftsRow = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(giftsRow.textContent).toContain('Contact');
+    expect(giftsRow.textContent).not.toContain('Direct');
+    expect(giftsRow.textContent).not.toContain('Damus');
+    const bobRow = screen.getByRole('button', { name: /Bob/ });
+    expect(bobRow.textContent).toContain('Direct');
+    expect(bobRow.textContent).not.toContain('Contact');
+    expect(bobRow.textContent).not.toContain('Damus');
+    const npubRow = screen.getByRole('button', { name: /npub1abc/ });
+    expect(npubRow.textContent).toContain('Damus');
+    expect(npubRow.textContent).not.toContain('Contact');
+    expect(npubRow.textContent).not.toContain('Direct');
     fireEvent.click(screen.getByRole('button', { name: /Bob/ }));
     expect(onOpen).toHaveBeenCalledWith('conv-2');
   });
@@ -188,6 +209,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
+    expect(screen.queryByText('Contact')).toBeNull();
     expect(screen.getByRole('button', { name: 'All conversations' })).toBeTruthy();
     expect(screen.queryByText('All conversations')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
@@ -217,6 +239,7 @@ describe('InboxScreen', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(onOpen).toHaveBeenCalledWith('conv-1');
+    expect(screen.getByText('Contact')).toBeTruthy();
   });
 
   it('shows an open thread, composer errors, and posts', () => {
@@ -245,6 +268,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: '21.gifts' })).toBeTruthy();
+    expect(screen.getByText('Contact')).toBeTruthy();
     expect(screen.getByText('Hello team')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
