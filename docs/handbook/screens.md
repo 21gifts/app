@@ -49,9 +49,9 @@ The only state: imprint plus privacy, marketing chrome.
 ## Screen: /stats/[day]
 
 - **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
-- **What the user sees:** Dark 21.gifts header, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, USD), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Stats body copy stays English.
-- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Open **All stats**. Change language. Header **Log in** goes to `/login`.
-- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`).
+- **What the user sees:** Dark 21.gifts header with a language switcher and number-format switcher, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, USD), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Stats body copy stays English.
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Open **All stats**. Change language or number format. Header **Log in** goes to `/login`.
+- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`), `LanguageSwitcher`, `NumberFormatSwitcher`.
 - **Auth:** None.
 
 ### Variant: default
@@ -619,9 +619,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) and optional profile forum note. Own profiles use this route too (forum author names navigate here, not `/profile`). A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip).
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) and optional profile forum note. Own profiles use this route too (forum author names navigate here, not `/profile`). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip).
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` plus optional `GET /gifts/stats?recipient=`.
-- **Actions:** Open **Menu**; icon-only back to the forum; expand role hint; open author profile links on the note when present; complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply. No edit controls.
+- **Actions:** Open **Menu**; icon-only back to the forum; expand role hint; open author profile links on the note when present; translate a foreign-language note or reply (**Translate** / Show original / Show translation); complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 

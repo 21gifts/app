@@ -101,9 +101,9 @@
 
 ## Function: DayLoader
 
-- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error.
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. Reads `useNumberFormat` so the summary and table grouping match the visitor number style.
 - **Inputs:** `day` UTC `YYYY-MM-DD`.
-- **Returns / side effects:** React element. Calls `fetchGiftDay`.
+- **Returns / side effects:** React element. Calls `fetchGiftDay`. Passes `numberFormat` into `GiftDayTable` and formats the day summary with the same style.
 - **Used by:** `GiftDayPage`.
 
 ## Function: GiftDayTable
@@ -1204,7 +1204,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Client hook returning `{ numberFormat, setNumberFormat }` from the nearest `NumberFormatProvider`. Call sites that format counts or money take this hook's style, not UI locale.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active `NumberFormatStyle` and a setter that writes the `numberFormat` cookie. Throws `useNumberFormat must be used within NumberFormatProvider` when used outside the provider.
-- **Used by:** `NumberFormatSwitcher`, `ForumBoard`, `StatsDashboard`, `GiftDayTable` / `DayLoader`, `AccountActivityChart`, `SignedInChrome`.
+- **Used by:** `NumberFormatSwitcher`, `ForumBoard`, `StatsDashboard`, `DayLoader`, `AccountActivityChart`, `SignedInChrome`, `PublicMessageLoader`.
 
 ## Function: walletOfSatoshiHref
 
