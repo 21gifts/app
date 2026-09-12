@@ -6,6 +6,7 @@ import {
   dismissForumLaws,
   fetchConversation,
   fetchConversations,
+  fetchNotifications,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
@@ -20,6 +21,8 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  markAllNotificationsRead,
+  markNotificationRead,
   openConversation,
   postContact,
   postConversationMessage,
@@ -1432,6 +1435,85 @@ describe('openConversation', () => {
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 404, body: {} });
     await expect(openConversation('sess', 'note-1')).rejects.toThrow('Could not send your message');
+  });
+});
+
+const notification = {
+  id: 'n1',
+  type: 'forum_reply' as const,
+  parentId: 'p1',
+  replyId: 'r1',
+  name: 'Bob',
+  text: 'Nice post',
+  createdAt: '2026-08-28T12:00:00.000Z',
+  readAt: null as string | null,
+};
+
+describe('fetchNotifications', () => {
+  it('returns the list and sends the bearer header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { notifications: [notification], unreadCount: 1 },
+    });
+    await expect(fetchNotifications('sess')).resolves.toEqual({
+      notifications: [notification],
+      unreadCount: 1,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/notifications', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'unavailable' } });
+    await expect(fetchNotifications('sess')).rejects.toThrow(
+      'Could not load notifications. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { notifications: [], unreadCount: -1 } });
+    await expect(fetchNotifications('sess')).rejects.toThrow(
+      'Could not load notifications. Please try again.',
+    );
+  });
+});
+
+describe('markNotificationRead', () => {
+  it('posts and encodes the id', async () => {
+    const read = { ...notification, readAt: '2026-08-28T13:00:00.000Z' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: read });
+    await expect(markNotificationRead('sess', 'a/b')).resolves.toEqual(read);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/a%2Fb/read', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(markNotificationRead('sess', 'n1')).rejects.toThrow(
+      'Could not mark notification as read',
+    );
+  });
+});
+
+describe('markAllNotificationsRead', () => {
+  it('posts without a JSON body', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+    await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-all', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(markAllNotificationsRead('sess')).rejects.toThrow(
+      'Could not mark notifications as read',
+    );
   });
 });
 

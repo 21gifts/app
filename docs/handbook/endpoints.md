@@ -231,6 +231,27 @@
 - **Used by:** `postConversationMessage` in the inbox composer.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/notifications
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (forum-reply notifications for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
+- **Errors:** Upstream 401/503, or 502 if the api is unreachable.
+- **Used by:** `fetchNotifications` on `/notifications`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /forum/notifications/read-all
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/read-all` (mark every notification read).
+- **Errors:** Upstream 401/503, or 502 if the api is unreachable.
+- **Used by:** `markAllNotificationsRead` from `NotificationsLoader`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /forum/notifications/[id]/read
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/:id/read` (mark one notification read).
+- **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
+- **Used by:** `markNotificationRead` from `NotificationsLoader` on row click.
+- **Auth:** Bearer.
+
 ## Endpoint: DELETE /me/push-subscriptions
 
 - **Purpose:** Same-origin Bearer proxy of api DELETE `/me/push-subscriptions` (remove a browser push subscription by `{ endpoint }`).

@@ -274,6 +274,40 @@ export async function proxyConversationPost(
 }
 
 /**
+ * Proxies GET /notifications to the 21.gifts api (app path `/forum/notifications`).
+ *
+ * HTML `/notifications` is the page; Next.js forbids a `route.ts` beside that
+ * `page.tsx`, so notification HTTP lives under `/forum/notifications`.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyNotificationsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/notifications');
+}
+
+/**
+ * Proxies POST /notifications/read-all to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyNotificationsReadAllPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/notifications/read-all');
+}
+
+/**
+ * Proxies POST /notifications/:id/read to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param id - Notification id from the dynamic route segment.
+ * @returns The upstream response.
+ */
+export async function proxyNotificationReadPost(request: Request, id: string): Promise<Response> {
+  return proxyApiRequest(request, `/notifications/${encodeURIComponent(id)}/read`);
+}
+
+/**
  * Proxies GET /messages/:id/photo to the 21.gifts api (public; no auth).
  *
  * @param request - Incoming App Router request.

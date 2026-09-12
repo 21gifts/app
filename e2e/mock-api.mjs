@@ -172,6 +172,7 @@ function missingListRequirements(account) {
 
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
+    req.resume();
     res.writeHead(204, {
       'access-control-allow-origin': '*',
       'access-control-allow-headers': 'authorization, content-type, user-agent',
@@ -181,6 +182,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const rawBody = await readBody(req);
   const url = new URL(req.url ?? '/', `http://${HOST}:${PORT}`);
   const pathName = url.pathname;
   const method = req.method ?? 'GET';
@@ -258,7 +260,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
@@ -318,7 +320,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
       return;
@@ -346,7 +348,7 @@ const server = http.createServer(async (req, res) => {
     const name = typeof account.name === 'string' ? account.name.trim() : '';
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
@@ -391,6 +393,37 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/notifications') {
+    const token = bearer(req);
+    if (token === null || !byToken.get(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { notifications: [], unreadCount: 0 });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/notifications/read-all') {
+    const token = bearer(req);
+    if (token === null || !byToken.get(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { ok: true });
+    return;
+  }
+
+  const notificationReadMatch = pathName.match(/^\/notifications\/([^/]+)\/read$/);
+  if (method === 'POST' && notificationReadMatch) {
+    const token = bearer(req);
+    if (token === null || !byToken.get(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/conversations') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -420,7 +453,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with a "forumMessageId" string' });
       return;
@@ -478,7 +511,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
@@ -574,7 +607,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Invalid subscription' });
       return;
@@ -622,7 +655,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with a "step" string' });
       return;
@@ -715,7 +748,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with a "name" string' });
       return;
@@ -756,7 +789,7 @@ const server = http.createServer(async (req, res) => {
     }
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with an "address" string' });
       return;
@@ -885,7 +918,7 @@ const server = http.createServer(async (req, res) => {
     const expectedType = pathName.includes('/register/') ? 'register' : 'authenticate';
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Expected a JSON body with challengeId and credential' });
       return;

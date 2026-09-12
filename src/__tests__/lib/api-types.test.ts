@@ -8,6 +8,8 @@ import {
   conversationMessageSchema,
   conversationSchema,
   conversationThreadSchema,
+  notificationListSchema,
+  notificationSchema,
   FORUM_MESSAGE_MAX_LENGTH,
   forumMessageSchema,
   lnAddressResolvedSchema,
@@ -120,6 +122,26 @@ describe('conversationMessageSchema', () => {
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
     expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
+  });
+});
+
+describe('notificationSchema', () => {
+  it('accepts a well-formed notification and list, including readAt null and empty text', () => {
+    const row = {
+      id: 'n1',
+      type: 'forum_reply' as const,
+      parentId: 'p1',
+      replyId: 'r1',
+      name: 'Bob',
+      text: '',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      readAt: null,
+    };
+    expect(notificationSchema.parse(row)).toEqual(row);
+    expect(notificationListSchema.parse({ notifications: [row], unreadCount: 1 })).toEqual({
+      notifications: [row],
+      unreadCount: 1,
+    });
   });
 });
 

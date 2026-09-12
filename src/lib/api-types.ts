@@ -359,6 +359,41 @@ export const conversationThreadSchema = z.object({
 export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 
 /**
+ * Runtime schema for one forum-reply notification from `GET /notifications`.
+ *
+ * `text` may be empty when the reply is photo-only. `readAt` is `null` until
+ * the session marks the row read.
+ */
+export const notificationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('forum_reply'),
+  parentId: z.string().min(1),
+  replyId: z.string().min(1),
+  name: z.string(),
+  text: z.string(),
+  createdAt: z.string().datetime({ offset: true }),
+  readAt: z.string().datetime({ offset: true }).nullable(),
+});
+
+/**
+ * Runtime schema for `GET /notifications`.
+ */
+export const notificationListSchema = z.object({
+  notifications: z.array(notificationSchema),
+  unreadCount: z.number().int().nonnegative(),
+});
+
+/**
+ * One forum-reply notification from the api.
+ */
+export type Notification = z.infer<typeof notificationSchema>;
+
+/**
+ * Signed-in notification list from the api.
+ */
+export type NotificationList = z.infer<typeof notificationListSchema>;
+
+/**
  * Runtime schema for `GET /push/vapid-public` success body.
  */
 export const vapidPublicSchema = z.object({
