@@ -2227,15 +2227,35 @@ test('Function: formatBitcoin — populated stats draw the ₿ chart', async ({ 
   await expect(page.getByLabel('Spend over time in ₿').getByText('₿1,500')).toBeVisible();
 });
 
-test('Function: formatUsdTick — populated stats draw the USD chart', async ({ page }) => {
-  await stubGiftStats(page, POPULATED_STATS);
-  await page.goto('/stats');
+test('Function: formatUsdTick — populated profile chart shows USD ticks', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 1500,
+    totalUsd: '1.43',
+    giftCount: 2,
+    recipientCount: 1,
+    spendOverTime: POPULATED_STATS.spendOverTime,
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
+  });
+  await page.goto('/profile');
   await page
-    .getByRole('group', { name: 'Over time scale' })
+    .getByRole('group', { name: 'Chart scale' })
     .getByRole('button', { name: 'USD' })
     .click();
-  await expect(page.getByLabel('Spend over time in USD')).toBeVisible();
-  await expect(page.getByLabel('Spend over time in USD').getByText('$1.43')).toBeVisible();
+  await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+  await expect(page.getByLabel('Given and received in USD').getByText('$1.43')).toBeVisible();
 });
 
 test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page }) => {

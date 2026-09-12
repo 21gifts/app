@@ -353,7 +353,7 @@ export default async function RootLayout({ children }: { children: ReactNode }):
 
 **`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, locale-grouped integer, no space, no fraction. Example: `₿1,500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
 
-USD: `formatUsdDisplay` → `$1.43` / `$1,425.00` (en-US currency). Axis ticks: `formatUsdTick` (`$0`, `$1.43`, `$1,425`). Toggle anatomy in §10.
+Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1,425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: `formatFiatTick` on stats; `formatUsdTick` on the profile ₿|USD chart. Toggle anatomy in §10.
 
 **Link type.** Marketing inline links: `text-accent underline underline-offset-2`. App inline links (rules, contact): `text-app-fg underline underline-offset-2 font-medium`. Do not make app body links orange (fails on paper; also not a gift CTA).
 
@@ -565,17 +565,17 @@ Target anatomy of the note footer:
 
 Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet CTAs: **Continue** (`Button` primary) then labeled **Open Wallet of Satoshi** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"` — sentence-length, **not** accent; today a raw `<a className="… bg-app-btn px-5 py-2">`, leftover). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link. Unchanged product rule from CONTRIBUTING.
 
-**USD.** `$1.43` via `formatUsdDisplay`. Stats KPI shows ₿ on the first line and USD on the second (keep).
+**Fiat.** Stats KPI shows ₿ on the first line and the selected fiat (CHF/EUR/USD/PHP) on the second via `FiatPicker` plus `formatFiatDisplay` (USD selected uses `formatUsdDisplay`). Profile activity stays ₿|USD.
 
-**₿ \| USD segmented control** — shipped as `SegmentedControl` (see catalog).
+**₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the FiatPicker code. Profile: ₿ and `USD`.
 
-| Part       | Spec                                                                                                               |
-| ---------- | ------------------------------------------------------------------------------------------------------------------ |
-| Track      | Gift app: `inline-flex overflow-hidden rounded-md border border-app-border text-xs`. Gift dark: `border-paper/20`. |
-| Segment    | `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop                                                            |
-| Selected   | Gift app: `bg-app-accent text-app-accent-fg`. Gift dark: `bg-accent text-ink`                                      |
-| Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                             |
-| Labels     | `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name                         |
+| Part       | Spec                                                                                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Track      | Gift app: `inline-flex overflow-hidden rounded-md border border-app-border text-xs`. Gift dark: `border-paper/20`.                                                        |
+| Segment    | `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop                                                                                                                   |
+| Selected   | Gift app: `bg-app-accent text-app-accent-fg`. Gift dark: `bg-accent text-ink`                                                                                             |
+| Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                                                                                    |
+| Labels     | Stats charts: `₿` and the selected FiatPicker code (CHF/EUR/USD/PHP). Profile: `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name |
 
 Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 

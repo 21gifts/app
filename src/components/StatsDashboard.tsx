@@ -10,6 +10,7 @@ import {
   formatBitcoin,
   formatFiatDisplay,
   formatFiatTick,
+  formatUsdDisplay,
   type FiatCode,
 } from '@/lib/stats-money';
 
@@ -583,6 +584,7 @@ export function StatsDashboard({
   }
 
   const empty = stats.giftCount === 0;
+  const spentFiat = totalFor(stats, fiat);
 
   return (
     <div className="space-y-12">
@@ -593,7 +595,9 @@ export function StatsDashboard({
           <dd className="mt-2 tabular-nums lining-nums">
             <div className="text-2xl font-semibold">{formatBitcoin(stats.totalSats)}</div>
             <div className="text-2xl font-semibold">
-              {formatFiatDisplay(totalFor(stats, fiat), fiat)}
+              {fiat === 'USD' && spentFiat !== null
+                ? formatUsdDisplay(spentFiat)
+                : formatFiatDisplay(spentFiat, fiat)}
             </div>
           </dd>
         </div>

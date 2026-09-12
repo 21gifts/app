@@ -970,17 +970,17 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: formatUsdDisplay
 
-- **Purpose:** Formats an API USD amount string (`"1425.00"`) as en-US currency for the stats hero.
+- **Purpose:** Formats an API USD amount string (`"1425.00"`) as en-US currency (wrapper around `formatFiatDisplay(..., 'USD')`).
 - **Inputs:** `usd` string from `GET /gifts/stats`.
 - **Returns / side effects:** Locale currency string such as `$1,425.00`.
-- **Used by:** `StatsDashboard`.
+- **Used by:** `StatsDashboard` KPI when USD is selected.
 
 ## Function: formatUsdTick
 
 - **Purpose:** Formats a parsed USD chart-axis value as a grouped dollar label.
 - **Inputs:** `usd` number (layout scale only).
 - **Returns / side effects:** Label such as `$1,234`.
-- **Used by:** `StatsDashboard` USD-over-time chart, `AccountActivityChart` USD scale.
+- **Used by:** `AccountActivityChart` USD scale (profile ₿|USD). Stats over-time uses `formatFiatTick`.
 
 ## Function: ThemeProvider
 
