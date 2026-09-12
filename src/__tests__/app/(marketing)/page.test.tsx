@@ -75,6 +75,10 @@ describe('Home', () => {
     renderWithLocale(await Home());
     const link = screen.getByRole('link', { name: '21gifts@walletofsatoshi.com' });
     expect(link.getAttribute('href')).toBe('lightning:21gifts@walletofsatoshi.com');
-    expect(link.querySelector('code')?.textContent).toBe('21gifts@walletofsatoshi.com');
+    expect(link.className).toContain('text-accent');
+    expect(link.className).toContain('underline-offset-2');
+    const code = link.querySelector('code');
+    expect(code?.textContent).toBe('21gifts@walletofsatoshi.com');
+    expect(code?.className).toContain('font-mono');
   });
 });

@@ -99,8 +99,11 @@ export default async function Home(): Promise<ReactElement> {
         <h2 className="mt-3 text-2xl font-semibold">{t('home.projectTitle')}</h2>
         <p className="mt-4 max-w-3xl text-paper/60">{t('home.projectLead')}</p>
         <p className="mt-6">
-          <a href={`lightning:${PROJECT_DONATE_ADDRESS}`}>
-            <code>{PROJECT_DONATE_ADDRESS}</code>
+          <a
+            href={`lightning:${PROJECT_DONATE_ADDRESS}`}
+            className="text-accent underline underline-offset-2"
+          >
+            <code className="font-mono text-sm">{PROJECT_DONATE_ADDRESS}</code>
           </a>
         </p>
       </section>
