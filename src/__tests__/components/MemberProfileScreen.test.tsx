@@ -2224,17 +2224,13 @@ describe('MemberProfileScreen', () => {
       session: 'sess',
       account: { ...account, role: 'moderator' },
     });
-    renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />,
-    );
+    renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
     expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
     expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
   });
 
   it('does not show Verify for a basis viewer', () => {
-    renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />,
-    );
+    renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
     expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
     expect(screen.queryByTestId('state-members-staff-verify')).toBeNull();
   });
