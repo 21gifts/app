@@ -1257,6 +1257,11 @@ test('Function: RootLayout — landing renders', async ({ page }) => {
 test('Function: Home — landing renders the pitch', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
+    'href',
+    'lightning:21gifts@walletofsatoshi.com',
+  );
 });
 
 test('Function: MarketingLayout — landing has marketing chrome', async ({ page }) => {
