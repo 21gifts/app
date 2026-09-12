@@ -1215,6 +1215,37 @@ describe('fetchReplies', () => {
       'Could not load messages. Please try again.',
     );
   });
+
+  it('keeps valid replies and skips an invalid empty name', async () => {
+    const invalidEmptyName = { ...forumMessage, id: 'm-invalid', name: '' };
+    const secondValid = { ...forumMessage, id: 'm2' };
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, invalidEmptyName, secondValid] },
+    });
+    await expect(fetchReplies('sess', 'parent')).resolves.toEqual([forumMessage, secondValid]);
+  });
+
+  it('returns an empty list when every reply is invalid', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [{ ...forumMessage, name: '' }] },
+    });
+    await expect(fetchReplies('sess', 'parent')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy when the body is not { messages: array }', async () => {
+    stubFetch({ ok: true, status: 200, body: { notMessages: [] } });
+    await expect(fetchReplies('sess', 'parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchReplies('sess', 'parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
 });
 
 const contactMessage = {
