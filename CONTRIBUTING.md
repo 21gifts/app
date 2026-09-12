@@ -102,7 +102,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + address + push bell + icon-only view-key copy
+│   │   │   └── page.tsx         # GET /profile — signed-in name + address + push bell
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── manifest.ts          # Web App Manifest (MetadataRoute.Manifest default export)
@@ -119,9 +119,8 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell + icon-only view-key copy)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell)
 │   │   ├── PushToggle.tsx       # Icon-only Bell Web Push enable/disable on profile
-│   │   ├── ViewKeyCopy.tsx      # Copy absolute /view/<viewKey> URL on profile
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
@@ -205,7 +204,7 @@ app/
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
-│   ├── view.spec.ts             # /view/[viewKey] public profile + profile view-key copy
+│   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines (single source for handbook images)
 │   └── visual.spec.ts-snapshots/
