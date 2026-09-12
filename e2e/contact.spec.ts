@@ -82,6 +82,7 @@ test('contact success opens the official thread with Hello team', async ({ page 
         conversations: [
           {
             id: 'conv-21',
+            kind: 'member_platform',
             name: '21.gifts',
             lastText: 'Hello team',
             lastAt: '2026-08-28T12:00:00.000Z',

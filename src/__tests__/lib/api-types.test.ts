@@ -101,12 +101,36 @@ describe('conversationSchema', () => {
   it('accepts an empty lastText', () => {
     const row = {
       id: 'c1',
+      kind: 'member_member',
       name: 'Bob',
       lastText: '',
       lastAt: '2026-08-28T12:00:00.000Z',
     };
     expect(conversationSchema.parse(row)).toEqual(row);
     expect(conversationListSchema.parse({ conversations: [row] }).conversations).toHaveLength(1);
+  });
+
+  it('rejects a missing kind', () => {
+    expect(() =>
+      conversationSchema.parse({
+        id: 'c1',
+        name: 'Bob',
+        lastText: '',
+        lastAt: '2026-08-28T12:00:00.000Z',
+      }),
+    ).toThrow();
+  });
+
+  it('rejects an invalid kind', () => {
+    expect(() =>
+      conversationSchema.parse({
+        id: 'c1',
+        kind: 'forum',
+        name: 'Bob',
+        lastText: '',
+        lastAt: '2026-08-28T12:00:00.000Z',
+      }),
+    ).toThrow();
   });
 });
 
