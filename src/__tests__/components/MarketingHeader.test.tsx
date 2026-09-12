@@ -47,6 +47,12 @@ describe('MarketingHeader', () => {
     expect(screen.getByLabelText('Number format')).toBeTruthy();
   });
 
+  it('omits the number-format switcher when showNumberFormat is false', () => {
+    renderWithLocale(<MarketingHeader showNumberFormat={false} />);
+    expect(screen.getByLabelText('Language')).toBeTruthy();
+    expect(screen.queryByLabelText('Number format')).toBeNull();
+  });
+
   it('toggles the mobile menu', () => {
     renderWithLocale(<MarketingHeader />);
     const toggle = screen.getByRole('button', { name: 'Menu' });

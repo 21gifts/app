@@ -10,12 +10,17 @@ import { ButtonLink, Wordmark } from '@/components/ui';
 
 /**
  * Sticky dark header for marketing pages: wordmark, section nav (including
- * number-format switcher), optional PWA install control, language switcher,
- * login CTA, and a mobile menu toggle.
+ * number-format switcher unless opted out), optional PWA install control,
+ * language switcher, login CTA, and a mobile menu toggle.
  *
+ * @param props - Optional chrome flags.
  * @returns The header element.
  */
-export function MarketingHeader(): ReactElement {
+export function MarketingHeader(props: {
+  /** When false, omit the number-format switcher (404 has no amounts). Default true. */
+  showNumberFormat?: boolean;
+}): ReactElement {
+  const showNumberFormat = props.showNumberFormat !== false;
   const [open, setOpen] = useState(false);
   const { t } = useTranslations();
 
@@ -52,7 +57,7 @@ export function MarketingHeader(): ReactElement {
             </ButtonLink>
           </span>
           <PwaInstall tone="dark" placement="header" />
-          <NumberFormatSwitcher tone="dark" />
+          {showNumberFormat ? <NumberFormatSwitcher tone="dark" /> : null}
         </nav>
         <LanguageSwitcher tone="dark" />
         <button

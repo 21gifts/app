@@ -1244,9 +1244,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: MarketingHeader
 
 - **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`, and `NumberFormatSwitcher` `tone="dark"` inside that nav so mobile does not cover the hamburger), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher is marketing-forbidden.
-- **Inputs:** None (internal open state). Reads copy via `useTranslations`.
-- **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. `NumberFormatSwitcher` is inside the primary nav (`hidden md:flex` when closed). Install control stays `null` until after mount when an offer applies.
-- **Used by:** `MarketingLayout`, `NotFound`.
+- **Inputs:** Optional `showNumberFormat` (default true). Internal open state. Reads copy via `useTranslations`.
+- **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. `NumberFormatSwitcher` is inside the primary nav (`hidden md:flex` when closed) unless `showNumberFormat` is false. Install control stays `null` until after mount when an offer applies.
+- **Used by:** `MarketingLayout`, `NotFound` (`showNumberFormat={false}`).
 
 ## Function: MarketingLayout
 
@@ -1259,7 +1259,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Async app-wide 404 screen with marketing chrome and a localized link home.
 - **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy; awaits `MarketingFooter()`.
-- **Returns / side effects:** 404 element with `MarketingHeader` and awaited footer (not rendered as JSX child).
+- **Returns / side effects:** 404 element with `MarketingHeader showNumberFormat={false}` (no amounts on this screen) and awaited footer (not rendered as JSX child).
 - **Used by:** Next.js `not-found.tsx`.
 
 ## Function: POST

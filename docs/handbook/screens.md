@@ -913,9 +913,9 @@ Markdown list of `## Endpoint:` headings.
 ## Screen: /404
 
 - **URL:** any unknown path (App Router `not-found.tsx`). There is no `page.tsx` for `/404`; Playwright uses `page.goto('/404')` which hits this screen.
-- **What the user sees:** Marketing chrome with a language switcher and number-format switcher, heading **404**, **This page does not exist.**, **Back home**.
-- **Actions:** Change language or number format, go home, or use header/footer links.
-- **Calls:** `NotFound`, `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`, `NumberFormatSwitcher`.
+- **What the user sees:** Marketing chrome with a language switcher (no number-format switcher — the page has no amounts), heading **404**, **This page does not exist.**, **Back home**.
+- **Actions:** Change language, go home, or use header/footer links.
+- **Calls:** `NotFound`, `MarketingHeader` (`showNumberFormat={false}`), `MarketingFooter`, `LanguageSwitcher`.
 
 ### Variant: default
 
