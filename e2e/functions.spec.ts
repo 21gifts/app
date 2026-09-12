@@ -1629,10 +1629,20 @@ test('Function: fetchNotifications — empty notifications copy is visible', asy
   await expect(page.getByText('No notifications yet.')).toBeVisible();
 });
 
-test('Function: markNotificationRead — empty notifications copy is visible', async ({ page }) => {
+test('Function: markNotificationRead — clicking a row POSTs read', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
+  const note = {
+    id: 'n1',
+    type: 'forum_reply',
+    parentId: 'p1',
+    replyId: 'r1',
+    name: 'Bob',
+    text: 'hello',
+    createdAt: '2026-09-12T12:00:00.000Z',
+    readAt: null,
+  };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -1653,20 +1663,34 @@ test('Function: markNotificationRead — empty notifications copy is visible', a
       }),
     });
   });
+  await page.route(/\/forum\/notifications\/read-all$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/n1\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...note, readAt: '2026-09-12T12:01:00.000Z' }),
+    });
+  });
   await page.route(/\/forum\/notifications$/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+      body: JSON.stringify({ notifications: [note], unreadCount: 1 }),
     });
   });
   await page.goto('/notifications');
-  await expect(page.getByText('No notifications yet.')).toBeVisible();
+  await page.getByRole('button', { name: /Bob replied to your post/ }).click();
+  await expect(page).toHaveURL(/\/messages\/p1$/);
 });
 
-test('Function: markAllNotificationsRead — empty notifications copy is visible', async ({
-  page,
-}) => {
+test('Function: markAllNotificationsRead — list fetch POSTs read-all', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -1690,6 +1714,14 @@ test('Function: markAllNotificationsRead — empty notifications copy is visible
       }),
     });
   });
+  await page.route(/\/forum\/notifications\/read-all$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
   await page.route(/\/forum\/notifications$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -1697,7 +1729,11 @@ test('Function: markAllNotificationsRead — empty notifications copy is visible
       body: JSON.stringify({ notifications: [], unreadCount: 0 }),
     });
   });
+  const readAll = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/forum/notifications/read-all'),
+  );
   await page.goto('/notifications');
+  await readAll;
   await expect(page.getByText('No notifications yet.')).toBeVisible();
 });
 
