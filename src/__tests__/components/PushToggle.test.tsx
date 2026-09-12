@@ -123,6 +123,9 @@ describe('PushToggle', () => {
     renderWithLocale(<PushToggle />);
     const button = await screen.findByRole('button', { name: 'Enable notifications' });
     expect(screen.queryByText('Enable notifications')).toBeNull();
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(button.className).toContain('border-app-border-strong');
+    expect(button.className).not.toContain('bg-app-btn');
     expect(button.querySelector('svg')).not.toBeNull();
   });
 
@@ -142,18 +145,28 @@ describe('PushToggle', () => {
     await waitFor(() => {
       expect(enablePush).toHaveBeenCalledWith('tok');
     });
-    expect(await screen.findByRole('button', { name: 'Disable notifications' })).toBeTruthy();
+    const button = await screen.findByRole('button', { name: 'Disable notifications' });
     expect(screen.queryByText('Disable notifications')).toBeNull();
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    expect(button.className).toContain('bg-app-btn');
+    expect(button.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
   });
 
   it('disables push when already subscribed', async () => {
     stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Disable notifications' }));
+    const subscribedButton = await screen.findByRole('button', { name: 'Disable notifications' });
+    expect(screen.queryByText('Disable notifications')).toBeNull();
+    expect(subscribedButton.getAttribute('aria-pressed')).toBe('true');
+    expect(subscribedButton.className).toContain('bg-app-btn');
+    expect(subscribedButton.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
+    fireEvent.click(subscribedButton);
     await waitFor(() => {
       expect(disablePush).toHaveBeenCalledWith('tok');
     });
-    expect(await screen.findByRole('button', { name: 'Enable notifications' })).toBeTruthy();
+    const button = await screen.findByRole('button', { name: 'Enable notifications' });
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(button.className).not.toContain('bg-app-btn');
   });
 
   it('shows unavailable copy when enable fails', async () => {

@@ -120,7 +120,7 @@ app/
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell)
-│   │   ├── PushToggle.tsx       # Icon-only Bell Web Push enable/disable on profile
+│   │   ├── PushToggle.tsx       # IconButton Bell Web Push; glanceable on/off (secondary outline / primary filled)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
