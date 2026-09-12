@@ -4,23 +4,17 @@ import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink, Wordmark } from '@/components/ui';
 
 /**
- * Sticky dark header for marketing pages: wordmark, section nav (including
- * number-format switcher unless opted out), optional PWA install control,
- * language switcher, login CTA, and a mobile menu toggle.
+ * Sticky dark header for marketing pages: wordmark, section nav, optional
+ * PWA install control, language switcher, login CTA, and a mobile menu
+ * toggle.
  *
- * @param props - Optional chrome flags.
  * @returns The header element.
  */
-export function MarketingHeader(props: {
-  /** When false, omit the number-format switcher (404 has no amounts). Default true. */
-  showNumberFormat?: boolean;
-}): ReactElement {
-  const showNumberFormat = props.showNumberFormat !== false;
+export function MarketingHeader(): ReactElement {
   const [open, setOpen] = useState(false);
   const { t } = useTranslations();
 
@@ -57,7 +51,6 @@ export function MarketingHeader(props: {
             </ButtonLink>
           </span>
           <PwaInstall tone="dark" placement="header" />
-          {showNumberFormat ? <NumberFormatSwitcher tone="dark" /> : null}
         </nav>
         <LanguageSwitcher tone="dark" />
         <button

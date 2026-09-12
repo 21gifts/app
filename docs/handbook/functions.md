@@ -146,14 +146,14 @@
 - **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, and rules) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
 - **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Globe + Language + chevron; expands in flow under the trigger with endonym rows). Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, `/rules`, and the signed-in Menu in `SignedInChrome`. `NumberFormatSwitcher` sits beside it in those chrome slots.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, `/rules`, and the signed-in Menu in `SignedInChrome`. `NumberFormatSwitcher` is only in `SignedInChrome`.
 
 ## Function: NumberFormatSwitcher
 
 - **Purpose:** Custom number-format listbox (not a native `<select>`) that persists the visitor's grouping in a `numberFormat` cookie. Grouping is independent of UI language. Standalone Hash pill shows the current sample (`10'000.23` / `10,000.23` / `23.000,33`); embedded Menu-row disclosure shows `t('numberFormat.label')` until opened.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for unsigned app pages) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads the current style via `useNumberFormat`.
+- **Inputs:** `tone` (`dark` | `light`) and optional `embedded`. Production only uses `tone="light"` embedded in the signed-in Menu. Reads the current style via `useNumberFormat`.
 - **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Hash + Number format + chevron; expands in flow under the trigger with sample rows). On a new style writes `numberFormat=<ch|us|de>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS. Same-style click is a no-op when the cookie is already set; picking `ch` while the cookie is absent still writes. Never set on first visit.
-- **Used by:** `MarketingHeader` (`tone="dark"`), `/login`, `/donate`, `/rules` unsigned chrome, `/messages/[id]`, `/view/[viewKey]`, and the signed-in Menu in `SignedInChrome` (`embedded`).
+- **Used by:** Only `SignedInChrome` (`embedded`). Not `MarketingHeader`, not `/login`, `/donate`, `/rules` unsigned chrome, `/messages/[id]`, or `/view/[viewKey]`.
 
 ## Function: NameForm
 
@@ -201,14 +201,14 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` + `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` + `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -550,7 +550,7 @@
 
 - **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
 - **Inputs:** Dynamic route params (`id`).
-- **Returns / side effects:** Fill `AppShell` (`align="center"`) with Wordmark top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Returns / side effects:** Fill `AppShell` (`align="center"`) with Wordmark top-left and `ThemeSwitcher` + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
 - **Used by:** Route `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -564,7 +564,7 @@
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
 - **Inputs:** Dynamic route params (`viewKey`).
-- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `Wordmark` → `/` top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `Wordmark` → `/` top-left and `ThemeSwitcher` + light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
 - **Used by:** Route `/view/[viewKey]`.
 
 ## Function: ViewProfileLoader
@@ -695,9 +695,9 @@
 
 ## Function: RulesPageChrome
 
-- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise keeps marketing-like unsigned chrome (`Wordmark` → `/`, `ThemeSwitcher` + `NumberFormatSwitcher` + `LanguageSwitcher`).
+- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise unsigned chrome (`Wordmark` → `/`, `ThemeSwitcher` + `LanguageSwitcher`, no `NumberFormatSwitcher`).
 - **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
-- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. No network beyond session hydration.
+- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. Unsigned top-right is Wordmark chrome with `ThemeSwitcher` + `LanguageSwitcher`. No network beyond session hydration.
 - **Used by:** `RulesPage`.
 
 ## Function: RulesPage
@@ -1243,10 +1243,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`, and `NumberFormatSwitcher` `tone="dark"` inside that nav so mobile does not cover the hamburger), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher is marketing-forbidden.
-- **Inputs:** Optional `showNumberFormat` (default true). Internal open state. Reads copy via `useTranslations`.
-- **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. `NumberFormatSwitcher` is inside the primary nav (`hidden md:flex` when closed) unless `showNumberFormat` is false. Install control stays `null` until after mount when an offer applies.
-- **Used by:** `MarketingLayout`, `NotFound` (`showNumberFormat={false}`).
+- **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher is marketing-forbidden.
+- **Inputs:** None. Internal open state. Reads copy via `useTranslations`.
+- **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
+- **Used by:** `MarketingLayout`, `NotFound` (no extra props).
 
 ## Function: MarketingLayout
 
@@ -1259,7 +1259,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Async app-wide 404 screen with marketing chrome and a localized link home.
 - **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy; awaits `MarketingFooter()`.
-- **Returns / side effects:** 404 element with `MarketingHeader showNumberFormat={false}` (no amounts on this screen) and awaited footer (not rendered as JSX child).
+- **Returns / side effects:** 404 element with `MarketingHeader` and awaited footer (not rendered as JSX child).
 - **Used by:** Next.js `not-found.tsx`.
 
 ## Function: POST

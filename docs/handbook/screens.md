@@ -5,9 +5,9 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher and `NumberFormatSwitcher` (`tone="dark"`), headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language or number format, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
-- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `NumberFormatSwitcher`, `PwaInstall`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
+- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`.
 
 ### Variant: default
 
@@ -27,18 +27,12 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 
 ![21.gifts home language](images/root-language.png)
 
-### Variant: number-format-open
-
-Open the number-format listbox in the marketing header; option `10'000.23` is visible.
-
-![21.gifts home number format](images/root-number-format.png)
-
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with a language switcher and number-format switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie — a number format — then a `numberFormat` cookie (choice writes it; absent = Swiss `10'000.23`) — or a light/dark appearance — then a `theme` cookie; System appearance clears `theme`; session in localStorage; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
-- **Actions:** Change language or number format. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
-- **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`, `NumberFormatSwitcher`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie — a number format — then a `numberFormat` cookie (choice writes it; absent = Swiss `10'000.23`) — or a light/dark appearance — then a `theme` cookie; System appearance clears `theme`; session in localStorage; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **Actions:** Change language. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
+- **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -49,9 +43,9 @@ The only state: imprint plus privacy, marketing chrome.
 ## Screen: /stats/[day]
 
 - **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
-- **What the user sees:** Dark 21.gifts header with a language switcher and number-format switcher, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, USD), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Stats body copy stays English.
-- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Open **All stats**. Change language or number format. Header **Log in** goes to `/login`.
-- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`), `LanguageSwitcher`, `NumberFormatSwitcher`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, USD), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Stats body copy stays English.
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Open **All stats**. Change language. Header **Log in** goes to `/login`.
+- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`), `LanguageSwitcher`.
 - **Auth:** None.
 
 ### Variant: default
@@ -81,9 +75,9 @@ Fetch failed. Button **Try again**.
 ## Screen: /stats
 
 - **URL:** `/stats` — public gift totals (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher and number-format switcher, heading **Gifts**, four KPI cards (total spent as BIP-177 **₿** plus **USD**, gifts, people, period), then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿/USD control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
-- **Actions:** Change language or number format. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Switch **Total spend over time** / **By person** / **By month** between ₿ and USD. Header **Stats** stays on this page; **Log in** goes to `/login`.
-- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`, `NumberFormatSwitcher`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Gifts**, four KPI cards (total spent as BIP-177 **₿** plus **USD**, gifts, people, period), then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿/USD control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Switch **Total spend over time** / **By person** / **By month** between ₿ and USD. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -118,9 +112,9 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Fill `AppShell` with Wordmark top-left; ThemeSwitcher, NumberFormatSwitcher (`tone="light"`), and LanguageSwitcher top-right (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
-- **Actions:** Change language, number format, or theme. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
-- **Calls:** `AppShell`, `Wordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `NumberFormatSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left; ThemeSwitcher and LanguageSwitcher top-right (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Actions:** Change language or theme. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
+- **Calls:** `AppShell`, `Wordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `ThemeSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
 ### Variant: idle
 
@@ -158,18 +152,12 @@ Open the theme switcher top-right. Custom listbox with System / Light / Dark —
 
 ![21.gifts login theme](images/login-theme.png)
 
-### Variant: number-format-open
-
-Click **Number format**; option `10'000.23` is visible.
-
-![21.gifts login number format](images/login-number-format.png)
-
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
-- **What the user sees:** Fill `AppShell` with Wordmark top-left; light language switcher, number-format switcher, and theme switcher top-right (not marketing header). Heading **Send help**, short lead about picking a forum message then sending Bitcoin, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
-- **Actions:** Change language, number format, or theme. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
-- **Calls:** `AppShell`, `Wordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`, `NumberFormatSwitcher`, `ThemeSwitcher`.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left; light language switcher and theme switcher top-right (not marketing header). Heading **Send help**, short lead about picking a forum message then sending Bitcoin, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **Actions:** Change language or theme. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
+- **Calls:** `AppShell`, `Wordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`, `ThemeSwitcher`.
 
 ### Variant: default
 
@@ -574,9 +562,9 @@ Named member with living-room rules agreed and no Wallet of Satoshi address. Com
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.
-- **What the user sees:** Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`). Unsigned (no session): Wordmark → `/`, ThemeSwitcher + NumberFormatSwitcher + LanguageSwitcher (today’s public chrome; default visual golden unchanged). Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first).
-- **Actions:** Change language, number format, or theme (unsigned), or open **Menu** / back to the forum (signed-in). Read the rules. Open contact or the forum.
-- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `NumberFormatSwitcher`, `ThemeSwitcher`.
+- **What the user sees:** Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`). Unsigned (no session): Wordmark → `/`, ThemeSwitcher + LanguageSwitcher (no NumberFormatSwitcher). Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first; Number format is a Menu row).
+- **Actions:** Change language or theme (unsigned), or open **Menu** / back to the forum (signed-in; Number format is in that Menu). Read the rules. Open contact or the forum.
+- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `NumberFormatSwitcher` (signed-in Menu via `SignedInChrome` only), `ThemeSwitcher`.
 - **Auth:** None required to view; chrome depends on hydrated session.
 
 ### Variant: default
@@ -738,9 +726,9 @@ Open official thread. Heading **21.gifts**, origin **Contact** under the heading
 
 ## Screen: /messages/[id]
 
-- **Purpose:** Public read-only HTML note by forum message UUID. Fill `AppShell` (`align="center"`) Wordmark top-left; ThemeSwitcher + NumberFormatSwitcher + light language switcher top-right. Ready card shows labeled **Translate** under the note body via `NoteTranslate` when the note language differs from the UI locale. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
+- **Purpose:** Public read-only HTML note by forum message UUID. Fill `AppShell` (`align="center"`) Wordmark top-left; ThemeSwitcher + light language switcher top-right. Ready card shows labeled **Translate** under the note body via `NoteTranslate` when the note language differs from the UI locale. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page.
 - **Inputs:** Dynamic route `id` (UUID). Message from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch.
-- **Actions:** Change language, number format, and theme. On a foreign-language note, **Translate** / Show original / Show translation. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
+- **Actions:** Change language and theme. On a foreign-language note, **Translate** / Show original / Show translation. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
 
 ### Variant: default
@@ -801,7 +789,7 @@ After POST /translate 502: **Could not translate this note. Please try again.**
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received + ₿ | USD, name + Wallet of Satoshi address fields) without edit/copy/back/menu/logout. Capability URL `/view/<64-hex>`; key/URL not shown. No `OnboardingGate` on this route.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); receive series from public `fetchGiftStats(handle)` via `recipientHandleFromAddress` (`GET /gifts/stats?recipient=`). Blank address → empty series, no stats fetch. Stats error → card with empty series.
-- **Actions:** Change language, number format, and theme (Wordmark top-left; ThemeSwitcher + NumberFormatSwitcher + light language switcher top-right). On profile fetch error, **Try again**. Empty series shows `profile.chartEmpty`; a filled series can toggle ₿ | USD. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
+- **Actions:** Change language and theme (Wordmark top-left; ThemeSwitcher + light language switcher top-right). On profile fetch error, **Try again**. Empty series shows `profile.chartEmpty`; a filled series can toggle ₿ | USD. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
 
 ### Variant: default
@@ -843,9 +831,9 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook hub (no auth gate). Header **Handbook** stays here.
-- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher and number-format switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
-- **Actions:** Change language or number format, open a part, copy the hub heading URL, follow the api handbook link.
-- **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`, `NumberFormatSwitcher`.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
+- **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
+- **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -915,7 +903,7 @@ Markdown list of `## Endpoint:` headings.
 - **URL:** any unknown path (App Router `not-found.tsx`). There is no `page.tsx` for `/404`; Playwright uses `page.goto('/404')` which hits this screen.
 - **What the user sees:** Marketing chrome with a language switcher (no number-format switcher — the page has no amounts), heading **404**, **This page does not exist.**, **Back home**.
 - **Actions:** Change language, go home, or use header/footer links.
-- **Calls:** `NotFound`, `MarketingHeader` (`showNumberFormat={false}`), `MarketingFooter`, `LanguageSwitcher`.
+- **Calls:** `NotFound`, `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`.
 
 ### Variant: default
 

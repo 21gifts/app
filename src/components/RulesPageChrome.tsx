@@ -2,7 +2,6 @@
 
 import { type ReactElement, type ReactNode } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -36,7 +35,6 @@ export function RulesPageChrome({ children }: { children: ReactNode }): ReactEle
       topRight={
         <>
           <ThemeSwitcher />
-          <NumberFormatSwitcher tone="light" />
           <LanguageSwitcher tone="light" />
         </>
       }

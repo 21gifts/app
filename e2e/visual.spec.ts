@@ -342,16 +342,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-language');
   });
 
-  test('state / number-format-open', async ({ page }, testInfo) => {
-    await page.goto('/');
-    if (isMobileProject(testInfo)) {
-      await page.getByRole('button', { name: 'Menu' }).click();
-    }
-    await page.getByLabel('Number format').click();
-    await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
-    await shotScreen(page, 'state-root-number-format');
-  });
-
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
@@ -523,13 +513,6 @@ test.describe('login variant baselines', () => {
     await page.getByLabel('Theme').click();
     await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
     await shotScreen(page, 'state-login-theme');
-  });
-
-  test('login number-format-open', async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Number format').click();
-    await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
-    await shotScreen(page, 'state-login-number-format');
   });
 });
 

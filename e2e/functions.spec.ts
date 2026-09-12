@@ -2311,31 +2311,83 @@ test('Function: LanguageSwitcher — landing exposes the language switcher', asy
   await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
 });
 
-test("Function: parseNumberFormat — /login Number format options include 10'000.23", async ({
-  page,
-}) => {
-  await page.goto('/login');
+test("Function: parseNumberFormat — Number format options include 10'000.23", async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
   await page.getByLabel('Number format').click();
   await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
 });
 
 test('Function: separatorsFor — same click shows 10,000.23 and 23.000,33', async ({ page }) => {
-  await page.goto('/login');
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
   await page.getByLabel('Number format').click();
   await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
   await expect(page.getByRole('option', { name: '23.000,33' })).toBeVisible();
 });
 
-test('Function: getRequestNumberFormat — /login switcher visible', async ({ page }) => {
-  await page.goto('/login');
+test('Function: getRequestNumberFormat — signed-in Menu Number format is visible', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
   await expect(page.getByLabel('Number format')).toBeVisible();
 });
 
-test('Function: NumberFormatProvider — picking 23.000,33 on /login writes numberFormat=de cookie', async ({
+test('Function: NumberFormatProvider — picking 23.000,33 in Menu writes numberFormat=de cookie', async ({
   page,
   context,
 }) => {
-  await page.goto('/login');
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
   await page.getByLabel('Number format').click();
   await page.getByRole('option', { name: '23.000,33' }).click();
   const cookies = await context.cookies();
@@ -2344,15 +2396,43 @@ test('Function: NumberFormatProvider — picking 23.000,33 on /login writes numb
   );
 });
 
-test('Function: useNumberFormat — Number format switcher on /login reads provider', async ({
+test('Function: useNumberFormat — Number format in signed-in Menu reads provider', async ({
   page,
 }) => {
-  await page.goto('/login');
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
   await expect(page.getByLabel('Number format')).toBeVisible();
 });
 
-test('Function: NumberFormatSwitcher — /login lists the three samples', async ({ page }) => {
-  await page.goto('/login');
+test('Function: NumberFormatSwitcher — signed-in Menu lists the three samples', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
   await page.getByLabel('Number format').click();
   await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
   await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
