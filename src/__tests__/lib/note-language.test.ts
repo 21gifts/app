@@ -45,6 +45,14 @@ describe('detectNoteLanguage', () => {
   it('returns other when supported-language scores tie', () => {
     expect(detectNoteLanguage('This is para sa everyone')).toBe('other');
   });
+
+  it('does not classify Spanish with a shared particle as English', () => {
+    expect(detectNoteLanguage('Necesito ayuda a pagar')).not.toBe('en');
+  });
+
+  it('does not classify German with shared particles as English', () => {
+    expect(detectNoteLanguage('Bitte hilf mir in Not')).toBe('de');
+  });
 });
 
 describe('shouldOfferNoteTranslate', () => {
@@ -75,5 +83,14 @@ describe('shouldOfferNoteTranslate', () => {
 
   it('does not offer translation for text that is too short to detect', () => {
     expect(shouldOfferNoteTranslate('hi', 'en')).toBe(false);
+  });
+
+  it('offers Spanish with a shared particle in the English UI', () => {
+    expect(shouldOfferNoteTranslate('Necesito ayuda a pagar', 'en')).toBe(true);
+  });
+
+  it('offers German with shared particles in the English UI', () => {
+    expect(shouldOfferNoteTranslate('Bitte hilf mir in Not', 'en')).toBe(true);
+    expect(shouldOfferNoteTranslate('Bitte hilf mir in Not', 'de')).toBe(false);
   });
 });
