@@ -47,6 +47,19 @@ const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageK
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
 
+/**
+ * Role that shows a forum tag, or `null` for basis / missing.
+ *
+ * @param role - Live account role from the api, if present.
+ * @returns Tagged role or `null`.
+ */
+function forumTaggedRole(role: string | undefined): ForumTaggedRole | null {
+  if (role === 'founder' || role === 'moderator' || role === 'verified') {
+    return role;
+  }
+  return null;
+}
+
 const COPY_RESET_MS = 1200;
 
 /** Active pay invoice shown under a forum card. */
@@ -516,12 +529,7 @@ export function ForumBoard({
                 : walletOfSatoshiHref(invoiceForCard.pr);
           /* v8 ignore stop */
 
-          const taggedRole =
-            message.role === 'founder' ||
-            message.role === 'moderator' ||
-            message.role === 'verified'
-              ? message.role
-              : null;
+          const taggedRole = forumTaggedRole(message.role);
           const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
@@ -819,63 +827,91 @@ export function ForumBoard({
                   ) : null}
                   {replies !== null && !repliesLoading && !repliesError ? (
                     <ul className="flex flex-col gap-3">
-                      {(Array.isArray(replies) ? replies : []).map((reply) => (
-                        <li
-                          key={reply.id}
-                          data-reply-id={reply.id}
-                          className="rounded-xl border border-app-border bg-app-card px-3 py-2"
-                        >
-                          <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
-                              <button
-                                type="button"
-                                aria-label={t('forum.authorProfile')}
-                                className="text-sm font-medium text-app-fg underline underline-offset-2"
-                                onClick={(event) => {
-                                  stopCardToggle(event);
-                                  router.push(`/members/${reply.accountId}`);
-                                }}
-                              >
-                                {reply.name}
-                              </button>
-                            ) : (
-                              <span className="text-sm font-medium text-app-fg">{reply.name}</span>
-                            )}
-                            <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
-                              {formatForumTime(reply.createdAt, locale)}
-                            </time>
-                          </div>
-                          {reply.text !== '' ? (
-                            <p className="mt-1 whitespace-pre-wrap text-sm text-app-fg">
-                              {reply.text}
-                            </p>
-                          ) : null}
-                          {showForumPm(ownAccountId, ownName, reply) ? (
-                            <div className="mt-2">
-                              <IconButton
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                aria-label={t('forum.pm')}
-                                title={t('forum.pm')}
-                                disabled={pmBusyId !== null}
-                                onClick={() => {
-                                  onPm(reply.id);
-                                }}
-                              >
-                                {pmBusyId === reply.id ? (
-                                  <Loader2
-                                    aria-hidden="true"
-                                    className="h-3.5 w-3.5 animate-spin"
-                                  />
+                      {(Array.isArray(replies) ? replies : []).map((reply) => {
+                        const replyTaggedRole = forumTaggedRole(reply.role);
+                        const replyRoleKeys =
+                          replyTaggedRole === null ? null : ROLE_TAG_KEYS[replyTaggedRole];
+                        const replyHintOpen = openRoleMessageId === reply.id;
+                        return (
+                          <li
+                            key={reply.id}
+                            data-reply-id={reply.id}
+                            className="rounded-xl border border-app-border bg-app-card px-3 py-2"
+                          >
+                            <div className="flex flex-wrap items-baseline justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
+                                  <button
+                                    type="button"
+                                    aria-label={t('forum.authorProfile')}
+                                    className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                    onClick={(event) => {
+                                      stopCardToggle(event);
+                                      router.push(`/members/${reply.accountId}`);
+                                    }}
+                                  >
+                                    {reply.name}
+                                  </button>
                                 ) : (
-                                  <Mail aria-hidden="true" className="h-3.5 w-3.5" />
+                                  <span className="text-sm font-medium text-app-fg">
+                                    {reply.name}
+                                  </span>
                                 )}
-                              </IconButton>
+                                {replyRoleKeys !== null ? (
+                                  <button
+                                    type="button"
+                                    aria-expanded={replyHintOpen}
+                                    onClick={(event) => {
+                                      stopCardToggle(event);
+                                      setOpenRoleMessageId(replyHintOpen ? null : reply.id);
+                                    }}
+                                    className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                                  >
+                                    {t(replyRoleKeys.label)}
+                                  </button>
+                                ) : null}
+                              </div>
+                              <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
+                                {formatForumTime(reply.createdAt, locale)}
+                              </time>
                             </div>
-                          ) : null}
-                        </li>
-                      ))}
+                            {replyHintOpen && replyRoleKeys !== null ? (
+                              <p role="status" className="mt-1 text-xs text-app-muted">
+                                {t(replyRoleKeys.hint)}
+                              </p>
+                            ) : null}
+                            {reply.text !== '' ? (
+                              <p className="mt-1 whitespace-pre-wrap text-sm text-app-fg">
+                                {reply.text}
+                              </p>
+                            ) : null}
+                            {showForumPm(ownAccountId, ownName, reply) ? (
+                              <div className="mt-2">
+                                <IconButton
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  aria-label={t('forum.pm')}
+                                  title={t('forum.pm')}
+                                  disabled={pmBusyId !== null}
+                                  onClick={() => {
+                                    onPm(reply.id);
+                                  }}
+                                >
+                                  {pmBusyId === reply.id ? (
+                                    <Loader2
+                                      aria-hidden="true"
+                                      className="h-3.5 w-3.5 animate-spin"
+                                    />
+                                  ) : (
+                                    <Mail aria-hidden="true" className="h-3.5 w-3.5" />
+                                  )}
+                                </IconButton>
+                              </div>
+                            ) : null}
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : null}
                   <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">

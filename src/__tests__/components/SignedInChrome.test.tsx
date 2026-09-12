@@ -170,7 +170,7 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
-  it('opens the menu with Profile, Language, and Log out, and omits zero totals', async () => {
+  it('opens the menu with Profile, Inbox, Language, and Log out, and omits zero totals', async () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
@@ -179,7 +179,7 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
-    expect(screen.getByRole('link', { name: 'Messages' }).getAttribute('href')).toBe('/messages');
+    expect(screen.getByRole('link', { name: 'Inbox' }).getAttribute('href')).toBe('/messages');
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByLabelText('Theme')).toBeTruthy();
@@ -404,11 +404,11 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
-  it('closes the menu when Messages is clicked', () => {
+  it('closes the menu when Inbox is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
-    fireEvent.click(screen.getByRole('link', { name: 'Messages' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Inbox' }));
     expectMenuClosed();
   });
 
