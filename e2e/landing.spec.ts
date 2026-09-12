@@ -20,6 +20,11 @@ test('legal page is reachable', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
 });
 
+test('about page is reachable', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('heading', { name: 'A house of hospitality' })).toBeVisible();
+});
+
 test('landing mobile nav opens the section links', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/');

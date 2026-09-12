@@ -8,8 +8,8 @@ import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink, Wordmark } from '@/components/ui';
 
 /**
- * Sticky dark header for marketing pages: wordmark, section nav, optional
- * PWA install control, language switcher, login CTA, and a mobile menu toggle.
+ * Sticky dark header for marketing pages: wordmark, section nav including About,
+ * optional PWA install control, language switcher, login CTA, and a mobile menu toggle.
  *
  * @returns The header element.
  */
@@ -37,6 +37,9 @@ export function MarketingHeader(): ReactElement {
           </Link>
           <Link href="/#faq" onClick={closeMenu}>
             {t('nav.faq')}
+          </Link>
+          <Link href="/about" onClick={closeMenu}>
+            {t('nav.about')}
           </Link>
           <Link href="/stats" onClick={closeMenu}>
             {t('nav.stats')}
