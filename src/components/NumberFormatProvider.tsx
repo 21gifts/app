@@ -18,7 +18,7 @@ export interface NumberFormatContextValue {
   /**
    * Persist a new style. Writes `numberFormat=<id>` with Path=/, Max-Age=1y,
    * SameSite=Lax (`Secure` on https). Same-id is a no-op when the cookie is
-   * already set; selecting `ch` while the cookie is absent still writes.
+   * already set to `next`; selecting `ch` while the cookie is absent still writes.
    *
    * @param next - Style the visitor chose.
    */
@@ -42,16 +42,6 @@ function readNumberFormatCookie(): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-/**
- * True when the visitor already has a valid `numberFormat` cookie.
- *
- * @returns Whether the cookie is exactly `ch`, `us`, or `de`.
- */
-function cookieIsPersisted(): boolean {
-  const raw = readNumberFormatCookie();
-  return raw === 'ch' || raw === 'us' || raw === 'de';
 }
 
 /**
@@ -79,7 +69,7 @@ export function NumberFormatProvider(props: {
 
   const setNumberFormat = useCallback(
     (next: NumberFormatStyle): void => {
-      if (next === numberFormat && cookieIsPersisted()) {
+      if (next === numberFormat && readNumberFormatCookie() === next) {
         return;
       }
       setNumberFormatState(next);
