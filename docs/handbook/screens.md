@@ -6,7 +6,7 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 
 - **URL:** `/` — public marketing landing (no auth gate).
 - **What the user sees:** Dark 21.gifts header with a language switcher and `NumberFormatSwitcher` (`tone="dark"`), headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **Actions:** Read the pitch, change language or number format, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `NumberFormatSwitcher`, `PwaInstall`.
 
 ### Variant: default
@@ -82,7 +82,7 @@ Fetch failed. Button **Try again**.
 
 - **URL:** `/stats` — public gift totals (no auth gate).
 - **What the user sees:** Dark 21.gifts header with a language switcher and number-format switcher, heading **Gifts**, four KPI cards (total spent as BIP-177 **₿** plus **USD**, gifts, people, period), then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿/USD control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Switch **Total spend over time** / **By person** / **By month** between ₿ and USD. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **Actions:** Change language or number format. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Switch **Total spend over time** / **By person** / **By month** between ₿ and USD. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`, `NumberFormatSwitcher`.
 
 ### Variant: default
@@ -575,7 +575,7 @@ Named member with living-room rules agreed and no Wallet of Satoshi address. Com
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.
 - **What the user sees:** Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`). Unsigned (no session): Wordmark → `/`, ThemeSwitcher + NumberFormatSwitcher + LanguageSwitcher (today’s public chrome; default visual golden unchanged). Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first).
-- **Actions:** Change language or theme (unsigned), or open **Menu** / back to the forum (signed-in). Read the rules. Open contact or the forum.
+- **Actions:** Change language, number format, or theme (unsigned), or open **Menu** / back to the forum (signed-in). Read the rules. Open contact or the forum.
 - **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `NumberFormatSwitcher`, `ThemeSwitcher`.
 - **Auth:** None required to view; chrome depends on hydrated session.
 
@@ -843,8 +843,8 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook hub (no auth gate). Header **Handbook** stays here.
-- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
-- **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher and number-format switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
+- **Actions:** Change language or number format, open a part, copy the hub heading URL, follow the api handbook link.
 - **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`, `NumberFormatSwitcher`.
 
 ### Variant: default
@@ -913,8 +913,8 @@ Markdown list of `## Endpoint:` headings.
 ## Screen: /404
 
 - **URL:** any unknown path (App Router `not-found.tsx`). There is no `page.tsx` for `/404`; Playwright uses `page.goto('/404')` which hits this screen.
-- **What the user sees:** Marketing chrome with a language switcher, heading **404**, **This page does not exist.**, **Back home**.
-- **Actions:** Change language, go home, or use header/footer links.
+- **What the user sees:** Marketing chrome with a language switcher and number-format switcher, heading **404**, **This page does not exist.**, **Back home**.
+- **Actions:** Change language or number format, go home, or use header/footer links.
 - **Calls:** `NotFound`, `MarketingHeader`, `MarketingFooter`, `LanguageSwitcher`, `NumberFormatSwitcher`.
 
 ### Variant: default
