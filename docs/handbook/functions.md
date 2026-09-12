@@ -870,8 +870,8 @@
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, and `ThemeProvider`.
-- **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, and `ThemeProvider`. Nest is Locale → NumberFormat → Theme.
+- **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, and `getRequestNumberFormat()` for the number-format provider.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
 
