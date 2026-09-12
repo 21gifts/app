@@ -15,12 +15,6 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   ),
 }));
 
-vi.mock('@/components/NumberFormatSwitcher', () => ({
-  NumberFormatSwitcher: ({ tone }: { tone?: string }) => (
-    <div data-testid="number-format-switcher">{tone}</div>
-  ),
-}));
-
 afterEach(cleanup);
 
 describe('ViewProfilePage', () => {
@@ -32,7 +26,6 @@ describe('ViewProfilePage', () => {
     const viewKey = 'a'.repeat(64);
     renderWithLocale(await ViewProfilePage({ params: Promise.resolve({ viewKey }) }));
     expect(screen.getByTestId('language-switcher').textContent).toBe('light');
-    expect(screen.getByTestId('number-format-switcher').textContent).toBe('light');
     expect(screen.getByTestId('view-profile-loader').textContent).toBe(viewKey);
   });
 });

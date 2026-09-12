@@ -7,10 +7,6 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   LanguageSwitcher: () => <div data-testid="language-switcher" />,
 }));
 
-vi.mock('@/components/NumberFormatSwitcher', () => ({
-  NumberFormatSwitcher: () => <div data-testid="number-format-switcher" />,
-}));
-
 vi.mock('@/lib/request-locale', () => ({
   getRequestLocale: vi.fn(async () => 'en' as const),
 }));
@@ -27,10 +23,5 @@ describe('RulesPage', () => {
   it('renders the language switcher', async () => {
     renderWithLocale(await RulesPage());
     expect(screen.getByTestId('language-switcher')).toBeTruthy();
-  });
-
-  it('renders the number format switcher', async () => {
-    renderWithLocale(await RulesPage());
-    expect(screen.getByTestId('number-format-switcher')).toBeTruthy();
   });
 });

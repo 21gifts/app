@@ -41,14 +41,8 @@ describe('MarketingHeader', () => {
     );
   });
 
-  it('always shows the language switcher and keeps number format in the nav', () => {
+  it('always shows the language switcher and does not show Number format', () => {
     renderWithLocale(<MarketingHeader />);
-    expect(screen.getByLabelText('Language')).toBeTruthy();
-    expect(screen.getByLabelText('Number format')).toBeTruthy();
-  });
-
-  it('omits the number-format switcher when showNumberFormat is false', () => {
-    renderWithLocale(<MarketingHeader showNumberFormat={false} />);
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.queryByLabelText('Number format')).toBeNull();
   });
