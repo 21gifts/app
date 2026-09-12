@@ -14,6 +14,8 @@ import {
   giftStatsSchema,
   memberProfileSchema,
   messageInvoiceSchema,
+  trustActionResultSchema,
+  trustChainSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
   pushSubscriptionResponseSchema,
@@ -31,6 +33,8 @@ import {
   type MessageInvoice,
   type PasskeyBegin,
   type PasskeySession,
+  type TrustActionResult,
+  type TrustChain,
   type ViewProfile,
 } from '@/lib/api-types';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
@@ -391,6 +395,120 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
   }
+}
+
+const TRUST_CHAIN_LOAD_ERROR = 'Could not load the Trust Chain. Please try again.';
+const TRUST_ACTION_ERROR = 'Could not update this member. Please try again.';
+
+/**
+ * Fetches the public Trust Chain graph (who verified or appointed whom).
+ *
+ * @returns The {@link TrustChain} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link trustChainSchema}.
+ */
+export async function fetchTrustChain(): Promise<TrustChain> {
+  try {
+    const response = await fetch('/trust/graph');
+    if (!response.ok) {
+      throw new Error(TRUST_CHAIN_LOAD_ERROR);
+    }
+    return trustChainSchema.parse(await response.json());
+  } catch {
+    throw new Error(TRUST_CHAIN_LOAD_ERROR);
+  }
+}
+
+/**
+ * Posts a staff Trust Chain action with the signed-in session.
+ *
+ * @param path - Same-origin proxy path.
+ * @param sessionToken - Bearer session.
+ * @param accountId - Subject account id.
+ * @returns Parsed {@link TrustActionResult}.
+ * @throws Error with visitor-facing copy on any failure.
+ */
+async function postTrustAction(
+  path: string,
+  sessionToken: string,
+  accountId: string,
+): Promise<TrustActionResult> {
+  try {
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId }),
+    });
+    if (!response.ok) {
+      throw new Error(TRUST_ACTION_ERROR);
+    }
+    return trustActionResultSchema.parse(await response.json());
+  } catch {
+    throw new Error(TRUST_ACTION_ERROR);
+  }
+}
+
+/**
+ * Verifies that a basis member is a real person (in-person confirmation).
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postTrustVerify(
+  sessionToken: string,
+  accountId: string,
+): Promise<TrustActionResult> {
+  return postTrustAction('/trust/verify', sessionToken, accountId);
+}
+
+/**
+ * Proposes a verified member as moderator.
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postTrustPropose(
+  sessionToken: string,
+  accountId: string,
+): Promise<TrustActionResult> {
+  return postTrustAction('/trust/propose-moderator', sessionToken, accountId);
+}
+
+/**
+ * Confirms a pending moderator proposal (must be a different staff member).
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postTrustConfirm(
+  sessionToken: string,
+  accountId: string,
+): Promise<TrustActionResult> {
+  return postTrustAction('/trust/confirm-moderator', sessionToken, accountId);
+}
+
+/**
+ * Appoints a basis or verified member as moderator (founder only).
+ *
+ * @param sessionToken - Bearer session of a founder.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postTrustAppoint(
+  sessionToken: string,
+  accountId: string,
+): Promise<TrustActionResult> {
+  return postTrustAction('/trust/appoint-moderator', sessionToken, accountId);
 }
 
 /**

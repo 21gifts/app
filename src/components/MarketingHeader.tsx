@@ -41,6 +41,9 @@ export function MarketingHeader(): ReactElement {
           <Link href="/stats" onClick={closeMenu}>
             {t('nav.stats')}
           </Link>
+          <Link href="/trust-chain" onClick={closeMenu}>
+            {t('nav.trustChain')}
+          </Link>
           <Link href="/handbook" onClick={closeMenu}>
             {t('nav.handbook')}
           </Link>

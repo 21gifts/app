@@ -16,6 +16,13 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('MarketingFooter', () => {
+  it('links Trust Chain to /trust-chain', async () => {
+    render(await MarketingFooter());
+    expect(screen.getByRole('link', { name: 'Trust Chain' }).getAttribute('href')).toBe(
+      '/trust-chain',
+    );
+  });
+
   it('links Handbook to /handbook', async () => {
     render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe('/handbook');

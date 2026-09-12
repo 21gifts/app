@@ -956,6 +956,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/trust-chain') {
+    json(res, 200, { nodes: [], edges: [] });
+    return;
+  }
+
+  if (
+    method === 'POST' &&
+    (pathName === '/trust/verify' ||
+      pathName === '/trust/propose-moderator' ||
+      pathName === '/trust/confirm-moderator' ||
+      pathName === '/trust/appoint-moderator')
+  ) {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 403, { error: 'Forbidden' });
+    return;
+  }
+
   json(res, 404, { error: 'Not found' });
 });
 

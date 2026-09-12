@@ -3957,6 +3957,147 @@ test('Function: proxyMessagesDelete — unauthenticated deletion is forwarded an
   expect(response.status()).toBe(401);
 });
 
+test('Function: proxyTrustChainGet — GET /trust/graph is empty', async ({ request }) => {
+  const res = await request.get('/trust/graph');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ nodes: [], edges: [] });
+});
+
+test('Function: fetchTrustChain — trust chain page shows the empty copy', async ({ page }) => {
+  await page.goto('/trust-chain');
+  await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
+  await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
+});
+
+test('Function: TrustChainPage — trust chain heading is visible', async ({ page }) => {
+  await page.goto('/trust-chain');
+  await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
+});
+
+test('Function: TrustChainLoader — trust chain page shows the empty copy', async ({ page }) => {
+  await page.goto('/trust-chain');
+  await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
+});
+
+test('Function: TrustChainScreen — empty chain hides the diagram', async ({ page }) => {
+  await page.goto('/trust-chain');
+  await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
+  await expect(page.locator('svg[aria-label]')).toHaveCount(0);
+});
+
+test('Function: TrustChainDiagram — a mocked chain renders named nodes', async ({ page }) => {
+  await page.route('**/trust/graph', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        nodes: [
+          { id: 'f1', name: 'Cyrill', role: 'founder' },
+          { id: 'm1', name: 'Severin', role: 'moderator' },
+        ],
+        edges: [{ from: 'f1', to: 'm1', kind: 'moderator_appoint' }],
+      }),
+    });
+  });
+  await page.goto('/trust-chain');
+  await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+  await expect(page.getByTestId('trust-node-m1')).toBeVisible();
+});
+
+test('Function: layoutTrustChain — appointed moderator sits below the founder', async ({
+  page,
+}) => {
+  await page.route('**/trust/graph', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        nodes: [
+          { id: 'f1', name: 'Cyrill', role: 'founder' },
+          { id: 'm1', name: 'Severin', role: 'moderator' },
+        ],
+        edges: [{ from: 'f1', to: 'm1', kind: 'moderator_appoint' }],
+      }),
+    });
+  });
+  await page.goto('/trust-chain');
+  const founder = page.getByTestId('trust-node-f1');
+  const moderator = page.getByTestId('trust-node-m1');
+  await expect(founder).toBeVisible();
+  await expect(moderator).toBeVisible();
+  const founderBox = await founder.boundingBox();
+  const moderatorBox = await moderator.boundingBox();
+  expect(founderBox).not.toBeNull();
+  expect(moderatorBox).not.toBeNull();
+  expect((moderatorBox?.y ?? 0) > (founderBox?.y ?? 0)).toBe(true);
+});
+
+test('Function: proxyTrustVerifyPost — unauthenticated verify is 401', async ({ request }) => {
+  expect((await request.post('/trust/verify')).status()).toBe(401);
+});
+
+test('Function: proxyTrustProposeModeratorPost — unauthenticated propose is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/trust/propose-moderator')).status()).toBe(401);
+});
+
+test('Function: proxyTrustConfirmModeratorPost — unauthenticated confirm is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/trust/confirm-moderator')).status()).toBe(401);
+});
+
+test('Function: proxyTrustAppointModeratorPost — unauthenticated appoint is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/trust/appoint-moderator')).status()).toBe(401);
+});
+
+test('Function: postTrustVerify — unauthenticated verify is 401', async ({ request }) => {
+  expect((await request.post('/trust/verify', { data: { accountId: 'x' } })).status()).toBe(401);
+});
+
+test('Function: postTrustPropose — unauthenticated propose is 401', async ({ request }) => {
+  expect(
+    (await request.post('/trust/propose-moderator', { data: { accountId: 'x' } })).status(),
+  ).toBe(401);
+});
+
+test('Function: postTrustConfirm — unauthenticated confirm is 401', async ({ request }) => {
+  expect(
+    (await request.post('/trust/confirm-moderator', { data: { accountId: 'x' } })).status(),
+  ).toBe(401);
+});
+
+test('Function: postTrustAppoint — unauthenticated appoint is 401', async ({ request }) => {
+  expect(
+    (await request.post('/trust/appoint-moderator', { data: { accountId: 'x' } })).status(),
+  ).toBe(401);
+});
+
+test('Function: MemberTrustActions — ordinary members have no verify action', async ({ page }) => {
+  await seedAdaSession(page);
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Ada',
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
+      }),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByTestId('state-members-staff-verify')).toHaveCount(0);
+});
+
 test('Function: DeletePostControl — ordinary members have no delete action', async ({ page }) => {
   await seedAdaSession(page);
   await stubPayableNote(page);

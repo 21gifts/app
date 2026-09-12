@@ -13,6 +13,8 @@ import {
   lnAddressResolvedSchema,
   giftStatsSchema,
   memberProfileSchema,
+  trustActionResultSchema,
+  trustChainSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
   pushSubscriptionResponseSchema,
@@ -45,7 +47,10 @@ describe('memberProfileSchema', () => {
       createdAt: '2026-01-15T12:00:00.000Z',
       profileMessage: null,
     };
-    expect(memberProfileSchema.parse(profile)).toEqual(profile);
+    expect(memberProfileSchema.parse(profile)).toEqual({
+      ...profile,
+      trust: { verifiedBy: null, proposedBy: null, confirmedBy: null, appointedBy: null },
+    });
   });
 
   it('rejects an empty name string', () => {
@@ -59,6 +64,19 @@ describe('memberProfileSchema', () => {
         profileMessage: null,
       }),
     ).toThrow();
+  });
+});
+
+describe('trustChainSchema', () => {
+  it('accepts an empty graph', () => {
+    expect(trustChainSchema.parse({ nodes: [], edges: [] })).toEqual({ nodes: [], edges: [] });
+  });
+});
+
+describe('trustActionResultSchema', () => {
+  it('accepts a staff action snapshot', () => {
+    const body = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
+    expect(trustActionResultSchema.parse(body)).toEqual(body);
   });
 });
 

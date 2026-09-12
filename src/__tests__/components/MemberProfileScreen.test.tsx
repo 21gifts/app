@@ -37,7 +37,19 @@ vi.mock('@/lib/api', () => ({
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
+  fetchMember: vi.fn(),
+  postTrustVerify: vi.fn(),
+  postTrustPropose: vi.fn(),
+  postTrustConfirm: vi.fn(),
+  postTrustAppoint: vi.fn(),
 }));
+
+const NULL_TRUST = {
+  verifiedBy: null,
+  proposedBy: null,
+  confirmedBy: null,
+  appointedBy: null,
+};
 
 const profile: MemberProfile = {
   id: '22222222-2222-4222-8222-222222222222',
@@ -46,6 +58,7 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   profileMessage: null,
+  trust: NULL_TRUST,
 };
 
 const note = {
@@ -647,6 +660,26 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('shows Verify for a moderator viewing a basis member', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />,
+    );
+    expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
+    expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
+  });
+
+  it('does not show Verify for a basis viewer', () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+    expect(screen.queryByTestId('state-members-staff-verify')).toBeNull();
   });
 
   it('shows unnamed and no-address copy when fields are null', () => {

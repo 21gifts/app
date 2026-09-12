@@ -6,12 +6,12 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 
 - **URL:** `/` — public marketing landing (no auth gate).
 - **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open Stats, open Trust Chain, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`.
 
 ### Variant: default
 
-Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, Stats, Handbook, Log in). No hamburger.
+Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, Stats, Trust Chain, Handbook, Log in). No hamburger.
 
 ![21.gifts home](images/root.png)
 
@@ -108,6 +108,37 @@ Waiting on `GET /gifts/stats`. Copy **Loading…**
 Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try again**.
 
 ![21.gifts stats error](images/stats-error.png)
+
+## Screen: /trust-chain
+
+- **URL:** `/trust-chain` — public Trust Chain (no auth gate).
+- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Trust Chain**, a short lead, then a data-driven diagram of who verified or appointed whom (founder at the root, moderators, then verified people). Below the diagram, three short explanations: **Verified**, **Moderator**, and **Founder**. Empty copy: **No one is on the Trust Chain yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Change language. Read the diagram and the role explanations. Open a member card (`/members/{id}`) from a node (then requires login). Header **Trust Chain** stays on this page; **Log in** goes to `/login`.
+- **Calls:** `TrustChainPage`, `TrustChainLoader`, `TrustChainScreen`, `TrustChainDiagram`, `layoutTrustChain`, `fetchTrustChain` (same-origin `GET /trust/graph`), `LanguageSwitcher`.
+
+### Variant: default
+
+Loaded chain: founder **Cyrill** appointed moderator **Severin**, who verified two people. Diagram visible.
+
+![21.gifts Trust Chain](images/trust-chain.png)
+
+### Variant: empty
+
+Zero nodes. Copy **No one is on the Trust Chain yet.**
+
+![21.gifts Trust Chain empty](images/trust-chain-empty.png)
+
+### Variant: loading
+
+Waiting on `GET /trust/graph`. Copy **Loading…**
+
+![21.gifts Trust Chain loading](images/trust-chain-loading.png)
+
+### Variant: error
+
+Fetch failed. Copy **Could not load the Trust Chain. Please try again.** and **Try again**.
+
+![21.gifts Trust Chain error](images/trust-chain-error.png)
 
 ## Screen: /login
 
@@ -612,6 +643,12 @@ Signed-in visitor viewing their own `/members/:id` card.
 Named visitor with living-room rules agreed and no Wallet of Satoshi address. Member profile note expanded, reply filled, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
 
 ![21.gifts member overlay address](images/members-overlay-address.png)
+
+### Variant: staff-verify
+
+Signed-in **moderator** viewing another member who is **basis**. Staff card with **Verify** (`data-testid="state-members-staff-verify"`).
+
+![21.gifts member staff verify](images/members-staff-verify.png)
 
 ## Screen: /profile
 

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useRef, useState, type ReactElement } from 'react';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { MemberTrustActions } from '@/components/MemberTrustActions';
 import {
   ForumBoard,
   type ForumFormError,
@@ -84,7 +85,9 @@ const IDLE_BOARD = {
 
 /**
  * Signed-in member identity card: chart, name, Lightning Address, role pill,
- * and optional single-note forum card when `profileMessage` is set.
+ * staff Trust Chain actions when the viewer is founder/moderator and the
+ * subject is someone else, and optional single-note forum card when
+ * `profileMessage` is set.
  *
  * @param props - Member profile and receive series for the chart.
  * @returns The presentational member profile.
@@ -117,8 +120,9 @@ export function MemberProfileScreen({
     'name' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const [listedProfile, setListedProfile] = useState(profile);
   const [listedNote, setListedNote] = useState(profile.profileMessage);
-  const address = profile.lightningAddress;
+  const address = listedProfile.lightningAddress;
 
   const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
     const next = nextPostRequirement(missing);
@@ -200,8 +204,10 @@ export function MemberProfileScreen({
   };
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const tagged =
-    profile.role === 'founder' || profile.role === 'moderator' || profile.role === 'verified'
-      ? profile.role
+    listedProfile.role === 'founder' ||
+    listedProfile.role === 'moderator' ||
+    listedProfile.role === 'verified'
+      ? listedProfile.role
       : null;
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
 
@@ -229,7 +235,7 @@ export function MemberProfileScreen({
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <p className="min-w-0 truncate text-sm text-app-fg">
-                {profile.name ?? t('view.unnamed')}
+                {listedProfile.name ?? t('view.unnamed')}
               </p>
               {roleKeys !== null ? (
                 <button
@@ -260,6 +266,11 @@ export function MemberProfileScreen({
               <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noAddress')}</p>
             )}
           </div>
+          {account !== null &&
+          (account.role === 'founder' || account.role === 'moderator') &&
+          listedProfile.id !== account.id ? (
+            <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />
+          ) : null}
         </section>
         {listedNote !== null ? (
           <ForumBoard

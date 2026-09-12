@@ -384,9 +384,43 @@ export const pushSubscriptionResponseSchema = z.object({
 export type PushSubscriptionResponse = z.infer<typeof pushSubscriptionResponseSchema>;
 
 /**
+ * Default all-null trust refs so mixed deploys without `trust` still parse.
+ */
+const accountTrustNull = {
+  verifiedBy: null,
+  proposedBy: null,
+  confirmedBy: null,
+  appointedBy: null,
+};
+
+/**
+ * Runtime schema for one account named in a trust-chain ref.
+ */
+export const accountTrustRefSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+});
+
+/**
+ * Runtime schema for who verified, proposed, confirmed, or appointed a member.
+ */
+export const accountTrustSchema = z.object({
+  verifiedBy: accountTrustRefSchema.nullable(),
+  proposedBy: accountTrustRefSchema.nullable(),
+  confirmedBy: accountTrustRefSchema.nullable(),
+  appointedBy: accountTrustRefSchema.nullable(),
+});
+
+/**
+ * Named refs for a member's place on the Trust Chain.
+ */
+export type AccountTrust = z.infer<typeof accountTrustSchema>;
+
+/**
  * Runtime schema for a signed-in member profile from `GET /members/:id`.
  *
  * `profileMessage` is the member's pinned forum note when present.
+ * `trust` defaults to all-null when an older api omits the field.
  */
 export const memberProfileSchema = z.object({
   id: z.string(),
@@ -395,9 +429,65 @@ export const memberProfileSchema = z.object({
   lightningAddress: z.string().nullable(),
   createdAt: z.string(),
   profileMessage: forumMessageSchema.nullable(),
+  trust: accountTrustSchema.optional().default(accountTrustNull),
 });
 
 /**
  * Signed-in member profile from the api.
  */
 export type MemberProfile = z.infer<typeof memberProfileSchema>;
+
+/**
+ * Runtime schema for one node on `GET /trust-chain`.
+ */
+export const trustChainNodeSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  role: z.enum(['verified', 'moderator', 'founder']),
+});
+
+/**
+ * Runtime schema for one directed edge on `GET /trust-chain`.
+ */
+export const trustChainEdgeSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  kind: z.enum(['verify', 'moderator_confirm', 'moderator_appoint']),
+});
+
+/**
+ * Runtime schema for the payload of `GET /trust-chain`.
+ */
+export const trustChainSchema = z.object({
+  nodes: z.array(trustChainNodeSchema),
+  edges: z.array(trustChainEdgeSchema),
+});
+
+/**
+ * Public Trust Chain graph from the api.
+ */
+export type TrustChain = z.infer<typeof trustChainSchema>;
+
+/**
+ * One person on the Trust Chain.
+ */
+export type TrustChainNode = z.infer<typeof trustChainNodeSchema>;
+
+/**
+ * One directed verify / confirm / appoint edge.
+ */
+export type TrustChainEdge = z.infer<typeof trustChainEdgeSchema>;
+
+/**
+ * Runtime schema for a successful staff trust POST (`verify` / propose / confirm / appoint).
+ */
+export const trustActionResultSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  role: z.enum(['basis', 'verified', 'moderator', 'founder']),
+});
+
+/**
+ * Updated account snapshot after a staff trust action.
+ */
+export type TrustActionResult = z.infer<typeof trustActionResultSchema>;

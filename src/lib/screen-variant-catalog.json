@@ -438,6 +438,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:overlay-address",
+    "label": "/members/[accountId] overlay-address",
+    "visual": "state-members-overlay-address",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:staff-verify",
+    "label": "/members/[accountId] staff-verify",
+    "visual": "state-members-staff-verify",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",
@@ -525,6 +537,30 @@
     "id": "/stats:error",
     "label": "/stats error",
     "visual": "state-stats-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/trust-chain:default",
+    "label": "/trust-chain default",
+    "visual": "screen-trust-chain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/trust-chain:empty",
+    "label": "/trust-chain empty",
+    "visual": "state-trust-chain-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/trust-chain:loading",
+    "label": "/trust-chain loading",
+    "visual": "state-trust-chain-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/trust-chain:error",
+    "label": "/trust-chain error",
+    "visual": "state-trust-chain-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

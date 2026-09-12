@@ -10,6 +10,7 @@ import {
   fetchGiftStats,
   fetchMe,
   fetchMember,
+  fetchTrustChain,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
@@ -22,6 +23,10 @@ import {
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   openConversation,
   postContact,
+  postTrustAppoint,
+  postTrustConfirm,
+  postTrustPropose,
+  postTrustVerify,
   postConversationMessage,
   postMessage,
   postMessageInvoice,
@@ -170,7 +175,10 @@ describe('fetchMember', () => {
 
   it('returns the validated member profile', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: member });
-    await expect(fetchMember('sess', member.id)).resolves.toEqual(member);
+    await expect(fetchMember('sess', member.id)).resolves.toEqual({
+      ...member,
+      trust: { verifiedBy: null, proposedBy: null, confirmedBy: null, appointedBy: null },
+    });
     expect(fetchMock).toHaveBeenCalledWith(`/forum/members/${encodeURIComponent(member.id)}`, {
       headers: { Authorization: 'Bearer sess' },
     });
@@ -1602,6 +1610,143 @@ describe('finishPasskeyAuthentication', () => {
     stubFetch({ ok: false, status: 400, body: {} });
     await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
       'Failed to finish passkey authentication: 400',
+    );
+  });
+});
+
+describe('fetchTrustChain', () => {
+  const chain = {
+    nodes: [{ id: 'f', name: 'Cyrill', role: 'founder' as const }],
+    edges: [] as { from: string; to: string; kind: 'verify' }[],
+  };
+
+  it('returns the validated graph', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: chain });
+    await expect(fetchTrustChain()).resolves.toEqual(chain);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/graph');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(fetchTrustChain()).rejects.toThrow(
+      'Could not load the Trust Chain. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchTrustChain()).rejects.toThrow(
+      'Could not load the Trust Chain. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { nodes: [] } });
+    await expect(fetchTrustChain()).rejects.toThrow(
+      'Could not load the Trust Chain. Please try again.',
+    );
+  });
+});
+
+describe('postTrustVerify', () => {
+  const result = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
+
+  it('posts Bearer JSON { accountId } and returns the snapshot', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postTrustVerify('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/verify', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(postTrustVerify('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+});
+
+describe('postTrustPropose', () => {
+  const result = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
+
+  it('posts Bearer JSON { accountId } to /trust/propose-moderator', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postTrustPropose('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/propose-moderator', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postTrustPropose('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+});
+
+describe('postTrustConfirm', () => {
+  const result = { id: 'acc_1', name: 'Carol', role: 'moderator' as const };
+
+  it('posts Bearer JSON { accountId } to /trust/confirm-moderator', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postTrustConfirm('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/confirm-moderator', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(postTrustConfirm('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+});
+
+describe('postTrustAppoint', () => {
+  const result = { id: 'acc_1', name: 'Carol', role: 'moderator' as const };
+
+  it('posts Bearer JSON { accountId } to /trust/appoint-moderator', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postTrustAppoint('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/appoint-moderator', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(postTrustAppoint('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(postTrustAppoint('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
     );
   });
 });

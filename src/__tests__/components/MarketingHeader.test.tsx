@@ -33,6 +33,9 @@ describe('MarketingHeader', () => {
     expect(screen.getByRole('link', { name: 'Stats', hidden: true }).getAttribute('href')).toBe(
       '/stats',
     );
+    expect(
+      screen.getByRole('link', { name: 'Trust Chain', hidden: true }).getAttribute('href'),
+    ).toBe('/trust-chain');
     expect(screen.getByRole('link', { name: 'Handbook', hidden: true }).getAttribute('href')).toBe(
       '/handbook',
     );

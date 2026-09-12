@@ -142,6 +142,56 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /trust-chain to the 21.gifts api (public; no auth required).
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyTrustChainGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/trust-chain');
+}
+
+/**
+ * Proxies POST /trust/verify to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyTrustVerifyPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/trust/verify');
+}
+
+/**
+ * Proxies POST /trust/propose-moderator to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyTrustProposeModeratorPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/trust/propose-moderator');
+}
+
+/**
+ * Proxies POST /trust/confirm-moderator to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyTrustConfirmModeratorPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/trust/confirm-moderator');
+}
+
+/**
+ * Proxies POST /trust/appoint-moderator to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyTrustAppointModeratorPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/trust/appoint-moderator');
+}
+
+/**
  * Proxies GET /gifts to the 21.gifts api (forwards `day` query).
  *
  * @param request - Incoming App Router request.

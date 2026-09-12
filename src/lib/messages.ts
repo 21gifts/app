@@ -7,6 +7,7 @@ const en = {
   'nav.why': 'Why',
   'nav.faq': 'FAQ',
   'nav.stats': 'Stats',
+  'nav.trustChain': 'Trust Chain',
   'nav.handbook': 'Handbook',
   'nav.login': 'Log in',
   'nav.home': 'Home',
@@ -29,6 +30,7 @@ const en = {
   'aria.github': 'GitHub',
   'aria.handbookSections': 'Handbook sections',
   'aria.theme': 'Theme',
+  'aria.trustChain': 'Trust Chain diagram',
 
   'theme.label': 'Theme',
   'theme.system': 'System',
@@ -405,6 +407,29 @@ const en = {
   'inbox.errorEmpty': 'Enter a message',
   'inbox.errorTooLong': 'Keep it to 500 characters',
   'inbox.errorRequest': 'Could not send your message',
+
+  'trustChain.title': 'Trust Chain',
+  'trustChain.lead': 'Who met whom in real life, and who appointed the moderators.',
+  'trustChain.empty': 'No one is on the Trust Chain yet.',
+  'trustChain.loading': 'Loading…',
+  'trustChain.error': 'Could not load the Trust Chain. Please try again.',
+  'trustChain.retry': 'Try again',
+  'trustChain.unnamed': 'Unnamed',
+  'trustChain.edge.verify': 'verified',
+  'trustChain.edge.confirm': 'confirmed',
+  'trustChain.edge.appoint': 'appointed',
+  'trustChain.explainVerified':
+    'Verified means a moderator or founder met the person in real life and confirmed they are real. It is not a wallet proof.',
+  'trustChain.explainModerator':
+    'To become a moderator, an existing moderator or founder proposes the person and a different moderator or founder confirms — or a founder appoints them directly.',
+  'trustChain.explainFounder': 'A founder started 21.gifts and sits at the root of the chain.',
+  'trustChain.action.verify': 'Verify',
+  'trustChain.action.propose': 'Propose as moderator',
+  'trustChain.action.confirm': 'Confirm as moderator',
+  'trustChain.action.appoint': 'Appoint as moderator',
+  'trustChain.actionFailed': 'Could not update this member. Please try again.',
+  'trustChain.waitingConfirm': 'Waiting for another moderator to confirm.',
+  'trustChain.alreadyOnChain': 'Already on the Trust Chain.',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -419,6 +444,7 @@ const de = {
   'nav.why': 'Warum',
   'nav.faq': 'FAQ',
   'nav.stats': 'Statistik',
+  'nav.trustChain': 'Trust-Kette',
   'nav.handbook': 'Handbuch',
   'nav.login': 'Anmelden',
   'nav.home': 'Start',
@@ -439,6 +465,7 @@ const de = {
   'aria.github': 'GitHub',
   'aria.handbookSections': 'Handbuchabschnitte',
   'aria.theme': 'Darstellung',
+  'aria.trustChain': 'Diagramm der Trust-Kette',
   'theme.label': 'Darstellung',
   'theme.system': 'System',
   'theme.light': 'Hell',
@@ -815,6 +842,32 @@ const de = {
   'inbox.errorEmpty': 'Bitte schreiben Sie eine Nachricht',
   'inbox.errorTooLong': 'Maximal 500 Zeichen',
   'inbox.errorRequest': 'Nachricht konnte nicht gesendet werden',
+
+  'trustChain.title': 'Trust-Kette',
+  'trustChain.lead': 'Wer wen persönlich getroffen hat, und wer die Moderatoren ernannt hat.',
+  'trustChain.empty': 'Noch niemand ist auf der Trust-Kette.',
+  'trustChain.loading': 'Laden…',
+  'trustChain.error': 'Die Trust-Kette konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'trustChain.retry': 'Erneut versuchen',
+  'trustChain.unnamed': 'Unbenannt',
+  'trustChain.edge.verify': 'verifiziert',
+  'trustChain.edge.confirm': 'bestätigt',
+  'trustChain.edge.appoint': 'ernannt',
+  'trustChain.explainVerified':
+    'Verifiziert bedeutet, dass eine Moderatorin, ein Moderator oder eine Gründerperson die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
+  'trustChain.explainModerator':
+    'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin, ein Moderator oder eine Gründerperson die Person vor, und eine andere Moderatorin, ein Moderator oder eine Gründerperson bestätigt — oder eine Gründerperson ernennt sie direkt.',
+  'trustChain.explainFounder':
+    'Eine Gründerperson hat 21.gifts gestartet und sitzt an der Wurzel der Kette.',
+  'trustChain.action.verify': 'Verifizieren',
+  'trustChain.action.propose': 'Als Moderator vorschlagen',
+  'trustChain.action.confirm': 'Als Moderator bestätigen',
+  'trustChain.action.appoint': 'Als Moderator ernennen',
+  'trustChain.actionFailed':
+    'Dieses Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.',
+  'trustChain.waitingConfirm':
+    'Warten auf die Bestätigung durch eine andere Moderatorin oder einen anderen Moderator.',
+  'trustChain.alreadyOnChain': 'Bereits auf der Trust-Kette.',
 } satisfies Messages;
 
 const es = {
@@ -823,6 +876,7 @@ const es = {
   'nav.why': 'Por qué',
   'nav.faq': 'FAQ',
   'nav.stats': 'Estadísticas',
+  'nav.trustChain': 'Cadena de confianza',
   'nav.handbook': 'Manual',
   'nav.login': 'Iniciar sesión',
   'nav.home': 'Inicio',
@@ -843,6 +897,7 @@ const es = {
   'aria.github': 'GitHub',
   'aria.handbookSections': 'Secciones del manual',
   'aria.theme': 'Tema',
+  'aria.trustChain': 'Diagrama de la cadena de confianza',
   'theme.label': 'Tema',
   'theme.system': 'Sistema',
   'theme.light': 'Claro',
@@ -1211,6 +1266,30 @@ const es = {
   'inbox.errorEmpty': 'Escribe un mensaje',
   'inbox.errorTooLong': 'Máximo 500 caracteres',
   'inbox.errorRequest': 'No se pudo enviar el mensaje',
+
+  'trustChain.title': 'Cadena de confianza',
+  'trustChain.lead': 'Quién conoció a quién en persona, y quién nombró a las personas moderadoras.',
+  'trustChain.empty': 'Todavía no hay nadie en la cadena de confianza.',
+  'trustChain.loading': 'Cargando…',
+  'trustChain.error': 'No se pudo cargar la cadena de confianza. Inténtalo de nuevo.',
+  'trustChain.retry': 'Intentar de nuevo',
+  'trustChain.unnamed': 'Sin nombre',
+  'trustChain.edge.verify': 'verificado',
+  'trustChain.edge.confirm': 'confirmado',
+  'trustChain.edge.appoint': 'nombrado',
+  'trustChain.explainVerified':
+    'Verificado significa que una persona moderadora o fundadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
+  'trustChain.explainModerator':
+    'Para ser moderadora o moderador, una persona moderadora o fundadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
+  'trustChain.explainFounder':
+    'Una persona fundadora empezó 21.gifts y está en la raíz de la cadena.',
+  'trustChain.action.verify': 'Verificar',
+  'trustChain.action.propose': 'Proponer como moderador',
+  'trustChain.action.confirm': 'Confirmar como moderador',
+  'trustChain.action.appoint': 'Nombrar como moderador',
+  'trustChain.actionFailed': 'No se pudo actualizar a este miembro. Inténtalo de nuevo.',
+  'trustChain.waitingConfirm': 'Esperando a que otra persona moderadora confirme.',
+  'trustChain.alreadyOnChain': 'Ya está en la cadena de confianza.',
 } satisfies Messages;
 
 const fil = {
@@ -1219,6 +1298,7 @@ const fil = {
   'nav.why': 'Bakit',
   'nav.faq': 'FAQ',
   'nav.stats': 'Stats',
+  'nav.trustChain': 'Trust Chain',
   'nav.handbook': 'Handbook',
   'nav.login': 'Mag-log in',
   'nav.home': 'Home',
@@ -1239,6 +1319,7 @@ const fil = {
   'aria.github': 'GitHub',
   'aria.handbookSections': 'Mga seksyon ng handbook',
   'aria.theme': 'Tema',
+  'aria.trustChain': 'Diagram ng Trust Chain',
   'theme.label': 'Tema',
   'theme.system': 'Sistema',
   'theme.light': 'Maliwanag',
@@ -1615,6 +1696,30 @@ const fil = {
   'inbox.errorEmpty': 'Maglagay ng mensahe',
   'inbox.errorTooLong': 'Hanggang 500 na karakter',
   'inbox.errorRequest': 'Hindi maipadala ang mensahe',
+
+  'trustChain.title': 'Trust Chain',
+  'trustChain.lead': 'Sino ang nagkita sa totoo, at sino ang nagtalaga sa mga moderator.',
+  'trustChain.empty': 'Wala pang nasa Trust Chain.',
+  'trustChain.loading': 'Naglo-load…',
+  'trustChain.error': 'Hindi ma-load ang Trust Chain. Subukan ulit.',
+  'trustChain.retry': 'Subukan ulit',
+  'trustChain.unnamed': 'Walang pangalan',
+  'trustChain.edge.verify': 'na-verify',
+  'trustChain.edge.confirm': 'nakumpirma',
+  'trustChain.edge.appoint': 'itinalaga',
+  'trustChain.explainVerified':
+    'Ang Verified ay nangangahulugang isang moderator o founder ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
+  'trustChain.explainModerator':
+    'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator o founder at ibang moderator o founder ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
+  'trustChain.explainFounder':
+    'Isang founder ang nagsimula ng 21.gifts at nakaupo sa ugat ng kadena.',
+  'trustChain.action.verify': 'I-verify',
+  'trustChain.action.propose': 'Ipanukala bilang moderator',
+  'trustChain.action.confirm': 'Kumpirmahin bilang moderator',
+  'trustChain.action.appoint': 'Italaga bilang moderator',
+  'trustChain.actionFailed': 'Hindi ma-update ang miyembrong ito. Subukan ulit.',
+  'trustChain.waitingConfirm': 'Naghihintay ng kumpirmasyon mula sa ibang moderator.',
+  'trustChain.alreadyOnChain': 'Nasa Trust Chain na.',
 } satisfies Messages;
 
 /**

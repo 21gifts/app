@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, and `/push/vapid-public`). HTML `/messages` is the inbox page, not a GET proxy.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, and `/trust/graph`). HTML `/messages` is the inbox page, not a GET proxy. The marketing page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -840,6 +840,83 @@
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
 - **Used by:** `useAuthStore.clearAuth`.
 
+## Function: fetchTrustChain
+
+- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) and parse the public Trust Chain graph.
+- **Inputs:** none.
+- **Returns / side effects:** `TrustChain`. Throws visitor copy when the api is down or the body is invalid.
+- **Used by:** `TrustChainLoader`.
+
+## Function: postTrustVerify
+
+- **Purpose:** POST `/trust/verify` with `{ accountId }` so a founder or moderator verifies a basis member.
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: postTrustPropose
+
+- **Purpose:** POST `/trust/propose-moderator` with `{ accountId }`.
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: postTrustConfirm
+
+- **Purpose:** POST `/trust/confirm-moderator` with `{ accountId }` (caller must not be the proposer).
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: postTrustAppoint
+
+- **Purpose:** POST `/trust/appoint-moderator` with `{ accountId }` (founder only).
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: layoutTrustChain
+
+- **Purpose:** BFS forest layout of Trust Chain nodes and edges into x/y coordinates (no graph library).
+- **Inputs:** `TrustChain` `{ nodes, edges }`.
+- **Returns / side effects:** `{ nodes, edges, width, height }` with pixel positions. Empty input is zero size.
+- **Used by:** `TrustChainDiagram`.
+
+## Function: TrustChainDiagram
+
+- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, arrow, kind label). Nodes link to `/members/{id}`.
+- **Inputs:** `chain: TrustChain`.
+- **Returns / side effects:** SVG with `data-testid="trust-node-{id}"`. Empty chain is not rendered by the parent screen.
+- **Used by:** `TrustChainScreen`.
+
+## Function: TrustChainScreen
+
+- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy.
+- **Inputs:** `chain`, `error`, `loading`, `onRetry`.
+- **Returns / side effects:** Marketing screen element.
+- **Used by:** `TrustChainLoader`.
+
+## Function: TrustChainLoader
+
+- **Purpose:** Client loader for `/trust-chain`: fetches the graph and renders `TrustChainScreen`.
+- **Inputs:** none (fetches on mount).
+- **Returns / side effects:** Loading, error+retry, empty, or diagram states.
+- **Used by:** `TrustChainPage`.
+
+## Function: TrustChainPage
+
+- **Purpose:** Marketing page at `/trust-chain`.
+- **Inputs:** none.
+- **Returns / side effects:** `TrustChainLoader` inside the dark marketing shell.
+- **Used by:** App Router `src/app/(marketing)/trust-chain/page.tsx`.
+
+## Function: MemberTrustActions
+
+- **Purpose:** Staff-only Verify / Propose / Confirm / Appoint controls on another member's identity card.
+- **Inputs:** `profile`, optional `onUpdated`. Hidden unless the signed-in account is founder/moderator and not the subject.
+- **Returns / side effects:** POST then re-fetch member; `data-testid="state-members-staff-verify"` when shown.
+- **Used by:** `MemberProfileScreen`.
+
 ## Function: fetchGiftStats
 
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
@@ -1215,10 +1292,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/contact/submit` re-exports `proxyContactPost`. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/contact/submit` re-exports `proxyContactPost`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), and in-app contact (`POST /contact/submit`).
+- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), in-app contact (`POST /contact/submit`), and staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/appoint-moderator`).
 
 ## Function: proxyApiRequest
 
@@ -1226,6 +1303,41 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response` (status + selected headers + streamed body), or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.
+
+## Function: proxyTrustChainGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /trust-chain`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/trust/graph`.
+
+## Function: proxyTrustVerifyPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/verify`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/verify`.
+
+## Function: proxyTrustProposeModeratorPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/propose-moderator`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/propose-moderator`.
+
+## Function: proxyTrustConfirmModeratorPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/confirm-moderator`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/confirm-moderator`.
+
+## Function: proxyTrustAppointModeratorPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/appoint-moderator`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/appoint-moderator`.
 
 ## Function: proxyGiftsStatsGet
 

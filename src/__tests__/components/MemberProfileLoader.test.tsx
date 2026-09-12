@@ -30,6 +30,7 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   profileMessage: null,
+  trust: { verifiedBy: null, proposedBy: null, confirmedBy: null, appointedBy: null },
 };
 
 const EMPTY_STATS: GiftStats = {

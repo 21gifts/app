@@ -238,6 +238,41 @@
 - **Used by:** `deletePushSubscription` via `disablePush` on `/profile`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /trust/graph
+
+- **Purpose:** Same-origin proxy of api `GET /trust-chain` (public nodes and stored edges). Lives at `/trust/graph` so it does not collide with the marketing page `/trust-chain`.
+- **Errors:** Upstream 503, or 502 if the api is unreachable.
+- **Used by:** `fetchTrustChain` on `/trust-chain`.
+- **Auth:** none.
+
+## Endpoint: POST /trust/verify
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /trust/verify` with `{ accountId }`.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postTrustVerify` in `MemberTrustActions`.
+- **Auth:** Bearer (founder or moderator).
+
+## Endpoint: POST /trust/propose-moderator
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /trust/propose-moderator` with `{ accountId }`.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postTrustPropose` in `MemberTrustActions`.
+- **Auth:** Bearer (founder or moderator).
+
+## Endpoint: POST /trust/confirm-moderator
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /trust/confirm-moderator` with `{ accountId }`.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postTrustConfirm` in `MemberTrustActions`.
+- **Auth:** Bearer (founder or moderator, not the proposer).
+
+## Endpoint: POST /trust/appoint-moderator
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /trust/appoint-moderator` with `{ accountId }`.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postTrustAppoint` in `MemberTrustActions`.
+- **Auth:** Bearer (founder).
+
 ## Endpoint: DELETE /forum/messages/[id]
 
 - **Purpose:** Same-origin moderation proxy to DELETE /messages/:id.
