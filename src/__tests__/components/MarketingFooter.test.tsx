@@ -16,6 +16,11 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('MarketingFooter', () => {
+  it('links About to /about', async () => {
+    render(await MarketingFooter());
+    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
+  });
+
   it('links Handbook to /handbook', async () => {
     render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe('/handbook');
@@ -40,5 +45,11 @@ describe('MarketingFooter', () => {
     expect(screen.getByRole('link', { name: 'GitHub' }).getAttribute('href')).toBe(
       'https://github.com/21gifts',
     );
+  });
+
+  it('quotes Matthew 10:8', async () => {
+    render(await MarketingFooter());
+    expect(screen.getByText(/Freely you have received; freely give/)).toBeTruthy();
+    expect(screen.getByText('Matthew 10:8')).toBeTruthy();
   });
 });

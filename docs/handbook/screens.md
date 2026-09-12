@@ -5,13 +5,13 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open Stats, open Legal & Privacy, open the Handbook.
+- **What the user sees:** Dark 21.gifts header with a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ (including whether this is a Christian project), CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
+- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`.
 
 ### Variant: default
 
-Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, Stats, Handbook, Log in). No hamburger.
+Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, About, Stats, Handbook, Log in). No hamburger.
 
 ![21.gifts home](images/root.png)
 
@@ -39,6 +39,20 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 The only state: imprint plus privacy, marketing chrome.
 
 ![21.gifts legal](images/legal.png)
+
+## Screen: /about
+
+- **Purpose:** Public origin of the house — hospitality, one verse, open door.
+- **URL:** `/about` — public marketing page (no auth gate).
+- **What the user sees:** Dark 21.gifts header with a language switcher, kicker **About**, heading **A house of hospitality**, a short lead, the Matthew 10:8 verse, then **Rooted, not restricted** with three body paragraphs and **Open the living room** (`/welcome`). Visitor copy comes from the catalog.
+- **Actions:** Change language. Read the origin. Open **Open the living room** (`/welcome`). Header **Log in** goes to `/login`.
+- **Calls:** `AboutPage` inside `MarketingLayout`, `LanguageSwitcher`, `ButtonLink`.
+
+### Variant: default
+
+The only state: origin copy, verse, and forum CTA, marketing chrome.
+
+![21.gifts about](images/about.png)
 
 ## Screen: /stats/[day]
 

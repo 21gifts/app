@@ -294,6 +294,12 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-legal');
   });
 
+  test('screen /about', async ({ page }) => {
+    await page.goto('/about');
+    await expect(page.getByRole('heading', { name: 'A house of hospitality' })).toBeVisible();
+    await shotScreen(page, 'screen-about');
+  });
+
   test('screen /login', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();

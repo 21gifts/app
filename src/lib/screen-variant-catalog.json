@@ -24,6 +24,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/about:default",
+    "label": "/about default",
+    "visual": "screen-about",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:idle",
     "label": "/login idle",
     "visual": "screen-login",
