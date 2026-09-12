@@ -1743,7 +1743,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Detect the language of a forum note after stripping URLs and bolt11 invoices. Scores `en` / `de` / `es` / `fil` stopwords (with extra weight for German umlauts and Spanish `ñ¿¡`).
 - **Inputs:** Raw note `text` string.
-- **Returns / side effects:** `en`/`de`/`es`/`fil` when one UI locale wins, `other` when the text is long enough but not those four, or `null` when empty or shorter than 12 characters. No I/O.
+- **Returns / side effects:** `en`/`de`/`es`/`fil` when one UI locale wins, `other` when the text is long enough but not those four, or `null` when empty or fewer than 12 Unicode letters or digits after stripping URLs and invoices. No I/O.
 - **Used by:** `shouldOfferNoteTranslate`.
 
 ## Function: shouldOfferNoteTranslate
