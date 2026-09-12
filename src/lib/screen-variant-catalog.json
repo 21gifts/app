@@ -348,6 +348,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-number-format-open",
+    "label": "/welcome menu-number-format-open",
+    "visual": "state-welcome-menu-number-format",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-qr",
     "label": "/welcome pay-qr",
     "visual": "state-welcome-pay-qr",
@@ -369,6 +375,12 @@
     "id": "/welcome:role-hint",
     "label": "/welcome role-hint",
     "visual": "state-welcome-role-hint",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:overlay-address",
+    "label": "/welcome overlay-address",
+    "visual": "state-welcome-overlay-address",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -435,6 +447,42 @@
     "id": "/members/[accountId]:own",
     "label": "/members/[accountId] own",
     "visual": "state-members-own",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:overlay-address",
+    "label": "/members/[accountId] overlay-address",
+    "visual": "state-members-overlay-address",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate",
+    "label": "/members/[accountId] translate",
+    "visual": "state-members-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-loading",
+    "label": "/members/[accountId] translate-loading",
+    "visual": "state-members-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-done",
+    "label": "/members/[accountId] translate-done",
+    "visual": "state-members-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-hidden",
+    "label": "/members/[accountId] translate-hidden",
+    "visual": "state-members-translate-hidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-error",
+    "label": "/members/[accountId] translate-error",
+    "visual": "state-members-translate-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -669,6 +717,66 @@
     "id": "/welcome:pm",
     "label": "/welcome pm",
     "visual": "state-welcome-pm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate",
+    "label": "/welcome translate",
+    "visual": "state-welcome-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-loading",
+    "label": "/welcome translate-loading",
+    "visual": "state-welcome-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-done",
+    "label": "/welcome translate-done",
+    "visual": "state-welcome-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-hidden",
+    "label": "/welcome translate-hidden",
+    "visual": "state-welcome-translate-hidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-error",
+    "label": "/welcome translate-error",
+    "visual": "state-welcome-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate",
+    "label": "/messages/[id] translate",
+    "visual": "state-messages-id-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate-loading",
+    "label": "/messages/[id] translate-loading",
+    "visual": "state-messages-id-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate-done",
+    "label": "/messages/[id] translate-done",
+    "visual": "state-messages-id-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate-hidden",
+    "label": "/messages/[id] translate-hidden",
+    "visual": "state-messages-id-translate-hidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate-error",
+    "label": "/messages/[id] translate-error",
+    "visual": "state-messages-id-translate-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

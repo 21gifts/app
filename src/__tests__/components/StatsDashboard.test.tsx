@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StatsDashboard } from '@/components/StatsDashboard';
 import type { GiftStats } from '@/lib/api-types';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(cleanup);
 
@@ -72,18 +73,22 @@ const EMPTY: GiftStats = {
 
 describe('StatsDashboard', () => {
   it('shows loading copy', () => {
-    render(<StatsDashboard stats={null} error={null} loading={true} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={null} error={null} loading={true} onRetry={() => undefined} />,
+    );
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
   it('shows a fallback loading line when nothing is loaded', () => {
-    render(<StatsDashboard stats={null} error={null} loading={false} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={null} error={null} loading={false} onRetry={() => undefined} />,
+    );
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
   it('shows an error and retries', () => {
     const onRetry = vi.fn();
-    render(
+    renderWithLocale(
       <StatsDashboard
         stats={null}
         error="Could not load gift stats. Please try again."
@@ -96,7 +101,9 @@ describe('StatsDashboard', () => {
   });
 
   it('shows the empty copy', () => {
-    render(<StatsDashboard stats={EMPTY} error={null} loading={false} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={EMPTY} error={null} loading={false} onRetry={() => undefined} />,
+    );
     expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('$0.00')).toBeTruthy();
@@ -116,7 +123,9 @@ describe('StatsDashboard', () => {
       firstPaidAt: '2026-06-01T00:00:00.000Z',
       lastPaidAt: '2026-06-01T00:00:00.000Z',
     };
-    render(<StatsDashboard stats={odd} error={null} loading={false} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={odd} error={null} loading={false} onRetry={() => undefined} />,
+    );
     expect(screen.getByRole('heading', { name: 'Total spend over time' })).toBeTruthy();
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
     expect(screen.getByLabelText('Spend over time in ₿').getAttribute('role')).toBe('img');
@@ -149,7 +158,9 @@ describe('StatsDashboard', () => {
         },
       ],
     };
-    render(<StatsDashboard stats={two} error={null} loading={false} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={two} error={null} loading={false} onRetry={() => undefined} />,
+    );
     const svg = screen.getByLabelText('Spend over time in ₿');
     expect(within(svg).getByText('2026-06-01')).toBeTruthy();
     expect(within(svg).getByText('2026-06-02')).toBeTruthy();
@@ -171,11 +182,11 @@ describe('StatsDashboard', () => {
   });
 
   it('renders KPIs, footnote, BTC/USD charts, and person labels', () => {
-    render(
+    renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
-    expect(screen.getAllByText('₿1,500,000')).toHaveLength(3);
-    expect(screen.getAllByText('$1,425.00')).toHaveLength(2);
+    expect(screen.getAllByText("₿1'500'000")).toHaveLength(3);
+    expect(screen.getAllByText("$1'425.00")).toHaveLength(2);
     expect(
       screen.getByText("USD is the BTC-USD daily close (UTC) on each gift's day."),
     ).toBeTruthy();
@@ -185,7 +196,7 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend by person in ₿')).toBeTruthy();
     expect(screen.getByLabelText('Spend by month in ₿')).toBeTruthy();
     expect(screen.getByText('alice')).toBeTruthy();
-    expect(screen.getByText('₿1,000,000 · $950.00')).toBeTruthy();
+    expect(screen.getByText("₿1'000'000 · $950.00")).toBeTruthy();
     const svg = screen.getByLabelText('Spend over time in ₿');
     expect(svg.getAttribute('role')).toBe('group');
     expect(within(svg).getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
@@ -222,7 +233,7 @@ describe('StatsDashboard', () => {
       ...SAMPLE,
       spendOverTime,
     };
-    render(
+    renderWithLocale(
       <StatsDashboard stats={longSeries} error={null} loading={false} onRetry={() => undefined} />,
     );
     const svg = screen.getByLabelText('Spend over time in ₿');
@@ -244,7 +255,7 @@ describe('StatsDashboard', () => {
   });
 
   it('anchors the first and last spend-over-time dates so full YYYY-MM-DD labels stay in view', () => {
-    render(
+    renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     const svg = screen.getByLabelText('Spend over time in ₿');
@@ -276,14 +287,16 @@ describe('StatsDashboard', () => {
         { month: '2026-01', giftCount: 1, sats: 15_000_000, btc: '0.15000000', usd: '14250.00' },
       ],
     };
-    render(<StatsDashboard stats={large} error={null} loading={false} onRetry={() => undefined} />);
-    expect(screen.getByLabelText('Spend over time in ₿').textContent).toContain('₿15,000,000');
+    renderWithLocale(
+      <StatsDashboard stats={large} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    expect(screen.getByLabelText('Spend over time in ₿').textContent).toContain("₿15'000'000");
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
         name: 'USD',
       }),
     );
-    expect(screen.getByLabelText('Spend over time in USD').textContent).toMatch(/\$14,250/);
+    expect(screen.getByLabelText('Spend over time in USD').textContent).toMatch(/\$14'250/);
   });
 
   it('does not duplicate the zero ₿ y tick when the series is tiny', () => {
@@ -305,7 +318,9 @@ describe('StatsDashboard', () => {
       ],
       byMonth: [{ month: '2026-01', giftCount: 1, sats: 1, btc: '0.00000001', usd: '0.00' }],
     };
-    render(<StatsDashboard stats={one} error={null} loading={false} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={one} error={null} loading={false} onRetry={() => undefined} />,
+    );
     const svg = screen.getByLabelText('Spend over time in ₿');
     const zeros = [...svg.querySelectorAll('text')].filter((el) => el.textContent === '₿0');
     expect(zeros).toHaveLength(1);
@@ -324,19 +339,19 @@ describe('StatsDashboard', () => {
   });
 
   it('keeps month labels on the by-month chart', () => {
-    render(
+    renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     expect(screen.getByLabelText('Spend by month in ₿').textContent).toContain('2026-06');
   });
 
   it('shows BIP-177 and USD amounts on the by-month chart', () => {
-    render(
+    renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     const svg = screen.getByLabelText('Spend by month in ₿');
-    expect(svg.textContent).toContain('₿1,500,000');
-    expect(svg.textContent).toContain('$1,425.00');
+    expect(svg.textContent).toContain("₿1'500'000");
+    expect(svg.textContent).toContain("$1'425.00");
   });
 
   it('labels zero-amount months on the by-month chart', () => {
@@ -347,7 +362,7 @@ describe('StatsDashboard', () => {
         { month: '2026-03', giftCount: 1, sats: 500_000, btc: '0.00500000', usd: '475.00' },
       ],
     };
-    render(
+    renderWithLocale(
       <StatsDashboard stats={withZero} error={null} loading={false} onRetry={() => undefined} />,
     );
     const svg = screen.getByLabelText('Spend by month in ₿');
@@ -366,7 +381,9 @@ describe('StatsDashboard', () => {
         { month: '2026-02', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '950.00' },
       ],
     };
-    render(<StatsDashboard stats={tiny} error={null} loading={false} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={tiny} error={null} loading={false} onRetry={() => undefined} />,
+    );
     const svg = screen.getByLabelText('Spend by month in ₿');
     const rects = [...svg.querySelectorAll('rect')];
     expect(rects).toHaveLength(2);
@@ -384,7 +401,7 @@ describe('StatsDashboard', () => {
         { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
       ],
     };
-    render(
+    renderWithLocale(
       <StatsDashboard stats={inverted} error={null} loading={false} onRetry={() => undefined} />,
     );
     const btcSvg = screen.getByLabelText('Spend by month in ₿');
@@ -422,7 +439,9 @@ describe('StatsDashboard', () => {
         { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
       ],
     };
-    render(<StatsDashboard stats={mixed} error={null} loading={false} onRetry={() => undefined} />);
+    renderWithLocale(
+      <StatsDashboard stats={mixed} error={null} loading={false} onRetry={() => undefined} />,
+    );
     const personBtc = [...screen.getByLabelText('Spend by person in ₿').querySelectorAll('rect')];
     expect(personBtc).toHaveLength(2);
     expect(Number(personBtc[0]?.getAttribute('width'))).toBeGreaterThan(
@@ -452,7 +471,7 @@ describe('StatsDashboard', () => {
   });
 
   it('switches over-time series independently of the month scale', () => {
-    render(
+    renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();

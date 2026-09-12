@@ -179,6 +179,33 @@ async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis')
   });
 }
 
+const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+
+/** Signed-in Ada `/welcome` with one paid German note (Active shows Translate). */
+async function seedGermanNoteWelcome(page: Page): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-de',
+            name: 'Ada',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
+      }),
+    });
+  });
+}
+
 async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
@@ -2137,7 +2164,13 @@ test('Function: formatBitcoin — populated stats draw the ₿ chart', async ({ 
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
   await expect(page.getByLabel('Spend over time in ₿')).toBeVisible();
-  await expect(page.getByLabel('Spend over time in ₿').getByText('₿1,500')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in ₿').getByText("₿1'500")).toBeVisible();
+});
+
+test("Function: formatGroupedNumber — /stats default grouped ₿1'500", async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.goto('/stats');
+  await expect(page.getByLabel('Spend over time in ₿').getByText("₿1'500")).toBeVisible();
 });
 
 test('Function: formatUsdTick — populated stats draw the USD chart', async ({ page }) => {
@@ -2276,6 +2309,134 @@ test('Function: LanguageSwitcher — landing exposes the language switcher', asy
   await expect(page.getByLabel('Language')).toBeVisible();
   await page.getByLabel('Language').click();
   await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
+});
+
+test("Function: parseNumberFormat — Number format options include 10'000.23", async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
+  await page.getByLabel('Number format').click();
+  await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+});
+
+test('Function: separatorsFor — same click shows 10,000.23 and 23.000,33', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
+  await page.getByLabel('Number format').click();
+  await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
+  await expect(page.getByRole('option', { name: '23.000,33' })).toBeVisible();
+});
+
+test('Function: getRequestNumberFormat — signed-in Menu Number format is visible', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
+  await expect(page.getByLabel('Number format')).toBeVisible();
+});
+
+test('Function: NumberFormatProvider — picking 23.000,33 in Menu writes numberFormat=de cookie', async ({
+  page,
+  context,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
+  await page.getByLabel('Number format').click();
+  await page.getByRole('option', { name: '23.000,33' }).click();
+  const cookies = await context.cookies();
+  expect(cookies.some((cookie) => cookie.name === 'numberFormat' && cookie.value === 'de')).toBe(
+    true,
+  );
+});
+
+test('Function: useNumberFormat — Number format in signed-in Menu reads provider', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
+  await expect(page.getByLabel('Number format')).toBeVisible();
+});
+
+test('Function: NumberFormatSwitcher — signed-in Menu lists the three samples', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
+  await page.getByLabel('Number format').click();
+  await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+  await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
+  await expect(page.getByRole('option', { name: '23.000,33' })).toBeVisible();
 });
 
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
@@ -3469,7 +3630,7 @@ test('Function: accountTotals — menu shows received sats for alice', async ({ 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: recipientHandleFromAddress — alice handle matches stats row', async ({ page }) => {
@@ -3480,7 +3641,7 @@ test('Function: recipientHandleFromAddress — alice handle matches stats row', 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: useAccountTotals — profile totals load from gift stats', async ({ page }) => {
@@ -3491,7 +3652,7 @@ test('Function: useAccountTotals — profile totals load from gift stats', async
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: AccountActivityChart — profile shows Given legend and ₿ chart', async ({
@@ -3567,7 +3728,7 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
     byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
   });
   await page.goto('/profile');
-  await expect(page.getByLabel('Given and received in ₿').getByText('₿1,500')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
 });
 
 test('Function: ThemeProvider — picking Dark sets html.dark on /login', async ({ page }) => {
@@ -3973,4 +4134,64 @@ test('Function: DeletePostControl — ordinary members have no delete action', a
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
+});
+
+test('Function: detectNoteLanguage — German note offers Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: shouldOfferNoteTranslate — Translate is under the German body', async ({
+  page,
+}) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: fetchTranslateAvailable — GET /translate enables Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: translateNote — Translate then Show original', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+});
+
+test('Function: getTranslateUpstream — GET /translate reports available', async ({ request }) => {
+  const res = await request.get('/translate');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ available: true });
+});
+
+test('Function: proxyTranslateGet — GET /translate is available', async ({ request }) => {
+  const res = await request.get('/translate');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ available: true });
+});
+
+test('Function: proxyTranslatePost — POST /translate returns translatedText', async ({
+  request,
+}) => {
+  const res = await request.post('/translate', {
+    data: { text: GERMAN_NOTE_TEXT, target: 'en' },
+  });
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({
+    translatedText: 'Can anyone lend me a few satoshi this week?',
+  });
+});
+
+test('Function: NoteTranslate — German welcome note shows Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
 });

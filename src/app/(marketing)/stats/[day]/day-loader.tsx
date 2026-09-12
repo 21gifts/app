@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { GiftDayTable } from '@/components/GiftDayTable';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
 import type { GiftDay } from '@/lib/api-types';
+import { formatGroupedNumber } from '@/lib/number-format';
 import { formatBitcoin } from '@/lib/stats-money';
 import { isUtcDay } from '@/lib/utc-day';
 
@@ -23,6 +25,7 @@ export interface DayLoaderProps {
  */
 export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
+  const { numberFormat } = useNumberFormat();
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,10 +96,11 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8">
           <p className="mb-4 text-paper/60">
-            {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
-            {formatBitcoin(payload.totalSats)} · {payload.totalUsd} USD
+            {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
+            {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}
+            · {formatGroupedNumber(Number(payload.totalUsd), numberFormat, 2)} USD
           </p>
-          <GiftDayTable day={payload} />
+          <GiftDayTable day={payload} numberFormat={numberFormat} />
         </div>
       ) : null}
     </div>

@@ -3,9 +3,11 @@ import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { getRequestLocale } from '@/lib/request-locale';
+import { getRequestNumberFormat } from '@/lib/request-number-format';
 import { getCatalog } from '@/lib/messages';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import './globals.css';
@@ -70,7 +72,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root layout: the `<html>`/`<body>` shell shared by every page (locale, theme bootstrap, providers).
+ * Root layout: the `<html>`/`<body>` shell shared by every page (locale, number
+ * format, theme bootstrap, providers).
  *
  * @param props - Layout children.
  * @returns The document wrapper with negotiated `lang`, theme bootstrap, and locale messages.
@@ -81,6 +84,7 @@ export default async function RootLayout({
   children: ReactNode;
 }): Promise<ReactElement> {
   const locale = await getRequestLocale();
+  const numberFormat = await getRequestNumberFormat();
   return (
     <html lang={locale} suppressHydrationWarning className={outfit.variable}>
       <head>
@@ -90,7 +94,9 @@ export default async function RootLayout({
       <body className="bg-app-bg font-sans text-app-fg antialiased">
         <AppHeightSync />
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
-          <ThemeProvider>{children}</ThemeProvider>
+          <NumberFormatProvider initial={numberFormat}>
+            <ThemeProvider>{children}</ThemeProvider>
+          </NumberFormatProvider>
         </LocaleProvider>
       </body>
     </html>

@@ -88,6 +88,7 @@ app/
 │   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
 │   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
+│   │   ├── translate/route.ts    # GET availability + POST LibreTranslate-compatible proxy
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   └── [id]/route.ts    # GET/POST /conversations/[id]
@@ -118,7 +119,10 @@ app/
 │   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
+│   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
+│   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
+│   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
@@ -155,12 +159,17 @@ app/
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
+│   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
+│   │   ├── request-number-format.ts # Cookie numberFormat for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
+│   │   ├── note-language.ts     # Small deterministic forum-note language detector
+│   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
+│   │   ├── translate-upstream.ts # Optional server-side translation upstream proxy
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
@@ -324,6 +333,8 @@ The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 | Labeled (`Button` / `ButtonLink`)                                                                                                                                                                                                                                                                                                               | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                             |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+
+Content translation under a note or reply body is a labeled underline text control (`forum.translate` / show original / show translation), not an `IconButton` in the footer.
 
 Tests locate icon **buttons** with `getByRole('button', { name })` against
 the catalog `aria-label` and assert `queryByText` for the visible catalog

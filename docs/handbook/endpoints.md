@@ -244,3 +244,17 @@
 - **Auth:** Forwards Bearer authorization; the API requires live founder or moderator role.
 - **Returns:** Upstream 204, 401, 403, 404 or 503; proxy failures return 502.
 - **Side effects:** Deletes the post, direct replies and stored media on 21.gifts. Does not refund gifts or erase external Nostr relay copies.
+
+## Endpoint: GET /translate
+
+- **Purpose:** `{ available: boolean }` from `TRANSLATE_URL` (no upstream call). Always 200.
+- **Errors:** none (invalid URL treated as unavailable).
+- **Used by:** `fetchTranslateAvailable` in `NoteTranslate`.
+- **Auth:** Public.
+
+## Endpoint: POST /translate
+
+- **Purpose:** `{ text, target }` → LibreTranslate-compatible upstream; returns `{ translatedText }`. `fil` maps to `tl`. Max 500 chars. 15s timeout. Does not forward Authorization.
+- **Errors:** 400 invalid body, 503 not configured, 502 upstream.
+- **Used by:** `translateNote` from `NoteTranslate`.
+- **Auth:** Public.

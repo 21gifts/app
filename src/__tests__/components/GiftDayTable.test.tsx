@@ -21,13 +21,14 @@ const EMPTY: GiftDay = {
 
 describe('GiftDayTable', () => {
   it('shows the empty copy', () => {
-    render(<GiftDayTable day={EMPTY} />);
+    render(<GiftDayTable day={EMPTY} numberFormat="ch" />);
     expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
   });
 
   it('lists gifts', () => {
     render(
       <GiftDayTable
+        numberFormat="ch"
         day={{
           ...EMPTY,
           giftCount: 1,
@@ -54,6 +55,7 @@ describe('GiftDayTable', () => {
   it('shows UTC clock from an offset timestamp', () => {
     render(
       <GiftDayTable
+        numberFormat="ch"
         day={{
           ...EMPTY,
           giftCount: 1,
@@ -75,6 +77,7 @@ describe('GiftDayTable', () => {
   it('shows the raw paidAt when the timestamp is not a date', () => {
     render(
       <GiftDayTable
+        numberFormat="ch"
         day={{
           ...EMPTY,
           giftCount: 1,

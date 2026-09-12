@@ -9,7 +9,8 @@ import { ButtonLink, Wordmark } from '@/components/ui';
 
 /**
  * Sticky dark header for marketing pages: wordmark, section nav, optional
- * PWA install control, language switcher, login CTA, and a mobile menu toggle.
+ * PWA install control, language switcher, login CTA, and a mobile menu
+ * toggle.
  *
  * @returns The header element.
  */

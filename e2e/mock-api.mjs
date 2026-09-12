@@ -190,6 +190,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/translate') {
+    let parsed;
+    try {
+      parsed = JSON.parse(await readBody(req));
+    } catch {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const q = parsed?.q;
+    if (typeof q !== 'string') {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    if (q.includes('Kann mir jemand')) {
+      json(res, 200, {
+        translatedText: 'Can anyone lend me a few satoshi this week?',
+      });
+      return;
+    }
+    json(res, 200, { translatedText: '[' + (parsed.target || 'en') + '] ' + q });
+    return;
+  }
+
   if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

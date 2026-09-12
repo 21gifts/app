@@ -27,12 +27,15 @@ describe('LegalPage', () => {
     expect(screen.queryByText(/Cloudflare Pages/i)).toBeNull();
   });
 
-  it('documents the optional locale and theme cookies', () => {
+  it('documents the optional locale, numberFormat, and theme cookies', () => {
     render(<LegalPage />);
     expect(
-      screen.getByText(/sets no cookies unless you choose a language or a light\/dark appearance/i),
+      screen.getByText(
+        /sets no cookies unless you choose a language, a number format, or a light\/dark appearance/i,
+      ),
     ).toBeTruthy();
     expect(screen.getAllByText('locale').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('numberFormat').length).toBeGreaterThan(0);
     expect(screen.getAllByText('theme').length).toBeGreaterThan(0);
   });
 

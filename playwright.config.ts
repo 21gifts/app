@@ -98,6 +98,7 @@ export default defineConfig({
         ...process.env,
         HOSTNAME: '0.0.0.0',
         NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
+        TRANSLATE_URL: 'http://127.0.0.1:3001',
       },
     },
   ],

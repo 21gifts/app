@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import type { GiftStats } from '@/lib/api-types';
+import { formatGroupedNumber, type NumberFormatStyle } from '@/lib/number-format';
 import { formatBitcoin, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
 
 /** Props for {@link StatsDashboard}. */
@@ -50,10 +52,11 @@ function scaleValue(scale: BarScale, sats: number, usd: string): number {
  * Formats a gift/recipient count with grouping separators (not a bitcoin amount).
  *
  * @param n - Whole count.
+ * @param style - Visitor number-format style.
  * @returns Grouped decimal string.
  */
-function formatCount(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n);
+function formatCount(n: number, style: NumberFormatStyle): string {
+  return formatGroupedNumber(n, style, 0);
 }
 
 /**
@@ -216,9 +219,14 @@ function CumulativeOverTimeChart(
  *
  * @param rows - Recipient totals.
  * @param scale - Whether bar widths use sats or USD cents.
+ * @param numberFormat - Visitor grouping style for ₿ and USD labels.
  * @returns Bar list.
  */
-function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactElement {
+function ByPersonChart(
+  rows: GiftStats['byRecipient'],
+  scale: BarScale,
+  numberFormat: NumberFormatStyle,
+): ReactElement {
   const width = 800;
   const rowH = 40;
   const padL = 8;
@@ -261,7 +269,7 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
               className="fill-paper/60"
               fontSize="14"
             >
-              {formatBitcoin(row.sats)} · ${row.usd}
+              {formatBitcoin(row.sats, numberFormat)} · {formatUsdDisplay(row.usd, numberFormat)}
             </text>
           </g>
         );
@@ -277,9 +285,14 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
  *
  * @param rows - Monthly totals.
  * @param scale - Whether bar heights use sats or USD cents.
+ * @param numberFormat - Visitor grouping style for ₿ and USD labels.
  * @returns SVG figure.
  */
-function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement {
+function ByMonthChart(
+  rows: GiftStats['byMonth'],
+  scale: BarScale,
+  numberFormat: NumberFormatStyle,
+): ReactElement {
   const width = 800;
   const height = 220;
   const monthAria = scale === 'btc' ? 'Spend by month in ₿' : 'Spend by month in USD';
@@ -338,7 +351,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
               className="fill-paper/70"
               fontSize="11"
             >
-              {formatBitcoin(row.sats)}
+              {formatBitcoin(row.sats, numberFormat)}
             </text>
             <text
               x={x + w / 2}
@@ -347,7 +360,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
               className="fill-paper/70"
               fontSize="11"
             >
-              {formatUsdDisplay(row.usd)}
+              {formatUsdDisplay(row.usd, numberFormat)}
             </text>
             <text
               x={x + w / 2}
@@ -372,9 +385,16 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
  * on the chart. Person and month bars rescale; their labels stay both units.
  *
  * @param stats - Loaded gift stats with at least one gift.
+ * @param numberFormat - Visitor grouping style for every money label.
  * @returns Diagram sections.
  */
-function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
+function StatsCharts({
+  stats,
+  numberFormat,
+}: {
+  stats: GiftStats;
+  numberFormat: NumberFormatStyle;
+}): ReactElement {
   const [overTimeScale, setOverTimeScale] = useState<BarScale>('btc');
   const [personScale, setPersonScale] = useState<BarScale>('btc');
   const [monthScale, setMonthScale] = useState<BarScale>('btc');
@@ -403,13 +423,13 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
             ? CumulativeOverTimeChart(
                 stats.spendOverTime,
                 (p) => p.cumulativeSats,
-                formatBitcoin,
+                (value) => formatBitcoin(value, numberFormat),
                 'Spend over time in ₿',
               )
             : CumulativeOverTimeChart(
                 stats.spendOverTime,
                 (p) => Number(p.cumulativeUsd),
-                formatUsdTick,
+                (value) => formatUsdTick(value, numberFormat),
                 'Spend over time in USD',
               )}
         </div>
@@ -426,7 +446,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
             shell="dark"
           />
         </div>
-        <div className="mt-6">{ByPersonChart(stats.byRecipient, personScale)}</div>
+        <div className="mt-6">{ByPersonChart(stats.byRecipient, personScale, numberFormat)}</div>
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
@@ -440,7 +460,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
             shell="dark"
           />
         </div>
-        <div className="mt-6">{ByMonthChart(stats.byMonth, monthScale)}</div>
+        <div className="mt-6">{ByMonthChart(stats.byMonth, monthScale, numberFormat)}</div>
       </section>
     </>
   );
@@ -458,6 +478,7 @@ export function StatsDashboard({
   loading,
   onRetry,
 }: StatsDashboardProps): ReactElement {
+  const { numberFormat } = useNumberFormat();
   if (loading && stats === null && error === null) {
     return <p className="text-paper/60">Loading…</p>;
   }
@@ -485,20 +506,24 @@ export function StatsDashboard({
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Total spent</dt>
           <dd className="mt-2 tabular-nums lining-nums">
-            <div className="text-2xl font-semibold">{formatBitcoin(stats.totalSats)}</div>
-            <div className="text-2xl font-semibold">{formatUsdDisplay(stats.totalUsd)}</div>
+            <div className="text-2xl font-semibold">
+              {formatBitcoin(stats.totalSats, numberFormat)}
+            </div>
+            <div className="text-2xl font-semibold">
+              {formatUsdDisplay(stats.totalUsd, numberFormat)}
+            </div>
           </dd>
         </div>
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Gifts</dt>
           <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
-            {formatCount(stats.giftCount)}
+            {formatCount(stats.giftCount, numberFormat)}
           </dd>
         </div>
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">People</dt>
           <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
-            {formatCount(stats.recipientCount)}
+            {formatCount(stats.recipientCount, numberFormat)}
           </dd>
         </div>
         <div className="rounded-2xl border border-paper/10 p-5">
@@ -512,7 +537,7 @@ export function StatsDashboard({
       {empty ? (
         <p className="text-paper/60">No gifts recorded yet.</p>
       ) : (
-        <StatsCharts stats={stats} />
+        <StatsCharts stats={stats} numberFormat={numberFormat} />
       )}
     </div>
   );

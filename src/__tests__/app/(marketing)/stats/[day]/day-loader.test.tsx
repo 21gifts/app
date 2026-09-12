@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DayLoader } from '@/app/(marketing)/stats/[day]/day-loader';
 import type { GiftDay } from '@/lib/api-types';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
 
@@ -40,7 +41,7 @@ afterEach(() => {
 describe('DayLoader', () => {
   it('shows the empty copy', async () => {
     fetchMock.mockResolvedValue(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
     });
@@ -49,7 +50,7 @@ describe('DayLoader', () => {
   it('shows a fetch error and retries', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Could not load gift stats. Please try again.'));
     fetchMock.mockResolvedValueOnce(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
@@ -61,7 +62,7 @@ describe('DayLoader', () => {
 
   it('falls back when fetch rejects a non-Error', async () => {
     fetchMock.mockRejectedValueOnce('nope');
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByText('Could not load gift stats. Please try again.')).toBeTruthy();
     });
@@ -85,7 +86,7 @@ describe('DayLoader', () => {
       ],
     });
     fetchMock.mockResolvedValueOnce({ ...EMPTY, day: '2026-06-02' });
-    const view = render(<DayLoader day="2026-06-01" />);
+    const view = renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByText('alice')).toBeTruthy();
     });
@@ -113,7 +114,7 @@ describe('DayLoader', () => {
         },
       ],
     });
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByText('1 gift · ₿500 · 0.48 USD')).toBeTruthy();
     });
@@ -121,7 +122,7 @@ describe('DayLoader', () => {
 
   it('navigates when the date input changes', async () => {
     fetchMock.mockResolvedValue(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByLabelText('UTC day')).toBeTruthy();
     });
@@ -131,7 +132,7 @@ describe('DayLoader', () => {
 
   it('does not navigate when the date is unchanged or invalid', async () => {
     fetchMock.mockResolvedValue(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByLabelText('UTC day')).toBeTruthy();
     });
@@ -148,7 +149,7 @@ describe('DayLoader', () => {
           resolveStale = resolve;
         }),
     );
-    const view = render(<DayLoader day="2026-06-01" />);
+    const view = renderWithLocale(<DayLoader day="2026-06-01" />);
     view.unmount();
     resolveStale?.(EMPTY);
     await Promise.resolve();
@@ -163,7 +164,7 @@ describe('DayLoader', () => {
           rejectStale = reject;
         }),
     );
-    const view = render(<DayLoader day="2026-06-01" />);
+    const view = renderWithLocale(<DayLoader day="2026-06-01" />);
     view.unmount();
     rejectStale?.(new Error('gone'));
     await Promise.resolve();
