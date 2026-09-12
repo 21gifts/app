@@ -744,6 +744,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not translate this note. Please try again.',
   },
   {
+    route: '/members/[accountId]',
+    id: 'staff-verify',
+    image: 'members-staff-verify.png',
+    visual: 'state-members-staff-verify',
+    needle: 'state-members-staff-verify',
+  },
+  {
     route: '/profile',
     id: 'receive',
     image: 'profile-receive.png',
@@ -853,6 +860,34 @@ export const SCREEN_VARIANTS = [
     id: 'error',
     image: 'stats-error.png',
     visual: 'state-stats-error',
+    needle: 'Try again',
+  },
+  {
+    route: '/trust-chain',
+    id: 'default',
+    image: 'trust-chain.png',
+    visual: 'screen-trust-chain',
+    needle: 'Trust Chain',
+  },
+  {
+    route: '/trust-chain',
+    id: 'empty',
+    image: 'trust-chain-empty.png',
+    visual: 'state-trust-chain-empty',
+    needle: 'No one is on the Trust Chain yet.',
+  },
+  {
+    route: '/trust-chain',
+    id: 'loading',
+    image: 'trust-chain-loading.png',
+    visual: 'state-trust-chain-loading',
+    needle: 'Loading…',
+  },
+  {
+    route: '/trust-chain',
+    id: 'error',
+    image: 'trust-chain-error.png',
+    visual: 'state-trust-chain-error',
     needle: 'Try again',
   },
   {

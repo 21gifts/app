@@ -21,6 +21,13 @@ describe('MarketingFooter', () => {
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
   });
 
+  it('links Trust Chain to /trust-chain', async () => {
+    render(await MarketingFooter());
+    expect(screen.getByRole('link', { name: 'Trust Chain' }).getAttribute('href')).toBe(
+      '/trust-chain',
+    );
+  });
+
   it('links Handbook to /handbook', async () => {
     render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe('/handbook');

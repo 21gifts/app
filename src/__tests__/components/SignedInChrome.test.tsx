@@ -187,6 +187,9 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
+    expect(screen.getByRole('link', { name: 'Trust Chain' }).getAttribute('href')).toBe(
+      '/trust-chain',
+    );
     const notifications = screen.getByRole('link', { name: 'Notifications' });
     const messages = screen.getByRole('link', { name: 'Messages' });
     expect(notifications.getAttribute('href')).toBe('/notifications');
@@ -216,6 +219,7 @@ describe('SignedInChrome', () => {
     expect(
       screen.getByRole('link', { name: 'Living room rules' }).querySelector('svg'),
     ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Trust Chain' }).querySelector('svg')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Notifications' }).querySelector('svg')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Contact' }).querySelector('svg')).toBeTruthy();
   });
@@ -491,6 +495,14 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Living room rules' }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Trust Chain is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Trust Chain' }));
     expectMenuClosed();
   });
 

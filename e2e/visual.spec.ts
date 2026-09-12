@@ -2150,6 +2150,56 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-overlay-address');
   });
 
+  test('state /members staff-verify', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          role: 'basis',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+    await shotScreen(page, 'state-members-staff-verify');
+  });
+
+
+
   test('state /members translate', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
