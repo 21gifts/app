@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactElement } from 'react';
 import { SegmentedControl } from '@/components/ui';
 import { FIAT_CODES, type FiatCode } from '@/lib/stats-money';

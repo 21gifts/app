@@ -98,7 +98,8 @@ export const usdAmountStringSchema = z.string().regex(/^\d+\.\d{2}$/);
 export const fiatAmountSchema = usdAmountStringSchema.nullable();
 
 /**
- * FX metadata for historical BTC-USD conversion on `GET /gifts/stats`.
+ * FX provenance for gift-day BTC-USD closes plus CHF/EUR/PHP quotes on
+ * `GET /gifts/stats` and `GET /gifts?day=`.
  */
 export const giftStatsFxSchema = z.object({
   quote: z.literal('BTC-USD'),
