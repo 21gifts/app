@@ -54,7 +54,11 @@ export async function proxyApiRequest(request: Request, apiPath: string): Promis
       method: request.method,
       headers,
     };
-    if (BODY_METHODS.has(request.method)) {
+    if (
+      BODY_METHODS.has(request.method) &&
+      request.body !== null &&
+      request.headers.get('content-length') !== '0'
+    ) {
       init.body = request.body;
       (init as RequestInit & { duplex?: string }).duplex = 'half';
     }

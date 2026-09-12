@@ -13,6 +13,7 @@ const en = {
   'nav.legal': 'Legal & Privacy',
   'nav.rules': 'Living room rules',
   'nav.inbox': 'Messages',
+  'nav.notifications': 'Notifications',
   'nav.contact': 'Contact',
 
   'pwa.install': 'Install app',
@@ -415,6 +416,15 @@ const en = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direct',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Notifications',
+  'notifications.listLabel': 'Notifications',
+  'notifications.empty': 'No notifications yet.',
+  'notifications.loading': 'Loading…',
+  'notifications.error': 'Could not load notifications. Please try again.',
+  'notifications.retry': 'Try again',
+  'notifications.reply': '{name} replied to your post',
+  'notifications.photoOnly': 'Photo reply',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -435,6 +445,7 @@ const de = {
   'nav.legal': 'Impressum & Datenschutz',
   'nav.rules': 'Wohnzimmerregeln',
   'nav.inbox': 'Posteingang',
+  'nav.notifications': 'Benachrichtigungen',
   'nav.contact': 'Kontakt',
   'pwa.install': 'App installieren',
   'pwa.iosTitle': '21.gifts auf den Home-Bildschirm',
@@ -835,6 +846,16 @@ const de = {
   'inbox.origin.contact': 'Kontakt',
   'inbox.origin.direct': 'Direkt',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Benachrichtigungen',
+  'notifications.listLabel': 'Benachrichtigungen',
+  'notifications.empty': 'Noch keine Benachrichtigungen.',
+  'notifications.loading': 'Wird geladen…',
+  'notifications.error':
+    'Benachrichtigungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'notifications.retry': 'Erneut versuchen',
+  'notifications.reply': '{name} hat auf deinen Beitrag geantwortet',
+  'notifications.photoOnly': 'Foto-Antwort',
 } satisfies Messages;
 
 const es = {
@@ -849,6 +870,7 @@ const es = {
   'nav.legal': 'Aviso legal y privacidad',
   'nav.rules': 'Reglas del salón',
   'nav.inbox': 'Bandeja',
+  'nav.notifications': 'Notificaciones',
   'nav.contact': 'Contacto',
   'pwa.install': 'Instalar app',
   'pwa.iosTitle': 'Añadir 21.gifts a la pantalla de inicio',
@@ -1241,6 +1263,15 @@ const es = {
   'inbox.origin.contact': 'Contacto',
   'inbox.origin.direct': 'Directo',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Notificaciones',
+  'notifications.listLabel': 'Notificaciones',
+  'notifications.empty': 'Aún no hay notificaciones.',
+  'notifications.loading': 'Cargando…',
+  'notifications.error': 'No se pudieron cargar las notificaciones. Inténtalo de nuevo.',
+  'notifications.retry': 'Intentar de nuevo',
+  'notifications.reply': '{name} respondió a tu publicación',
+  'notifications.photoOnly': 'Respuesta con foto',
 } satisfies Messages;
 
 const fil = {
@@ -1255,6 +1286,7 @@ const fil = {
   'nav.legal': 'Legal at Privacy',
   'nav.rules': 'Mga patakaran sa living room',
   'nav.inbox': 'Mga mensahe',
+  'nav.notifications': 'Mga abiso',
   'nav.contact': 'Contact',
   'pwa.install': 'I-install ang app',
   'pwa.iosTitle': 'Idagdag ang 21.gifts sa Home Screen',
@@ -1655,6 +1687,15 @@ const fil = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direkta',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Mga abiso',
+  'notifications.listLabel': 'Mga abiso',
+  'notifications.empty': 'Wala pang mga abiso.',
+  'notifications.loading': 'Naglo-load…',
+  'notifications.error': 'Hindi ma-load ang mga abiso. Subukan ulit.',
+  'notifications.retry': 'Subukan ulit',
+  'notifications.reply': '{name} sumagot sa iyong post',
+  'notifications.photoOnly': 'Sagot na litrato',
 } satisfies Messages;
 
 /**

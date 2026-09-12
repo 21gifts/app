@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, and `/push/vapid-public`). HTML `/messages` is the inbox page, not a GET proxy.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, and `/push/vapid-public`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -261,14 +261,14 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`.
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home`; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; Messages `/messages`; MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home`; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; embedded ThemeSwitcher System / Light / Dark next to Language; LogOut log out).
 - **Inputs:** None. Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `RulesPageChrome`.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language or theme) is expanded.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`.
 
 ## Function: ProfilePage
 
@@ -282,7 +282,7 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
 - **Inputs:** Catalog `profile.back` via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `RulesPageChrome`.
+- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`.
 
 ## Function: ProfileScreen
 
@@ -485,7 +485,7 @@
 - **Inputs:** `children`, required `mode` (`fill` | `flow`), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`, fill only).
 - **Returns / side effects:** A `<main>` layout with absolute chrome slots and optional header/footer portals. No network.
 - **Used by:**
-  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, profile, contact, view, members, inbox, public note)
+  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, profile, contact, view, members, inbox, notifications, public note)
   - **`PageChrome`** (flow-mode wrapper used by welcome and public rules)
   - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
 
@@ -1215,14 +1215,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/contact/submit` re-exports `proxyContactPost`. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), and in-app contact (`POST /contact/submit`).
+- **Used by:** Same-origin name save, forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), and in-app contact (`POST /contact/submit`).
 
 ## Function: proxyApiRequest
 
-- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers, streams POST/PUT/PATCH/DELETE bodies with `duplex: 'half'`, and copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers, streams a POST/PUT/PATCH/DELETE body with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0` (empty POSTs omit body and duplex), and copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response` (status + selected headers + streamed body), or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.
@@ -1520,6 +1520,69 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** App Router `Request` and conversation id.
 - **Returns / side effects:** Forwards to the api.
 - **Used by:** `src/app/conversations/[id]/route.ts`.
+
+## Function: NotificationsPage
+
+- **Purpose:** Next.js page for `/notifications` (signed-in forum-reply notifications).
+- **Inputs:** None.
+- **Returns / side effects:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `NotificationsLoader`. Notification HTTP is under `/forum/notifications` (no `route.ts` beside this page).
+- **Used by:** Route `/notifications`.
+
+## Function: NotificationsLoader
+
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, fire-and-forget `markAllNotificationsRead` after a successful list, opens a row to `/messages/{parentId}` after `markNotificationRead`.
+- **Inputs:** None (session from the auth store).
+- **Returns / side effects:** React element or `null` without a session. No composer.
+- **Used by:** `NotificationsPage`.
+
+## Function: NotificationsScreen
+
+- **Purpose:** Presentational notifications list (actor `{name} replied to your post`, reply text or photo-only, time; unread semibold). No composer and no thread view.
+- **Inputs:** List state from `NotificationsLoader` (`notifications`, `error`, `loading`, `onRetry`, `onOpen`).
+- **Returns / side effects:** React element. No network.
+- **Used by:** `NotificationsLoader`.
+
+## Function: fetchNotifications
+
+- **Purpose:** GET `/forum/notifications` with Bearer and parse `{ notifications, unreadCount }`.
+- **Inputs:** Session token.
+- **Returns / side effects:** `{ notifications, unreadCount }`, or throws visitor copy `Could not load notifications. Please try again.`
+- **Used by:** `NotificationsLoader`.
+
+## Function: markNotificationRead
+
+- **Purpose:** POST `/forum/notifications/:id/read` with Bearer and parse one notification.
+- **Inputs:** Session token and notification id (encoded in the path).
+- **Returns / side effects:** Updated notification, or throws visitor copy.
+- **Used by:** `NotificationsLoader` on row click.
+
+## Function: markAllNotificationsRead
+
+- **Purpose:** POST `/forum/notifications/read-all` with Bearer. Non-ok throws; success may ignore body.
+- **Inputs:** Session token.
+- **Returns / side effects:** void.
+- **Used by:** `NotificationsLoader` fire-and-forget after a successful list fetch.
+
+## Function: proxyNotificationsGet
+
+- **Purpose:** Same-origin proxy for api GET `/notifications`. App route is GET `/forum/notifications`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/forum/notifications/route.ts`.
+
+## Function: proxyNotificationsReadAllPost
+
+- **Purpose:** Same-origin proxy for api POST `/notifications/read-all`. App route is POST `/forum/notifications/read-all`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/forum/notifications/read-all/route.ts`.
+
+## Function: proxyNotificationReadPost
+
+- **Purpose:** Same-origin proxy for api POST `/notifications/:id/read`. App route is POST `/forum/notifications/[id]/read`.
+- **Inputs:** App Router `Request` and notification id.
+- **Returns / side effects:** Forwards to the api (id encoded).
+- **Used by:** `src/app/forum/notifications/[id]/read/route.ts`.
 
 ## Function: HandbookScreensPage
 
