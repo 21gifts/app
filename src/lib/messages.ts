@@ -243,6 +243,10 @@ const en = {
   'forum.collapse': 'Hide replies',
   'forum.refreshing': 'Refreshing messages',
   'forum.authorProfile': 'View profile',
+  'forum.translate': 'Translate',
+  'forum.translateShowOriginal': 'Show original',
+  'forum.translateShowTranslation': 'Show translation',
+  'forum.translateError': 'Could not translate this note. Please try again.',
 
   'requirements.nameTitle': 'Add your name',
   'requirements.rulesTitle': 'Agree to the living room rules',
@@ -660,6 +664,10 @@ const de = {
   'forum.collapse': 'Antworten ausblenden',
   'forum.refreshing': 'Nachrichten werden aktualisiert',
   'forum.authorProfile': 'Profil anzeigen',
+  'forum.translate': 'Übersetzen',
+  'forum.translateShowOriginal': 'Original anzeigen',
+  'forum.translateShowTranslation': 'Übersetzung anzeigen',
+  'forum.translateError': 'Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen.',
 
   'requirements.nameTitle': 'Namen hinzufügen',
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
@@ -1072,6 +1080,10 @@ const es = {
   'forum.collapse': 'Ocultar respuestas',
   'forum.refreshing': 'Actualizando mensajes',
   'forum.authorProfile': 'Ver perfil',
+  'forum.translate': 'Traducir',
+  'forum.translateShowOriginal': 'Mostrar original',
+  'forum.translateShowTranslation': 'Mostrar traducción',
+  'forum.translateError': 'No se pudo traducir esta nota. Inténtalo de nuevo.',
 
   'requirements.nameTitle': 'Añade tu nombre',
   'requirements.rulesTitle': 'Acepta las reglas del salón',
@@ -1482,6 +1494,10 @@ const fil = {
   'forum.collapse': 'Itago ang mga sagot',
   'forum.refreshing': 'Nire-refresh ang mga mensahe',
   'forum.authorProfile': 'Tingnan ang profile',
+  'forum.translate': 'Isalin',
+  'forum.translateShowOriginal': 'Ipakita ang orihinal',
+  'forum.translateShowTranslation': 'Ipakita ang pagsasalin',
+  'forum.translateError': 'Hindi maisalin ang notang ito. Pakisubukan muli.',
 
   'requirements.nameTitle': 'Idagdag ang pangalan mo',
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',

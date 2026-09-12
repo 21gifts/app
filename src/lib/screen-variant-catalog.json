@@ -700,5 +700,41 @@
     "label": "/welcome pm",
     "visual": "state-welcome-pm",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate",
+    "label": "/welcome translate",
+    "visual": "state-welcome-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-done",
+    "label": "/welcome translate-done",
+    "visual": "state-welcome-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-error",
+    "label": "/welcome translate-error",
+    "visual": "state-welcome-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate",
+    "label": "/messages/[id] translate",
+    "visual": "state-messages-id-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate-done",
+    "label": "/messages/[id] translate-done",
+    "visual": "state-messages-id-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:translate-error",
+    "label": "/messages/[id] translate-error",
+    "visual": "state-messages-id-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

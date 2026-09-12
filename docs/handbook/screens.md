@@ -385,6 +385,24 @@ Click **Copy link to this note** — control sets `data-copied` after writing `o
 
 ![21.gifts welcome pm](images/welcome-pm.png)
 
+### Variant: translate
+
+Signed-in `/welcome` with one paid German note. **Translate** is visible under the body (not in the footer icon row). English notes on other fixtures still hide it.
+
+![21.gifts welcome translate](images/welcome-translate.png)
+
+### Variant: translate-done
+
+Same German note after a successful translation. Translated body plus **Show original**.
+
+![21.gifts welcome translate done](images/welcome-translate-done.png)
+
+### Variant: translate-error
+
+Same German note after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts welcome translate error](images/welcome-translate-error.png)
+
 ### Variant: photo
 
 On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.
@@ -736,6 +754,24 @@ Waiting on the public message fetch. Copy **Loading…**
 Public message fetch failed. Copy **Could not load this profile. Please try again.** and **Try again**.
 
 ![21.gifts public message error](images/messages-id-error.png)
+
+### Variant: translate
+
+Public German note. Body is the German fixture; **Translate** is visible.
+
+![21.gifts public message translate](images/messages-id-translate.png)
+
+### Variant: translate-done
+
+After successful translation: **Show original**.
+
+![21.gifts public message translate done](images/messages-id-translate-done.png)
+
+### Variant: translate-error
+
+After POST /translate 502: **Could not translate this note. Please try again.**
+
+![21.gifts public message translate error](images/messages-id-translate-error.png)
 
 ## Screen: /view/[viewKey]
 

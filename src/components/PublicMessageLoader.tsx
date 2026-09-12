@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
@@ -162,6 +163,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         {note.text !== '' ? (
           <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
         ) : null}
+        {note.text !== '' ? <NoteTranslate text={note.text} /> : null}
         <p className="text-sm font-medium text-app-fg">{formatBitcoin(note.sats, numberFormat)}</p>
       </Card>
       {ready ? (

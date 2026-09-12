@@ -13,6 +13,7 @@ import {
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
@@ -628,6 +629,7 @@ export function ForumBoard({
                 {message.text !== '' ? (
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
+                {message.text !== '' ? <NoteTranslate text={message.text} /> : null}
                 <div className="mt-3 flex flex-wrap items-center gap-5">
                   <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
                     {formatBitcoin(message.sats, numberFormat)}
@@ -887,6 +889,7 @@ export function ForumBoard({
                                 {reply.text}
                               </p>
                             ) : null}
+                            {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
                             {showForumPm(ownAccountId, ownName, reply) ? (
                               <div className="mt-2">
                                 <IconButton

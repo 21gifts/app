@@ -179,6 +179,33 @@ async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis')
   });
 }
 
+const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+
+/** Signed-in Ada `/welcome` with one paid German note (Active shows Translate). */
+async function seedGermanNoteWelcome(page: Page): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-de',
+            name: 'Ada',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
+      }),
+    });
+  });
+}
+
 async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
@@ -4027,4 +4054,74 @@ test('Function: DeletePostControl — ordinary members have no delete action', a
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
+});
+
+test('Function: detectNoteLanguage — German note offers Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: shouldOfferNoteTranslate — Translate is under the German body', async ({
+  page,
+}) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: resetTranslateAvailableCache — Translate stays available after reload', async ({
+  page,
+}) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: fetchTranslateAvailable — GET /translate enables Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: translateNote — Translate then Show original', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+});
+
+test('Function: getTranslateUpstream — GET /translate reports available', async ({ request }) => {
+  const res = await request.get('/translate');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ available: true });
+});
+
+test('Function: proxyTranslateGet — GET /translate is available', async ({ request }) => {
+  const res = await request.get('/translate');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ available: true });
+});
+
+test('Function: proxyTranslatePost — POST /translate returns translatedText', async ({
+  request,
+}) => {
+  const res = await request.post('/translate', {
+    data: { text: GERMAN_NOTE_TEXT, target: 'en' },
+  });
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({
+    translatedText: 'Can anyone lend me a few satoshi this week?',
+  });
+});
+
+test('Function: NoteTranslate — German welcome note shows Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
 });

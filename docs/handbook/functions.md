@@ -1738,3 +1738,66 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming Request and messageId.
 - **Returns / side effects:** Proxied DELETE `/messages/:id`, with encoded id, authorization and upstream status. Upstream 204 hides the row (`deleted_at`); the row stays and is omitted from GET.
 - **Used by:** App Router `DELETE` on `/forum/messages/[id]`.
+
+## Function: detectNoteLanguage
+
+- **Purpose:** Detect the language of a forum note after stripping URLs and bolt11 invoices. Scores `en` / `de` / `es` / `fil` stopwords (with extra weight for German umlauts and Spanish `ñ¿¡`).
+- **Inputs:** Raw note `text` string.
+- **Returns / side effects:** `en`/`de`/`es`/`fil` when one UI locale wins, `other` when the text is long enough but not those four, or `null` when empty or shorter than 12 characters. No I/O.
+- **Used by:** `shouldOfferNoteTranslate`.
+
+## Function: shouldOfferNoteTranslate
+
+- **Purpose:** Decide whether to offer **Translate** for this note in the active UI locale.
+- **Inputs:** Raw note `text` and the active UI `locale`.
+- **Returns / side effects:** `false` when detection is `null` or equals `locale`; `true` for `other` or a different UI locale. No I/O.
+- **Used by:** `NoteTranslate`.
+
+## Function: resetTranslateAvailableCache
+
+- **Purpose:** Clear the shared GET `/translate` availability promise so the next `fetchTranslateAvailable` call hits the route again.
+- **Inputs:** None.
+- **Returns / side effects:** `void`. Tests only; no network of its own.
+- **Used by:** Unit tests of `fetchTranslateAvailable`.
+
+## Function: fetchTranslateAvailable
+
+- **Purpose:** Query same-origin GET `/translate` and cache the shared promise. Failures and non-`{ available: true }` bodies resolve to `false`.
+- **Inputs:** None.
+- **Returns / side effects:** `Promise<boolean>`. One in-flight GET is reused until `resetTranslateAvailableCache`. Does not throw.
+- **Used by:** `NoteTranslate` on mount.
+
+## Function: translateNote
+
+- **Purpose:** POST `{ text, target }` to same-origin `/translate` and return the translated body.
+- **Inputs:** Raw forum note `text` and the active UI `target` locale.
+- **Returns / side effects:** The `translatedText` string. Throws when the route is non-2xx or omits a string `translatedText`.
+- **Used by:** `NoteTranslate` on **Translate**.
+
+## Function: getTranslateUpstream
+
+- **Purpose:** Read optional LibreTranslate-compatible config from `TRANSLATE_URL` (and optional `TRANSLATE_API_KEY`). Invalid or empty URLs disable translation.
+- **Inputs:** None (process env).
+- **Returns / side effects:** `{ url, apiKey }` pointing at `{TRANSLATE_URL}/translate`, or `null` when unset/invalid. Does not contact upstream. Does not throw.
+- **Used by:** `proxyTranslateGet`, `proxyTranslatePost`.
+
+## Function: proxyTranslateGet
+
+- **Purpose:** Report whether translation is configured without calling upstream. Always 200 `{ available: boolean }`.
+- **Inputs:** None.
+- **Returns / side effects:** JSON `Response`. Invalid `TRANSLATE_URL` is treated as unavailable.
+- **Used by:** App Router GET `/translate`; `fetchTranslateAvailable` in `NoteTranslate`.
+
+## Function: proxyTranslatePost
+
+- **Purpose:** Validate `{ text, target }` and forward a LibreTranslate-compatible POST (`q`, `source: auto`, `fil`→`tl`, 500-character max, 15s timeout). Does not forward Authorization.
+- **Inputs:** Incoming `Request` with JSON `{ text, target }` (`en` / `de` / `es` / `fil`).
+- **Returns / side effects:** `{ translatedText }` on success; 400 invalid body, 503 not configured, 502 upstream. Does not throw.
+- **Used by:** App Router POST `/translate`; `translateNote` from `NoteTranslate`.
+
+## Function: NoteTranslate
+
+- **Purpose:** Client control that offers on-demand translation when the note language differs from the active UI locale and GET `/translate` reports available. **Translate** sits under the note body (not in the footer icon row). Success shows the translated body plus **Show original**; failure shows **Could not translate this note. Please try again.** and keeps Translate.
+- **Inputs:** `text` — raw public note or reply body.
+- **Returns / side effects:** The control, or `null` when the text is blank, translation is unavailable, or `shouldOfferNoteTranslate` is false. Calls `fetchTranslateAvailable` on mount and `translateNote` on click. Stops click/keydown so forum expand does not fire.
+- **Used by:** `ForumBoard` (notes and replies) and `PublicMessageLoader`.
