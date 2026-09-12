@@ -16,9 +16,16 @@ declare global {
        * Not `readonly`: unit tests assign it to exercise both branches.
        */
       NEXT_PUBLIC_API_URL?: string;
-      /** Optional same-origin translation proxy upstream base URL. Tests assign it. */
+      /**
+       * Optional same-origin translation proxy upstream base URL. Missing, empty,
+       * or non-http(s) values disable translation (`available: false` / POST 503).
+       * Tests assign it.
+       */
       TRANSLATE_URL?: string;
-      /** Optional LibreTranslate-compatible API key. Tests assign it. */
+      /**
+       * Optional LibreTranslate-compatible API key, sent only when `TRANSLATE_URL`
+       * is set. Tests assign it.
+       */
       TRANSLATE_API_KEY?: string;
       /** Set by CI systems (GitHub Actions sets `"true"`); read by `playwright.config.ts`. */
       readonly CI?: string;
