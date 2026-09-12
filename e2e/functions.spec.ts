@@ -811,6 +811,52 @@ test('Function: RequirementsOverlay — forum post without a lightning-address o
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
+test('Function: IntroduceYourselfOverlay — signed-in member without a post sees the dialog', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        hasPosted: false,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Write an introduction' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+});
+
 test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay', async ({
   page,
 }) => {
