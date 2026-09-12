@@ -2988,7 +2988,7 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
     'href',
     '/rules',
   );
-  await expect(page.getByRole('link', { name: 'Inbox' })).toHaveAttribute('href', '/messages');
+  await expect(page.getByRole('link', { name: 'Messages' })).toHaveAttribute('href', '/messages');
   await expect(page.getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');
   await expect(page.getByLabel('Language')).toBeVisible();
   await expect(page.getByRole('option', { name: 'Deutsch' })).toHaveCount(0);

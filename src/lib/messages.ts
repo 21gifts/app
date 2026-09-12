@@ -12,7 +12,7 @@ const en = {
   'nav.home': 'Home',
   'nav.legal': 'Legal & Privacy',
   'nav.rules': 'Living room rules',
-  'nav.inbox': 'Inbox',
+  'nav.inbox': 'Messages',
   'nav.contact': 'Contact',
 
   'pwa.install': 'Install app',
@@ -1227,7 +1227,7 @@ const fil = {
   'nav.home': 'Home',
   'nav.legal': 'Legal at Privacy',
   'nav.rules': 'Mga patakaran sa living room',
-  'nav.inbox': 'Inbox',
+  'nav.inbox': 'Mga mensahe',
   'nav.contact': 'Contact',
   'pwa.install': 'I-install ang app',
   'pwa.iosTitle': 'Idagdag ang 21.gifts sa Home Screen',
