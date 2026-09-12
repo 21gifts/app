@@ -96,9 +96,9 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8">
           <p className="mb-4 text-paper/60">
-            {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
-            {formatBitcoin(payload.totalSats, numberFormat)} ·{' '}
-            {formatGroupedNumber(Number(payload.totalUsd), numberFormat, 2)} USD
+            {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
+            {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}
+            · {formatGroupedNumber(Number(payload.totalUsd), numberFormat, 2)} USD
           </p>
           <GiftDayTable day={payload} numberFormat={numberFormat} />
         </div>

@@ -877,10 +877,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'translate-loading',
+    image: 'welcome-translate-loading.png',
+    visual: 'state-welcome-translate-loading',
+    needle: 'state-welcome-translate-loading',
+  },
+  {
+    route: '/welcome',
     id: 'translate-done',
     image: 'welcome-translate-done.png',
     visual: 'state-welcome-translate-done',
     needle: 'Show original',
+  },
+  {
+    route: '/welcome',
+    id: 'translate-hidden',
+    image: 'welcome-translate-hidden.png',
+    visual: 'state-welcome-translate-hidden',
+    needle: 'Show translation',
   },
   {
     route: '/welcome',
@@ -898,10 +912,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'translate-loading',
+    image: 'messages-id-translate-loading.png',
+    visual: 'state-messages-id-translate-loading',
+    needle: 'state-messages-id-translate-loading',
+  },
+  {
+    route: '/messages/[id]',
     id: 'translate-done',
     image: 'messages-id-translate-done.png',
     visual: 'state-messages-id-translate-done',
     needle: 'Show original',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'translate-hidden',
+    image: 'messages-id-translate-hidden.png',
+    visual: 'state-messages-id-translate-hidden',
+    needle: 'state-messages-id-translate-hidden',
   },
   {
     route: '/messages/[id]',

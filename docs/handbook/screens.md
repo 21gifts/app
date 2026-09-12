@@ -391,11 +391,23 @@ Signed-in `/welcome` with one paid German note. **Translate** is visible under t
 
 ![21.gifts welcome translate](images/welcome-translate.png)
 
+### Variant: translate-loading
+
+Same German note after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts welcome translate loading](images/welcome-translate-loading.png)
+
 ### Variant: translate-done
 
 Same German note after a successful translation. Translated body plus **Show original**.
 
 ![21.gifts welcome translate done](images/welcome-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts welcome translate hidden](images/welcome-translate-hidden.png)
 
 ### Variant: translate-error
 
@@ -761,11 +773,23 @@ Public German note. Body is the German fixture; **Translate** is visible.
 
 ![21.gifts public message translate](images/messages-id-translate.png)
 
+### Variant: translate-loading
+
+After clicking **Translate** while POST `/translate` hangs. The control is busy.
+
+![21.gifts public message translate loading](images/messages-id-translate-loading.png)
+
 ### Variant: translate-done
 
 After successful translation: **Show original**.
 
 ![21.gifts public message translate done](images/messages-id-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: control reads **Show translation**.
+
+![21.gifts public message translate hidden](images/messages-id-translate-hidden.png)
 
 ### Variant: translate-error
 

@@ -4071,16 +4071,6 @@ test('Function: shouldOfferNoteTranslate — Translate is under the German body'
   await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
 });
 
-test('Function: resetTranslateAvailableCache — Translate stays available after reload', async ({
-  page,
-}) => {
-  await seedGermanNoteWelcome(page);
-  await page.goto('/welcome');
-  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
-  await page.reload();
-  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
-});
-
 test('Function: fetchTranslateAvailable — GET /translate enables Translate', async ({ page }) => {
   await seedGermanNoteWelcome(page);
   await page.goto('/welcome');

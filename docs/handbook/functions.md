@@ -1753,18 +1753,11 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `false` when detection is `null` or equals `locale`; `true` for `other` or a different UI locale. No I/O.
 - **Used by:** `NoteTranslate`.
 
-## Function: resetTranslateAvailableCache
-
-- **Purpose:** Clear the shared GET `/translate` availability promise so the next `fetchTranslateAvailable` call hits the route again.
-- **Inputs:** None.
-- **Returns / side effects:** `void`. Tests only; no network of its own.
-- **Used by:** Unit tests of `fetchTranslateAvailable`.
-
 ## Function: fetchTranslateAvailable
 
 - **Purpose:** Query same-origin GET `/translate` and cache the shared promise. Failures and non-`{ available: true }` bodies resolve to `false`.
 - **Inputs:** None.
-- **Returns / side effects:** `Promise<boolean>`. One in-flight GET is reused until `resetTranslateAvailableCache`. Does not throw.
+- **Returns / side effects:** `Promise<boolean>`. One in-flight GET is reused for the module lifetime. Does not throw.
 - **Used by:** `NoteTranslate` on mount.
 
 ## Function: translateNote

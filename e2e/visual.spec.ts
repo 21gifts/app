@@ -286,10 +286,13 @@ async function fulfillGermanPaidAdaNote(page: Page): Promise<void> {
 }
 
 /** Intercept same-origin POST /translate; GET continues to the app route. */
-async function fulfillTranslatePost(page: Page, outcome: 'ok' | 'fail'): Promise<void> {
+async function fulfillTranslatePost(page: Page, outcome: 'ok' | 'fail' | 'hang'): Promise<void> {
   await page.route(/\/translate$/, async (route) => {
     if (route.request().method() !== 'POST') {
       await route.continue();
+      return;
+    }
+    if (outcome === 'hang') {
       return;
     }
     if (outcome === 'fail') {
@@ -807,6 +810,36 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-translate');
   });
 
+  test('state /welcome translate-loading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillGermanPaidAdaNote(page);
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await shotScreen(page, 'state-welcome-translate-loading');
+  });
+
   test('state /welcome translate-done', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -832,6 +865,35 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await shotScreen(page, 'state-welcome-translate-done');
+  });
+
+  test('state /welcome translate-hidden', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillGermanPaidAdaNote(page);
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-translate-hidden');
   });
 
   test('state /welcome translate-error', async ({ page }) => {
@@ -1210,6 +1272,35 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-translate');
   });
 
+  test('state /messages/[id] translate-loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: GERMAN_NOTE_TEXT,
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await shotScreen(page, 'state-messages-id-translate-loading');
+  });
+
   test('state /messages/[id] translate-done', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
     await page.route(`**/public-messages/${id}`, async (route) => {
@@ -1234,6 +1325,34 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await shotScreen(page, 'state-messages-id-translate-done');
+  });
+
+  test('state /messages/[id] translate-hidden', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: GERMAN_NOTE_TEXT,
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-translate-hidden');
   });
 
   test('state /messages/[id] translate-error', async ({ page }) => {
