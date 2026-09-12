@@ -767,6 +767,11 @@ export function ForumLoader(): ReactElement | null {
             });
       applyCreatedNote(created, pendingPhoto, pendingVideo);
       pendingPostRef.current = null;
+      const current = useAuthStore.getState();
+      if (current.session !== session || current.account === null) {
+        return;
+      }
+      setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
@@ -982,6 +987,11 @@ export function ForumLoader(): ReactElement | null {
       const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
       applyCreatedReply(created, parentId, parentBaseline);
       pendingPostRef.current = null;
+      const current = useAuthStore.getState();
+      if (current.session !== session || current.account === null) {
+        return;
+      }
+      setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {

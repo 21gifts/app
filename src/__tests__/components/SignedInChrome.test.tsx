@@ -465,7 +465,9 @@ describe('SignedInChrome', () => {
     }
     useAuthStore.setState({ account: { ...account, hasPosted: false } });
     renderWithLocale(<SignedInChrome />);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(screen.queryByText('Close')).toBeNull();
+    fireEvent.click(close);
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
   });
 });

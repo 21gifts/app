@@ -18,7 +18,9 @@ describe('IntroduceYourselfOverlay', () => {
   it('calls onDismiss when Close is clicked', () => {
     const onDismiss = vi.fn();
     renderWithLocale(<IntroduceYourselfOverlay onDismiss={onDismiss} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(screen.queryByText('Close')).toBeNull();
+    fireEvent.click(close);
     expect(onDismiss).toHaveBeenCalled();
   });
 });
