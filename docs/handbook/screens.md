@@ -653,14 +653,14 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right (Home first, includes **Messages**). Heading **Messages**, a conversation list (counterpart name, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right (Home first, includes **Messages**). Heading **Messages**, a conversation list (counterpart name, origin label Contact / Direct / Damus, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome.
 - **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open **Menu** (Home first). Forum PM and `/contact` send land here.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
 
-Loaded list with at least one thread (counterpart **21.gifts**).
+Loaded list with at least one thread (counterpart **21.gifts**, origin **Contact**).
 
 ![21.gifts inbox](images/messages.png)
 
@@ -684,7 +684,7 @@ List fetch failed. Button **Try again**.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts**, message body **Hello team**, composer visible.
+Open official thread. Heading **21.gifts**, origin **Contact** under the heading, message body **Hello team**, composer visible.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 

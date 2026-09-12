@@ -45,6 +45,7 @@ const account: Account = {
 
 const THREAD: Conversation = {
   id: 'conv-1',
+  kind: 'member_platform',
   name: '21.gifts',
   lastText: 'Hello',
   lastAt: '2026-08-28T12:00:00.000Z',
@@ -52,6 +53,7 @@ const THREAD: Conversation = {
 
 const OLDER: Conversation = {
   id: 'conv-2',
+  kind: 'member_member',
   name: 'Bob',
   lastText: 'Older',
   lastAt: '2026-08-27T12:00:00.000Z',

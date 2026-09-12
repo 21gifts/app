@@ -314,11 +314,14 @@ export type ContactMessage = z.infer<typeof contactSchema>;
 /**
  * Runtime schema for one conversation list row from `GET /conversations`.
  *
- * `lastText` may be empty when the thread was opened from a forum note and
- * has no messages yet.
+ * `kind` is `member_member` (in-app member conversation), `member_platform`
+ * (contact / official 21.gifts thread), or `member_damus` (Nostr-only
+ * counterpart). `lastText` may be empty when the thread was opened from a
+ * forum note and has no messages yet.
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
+  kind: z.enum(['member_member', 'member_platform', 'member_damus']),
   name: z.string().min(1),
   lastText: z.string(),
   lastAt: z.string().datetime({ offset: true }),
