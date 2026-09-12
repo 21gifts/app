@@ -219,7 +219,7 @@ function CumulativeOverTimeChart(
  *
  * @param rows - Recipient totals.
  * @param scale - Whether bar widths use sats or USD cents.
- * @param numberFormat - Visitor grouping style for ₿ labels.
+ * @param numberFormat - Visitor grouping style for ₿ and USD labels.
  * @returns Bar list.
  */
 function ByPersonChart(
@@ -269,7 +269,7 @@ function ByPersonChart(
               className="fill-paper/60"
               fontSize="14"
             >
-              {formatBitcoin(row.sats, numberFormat)} · ${row.usd}
+              {formatBitcoin(row.sats, numberFormat)} · {formatUsdDisplay(row.usd, numberFormat)}
             </text>
           </g>
         );

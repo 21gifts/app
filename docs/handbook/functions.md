@@ -1245,7 +1245,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`, and `NumberFormatSwitcher` `tone="dark"` inside that nav so mobile does not cover the hamburger), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher is marketing-forbidden.
 - **Inputs:** None (internal open state). Reads copy via `useTranslations`.
-- **Returns / side effects:** Header element; toggles nav on small screens. Language and number-format selects stay visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
+- **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. `NumberFormatSwitcher` is inside the primary nav (`hidden md:flex` when closed). Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound`.
 
 ## Function: MarketingLayout

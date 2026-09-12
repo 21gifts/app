@@ -1,13 +1,13 @@
 import type { ReactElement } from 'react';
 import type { GiftDay } from '@/lib/api-types';
-import type { NumberFormatStyle } from '@/lib/number-format';
+import { formatGroupedNumber, type NumberFormatStyle } from '@/lib/number-format';
 import { formatBitcoin } from '@/lib/stats-money';
 
 /** Props for {@link GiftDayTable}. */
 export interface GiftDayTableProps {
   /** Per-day payload from `GET /gifts`. */
   day: GiftDay;
-  /** Visitor grouping style for the ₿ column. */
+  /** Visitor grouping style for the ₿ and USD columns. */
   numberFormat: NumberFormatStyle;
 }
 
@@ -31,7 +31,7 @@ function formatUtcTime(iso: string): string {
 /**
  * Table of individual outbound gifts on one UTC day.
  *
- * @param props - Day payload and the visitor number-format style for ₿ amounts.
+ * @param props - Day payload and the visitor number-format style for ₿ and USD amounts.
  * @returns A table, or the empty-day copy.
  */
 export function GiftDayTable({ day, numberFormat }: GiftDayTableProps): ReactElement {
@@ -64,7 +64,9 @@ export function GiftDayTable({ day, numberFormat }: GiftDayTableProps): ReactEle
               <td className="py-2 pr-4 tabular-nums">
                 {formatBitcoin(gift.amountSats, numberFormat)}
               </td>
-              <td className="py-2 tabular-nums text-paper/80">{gift.amountUsd}</td>
+              <td className="py-2 tabular-nums text-paper/80">
+                {formatGroupedNumber(Number(gift.amountUsd), numberFormat, 2)}
+              </td>
             </tr>
           ))}
         </tbody>

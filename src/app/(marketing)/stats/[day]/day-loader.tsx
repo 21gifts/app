@@ -7,6 +7,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
 import type { GiftDay } from '@/lib/api-types';
+import { formatGroupedNumber } from '@/lib/number-format';
 import { formatBitcoin } from '@/lib/stats-money';
 import { isUtcDay } from '@/lib/utc-day';
 
@@ -96,7 +97,8 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
         <div className="mt-8">
           <p className="mb-4 text-paper/60">
             {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
-            {formatBitcoin(payload.totalSats, numberFormat)} · {payload.totalUsd} USD
+            {formatBitcoin(payload.totalSats, numberFormat)} ·{' '}
+            {formatGroupedNumber(Number(payload.totalUsd), numberFormat, 2)} USD
           </p>
           <GiftDayTable day={payload} numberFormat={numberFormat} />
         </div>
