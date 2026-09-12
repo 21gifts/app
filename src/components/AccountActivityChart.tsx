@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { SegmentedControl } from '@/components/ui';
 import {
   activityMaxY,
@@ -43,7 +44,8 @@ export function AccountActivityChart({
   received,
   donated = [],
 }: AccountActivityChartProps): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const [scale, setScale] = useState<ActivityScale>('sat');
   const points = alignActivitySeries(received, donated);
   const maxY = activityMaxY(points, scale);
@@ -57,7 +59,9 @@ export function AccountActivityChart({
     0,
   );
   const formatTick =
-    scale === 'sat' ? (value: number): string => formatBitcoin(value, locale) : formatUsdTick;
+    scale === 'sat'
+      ? (value: number): string => formatBitcoin(value, numberFormat)
+      : (value: number): string => formatUsdTick(value, numberFormat);
   const ariaLabel = scale === 'sat' ? t('profile.chartSat') : t('profile.chartUsd');
 
   const innerW = WIDTH - PAD_L - PAD_R;

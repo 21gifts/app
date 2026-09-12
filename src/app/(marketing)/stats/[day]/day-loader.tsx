@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { FiatPicker } from '@/components/FiatPicker';
 import { GiftDayTable } from '@/components/GiftDayTable';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
 import type { GiftDay } from '@/lib/api-types';
@@ -51,6 +52,7 @@ function dayTotal(payload: GiftDay, fiat: FiatCode): string | null {
 export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
   const { locale } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -124,9 +126,10 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
           <FiatPicker value={fiat} onChange={setFiat} />
           <p className="text-paper/60">
             {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
-            {formatBitcoin(payload.totalSats)} · {formatFiatDisplay(dayTotal(payload, fiat), fiat)}
+            {formatBitcoin(payload.totalSats, numberFormat)} ·{' '}
+            {formatFiatDisplay(dayTotal(payload, fiat), fiat, numberFormat)}
           </p>
-          <GiftDayTable day={payload} fiat={fiat} />
+          <GiftDayTable day={payload} fiat={fiat} numberFormat={numberFormat} />
         </div>
       ) : null}
     </div>

@@ -15,6 +15,12 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   ),
 }));
 
+vi.mock('@/components/NumberFormatSwitcher', () => ({
+  NumberFormatSwitcher: ({ tone }: { tone?: string }) => (
+    <div data-testid="number-format-switcher">{tone}</div>
+  ),
+}));
+
 afterEach(cleanup);
 
 describe('PublicMessagePage', () => {
@@ -22,6 +28,7 @@ describe('PublicMessagePage', () => {
     const id = '11111111-1111-4111-8111-111111111111';
     renderWithLocale(await PublicMessagePage({ params: Promise.resolve({ id }) }));
     expect(screen.getByTestId('language-switcher').textContent).toBe('light');
+    expect(screen.getByTestId('number-format-switcher').textContent).toBe('light');
     expect(screen.getByTestId('public-message-loader').textContent).toBe(id);
   });
 });

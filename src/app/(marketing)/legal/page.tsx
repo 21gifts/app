@@ -48,11 +48,12 @@ export default function LegalPage(): ReactElement {
         <h3 className="text-lg font-semibold">Data on this website</h3>
         <p className="text-paper/70">
           This origin does not load analytics scripts. It sets no cookies unless you choose a
-          language or a light/dark appearance; then a <code>locale</code> cookie and/or a{' '}
-          <code>theme</code> cookie store those choices so the next visit can honour them. Choosing
-          System appearance removes the <code>theme</code> cookie. The application stores a session
-          token in <code>localStorage</code> after you log in so a returning visitor stays logged
-          in.
+          language, a number format, or a light/dark appearance; then a <code>locale</code> cookie,
+          a <code>numberFormat</code> cookie, and/or a <code>theme</code> cookie store those choices
+          so the next visit can honour them. Choosing a number format writes{' '}
+          <code>numberFormat</code>; absent means Swiss grouping 10&apos;000.23. Choosing System
+          appearance removes the <code>theme</code> cookie. The application stores a session token
+          in <code>localStorage</code> after you log in so a returning visitor stays logged in.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
         <p className="text-paper/70">
