@@ -1,9 +1,31 @@
 import { expect, test } from '@playwright/test';
 
+const FX_USD = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+
+const FX_ALL = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [
+    { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+    { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+    { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+    { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+  ],
+};
+
 const FIXTURE = {
   totalSats: 1500,
   totalBtc: '0.00001500',
   totalUsd: '1.43',
+  totalChf: '1.20',
+  totalEur: '1.30',
+  totalPhp: '80.00',
   giftCount: 3,
   recipientCount: 2,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -17,6 +39,12 @@ const FIXTURE = {
       cumulativeBtc: '0.00000500',
       usd: '0.48',
       cumulativeUsd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-06-02',
@@ -26,6 +54,12 @@ const FIXTURE = {
       cumulativeBtc: '0.00000500',
       usd: '0.00',
       cumulativeUsd: '0.48',
+      chf: '0.00',
+      eur: '0.00',
+      php: '0.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-07-01',
@@ -35,27 +69,68 @@ const FIXTURE = {
       cumulativeBtc: '0.00001500',
       usd: '0.95',
       cumulativeUsd: '1.43',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '1.20',
+      cumulativeEur: '1.30',
+      cumulativePhp: '80.00',
     },
   ],
   byRecipient: [
-    { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
-    { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
+    {
+      recipient: 'alice',
+      giftCount: 2,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
+    {
+      recipient: 'bob',
+      giftCount: 1,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
   ],
   byMonth: [
-    { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
-    { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
+    {
+      month: '2026-06',
+      giftCount: 2,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
+    {
+      month: '2026-07',
+      giftCount: 1,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
   ],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 const EMPTY = {
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -63,11 +138,7 @@ const EMPTY = {
   spendOverTime: [],
   byRecipient: [],
   byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_USD,
 };
 
 test('GET /gifts/stats is proxied', async ({ request }) => {
@@ -90,6 +161,7 @@ test('stats page shows total spend over time', async ({ page }) => {
   });
   await page.goto('/stats');
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toBeVisible();
   await expect(page.locator('dl').getByText('₿1,500')).toBeVisible();
   await expect(page.locator('dl').getByText('$1.43')).toBeVisible();
   const chart = page.getByLabel('Spend over time in ₿');

@@ -1417,7 +1417,7 @@ PRs 1–5 in the original sequence **shipped in 21gifts/app#125** (Outfit, token
 
 **This PR** finishes the remaining target:
 
-- `SegmentedControl` primitive (`tone` gift|neutral, optional `shell` app|dark) wired to forum Active/No gifts yet/All/Most popular, profile ₿|USD, and stats ₿|USD.
+- `SegmentedControl` primitive (`tone` gift|neutral, optional `shell` app|dark) wired to forum Active/No gifts yet/All/Most popular, profile ₿|USD, and stats ₿|{selected fiat} after FiatPicker.
 - `Button.tone` (`app` | `dark`) so marketing PwaInstall header/hero is a real dark secondary, not class soup.
 - Marketing leftover `text-white` / `#f7931a` → `paper` / `accent` on legal, handbook, stats, day table.
 - PwaInstall documented on marketing header, `/` hero, and signed-in menu.

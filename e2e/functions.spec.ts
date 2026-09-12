@@ -3,10 +3,32 @@ import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
+const FX_USD = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+
+const FX_ALL = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [
+    { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+    { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+    { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+    { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+  ],
+};
+
 const POPULATED_STATS = {
   totalSats: 1500,
   totalBtc: '0.00001500',
   totalUsd: '1.43',
+  totalChf: '1.20',
+  totalEur: '1.30',
+  totalPhp: '80.00',
   giftCount: 3,
   recipientCount: 2,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -20,6 +42,12 @@ const POPULATED_STATS = {
       cumulativeBtc: '0.00000500',
       usd: '0.48',
       cumulativeUsd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-06-02',
@@ -29,6 +57,12 @@ const POPULATED_STATS = {
       cumulativeBtc: '0.00000500',
       usd: '0.00',
       cumulativeUsd: '0.48',
+      chf: '0.00',
+      eur: '0.00',
+      php: '0.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-07-01',
@@ -38,27 +72,68 @@ const POPULATED_STATS = {
       cumulativeBtc: '0.00001500',
       usd: '0.95',
       cumulativeUsd: '1.43',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '1.20',
+      cumulativeEur: '1.30',
+      cumulativePhp: '80.00',
     },
   ],
   byRecipient: [
-    { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
-    { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
+    {
+      recipient: 'alice',
+      giftCount: 2,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
+    {
+      recipient: 'bob',
+      giftCount: 1,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
   ],
   byMonth: [
-    { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
-    { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
+    {
+      month: '2026-06',
+      giftCount: 2,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
+    {
+      month: '2026-07',
+      giftCount: 1,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
   ],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 const EMPTY_STATS = {
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -66,11 +141,7 @@ const EMPTY_STATS = {
   spendOverTime: [],
   byRecipient: [],
   byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_USD,
 };
 
 async function stubPayableNote(page: Page): Promise<void> {
@@ -2110,8 +2181,26 @@ test('Function: StatsDashboard — month USD scale makes the higher-USD month ta
     ...POPULATED_STATS,
     giftCount: 2,
     byMonth: [
-      { month: '2026-06', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
-      { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+      {
+        month: '2026-06',
+        giftCount: 1,
+        sats: 1_000_000,
+        btc: '0.01000000',
+        usd: '50.00',
+        chf: '42.00',
+        eur: '45.00',
+        php: '2800.00',
+      },
+      {
+        month: '2026-07',
+        giftCount: 1,
+        sats: 100_000,
+        btc: '0.00100000',
+        usd: '900.00',
+        chf: '756.00',
+        eur: '820.00',
+        php: '50400.00',
+      },
     ],
   });
   await page.goto('/stats');
@@ -2147,6 +2236,43 @@ test('Function: formatUsdTick — populated stats draw the USD chart', async ({ 
     .click();
   await expect(page.getByLabel('Spend over time in USD')).toBeVisible();
   await expect(page.getByLabel('Spend over time in USD').getByText('$1.43')).toBeVisible();
+});
+
+test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  const group = page.getByRole('group', { name: 'Fiat currency' });
+  await expect(group).toBeVisible();
+  await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
+});
+
+test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.goto('/stats');
+  await page
+    .getByRole('group', { name: 'Over time scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await expect(page.getByLabel('Spend over time in USD')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in USD').getByText('$1.43')).toBeVisible();
+});
+
+test('Function: defaultFiatForLocale — English stats default to USD', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(
+    page.getByRole('group', { name: 'Fiat currency' }).getByRole('button', { name: 'USD' }),
+  ).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a challenge', async ({
@@ -3463,7 +3589,18 @@ test('Function: accountTotals — menu shows received sats for alice', async ({ 
   await seedAdaSession(page);
   await stubGiftStats(page, {
     ...EMPTY_STATS,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1000,
+        btc: '0.00001000',
+        usd: '0.95',
+        chf: '0.80',
+        eur: '0.86',
+        php: '53.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
@@ -3474,7 +3611,18 @@ test('Function: recipientHandleFromAddress — alice handle matches stats row', 
   await seedAdaSession(page);
   await stubGiftStats(page, {
     ...EMPTY_STATS,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1000,
+        btc: '0.00001000',
+        usd: '0.95',
+        chf: '0.80',
+        eur: '0.86',
+        php: '53.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
@@ -3485,7 +3633,18 @@ test('Function: useAccountTotals — profile totals load from gift stats', async
   await seedAdaSession(page);
   await stubGiftStats(page, {
     ...EMPTY_STATS,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1000,
+        btc: '0.00001000',
+        usd: '0.95',
+        chf: '0.80',
+        eur: '0.86',
+        php: '53.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
@@ -3513,7 +3672,18 @@ test('Function: alignActivitySeries — receive series days appear on the profil
     giftCount: 2,
     recipientCount: 1,
     spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await expect(page.getByText('2026-06-01')).toBeVisible();
@@ -3531,7 +3701,18 @@ test('Function: activityValue — USD toggle shows received USD on the profile c
     giftCount: 2,
     recipientCount: 1,
     spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await page
@@ -3562,7 +3743,18 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
     giftCount: 2,
     recipientCount: 1,
     spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await expect(page.getByLabel('Given and received in ₿').getByText('₿1,500')).toBeVisible();

@@ -80,9 +80,9 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` + USD, no sats caption) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | USD (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units.
+- **Purpose:** Renders `FiatPicker` then gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the selected fiat; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {selected FiatCode} via BarScale `'btc' | 'fiat'` (default ₿; not a five-way ₿|CHF|EUR|USD|PHP). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each gift's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
-- **Returns / side effects:** React element. No network.
+- **Returns / side effects:** React element. Shared `useState<FiatCode>` defaults to `defaultFiatForLocale(locale)`. No network.
 - **Used by:** `StatsLoader`.
 
 ## Function: StatsPage
@@ -101,17 +101,24 @@
 
 ## Function: DayLoader
 
-- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error.
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. Renders `FiatPicker`; the summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, fiat)`.
 - **Inputs:** `day` UTC `YYYY-MM-DD`.
-- **Returns / side effects:** React element. Calls `fetchGiftDay`.
+- **Returns / side effects:** React element. Calls `fetchGiftDay`. Selected fiat defaults with `defaultFiatForLocale`.
 - **Used by:** `GiftDayPage`.
 
 ## Function: GiftDayTable
 
-- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, USD), or empty copy.
-- **Inputs:** `day: GiftDay`.
-- **Returns / side effects:** React element. No network.
+- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, {FiatCode}), or empty copy **No gifts recorded on this day.**
+- **Inputs:** `day: GiftDay` and `fiat: FiatCode`.
+- **Returns / side effects:** React element. Fourth column header is the selected code; cells use `formatFiatDisplay`. No network.
 - **Used by:** `DayLoader`.
+
+## Function: FiatPicker
+
+- **Purpose:** Four-way CHF | EUR | USD | PHP control for public stats. Uses `SegmentedControl tone="gift" shell="dark"` with `ariaLabel="Fiat currency"`. Does not include ₿ (chart scale stays a separate ₿ | selected fiat control).
+- **Inputs:** `value` (`FiatCode`) and `onChange`.
+- **Returns / side effects:** React element. No network.
+- **Used by:** `StatsDashboard`, `DayLoader`.
 
 ## Function: fetchGiftDay
 
@@ -939,6 +946,27 @@
 - **Used by:** `ForumBoard`, `ForumLoader`.
 
 The No gifts yet mode keeps only loaded messages with exactly zero sats, including notes without a wallet, preserving input order. The board displays them newest first (same as Active/All). Active remains the default.
+
+## Function: formatFiatDisplay
+
+- **Purpose:** Formats an API fiat amount string for stats display. `null` becomes `—` (U+2014). USD uses a dollar symbol; CHF/EUR/PHP use `currencyDisplay: 'code'` rebuilt so the code prefixes the number (`"CHF 1,425.00"`).
+- **Inputs:** `amount` (`string | null`) and `code` (`FiatCode`).
+- **Returns / side effects:** Display string. No network.
+- **Used by:** `StatsDashboard`, `GiftDayTable`, `DayLoader`.
+
+## Function: formatFiatTick
+
+- **Purpose:** Formats a parsed fiat chart-axis value with grouping and a currency prefix. USD matches `formatUsdTick`; other codes are `CHF 0` / `CHF 1.43` / `CHF 1,425`.
+- **Inputs:** `amount` number (layout scale only) and `code` (`FiatCode`).
+- **Returns / side effects:** Axis label. Does not itself map a null series to `—` — `StatsDashboard` does that when every selected cumulative is `null`.
+- **Used by:** `StatsDashboard` over-time fiat scale.
+
+## Function: defaultFiatForLocale
+
+- **Purpose:** Picks the default public-stats fiat for a UI locale: `de` → CHF, `fil` → PHP, `es` → EUR, `en` → USD.
+- **Inputs:** `locale` (`Locale`).
+- **Returns / side effects:** A `FiatCode`. No network.
+- **Used by:** `StatsDashboard`, `DayLoader`.
 
 ## Function: formatUsdDisplay
 
