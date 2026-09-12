@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LoginCard } from '@/components/LoginCard';
+import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Wordmark } from '@/components/ui';
@@ -22,6 +23,7 @@ export default function LoginPage(): ReactElement {
       topRight={
         <>
           <ThemeSwitcher />
+          <NumberFormatSwitcher tone="light" />
           <LanguageSwitcher tone="light" />
         </>
       }

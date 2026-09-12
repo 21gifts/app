@@ -157,7 +157,7 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
     });
-    expect(screen.queryByLabelText('Received ₿1,500')).toBeNull();
+    expect(screen.queryByLabelText("Received ₿1'500")).toBeNull();
   });
 
   it('does not show a copy view-only link control, View key heading, view URL, or raw key', () => {

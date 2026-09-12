@@ -71,6 +71,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Español' })",
   },
   {
+    route: '/',
+    id: 'number-format-open',
+    image: 'root-number-format.png',
+    visual: 'state-root-number-format',
+    needle: "getByRole('option', { name: \"10'000.23\" })",
+  },
+  {
     route: '/legal',
     id: 'default',
     image: 'legal.png',
@@ -118,6 +125,13 @@ export const SCREEN_VARIANTS = [
     image: 'login-theme.png',
     visual: 'state-login-theme',
     needle: "getByRole('option', { name: 'Dark' })",
+  },
+  {
+    route: '/login',
+    id: 'number-format-open',
+    image: 'login-number-format.png',
+    visual: 'state-login-number-format',
+    needle: "getByRole('option', { name: \"10'000.23\" })",
   },
   {
     route: '/donate',
@@ -457,6 +471,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-number-format-open',
+    image: 'welcome-menu-number-format.png',
+    visual: 'state-welcome-menu-number-format',
+    needle: "getByRole('option', { name: \"10'000.23\" })",
+  },
+  {
+    route: '/welcome',
     id: 'pay-qr',
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
@@ -600,7 +621,7 @@ export const SCREEN_VARIANTS = [
     id: 'large-usd',
     image: 'profile-large-usd.png',
     visual: 'state-profile-large-usd',
-    needle: '$1,425',
+    needle: "$1'425",
   },
   {
     route: '/view/[viewKey]',

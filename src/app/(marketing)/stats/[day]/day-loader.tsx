@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { GiftDayTable } from '@/components/GiftDayTable';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
 import type { GiftDay } from '@/lib/api-types';
@@ -23,6 +24,7 @@ export interface DayLoaderProps {
  */
 export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
+  const { numberFormat } = useNumberFormat();
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,9 +96,9 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
         <div className="mt-8">
           <p className="mb-4 text-paper/60">
             {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
-            {formatBitcoin(payload.totalSats)} · {payload.totalUsd} USD
+            {formatBitcoin(payload.totalSats, numberFormat)} · {payload.totalUsd} USD
           </p>
-          <GiftDayTable day={payload} />
+          <GiftDayTable day={payload} numberFormat={numberFormat} />
         </div>
       ) : null}
     </div>

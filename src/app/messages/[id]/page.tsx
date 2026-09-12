@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Wordmark } from '@/components/ui';
@@ -28,6 +29,7 @@ export default async function PublicMessagePage({
       topRight={
         <>
           <ThemeSwitcher />
+          <NumberFormatSwitcher tone="light" />
           <LanguageSwitcher tone="light" />
         </>
       }

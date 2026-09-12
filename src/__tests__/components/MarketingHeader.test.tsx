@@ -41,9 +41,10 @@ describe('MarketingHeader', () => {
     );
   });
 
-  it('always shows the language switcher', () => {
+  it('always shows the language switcher and keeps number format in the nav', () => {
     renderWithLocale(<MarketingHeader />);
     expect(screen.getByLabelText('Language')).toBeTruthy();
+    expect(screen.getByLabelText('Number format')).toBeTruthy();
   });
 
   it('toggles the mobile menu', () => {

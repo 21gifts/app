@@ -118,7 +118,9 @@ app/
 │   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
+│   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
+│   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
@@ -155,7 +157,9 @@ app/
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
+│   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
+│   │   ├── request-number-format.ts # Cookie numberFormat for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse

@@ -16,6 +16,10 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   LanguageSwitcher: () => <div data-testid="language-switcher" />,
 }));
 
+vi.mock('@/components/NumberFormatSwitcher', () => ({
+  NumberFormatSwitcher: () => <div data-testid="number-format-switcher" />,
+}));
+
 vi.mock('@/components/ThemeSwitcher', () => ({
   ThemeSwitcher: () => <div data-testid="theme-switcher" />,
 }));
@@ -31,6 +35,11 @@ describe('LoginPage', () => {
   it('renders the language switcher', () => {
     renderWithLocale(<LoginPage />);
     expect(screen.getByTestId('language-switcher')).toBeTruthy();
+  });
+
+  it('renders the number format switcher', () => {
+    renderWithLocale(<LoginPage />);
+    expect(screen.getByTestId('number-format-switcher')).toBeTruthy();
   });
 
   it('renders the theme switcher', () => {

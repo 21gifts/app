@@ -2137,7 +2137,13 @@ test('Function: formatBitcoin — populated stats draw the ₿ chart', async ({ 
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
   await expect(page.getByLabel('Spend over time in ₿')).toBeVisible();
-  await expect(page.getByLabel('Spend over time in ₿').getByText('₿1,500')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in ₿').getByText("₿1'500")).toBeVisible();
+});
+
+test("Function: formatGroupedNumber — /stats default grouped ₿1'500", async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.goto('/stats');
+  await expect(page.getByLabel('Spend over time in ₿').getByText("₿1'500")).toBeVisible();
 });
 
 test('Function: formatUsdTick — populated stats draw the USD chart', async ({ page }) => {
@@ -2276,6 +2282,54 @@ test('Function: LanguageSwitcher — landing exposes the language switcher', asy
   await expect(page.getByLabel('Language')).toBeVisible();
   await page.getByLabel('Language').click();
   await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
+});
+
+test("Function: parseNumberFormat — /login Number format options include 10'000.23", async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.getByLabel('Number format').click();
+  await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+});
+
+test('Function: separatorsFor — same click shows 10,000.23 and 23.000,33', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Number format').click();
+  await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
+  await expect(page.getByRole('option', { name: '23.000,33' })).toBeVisible();
+});
+
+test('Function: getRequestNumberFormat — /login switcher visible', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByLabel('Number format')).toBeVisible();
+});
+
+test('Function: NumberFormatProvider — picking 23.000,33 on /login writes numberFormat=de cookie', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/login');
+  await page.getByLabel('Number format').click();
+  await page.getByRole('option', { name: '23.000,33' }).click();
+  const cookies = await context.cookies();
+  expect(cookies.some((cookie) => cookie.name === 'numberFormat' && cookie.value === 'de')).toBe(
+    true,
+  );
+});
+
+test('Function: useNumberFormat — Number format switcher on /login reads provider', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await expect(page.getByLabel('Number format')).toBeVisible();
+});
+
+test('Function: NumberFormatSwitcher — /login lists the three samples', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Number format').click();
+  await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+  await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
+  await expect(page.getByRole('option', { name: '23.000,33' })).toBeVisible();
 });
 
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
@@ -3469,7 +3523,7 @@ test('Function: accountTotals — menu shows received sats for alice', async ({ 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: recipientHandleFromAddress — alice handle matches stats row', async ({ page }) => {
@@ -3480,7 +3534,7 @@ test('Function: recipientHandleFromAddress — alice handle matches stats row', 
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: useAccountTotals — profile totals load from gift stats', async ({ page }) => {
@@ -3491,7 +3545,7 @@ test('Function: useAccountTotals — profile totals load from gift stats', async
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: AccountActivityChart — profile shows Given legend and ₿ chart', async ({
@@ -3567,7 +3621,7 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
     byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
   });
   await page.goto('/profile');
-  await expect(page.getByLabel('Given and received in ₿').getByText('₿1,500')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
 });
 
 test('Function: ThemeProvider — picking Dark sets html.dark on /login', async ({ page }) => {

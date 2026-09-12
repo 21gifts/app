@@ -13,6 +13,7 @@ import {
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
@@ -295,6 +296,7 @@ export function ForumBoard({
   onDeleted,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -628,7 +630,7 @@ export function ForumBoard({
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-5">
                   <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
-                    {formatBitcoin(message.sats, locale)}
+                    {formatBitcoin(message.sats, numberFormat)}
                   </p>
                   {message.payable ? (
                     <IconButton
@@ -771,7 +773,7 @@ export function ForumBoard({
                   </IconButton>
                   <p className="px-10 text-center text-sm text-app-muted">
                     {t('forum.payConfirm', {
-                      amount: formatBitcoin(invoiceForCard.amountSats, locale),
+                      amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
                     })}
                   </p>
                   {showPaymentQr ? (

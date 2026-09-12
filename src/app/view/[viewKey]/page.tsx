@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
 import { Wordmark } from '@/components/ui';
@@ -31,6 +32,7 @@ export default async function ViewProfilePage({
       topRight={
         <>
           <ThemeSwitcher />
+          <NumberFormatSwitcher tone="light" />
           <LanguageSwitcher tone="light" />
         </>
       }

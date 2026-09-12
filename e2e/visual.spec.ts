@@ -288,6 +288,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-language');
   });
 
+  test('state / number-format-open', async ({ page }, testInfo) => {
+    await page.goto('/');
+    if (isMobileProject(testInfo)) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+    }
+    await page.getByLabel('Number format').click();
+    await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+    await shotScreen(page, 'state-root-number-format');
+  });
+
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
@@ -459,6 +469,13 @@ test.describe('login variant baselines', () => {
     await page.getByLabel('Theme').click();
     await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
     await shotScreen(page, 'state-login-theme');
+  });
+
+  test('login number-format-open', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Number format').click();
+    await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+    await shotScreen(page, 'state-login-number-format');
   });
 });
 
@@ -1347,7 +1364,7 @@ test.describe('profile activity chart variants', () => {
       .getByRole('button', { name: 'USD' })
       .click();
     await expect(page.getByLabel('Given and received in USD')).toBeVisible();
-    await expect(page.getByText('$1,425')).toBeVisible();
+    await expect(page.getByText("$1'425")).toBeVisible();
     await shotScreen(page, 'state-profile-large-usd');
   });
 });
@@ -2069,6 +2086,22 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Theme').click();
     await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu-theme');
+  });
+
+  test('welcome menu-number-format-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByLabel('Number format').click();
+    await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-number-format');
   });
 
   test('welcome pay-qr', async ({ page }, testInfo) => {

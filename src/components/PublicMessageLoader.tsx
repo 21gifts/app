@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { fetchPublicMessage, fetchPublicMessagePhoto } from '@/lib/api';
@@ -24,6 +25,7 @@ const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
  */
 export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const { t, locale } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const { ready } = useHydrateSession();
   const account = useAuthStore((state) => state.account);
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
@@ -160,7 +162,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         {note.text !== '' ? (
           <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
         ) : null}
-        <p className="text-sm font-medium text-app-fg">{formatBitcoin(note.sats, locale)}</p>
+        <p className="text-sm font-medium text-app-fg">{formatBitcoin(note.sats, numberFormat)}</p>
       </Card>
       {ready ? (
         account === null ? (

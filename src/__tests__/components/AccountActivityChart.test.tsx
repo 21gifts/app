@@ -43,7 +43,7 @@ describe('AccountActivityChart', () => {
     ).toBe(true);
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByText('₿1,500')).toBeTruthy();
+    expect(screen.getByText("₿1'500")).toBeTruthy();
     expect(screen.getByText('2026-06-01')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
   });

@@ -25,9 +25,9 @@ and empty profile charts that show copy instead of a null axis.
 
 **Current state (SHA `209486fe`).**
 
-- Marketing: `src/app/(marketing)/layout.tsx` uses `bg-ink text-paper`. Header `Wordmark` + nav + accent **Log in** `ButtonLink` + `LanguageSwitcher` + optional `PwaInstall tone="dark" placement="header"`. Hero CTAs are `ButtonLink` (accent / secondary dark) plus `PwaInstall` hero. Kickers use `text-sm font-medium tracking-widest text-accent uppercase`. Leftover raw `#f7931a` / `text-white` on listed marketing surfaces move to `text-accent` / `text-paper/*`.
+- Marketing: `src/app/(marketing)/layout.tsx` uses `bg-ink text-paper`. Header `Wordmark` + nav (How / Why / FAQ / Stats / Handbook, accent **Log in**, optional `PwaInstall tone="dark" placement="header"`, `NumberFormatSwitcher tone="dark"` inside that nav so the mobile hamburger stays clickable) + always-visible `LanguageSwitcher`. ThemeSwitcher is marketing-forbidden. Hero CTAs are `ButtonLink` (accent / secondary dark) plus `PwaInstall` hero. Kickers use `text-sm font-medium tracking-widest text-accent uppercase`. Leftover raw `#f7931a` / `text-white` on listed marketing surfaces move to `text-accent` / `text-paper/*`.
 - App: `src/app/layout.tsx` loads Outfit via `next/font/google`; `body` is `font-sans bg-app-bg text-app-fg antialiased`. Tokens live in `src/app/globals.css` `@theme` / `html.dark`. Primitives: `src/components/ui/{Button,ButtonLink,IconButton,Card,Field,PageChrome,Wordmark,SegmentedControl}.tsx`.
-- Theme: cookie `theme` (`src/lib/theme.ts`), bootstrap script in `<head>`, `html.dark`. Marketing never mounts `ThemeSwitcher`. Unsigned app routes mount ThemeSwitcher + LanguageSwitcher.
+- Theme: cookie `theme` (`src/lib/theme.ts`), bootstrap script in `<head>`, `html.dark`. Marketing never mounts `ThemeSwitcher`. Unsigned app routes mount ThemeSwitcher + NumberFormatSwitcher + LanguageSwitcher.
 - Money: `formatBitcoin` in `src/lib/stats-money.ts` (BIP 177, leading `₿` U+20BF). Forum amount is text-only (`font-medium`); pay is lucide `Gift` `IconButton` (`forum.pay` “Send Bitcoin”). Empty profile charts show `profile.chartEmpty`, not a null axis.
 - Locales: four catalogs in `src/lib/messages.ts` (`en`, `de`, `es`, `fil`). The API concept document says “English only”; the app already ships four. This system does not pretend otherwise.
 
@@ -70,7 +70,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 3. **Orange is shell-split, not “gift-only.”** On the **marketing shell**, `#f7931a` is the primary filled CTA (header **Log in**, **Ask for help**, 404 **Back home**) plus kickers. On the **app shell**, it is gift-money only (charts, ₿ selected, donate **Open the forum**). _Implication:_ do not call marketing **Log in** a gift. App form primaries (`Button variant="primary"`) stay `bg-app-btn`. `Button variant="accent"` is the orange fill; marketing uses it as shell primary, the app uses it for gift-intent only.
 
-4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1,500`). No `npub`, no “zap”, no “LNURL” on any screen (the API flows document).
+4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1'500`; visitor may pick US `10,000.23` / German `23.000,33`). No `npub`, no “zap”, no “LNURL” on any screen (the API flows document).
 
 5. **People first.** Receiver names, notes, and (later) photos are the hero; chrome is quiet. _Implication:_ forum note body is `text-sm text-app-fg`; chrome labels are `text-app-muted`. When photo/story lands, it occupies the reserved profile slot, not a new layout.
 
@@ -116,10 +116,10 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 [                         children                                      ]
 ```
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                                            | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`; `/rules` with hydrated session)                                                                                                                                  |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topLeft`  | `Wordmark` → `/`                                                                                                                                                                     | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/contact`, `/messages`, and signed-in `/rules`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
-| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                                                                                                                                                      |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                                                                                  | Signed-in app (`/welcome`, `/profile`, `/contact`, `/messages`, `/setup/*`; `/rules` with hydrated session)                                                                                                                                  |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `topLeft`  | `Wordmark` → `/`                                                                                                                                                                                                           | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/contact`, `/messages`, and signed-in `/rules`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules` (index > 0): `IconButton` back **then** wordmark |
+| `topRight` | `ThemeSwitcher` + `NumberFormatSwitcher tone="light"` + `LanguageSwitcher tone="light"` — **every** unsigned app route, including `/messages/[id]` and `/view/*` (SHA mounts language only; **add** ThemeSwitcher in PR 3) | `SignedInChrome` (Menu)                                                                                                                                                                                                                      |
 
 App shell today (`src/components/AppShell.tsx`); `PageChrome` is a thin `mode="flow"` wrapper:
 
@@ -351,9 +351,9 @@ export default async function RootLayout({ children }: { children: ReactNode }):
 
 **One title per page.** The document outline has one `h1` (or `card-title` used as the sole heading). Card must not repeat a page title. SHA `96d184d4` `LoginPage` already has no outer “Log in to 21.gifts”; the only heading is `LoginCard` `login.heading` at **card-title**. `login/page.test.tsx` does not assert the old string. Do not add the outer title back after wordmark lands. `login.pageTitle` in catalogs, if unused, is out of this freeze.
 
-**`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, locale-grouped integer, no space, no fraction. Example: `₿1,500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
+**`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, style-grouped via `NumberFormatStyle`, no space, no fraction. Default Swiss `₿1'500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
 
-USD: `formatUsdDisplay` → `$1.43` / `$1,425.00` (en-US currency). Axis ticks: `formatUsdTick` (`$0`, `$1.43`, `$1,425`). Toggle anatomy in §10.
+USD: `formatUsdDisplay` → `$1.43` / `$1'425.00` (default Swiss grouping). Axis ticks: `formatUsdTick` (`$0`, `$1.43`, `$1'425`). Styles `us` and `de` exist. Toggle anatomy in §10.
 
 **Link type.** Marketing inline links: `text-accent underline underline-offset-2`. App inline links (rules, contact): `text-app-fg underline underline-offset-2 font-medium`. Do not make app body links orange (fails on paper; also not a gift CTA).
 
@@ -591,16 +591,16 @@ The design system **wins** for **new** work. CONTRIBUTING **Icon controls** matc
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Consent (**I agree to these rules**), **Continue**, **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
-| Conversion (shipped in #125)                              | Result                                   |
-| --------------------------------------------------------- | ---------------------------------------- |
-| Contact **Send** labeled `Button` (`ContactScreen.tsx`)   | `IconButton` primary `lg`, lucide `Send` |
-| Pay lucide `Bitcoin` `IconButton` `sm` (`ForumBoard.tsx`) | lucide `Gift`, same `forum.pay` name     |
-| `IconButton` `sm` `h-6 w-6`                               | 24px paint + 44px hit slop               |
-| Open Wallet raw `<a className="… bg-app-btn px-5 py-2">`  | `ButtonLink` primary md                  |
-| Public ThemeSwitcher on unsigned app routes               | ThemeSwitcher + LanguageSwitcher         |
-| Claim banner `bg-neutral-900` leftovers                   | `app-notice` + `Button`                  |
-| NameForm / RulesSetup leftover buttons                    | `Button` / `IconButton`                  |
-| Empty profile chart null axis                             | `profile.chartEmpty` status copy         |
+| Conversion (shipped in #125)                              | Result                                                  |
+| --------------------------------------------------------- | ------------------------------------------------------- |
+| Contact **Send** labeled `Button` (`ContactScreen.tsx`)   | `IconButton` primary `lg`, lucide `Send`                |
+| Pay lucide `Bitcoin` `IconButton` `sm` (`ForumBoard.tsx`) | lucide `Gift`, same `forum.pay` name                    |
+| `IconButton` `sm` `h-6 w-6`                               | 24px paint + 44px hit slop                              |
+| Open Wallet raw `<a className="… bg-app-btn px-5 py-2">`  | `ButtonLink` primary md                                 |
+| Public ThemeSwitcher on unsigned app routes               | ThemeSwitcher + NumberFormatSwitcher + LanguageSwitcher |
+| Claim banner `bg-neutral-900` leftovers                   | `app-notice` + `Button`                                 |
+| NameForm / RulesSetup leftover buttons                    | `Button` / `IconButton`                                 |
+| Empty profile chart null axis                             | `profile.chartEmpty` status copy                        |
 
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on the post overlay.
 
@@ -817,7 +817,7 @@ Placeholder: `text-app-subtle`.
 
 ---
 
-#### LanguageSwitcher / ThemeSwitcher pills
+#### LanguageSwitcher / NumberFormatSwitcher / ThemeSwitcher pills
 
 **Standalone trigger (unsigned chrome, marketing language):**
 
@@ -838,7 +838,7 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox a
 
 ThemeSwitcher is **app only**. Marketing never mounts it.
 
-Promote shared listbox styles only if a third switcher appears; until then, keep the two components but match the recipes above (including `min-h-11` on the trigger).
+Three parallel components (LanguageSwitcher, NumberFormatSwitcher, ThemeSwitcher); do not extract a shared listbox. Match the recipes above (including `min-h-11` on the trigger).
 
 ---
 
@@ -850,7 +850,7 @@ Promote shared listbox styles only if a third switcher appears; until then, keep
 
 **Rows.** `flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline hover:bg-app-hover min-h-11`. Leading lucide 14px. Profile row: name + given/received `formatBitcoin` indicators (`ArrowUpRight` / `ArrowDownLeft`, not buttons) only when the matching sat total is `> 0`.
 
-**Order (keep):** Home, Profile, Living room rules, Messages (inbox), Contact, optional Install app, Language, Theme, Log out.
+**Order (keep):** Home, Profile, Living room rules, Messages (inbox), Contact, optional Install app, Language, Number format, Theme, Log out.
 
 Escape and outside-click already implemented — keep.
 
@@ -972,7 +972,7 @@ Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above
 
 #### Marketing header / footer / CTA pair
 
-**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark`. Right: `nav` (how, why, faq, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` (`Button tone="dark" variant="secondary" size="sm"`) + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, keep three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
+**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark`. Right: `nav` (how, why, faq, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` (`Button tone="dark" variant="secondary" size="sm"`) + `NumberFormatSwitcher tone="dark"` inside the same `nav` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, keep three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`). ThemeSwitcher is marketing-forbidden.
 
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile (keep).
 
@@ -1087,11 +1087,11 @@ Unsigned: Wordmark + Theme + Language. Signed-in: back + Wordmark + Menu. `h1-lg
 
 #### `/messages/[id]` — **add wordmark + ThemeSwitcher**
 
-`PageChrome` `topLeft=Wordmark` `topRight=ThemeSwitcher + LanguageSwitcher` (SHA: language only — **add ThemeSwitcher** in PR 3; matches the slot table). Public note card, no pay, no composer.
+`PageChrome` `topLeft=Wordmark` `topRight=ThemeSwitcher + NumberFormatSwitcher + LanguageSwitcher` (SHA: language only — **add ThemeSwitcher** in PR 3; matches the slot table). Public note card, no pay, no composer.
 
 #### `/view/[viewKey]` — **fix Activate tokens, add wordmark + ThemeSwitcher**
 
-`PageChrome` `topLeft=Wordmark` `topRight=ThemeSwitcher + LanguageSwitcher` (SHA: language only — **add ThemeSwitcher** in PR 3). `ViewProfileScreen` card (chart + name + address, no actions). Below: `ViewProfileClaim`.
+`PageChrome` `topLeft=Wordmark` `topRight=ThemeSwitcher + NumberFormatSwitcher + LanguageSwitcher` (SHA: language only — **add ThemeSwitcher** in PR 3). `ViewProfileScreen` card (chart + name + address, no actions). Below: `ViewProfileClaim`.
 
 - Unclaimed: `app-notice` banner (replace `bg-yellow-200`) + `Button` primary **Activate** (replace `bg-neutral-900 px-5 py-2`).
 - Loading: `Loader2` `text-app-subtle` (replace `text-neutral-400`).
@@ -1142,7 +1142,7 @@ Short, warm, direct. People helping people. English examples (catalogs translate
 | Something went wrong. Please try again. | “Request failed with 500”                             |
 | You are a guest in a living room…       | “Community guidelines / ToS summary”                  |
 | Open the forum                          | “Go to messenger surface”                             |
-| `₿1,500`                                | “1500 sats” as the visitor-facing string              |
+| `₿1'500`                                | “1500 sats” as the visitor-facing string              |
 
 Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook), invoice jargon. Push copy stays English `{ title, body }` as the API already sends — out of this freeze.
 

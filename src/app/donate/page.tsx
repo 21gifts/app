@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { ButtonLink, Wordmark } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
@@ -23,6 +24,7 @@ export default async function DonatePage(): Promise<ReactElement> {
       topRight={
         <>
           <ThemeSwitcher />
+          <NumberFormatSwitcher tone="light" />
           <LanguageSwitcher tone="light" />
         </>
       }

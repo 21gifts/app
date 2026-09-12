@@ -15,6 +15,8 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
+import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PwaInstall } from '@/components/PwaInstall';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
@@ -24,12 +26,13 @@ import { formatBitcoin } from '@/lib/stats-money';
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Profile with same-line given/received amounts only when that
  * side is non-zero, living-room rules, messages, contact, optional PWA
- * install, language, theme, and log out).
+ * install, language, number format, theme, and log out).
  *
  * @returns The signed-in Menu chrome.
  */
 export function SignedInChrome(): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -66,8 +69,8 @@ export function SignedInChrome(): ReactElement {
     };
   }, [open]);
 
-  const givenAmount = formatBitcoin(donatedSats, locale);
-  const receivedAmount = formatBitcoin(receivedSats, locale);
+  const givenAmount = formatBitcoin(donatedSats, numberFormat);
+  const receivedAmount = formatBitcoin(receivedSats, numberFormat);
   const showGiven = donatedSats > 0;
   const showReceived = receivedSats > 0;
   const showTotalsCluster = loading || showGiven || showReceived;
@@ -183,6 +186,7 @@ export function SignedInChrome(): ReactElement {
           }}
         />
         <LanguageSwitcher tone="light" embedded />
+        <NumberFormatSwitcher tone="light" embedded />
         <ThemeSwitcher embedded />
         <LogoutButton />
       </div>
