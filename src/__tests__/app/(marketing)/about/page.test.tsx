@@ -29,7 +29,8 @@ describe('AboutPage', () => {
 
   it('states the house is rooted, not restricted', async () => {
     renderWithLocale(await AboutPage());
-    expect(screen.getByText('Rooted, not restricted')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Rooted, not restricted' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Where this house comes from' })).toBeNull();
   });
 
   it('links Open the living room to /welcome', async () => {
