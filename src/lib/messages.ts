@@ -1640,7 +1640,7 @@ const fil = {
   'inbox.errorEmpty': 'Maglagay ng mensahe',
   'inbox.errorTooLong': 'Hanggang 500 na karakter',
   'inbox.errorRequest': 'Hindi maipadala ang mensahe',
-  'inbox.origin.contact': 'Contacto',
+  'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direkta',
   'inbox.origin.damus': 'Damus',
 } satisfies Messages;
