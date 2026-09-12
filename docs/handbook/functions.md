@@ -884,9 +884,9 @@
 
 ## Function: fetchReplies
 
-- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session, parse `forumRepliesSchema` (`{ messages }`, same key as the list endpoint), and return oldest-first replies for one note.
+- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items, and return the survivors oldest-first.
 - **Inputs:** `sessionToken`, parent message `id`.
-- **Returns / side effects:** `ForumMessage[]`. Throws visitor copy (`Could not load messages. Please try again.`) on failure. Damus authors may omit `role` (schema defaults to `basis`).
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive). Throws visitor copy (`Could not load messages. Please try again.`) when the api is unavailable, the body is not JSON, or the body is not `{ messages: array }`. Damus authors may omit `role` (schema defaults to `basis`).
 - **Used by:** `ForumLoader`.
 
 ## Function: fetchMessagePhoto
