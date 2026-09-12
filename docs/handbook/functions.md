@@ -101,9 +101,9 @@
 
 ## Function: DayLoader
 
-- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. Renders `FiatPicker`; the summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, fiat)`.
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. Renders `FiatPicker`; the summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, fiat, numberFormat)`.
 - **Inputs:** `day` UTC `YYYY-MM-DD`.
-- **Returns / side effects:** React element. Calls `fetchGiftDay`. Selected fiat defaults with `defaultFiatForLocale`.
+- **Returns / side effects:** React element. Calls `fetchGiftDay`. Selected fiat defaults with `defaultFiatForLocale`. Reads `useNumberFormat` and passes `numberFormat` into `GiftDayTable`.
 - **Used by:** `GiftDayPage`.
 
 ## Function: GiftDayTable
@@ -1219,6 +1219,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
 - **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`.
+
+## Function: useNumberFormat
+
+- **Purpose:** Client hook returning `{ numberFormat, setNumberFormat }` from the nearest `NumberFormatProvider`. Call sites that format counts or money take this hook's style, not UI locale.
+- **Inputs:** None (React context).
+- **Returns / side effects:** Active `NumberFormatStyle` and a setter that writes the `numberFormat` cookie. Throws `useNumberFormat must be used within NumberFormatProvider` when used outside the provider.
+- **Used by:** `NumberFormatSwitcher`, `ForumBoard`, `StatsDashboard`, `DayLoader`, `AccountActivityChart`, `SignedInChrome`, `PublicMessageLoader`.
 
 ## Function: walletOfSatoshiHref
 
