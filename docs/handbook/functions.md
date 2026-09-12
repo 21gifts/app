@@ -153,7 +153,14 @@
 - **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, and rules) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads current locale via `useTranslations`.
 - **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Globe + Language + chevron; expands in flow under the trigger with endonym rows). Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
-- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, `/rules`, and the signed-in Menu in `SignedInChrome`.
+- **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, `/rules`, and the signed-in Menu in `SignedInChrome`. `NumberFormatSwitcher` sits beside it in those chrome slots.
+
+## Function: NumberFormatSwitcher
+
+- **Purpose:** Custom number-format listbox (not a native `<select>`) that persists the visitor's grouping in a `numberFormat` cookie. Grouping is independent of UI language. Standalone Hash pill shows the current sample (`10'000.23` / `10,000.23` / `23.000,33`); embedded Menu-row disclosure shows `t('numberFormat.label')` until opened.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for unsigned app pages) and optional `embedded` when shown inside the signed-in Menu dropdown. Reads the current style via `useNumberFormat`.
+- **Returns / side effects:** Standalone combobox + absolute popover listbox, or an embedded Menu-row disclosure (collapsed by default: Hash + Number format + chevron; expands in flow under the trigger with sample rows). On a new style writes `numberFormat=<ch|us|de>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS. Same-style click is a no-op when the cookie is already set; picking `ch` while the cookie is absent still writes. Never set on first visit.
+- **Used by:** `MarketingHeader` (`tone="dark"`), `/login`, `/donate`, `/rules` unsigned chrome, `/messages/[id]`, `/view/[viewKey]`, and the signed-in Menu in `SignedInChrome` (`embedded`).
 
 ## Function: NameForm
 
@@ -176,6 +183,13 @@
 - **Returns / side effects:** React provider element. No network; does not write cookies.
 - **Used by:** `RootLayout` wraps every page; consumed via `useTranslations` (see that function).
 
+## Function: NumberFormatProvider
+
+- **Purpose:** Client context provider that exposes the negotiated number-format style and a setter that writes the `numberFormat` cookie. Nest is `LocaleProvider` → `NumberFormatProvider initial={numberFormat}` → `ThemeProvider`.
+- **Inputs:** `initial` (`NumberFormatStyle` from `getRequestNumberFormat`) and `children`.
+- **Returns / side effects:** React provider element. `setNumberFormat` writes `numberFormat=<id>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS. Same-id is a no-op when the cookie is already `ch`/`us`/`de`; selecting `ch` while the cookie is absent still writes so the choice persists.
+- **Used by:** `RootLayout` wraps every page; consumed via `useNumberFormat` (see that function).
+
 ## Function: InAppBrowserView
 
 - **Purpose:** Shared escape UI when a passkey ceremony cannot run inside Telegram or another in-app browser: heading **Open this page in your browser**, body copy, optional iOS hint, **Open in browser**, and **Copy link**.
@@ -194,14 +208,14 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -272,9 +286,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home`; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; LogOut log out). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only).
-- **Inputs:** Session `account` from `useAuthStore` (introduce overlay gate). Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay`; does not write `forumLawsDismissed` or any account field.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home`; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; Hash Number format (`NumberFormatSwitcher` embedded); embedded ThemeSwitcher System / Light / Dark next to Number format; LogOut log out). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only).
+- **Inputs:** Session `account` from `useAuthStore` (introduce overlay gate). Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), `NumberFormatSwitcher` (`tone="light"`, `embedded`), `ThemeSwitcher` (`embedded`; app tokens, not a hardcoded marketing `tone="dark"`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), embedded Number format disclosure (collapsed until clicked), embedded ThemeSwitcher (System / Light / Dark; collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language, number format, or theme) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay`; does not write `forumLawsDismissed` or any account field.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`.
 
 ## Function: ProfilePage
@@ -293,9 +307,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), and a theme settings row (`ThemeSwitcher`). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no SVG/toggle; otherwise legend + ₿ | USD + SVG), name form, address form, push bell under the address form, and Theme (System / Light / Dark) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name and Wallet of Satoshi address forms, and an icon-only Web Push bell (`PushToggle`). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm` and `LightningAddressForm` for edits; `PushToggle`; `AccountActivityChart`; catalog via `useTranslations`.
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no SVG/toggle; otherwise legend + ₿ | USD + SVG), name form, address form, and push bell under the address form — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: PushToggle
@@ -527,7 +541,7 @@
 
 ## Function: PageChrome
 
-- **Purpose:** Flow-mode wrapper around `AppShell` with optional absolute top-left (wordmark) and top-right (menu / language) slots. Prefer `AppShell` directly on app routes.
+- **Purpose:** Flow-mode wrapper around `AppShell` with optional absolute top-left (wordmark) and top-right (menu / language / theme) slots. Prefer `AppShell` directly on app routes.
 - **Inputs:** `children`, optional `topLeft`, optional `topRight`, optional `className` on the outer `<main>`.
 - **Returns / side effects:** Layout only (`AppShell mode="flow"`). No network.
 - **Used by:** Flow app routes (`WelcomePage`, `RulesPage`) plus unit tests and the `ui` barrel. Fill routes use `AppShell` directly.
@@ -543,7 +557,7 @@
 
 - **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
 - **Inputs:** Dynamic route params (`id`).
-- **Returns / side effects:** Fill `AppShell` (`align="center"`) with Wordmark top-left and light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Returns / side effects:** Fill `AppShell` (`align="center"`) with Wordmark top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
 - **Used by:** Route `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -557,7 +571,7 @@
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
 - **Inputs:** Dynamic route params (`viewKey`).
-- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `Wordmark` → `/` top-left and light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `Wordmark` → `/` top-left and `ThemeSwitcher` + `NumberFormatSwitcher` `tone="light"` + light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
 - **Used by:** Route `/view/[viewKey]`.
 
 ## Function: ViewProfileLoader
@@ -688,7 +702,7 @@
 
 ## Function: RulesPageChrome
 
-- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise keeps marketing-like unsigned chrome (`Wordmark` → `/`, `LanguageSwitcher`).
+- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise keeps marketing-like unsigned chrome (`Wordmark` → `/`, `ThemeSwitcher` + `NumberFormatSwitcher` + `LanguageSwitcher`).
 - **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
 - **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. No network beyond session hydration.
 - **Used by:** `RulesPage`.
@@ -697,7 +711,7 @@
 
 - **Purpose:** Next.js page for `/rules` with localized heading and living-room rules document, wrapped in `RulesPageChrome` (signed-in or unsigned chrome depending on hydrated session).
 - **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Language).
+- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Theme + Language).
 - **Used by:** Route `/rules`.
 
 ## Function: ForumLoader
@@ -959,11 +973,32 @@
 - **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
 - **Used by:** `ForumLoader`.
 
+## Function: parseNumberFormat
+
+- **Purpose:** Returns `value` if it is exactly one of `NUMBER_FORMATS` (`ch` / `us` / `de`); otherwise Swiss `ch`. Case-sensitive; `'CH'` and `'de-CH'` are invalid and fall back to the default.
+- **Inputs:** Raw cookie or option `value` string, or `undefined` when absent.
+- **Returns / side effects:** A supported `NumberFormatStyle`. Missing or unknown values become `DEFAULT_NUMBER_FORMAT` (`ch`). Never writes a cookie.
+- **Used by:** `getRequestNumberFormat` (server cookie) and any caller that must coerce a raw `numberFormat` string.
+
+## Function: separatorsFor
+
+- **Purpose:** Returns the grouping and decimal characters for one `NumberFormatStyle` without `Intl.NumberFormat`. Swiss uses `'` + `.`, US uses `,` + `.`, German uses `.` + `,`.
+- **Inputs:** `style` (`ch` / `us` / `de`).
+- **Returns / side effects:** `{ grouping, decimal }` for that style. Exhaustive switch over `NumberFormatStyle`.
+- **Used by:** `formatGroupedNumber` and `formatUsdTick` (under-10 values swap the decimal separator).
+
+## Function: formatGroupedNumber
+
+- **Purpose:** Groups the integer part of `value` in threes from the right and emits `fractionDigits` decimal digits using `separatorsFor`. Non-finite values are treated as 0. Rounding uses `Math.round` at `fractionDigits`.
+- **Inputs:** `value` number, `style` `NumberFormatStyle`, `fractionDigits` (0 omits the decimal part).
+- **Returns / side effects:** Grouped numeric string without a currency or ₿ prefix (for example `1'500` or `10'000.23`). Negative values keep a leading minus.
+- **Used by:** `formatBitcoin`, `formatUsdDisplay`, `formatUsdTick`, `NumberFormatSwitcher` sample labels, `DayLoader`, `GiftDayTable`, and `StatsDashboard`.
+
 ## Function: formatBitcoin
 
-- **Purpose:** Formats a whole-sat amount as BIP-177 ₿-only display (leading ₿, locale grouping, no fraction, no “sats” unit).
-- **Inputs:** `sats` non-negative number (API `sats` / `totalSats`; chart mid-ticks may be fractional and are rounded); optional `locale` BCP-47 tag (default `en-US`).
-- **Returns / side effects:** Display string such as `₿1,500` or `₿0`.
+- **Purpose:** Formats a whole-sat amount as BIP-177 ₿-only display (leading ₿, grouping from `style`, no fraction, no “sats” unit).
+- **Inputs:** `sats` non-negative number (API `sats` / `totalSats`; chart mid-ticks may be fractional and are rounded); optional `style` `NumberFormatStyle` (default `ch`). No locale argument.
+- **Returns / side effects:** Display string such as `₿1'500` or `₿0`.
 - **Used by:** `ForumBoard`, `SignedInChrome`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`.
 
 ## Function: formatForumTime
@@ -1005,16 +1040,16 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: formatUsdDisplay
 
-- **Purpose:** Formats an API USD amount string (`"1425.00"`) as en-US currency (wrapper around `formatFiatDisplay(..., 'USD')`).
-- **Inputs:** `usd` string from `GET /gifts/stats`.
-- **Returns / side effects:** Locale currency string such as `$1,425.00`.
+- **Purpose:** Formats an API USD amount string (`"1425.00"`) as grouped currency (wrapper around `formatFiatDisplay(..., 'USD', style)`).
+- **Inputs:** `usd` string from `GET /gifts/stats`; optional `style` `NumberFormatStyle` (default `ch`).
+- **Returns / side effects:** Dollar string such as `$1'425.00`.
 - **Used by:** `StatsDashboard` KPI when USD is selected.
 
 ## Function: formatUsdTick
 
 - **Purpose:** Formats a parsed USD chart-axis value as a grouped dollar label.
-- **Inputs:** `usd` number (layout scale only).
-- **Returns / side effects:** Label such as `$1,234`.
+- **Inputs:** `usd` number (layout scale only); optional `style` `NumberFormatStyle` (default `ch`).
+- **Returns / side effects:** Label such as `$1'425`. Values under 10 keep trimmed decimals and use the style decimal separator (`.` for `ch`/`us`, `,` for `de`).
 - **Used by:** `AccountActivityChart` USD scale (profile ₿|USD). Stats over-time uses `formatFiatTick`.
 
 ## Function: ThemeProvider
@@ -1026,17 +1061,17 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ThemeSwitcher
 
-- **Purpose:** Profile identity-card settings section: uppercase `theme.label` kicker and `SegmentedControl tone="neutral"` for System / Light / Dark. Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
-- **Inputs:** None. Reads `preference` / `setPreference` from `useTheme`. Catalog keys `theme.label`, `theme.system`, `theme.light`, `theme.dark`, `aria.theme`.
-- **Returns / side effects:** Settings row matching `PushToggle` chrome. Pressing an option calls `setPreference` (cookie write via `ThemeProvider`).
-- **Used by:** `ProfileScreen`.
+- **Purpose:** System / Light / Dark control using semantic app tokens. Standalone compact pill on unsigned app pages; `embedded` Menu-row disclosure beside language when signed in.
+- **Inputs:** Optional `embedded` boolean.
+- **Returns / side effects:** Listbox UI; selecting an option calls `setPreference`.
+- **Used by:** `/login`, `/donate`, `/rules`, `SignedInChrome`.
 
 ## Function: useTheme
 
 - **Purpose:** Reads theme preference and setters from the nearest `ThemeProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** `ThemeContextValue`. Throws when used outside `ThemeProvider`.
-- **Used by:** `ThemeSwitcher`.
+- **Used by:** `ThemeSwitcher` and any client chrome that needs the resolved theme.
 
 ## Function: parseThemePreference
 
@@ -1086,6 +1121,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
 - **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
 - **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, `RulesPage`, and `RulesSetupPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+
+## Function: getRequestNumberFormat
+
+- **Purpose:** Resolve the visitor number-format style for the current request without writing cookies. Cookie `numberFormat` wins when it is `ch`/`us`/`de`; otherwise Swiss `ch`.
+- **Inputs:** Reads the `numberFormat` cookie via `next/headers` (async in Next 15).
+- **Returns / side effects:** A `NumberFormatStyle`. Invalid or missing cookie → `ch`. Lives in `src/lib/request-number-format.ts` so client components can import `NUMBER_FORMATS` from `@/lib/number-format` without pulling `next/headers` into the browser bundle.
+- **Used by:** `RootLayout` (passes `initial` into `NumberFormatProvider`).
 
 ## Function: isAndroidUserAgent
 
@@ -1264,10 +1306,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with wordmark, section nav, optional `PwaInstall` (`tone="dark"` `placement="header"`) next to Log in (desktop and open mobile nav), always-visible `LanguageSwitcher` (`tone="dark"`), login CTA, and mobile menu.
-- **Inputs:** None (internal open state). Reads copy via `useTranslations`.
-- **Returns / side effects:** Header element; toggles nav on small screens. Language select stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
-- **Used by:** `MarketingLayout`, `NotFound`.
+- **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`, and `NumberFormatSwitcher` `tone="dark"` inside that nav so mobile does not cover the hamburger), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher is marketing-forbidden.
+- **Inputs:** Optional `showNumberFormat` (default true). Internal open state. Reads copy via `useTranslations`.
+- **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. `NumberFormatSwitcher` is inside the primary nav (`hidden md:flex` when closed) unless `showNumberFormat` is false. Install control stays `null` until after mount when an offer applies.
+- **Used by:** `MarketingLayout`, `NotFound` (`showNumberFormat={false}`).
 
 ## Function: MarketingLayout
 
@@ -1280,7 +1322,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Async app-wide 404 screen with marketing chrome and a localized link home.
 - **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy; awaits `MarketingFooter()`.
-- **Returns / side effects:** 404 element with `MarketingHeader` and awaited footer (not rendered as JSX child).
+- **Returns / side effects:** 404 element with `MarketingHeader showNumberFormat={false}` (no amounts on this screen) and awaited footer (not rendered as JSX child).
 - **Used by:** Next.js `not-found.tsx`.
 
 ## Function: POST
