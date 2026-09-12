@@ -1,12 +1,16 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StatsLoader } from '@/app/(marketing)/stats/stats-loader';
 import type { GiftStats } from '@/lib/api-types';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const EMPTY: GiftStats = {
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -18,6 +22,7 @@ const EMPTY: GiftStats = {
     quote: 'BTC-USD',
     dayBasis: 'utc',
     source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
   },
 };
 
@@ -37,7 +42,7 @@ afterEach(() => {
 describe('StatsLoader', () => {
   it('renders loaded stats', async () => {
     fetchMock.mockResolvedValue(EMPTY);
-    render(<StatsLoader />);
+    renderWithLocale(<StatsLoader />);
     await waitFor(() => {
       expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
     });
@@ -46,7 +51,7 @@ describe('StatsLoader', () => {
   it('shows a fetch error and retries', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Could not load gift stats. Please try again.'));
     fetchMock.mockResolvedValueOnce(EMPTY);
-    render(<StatsLoader />);
+    renderWithLocale(<StatsLoader />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
@@ -59,7 +64,7 @@ describe('StatsLoader', () => {
 
   it('uses the fallback error copy for a non-Error rejection', async () => {
     fetchMock.mockRejectedValueOnce('nope');
-    render(<StatsLoader />);
+    renderWithLocale(<StatsLoader />);
     await waitFor(() => {
       expect(screen.getByText('Could not load gift stats. Please try again.')).toBeTruthy();
     });
@@ -73,7 +78,7 @@ describe('StatsLoader', () => {
           resolveStale = resolve;
         }),
     );
-    const view = render(<StatsLoader />);
+    const view = renderWithLocale(<StatsLoader />);
     view.unmount();
     resolveStale?.(EMPTY);
     await Promise.resolve();
@@ -88,7 +93,7 @@ describe('StatsLoader', () => {
           rejectStale = reject;
         }),
     );
-    const view = render(<StatsLoader />);
+    const view = renderWithLocale(<StatsLoader />);
     view.unmount();
     rejectStale?.(new Error('gone'));
     await Promise.resolve();

@@ -27,6 +27,9 @@ const EMPTY_STATS: GiftStats = {
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -38,6 +41,7 @@ const EMPTY_STATS: GiftStats = {
     quote: 'BTC-USD',
     dayBasis: 'utc',
     source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
   },
 };
 
@@ -106,9 +110,26 @@ describe('ViewProfileLoader', () => {
           cumulativeBtc: '0.00000021',
           usd: '0.02',
           cumulativeUsd: '0.02',
+          chf: '0.02',
+          eur: '0.02',
+          php: '1.00',
+          cumulativeChf: '0.02',
+          cumulativeEur: '0.02',
+          cumulativePhp: '1.00',
         },
       ],
-      byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 21, btc: '0.00000021', usd: '0.02' }],
+      byRecipient: [
+        {
+          recipient: 'alice',
+          giftCount: 1,
+          sats: 21,
+          btc: '0.00000021',
+          usd: '0.02',
+          chf: '0.02',
+          eur: '0.02',
+          php: '1.00',
+        },
+      ],
     });
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {

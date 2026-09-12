@@ -10,7 +10,33 @@ import type { GiftStats } from '@/lib/api-types';
 
 type SpendPoint = GiftStats['spendOverTime'][number];
 
+function fiatFromUsd(usd: string): { chf: string; eur: string; php: string } {
+  switch (usd) {
+    case '0.00':
+      return { chf: '0.00', eur: '0.00', php: '0.00' };
+    case '0.02':
+      return { chf: '0.02', eur: '0.02', php: '1.00' };
+    case '0.04':
+      return { chf: '0.03', eur: '0.04', php: '2.20' };
+    case '0.05':
+      return { chf: '0.04', eur: '0.05', php: '2.80' };
+    case '0.10':
+      return { chf: '0.08', eur: '0.09', php: '5.60' };
+    case '0.20':
+      return { chf: '0.17', eur: '0.18', php: '11.20' };
+    case '0.30':
+      return { chf: '0.25', eur: '0.27', php: '16.80' };
+    case '0.48':
+      return { chf: '0.40', eur: '0.44', php: '27.00' };
+    case '1.43':
+      return { chf: '1.20', eur: '1.30', php: '80.00' };
+    default:
+      return { chf: usd, eur: usd, php: usd };
+  }
+}
+
 function day(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 0): SpendPoint {
+  const cumulative = fiatFromUsd(cumulativeUsd);
   return {
     day,
     sats,
@@ -19,6 +45,12 @@ function day(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 
     cumulativeBtc: '0.00000000',
     usd: '0.00',
     cumulativeUsd,
+    chf: '0.00',
+    eur: '0.00',
+    php: '0.00',
+    cumulativeChf: cumulative.chf,
+    cumulativeEur: cumulative.eur,
+    cumulativePhp: cumulative.php,
   };
 }
 

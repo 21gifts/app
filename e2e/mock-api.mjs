@@ -800,16 +800,32 @@ const server = http.createServer(async (req, res) => {
         totalSats: 500,
         totalBtc: '0.00000500',
         totalUsd: '0.48',
+        totalChf: '0.40',
+        totalEur: '0.44',
+        totalPhp: '27.00',
         gifts: [
           {
             paidAt: '2026-06-01T12:00:00.000Z',
             amountSats: 500,
             amountBtc: '0.00000500',
             amountUsd: '0.48',
+            amountChf: '0.40',
+            amountEur: '0.44',
+            amountPhp: '27.00',
             recipient: 'alice',
           },
         ],
-        fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [
+            { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+            { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+            { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+            { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+          ],
+        },
       });
       return;
     }
@@ -820,8 +836,16 @@ const server = http.createServer(async (req, res) => {
         totalSats: 0,
         totalBtc: '0.00000000',
         totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
         gifts: [],
-        fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
       });
       return;
     }
@@ -834,6 +858,9 @@ const server = http.createServer(async (req, res) => {
       totalSats: 0,
       totalBtc: '0.00000000',
       totalUsd: '0.00',
+      totalChf: '0.00',
+      totalEur: '0.00',
+      totalPhp: '0.00',
       giftCount: 0,
       recipientCount: 0,
       firstPaidAt: null,
@@ -841,7 +868,12 @@ const server = http.createServer(async (req, res) => {
       spendOverTime: [],
       byRecipient: [],
       byMonth: [],
-      fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+      fx: {
+        quote: 'BTC-USD',
+        dayBasis: 'utc',
+        source: 'coinbase-exchange-daily-close',
+        quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+      },
     });
     return;
   }
