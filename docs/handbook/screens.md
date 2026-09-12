@@ -649,6 +649,36 @@ Named visitor with living-room rules agreed and no Wallet of Satoshi address. Me
 
 ![21.gifts member overlay address](images/members-overlay-address.png)
 
+### Variant: translate
+
+Signed-in `/members/:id` with a German profile note. **Translate** is visible under the body (not in the footer icon row).
+
+![21.gifts member translate](images/members-translate.png)
+
+### Variant: translate-loading
+
+Same German note after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts member translate loading](images/members-translate-loading.png)
+
+### Variant: translate-done
+
+Same German note after a successful translation. Translated body plus **Show original**.
+
+![21.gifts member translate done](images/members-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts member translate hidden](images/members-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German note after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts member translate error](images/members-translate-error.png)
+
 ## Screen: /profile
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (`SegmentedControl tone="gift"` for ₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes skip an OS banner when any window client is focused; background-only clients still show it), return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero.

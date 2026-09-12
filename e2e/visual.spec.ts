@@ -1176,6 +1176,270 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-overlay-address');
   });
 
+  test('state /members translate', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await shotScreen(page, 'state-members-translate');
+  });
+
+  test('state /members translate-loading', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await shotScreen(page, 'state-members-translate-loading');
+  });
+
+  test('state /members translate-done', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await shotScreen(page, 'state-members-translate-done');
+  });
+
+  test('state /members translate-hidden', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await shotScreen(page, 'state-members-translate-hidden');
+  });
+
+  test('state /members translate-error', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-members-translate-error');
+  });
+
   test('screen /messages/[id] default', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
     await page.route(`**/public-messages/${id}`, async (route) => {

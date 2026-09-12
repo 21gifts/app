@@ -456,6 +456,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:translate",
+    "label": "/members/[accountId] translate",
+    "visual": "state-members-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-loading",
+    "label": "/members/[accountId] translate-loading",
+    "visual": "state-members-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-done",
+    "label": "/members/[accountId] translate-done",
+    "visual": "state-members-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-hidden",
+    "label": "/members/[accountId] translate-hidden",
+    "visual": "state-members-translate-hidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:translate-error",
+    "label": "/members/[accountId] translate-error",
+    "visual": "state-members-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",
