@@ -22,6 +22,12 @@ export const accountSchema = z.object({
   setup: z.enum(['name', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
   missing: z.array(z.enum(['name', 'lightning-address', 'rules'])),
+  /**
+   * True after the owner has posted at least one forum note. Optional so current
+   * develop api bodies still parse; the introduce overlay only opens when this
+   * is strictly `false`.
+   */
+  hasPosted: z.boolean().optional(),
 });
 
 /**
@@ -45,6 +51,9 @@ export const accountSchema = z.object({
  * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
  * or `null` when onboarding is complete (including after skips). `missing` lists
  * fields still unset for posting; skipped steps stay listed until filled.
+ * `hasPosted` is true after the owner has posted in the forum, false until then,
+ * and omitted on older api builds (the introduce overlay fails open when the
+ * field is missing).
  */
 export type Account = z.infer<typeof accountSchema>;
 

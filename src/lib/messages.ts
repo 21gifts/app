@@ -247,6 +247,12 @@ const en = {
   'requirements.addressTitle': 'Add your Wallet of Satoshi address',
   'requirements.close': 'Close',
 
+  'introduce.title': 'Introduce yourself',
+  'introduce.body':
+    'Write a short post in the forum so people know who you are. Gifts are only sent to members who have introduced themselves.',
+  'introduce.cta': 'Write an introduction',
+  'introduce.close': 'Close',
+
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
   'profile.received': 'Received {amount}',
@@ -659,6 +665,12 @@ const de = {
   'requirements.addressTitle': 'Wallet of Satoshi address hinterlegen',
   'requirements.close': 'Schließen',
 
+  'introduce.title': 'Stell dich vor',
+  'introduce.body':
+    'Schreib einen kurzen Beitrag im Forum, damit die anderen dich kennen. Geschenke gehen nur an Mitglieder, die sich vorgestellt haben.',
+  'introduce.cta': 'Vorstellung schreiben',
+  'introduce.close': 'Schließen',
+
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
   'profile.received': 'Erhalten {amount}',
@@ -1066,6 +1078,12 @@ const es = {
   'requirements.addressTitle': 'Añade tu Wallet of Satoshi address',
   'requirements.close': 'Cerrar',
 
+  'introduce.title': 'Preséntate',
+  'introduce.body':
+    'Escribe una nota breve en el foro para que la gente sepa quién eres. Los regalos solo se envían a los miembros que se han presentado.',
+  'introduce.cta': 'Escribe una presentación',
+  'introduce.close': 'Cerrar',
+
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
   'profile.received': 'Recibido {amount}',
@@ -1470,6 +1488,12 @@ const fil = {
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',
   'requirements.addressTitle': 'Idagdag ang Wallet of Satoshi address mo',
   'requirements.close': 'Isara',
+
+  'introduce.title': 'Ipakilala ang sarili mo',
+  'introduce.body':
+    'Magsulat ng maikling post sa forum para makilala ka ng iba. Ang mga regalo ay ipinapadala lang sa mga miyembrong nagpakilala na.',
+  'introduce.cta': 'Sumulat ng pagpapakilala',
+  'introduce.close': 'Isara',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',
