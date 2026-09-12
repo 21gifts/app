@@ -293,9 +293,9 @@
 
 ## Function: PushToggle
 
-- **Purpose:** Icon-only Bell `IconButton` (same circle as profile name/address actions) to enable or disable Web Push for the signed-in member. Off is `variant="secondary"` with an outline Bell; on is `variant="primary"` with a filled Bell (`fill="currentColor"`). Renders nothing without a session or when `serviceWorker` / `PushManager` are missing. On iPhone Safari outside standalone, shows `profile.push.installHint` above the button.
+- **Purpose:** Profile identity-card row matching name/address: heading `profile.push.heading`, visible On/Off value (`profile.push.on` / `profile.push.off`), and an icon-only `IconButton` (same circle as profile name/address actions) to enable or disable Web Push for the signed-in member. Off is `variant="secondary"` with an outline BellOff; on is `variant="primary"` with a filled Bell (`fill="currentColor"`). The button stays icon-only — On/Off is the value, not a labeled button. Renders nothing without a session or when `serviceWorker` / `PushManager` are missing. On iPhone Safari outside standalone, shows `profile.push.installHint` above the value row.
 - **Inputs:** Session from `useAuthStore`; catalog via `useTranslations`; `enablePush` / `disablePush` / `isIosSafari` / `isStandaloneDisplay`.
-- **Returns / side effects:** Icon-only `IconButton` named from `profile.push.enable` or `profile.push.disable` (`aria-pressed` when subscribed). User gesture calls enable/disable; may show `profile.push.unavailable` on failure.
+- **Returns / side effects:** Heading, On/Off value, and icon-only `IconButton` named from `profile.push.enable` or `profile.push.disable` (`aria-pressed` when subscribed). User gesture calls enable/disable; may show `profile.push.unavailable` on failure.
 - **Used by:** `ProfileScreen`.
 
 ## Function: vapidPublicKeyToBytes

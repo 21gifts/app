@@ -1069,7 +1069,7 @@ Back `IconButton` (when index > 0) + Wordmark + Menu. `h1` Living room rules. Pr
 
 #### `/profile` — **fix empty chart, chrome, icon size**
 
-`PageChrome` back + Wordmark + Menu → `Card sm` → `h1` Profile → `AccountActivityChart` (empty state, not ₿0 axis) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` `IconButton` (secondary outline Bell off, primary filled Bell on — fill vs outline so color is not the only encoding). ₿\|USD `tone="gift"`. Given/Received labels stay so color is not the only encoding.
+`PageChrome` back + Wordmark + Menu → `Card sm` → `h1` Profile → `AccountActivityChart` (empty state, not ₿0 axis) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` third card row (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding; not a lone bottom-right glyph). ₿\|USD `tone="gift"`. Given/Received labels stay so color is not the only encoding.
 
 NameForm profile still uses raw 40×40 rounded-2xl buttons — **fix** to `IconButton` (LightningAddressForm already did).
 
