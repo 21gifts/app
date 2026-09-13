@@ -3974,7 +3974,9 @@ test('Function: PushToggle — profile shows the enable notifications control', 
   await page.goto('/profile');
   await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
   await expect(page.getByText('Enable notifications')).toHaveCount(0);
-  await expect(page.getByText('Notifications', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('paragraph').getByText('Notifications', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText('Off', { exact: true })).toBeVisible();
 });
 
