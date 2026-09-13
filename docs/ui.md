@@ -732,7 +732,7 @@ Do not use orange. This is law, not a gift CTA.
 
 Expand: the whole card is `role="button"` (click to expand replies). Inner controls `stopPropagation`. Focus ring on the expandable region.
 
-Inbox thread rows reuse this note recipe.
+Inbox thread rows share only this chrome (rounded-2xl card, name, time, body). They do not reuse the forum footer (amount, Gift pay, copy, PM, expand).
 
 **Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Not a labeled button.
 
@@ -818,7 +818,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): chart, name, Lightning Address, optional role pill. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title`, then chart, name, Lightning Address, optional role pill. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -879,10 +879,8 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
 - `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular.
-- Note cards: amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Footer `gap-5`.
-- Founder/moderator: icon-only Trash2 + inline confirm.
 - Composer.
-- Empty / loading / error recipes.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
 
 Author names with `accountId` open `/members/[accountId]`.
 
@@ -892,7 +890,7 @@ Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<
 
 ### `/members/[accountId]`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (chart, name, Lightning Address, optional role pill) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, Lightning Address, optional role pill) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile.
 
 Handbook states: default (note present), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (`RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip).
 
