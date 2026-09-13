@@ -181,7 +181,7 @@ app/
 │       │   └── healthz/route.test.ts
 │       └── lib/config.test.ts
 ├── docs/
-│   ├── ui.md                    # Visual design system (target: tokens, type, chrome, control grammar)
+│   ├── ui.md                    # Visual design system (tokens, type, chrome, control grammar)
 │   └── handbook/                # Mandatory: every screen + exported function + endpoint
 │       ├── README.md
 │       ├── screens.md
