@@ -469,7 +469,7 @@ test.describe('screen baselines', () => {
 
   test('screen /about', async ({ page }) => {
     await page.goto('/about');
-    await expect(page.getByRole('heading', { name: 'A house of hospitality' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
     await shotScreen(page, 'screen-about');
   });
 

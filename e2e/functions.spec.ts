@@ -1592,7 +1592,7 @@ test('Function: LegalPage — legal heading is visible', async ({ page }) => {
 
 test('Function: AboutPage — about heading is visible', async ({ page }) => {
   await page.goto('/about');
-  await expect(page.getByRole('heading', { name: 'A house of hospitality' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
 });
 
 test('Function: HandbookPage — handbook heading is visible', async ({ page }) => {

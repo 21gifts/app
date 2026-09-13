@@ -17,9 +17,9 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('AboutPage', () => {
-  it('renders the hospitality heading', async () => {
+  it('renders the heading', async () => {
     renderWithLocale(await AboutPage());
-    expect(screen.getByRole('heading', { name: 'A house of hospitality' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Three convictions' })).toBeTruthy();
   });
 
   it('quotes Matthew 10:8', async () => {
@@ -27,13 +27,21 @@ describe('AboutPage', () => {
     expect(screen.getByText('Freely you have received; freely give.')).toBeTruthy();
   });
 
-  it('states a Christian origin', async () => {
+  it('states three convictions', async () => {
     renderWithLocale(await AboutPage());
-    expect(screen.getByRole('heading', { name: 'A Christian origin' })).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Where this house comes from' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Three convictions' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Giving is a duty' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Direct, with no middleman' })).toBeTruthy();
+    expect(
+      screen.getByRole('heading', { name: 'Bitcoin is the most effective money' }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Dear children, let us not love with words or speech but with actions and in truth.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'A Christian origin' })).toBeNull();
     expect(document.body.textContent).not.toMatch(/rooted, not restricted/i);
-    expect(document.body.textContent).not.toMatch(/creed at the door/i);
-    expect(document.body.textContent).not.toMatch(/Good Samaritan/i);
   });
 
   it('links Open the living room to /welcome', async () => {

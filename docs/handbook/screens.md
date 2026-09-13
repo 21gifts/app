@@ -42,15 +42,15 @@ The only state: imprint plus privacy, marketing chrome.
 
 ## Screen: /about
 
-- **Purpose:** Public origin of the house — hospitality, one verse, Christian origin.
+- **Purpose:** Public foundation of the house — three convictions and Matthew 10:8.
 - **URL:** `/about` — public marketing page (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, kicker **About**, heading **A house of hospitality**, a short lead, the Matthew 10:8 verse, then **A Christian origin** with one body paragraph and **Open the living room** (`/welcome`). Visitor copy comes from the catalog.
-- **Actions:** Change language. Read the origin. Open **Open the living room** (`/welcome`). Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, kicker **About**, heading **Three convictions**, a short lead, the Matthew 10:8 verse, then three numbered convictions (Giving is a duty with 1 John 3:18; Direct, with no middleman; Bitcoin is the most effective money) and **Open the living room** (`/welcome`). Visitor copy comes from the catalog.
+- **Actions:** Change language. Read the convictions. Open **Open the living room** (`/welcome`). Header **Log in** goes to `/login`.
 - **Calls:** `AboutPage` inside `MarketingLayout`, `LanguageSwitcher`, `ButtonLink`.
 
 ### Variant: default
 
-The only state: origin copy, verse, and forum CTA, marketing chrome.
+The only state: three convictions, verse, and forum CTA, marketing chrome.
 
 ![21.gifts about](images/about.png)
 

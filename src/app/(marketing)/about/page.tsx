@@ -10,11 +10,11 @@ import { translate } from '@/lib/translate';
  */
 export const metadata: Metadata = {
   title: 'About — 21.gifts',
-  description: 'Where 21.gifts comes from.',
+  description: 'Three convictions 21.gifts stands on.',
 };
 
 /**
- * Origin of the house at `/about`: hospitality, one verse, and a Christian origin.
+ * Three convictions the house stands on at `/about`, with Matthew 10:8.
  *
  * @returns The about screen.
  */
@@ -43,13 +43,34 @@ export default async function AboutPage(): Promise<ReactElement> {
         </div>
       </section>
       <section className="mx-auto max-w-3xl px-5 py-16">
-        <p className="text-sm font-medium tracking-widest text-accent uppercase">
-          {t('about.originKicker')}
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold">{t('about.originTitle')}</h2>
-        <div className="mt-8 space-y-6 text-paper/60">
-          <p>{t('about.originBody1')}</p>
-        </div>
+        <article>
+          <p className="text-sm font-medium tracking-widest text-accent uppercase">
+            {t('about.conv1Num')}
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold">{t('about.conv1Title')}</h2>
+          <p className="mt-6 text-paper/60">{t('about.conv1Body')}</p>
+          <p className="mt-6 text-paper/60">{t('about.conv1Body2')}</p>
+          <blockquote className="mt-8 border-l-2 border-accent pl-5">
+            <p className="text-xl italic text-paper/80">{t('about.conv1Verse')}</p>
+            <footer className="mt-3 text-sm font-medium tracking-widest text-accent uppercase">
+              {t('about.conv1VerseRef')}
+            </footer>
+          </blockquote>
+        </article>
+        <article className="mt-16">
+          <p className="text-sm font-medium tracking-widest text-accent uppercase">
+            {t('about.conv2Num')}
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold">{t('about.conv2Title')}</h2>
+          <p className="mt-6 text-paper/60">{t('about.conv2Body')}</p>
+        </article>
+        <article className="mt-16">
+          <p className="text-sm font-medium tracking-widest text-accent uppercase">
+            {t('about.conv3Num')}
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold">{t('about.conv3Title')}</h2>
+          <p className="mt-6 text-paper/60">{t('about.conv3Body')}</p>
+        </article>
         <ButtonLink href="/welcome" variant="accent" tone="dark" className="mt-10">
           {t('about.ctaForum')}
         </ButtonLink>

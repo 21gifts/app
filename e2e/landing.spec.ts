@@ -22,7 +22,7 @@ test('legal page is reachable', async ({ page }) => {
 
 test('about page is reachable', async ({ page }) => {
   await page.goto('/about');
-  await expect(page.getByRole('heading', { name: 'A house of hospitality' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
 });
 
 test('landing mobile nav opens the section links', async ({ page }) => {

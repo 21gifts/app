@@ -1320,7 +1320,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: AboutPage
 
-- **Purpose:** Next.js page for `/about`. Origin of the house: hospitality heading, Matthew 10:8, Christian origin, and a CTA into `/welcome`.
+- **Purpose:** Next.js page for `/about`. Three convictions, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
 - **Inputs:** None. Calls `getRequestLocale()` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** The about screen with a link to `/welcome`.
 - **Used by:** Route `/about`.

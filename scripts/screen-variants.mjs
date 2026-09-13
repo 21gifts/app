@@ -82,7 +82,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'about.png',
     visual: 'screen-about',
-    needle: 'A house of hospitality',
+    needle: 'Three convictions',
   },
   {
     route: '/login',
