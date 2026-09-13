@@ -37,7 +37,7 @@ test('public view profile default shows name and address', async ({ page }) => {
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/view-key/*/activity', async (route) => {
+  await page.route(/\/view-key\/[^/?#]+\/activity/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -66,7 +66,7 @@ test('public view profile claimed hides the Activate banner', async ({ page }) =
       body: JSON.stringify({ ...VIEW_PROFILE, hasPasskey: true }),
     });
   });
-  await page.route('**/view-key/*/activity', async (route) => {
+  await page.route(/\/view-key\/[^/?#]+\/activity/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -112,7 +112,7 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/view-key/*/activity', async (route) => {
+  await page.route(/\/view-key\/[^/?#]+\/activity/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -138,7 +138,7 @@ test('Telegram WebView shows Open in browser instead of Activate on an unclaimed
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/view-key/*/activity', async (route) => {
+  await page.route(/\/view-key\/[^/?#]+\/activity/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -189,7 +189,7 @@ test('public view profile error shows Try again and retries', async ({ page }) =
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/view-key/*/activity', async (route) => {
+  await page.route(/\/view-key\/[^/?#]+\/activity/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -239,7 +239,7 @@ async function stubAccountActivity(page: Page, body: unknown): Promise<void> {
 }
 
 async function stubViewActivity(page: Page, body: unknown): Promise<void> {
-  await page.route('**/view-key/*/activity', async (route) => {
+  await page.route(/\/view-key\/[^/?#]+\/activity/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

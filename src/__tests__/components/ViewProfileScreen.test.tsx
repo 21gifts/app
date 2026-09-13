@@ -30,13 +30,19 @@ describe('ViewProfileScreen', () => {
   });
 
   it('shows view.unnamed when name is null', () => {
-    renderWithLocale(<ViewProfileScreen profile={{ ...named, name: null }} received={[]} donated={[]} />);
+    renderWithLocale(
+      <ViewProfileScreen profile={{ ...named, name: null }} received={[]} donated={[]} />,
+    );
     expect(screen.getByText('Unnamed')).toBeTruthy();
   });
 
   it('shows view.noAddress when lightningAddress is null', () => {
     renderWithLocale(
-      <ViewProfileScreen profile={{ ...named, lightningAddress: null }} received={[]} donated={[]} />,
+      <ViewProfileScreen
+        profile={{ ...named, lightningAddress: null }}
+        received={[]}
+        donated={[]}
+      />,
     );
     expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
   });

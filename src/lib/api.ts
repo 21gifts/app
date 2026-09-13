@@ -541,12 +541,9 @@ export async function fetchMemberActivity(
   accountId: string,
 ): Promise<AccountActivity> {
   try {
-    const response = await fetch(
-      `/forum/members/${encodeURIComponent(accountId)}/activity`,
-      {
-        headers: { Authorization: `Bearer ${sessionToken}` },
-      },
-    );
+    const response = await fetch(`/forum/members/${encodeURIComponent(accountId)}/activity`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
     if (response.status === 409) {
       let body: unknown;
       try {

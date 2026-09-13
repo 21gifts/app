@@ -920,9 +920,12 @@ describe('fetchMemberActivity', () => {
   it('returns the validated payload and sends the bearer header', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: ACTIVITY });
     await expect(fetchMemberActivity('sess', memberId)).resolves.toEqual(ACTIVITY);
-    expect(fetchMock).toHaveBeenCalledWith(`/forum/members/${encodeURIComponent(memberId)}/activity`, {
-      headers: { Authorization: 'Bearer sess' },
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(memberId)}/activity`,
+      {
+        headers: { Authorization: 'Bearer sess' },
+      },
+    );
   });
 
   it('throws visitor copy on 401 and 404', async () => {
