@@ -40,13 +40,13 @@ describe('TrustChainScreen', () => {
     renderWithLocale(
       <TrustChainScreen
         chain={null}
-        error="Could not load the Trust Chain."
+        error="Could not load the Trust Chain. Please try again."
         loading={false}
         onRetry={onRetry}
         onExpand={() => undefined}
       />,
     );
-    expect(screen.getByText('Could not load the Trust Chain.')).toBeTruthy();
+    expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();

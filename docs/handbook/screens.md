@@ -214,7 +214,8 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 - **URL:** `/setup/name` — first screen after login (`account.setup === 'name'`).
 - **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/address`).- **Calls:** `AppShell`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
+- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
+- **Calls:** `AppShell`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
@@ -225,7 +226,8 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 
 - **URL:** `/setup/address` — second screen after login (`account.setup === 'address'`; name may already be saved or skipped).
 - **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
-- **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).- **Calls:** `AppShell`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
+- **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).
+- **Calls:** `AppShell`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
@@ -236,7 +238,8 @@ Signed in with a name (or a skipped name) and no address. **Your Wallet of Satos
 
 - **URL:** `/setup/rules` — third screen after login, when living-room rules are not yet agreed (`account.setup === 'rules'`). Name and address may already be saved or skipped; rules cannot be skipped.
 - **What the user sees:** Fill `AppShell` with one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Wordmark top-left (with icon-only chapter back after the first chapter). Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
-- **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**.- **Calls:** `AppShell`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
+- **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**.
+- **Calls:** `AppShell`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
 
@@ -672,6 +675,7 @@ Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-rig
 - **Actions:** Send a message, complete a `RequirementsOverlay` for a missing name or rules agreement, open the rules; back to the forum; open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ContactPage`, `ContactLoader`, `ContactScreen`, `RequirementsOverlay`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
+
 ### Variant: default
 
 Idle composer with lead and rules link.
@@ -833,6 +837,7 @@ Signed-in **moderator** viewing another member who is **basis**. Staff card with
 - **Used by:** Route `/profile` (`ProfilePage`).
 - **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out** (best-effort Web Push unsubscribe while the session is still valid); icon-only back (top-left) to the forum; save name; save or clear location; link or change address; toggle Web Push on the notifications row under the address form (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); pick CHF|EUR|USD|PHP on FiatPicker; when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Used by:** Route `/profile` (`ProfilePage`).
+
 ### Variant: default
 
 Heading **Profile**, then inside the single `max-w-sm` identity card: FiatPicker always (CHF|EUR|USD|PHP, `shell="app"`). When the series is empty, FiatPicker + `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat right; no chart title heading), name, location (**Location** / **Ort**, unset shows **Not set**), and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), a notifications row under the address form with visible On/Off and an icon-only bell (same `IconButton` circle as pencil/trash; off outlined BellOff secondary, on filled Bell primary), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (**Home** first; language then log out, then a quiet **Version {sha}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
