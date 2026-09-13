@@ -135,6 +135,8 @@ export function MemberProfileScreen({
   const [activityReplies, setActivityReplies] = useState<ForumMessage[] | null>(null);
   const [activityRepliesLoading, setActivityRepliesLoading] = useState(false);
   const [activityRepliesError, setActivityRepliesError] = useState(false);
+  const postsLoadGen = useRef(0);
+  const repliesLoadGen = useRef(0);
   const address = profile.lightningAddress;
 
   const loadActivityFeed = async (kind: 'posts' | 'replies'): Promise<void> => {
@@ -142,6 +144,8 @@ export function MemberProfileScreen({
     const setError = kind === 'posts' ? setPostsError : setActivityRepliesError;
     const setList = kind === 'posts' ? setPosts : setActivityReplies;
     const fetchFn = kind === 'posts' ? fetchMemberPosts : fetchMemberReplies;
+    const loadGen = kind === 'posts' ? postsLoadGen : repliesLoadGen;
+    const gen = ++loadGen.current;
     setLoading(true);
     setError(false);
     if (session === null) {
@@ -151,15 +155,21 @@ export function MemberProfileScreen({
     }
     try {
       const next = await fetchFn(session, profile.id);
-      setList(next);
+      if (loadGen.current === gen) {
+        setList(next);
+      }
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         router.replace('/setup/rules');
         return;
       }
-      setError(true);
+      if (loadGen.current === gen) {
+        setError(true);
+      }
     } finally {
-      setLoading(false);
+      if (loadGen.current === gen) {
+        setLoading(false);
+      }
     }
   };
 
@@ -170,12 +180,12 @@ export function MemberProfileScreen({
     }
     setActivity(next);
     if (next === 'posts') {
-      if (posts === null || postsError) {
+      if ((posts === null || postsError) && !postsLoading) {
         void loadActivityFeed('posts');
       }
       return;
     }
-    if (activityReplies === null || activityRepliesError) {
+    if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
       void loadActivityFeed('replies');
     }
   };

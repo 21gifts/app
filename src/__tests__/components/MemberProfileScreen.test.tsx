@@ -230,6 +230,27 @@ describe('MemberProfileScreen', () => {
     expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
   });
 
+  it('does not refetch posts when reopening an in-flight feed', async () => {
+    let resolvePosts!: (value: (typeof secondPost)[]) => void;
+    vi.mocked(fetchMemberPosts).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePosts = resolve;
+        }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    await waitFor(() => {
+      expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolvePosts([secondPost]);
+    });
+  });
+
   it('keeps the profile note visible beside the replies feed', async () => {
     vi.mocked(fetchMemberReplies).mockResolvedValue([activityReply]);
     renderWithLocale(
@@ -245,6 +266,29 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refetch replies when reopening an in-flight feed', async () => {
+    let resolveReplies!: (value: (typeof activityReply)[]) => void;
+    vi.mocked(fetchMemberReplies).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReplies = resolve;
+        }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    await waitFor(() => {
+      expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveReplies([activityReply]);
+    });
   });
 
   it('shows when the posts feed is truncated', async () => {
@@ -298,6 +342,82 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
     expect(fetchMemberPosts).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not apply a stale posts feed error onto a newer success', async () => {
+    vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new Error('fail'));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    let rejectOlder!: (reason: Error) => void;
+    let resolveNewer!: (value: (typeof secondPost)[]) => void;
+    let overlapping = 0;
+    vi.mocked(fetchMemberPosts).mockImplementation(() => {
+      overlapping += 1;
+      if (overlapping === 1) {
+        const older = new Promise<(typeof secondPost)[]>((_resolve, reject) => {
+          rejectOlder = reject;
+        });
+        retry.click();
+        return older;
+      }
+      return new Promise((resolve) => {
+        resolveNewer = resolve;
+      });
+    });
+    fireEvent.click(retry);
+    fireEvent.click(retry);
+    await waitFor(() => {
+      expect(overlapping).toBe(2);
+    });
+    await act(async () => {
+      resolveNewer([secondPost]);
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    await act(async () => {
+      rejectOlder(new Error('fail'));
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
+  it('does not apply a stale posts feed onto a newer success', async () => {
+    vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new Error('fail'));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    let resolveOlder!: (value: (typeof secondPost)[]) => void;
+    let resolveNewer!: (value: (typeof secondPost)[]) => void;
+    let overlapping = 0;
+    vi.mocked(fetchMemberPosts).mockImplementation(() => {
+      overlapping += 1;
+      if (overlapping === 1) {
+        const older = new Promise<(typeof secondPost)[]>((resolve) => {
+          resolveOlder = resolve;
+        });
+        retry.click();
+        return older;
+      }
+      return new Promise((resolve) => {
+        resolveNewer = resolve;
+      });
+    });
+    fireEvent.click(retry);
+    fireEvent.click(retry);
+    await waitFor(() => {
+      expect(overlapping).toBe(2);
+    });
+    await act(async () => {
+      resolveNewer([secondPost]);
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    await act(async () => {
+      resolveOlder([note]);
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.queryByText('Hello from my profile note.')).toBeNull();
   });
 
   it('renders a profile note when present', () => {
