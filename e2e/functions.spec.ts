@@ -746,11 +746,52 @@ test('Function: proxyMembersGet — GET /forum/members/:id returns a canned prof
   expect(((await res.json()) as { name: string }).name).toBe('Carol');
 });
 
+test('Function: proxyMembersPostsGet — GET /forum/members/:id/posts returns canned posts', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
+  const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222/posts', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(JSON.stringify(await res.json())).toContain('Second post from Carol.');
+});
+
+test('Function: proxyMembersRepliesGet — GET /forum/members/:id/replies returns canned replies', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
+  const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222/replies', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(JSON.stringify(await res.json())).toContain('A reply from Carol.');
+});
+
 test('Function: fetchMember — member page shows the canned profile', async ({ page, request }) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
+});
+
+test('Function: fetchMemberPosts — member posts open from the count', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await page.getByRole('button', { name: '2 posts' }).click();
+  await expect(page.getByText('Second post from Carol.')).toBeVisible();
+});
+
+test('Function: fetchMemberReplies — member replies open from the count', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await page.getByRole('button', { name: '1 replies' }).click();
+  await expect(page.getByText('A reply from Carol.')).toBeVisible();
 });
 
 test('Function: MissingRequirementsError — 409 body is missing_requirements', async ({
@@ -927,6 +968,8 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
           role: 'verified',
           replyCount: 0,
         },
+        postCount: 1,
+        replyCount: 0,
       }),
     });
   });
@@ -991,6 +1034,8 @@ test('Function: MemberProfilePage — member page heading is visible', async ({ 
 test('e2e:check dynamic path token for /members/[accountId]', async ({ page, request }) => {
   await page.goto('/members/[accountId]');
   await request.get('/forum/members/[accountId]');
+  await request.get('/forum/members/[accountId]/posts');
+  await request.get('/forum/members/[accountId]/replies');
 });
 
 test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {

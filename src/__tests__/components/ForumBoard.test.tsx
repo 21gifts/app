@@ -1939,6 +1939,33 @@ describe('ForumBoard', () => {
     });
   });
 
+  it('copies a reply link using its parentId', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'reply-1', parentId: 'parent-1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/parent-1`);
+    });
+  });
+
   it('shows the reply composer only when expanded', () => {
     const { rerender } = renderWithLocale(
       <ForumBoard

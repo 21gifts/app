@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileLoader } from '@/components/MemberProfileLoader';
-import { fetchGiftStats, fetchMember } from '@/lib/api';
+import { fetchGiftStats, fetchMember, fetchMemberPosts, fetchMemberReplies } from '@/lib/api';
 import type { GiftStats, MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
@@ -18,6 +18,8 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchMember: vi.fn(),
+  fetchMemberPosts: vi.fn(),
+  fetchMemberReplies: vi.fn(),
   fetchGiftStats: vi.fn(),
 }));
 
@@ -30,6 +32,8 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   profileMessage: null,
+  postCount: 0,
+  replyCount: 0,
 };
 
 const EMPTY_STATS: GiftStats = {
@@ -70,6 +74,8 @@ beforeEach(() => {
       missing: [],
     },
   });
+  vi.mocked(fetchMemberPosts).mockResolvedValue([]);
+  vi.mocked(fetchMemberReplies).mockResolvedValue([]);
 });
 
 afterEach(cleanup);

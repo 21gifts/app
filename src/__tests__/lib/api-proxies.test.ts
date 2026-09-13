@@ -16,6 +16,8 @@ import {
   proxyMeRulesAgreementPost,
   proxyMeSetupSkipPost,
   proxyMembersGet,
+  proxyMembersPostsGet,
+  proxyMembersRepliesGet,
   proxyContactPost,
   proxyConversationGet,
   proxyConversationPost,
@@ -77,6 +79,21 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMembersGet(new Request('http://localhost/forum/members/acc%201'), 'acc 1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/acc%201');
+  });
+
+  it('proxyMembersPostsGet encodes the id in GET /members/:id/posts', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersPostsGet(new Request('http://localhost/forum/members/a%2Fb/posts'), 'a/b');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/posts');
+  });
+
+  it('proxyMembersRepliesGet encodes the id in GET /members/:id/replies', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersRepliesGet(
+      new Request('http://localhost/forum/members/a%2Fb/replies'),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/replies');
   });
 
   it('proxyMeForumLawsDismissedPost hits POST /me/forum-laws-dismissed', async () => {

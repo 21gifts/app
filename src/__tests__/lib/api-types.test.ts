@@ -46,8 +46,24 @@ describe('memberProfileSchema', () => {
       lightningAddress: 'carol@walletofsatoshi.com',
       createdAt: '2026-01-15T12:00:00.000Z',
       profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
     };
     expect(memberProfileSchema.parse(profile)).toEqual(profile);
+  });
+
+  it('requires post and reply counts', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      profileMessage: null,
+    };
+    expect(() => memberProfileSchema.parse(profile)).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, postCount: 0 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, replyCount: 0 })).toThrow();
   });
 
   it('rejects an empty name string', () => {
@@ -59,6 +75,8 @@ describe('memberProfileSchema', () => {
         lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
       }),
     ).toThrow();
   });
@@ -212,6 +230,11 @@ describe('forumMessageSchema', () => {
       videoContentType: null,
       replyCount: 0,
     });
+  });
+
+  it('accepts an optional parentId on replies', () => {
+    expect(forumMessageSchema.parse(base).parentId).toBeUndefined();
+    expect(forumMessageSchema.parse({ ...base, parentId: 'parent-1' }).parentId).toBe('parent-1');
   });
 
   it('accepts an empty text when hasPhoto is true', () => {

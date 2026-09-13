@@ -11,6 +11,8 @@ import {
   fetchGiftStats,
   fetchMe,
   fetchMember,
+  fetchMemberPosts,
+  fetchMemberReplies,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
@@ -169,6 +171,8 @@ describe('fetchMember', () => {
     lightningAddress: 'carol@walletofsatoshi.com',
     createdAt: '2026-01-15T12:00:00.000Z',
     profileMessage: null,
+    postCount: 0,
+    replyCount: 0,
   };
 
   it('returns the validated member profile', async () => {
@@ -220,6 +224,118 @@ describe('fetchMember', () => {
     stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
     await expect(fetchMember('sess', member.id)).rejects.toThrow(
       'Could not load this profile. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberPosts', () => {
+  const accountId = '22222222-2222-4222-8222-222222222222';
+  const post = {
+    id: 'post-1',
+    accountId,
+    name: 'Carol',
+    text: 'A post from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+  };
+
+  it('returns the validated post list', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [post] } });
+    await expect(fetchMemberPosts('sess', accountId)).resolves.toEqual([post]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(accountId)}/posts`,
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberReplies', () => {
+  const accountId = '22222222-2222-4222-8222-222222222222';
+  const reply = {
+    id: 'reply-1',
+    accountId,
+    parentId: 'parent-1',
+    name: 'Carol',
+    text: 'A reply from Carol.',
+    createdAt: '2026-08-03T10:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+  };
+
+  it('returns the validated reply list', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [reply] } });
+    await expect(fetchMemberReplies('sess', accountId)).resolves.toEqual([reply]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(accountId)}/replies`,
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberReplies('sess', accountId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberReplies('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
     );
   });
 });

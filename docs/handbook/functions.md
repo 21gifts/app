@@ -739,15 +739,29 @@
 
 - **Purpose:** Loads a signed-in member profile by account id.
 - **Inputs:** Bearer session and `accountId`.
-- **Returns / side effects:** Validated `MemberProfile`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`.
+- **Returns / side effects:** Validated `MemberProfile`, including `postCount` and `replyCount`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`.
 - **Used by:** `MemberProfileLoader`.
+
+## Function: fetchMemberPosts
+
+- **Purpose:** Loads a member's top-level forum posts with `GET /forum/members/:id/posts`.
+- **Inputs:** Bearer session and `accountId`.
+- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
+- **Used by:** `MemberProfileScreen`.
+
+## Function: fetchMemberReplies
+
+- **Purpose:** Loads a member's forum replies with `GET /forum/members/:id/replies`.
+- **Inputs:** Bearer session and `accountId`.
+- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200; reply messages are not payable and may include `parentId`. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
+- **Used by:** `MemberProfileScreen`.
 
 ## Function: parseMissingRequirements
 
 - **Purpose:** Parses a 409 `{ error: 'missing_requirements', missing: [...] }` body.
 - **Inputs:** Unknown JSON body.
 - **Returns / side effects:** `MissingRequirementsError` or `null`.
-- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`.
+- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`, `fetchMemberPosts`, `fetchMemberReplies`.
 
 ## Function: MissingRequirementsError
 
@@ -786,16 +800,16 @@
 
 ## Function: MemberProfileLoader
 
-- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, optional gift stats for the chart.
+- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, and optional gift stats for the chart. It does not prefetch activity feeds; `postCount` and `replyCount` arrive with the profile JSON.
 - **Inputs:** Route `accountId`; session from auth store.
 - **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`.
 - **Used by:** `MemberProfilePage`.
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
 - **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
-- **Returns / side effects:** React tree; may `POST` invoice/conversation/replies and navigate to `/messages?c=`.
+- **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: MemberProfilePage
@@ -818,6 +832,20 @@
 - **Inputs:** App Router request and `accountId`.
 - **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}`.
 - **Used by:** `/forum/members/[accountId]` route.
+
+## Function: proxyMembersPostsGet
+
+- **Purpose:** Proxies `GET /members/:accountId/posts` to the api.
+- **Inputs:** App Router request and `accountId`.
+- **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}/posts`.
+- **Used by:** `/forum/members/[accountId]/posts` route.
+
+## Function: proxyMembersRepliesGet
+
+- **Purpose:** Proxies `GET /members/:accountId/replies` to the api.
+- **Inputs:** App Router request and `accountId`.
+- **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}/replies`.
+- **Used by:** `/forum/members/[accountId]/replies` route.
 
 ## Function: useHydrateSession
 

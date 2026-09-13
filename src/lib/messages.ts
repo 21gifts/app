@@ -274,6 +274,9 @@ const en = {
   'profile.push.off': 'Off',
   'profile.push.installHint': 'On iPhone, add 21.gifts to your Home Screen to get notifications.',
   'profile.push.unavailable': 'Notifications are not available in this browser.',
+  'profile.postCount': '{count} posts',
+  'profile.replyCount': '{count} replies',
+  'profile.activityLatest': 'Showing the latest {shown} of {total}.',
 
   'view.unnamed': 'Unnamed',
   'view.noAddress': 'No Wallet of Satoshi address',
@@ -706,6 +709,9 @@ const de = {
   'profile.push.installHint':
     'Fügen Sie 21.gifts auf dem iPhone zum Home-Bildschirm hinzu, um Benachrichtigungen zu erhalten.',
   'profile.push.unavailable': 'Benachrichtigungen sind in diesem Browser nicht verfügbar.',
+  'profile.postCount': '{count} Beiträge',
+  'profile.replyCount': '{count} Antworten',
+  'profile.activityLatest': 'Die neuesten {shown} von {total}.',
 
   'view.unnamed': 'Unbenannt',
   'view.noAddress': 'Keine Wallet of Satoshi address',
@@ -1133,6 +1139,9 @@ const es = {
   'profile.push.installHint':
     'En iPhone, añade 21.gifts a la pantalla de inicio para recibir notificaciones.',
   'profile.push.unavailable': 'Las notificaciones no están disponibles en este navegador.',
+  'profile.postCount': '{count} publicaciones',
+  'profile.replyCount': '{count} respuestas',
+  'profile.activityLatest': 'Mostrando los {shown} más recientes de {total}.',
 
   'view.unnamed': 'Sin nombre',
   'view.noAddress': 'Sin Wallet of Satoshi address',
@@ -1557,6 +1566,9 @@ const fil = {
   'profile.push.installHint':
     'Sa iPhone, idagdag ang 21.gifts sa Home Screen para makatanggap ng notification.',
   'profile.push.unavailable': 'Hindi available ang mga notification sa browser na ito.',
+  'profile.postCount': '{count} mga post',
+  'profile.replyCount': '{count} mga sagot',
+  'profile.activityLatest': 'Ipinapakita ang pinakabago {shown} sa {total}.',
 
   'view.unnamed': 'Walang pangalan',
   'view.noAddress': 'Walang Wallet of Satoshi address',

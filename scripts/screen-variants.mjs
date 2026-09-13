@@ -548,6 +548,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'posts-open',
+    image: 'members-posts-open.png',
+    visual: 'state-members-posts-open',
+    needle: 'Second post from Carol.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'replies-open',
+    image: 'members-replies-open.png',
+    visual: 'state-members-replies-open',
+    needle: 'A reply from Carol.',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'note-null',
     image: 'members-note-null.png',
     visual: 'state-members-note-null',

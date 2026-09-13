@@ -244,6 +244,82 @@ export async function fetchMember(
 }
 
 /**
+ * Fetches a member's top-level forum posts or replies (newest first).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @param suffix - `posts` or `replies`.
+ * @returns The message list.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+async function fetchMemberForumList(
+  sessionToken: string,
+  accountId: string,
+  suffix: 'posts' | 'replies',
+): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch(`/forum/members/${encodeURIComponent(accountId)}/${suffix}`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (response.status === 409) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        throw new Error('Could not load messages. Please try again.');
+      }
+      const missing = parseMissingRequirements(body);
+      if (missing !== null) {
+        throw missing;
+      }
+      throw new Error('Could not load messages. Please try again.');
+    }
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return forumListSchema.parse(await response.json()).messages;
+  } catch (err) {
+    if (err instanceof MissingRequirementsError) {
+      throw err;
+    }
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches a member's top-level forum posts (newest first, api cap 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The message list.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchMemberPosts(
+  sessionToken: string,
+  accountId: string,
+): Promise<ForumMessage[]> {
+  return fetchMemberForumList(sessionToken, accountId, 'posts');
+}
+
+/**
+ * Fetches a member's forum replies (newest first, api cap 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The message list (`payable` false; optional `parentId`).
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchMemberReplies(
+  sessionToken: string,
+  accountId: string,
+): Promise<ForumMessage[]> {
+  return fetchMemberForumList(sessionToken, accountId, 'replies');
+}
+
+/**
  * Links or replaces the account's receiving Lightning Address.
  *
  * @param sessionToken - A bearer token from a completed challenge.

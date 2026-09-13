@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
   agreeToRules,
+  fetchMemberPosts,
+  fetchMemberReplies,
   fetchReplies,
   openConversation,
   postMessage,
@@ -31,6 +33,8 @@ vi.mock('@/lib/api', () => ({
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchMemberPosts: vi.fn(),
+  fetchMemberReplies: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
@@ -46,6 +50,8 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   profileMessage: null,
+  postCount: 0,
+  replyCount: 0,
 };
 
 const note = {
@@ -61,6 +67,30 @@ const note = {
   videoContentType: null,
   role: 'verified' as const,
   replyCount: 0,
+};
+
+const profileWithNote: MemberProfile = {
+  ...profile,
+  profileMessage: note,
+  postCount: 1,
+};
+
+const secondPost = {
+  ...note,
+  id: '44444444-4444-4444-8444-444444444444',
+  text: 'Second post from Carol.',
+  createdAt: '2026-08-02T10:00:00.000Z',
+  sats: 0,
+};
+
+const activityReply = {
+  ...note,
+  id: '66666666-6666-4666-8666-666666666666',
+  text: 'A reply from Carol.',
+  createdAt: '2026-08-03T10:00:00.000Z',
+  sats: 0,
+  payable: false,
+  parentId: '55555555-5555-4555-8555-555555555555',
 };
 
 const account: Account = {
@@ -92,6 +122,8 @@ async function expandNote(): Promise<void> {
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockClear();
+  vi.mocked(fetchMemberPosts).mockResolvedValue([]);
+  vi.mocked(fetchMemberReplies).mockResolvedValue([]);
   vi.mocked(fetchReplies).mockResolvedValue([]);
   vi.mocked(openConversation).mockResolvedValue({
     id: 'conv-1',
@@ -133,6 +165,105 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
     expect(screen.getByText(/confirmed they are real/i)).toBeTruthy();
+  });
+
+  it('shows clickable post and reply counts, including the empty 0/0 state', () => {
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
+    expect(screen.getByRole('button', { name: '0 posts' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    expect(screen.getByRole('button', { name: '0 replies' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('opens and collapses the posts feed while hiding and restoring the profile note', async () => {
+    vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost]);
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.queryByText('Hello from my profile note.')).toBeNull();
+    expect(fetchMemberPosts).toHaveBeenCalledWith('sess', profile.id);
+
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    expect(screen.queryByText('Second post from Carol.')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the profile note visible beside the replies feed', async () => {
+    vi.mocked(fetchMemberReplies).mockResolvedValue([activityReply]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    expect(fetchMemberReplies).toHaveBeenCalledWith('sess', profile.id);
+
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
+    expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows when the posts feed is truncated', async () => {
+    vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, postCount: 3 }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3 posts' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.getByText('Showing the latest 1 of 3.')).toBeTruthy();
+  });
+
+  it('opens the parent note when a reply activity card is expanded', async () => {
+    vi.mocked(fetchMemberReplies).mockResolvedValue([activityReply]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    const replyText = await screen.findByText('A reply from Carol.');
+    const replyRow = replyText.closest('li');
+    const expand = replyRow?.querySelector<HTMLButtonElement>('[aria-label="Show replies"]');
+    expect(expand).toBeTruthy();
+    fireEvent.click(expand as HTMLButtonElement);
+    expect(push).toHaveBeenCalledWith('/messages/55555555-5555-4555-8555-555555555555');
+  });
+
+  it('shows an activity error when the session is missing', async () => {
+    useAuthStore.setState({ session: null, account });
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(fetchMemberPosts).not.toHaveBeenCalled();
+  });
+
+  it('sends a missing-requirements feed load to rules setup', async () => {
+    vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('shows an activity error and retries the selected feed', async () => {
+    vi.mocked(fetchMemberPosts)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce([secondPost]);
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(fetchMemberPosts).toHaveBeenCalledTimes(2);
   });
 
   it('renders a profile note when present', () => {
