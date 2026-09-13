@@ -1023,6 +1023,88 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-translate-error');
   });
 
+  test('state /welcome new-posts', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const baseMessages = Array.from({ length: 12 }, (_, index) => ({
+      id: `m-tall-${String(index)}`,
+      name: 'Ada',
+      text: `Tall note ${String(index)} so the welcome list can scroll past the top.`,
+      createdAt: `2026-08-28T12:${String(index).padStart(2, '0')}:00.000Z`,
+      sats: 21,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis' as const,
+      replyCount: 0,
+    }));
+    let messagesBody: { messages: typeof baseMessages } = { messages: baseMessages };
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(messagesBody),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(
+      page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
+    ).toBeVisible();
+    await page.evaluate(() => {
+      window.scrollTo(0, 900);
+    });
+    messagesBody = {
+      messages: [
+        {
+          id: 'm-unseen',
+          name: 'Carol',
+          text: 'Held unseen note for the New posts pill.',
+          createdAt: '2026-08-28T13:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+        ...baseMessages,
+      ],
+    };
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(page.getByRole('button', { name: 'New posts' })).toBeVisible();
+    await expect(page.getByText('Held unseen note for the New posts pill.')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-new-posts');
+  });
+
   test('screen /profile', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

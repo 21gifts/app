@@ -1,5 +1,5 @@
-import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -30,5 +30,12 @@ describe('Wordmark', () => {
   it('treats empty className as absent', () => {
     renderWithLocale(<Wordmark href="/" className="" />);
     expect(screen.getByRole('link', { name: '21.gifts' }).className).not.toContain('undefined');
+  });
+
+  it('forwards link clicks to onClick', () => {
+    const onClick = vi.fn();
+    renderWithLocale(<Wordmark href="/welcome" onClick={onClick} />);
+    fireEvent.click(screen.getByRole('link', { name: '21.gifts' }));
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

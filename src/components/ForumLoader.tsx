@@ -24,6 +24,9 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
+  FORUM_HOME_EVENT,
+  FORUM_LIST_POLL_MS,
+  hasUnseenForumPosts,
   type ForumFeedMode,
   visibleForumMessages,
 } from '@/lib/forum-feed';
@@ -123,9 +126,12 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * polls until unsigned notes become payable. Silently re-fetches when the
  * document becomes visible again
  * (`visibilitychange` hidden→visible, `pageshow` with `persisted`) and when
- * the board pull-to-refresh fires; silent refresh keeps an existing list on
- * screen (no loading copy) and does not auto-scroll the newest note. Renders
- * nothing when there is no session.
+ * the board pull-to-refresh fires, plus every 30 seconds while the tab is
+ * visible. A silent refresh holds unseen ids behind a New posts pill while the
+ * visitor is scrolled down; the pill, welcome wordmark, and already-home menu
+ * action scroll to top and force-apply a refetch. Silent refresh keeps an
+ * existing list on screen (no loading copy) and does not auto-scroll the
+ * newest note. Renders nothing when there is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
@@ -140,6 +146,7 @@ export function ForumLoader(): ReactElement | null {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [newPostsAvailable, setNewPostsAvailable] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
@@ -196,6 +203,7 @@ export function ForumLoader(): ReactElement | null {
   const refreshGeneration = useRef(0);
   const wasHiddenRef = useRef(false);
   const pendingRefreshRef = useRef(false);
+  const forceApplyRef = useRef(false);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const loadingRef = useRef(loading);
@@ -264,20 +272,28 @@ export function ForumLoader(): ReactElement | null {
    *
    * @param activeSession - Session token for the fetch.
    * @param shouldContinue - False when the caller was cancelled or superseded.
+   * @param forceApply - Whether to apply fetched ids even while the page is scrolled down.
    * @returns `ok` when the list was applied, `error` on failure, `aborted` when skipped.
    */
   const loadMessagesOnce = async (
     activeSession: string,
     shouldContinue: () => boolean,
+    forceApply = true,
   ): Promise<'ok' | 'error' | 'aborted' | 'requirements'> => {
     try {
       const next = await fetchMessages(activeSession);
       if (!shouldContinue()) {
         return 'aborted';
       }
+      const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
+      if (!forceApply && !atTop && hasUnseenForumPosts(messagesRef.current, next)) {
+        setNewPostsAvailable(true);
+        return 'ok';
+      }
       setMessages((prev) =>
         mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)),
       );
+      setNewPostsAvailable(false);
       if (next.some((message) => message.payable === false)) {
         startPayablePoll(activeSession);
       }
@@ -302,13 +318,13 @@ export function ForumLoader(): ReactElement | null {
     return true;
   };
 
-  const refreshMessages = (): void => {
+  const refreshMessages = (): boolean => {
     /* v8 ignore next 3 -- board unmounts without a session */
     if (session === null) {
-      return;
+      return false;
     }
     if (loadingRef.current || refreshingRef.current) {
-      return;
+      return false;
     }
     if (
       postingRef.current ||
@@ -319,9 +335,11 @@ export function ForumLoader(): ReactElement | null {
       replyPostingRef.current
     ) {
       pendingRefreshRef.current = true;
-      return;
+      return false;
     }
     pendingRefreshRef.current = false;
+    const forceApply = forceApplyRef.current;
+    forceApplyRef.current = false;
     const activeSession = session;
     const generation = ++refreshGeneration.current;
     refreshingRef.current = true;
@@ -330,6 +348,7 @@ export function ForumLoader(): ReactElement | null {
       const result = await loadMessagesOnce(
         activeSession,
         () => generation === refreshGeneration.current,
+        forceApply,
       );
       if (generation !== refreshGeneration.current) {
         return;
@@ -350,6 +369,7 @@ export function ForumLoader(): ReactElement | null {
       refreshingRef.current = false;
       setRefreshing(false);
     })();
+    return true;
   };
 
   const refreshMessagesRef = useRef(refreshMessages);
@@ -357,6 +377,15 @@ export function ForumLoader(): ReactElement | null {
 
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
+  }, []);
+
+  const showNewPosts = useCallback((): void => {
+    window.scrollTo(0, 0);
+    forceApplyRef.current = true;
+    const started = refreshMessagesRef.current();
+    if (!started && !pendingRefreshRef.current) {
+      forceApplyRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
@@ -418,6 +447,50 @@ export function ForumLoader(): ReactElement | null {
       window.removeEventListener('pageshow', onPageShow);
     };
   }, [session]);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshMessagesRef.current();
+      }
+    }, FORUM_LIST_POLL_MS);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    const onForumHome = (): void => {
+      showNewPosts();
+    };
+    window.addEventListener(FORUM_HOME_EVENT, onForumHome);
+    return () => {
+      window.removeEventListener(FORUM_HOME_EVENT, onForumHome);
+    };
+  }, [session, showNewPosts]);
+
+  useEffect(() => {
+    if (session === null || !newPostsAvailable) {
+      return;
+    }
+    const onScroll = (): void => {
+      const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
+      if (atTop) {
+        showNewPosts();
+      }
+    };
+    window.addEventListener('scroll', onScroll);
+    onScroll();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [newPostsAvailable, session, showNewPosts]);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {
@@ -1077,6 +1150,8 @@ export function ForumLoader(): ReactElement | null {
       ) : null}
       <ForumBoard
         messages={messages}
+        newPostsAvailable={newPostsAvailable}
+        onShowNewPosts={showNewPosts}
         onDeleted={(messageId) => {
           deletedIds.current.add(messageId);
           setMessages((prev) => prev!.filter((row) => row.id !== messageId));

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ReactElement } from 'react';
+import type { MouseEventHandler, ReactElement } from 'react';
 
 /** Shell for the wordmark color. */
 export type WordmarkTone = 'app' | 'dark';
@@ -17,6 +17,8 @@ export interface WordmarkProps {
   size?: WordmarkSize;
   /** Extra classes. */
   className?: string;
+  /** Link click handler. Ignored when the wordmark is not a link. */
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 /**
@@ -30,6 +32,7 @@ export function Wordmark({
   tone = 'app',
   size = 'header',
   className,
+  onClick,
 }: WordmarkProps): ReactElement {
   const toneClass = tone === 'dark' ? 'text-paper' : 'text-app-fg';
   const sizeClass = size === 'footer' ? 'text-[15px]' : 'text-[17px]';
@@ -39,7 +42,7 @@ export function Wordmark({
     return <span className={classes}>21.gifts</span>;
   }
   return (
-    <Link href={href} className={classes}>
+    <Link href={href} className={classes} {...(onClick !== undefined ? { onClick } : {})}>
       21.gifts
     </Link>
   );

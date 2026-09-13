@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { ForumMessage } from '@/lib/api-types';
-import { DEFAULT_FORUM_FEED_MODE, FORUM_FEED_MODES, visibleForumMessages } from '@/lib/forum-feed';
+import {
+  DEFAULT_FORUM_FEED_MODE,
+  FORUM_FEED_MODES,
+  hasUnseenForumPosts,
+  visibleForumMessages,
+} from '@/lib/forum-feed';
 
 const ADA: ForumMessage = {
   id: 'm3',
@@ -90,6 +95,19 @@ describe('forum-feed', () => {
   it('defaults to active and lists modes Active → No gifts yet → All → Most popular', () => {
     expect(DEFAULT_FORUM_FEED_MODE).toBe('active');
     expect(FORUM_FEED_MODES).toEqual(['active', 'unpaid', 'all', 'popular']);
+  });
+
+  it('detects a fetched message id missing from the loaded list', () => {
+    expect(hasUnseenForumPosts([ADA], [CAROL, ADA])).toBe(true);
+  });
+
+  it('does not report unseen posts before or without an initial list', () => {
+    expect(hasUnseenForumPosts(null, [ADA])).toBe(false);
+    expect(hasUnseenForumPosts([], [ADA])).toBe(false);
+  });
+
+  it('compares ids rather than updated message values', () => {
+    expect(hasUnseenForumPosts([ADA, CAROL], [{ ...ADA, sats: 42 }, CAROL])).toBe(false);
   });
 
   it('all preserves order including zero-sat rows', () => {

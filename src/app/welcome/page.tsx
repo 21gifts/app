@@ -1,8 +1,9 @@
 import type { ReactElement } from 'react';
+import { ForumHomeWordmark } from '@/components/ForumHomeWordmark';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { PageChrome } from '@/components/ui';
 
 /**
  * `/welcome` — shown when name, address, and living-room rules agreement are saved.
@@ -11,7 +12,7 @@ import { PageChrome, Wordmark } from '@/components/ui';
  */
 export default function WelcomePage(): ReactElement {
   return (
-    <PageChrome topLeft={<Wordmark href="/welcome" />} topRight={<SignedInChrome />}>
+    <PageChrome topLeft={<ForumHomeWordmark />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="welcome">
         <WelcomeScreen />
       </OnboardingGate>

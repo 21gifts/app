@@ -6,8 +6,33 @@ export type ForumFeedMode = 'active' | 'unpaid' | 'all' | 'popular';
 /** Default feed mode on the welcome forum (paid notes, newest-first). */
 export const DEFAULT_FORUM_FEED_MODE: ForumFeedMode = 'active';
 
+/** Window event: already-on-home chrome asked to scroll to top and apply new posts. */
+export const FORUM_HOME_EVENT = '21gifts:forum-home';
+
+/** Visible-tab poll interval for GET /forum/messages (ms). */
+export const FORUM_LIST_POLL_MS = 30_000;
+
 /** Selector button order: Active, No gifts yet, All, Most popular. */
 export const FORUM_FEED_MODES: readonly ForumFeedMode[] = ['active', 'unpaid', 'all', 'popular'];
+
+/**
+ * Checks whether a fetched forum list contains a message not present in the loaded list.
+ *
+ * @param current - The currently loaded forum messages, or null before the initial load.
+ * @param fetched - The newly fetched forum messages.
+ * @returns True when a non-empty current list is missing at least one fetched message id.
+ */
+export function hasUnseenForumPosts(
+  current: readonly ForumMessage[] | null,
+  fetched: readonly ForumMessage[],
+): boolean {
+  if (!current || current.length === 0) {
+    return false;
+  }
+
+  const currentIds = new Set(current.map((message) => message.id));
+  return fetched.some((message) => !currentIds.has(message.id));
+}
 
 /**
  * Filters and sorts a loaded forum thread for the selected feed mode.

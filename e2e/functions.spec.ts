@@ -3463,6 +3463,280 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
   await expect(page.getByText('Visible again note')).toBeVisible();
 });
 
+test('Function: ForumLoader — scrolled silent refresh shows New posts without inserting the note', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const first = Array.from({ length: 12 }, (_, index) => ({
+    id: `m-tall-${String(index)}`,
+    name: 'Ada',
+    text: `Tall note ${String(index)} so the welcome list can scroll past the top.`,
+    createdAt: `2026-08-28T12:${String(index).padStart(2, '0')}:00.000Z`,
+    sats: 21,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  }));
+  let messagesBody: unknown = { messages: first };
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(messagesBody),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(
+    page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    window.scrollTo(0, 900);
+  });
+  messagesBody = {
+    messages: [
+      {
+        id: 'm-unseen',
+        name: 'Carol',
+        text: 'Held unseen note for the New posts pill.',
+        createdAt: '2026-08-28T13:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      ...first,
+    ],
+  };
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(page.getByRole('button', { name: 'New posts' })).toBeVisible();
+  await expect(page.getByText('Held unseen note for the New posts pill.')).toHaveCount(0);
+  await page.getByRole('button', { name: 'New posts' }).click();
+  await expect(page.getByText('Held unseen note for the New posts pill.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'New posts' })).toHaveCount(0);
+});
+
+test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id behind New posts', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const first = Array.from({ length: 12 }, (_, index) => ({
+    id: `m-tall-${String(index)}`,
+    name: 'Ada',
+    text: `Tall note ${String(index)} so the welcome list can scroll past the top.`,
+    createdAt: `2026-08-28T12:${String(index).padStart(2, '0')}:00.000Z`,
+    sats: 21,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  }));
+  let messagesBody: unknown = { messages: first };
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(messagesBody),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(
+    page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    window.scrollTo(0, 900);
+  });
+  messagesBody = {
+    messages: [
+      {
+        id: 'm-unseen-ids',
+        name: 'Carol',
+        text: 'Unseen id held by hasUnseenForumPosts.',
+        createdAt: '2026-08-28T13:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      ...first,
+    ],
+  };
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(page.getByRole('button', { name: 'New posts' })).toBeVisible();
+  await expect(page.getByText('Unseen id held by hasUnseenForumPosts.')).toHaveCount(0);
+});
+
+test('Function: ForumLoader — wordmark click on /welcome refetches', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  let messagesBody: unknown = { messages: [] };
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(messagesBody),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+  messagesBody = {
+    messages: [
+      {
+        id: 'm-home',
+        name: 'Ada',
+        text: 'From wordmark refresh',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ],
+  };
+  await page.getByRole('link', { name: '21.gifts' }).click();
+  await expect(page.getByText('From wordmark refresh')).toBeVisible();
+});
+
+test('Function: ForumHomeWordmark — clicking 21.gifts on /welcome does not leave the forum', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+  await page.getByRole('link', { name: '21.gifts' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+});
+
 test('Function: formatForumTime — message timestamp is visible', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

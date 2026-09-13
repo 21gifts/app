@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumLoader } from '@/components/ForumLoader';
 import type { Account, Conversation, ForumMessage } from '@/lib/api-types';
+import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -107,6 +108,20 @@ const SAMPLE: ForumMessage = {
   replyCount: 0,
 };
 
+const FRESH: ForumMessage = {
+  id: 'm-new',
+  name: 'Carol',
+  text: 'Fresh from refresh',
+  createdAt: '2026-08-28T15:00:00.000Z',
+  sats: 21,
+  payable: true,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'basis',
+  replyCount: 0,
+};
+
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 
 async function revealAll(): Promise<void> {
@@ -145,6 +160,7 @@ afterEach(() => {
     configurable: true,
     get: () => 'visible',
   });
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
   fetchMock.mockReset();
   publicFetchMock.mockReset();
   postMock.mockReset();
@@ -3173,6 +3189,208 @@ describe('ForumLoader', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(screen.getByText('Fresh from refresh')).toBeTruthy();
     });
+  });
+
+  it('holds unseen notes behind New posts when the page is scrolled down', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Fresh from refresh')).toBeNull();
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  });
+
+  it('applies held notes and scrolls to top when New posts is clicked', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'New posts' }));
+    await waitFor(() => {
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'New posts' })).toBeNull();
+    expect(scrollTo).toHaveBeenCalled();
+    scrollTo.mockRestore();
+  });
+
+  it('clears force-apply when New posts is clicked while a refresh is already running', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+
+    const pill = screen.getByRole('button', { name: 'New posts' });
+    fireEvent.click(pill);
+    fireEvent.click(pill);
+    await waitFor(() => {
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+  });
+
+  it('applies held notes when the visitor scrolls back to the top', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    act(() => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+  });
+
+  it('scrolls to top and force-applies on the forum home event', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    scrollTo.mockRestore();
+  });
+
+  it('polls the forum list on the visible-tab interval', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockResolvedValueOnce([FRESH, SAMPLE]);
+    await act(async () => {
+      vi.advanceTimersByTime(FORUM_LIST_POLL_MS);
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not poll while the document is hidden', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(FORUM_LIST_POLL_MS);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not double-fetch on first mount before any visibility event', async () => {

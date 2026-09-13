@@ -171,6 +171,52 @@ function modeProps(
 }
 
 describe('ForumBoard', () => {
+  it('mounts the New posts pill only while unseen posts are available', () => {
+    const onShowNewPosts = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText('New posts')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            newPostsAvailable
+            onShowNewPosts={onShowNewPosts}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const button = screen.getByRole('button', { name: 'New posts' });
+    expect(button.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    fireEvent.click(button);
+    expect(onShowNewPosts).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the heading, mode selector, attach/send icons, and composer', () => {
     renderWithLocale(
       <ForumBoard

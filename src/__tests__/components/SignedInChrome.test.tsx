@@ -9,16 +9,19 @@ import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { FORUM_HOME_EVENT } from '@/lib/forum-feed';
 
 const replace = vi.fn();
 const refresh = vi.fn();
 const cancel = vi.fn();
+const navigation = vi.hoisted(() => ({ pathname: '/profile' }));
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { replace: typeof replace; refresh: typeof refresh } => ({
     replace,
     refresh,
   }),
+  usePathname: (): string => navigation.pathname,
 }));
 vi.mock('next/link', () => ({
   default: ({
@@ -32,14 +35,7 @@ vi.mock('next/link', () => ({
     onClick?: (event: { preventDefault: () => void }) => void;
     [key: string]: unknown;
   }) => (
-    <a
-      href={href}
-      {...rest}
-      onClick={(event) => {
-        event.preventDefault();
-        onClick?.(event);
-      }}
-    >
+    <a href={href} {...rest} onClick={onClick}>
       {children}
     </a>
   ),
@@ -111,6 +107,7 @@ function expectMenuOpen(): void {
 }
 
 beforeEach(() => {
+  navigation.pathname = '/profile';
   replace.mockClear();
   refresh.mockClear();
   cancel.mockClear();
@@ -404,6 +401,32 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+    expectMenuClosed();
+  });
+
+  it('dispatches the forum home event instead of navigating when Home is already current', () => {
+    navigation.pathname = '/welcome';
+    const listener = vi.fn();
+    window.addEventListener(FORUM_HOME_EVENT, listener);
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    const clickCompleted = fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+
+    expect(clickCompleted).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expectMenuClosed();
+    window.removeEventListener(FORUM_HOME_EVENT, listener);
+  });
+
+  it('leaves Home navigation intact on another pathname and closes the menu', () => {
+    navigation.pathname = '/notifications';
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    const clickCompleted = fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+
+    expect(clickCompleted).toBe(true);
     expectMenuClosed();
   });
 

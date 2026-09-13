@@ -1,6 +1,17 @@
 'use client';
 
-import { ArrowLeft, Check, Gift, ImagePlus, Link2, Loader2, Mail, Send, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowUp,
+  Check,
+  Gift,
+  ImagePlus,
+  Link2,
+  Loader2,
+  Mail,
+  Send,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -86,6 +97,10 @@ export interface ForumBoardProps {
   refreshing?: boolean;
   /** Re-fetch the forum list. Omit to disable pull-to-refresh. */
   onRefresh?: () => void;
+  /** True when unseen notes exist and the page is scrolled down. Default false. */
+  newPostsAvailable?: boolean;
+  /** Apply unseen notes and scroll to top. Omit with `newPostsAvailable` falsy. */
+  onShowNewPosts?: () => void;
   /** True while a post is in flight. */
   posting: boolean;
   /** Composer draft text. */
@@ -242,6 +257,8 @@ function showForumPm(
  * photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
+ * When unseen notes are held for a scrolled visitor, a labeled New posts pill
+ * applies them without placing refresh chrome in the idle board.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
@@ -252,6 +269,8 @@ export function ForumBoard({
   loading,
   refreshing = false,
   onRefresh,
+  newPostsAvailable = false,
+  onShowNewPosts,
   posting,
   draft,
   onDraftChange,
@@ -996,6 +1015,20 @@ export function ForumBoard({
       ref={rootRef}
       className="flex w-full flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
     >
+      {newPostsAvailable ? (
+        <div className="pointer-events-none fixed left-1/2 top-14 z-30 -translate-x-1/2">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowNewPosts}
+          >
+            {t('forum.newPosts')}
+          </Button>
+        </div>
+      ) : null}
       {showRefreshStatus ? (
         <div
           role="status"
