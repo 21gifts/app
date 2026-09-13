@@ -233,7 +233,7 @@ const server = http.createServer(async (req, res) => {
   if (method === 'POST' && pathName === '/translate') {
     let parsed;
     try {
-      parsed = JSON.parse(await readBody(req));
+      parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, { error: 'Invalid body' });
       return;
