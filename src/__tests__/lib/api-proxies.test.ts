@@ -14,6 +14,7 @@ import {
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeLocationPost,
+  proxyMeAboutPut,
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
   proxyMeSetupSkipPost,
@@ -83,6 +84,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/location');
+  });
+
+  it('proxyMeAboutPut hits PUT /me/about', async () => {
+    const fetchMock = stubApi();
+    await proxyMeAboutPut(
+      new Request('http://localhost/me/about', { method: 'PUT', body: '{"text":"Hi"}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('PUT');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/about');
   });
 
   it('proxyMeSetupSkipPost hits POST /me/setup/skip', async () => {

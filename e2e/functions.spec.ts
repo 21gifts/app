@@ -272,6 +272,7 @@ async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis')
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -555,6 +556,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -614,6 +616,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -650,6 +653,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -814,6 +818,31 @@ test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) 
   const res = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { role: string }).role).toBe('basis');
+});
+
+test('Function: proxyMeAboutPut — PUT /me/about without bearer is 401', async ({ request }) => {
+  const res = await request.put('/me/about', { data: { text: 'Hi' } });
+  expect(res.status()).toBe(401);
+});
+
+test('Function: PUT — PUT /me/about without bearer is 401', async ({ request }) => {
+  const res = await request.put('/me/about', { data: { text: 'Hi' } });
+  expect(res.status()).toBe(401);
+});
+
+test('Function: putAboutMe — PUT /me/about without bearer is 401', async ({ request }) => {
+  const res = await request.put('/me/about', { data: { text: 'Hi' } });
+  expect(res.status()).toBe(401);
+});
+
+test('Function: AboutMeSection — signed-in profile shows the empty About me prompt', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await page.goto('/profile');
+  await expect(page.getByText('Tell others who you are.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write your About me' })).toBeVisible();
 });
 
 test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, request }) => {
@@ -1049,7 +1078,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
   );
 });
 
-test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay', async ({
+test('Function: MemberProfileScreen — public card shows About me, copy-profile-link, and Message', async ({
   page,
 }) => {
   const memberId = '22222222-2222-4222-8222-222222222222';
@@ -1073,6 +1102,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
         createdAt: 1_700_000_000,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: ['lightning-address'],
       }),
@@ -1089,6 +1119,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
         role: 'verified',
         lightningAddress: 'carol@walletofsatoshi.com',
         createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: 'Hello from Carol.',
         profileMessage: {
           id: noteId,
           accountId: memberId,
@@ -1106,6 +1137,109 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
       }),
     });
   });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('About me')).toBeVisible();
+  await expect(page.getByText('Hello from Carol.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show replies' })).toHaveCount(0);
+  await expect(page.getByLabel('Your reply')).toHaveCount(0);
+});
+
+test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay from the posts feed', async ({
+  page,
+}) => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  const noteId = '33333333-3333-4333-8333-333333333333';
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: ['lightning-address'],
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Carol',
+        role: 'verified',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: 'Hello from Carol.',
+        profileMessage: {
+          id: noteId,
+          accountId: memberId,
+          name: 'Carol',
+          text: 'Hello from my profile note.',
+          createdAt: '2026-08-01T10:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          role: 'verified',
+          replyCount: 0,
+        },
+        postCount: 1,
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
   await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -1115,6 +1249,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   });
   await page.goto(`/members/${memberId}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await page.getByRole('button', { name: '1 posts' }).click();
   await expect(page.getByText('Hello from my profile note.')).toBeVisible();
   await page.getByRole('button', { name: 'Show replies' }).click();
   await expect(page.getByLabel('Your reply')).toBeVisible();
@@ -1310,6 +1445,7 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'rules',
         missing: ['rules'],
       }),
@@ -1339,6 +1475,7 @@ test('Function: RulesDocument — onboarding first chapter is the lead', async (
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'rules',
         missing: ['rules'],
       }),
@@ -1373,6 +1510,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'rules',
         missing: ['rules'],
       }),
@@ -1404,6 +1542,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'rules',
         missing: ['rules'],
       }),
@@ -1770,6 +1909,7 @@ test('Function: NotificationsPage — notifications heading is visible', async (
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -1806,6 +1946,7 @@ test('Function: NotificationsLoader — empty notifications copy is visible', as
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -1842,6 +1983,7 @@ test('Function: NotificationsScreen — empty notifications copy is visible', as
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -1878,6 +2020,7 @@ test('Function: fetchNotifications — empty notifications copy is visible', asy
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -1924,6 +2067,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -1976,6 +2120,7 @@ test('Function: markAllNotificationsRead — list fetch POSTs read-all', async (
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -2024,6 +2169,7 @@ test('Function: MessagesPage — inbox heading is visible', async ({ page }) => 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -2060,6 +2206,7 @@ test('Function: InboxLoader — empty inbox copy is visible', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -2096,6 +2243,7 @@ test('Function: InboxScreen — empty inbox copy is visible', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -2132,6 +2280,7 @@ test('Function: fetchConversations — empty inbox copy is visible', async ({ pa
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -2168,6 +2317,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -2230,6 +2380,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -2292,6 +2443,7 @@ test('Function: openConversation — Send a private message is on other notes', 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3089,6 +3241,7 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'name',
         missing: ['name', 'lightning-address', 'rules'],
       }),
@@ -3118,6 +3271,7 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'name',
         missing: ['name', 'lightning-address', 'rules'],
       }),
@@ -3147,6 +3301,7 @@ test('Function: AddressSetupPage — address screen heading is visible', async (
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'lightning-address',
         missing: ['lightning-address', 'rules'],
       }),
@@ -3176,6 +3331,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'lightning-address',
         missing: ['lightning-address', 'rules'],
       }),
@@ -3209,6 +3365,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3245,6 +3402,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3281,6 +3439,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3317,6 +3476,7 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3346,6 +3506,7 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3379,6 +3540,7 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3408,6 +3570,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3446,6 +3609,7 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3702,6 +3866,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3753,6 +3918,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -3846,6 +4012,7 @@ test('Function: OnboardingGate — name and address without agreement go to rule
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'rules',
         missing: ['rules'],
       }),
@@ -3893,6 +4060,7 @@ test('Function: hasLightningAddress — named account without address stays on a
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'lightning-address',
         missing: ['lightning-address', 'rules'],
       }),
@@ -4064,6 +4232,7 @@ test('Function: AppShellTopLeft — rules setup shows the wordmark', async ({ pa
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'rules',
         missing: ['rules'],
       }),
@@ -4109,6 +4278,7 @@ test('Function: AppShellHeader — name screen heading is visible', async ({ pag
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'name',
         missing: ['name', 'lightning-address', 'rules'],
       }),
@@ -4138,6 +4308,7 @@ test('Function: AppShellFooter — name screen Continue is visible', async ({ pa
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'name',
         missing: ['name', 'lightning-address', 'rules'],
       }),
@@ -4296,6 +4467,7 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
+        aboutMe: null,
       }),
     });
   });
@@ -4331,6 +4503,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
+        aboutMe: null,
       }),
     });
   });
@@ -4361,6 +4534,7 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
+        aboutMe: null,
       }),
     });
   });
@@ -4385,6 +4559,7 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
+        aboutMe: null,
       }),
     });
   });

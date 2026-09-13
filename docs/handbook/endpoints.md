@@ -84,6 +84,13 @@
 - **Used by:** `setLocation` / `LocationForm`.
 - **Auth:** Bearer.
 
+## Endpoint: PUT /me/about
+
+- **Purpose:** Same-origin proxy of api `PUT /me/about` (set or replace the signed-in About me note).
+- **Errors:** Upstream 400/401/409, or 502 if the api is unreachable.
+- **Used by:** `putAboutMe`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/setup/skip
 
 - **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).

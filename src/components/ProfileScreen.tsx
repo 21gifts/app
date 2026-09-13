@@ -1,6 +1,8 @@
 'use client';
 
-import { type ReactElement } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, type ReactElement } from 'react';
+import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { LocationForm } from '@/components/LocationForm';
@@ -11,10 +13,13 @@ import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
+import { putAboutMe } from '@/lib/api';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Signed-in profile card with compact activity chart, name, location, and
- * address forms, PushToggle, ThemeSwitcher, and NumberFormatSwitcher.
+ * Signed-in profile card with compact activity chart, About me, name, location,
+ * and address forms, PushToggle, ThemeSwitcher, and NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Menu totals stay in `SignedInChrome`.
  *
@@ -22,7 +27,16 @@ import { useAccountTotals } from '@/hooks/useAccountTotals';
  */
 export function ProfileScreen(): ReactElement {
   const { t } = useTranslations();
+  const router = useRouter();
   const { receiveOverTime, donateOverTime } = useAccountTotals();
+  const account = useAuthStore((state) => state.account);
+  const session = useAuthStore((state) => state.session);
+  const setAccount = useAuthStore((state) => state.setAccount);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   return (
     <Card>
@@ -30,6 +44,33 @@ export function ProfileScreen(): ReactElement {
         {t('profile.title')}
       </h1>
       <AccountActivityChart received={receiveOverTime} donated={donateOverTime} />
+      {account !== null && session !== null ? (
+        <AboutMeSection
+          mode="owner"
+          aboutMe={account.aboutMe}
+          name={account.name}
+          {...(origin !== '' ? { profileUrl: `${origin}/view/${account.viewKey}` } : {})}
+          onSave={async (text) => {
+            try {
+              const updated = await putAboutMe(session, text);
+              if (useAuthStore.getState().session !== session) {
+                return;
+              }
+              const current = useAuthStore.getState().account;
+              if (current === null) {
+                return;
+              }
+              setAccount({ ...current, aboutMe: updated.aboutMe });
+            } catch (err) {
+              if (err instanceof MissingRequirementsError) {
+                router.replace('/setup/rules');
+                return;
+              }
+              throw err;
+            }
+          }}
+        />
+      ) : null}
       <NameForm variant="profile" />
       <LocationForm />
       <LightningAddressForm variant="profile" />

@@ -19,6 +19,8 @@ export const accountSchema = z.object({
   /** Epoch ms of the first living-room rules agreement, or `null` if not yet agreed. */
   rulesAgreedAt: z.number().nullable(),
   viewKey: z.string().regex(/^[0-9a-f]{64}$/),
+  /** About me note, or `null` when unfilled (name-only auto notes). */
+  aboutMe: z.string().nullable(),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
   setup: z.enum(['name', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
@@ -50,6 +52,8 @@ export const accountSchema = z.object({
  * lowercase hex capability key for the public read-only profile URL
  * `/view/<viewKey>` (owner `/me` only; never shown on the public view payload;
  * never rendered as visible text in the signed-in profile UI).
+ * `aboutMe` is the profile card note, or `null` until the giver writes one
+ * (name-only auto notes from the api are `null`).
  * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
  * or `null` when onboarding is complete (including after skips). `missing` lists
  * fields still unset for posting; skipped steps stay listed until filled.
@@ -72,6 +76,8 @@ export const viewProfileSchema = z.object({
   lightningAddressVerified: z.boolean(),
   createdAt: z.number(),
   hasPasskey: z.boolean(),
+  /** About me note, or `null` when unfilled. */
+  aboutMe: z.string().nullable(),
 });
 
 /**
@@ -506,6 +512,8 @@ export const memberProfileSchema = z.object({
   profileMessage: forumMessageSchema.nullable(),
   postCount: z.number().int().nonnegative(),
   replyCount: z.number().int().nonnegative(),
+  /** About me note, or `null` when unfilled. */
+  aboutMe: z.string().nullable(),
 });
 
 /**

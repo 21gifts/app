@@ -26,6 +26,7 @@ const baseAccount: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: 'lightning-address',
   missing: ['lightning-address', 'rules'],
 };

@@ -177,6 +177,45 @@ export async function setLocation(sessionToken: string, location: string): Promi
 }
 
 /**
+ * Sets or replaces the account About me note.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param text - The About me text as typed.
+ * @returns The updated {@link Account}.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error `'Could not save. Please try again.'` on any other non-2xx
+ * status, a 409 body that is not `missing_requirements`, or when the body
+ * fails {@link accountSchema} validation.
+ */
+export async function putAboutMe(sessionToken: string, text: string): Promise<Account> {
+  const response = await fetch('/me/about', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not save. Please try again.');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not save. Please try again.');
+  }
+  if (!response.ok) {
+    throw new Error('Could not save. Please try again.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Fetches the account behind a session token.
  *
  * @param sessionToken - A bearer token from a completed challenge.

@@ -43,7 +43,7 @@ function json(res, status, body) {
     'content-type': 'application/json',
     'access-control-allow-origin': '*',
     'access-control-allow-headers': 'authorization, content-type, user-agent',
-    'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   });
   res.end(payload);
 }
@@ -133,6 +133,7 @@ function newAccount(linkingKey) {
     createdAt: Date.now(),
     rulesAgreedAt: null,
     viewKey: hex(randomBytes(32)),
+    aboutMe: null,
     setup: 'name',
     missing: ['name', 'lightning-address', 'rules'],
   };
@@ -148,6 +149,7 @@ const E2E_MEMBER_PROFILE = {
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
+  aboutMe: null,
   profileMessage: {
     id: '33333333-3333-4333-8333-333333333333',
     accountId: E2E_MEMBER_ID,
@@ -230,7 +232,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'access-control-allow-origin': '*',
       'access-control-allow-headers': 'authorization, content-type, user-agent',
-      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     });
     res.end();
     return;
@@ -296,7 +298,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'access-control-allow-origin': '*',
       'access-control-allow-headers': 'authorization, content-type, user-agent',
-      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     });
     res.end();
     return;
@@ -647,7 +649,7 @@ const server = http.createServer(async (req, res) => {
       'content-type': 'image/jpeg',
       'access-control-allow-origin': '*',
       'access-control-allow-headers': 'authorization, content-type, user-agent',
-      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     });
     res.end(bytes);
     return;
@@ -849,6 +851,7 @@ const server = http.createServer(async (req, res) => {
         role: account.role,
         lightningAddress: account.lightningAddress,
         createdAt: new Date(account.createdAt).toISOString(),
+        aboutMe: account.aboutMe ?? null,
         profileMessage: null,
         postCount: 0,
         replyCount: 0,
@@ -930,7 +933,32 @@ const server = http.createServer(async (req, res) => {
       lightningAddressVerified: found.lightningAddressVerified,
       createdAt: found.createdAt,
       hasPasskey,
+      aboutMe: found.aboutMe ?? null,
     });
+    return;
+  }
+
+  if (method === 'PUT' && pathName === '/me/about') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
+    if (typeof parsed?.text !== 'string') {
+      json(res, 400, { error: 'Expected a JSON body with a "text" string' });
+      return;
+    }
+    const trimmed = parsed.text.trim();
+    account.aboutMe = trimmed === '' ? null : trimmed;
+    json(res, 200, account);
     return;
   }
 

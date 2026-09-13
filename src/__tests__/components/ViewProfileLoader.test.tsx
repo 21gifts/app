@@ -22,6 +22,7 @@ const profile: ViewProfile = {
   lightningAddressVerified: false,
   createdAt: 1,
   hasPasskey: false,
+  aboutMe: null,
 };
 
 const EMPTY_ACTIVITY: AccountActivity = {

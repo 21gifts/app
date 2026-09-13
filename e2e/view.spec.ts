@@ -10,6 +10,7 @@ const VIEW_PROFILE = {
   lightningAddressVerified: false,
   createdAt: 1,
   hasPasskey: false,
+  aboutMe: null,
 };
 
 const EMPTY_ACTIVITY = {
@@ -100,6 +101,7 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'c'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -223,6 +225,7 @@ test('signed-in profile does not show the copy control or the view-key URL', asy
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: KEY,
+        aboutMe: null,
         setup: null,
         missing: [],
       }),

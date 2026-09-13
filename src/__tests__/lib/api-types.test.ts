@@ -34,6 +34,7 @@ const account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: 'name' as const,
   missing: ['name', 'lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
@@ -47,6 +48,7 @@ describe('memberProfileSchema', () => {
       role: 'verified' as const,
       lightningAddress: 'carol@walletofsatoshi.com',
       createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
       profileMessage: null,
       postCount: 0,
       replyCount: 0,
@@ -78,6 +80,7 @@ describe('memberProfileSchema', () => {
         role: 'basis',
         lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
         profileMessage: null,
         postCount: 0,
         replyCount: 0,
@@ -435,6 +438,7 @@ describe('viewProfileSchema', () => {
     lightningAddressVerified: false,
     createdAt: 1_700_000_000,
     hasPasskey: false,
+    aboutMe: null,
   };
 
   it('accepts a well-formed named profile', () => {

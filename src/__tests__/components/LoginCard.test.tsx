@@ -99,6 +99,7 @@ describe('LoginCard', () => {
         createdAt: 1,
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       },

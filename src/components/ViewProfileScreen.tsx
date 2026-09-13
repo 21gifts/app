@@ -1,28 +1,38 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
+import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import type { GiftStats, ViewProfile } from '@/lib/api-types';
 
 /**
  * Public read-only identity card matching signed-in profile chrome without
- * actions; chart never replaced by `forum.loading`.
+ * edit or message actions; chart never replaced by `forum.loading`.
  *
- * @param props - Public profile and both activity series for the chart.
+ * @param props - Public profile, view key, and both activity series for the chart.
  * @returns The presentational card.
  */
 export function ViewProfileScreen({
   profile,
+  viewKey,
   received,
   donated,
 }: {
   profile: ViewProfile;
+  viewKey: string;
   received: GiftStats['spendOverTime'];
   donated: GiftStats['spendOverTime'];
 }): ReactElement {
   const { t } = useTranslations();
   const address = profile.lightningAddress;
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const profileUrl = origin !== '' ? `${origin}/view/${viewKey}` : '';
 
   return (
     <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
@@ -30,6 +40,12 @@ export function ViewProfileScreen({
         {t('profile.title')}
       </h1>
       <AccountActivityChart received={received} donated={donated} />
+      <AboutMeSection
+        mode="public"
+        aboutMe={profile.aboutMe}
+        name={profile.name}
+        {...(profileUrl !== '' ? { profileUrl } : {})}
+      />
       <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
         <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
           {t('name.heading')}
