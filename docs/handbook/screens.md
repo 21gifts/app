@@ -691,9 +691,9 @@ Open official thread. Heading **21.gifts**, origin **Contact** under the heading
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in forum-reply notifications. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right (Home first, **Notifications** then **Messages**). Heading **Notifications**, a list of forum replies (actor `{name} replied to your post`, reply text or **Photo reply**, time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer.
-- **Actions:** Click a row to open the public forum note `/messages/{parentId}` (mark that notification read). Back to the forum. Open **Menu** (Home first; Notifications then Messages).
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchNotifications`, `markNotificationRead`, `markAllNotificationsRead`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right (Home first, **Notifications** then **Messages**). Heading **Notifications**, a list of forum replies (actor `{name} replied to your post`, reply text or **Photo reply**, time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Actions:** Click a row to open the public forum note `/messages/{parentId}` (mark that notification read). Back to the forum. Open **Menu** (Home first; Notifications then Messages). Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchNotifications`, `markNotificationRead`, `markAllNotificationsRead`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
