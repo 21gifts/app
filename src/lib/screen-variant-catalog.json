@@ -378,6 +378,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:overlay-introduce",
+    "label": "/welcome overlay-introduce",
+    "visual": "state-welcome-overlay-introduce",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/rules:default",
     "label": "/rules default",
     "visual": "screen-rules",

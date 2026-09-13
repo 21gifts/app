@@ -2227,6 +2227,36 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-overlay-address');
   });
+
+  test('welcome overlay-introduce', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+          hasPosted: false,
+        }),
+      });
+    });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Write an introduction' })).toHaveAttribute(
+      'href',
+      '/welcome',
+    );
+    await shotScreen(page, 'state-welcome-overlay-introduce');
+  });
 });
 
 test.describe('contact screens', () => {
