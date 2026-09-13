@@ -56,6 +56,7 @@ describe('LocationForm', () => {
     expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Not set')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Edit location' })).toBeTruthy();
+    expect(screen.queryByText('Edit location')).toBeNull();
     expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
   });
@@ -82,6 +83,8 @@ describe('LocationForm', () => {
     expect(input.getAttribute('aria-label')).toBe('Location');
 
     fireEvent.change(input, { target: { value: 'Zug' } });
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+    expect(screen.queryByText('Save')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Zug')).toBeTruthy();
@@ -125,6 +128,8 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     expect(screen.getByText('Zug')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Clear location' })).toBeTruthy();
+    expect(screen.queryByText('Clear location')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Clear location' }));
 
     expect(await screen.findByText('Not set')).toBeTruthy();
@@ -154,6 +159,8 @@ describe('LocationForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
     expect(screen.getByPlaceholderText('City, country, or anywhere')).toBeTruthy();
 
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
     expect(screen.getByText('Zug')).toBeTruthy();
