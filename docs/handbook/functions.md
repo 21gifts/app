@@ -315,7 +315,7 @@
 ## Function: ProfileScreen
 
 - **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), and a number-format settings row (`NumberFormatSwitcher`). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; `AccountActivityChart`; catalog via `useTranslations`.
+- **Inputs:** `useAccountTotals` for `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
 - **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
@@ -433,7 +433,7 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Always renders FiatPicker (`tone="gift"` via picker, `shell="app"`, aria `profile.fiatCurrency`). Empty/all-zero sats: picker + `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: picker + legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Own `useState<FiatCode>` from `defaultFiatForLocale(locale)` (mount-time). Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. v1 Given defaults to zeros on the received days.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Always renders FiatPicker (`tone="gift"` via picker, `shell="app"`, aria `profile.fiatCurrency`). Empty/all-zero sats: picker + `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: picker + legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Given is the live donated series when the caller passes it. Own `useState<FiatCode>` from `defaultFiatForLocale(locale)` (mount-time). Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
 - **Returns / side effects:** Always FiatPicker. When the series is empty or all zeros: picker + `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise picker, one chrome row (legend left, ₿ | selected FiatCode right), and SVG. Client state for fiat and scale. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`, `MemberProfileScreen`.
@@ -590,15 +590,15 @@
 
 ## Function: ViewProfileLoader
 
-- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then (if address set) filtered gift stats for `spendOverTime`. Does not use `useAuthStore`.
+- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then Given + Received via `fetchViewActivity`. Does not use `useAuthStore`. Does not call `fetchGiftStats`.
 - **Inputs:** `viewKey` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey` and `hasPasskey` from the fetched profile). Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey` and `hasPasskey` from the fetched profile). Malformed keys (not 64 lowercase hex) → missing without an api call. After identity, `fetchViewActivity(viewKey)` even when the address is blank. Activity failure → both series `[]`, keep the card. Identity errors unchanged. Chart never swapped for `forum.loading`.
 - **Used by:** `ViewProfilePage`.
 
 ## Function: ViewProfileScreen
 
 - **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without action buttons. Unset location shows `location.unset`.
-- **Inputs:** `{ profile, received }` (`GiftStats['spendOverTime']`).
+- **Inputs:** `{ profile, received, donated }` — both series required arrays, never `undefined`.
 - **Returns / side effects:** No menu, logout, back, or edit forms. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
 
@@ -616,6 +616,13 @@
 - **Returns / side effects:** Validated `ViewProfile`, or `null` on 404. Throws on other non-2xx or a body that fails `viewProfileSchema`. Hits `/view-key/${encodeURIComponent(viewKey)}`.
 - **Used by:** `ViewProfileLoader`.
 
+## Function: fetchViewActivity
+
+- **Purpose:** GET same-origin `/view-key/:viewKey/activity` with no auth and parse Given + Received for a public capability URL.
+- **Inputs:** `viewKey` (64 lowercase hex).
+- **Returns / side effects:** Validated `AccountActivity`. 404 and any other failure throw the gift-stats visitor copy. Hits `/view-key/${encodeURIComponent(viewKey)}/activity`.
+- **Used by:** `ViewProfileLoader` (activity failure keeps the card and empties both series).
+
 ## Function: proxyViewGet
 
 - **Purpose:** Same-origin proxy of api `GET /view/:viewKey` (public; no auth).
@@ -623,12 +630,19 @@
 - **Returns / side effects:** Proxied upstream `Response` for `/view/${encodeURIComponent(viewKey)}`.
 - **Used by:** App Router `GET` on `/view-key/[viewKey]`.
 
+## Function: proxyViewActivityGet
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/activity` (no auth).
+- **Inputs:** Incoming `Request` and `viewKey` path segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest` to `/view/${encodeURIComponent(viewKey)}/activity`.
+- **Used by:** App Router `GET` on `/view-key/[viewKey]/activity`.
+
 ## Function: accountTotals
 
-- **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
+- **Purpose:** Marketing `/gifts/stats` helper: derives given/received sat totals from public gift stats. Given stays `0` on that path.
 - **Inputs:** `GiftStats` and the Lightning Address (or null).
-- **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
-- **Used by:** `useAccountTotals`.
+- **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0`; received matches the address handle against `byRecipient` case-insensitively.
+- **Used by:** Unit tests of the marketing stats path, not live profile loaders.
 
 ## Function: alignActivitySeries
 
@@ -656,13 +670,13 @@
 - **Purpose:** Local-part of a Lightning Address (before the first `@`).
 - **Inputs:** Full address or bare handle string.
 - **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
-- **Used by:** `accountTotals`, `useAccountTotals`, `ViewProfileLoader`.
+- **Used by:** `accountTotals`.
 
 ## Function: useAccountTotals
 
-- **Purpose:** Fetches gift stats filtered by the signed-in Lightning Address handle and derives given/received sats plus the receive time series.
-- **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats(handle)` and `accountTotals`. Skips the fetch when the address is null/blank.
-- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. On each fetch start (including address change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
+- **Purpose:** Loads signed-in Given + Received totals and both cumulative series from `GET /me/activity`. Does not call `fetchGiftStats`.
+- **Inputs:** Session from `useAuthStore`. Calls `fetchAccountActivity(session)` even when Lightning Address is blank. No session → zeros, empty series, `loading: false` (no fetch).
+- **Returns / side effects:** `{ donatedSats, receivedSats, donateOverTime, receiveOverTime, loading }`. Errors resolve to zeros and empty series. Cancels in-flight work when the session changes.
 - **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
@@ -791,12 +805,19 @@
 - **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200; reply messages are not payable and may include `parentId`. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
 - **Used by:** `MemberProfileScreen`.
 
+## Function: fetchMemberActivity
+
+- **Purpose:** GET same-origin `/forum/members/:accountId/activity` with the Bearer session and parse Given + Received for that member.
+- **Inputs:** `sessionToken` and `accountId`.
+- **Returns / side effects:** Validated `AccountActivity`. 409 `missing_requirements` throws `MissingRequirementsError` via `parseMissingRequirements`. 401/404 and other failures throw the gift-stats visitor copy. Hits `/forum/members/${encodeURIComponent(accountId)}/activity`.
+- **Used by:** `MemberProfileLoader` (activity failure keeps the profile card and empties both series).
+
 ## Function: parseMissingRequirements
 
 - **Purpose:** Parses a 409 `{ error: 'missing_requirements', missing: [...] }` body.
 - **Inputs:** Unknown JSON body.
 - **Returns / side effects:** `MissingRequirementsError` or `null`.
-- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`, `fetchMemberPosts`, `fetchMemberReplies`.
+- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`, `fetchMemberPosts`, `fetchMemberReplies`, `fetchMemberActivity`.
 
 ## Function: MissingRequirementsError
 
@@ -835,15 +856,15 @@
 
 ## Function: MemberProfileLoader
 
-- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, and optional gift stats for the chart. It does not prefetch activity feeds; `postCount` and `replyCount` arrive with the profile JSON.
+- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, then Given + Received via `fetchMemberActivity`. It does not prefetch activity feeds; `postCount` and `replyCount` arrive with the profile JSON. Does not call `fetchGiftStats`.
 - **Inputs:** Route `accountId`; session from auth store.
-- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`.
+- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`. After identity, `fetchMemberActivity(session, accountId)` even when Lightning Address is blank. Activity failure → both series `[]`, keep the profile.
 - **Used by:** `MemberProfilePage`.
 
 ## Function: MemberProfileScreen
 
 - **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, or founder may `POST /messages` unpaid; everyone else (including `verified`) invoices ≥ 1 sat with optional text. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
-- **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
+- **Inputs:** `MemberProfile` plus `received` and `donated` series; session/account from the auth store.
 - **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
 
@@ -882,6 +903,13 @@
 - **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}/replies`.
 - **Used by:** `/forum/members/[accountId]/replies` route.
 
+## Function: proxyMembersActivityGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /members/:accountId/activity`.
+- **Inputs:** Incoming `Request` and `accountId` path segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest` to `/members/${encodeURIComponent(accountId)}/activity`.
+- **Used by:** App Router `GET` on `/forum/members/[accountId]/activity`.
+
 ## Function: useHydrateSession
 
 - **Purpose:** Rehydrates a persisted session token into the auth store.
@@ -915,7 +943,14 @@
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
 - **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`, `useAccountTotals`, `ViewProfileLoader`.
+- **Used by:** `StatsLoader`.
+
+## Function: fetchAccountActivity
+
+- **Purpose:** GET same-origin `/me/activity` with the Bearer session and parse Given + Received totals plus both cumulative series (house gifts and forum zaps).
+- **Inputs:** `sessionToken` string from a completed challenge.
+- **Returns / side effects:** Validated `AccountActivity`. Throws visitor copy `Could not load gift stats. Please try again.` on non-2xx, network failure, or a body that fails `accountActivitySchema`.
+- **Used by:** `useAccountTotals`.
 
 ## Function: fetchMe
 
@@ -1422,6 +1457,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `Request` with Bearer token.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route GET `/me`.
+
+## Function: proxyMeActivityGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /me/activity` (Given + Received, house gifts + forum zaps).
+- **Inputs:** Incoming `Request` with Bearer session. No query string required.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest` to `/me/activity`.
+- **Used by:** App Router `GET` on `/me/activity`.
 
 ## Function: proxyMessagesGet
 

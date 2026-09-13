@@ -23,13 +23,16 @@ export function recipientHandleFromAddress(address: string): string {
 /**
  * Derives given/received sat totals for a profile address from public gift stats.
  *
- * Given is always `0` in v1 (payments are not attributed to the signed-in account). Received
- * is the first `byRecipient` row whose `recipient` matches the address handle
- * case-insensitively.
+ * Used by unit tests of the marketing `/gifts/stats` path. Live profile, member,
+ * and view loaders read Given + Received from `GET /me/activity` (and the
+ * matching member/view activity endpoints) instead of this helper — Given is
+ * no longer always 0 on those surfaces. Received here is the first
+ * `byRecipient` row whose `recipient` matches the address handle
+ * case-insensitively; Given stays `0` because public stats are outbound-only.
  *
  * @param stats - Public `GET /gifts/stats` payload.
  * @param lightningAddress - Current account Lightning Address, or null.
- * @returns Sat totals (`donatedSats` always 0).
+ * @returns Sat totals (`donatedSats` always 0 on this marketing-stats path).
  */
 export function accountTotals(stats: GiftStats, lightningAddress: string | null): AccountTotals {
   if (lightningAddress === null || lightningAddress.trim() === '') {

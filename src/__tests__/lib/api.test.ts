@@ -7,10 +7,12 @@ import {
   fetchConversation,
   fetchConversations,
   fetchNotifications,
+  fetchAccountActivity,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
   fetchMember,
+  fetchMemberActivity,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -19,6 +21,7 @@ import {
   fetchPublicMessagePhoto,
   fetchReplies,
   fetchVapidPublicKey,
+  fetchViewActivity,
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
@@ -833,6 +836,188 @@ describe('fetchGiftStats', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+});
+
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [] as const,
+  receivedOverTime: [] as const,
+  fx: {
+    quote: 'BTC-USD' as const,
+    dayBasis: 'utc' as const,
+    source: 'coinbase-exchange-daily-close' as const,
+    quotes: [{ code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};
+
+const ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 10,
+  donatedOverTime: [] as typeof EMPTY_ACTIVITY.donatedOverTime,
+  receivedOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 10,
+      cumulativeSats: 10,
+      btc: '0.00000010',
+      cumulativeBtc: '0.00000010',
+      usd: '0.01',
+      cumulativeUsd: '0.01',
+      chf: '0.01',
+      eur: '0.01',
+      php: '0.50',
+      cumulativeChf: '0.01',
+      cumulativeEur: '0.01',
+      cumulativePhp: '0.50',
+    },
+  ],
+  fx: EMPTY_ACTIVITY.fx,
+};
+
+describe('fetchAccountActivity', () => {
+  it('returns the validated payload and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: ACTIVITY });
+    await expect(fetchAccountActivity('sess')).resolves.toEqual(ACTIVITY);
+    expect(fetchMock).toHaveBeenCalledWith('/me/activity', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchAccountActivity('sess')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchAccountActivity('sess')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchAccountActivity('sess')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { donatedSats: 0 } });
+    await expect(fetchAccountActivity('sess')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberActivity', () => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+
+  it('returns the validated payload and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: ACTIVITY });
+    await expect(fetchMemberActivity('sess', memberId)).resolves.toEqual(ACTIVITY);
+    expect(fetchMock).toHaveBeenCalledWith(`/forum/members/${encodeURIComponent(memberId)}/activity`, {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on 401 and 404', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { donatedSats: 0 } });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+});
+
+describe('fetchViewActivity', () => {
+  const viewKey = 'a'.repeat(64);
+
+  it('returns the validated payload and hits the same-origin proxy path', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: ACTIVITY });
+    await expect(fetchViewActivity(viewKey)).resolves.toEqual(ACTIVITY);
+    expect(fetchMock).toHaveBeenCalledWith(`/view-key/${encodeURIComponent(viewKey)}/activity`);
+  });
+
+  it('throws visitor copy on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { donatedSats: 0 } });
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
   });
 });
 

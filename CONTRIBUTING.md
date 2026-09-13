@@ -60,6 +60,7 @@ app/
 │   │   │   └── rules/page.tsx   # GET /setup/rules — agree to living-room rules
 │   │   ├── me/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
+│   │   │   ├── activity/route.ts  # GET /me/activity
 │   │   │   ├── name/route.ts    # POST /me/name
 │   │   │   ├── location/route.ts # POST /me/location
 │   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
@@ -98,7 +99,9 @@ app/
 │   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy
 │   │   │   │   └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
 │   │   │   └── members/
-│   │   │       └── [accountId]/route.ts  # GET /forum/members/:id → api GET /members/:id
+│   │   │       └── [accountId]/
+│   │   │           ├── route.ts  # GET /forum/members/:id → api GET /members/:id
+│   │   │           └── activity/route.ts  # GET /forum/members/:id/activity
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -112,7 +115,9 @@ app/
 
 │   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
 │   │   ├── view-key/
-│   │   │   └── [viewKey]/route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
+│   │   │   └── [viewKey]/
+│   │   │       ├── route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
+│   │   │       └── activity/route.ts  # GET /view-key/:viewKey/activity
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe

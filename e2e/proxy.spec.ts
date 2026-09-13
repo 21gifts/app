@@ -33,6 +33,11 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.delete('/me/lightning-address')).status()).toBe(401);
   expect((await request.get('/lightning-address')).status()).toBe(400);
   expect((await request.get('/gifts/stats')).status()).toBe(200);
+  expect((await request.get('/me/activity')).status()).toBe(401);
+  expect((await request.get('/forum/members/[accountId]/activity')).status()).toBeGreaterThanOrEqual(
+    400,
+  );
+  expect((await request.get('/view-key/[viewKey]/activity')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/gifts')).status()).toBe(400);
   expect((await request.post('/auth/passkey/register/begin')).status()).toBe(200);
   expect((await request.post('/auth/passkey/register/finish')).status()).toBe(400);

@@ -2,30 +2,23 @@ import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-import type { GiftStats } from '@/lib/api-types';
+import type { AccountActivity } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
-  fetchGiftStats: vi.fn(),
+  fetchAccountActivity: vi.fn(),
 }));
 
-import { fetchGiftStats } from '@/lib/api';
+import { fetchAccountActivity } from '@/lib/api';
 
-const fetchMock = vi.mocked(fetchGiftStats);
+const fetchMock = vi.mocked(fetchAccountActivity);
 
-const STATS: GiftStats = {
-  totalSats: 1000,
-  totalBtc: '0.00001000',
-  totalUsd: '0.95',
-  totalChf: '0.80',
-  totalEur: '0.86',
-  totalPhp: '53.00',
-  giftCount: 2,
-  recipientCount: 1,
-  firstPaidAt: null,
-  lastPaidAt: null,
-  spendOverTime: [
+const ACTIVITY: AccountActivity = {
+  donatedSats: 0,
+  receivedSats: 1000,
+  donatedOverTime: [],
+  receivedOverTime: [
     {
       day: '2026-06-01',
       sats: 1000,
@@ -42,19 +35,6 @@ const STATS: GiftStats = {
       cumulativePhp: '53.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1000,
-      btc: '0.00001000',
-      usd: '0.95',
-      chf: '0.80',
-      eur: '0.86',
-      php: '53.00',
-    },
-  ],
-  byMonth: [],
   fx: {
     quote: 'BTC-USD',
     dayBasis: 'utc',
@@ -70,10 +50,12 @@ const STATS: GiftStats = {
 
 /** Mounts {@link useAccountTotals} for assertions. */
 function Probe(): ReactElement {
-  const { donatedSats, receivedSats, receiveOverTime, loading } = useAccountTotals();
+  const { donatedSats, receivedSats, donateOverTime, receiveOverTime, loading } =
+    useAccountTotals();
   return (
     <p>
-      {loading ? 'loading' : 'ready'}:{donatedSats}:{receivedSats}:{receiveOverTime.length}
+      {loading ? 'loading' : 'ready'}:{donatedSats}:{receivedSats}:{receiveOverTime.length}:
+      {donateOverTime.length}
     </p>
   );
 }
@@ -105,18 +87,18 @@ afterEach(() => {
 });
 
 describe('useAccountTotals', () => {
-  it('treats a missing account as a null address and does not fetch', async () => {
-    fetchMock.mockResolvedValue(STATS);
+  it('does not fetch when there is no session', async () => {
+    fetchMock.mockResolvedValue(ACTIVITY);
     useAuthStore.setState({ session: null, account: null });
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:0:0:0')).toBeTruthy();
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('skips the fetch when the address is blank', async () => {
-    fetchMock.mockResolvedValue(STATS);
+  it('fetches activity when the Lightning Address is blank', async () => {
+    fetchMock.mockResolvedValue(ACTIVITY);
     useAuthStore.setState({
       session: 'tok',
       account: {
@@ -137,52 +119,39 @@ describe('useAccountTotals', () => {
     });
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:1000:1:0')).toBeTruthy();
     });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 
-  it('fetches filtered stats with the alice handle and plumbs receiveOverTime', async () => {
-    fetchMock.mockResolvedValue(STATS);
-    renderWithLocale(<Probe />);
-    await waitFor(() => {
-      expect(screen.getByText('ready:0:1000:1')).toBeTruthy();
-    });
-    expect(fetchMock).toHaveBeenCalledWith('alice');
-  });
-
-  it('trims surrounding whitespace on the store address before fetch and totals', async () => {
-    fetchMock.mockResolvedValue(STATS);
-    useAuthStore.setState({
-      session: 'tok',
-      account: {
-        id: 'acc_1',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: ' Alice@walletofsatoshi.com ',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        setup: null,
-        missing: [],
-      },
+  it('fetches /me/activity with the session and plumbs both series', async () => {
+    fetchMock.mockResolvedValue({
+      ...ACTIVITY,
+      donatedSats: 200,
+      donatedOverTime: [
+        {
+          day: '2026-06-02',
+          sats: 200,
+          cumulativeSats: 200,
+          btc: '0.00000200',
+          cumulativeBtc: '0.00000200',
+          usd: '0.19',
+          cumulativeUsd: '0.19',
+        },
+      ],
     });
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:1000:1')).toBeTruthy();
+      expect(screen.getByText('ready:200:1000:1:1')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledWith('Alice');
+    expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 
-  it('maps the alice byRecipient row on success', async () => {
-    fetchMock.mockResolvedValue(STATS);
+  it('maps donatedSats and receivedSats from the activity payload', async () => {
+    fetchMock.mockResolvedValue(ACTIVITY);
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:1000:1')).toBeTruthy();
+      expect(screen.getByText('ready:0:1000:1:0')).toBeTruthy();
     });
   });
 
@@ -190,30 +159,30 @@ describe('useAccountTotals', () => {
     fetchMock.mockRejectedValue(new Error('Could not load gift stats. Please try again.'));
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:0:0:0')).toBeTruthy();
     });
   });
 
   it('reports loading while the fetch is in flight', async () => {
-    let resolve!: (value: GiftStats) => void;
+    let resolve!: (value: AccountActivity) => void;
     fetchMock.mockReturnValue(
       new Promise((r) => {
         resolve = r;
       }),
     );
     renderWithLocale(<Probe />);
-    expect(screen.getByText('loading:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
     await act(async () => {
-      resolve(STATS);
+      resolve(ACTIVITY);
     });
     await waitFor(() => {
-      expect(screen.getByText('ready:0:1000:1')).toBeTruthy();
+      expect(screen.getByText('ready:0:1000:1:0')).toBeTruthy();
     });
   });
 
-  it('clears totals and series when switching address after a loaded result', async () => {
-    fetchMock.mockResolvedValueOnce(STATS);
-    let resolveBob!: (value: GiftStats) => void;
+  it('clears totals and series when switching session after a loaded result', async () => {
+    fetchMock.mockResolvedValueOnce(ACTIVITY);
+    let resolveBob!: (value: AccountActivity) => void;
     fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -223,58 +192,31 @@ describe('useAccountTotals', () => {
 
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:1000:1')).toBeTruthy();
+      expect(screen.getByText('ready:0:1000:1:0')).toBeTruthy();
     });
 
     await act(async () => {
-      useAuthStore.setState({
-        session: 'tok',
-        account: {
-          id: 'acc_1',
-          linkingKey: null,
-          role: 'basis',
-          name: 'Ada',
-          location: null,
-          lightningAddress: 'bob@walletofsatoshi.com',
-          lightningAddressVerified: false,
-          forumLawsDismissed: false,
-          createdAt: 1,
-          rulesAgreedAt: null,
-          viewKey: 'a'.repeat(64),
-          setup: null,
-          missing: [],
-        },
-      });
+      useAuthStore.setState({ session: 'tok-bob' });
     });
 
-    expect(screen.getByText('loading:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
 
     await act(async () => {
       resolveBob({
-        ...STATS,
-        spendOverTime: [],
-        byRecipient: [
-          {
-            recipient: 'bob',
-            giftCount: 1,
-            sats: 500,
-            btc: '0.00000500',
-            usd: '0.48',
-            chf: '0.40',
-            eur: '0.44',
-            php: '27.00',
-          },
-        ],
+        ...ACTIVITY,
+        receivedSats: 500,
+        receivedOverTime: [],
       });
     });
 
     await waitFor(() => {
-      expect(screen.getByText('ready:0:500:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
     });
+    expect(fetchMock).toHaveBeenLastCalledWith('tok-bob');
   });
 
-  it('drops a stale result when the lightning address changes mid-flight', async () => {
-    let resolveFirst!: (value: GiftStats) => void;
+  it('drops a stale result when the session changes mid-flight', async () => {
+    let resolveFirst!: (value: AccountActivity) => void;
     fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -282,56 +224,28 @@ describe('useAccountTotals', () => {
         }),
     );
     fetchMock.mockResolvedValueOnce({
-      ...STATS,
-      spendOverTime: [],
-      byRecipient: [
-        {
-          recipient: 'bob',
-          giftCount: 1,
-          sats: 500,
-          btc: '0.00000500',
-          usd: '0.48',
-          chf: '0.40',
-          eur: '0.44',
-          php: '27.00',
-        },
-      ],
+      ...ACTIVITY,
+      receivedSats: 500,
+      receivedOverTime: [],
     });
 
     renderWithLocale(<Probe />);
-    expect(screen.getByText('loading:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
 
     await act(async () => {
-      useAuthStore.setState({
-        session: 'tok',
-        account: {
-          id: 'acc_1',
-          linkingKey: null,
-          role: 'basis',
-          name: 'Ada',
-          location: null,
-          lightningAddress: 'bob@walletofsatoshi.com',
-          lightningAddressVerified: false,
-          forumLawsDismissed: false,
-          createdAt: 1,
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          setup: null,
-          missing: [],
-        },
-      });
+      useAuthStore.setState({ session: 'tok-bob' });
     });
 
     await act(async () => {
-      resolveFirst(STATS);
+      resolveFirst(ACTIVITY);
     });
 
     await waitFor(() => {
-      expect(screen.getByText('ready:0:500:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
     });
   });
 
-  it('drops a stale rejection when the lightning address changes mid-flight', async () => {
+  it('drops a stale rejection when the session changes mid-flight', async () => {
     let rejectFirst!: (reason?: unknown) => void;
     fetchMock.mockImplementationOnce(
       () =>
@@ -340,44 +254,16 @@ describe('useAccountTotals', () => {
         }),
     );
     fetchMock.mockResolvedValueOnce({
-      ...STATS,
-      spendOverTime: [],
-      byRecipient: [
-        {
-          recipient: 'bob',
-          giftCount: 1,
-          sats: 500,
-          btc: '0.00000500',
-          usd: '0.48',
-          chf: '0.40',
-          eur: '0.44',
-          php: '27.00',
-        },
-      ],
+      ...ACTIVITY,
+      receivedSats: 500,
+      receivedOverTime: [],
     });
 
     renderWithLocale(<Probe />);
-    expect(screen.getByText('loading:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
 
     await act(async () => {
-      useAuthStore.setState({
-        session: 'tok',
-        account: {
-          id: 'acc_1',
-          linkingKey: null,
-          role: 'basis',
-          name: 'Ada',
-          location: null,
-          lightningAddress: 'bob@walletofsatoshi.com',
-          lightningAddressVerified: false,
-          forumLawsDismissed: false,
-          createdAt: 1,
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          setup: null,
-          missing: [],
-        },
-      });
+      useAuthStore.setState({ session: 'tok-bob' });
     });
 
     await act(async () => {
@@ -385,7 +271,23 @@ describe('useAccountTotals', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('ready:0:500:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
+    });
+  });
+
+  it('clears totals when the session is dropped', async () => {
+    fetchMock.mockResolvedValue(ACTIVITY);
+    renderWithLocale(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByText('ready:0:1000:1:0')).toBeTruthy();
+    });
+
+    await act(async () => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('ready:0:0:0:0')).toBeTruthy();
     });
   });
 });

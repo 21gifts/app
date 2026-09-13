@@ -12,20 +12,11 @@ const VIEW_PROFILE = {
   hasPasskey: false,
 };
 
-const EMPTY_STATS = {
-  totalSats: 0,
-  totalBtc: '0.00000000',
-  totalUsd: '0.00',
-  totalChf: '0.00',
-  totalEur: '0.00',
-  totalPhp: '0.00',
-  giftCount: 0,
-  recipientCount: 0,
-  firstPaidAt: null,
-  lastPaidAt: null,
-  spendOverTime: [],
-  byRecipient: [],
-  byMonth: [],
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [],
+  receivedOverTime: [],
   fx: {
     quote: 'BTC-USD',
     dayBasis: 'utc',
@@ -46,11 +37,11 @@ test('public view profile default shows name and address', async ({ page }) => {
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/*/activity', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${KEY}`);
@@ -75,11 +66,11 @@ test('public view profile claimed hides the Activate banner', async ({ page }) =
       body: JSON.stringify({ ...VIEW_PROFILE, hasPasskey: true }),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/*/activity', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${KEY}`);
@@ -121,11 +112,11 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/*/activity', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${KEY}`);
@@ -147,11 +138,11 @@ test('Telegram WebView shows Open in browser instead of Activate on an unclaimed
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/*/activity', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${KEY}`);
@@ -198,11 +189,11 @@ test('public view profile error shows Try again and retries', async ({ page }) =
       body: JSON.stringify(VIEW_PROFILE),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/*/activity', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${KEY}`);
@@ -237,11 +228,11 @@ test('signed-in profile does not show the copy control or the view-key URL', asy
       }),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/me/activity', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto('/profile');

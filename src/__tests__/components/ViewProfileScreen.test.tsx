@@ -17,7 +17,7 @@ afterEach(cleanup);
 
 describe('ViewProfileScreen', () => {
   it('shows the heading, name, address, chart, and Given legend', () => {
-    renderWithLocale(<ViewProfileScreen profile={named} received={[]} />);
+    renderWithLocale(<ViewProfileScreen profile={named} received={[]} donated={[]} />);
     expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
@@ -30,13 +30,13 @@ describe('ViewProfileScreen', () => {
   });
 
   it('shows view.unnamed when name is null', () => {
-    renderWithLocale(<ViewProfileScreen profile={{ ...named, name: null }} received={[]} />);
+    renderWithLocale(<ViewProfileScreen profile={{ ...named, name: null }} received={[]} donated={[]} />);
     expect(screen.getByText('Unnamed')).toBeTruthy();
   });
 
   it('shows view.noAddress when lightningAddress is null', () => {
     renderWithLocale(
-      <ViewProfileScreen profile={{ ...named, lightningAddress: null }} received={[]} />,
+      <ViewProfileScreen profile={{ ...named, lightningAddress: null }} received={[]} donated={[]} />,
     );
     expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
   });
@@ -49,7 +49,7 @@ describe('ViewProfileScreen', () => {
   });
 
   it('has no edit, copy, or remove action buttons', () => {
-    renderWithLocale(<ViewProfileScreen profile={named} received={[]} />);
+    renderWithLocale(<ViewProfileScreen profile={named} received={[]} donated={[]} />);
     expect(screen.queryByRole('button', { name: 'Edit name' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
@@ -59,7 +59,7 @@ describe('ViewProfileScreen', () => {
   });
 
   it('does not show Loading… on the card with an empty series', () => {
-    renderWithLocale(<ViewProfileScreen profile={named} received={[]} />);
+    renderWithLocale(<ViewProfileScreen profile={named} received={[]} donated={[]} />);
     expect(screen.queryByText('Loading…')).toBeNull();
   });
 });

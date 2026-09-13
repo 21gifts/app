@@ -77,6 +77,20 @@ function hasRules(account) {
   return account.rulesAgreedAt !== null;
 }
 
+/** Empty given+received activity (house gifts + forum zaps). */
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [],
+  receivedOverTime: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};
+
 /** Refresh `missing` from filled fields. */
 function refreshMissing(account) {
   const missing = [];
@@ -662,6 +676,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/me/activity') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, EMPTY_ACTIVITY);
+    return;
+  }
+
   if (method === 'GET' && pathName === '/push/vapid-public') {
     const token = bearer(req);
     if (token === null || !byToken.has(token)) {
@@ -831,6 +856,49 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  const membersActivityMatch = pathName.match(/^\/members\/([^/]+)\/activity$/);
+  if (method === 'GET' && membersActivityMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
+    const id = decodeURIComponent(membersActivityMatch[1]);
+    if (id === E2E_MEMBER_ID || id === account.id) {
+      json(res, 200, EMPTY_ACTIVITY);
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  const viewActivityMatch = pathName.match(/^\/view\/([^/]+)\/activity$/);
+  if (method === 'GET' && viewActivityMatch) {
+    const key = viewActivityMatch[1];
+    if (!/^[0-9a-f]{64}$/.test(key)) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    let found;
+    for (const account of byToken.values()) {
+      if (account.viewKey === key) {
+        found = account;
+        break;
+      }
+    }
+    if (!found) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    json(res, 200, EMPTY_ACTIVITY);
     return;
   }
 

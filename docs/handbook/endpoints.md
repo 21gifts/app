@@ -60,7 +60,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats` and `/profile`.
+- **Used by:** `fetchGiftStats` on the marketing `/stats` page (`StatsLoader` only).
 - **Auth:** Public.
 
 ## Endpoint: GET /lightning-address
@@ -112,6 +112,13 @@
 - **Used by:** `fetchMemberReplies` via `MemberProfileScreen`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/members/[accountId]/activity
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/activity` for signed-in member Given + Received (house gifts + forum zaps).
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberActivity` via `MemberProfileLoader`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/forum-laws-dismissed
 
 - **Purpose:** Same-origin proxy to permanently dismiss the welcome-forum living-room laws hint (`forumLawsDismissed: true` on the account).
@@ -133,11 +140,25 @@
 - **Used by:** `fetchMe`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /me/activity
+
+- **Purpose:** Same-origin proxy of api `GET /me/activity` (Given + Received totals and series: house gifts + forum zaps).
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `fetchAccountActivity` / `useAccountTotals` / `ProfileScreen` / `SignedInChrome`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /view-key/[viewKey]
 
 - **Purpose:** Same-origin public proxy of api `GET /view/:viewKey`.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchViewProfile`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/activity
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/activity` (Given + Received for a capability URL).
+- **Errors:** Upstream 404, or 502 if the api is unreachable.
+- **Used by:** `fetchViewActivity` via `ViewProfileLoader`.
 - **Auth:** Public.
 
 ## Endpoint: GET /forum/messages

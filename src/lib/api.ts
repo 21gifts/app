@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  accountActivitySchema,
   accountSchema,
   contactSchema,
   conversationListSchema,
@@ -21,6 +22,7 @@ import {
   vapidPublicSchema,
   viewProfileSchema,
   type Account,
+  type AccountActivity,
   type ContactMessage,
   type Conversation,
   type ConversationMessage,
@@ -497,6 +499,94 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
       throw new Error('Could not load gift stats. Please try again.');
     }
     return giftStatsSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches given + received activity for the signed-in account.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The {@link AccountActivity} payload (house gifts + forum zaps).
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link accountActivitySchema}.
+ */
+export async function fetchAccountActivity(sessionToken: string): Promise<AccountActivity> {
+  try {
+    const response = await fetch('/me/activity', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    return accountActivitySchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches given + received activity for a signed-in member profile.
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The {@link AccountActivity} payload.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on 401/404, other non-2xx, or a body
+ * that fails {@link accountActivitySchema}.
+ */
+export async function fetchMemberActivity(
+  sessionToken: string,
+  accountId: string,
+): Promise<AccountActivity> {
+  try {
+    const response = await fetch(
+      `/forum/members/${encodeURIComponent(accountId)}/activity`,
+      {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      },
+    );
+    if (response.status === 409) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        throw new Error('Could not load gift stats. Please try again.');
+      }
+      const missing = parseMissingRequirements(body);
+      if (missing !== null) {
+        throw missing;
+      }
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    return accountActivitySchema.parse(await response.json());
+  } catch (err) {
+    if (err instanceof MissingRequirementsError) {
+      throw err;
+    }
+    throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches given + received activity for a public view-key profile.
+ *
+ * @param viewKey - 64 lowercase hex capability key.
+ * @returns The {@link AccountActivity} payload.
+ * @throws Error with visitor-facing copy on 404, any other failure, or a body
+ * that fails {@link accountActivitySchema}.
+ */
+export async function fetchViewActivity(viewKey: string): Promise<AccountActivity> {
+  try {
+    const response = await fetch(`/view-key/${encodeURIComponent(viewKey)}/activity`);
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    return accountActivitySchema.parse(await response.json());
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
   }

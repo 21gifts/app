@@ -22,14 +22,14 @@ import { useAccountTotals } from '@/hooks/useAccountTotals';
  */
 export function ProfileScreen(): ReactElement {
   const { t } = useTranslations();
-  const { receiveOverTime } = useAccountTotals();
+  const { receiveOverTime, donateOverTime } = useAccountTotals();
 
   return (
     <Card>
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('profile.title')}
       </h1>
-      <AccountActivityChart received={receiveOverTime} />
+      <AccountActivityChart received={receiveOverTime} donated={donateOverTime} />
       <NameForm variant="profile" />
       <LocationForm />
       <LightningAddressForm variant="profile" />

@@ -1,26 +1,30 @@
 import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileScreen } from '@/components/ProfileScreen';
-import { fetchGiftStats } from '@/lib/api';
-import type { GiftStats } from '@/lib/api-types';
+import { fetchAccountActivity } from '@/lib/api';
+import type { AccountActivity } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const EMPTY_ACTIVITY: AccountActivity = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [],
+  receivedOverTime: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};
+
 vi.mock('@/lib/api', () => ({
-  fetchGiftStats: vi.fn().mockResolvedValue({
-    totalSats: 0,
-    totalBtc: '0.00000000',
-    totalUsd: '0.00',
-    totalChf: '0.00',
-    totalEur: '0.00',
-    totalPhp: '0.00',
-    giftCount: 0,
-    recipientCount: 0,
-    firstPaidAt: null,
-    lastPaidAt: null,
-    spendOverTime: [],
-    byRecipient: [],
-    byMonth: [],
+  fetchAccountActivity: vi.fn().mockResolvedValue({
+    donatedSats: 0,
+    receivedSats: 0,
+    donatedOverTime: [],
+    receivedOverTime: [],
     fx: {
       quote: 'BTC-USD',
       dayBasis: 'utc',
@@ -43,13 +47,6 @@ vi.mock('@/lib/push', () => ({
   vapidPublicKeyToBytes: vi.fn(),
 }));
 
-const EMPTY_FX = {
-  quote: 'BTC-USD' as const,
-  dayBasis: 'utc' as const,
-  source: 'coinbase-exchange-daily-close' as const,
-  quotes: [{ code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-};
-
 const FX_ALL = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
@@ -65,23 +62,8 @@ const FX_ALL = {
 const VIEW_KEY = 'a'.repeat(64);
 
 beforeEach(() => {
-  vi.mocked(fetchGiftStats).mockReset();
-  vi.mocked(fetchGiftStats).mockResolvedValue({
-    totalSats: 0,
-    totalBtc: '0.00000000',
-    totalUsd: '0.00',
-    totalChf: '0.00',
-    totalEur: '0.00',
-    totalPhp: '0.00',
-    giftCount: 0,
-    recipientCount: 0,
-    firstPaidAt: null,
-    lastPaidAt: null,
-    spendOverTime: [],
-    byRecipient: [],
-    byMonth: [],
-    fx: EMPTY_FX,
-  });
+  vi.mocked(fetchAccountActivity).mockReset();
+  vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   useAuthStore.setState({
     session: 'tok',
     account: {
@@ -131,12 +113,12 @@ describe('ProfileScreen', () => {
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     await waitFor(() => {
-      expect(vi.mocked(fetchGiftStats)).toHaveBeenCalled();
+      expect(vi.mocked(fetchAccountActivity)).toHaveBeenCalled();
     });
   });
 
   it('keeps the chart mounted with no Loading… while fetch is pending', () => {
-    vi.mocked(fetchGiftStats).mockReturnValue(new Promise<GiftStats>(() => undefined));
+    vi.mocked(fetchAccountActivity).mockReturnValue(new Promise<AccountActivity>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
@@ -147,19 +129,12 @@ describe('ProfileScreen', () => {
     expect(screen.queryByLabelText('Given ₿0')).toBeNull();
   });
 
-  it('shows a series day tick after filtered stats load', async () => {
-    const seriesStats: GiftStats = {
-      totalSats: 1500,
-      totalBtc: '0.00001500',
-      totalUsd: '1.43',
-      totalChf: '1.20',
-      totalEur: '1.30',
-      totalPhp: '80.00',
-      giftCount: 2,
-      recipientCount: 1,
-      firstPaidAt: '2026-06-01T00:00:00.000Z',
-      lastPaidAt: '2026-06-03T00:00:00.000Z',
-      spendOverTime: [
+  it('shows a series day tick after filtered activity loads', async () => {
+    const seriesActivity: AccountActivity = {
+      donatedSats: 0,
+      receivedSats: 1500,
+      donatedOverTime: [],
+      receivedOverTime: [
         {
           day: '2026-06-01',
           sats: 500,
@@ -206,22 +181,9 @@ describe('ProfileScreen', () => {
           cumulativePhp: '80.00',
         },
       ],
-      byRecipient: [
-        {
-          recipient: 'alice',
-          giftCount: 2,
-          sats: 1500,
-          btc: '0.00001500',
-          usd: '1.43',
-          chf: '1.20',
-          eur: '1.30',
-          php: '80.00',
-        },
-      ],
-      byMonth: [],
       fx: FX_ALL,
     };
-    vi.mocked(fetchGiftStats).mockResolvedValue(seriesStats);
+    vi.mocked(fetchAccountActivity).mockResolvedValue(seriesActivity);
     renderWithLocale(<ProfileScreen />);
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
