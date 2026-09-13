@@ -144,7 +144,7 @@ export function InboxScreen({
                 className={
                   message.fromMe
                     ? 'ml-8 self-end rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
-                    : 'mr-8 self-start rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
+                    : 'rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
                 }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
