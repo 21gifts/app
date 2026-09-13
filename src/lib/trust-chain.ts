@@ -1,4 +1,4 @@
-import type { TrustChain, TrustChainNode } from '@/lib/api-types';
+import type { TrustChain, TrustChainEdge, TrustChainNode } from '@/lib/api-types';
 
 /** Laid-out node width in CSS pixels. */
 export const TRUST_NODE_WIDTH = 176;
@@ -35,6 +35,47 @@ function chainWidth(n: number): number {
     return 0;
   }
   return n * TRUST_NODE_WIDTH + (n - 1) * TRUST_NODE_GAP;
+}
+
+/**
+ * Merge two Trust Chain payloads without duplicating nodes or edges.
+ *
+ * Used when a click loads one hop around a person into the already visible
+ * chain.
+ *
+ * @param current - Already displayed graph.
+ * @param incoming - Neighborhood from `GET /trust-chain?around=`.
+ * @returns Combined graph; `current.nodes` order is kept, then new nodes.
+ */
+export function mergeTrustChain(current: TrustChain, incoming: TrustChain): TrustChain {
+  const nodes = [...current.nodes];
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  for (const node of incoming.nodes) {
+    if (!nodeIds.has(node.id)) {
+      nodes.push(node);
+      nodeIds.add(node.id);
+    }
+  }
+  const edges = [...current.edges];
+  const edgeKeys = new Set(edges.map(edgeKey));
+  for (const edge of incoming.edges) {
+    const key = edgeKey(edge);
+    if (!edgeKeys.has(key)) {
+      edges.push(edge);
+      edgeKeys.add(key);
+    }
+  }
+  return { nodes, edges };
+}
+
+/**
+ * Stable identity of a directed public edge.
+ *
+ * @param edge - Public graph edge.
+ * @returns `from:to:kind`.
+ */
+function edgeKey(edge: TrustChainEdge): string {
+  return `${edge.from}:${edge.to}:${edge.kind}`;
 }
 
 /**

@@ -2303,6 +2303,18 @@ describe('fetchTrustChain', () => {
     expect(fetchMock).toHaveBeenCalledWith('/trust/graph');
   });
 
+  it('requests one hop when around is set', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: chain });
+    await expect(fetchTrustChain('acc/1')).resolves.toEqual(chain);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/graph?around=acc%2F1');
+  });
+
+  it('omits the query when around is empty', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: chain });
+    await expect(fetchTrustChain('')).resolves.toEqual(chain);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/graph');
+  });
+
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: {} });
     await expect(fetchTrustChain()).rejects.toThrow(

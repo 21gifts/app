@@ -501,7 +501,8 @@ const en = {
   'notifications.photoOnly': 'Photo reply',
 
   'trustChain.title': 'Trust Chain',
-  'trustChain.lead': 'Who met whom in real life, and who appointed the moderators.',
+  'trustChain.lead':
+    'Who met whom in real life, and who appointed the moderators. Click a person to load everyone linked to them.',
   'trustChain.empty': 'No one is on the Trust Chain yet.',
   'trustChain.loading': 'Loading…',
   'trustChain.error': 'Could not load the Trust Chain. Please try again.',
@@ -1027,7 +1028,8 @@ const de = {
   'notifications.photoOnly': 'Foto-Antwort',
 
   'trustChain.title': 'Trust-Kette',
-  'trustChain.lead': 'Wer wen persönlich getroffen hat, und wer die Moderatoren ernannt hat.',
+  'trustChain.lead':
+    'Wer wen persönlich getroffen hat, und wer die Moderatoren ernannt hat. Klicken Sie auf eine Person, um alle mit ihr verbundenen zu laden.',
   'trustChain.empty': 'Noch niemand ist auf der Trust-Kette.',
   'trustChain.loading': 'Laden…',
   'trustChain.error': 'Die Trust-Kette konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
@@ -1540,7 +1542,8 @@ const es = {
   'notifications.photoOnly': 'Respuesta con foto',
 
   'trustChain.title': 'Cadena de confianza',
-  'trustChain.lead': 'Quién conoció a quién en persona, y quién nombró a las personas moderadoras.',
+  'trustChain.lead':
+    'Quién conoció a quién en persona, y quién nombró a las personas moderadoras. Haz clic en una persona para cargar a todas las vinculadas a ella.',
   'trustChain.empty': 'Todavía no hay nadie en la cadena de confianza.',
   'trustChain.loading': 'Cargando…',
   'trustChain.error': 'No se pudo cargar la cadena de confianza. Inténtalo de nuevo.',
@@ -2060,7 +2063,8 @@ const fil = {
   'notifications.photoOnly': 'Sagot na litrato',
 
   'trustChain.title': 'Trust Chain',
-  'trustChain.lead': 'Sino ang nagkita sa totoo, at sino ang nagtalaga sa mga moderator.',
+  'trustChain.lead':
+    'Sino ang nagkita sa totoo, at sino ang nagtalaga sa mga moderator. I-click ang isang tao para i-load ang lahat ng nakaugnay sa kanya.',
   'trustChain.empty': 'Wala pang nasa Trust Chain.',
   'trustChain.loading': 'Naglo-load…',
   'trustChain.error': 'Hindi ma-load ang Trust Chain. Subukan ulit.',

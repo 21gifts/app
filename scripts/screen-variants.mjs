@@ -871,6 +871,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/trust-chain',
+    id: 'expanded',
+    image: 'trust-chain-expanded.png',
+    visual: 'state-trust-chain-expanded',
+    needle: 'trust-node-v1',
+  },
+  {
+    route: '/trust-chain',
     id: 'empty',
     image: 'trust-chain-empty.png',
     visual: 'state-trust-chain-empty',

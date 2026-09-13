@@ -105,6 +105,34 @@ const VIEW_RECEIVED_ACTIVITY = {
   fx: FX_ALL,
 };
 
+const TRUST_CHAIN_SEED = {
+  nodes: [{ id: 'f1', name: 'Cyrill', role: 'founder' }],
+  edges: [] as { from: string; to: string; kind: 'verify' | 'moderator_appoint' }[],
+};
+
+const TRUST_CHAIN_AROUND_FOUNDER = {
+  nodes: [
+    { id: 'f1', name: 'Cyrill', role: 'founder' },
+    { id: 'm1', name: 'Severin', role: 'moderator' },
+  ],
+  edges: [{ from: 'f1', to: 'm1', kind: 'moderator_appoint' as const }],
+};
+
+const TRUST_CHAIN_AROUND_MODERATOR = {
+  nodes: [
+    { id: 'f1', name: 'Cyrill', role: 'founder' },
+    { id: 'm1', name: 'Severin', role: 'moderator' },
+    { id: 'v1', name: 'Ada', role: 'verified' },
+    { id: 'v2', name: 'Bob', role: 'verified' },
+  ],
+  edges: [
+    { from: 'f1', to: 'm1', kind: 'moderator_appoint' as const },
+    { from: 'm1', to: 'v1', kind: 'verify' as const },
+    { from: 'm1', to: 'v2', kind: 'verify' as const },
+  ],
+};
+};
+
 const STATS_DEFAULT = {
   totalSats: 1500,
   totalBtc: '0.00001500',
@@ -560,6 +588,44 @@ test.describe('screen baselines', () => {
     await page.goto('/donate');
     await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
     await shotScreen(page, 'screen-donate');
+  });
+
+  test('screen /trust-chain', async ({ page }) => {
+    await page.route('**/trust/graph**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(TRUST_CHAIN_SEED),
+      });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
+    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+    await shotScreen(page, 'screen-trust-chain');
+  });
+
+  test('state /trust-chain expanded', async ({ page }) => {
+    await page.route('**/trust/graph**', async (route) => {
+      const url = new URL(route.request().url());
+      const around = url.searchParams.get('around');
+      const body =
+        around === 'm1'
+          ? TRUST_CHAIN_AROUND_MODERATOR
+          : around === 'f1'
+            ? TRUST_CHAIN_AROUND_FOUNDER
+            : TRUST_CHAIN_SEED;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    await page.goto('/trust-chain');
+    await page.getByTestId('trust-node-f1').click();
+    await expect(page.getByTestId('trust-node-m1')).toBeVisible();
+    await page.getByTestId('trust-node-m1').click();
+    await expect(page.getByTestId('trust-node-v1')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-expanded');
   });
 
   test('screen /stats', async ({ page }) => {

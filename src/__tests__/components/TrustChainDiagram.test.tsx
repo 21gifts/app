@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TrustChainDiagram } from '@/components/TrustChainDiagram';
 import type { TrustChain } from '@/lib/api-types';
@@ -39,6 +39,26 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByText('confirmed')).toBeTruthy();
     expect(screen.getByText('appointed')).toBeTruthy();
     expect(screen.queryByTestId('trust-node-ghost')).toBeNull();
+  });
+
+  it('calls onExpand on a plain click and skips it while that node is expanding', () => {
+    const onExpand = vi.fn();
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} onExpand={onExpand} expandingId="f" />);
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    expect(onExpand).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('trust-node-m'));
+    expect(onExpand).toHaveBeenCalledTimes(1);
+    expect(onExpand).toHaveBeenCalledWith('m');
+  });
+
+  it('keeps the member link on a modifier click', () => {
+    const onExpand = vi.fn();
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} onExpand={onExpand} />);
+    fireEvent.click(screen.getByTestId('trust-node-f'), { metaKey: true });
+    fireEvent.click(screen.getByTestId('trust-node-m'), { ctrlKey: true });
+    fireEvent.click(screen.getByTestId('trust-node-ada'), { shiftKey: true });
+    expect(onExpand).not.toHaveBeenCalled();
+    expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
   });
 
   it('draws a back-edge from a later block to an earlier one', () => {

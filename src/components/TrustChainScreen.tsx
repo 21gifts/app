@@ -9,19 +9,23 @@ import type { TrustChain } from '@/lib/api-types';
 /**
  * Localized `/trust-chain` body: heading, load states, diagram, and role copy.
  *
- * @param props - Fetched graph plus loader status and retry.
+ * @param props - Fetched graph plus loader status, hop expand, and retry.
  * @returns The marketing Trust Chain screen.
  */
 export function TrustChainScreen({
   chain,
   error,
   loading,
+  expandingId = null,
   onRetry,
+  onExpand,
 }: {
   chain: TrustChain | null;
   error: string | null;
   loading: boolean;
+  expandingId?: string | null;
   onRetry: () => void;
+  onExpand: (accountId: string) => void;
 }): ReactElement {
   const { t } = useTranslations();
 
@@ -42,7 +46,7 @@ export function TrustChainScreen({
   } else {
     body = (
       <div className="mt-12">
-        <TrustChainDiagram chain={chain} />
+        <TrustChainDiagram chain={chain} expandingId={expandingId} onExpand={onExpand} />
       </div>
     );
   }

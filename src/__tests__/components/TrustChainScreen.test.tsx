@@ -21,7 +21,13 @@ const EXPLAIN_FOUNDER = 'A founder started 21.gifts and is the first link of the
 describe('TrustChainScreen', () => {
   it('shows loading copy and the role explanation', () => {
     const { container } = renderWithLocale(
-      <TrustChainScreen chain={null} error={null} loading={true} onRetry={() => undefined} />,
+      <TrustChainScreen
+        chain={null}
+        error={null}
+        loading={true}
+        onRetry={() => undefined}
+        onExpand={() => undefined}
+      />,
     );
     expect(screen.getByRole('heading', { name: 'Trust Chain' })).toBeTruthy();
     expect(screen.getByText('Loading…')).toBeTruthy();
@@ -37,6 +43,7 @@ describe('TrustChainScreen', () => {
         error="Could not load the Trust Chain."
         loading={false}
         onRetry={onRetry}
+        onExpand={() => undefined}
       />,
     );
     expect(screen.getByText('Could not load the Trust Chain.')).toBeTruthy();
@@ -47,7 +54,13 @@ describe('TrustChainScreen', () => {
 
   it('shows empty copy and no svg when the chain has no nodes', () => {
     const { container } = renderWithLocale(
-      <TrustChainScreen chain={EMPTY} error={null} loading={false} onRetry={() => undefined} />,
+      <TrustChainScreen
+        chain={EMPTY}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+        onExpand={() => undefined}
+      />,
     );
     expect(screen.getByText('No one is on the Trust Chain yet.')).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();
@@ -56,7 +69,13 @@ describe('TrustChainScreen', () => {
 
   it('shows empty copy when the chain is null and not loading', () => {
     const { container } = renderWithLocale(
-      <TrustChainScreen chain={null} error={null} loading={false} onRetry={() => undefined} />,
+      <TrustChainScreen
+        chain={null}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+        onExpand={() => undefined}
+      />,
     );
     expect(screen.getByText('No one is on the Trust Chain yet.')).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();
@@ -64,7 +83,13 @@ describe('TrustChainScreen', () => {
 
   it('mounts named nodes when the chain is populated', () => {
     renderWithLocale(
-      <TrustChainScreen chain={POPULATED} error={null} loading={false} onRetry={() => undefined} />,
+      <TrustChainScreen
+        chain={POPULATED}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+        onExpand={() => undefined}
+      />,
     );
     expect(screen.getByTestId('trust-node-f')).toBeTruthy();
     expect(screen.getByTestId('trust-node-m')).toBeTruthy();

@@ -11,6 +11,14 @@ const POPULATED: TrustChain = {
   edges: [],
 };
 
+const HOP: TrustChain = {
+  nodes: [
+    { id: 'f', name: 'Cyrill', role: 'founder' },
+    { id: 'm', name: 'Severin', role: 'moderator' },
+  ],
+  edges: [{ from: 'f', to: 'm', kind: 'moderator_appoint' }],
+};
+
 vi.mock('@/lib/api', () => ({
   fetchTrustChain: vi.fn(),
 }));
@@ -76,6 +84,58 @@ describe('TrustChainLoader', () => {
     resolveStale?.(EMPTY);
     await Promise.resolve();
     expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it('loads one hop when a node is clicked', async () => {
+    fetchMock.mockResolvedValueOnce(POPULATED);
+    fetchMock.mockResolvedValueOnce(HOP);
+    renderWithLocale(<TrustChainLoader />);
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-m')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenLastCalledWith('f');
+  });
+
+  it('shows the load error when a hop fails', async () => {
+    fetchMock.mockResolvedValueOnce(POPULATED);
+    fetchMock.mockRejectedValueOnce(new Error('Could not load the Trust Chain. Please try again.'));
+    renderWithLocale(<TrustChainLoader />);
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    await waitFor(() => {
+      expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
+    });
+  });
+
+  it('ignores a second click while a hop is in flight', async () => {
+    fetchMock.mockResolvedValueOnce(POPULATED);
+    let resolveHop: ((value: TrustChain) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveHop = resolve;
+        }),
+    );
+    renderWithLocale(<TrustChainLoader />);
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-f').getAttribute('aria-busy')).toBe('true');
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    resolveHop?.(HOP);
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-m')).toBeTruthy();
+    });
   });
 
   it('ignores a stale rejection after unmount', async () => {

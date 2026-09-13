@@ -672,6 +672,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/trust-chain:expanded",
+    "label": "/trust-chain expanded",
+    "visual": "state-trust-chain-expanded",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/trust-chain:empty",
     "label": "/trust-chain empty",
     "visual": "state-trust-chain-empty",

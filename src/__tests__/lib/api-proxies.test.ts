@@ -431,6 +431,14 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust-chain');
   });
 
+  it('proxyTrustChainGet forwards around', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustChainGet(new Request('http://localhost/trust/graph?around=acc%2F1'));
+    const dest = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(dest.pathname).toBe('/trust-chain');
+    expect(dest.search).toBe('?around=acc%2F1');
+  });
+
   it('proxyTrustVerifyPost hits POST /trust/verify', async () => {
     const fetchMock = stubApi();
     await proxyTrustVerifyPost(

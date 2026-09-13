@@ -84,10 +84,21 @@ function edgeHops(fromX: number, toX: number): number {
 /**
  * Scrollable SVG chain of who verified or appointed whom, left to right.
  *
- * @param props - Public Trust Chain payload.
+ * A plain click loads the person's neighborhood (`onExpand`). Modifier-click
+ * keeps the member-card link.
+ *
+ * @param props - Public Trust Chain payload and optional expand handler.
  * @returns The diagram.
  */
-export function TrustChainDiagram({ chain }: { chain: TrustChain }): ReactElement {
+export function TrustChainDiagram({
+  chain,
+  expandingId = null,
+  onExpand,
+}: {
+  chain: TrustChain;
+  expandingId?: string | null;
+  onExpand?: (accountId: string) => void;
+}): ReactElement {
   const { t } = useTranslations();
   const { nodes, edges, width, height } = layoutTrustChain(chain);
   const byId = new Map<string, LaidOutTrustNode>(nodes.map((node) => [node.id, node]));
@@ -143,8 +154,23 @@ export function TrustChainDiagram({ chain }: { chain: TrustChain }): ReactElemen
         {nodes.map((node) => {
           const label =
             node.name === null || node.name === '' ? t('trustChain.unnamed') : node.name;
+          const busy = expandingId === node.id;
           return (
-            <a key={node.id} href={`/members/${node.id}`} data-testid={`trust-node-${node.id}`}>
+            <a
+              key={node.id}
+              href={`/members/${node.id}`}
+              data-testid={`trust-node-${node.id}`}
+              aria-busy={busy ? 'true' : undefined}
+              onClick={(event) => {
+                if (onExpand === undefined || event.metaKey || event.ctrlKey || event.shiftKey) {
+                  return;
+                }
+                event.preventDefault();
+                if (!busy) {
+                  onExpand(node.id);
+                }
+              }}
+            >
               <rect
                 x={node.x}
                 y={node.y}
@@ -169,7 +195,7 @@ export function TrustChainDiagram({ chain }: { chain: TrustChain }): ReactElemen
                 className="fill-paper"
                 fontSize="12"
               >
-                {t(roleMessageKey(node.role))}
+                {busy ? t('trustChain.loading') : t(roleMessageKey(node.role))}
               </text>
             </a>
           );

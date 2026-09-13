@@ -932,8 +932,8 @@
 
 ## Function: fetchTrustChain
 
-- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) and parse the public Trust Chain graph.
-- **Inputs:** none.
+- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) and parse the public Trust Chain graph. Optional `around` loads one hop (`?around=`).
+- **Inputs:** optional `around` account id.
 - **Returns / side effects:** `TrustChain`. Throws visitor copy when the api is down or the body is invalid.
 - **Used by:** `TrustChainLoader`.
 
@@ -965,6 +965,13 @@
 - **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
 - **Used by:** `MemberTrustActions`.
 
+## Function: mergeTrustChain
+
+- **Purpose:** Merge a newly loaded neighborhood into the already visible Trust Chain without duplicating nodes or edges.
+- **Inputs:** `current` graph, `incoming` hop from `GET /trust-chain?around=`.
+- **Returns / side effects:** Combined `{ nodes, edges }`. No I/O.
+- **Used by:** `TrustChainLoader`.
+
 ## Function: layoutTrustChain
 
 - **Purpose:** Horizontal chain layout of Trust Chain nodes and edges into x/y coordinates (one row, left to right, no graph library). Never stacked as a pyramid of levels.
@@ -974,15 +981,15 @@
 
 ## Function: TrustChainDiagram
 
-- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, left-to-right arrow, kind label). Nodes link to `/members/{id}`.
-- **Inputs:** `chain: TrustChain`.
+- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, left-to-right arrow, kind label). A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link.
+- **Inputs:** `chain: TrustChain`, optional `expandingId`, optional `onExpand`.
 - **Returns / side effects:** SVG with `data-testid="trust-node-{id}"`. Empty chain is not rendered by the parent screen.
 - **Used by:** `TrustChainScreen`.
 
 ## Function: TrustChainScreen
 
 - **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy.
-- **Inputs:** `chain`, `error`, `loading`, `onRetry`.
+- **Inputs:** `chain`, `error`, `loading`, optional `expandingId`, `onExpand`, `onRetry`.
 - **Returns / side effects:** Marketing screen element.
 - **Used by:** `TrustChainLoader`.
 
@@ -1543,7 +1550,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: proxyApiRequest
 
-- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers, streams a POST/PUT/PATCH/DELETE body with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0` (empty POSTs omit body and duplex), and copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers. Multipart POST/PUT/PATCH/DELETE bodies stream with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0`; JSON and other bodies are buffered (`arrayBuffer`) so Node fetch does not throw. Empty POSTs omit body and duplex. Copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response` (status + selected headers + streamed body), or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.

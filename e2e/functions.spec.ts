@@ -5384,8 +5384,37 @@ test('Function: TrustChainScreen — empty chain hides the diagram', async ({ pa
   await expect(page.locator('svg[aria-label]')).toHaveCount(0);
 });
 
+test('Function: mergeTrustChain — clicking a founder loads the next hop', async ({ page }) => {
+  await page.route('**/trust/graph**', async (route) => {
+    const url = new URL(route.request().url());
+    const around = url.searchParams.get('around');
+    const body =
+      around === 'f1'
+        ? {
+            nodes: [
+              { id: 'f1', name: 'Cyrill', role: 'founder' },
+              { id: 'm1', name: 'Severin', role: 'moderator' },
+            ],
+            edges: [{ from: 'f1', to: 'm1', kind: 'moderator_appoint' }],
+          }
+        : {
+            nodes: [{ id: 'f1', name: 'Cyrill', role: 'founder' }],
+            edges: [],
+          };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+  await page.goto('/trust-chain');
+  await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+  await page.getByTestId('trust-node-f1').click();
+  await expect(page.getByTestId('trust-node-m1')).toBeVisible();
+});
+
 test('Function: TrustChainDiagram — a mocked chain renders named nodes', async ({ page }) => {
-  await page.route('**/trust/graph', async (route) => {
+  await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -5406,7 +5435,7 @@ test('Function: TrustChainDiagram — a mocked chain renders named nodes', async
 test('Function: layoutTrustChain — appointed moderator sits to the right of the founder', async ({
   page,
 }) => {
-  await page.route('**/trust/graph', async (route) => {
+  await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

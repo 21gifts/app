@@ -514,13 +514,18 @@ const TRUST_ACTION_ERROR = 'Could not update this member. Please try again.';
 /**
  * Fetches the public Trust Chain graph (who verified or appointed whom).
  *
+ * @param around - Optional account id; loads one hop when set.
  * @returns The {@link TrustChain} payload.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link trustChainSchema}.
  */
-export async function fetchTrustChain(): Promise<TrustChain> {
+export async function fetchTrustChain(around?: string): Promise<TrustChain> {
   try {
-    const response = await fetch('/trust/graph');
+    const path =
+      around === undefined || around === ''
+        ? '/trust/graph'
+        : `/trust/graph?around=${encodeURIComponent(around)}`;
+    const response = await fetch(path);
     if (!response.ok) {
       throw new Error(TRUST_CHAIN_LOAD_ERROR);
     }

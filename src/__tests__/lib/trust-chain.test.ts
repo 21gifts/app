@@ -1,11 +1,30 @@
 import { describe, expect, it } from 'vitest';
 import type { TrustChain } from '@/lib/api-types';
-import { layoutTrustChain } from '@/lib/trust-chain';
+import { layoutTrustChain, mergeTrustChain } from '@/lib/trust-chain';
 
 const FOUNDER = { id: 'f', name: 'Cyrill', role: 'founder' as const };
 const MODERATOR = { id: 'm', name: 'Severin', role: 'moderator' as const };
 const ADA = { id: 'ada', name: 'Ada', role: 'verified' as const };
 const BOB = { id: 'bob', name: 'Bob', role: 'verified' as const };
+
+describe('mergeTrustChain', () => {
+  it('appends new nodes and edges and skips duplicates', () => {
+    const current: TrustChain = {
+      nodes: [FOUNDER],
+      edges: [],
+    };
+    const hop: TrustChain = {
+      nodes: [FOUNDER, MODERATOR, ADA],
+      edges: [
+        { from: 'f', to: 'm', kind: 'moderator_appoint' },
+        { from: 'f', to: 'm', kind: 'moderator_appoint' },
+      ],
+    };
+    const merged = mergeTrustChain(current, hop);
+    expect(merged.nodes.map((node) => node.id)).toEqual(['f', 'm', 'ada']);
+    expect(merged.edges).toEqual([{ from: 'f', to: 'm', kind: 'moderator_appoint' }]);
+  });
+});
 
 describe('layoutTrustChain', () => {
   it('returns zero size for an empty graph and keeps the input edges array', () => {
