@@ -1,7 +1,9 @@
 'use client';
 
+import { Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
 import {
@@ -13,7 +15,7 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import { Button } from '@/components/ui';
+import { Button, IconButton } from '@/components/ui';
 import {
   fetchMemberPosts,
   fetchMemberReplies,
@@ -122,7 +124,7 @@ const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: Message
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
 
-/* v8 ignore start -- ForumBoard defaults unused on the single profile note card */
+/* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
 const IDLE_BOARD = {
   error: false,
   loading: false,
@@ -170,10 +172,10 @@ const IDLE_BOARD = {
 /* v8 ignore stop */
 
 /**
- * Signed-in member identity card: chart, name, location, Lightning Address,
- * role pill, post/reply counts, optional pinned forum note, stacked
- * activity feeds, and staff Trust Chain actions when the viewer is
- * founder/moderator and the subject is someone else.
+ * Signed-in member identity card: chart, About me, name, location, Lightning
+ * Address, role pill, copy-profile-link, optional Message, post/reply counts,
+ * stacked activity feeds, and staff Trust Chain actions when the viewer is
+ * founder/moderator and the subject is someone else. About me is not a forum post.
  *
  * @param props - Member profile and both activity series for the chart.
  * @returns The presentational member profile.
@@ -515,16 +517,6 @@ export function MemberProfileScreen({
         setReplyDraft('');
       }
       if (!alreadyListed) {
-        setListedNote((prev) => {
-          /* v8 ignore next 3 -- reply composer only mounts with a profile note */
-          if (prev === null) {
-            return prev;
-          }
-          if (prev.id !== parentId) {
-            return prev;
-          }
-          return { ...prev, replyCount: Math.max(prev.replyCount, prev.replyCount + 1) };
-        });
         setPosts((prev) => {
           if (prev === null) {
             return prev;
@@ -646,6 +638,8 @@ export function MemberProfileScreen({
     }
     void pending();
   };
+  const [origin, setOrigin] = useState('');
+  const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const tagged =
     listedProfile.role === 'founder' ||
@@ -654,6 +648,31 @@ export function MemberProfileScreen({
       ? listedProfile.role
       : null;
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
+  const showMessage =
+    session !== null && account?.id !== profile.id && profile.profileMessage !== null;
+  const profileUrl = origin !== '' ? `${origin}/members/${profile.id}` : '';
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const onMessage = (): void => {
+    /* v8 ignore next 4 -- button disabled while pmBusy; session and profileMessage already gated by showMessage */
+    if (session === null || profile.profileMessage === null || pmBusy) {
+      return;
+    }
+    const token = session;
+    const messageId = profile.profileMessage.id;
+    setPmBusy(true);
+    void (async () => {
+      try {
+        const thread = await openConversation(token, messageId);
+        router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
+      } catch {
+        setPmBusy(false);
+      }
+    })();
+  };
 
   const handlePayOpen = (messageId: string): void => {
     bumpPayPollGeneration();
@@ -936,6 +955,27 @@ export function MemberProfileScreen({
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} donated={donated} />
+          <AboutMeSection
+            mode="public"
+            aboutMe={profile.aboutMe}
+            name={profile.name}
+            {...(profileUrl !== '' ? { profileUrl } : {})}
+          />
+          {showMessage ? (
+            <div className="flex items-center justify-center">
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={pmBusy}
+                aria-label={t('profile.message')}
+                title={t('profile.message')}
+                onClick={onMessage}
+              >
+                <Mail aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          ) : null}
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
               {t('name.heading')}
@@ -1009,9 +1049,6 @@ export function MemberProfileScreen({
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />
           ) : null}
         </section>
-        {listedNote !== null && activity !== 'posts' ? (
-          <ForumBoard {...IDLE_BOARD} messages={[listedNote]} {...sharedForumProps} />
-        ) : null}
         {activity === 'posts' || activity === 'replies' ? (
           activityLoading ? (
             <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>

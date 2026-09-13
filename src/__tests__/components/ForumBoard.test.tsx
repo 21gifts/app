@@ -287,6 +287,27 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('Dismiss')).toBeNull();
   });
 
+  it('hides the composer and mode control when composerHidden', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerHidden
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
+    expect(document.querySelector('form')).toBeNull();
+  });
+
   it('calls onDismissLaws when the Dismiss button is clicked', () => {
     const onDismissLaws = vi.fn();
     renderWithLocale(

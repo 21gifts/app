@@ -18,6 +18,7 @@ const E2E_ACCOUNT = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null as string | null,
   setup: 'name' as 'name' | 'lightning-address' | 'rules' | null,
   missing: ['name', 'lightning-address', 'rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
@@ -402,6 +403,7 @@ const RULES_SETUP_ACCOUNT = {
   lightningAddress: 'alice@walletofsatoshi.com',
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: 'rules' as const,
   missing: ['rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
@@ -667,6 +669,7 @@ test.describe('screen baselines', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -877,6 +880,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -911,6 +915,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1003,6 +1008,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1031,6 +1037,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1280,6 +1287,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1328,6 +1336,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: 'Hello from Carol.',
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1347,7 +1356,10 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('About me')).toBeVisible();
+    await expect(page.getByText('Hello from Carol.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
     await shotScreen(page, 'screen-members-accountId');
   });
 
@@ -2036,6 +2048,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: null,
           postCount: 0,
           replyCount: 0,
@@ -2133,6 +2146,7 @@ test.describe('onboarding screens', () => {
           role: 'basis',
           lightningAddress: 'alice@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: null,
           postCount: 0,
           replyCount: 0,
@@ -2886,6 +2900,7 @@ test.describe('onboarding screens', () => {
           lightningAddressVerified: false,
           createdAt: 1,
           hasPasskey: false,
+          aboutMe: null,
         }),
       });
     });
@@ -2952,6 +2967,7 @@ test.describe('onboarding screens', () => {
           lightningAddressVerified: false,
           createdAt: 1,
           hasPasskey: true,
+          aboutMe: null,
         }),
       });
     });
@@ -2985,6 +3001,7 @@ test.describe('onboarding screens', () => {
           lightningAddressVerified: false,
           createdAt: 1,
           hasPasskey: false,
+          aboutMe: null,
         }),
       });
     });
@@ -3161,6 +3178,7 @@ test.describe('profile activity chart variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -3246,6 +3264,7 @@ test.describe('welcome forum variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -4279,6 +4298,7 @@ test.describe('welcome forum variants', () => {
           lightningAddress: null,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: ['lightning-address'],
         }),
@@ -4340,6 +4360,7 @@ test.describe('contact screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -4448,6 +4469,7 @@ test.describe('inbox screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -4660,6 +4682,7 @@ test.describe('notifications screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),

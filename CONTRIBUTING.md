@@ -62,6 +62,7 @@ app/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
 │   │   │   ├── name/route.ts    # POST /me/name
 │   │   │   ├── location/route.ts # POST /me/location
+│   │   │   ├── about/route.ts   # PUT /me/about
 │   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
@@ -136,7 +137,8 @@ app/
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/location/address + push bell + theme + number format)
+│   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + theme + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Public /trust-chain body
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
@@ -145,9 +147,9 @@ app/
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + GET /view-key/:viewKey/activity
-│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/location/address, no actions)
+│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + About me + name/location/address, copy-link)
 │   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + GET /forum/members/:id/activity
-│   │   ├── MemberProfileScreen.tsx # Member identity card + optional profile note
+│   │   ├── MemberProfileScreen.tsx # Member identity card + About me + location + activity feeds
 │   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
