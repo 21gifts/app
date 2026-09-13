@@ -143,8 +143,8 @@ export function InboxScreen({
                 data-from-me={message.fromMe ? 'true' : 'false'}
                 className={
                   message.fromMe
-                    ? 'self-end ml-8 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
-                    : 'self-start mr-8 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
+                    ? 'ml-8 self-end rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
+                    : 'mr-8 self-start rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
                 }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -262,9 +262,7 @@ export function InboxScreen({
                 </span>
                 {row.lastText !== '' ? (
                   <span className="line-clamp-2 text-sm text-app-muted">
-                    {row.lastFromMe
-                      ? t('inbox.sentPreview', { text: row.lastText })
-                      : row.lastText}
+                    {row.lastFromMe ? t('inbox.sentPreview', { text: row.lastText }) : row.lastText}
                   </span>
                 ) : null}
               </button>
