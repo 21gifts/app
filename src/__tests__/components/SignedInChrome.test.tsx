@@ -179,7 +179,11 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
-    expect(screen.getByRole('link', { name: 'Messages' }).getAttribute('href')).toBe('/messages');
+    const notifications = screen.getByRole('link', { name: 'Notifications' });
+    const messages = screen.getByRole('link', { name: 'Messages' });
+    expect(notifications.getAttribute('href')).toBe('/notifications');
+    expect(messages.getAttribute('href')).toBe('/messages');
+    expect(notifications.nextElementSibling).toBe(messages);
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
     expect(screen.getByLabelText('Theme')).toBeTruthy();
@@ -201,6 +205,7 @@ describe('SignedInChrome', () => {
     expect(
       screen.getByRole('link', { name: 'Living room rules' }).querySelector('svg'),
     ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Notifications' }).querySelector('svg')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Contact' }).querySelector('svg')).toBeTruthy();
   });
 
@@ -404,6 +409,14 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
+  it('closes the menu when Notifications is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    expectMenuClosed();
+  });
+
   it('closes the menu when Messages is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -420,5 +433,54 @@ describe('SignedInChrome', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
     expectMenuClosed();
     expect(screen.getByRole('dialog')).toBeTruthy();
+  });
+
+  it('shows the introduce overlay when onboarding is done and hasPosted is false', () => {
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: false } });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.getByRole('dialog', { name: 'Introduce yourself' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Write an introduction' })).toBeTruthy();
+  });
+
+  it('hides the introduce overlay when hasPosted is true', () => {
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: true } });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+  });
+
+  it('hides the introduce overlay during setup', () => {
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, setup: 'name', hasPosted: false } });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+  });
+
+  it('hides the introduce overlay when hasPosted is omitted', () => {
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+  });
+
+  it('dismisses the introduce overlay for this mount', () => {
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: false } });
+    renderWithLocale(<SignedInChrome />);
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(screen.queryByText('Close')).toBeNull();
+    fireEvent.click(close);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
   });
 });

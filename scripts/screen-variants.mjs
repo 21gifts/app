@@ -491,6 +491,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })",
   },
   {
+    route: '/welcome',
+    id: 'overlay-introduce',
+    image: 'welcome-overlay-introduce.png',
+    visual: 'state-welcome-overlay-introduce',
+    needle: "getByRole('dialog', { name: 'Introduce yourself' })",
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',
@@ -790,6 +797,34 @@ export const SCREEN_VARIANTS = [
     image: 'messages-thread.png',
     visual: 'state-messages-thread',
     needle: 'Hello team',
+  },
+  {
+    route: '/notifications',
+    id: 'default',
+    image: 'notifications.png',
+    visual: 'screen-notifications',
+    needle: "getByRole('heading', { name: 'Notifications' })",
+  },
+  {
+    route: '/notifications',
+    id: 'empty',
+    image: 'notifications-empty.png',
+    visual: 'state-notifications-empty',
+    needle: 'No notifications yet.',
+  },
+  {
+    route: '/notifications',
+    id: 'loading',
+    image: 'notifications-loading.png',
+    visual: 'state-notifications-loading',
+    needle: 'notifications loading',
+  },
+  {
+    route: '/notifications',
+    id: 'error',
+    image: 'notifications-error.png',
+    visual: 'state-notifications-error',
+    needle: 'Could not load notifications. Please try again.',
   },
   {
     route: '/404',

@@ -168,34 +168,34 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — first screen after login (`account.setup === 'name'`).
-- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
+- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
+- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
 - **Calls:** `AppShell`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**.
+Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts name setup](images/setup-name.png)
 
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login (`account.setup === 'address'`; name may already be saved or skipped).
-- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
-- **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).
+- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
+- **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).
 - **Calls:** `AppShell`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
-Signed in with a name (or a skipped name) and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**.
+Signed in with a name (or a skipped name) and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts address setup](images/setup-address.png)
 
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — third screen after login, when living-room rules are not yet agreed (`account.setup === 'rules'`). Name and address may already be saved or skipped; rules cannot be skipped.
-- **What the user sees:** Fill `AppShell` with one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Wordmark top-left (with icon-only chapter back after the first chapter). Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
-- **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**.
+- **What the user sees:** Fill `AppShell` with one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Wordmark top-left (with icon-only chapter back after the first chapter). Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
+- **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**.
 - **Calls:** `AppShell`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
@@ -267,13 +267,13 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when `account.setup` is null (name and address may be saved or skipped; living-room rules agreement is required).
-- **What the user sees:** Flow `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a four-way `SegmentedControl tone="neutral"` (**Active** / **No gifts yet** / **All** / **Most popular**). Default is **Active** (paid notes, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply**); reply authors show the same Founder / Moderator / Verified pills (`basis` has none). Pay control / Send Bitcoin only when the note is payable; composer under the filters (`SegmentedControl`) above the list with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, copy a note link to `/messages/<uuid>`, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `PageChrome`, `AppShell`, `Wordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`.
+- **What the user sees:** Flow `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a four-way `SegmentedControl tone="neutral"` (**Active** / **No gifts yet** / **All** / **Most popular**). Default is **Active** (paid notes, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply**); reply authors show the same Founder / Moderator / Verified pills (`basis` has none). Pay control / Send Bitcoin only when the note is payable; composer under the filters (`SegmentedControl`) above the list with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, copy a note link to `/messages/<uuid>`, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `PageChrome`, `AppShell`, `Wordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`.
 
 ### Variant: default
 
-Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes newest-first (Ada ₿5 then Carol ₿21); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. Founder / Moderator / Verified pills beside the name when `role` is one of those three; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**.
+Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, with the dismissible laws hint box and rules/contact links, **Active** selected. Paid notes newest-first (Ada ₿5 then Carol ₿21); Bob's unpaid note is not visible. Composer with attach + Send icons. Pay control / Send Bitcoin only when the note is payable. Founder / Moderator / Verified pills beside the name when `role` is one of those three; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -477,7 +477,7 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: menu-open
 
-Open **Menu** top-right only (do not click Language or Theme) → Menu includes **Home** first (Home, Profile, Living room rules, Messages, Contact, optional Install, Language, Theme, Log out). Profile is one line (User + Profile; ₿ totals on the right only when a side is non-zero). Ada’s default welcome-menu shot has zeros, so no ₿ totals on the right. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Language (Globe + label + chevron), Theme (System / Light / Dark) next to Language, Log out. With both totals zero, the Profile link’s accessible name is Profile; otherwise it includes only the visible non-zero indicator labels. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No System / Light / Dark option rows. No native language select.
+Open **Menu** top-right only (do not click Language or Theme) → Menu includes **Home** first (Home, Profile, Living room rules, Notifications, Messages, Contact, optional Install, Language, Theme, Log out). Profile is one line (User + Profile; ₿ totals on the right only when a side is non-zero). Ada’s default welcome-menu shot has zeros, so no ₿ totals on the right. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Language (Globe + label + chevron), Theme (System / Light / Dark) next to Language, Log out. With both totals zero, the Profile link’s accessible name is Profile; otherwise it includes only the visible non-zero indicator labels. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No System / Light / Dark option rows. No native language select.
 
 ![21.gifts welcome menu](images/welcome-menu.png)
 
@@ -523,12 +523,18 @@ Named member with living-room rules agreed and no Wallet of Satoshi address. Com
 
 ![21.gifts welcome overlay address](images/welcome-overlay-address.png)
 
+### Variant: overlay-introduce
+
+Named member with living-room rules agreed, a Wallet of Satoshi address, and `hasPosted` false. After login on `/welcome`, `IntroduceYourselfOverlay` dialog **Introduce yourself** with body copy and **Write an introduction**. Close (X) is icon-only.
+
+![21.gifts welcome overlay introduce](images/welcome-overlay-introduce.png)
+
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.
-- **What the user sees:** Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`). Unsigned (no session): Wordmark → `/`, ThemeSwitcher + LanguageSwitcher (today’s public chrome; default visual golden unchanged). Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first).
-- **Actions:** Change language or theme (unsigned), or open **Menu** / back to the forum (signed-in). Read the rules. Open contact or the forum.
-- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `ThemeSwitcher`.
+- **What the user sees:** Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and CTAs **Contact 21.gifts** (`/contact`) and **Back to the forum** (`/welcome`). Unsigned (no session): Wordmark → `/`, ThemeSwitcher + LanguageSwitcher (today’s public chrome; default visual golden unchanged). Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Actions:** Change language or theme (unsigned), or open **Menu** / back to the forum (signed-in). Read the rules. Open contact or the forum. Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `IntroduceYourselfOverlay`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`, `ThemeSwitcher`.
 - **Auth:** None required to view; chrome depends on hydrated session.
 
 ### Variant: default
@@ -546,9 +552,9 @@ Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-rig
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (`account.setup` null; name and address may be skipped; living-room rules agreement required).
-- **What the user sees:** Fill `AppShell` with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with an icon-only **Send** control (`contact.send` catalog `aria-label`, no visible Send text). A missing name or rules agreement opens `RequirementsOverlay` (no Skip) before the send retries. Lightning Address is not required for contact. A successful send opens the official 21.gifts thread in `/messages`.
-- **Actions:** Send a message, complete a `RequirementsOverlay` for a missing name or rules agreement, open the rules; back to the forum; open **Menu** for **Home**, Profile, **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `ContactPage`, `ContactLoader`, `ContactScreen`, `RequirementsOverlay`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
+- **What the user sees:** Fill `AppShell` with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with an icon-only **Send** control (`contact.send` catalog `aria-label`, no visible Send text). A missing name or rules agreement opens `RequirementsOverlay` (no Skip) before the send retries. Lightning Address is not required for contact. A successful send opens the official 21.gifts thread in `/messages`. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Actions:** Send a message, complete a `RequirementsOverlay` for a missing name or rules agreement, open the rules; back to the forum; open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out**; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ContactPage`, `ContactLoader`, `ContactScreen`, `RequirementsOverlay`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -571,9 +577,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) and optional profile forum note. Own profiles use this route too (forum author names navigate here, not `/profile`). A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip).
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) and optional profile forum note. Own profiles use this route too (forum author names navigate here, not `/profile`). A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` plus optional `GET /gifts/stats?recipient=`.
-- **Actions:** Open **Menu**; icon-only back to the forum; expand role hint; open author profile links on the note when present; complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply. No edit controls.
+- **Actions:** Open **Menu**; icon-only back to the forum; expand role hint; open author profile links on the note when present; complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -615,9 +621,9 @@ Named visitor with living-room rules agreed and no Wallet of Satoshi address. Me
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (`SegmentedControl tone="gift"` for ₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes skip an OS banner when any window client is focused; background-only clients still show it), return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (`SegmentedControl tone="gift"` for ₿ | USD) inside the identity card, edit name and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes skip an OS banner when any window client is focused; background-only clients still show it), return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Session account (name + Lightning Address + `viewKey` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
-- **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out** (best-effort Web Push unsubscribe while the session is still valid); icon-only back (top-left) to the forum; save name; link or change address; toggle Web Push on the notifications row under the address form (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); toggle the activity chart between ₿ and USD. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row.
+- **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, theme (System / Light / Dark), or **Log out** (best-effort Web Push unsubscribe while the session is still valid); icon-only back (top-left) to the forum; save name; link or change address; toggle Web Push on the notifications row under the address form (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); toggle the activity chart between ₿ and USD. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
@@ -653,9 +659,9 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right (Home first, includes **Messages**). Heading **Messages**, a conversation list (counterpart name, origin label Contact / Direct / Damus, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome.
-- **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open **Menu** (Home first). Forum PM and `/contact` send land here.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right (Home first, **Notifications** then **Messages**). Heading **Messages**, a conversation list (counterpart name, origin label Contact / Direct / Damus, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open **Menu** (Home first; Notifications then Messages). Forum PM and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -687,6 +693,38 @@ List fetch failed. Button **Try again**.
 Open official thread. Heading **21.gifts**, origin **Contact** under the heading, message body **Hello team**, composer visible.
 
 ![21.gifts inbox thread](images/messages-thread.png)
+
+## Screen: /notifications
+
+- **URL:** `/notifications` — signed-in forum-reply notifications. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right (Home first, **Notifications** then **Messages**). Heading **Notifications**, a list of forum replies (actor `{name} replied to your post`, reply text or **Photo reply**, time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Actions:** Click a row to open the public forum note `/messages/{parentId}` (mark that notification read). Back to the forum. Open **Menu** (Home first; Notifications then Messages). Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchNotifications`, `markNotificationRead`, `markAllNotificationsRead`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
+
+### Variant: default
+
+Loaded list with at least one unread forum reply (actor **Bob**).
+
+![21.gifts notifications](images/notifications.png)
+
+### Variant: empty
+
+No notifications. Copy **No notifications yet.**
+
+![21.gifts notifications empty](images/notifications-empty.png)
+
+### Variant: loading
+
+Waiting on `GET /forum/notifications`. Copy **Loading…**
+
+![21.gifts notifications loading](images/notifications-loading.png)
+
+### Variant: error
+
+List fetch failed. Button **Try again**. Copy **Could not load notifications. Please try again.**
+
+![21.gifts notifications error](images/notifications-error.png)
 
 ## Screen: /messages/[id]
 

@@ -6,6 +6,8 @@ import {
   conversationMessageSchema,
   conversationSchema,
   conversationThreadSchema,
+  notificationListSchema,
+  notificationSchema,
   forumListSchema,
   forumMessageSchema,
   lnAddressResolvedSchema,
@@ -22,6 +24,8 @@ import {
   type ContactMessage,
   type Conversation,
   type ConversationMessage,
+  type Notification,
+  type NotificationList,
   type ForumMessage,
   type GiftDay,
   type GiftStats,
@@ -815,6 +819,76 @@ export async function openConversation(
     throw new Error('Could not send your message');
   }
   return conversationSchema.parse(await response.json());
+}
+
+/**
+ * Fetches forum-reply notifications for the signed-in session.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns `{ notifications, unreadCount }` newest-first from the api.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link notificationListSchema}.
+ */
+export async function fetchNotifications(sessionToken: string): Promise<NotificationList> {
+  try {
+    const response = await fetch('/forum/notifications', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load notifications. Please try again.');
+    }
+    return notificationListSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load notifications. Please try again.');
+  }
+}
+
+/**
+ * Marks one notification as read.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Notification id.
+ * @returns The updated {@link Notification} with `readAt` set.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link notificationSchema}.
+ */
+export async function markNotificationRead(
+  sessionToken: string,
+  id: string,
+): Promise<Notification> {
+  try {
+    const response = await fetch(`/forum/notifications/${encodeURIComponent(id)}/read`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not mark notification as read');
+    }
+    return notificationSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not mark notification as read');
+  }
+}
+
+/**
+ * Marks every notification as read for the session.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns Nothing on success.
+ * @throws Error with visitor-facing copy when the api is unavailable.
+ */
+export async function markAllNotificationsRead(sessionToken: string): Promise<void> {
+  try {
+    const response = await fetch('/forum/notifications/read-all', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not mark notifications as read');
+    }
+  } catch {
+    throw new Error('Could not mark notifications as read');
+  }
 }
 
 /**

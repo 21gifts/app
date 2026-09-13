@@ -1752,6 +1752,7 @@ describe('ForumLoader', () => {
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(1);
     expect(items[0]!.textContent).toContain('Hello');
+    expect(useAuthStore.getState().account?.hasPosted).toBe(true);
   });
 
   it('shows a newly posted note above existing notes', async () => {
@@ -2961,6 +2962,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('1 replies')).toBeTruthy();
       expect(screen.getByText('0 replies')).toBeTruthy();
     });
+    expect(useAuthStore.getState().account?.hasPosted).toBe(true);
   });
 
   it('posts a reply when the account snapshot is missing', async () => {

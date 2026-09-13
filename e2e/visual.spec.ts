@@ -2227,6 +2227,36 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-overlay-address');
   });
+
+  test('welcome overlay-introduce', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+          hasPosted: false,
+        }),
+      });
+    });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Write an introduction' })).toHaveAttribute(
+      'href',
+      '/welcome',
+    );
+    await shotScreen(page, 'state-welcome-overlay-introduce');
+  });
 });
 
 test.describe('contact screens', () => {
@@ -2455,6 +2485,96 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
     await shotScreen(page, 'state-messages-thread');
+  });
+});
+
+test.describe('notifications screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  test('screen /notifications', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n1',
+              type: 'forum_reply',
+              parentId: 'parent-1',
+              replyId: 'reply-1',
+              name: 'Bob',
+              text: 'Nice post',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await page.goto('/notifications');
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
+    await shotScreen(page, 'screen-notifications');
+  });
+
+  test('notifications empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+      });
+    });
+    await page.goto('/notifications');
+    await expect(page.getByText('No notifications yet.')).toBeVisible();
+    await shotScreen(page, 'state-notifications-empty');
+  });
+
+  test('notifications loading', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async () => {
+      /* hang */
+    });
+    await page.goto('/notifications');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-notifications-loading');
+  });
+
+  test('notifications error', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/notifications');
+    await expect(page.getByText('Could not load notifications. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-notifications-error');
   });
 });
 

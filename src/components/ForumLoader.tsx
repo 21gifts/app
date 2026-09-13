@@ -117,8 +117,11 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
  * popular feed mode, pay-on-note invoice + sats-poll state, expand/replies
  * (`fetchReplies`, reply composer via `postMessage` with `inReplyTo`), PM
  * (`openConversation` → `/messages?c=`), and persists dismiss of the
- * living-room laws hint on the account. Also polls until unsigned notes
- * become payable. Silently re-fetches when the document becomes visible again
+ * living-room laws hint on the account. After a successful top-level post or
+ * reply, sets `hasPosted: true` on the session account when the session token
+ * is unchanged and an account is still present (no persist-flag POST). Also
+ * polls until unsigned notes become payable. Silently re-fetches when the
+ * document becomes visible again
  * (`visibilitychange` hidden→visible, `pageshow` with `persisted`) and when
  * the board pull-to-refresh fires; silent refresh keeps an existing list on
  * screen (no loading copy) and does not auto-scroll the newest note. Renders
@@ -767,6 +770,11 @@ export function ForumLoader(): ReactElement | null {
             });
       applyCreatedNote(created, pendingPhoto, pendingVideo);
       pendingPostRef.current = null;
+      const current = useAuthStore.getState();
+      if (current.session !== session || current.account === null) {
+        return;
+      }
+      setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
@@ -982,6 +990,11 @@ export function ForumLoader(): ReactElement | null {
       const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
       applyCreatedReply(created, parentId, parentBaseline);
       pendingPostRef.current = null;
+      const current = useAuthStore.getState();
+      if (current.session !== session || current.account === null) {
+        return;
+      }
+      setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {

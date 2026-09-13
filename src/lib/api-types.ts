@@ -22,6 +22,12 @@ export const accountSchema = z.object({
   setup: z.enum(['name', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
   missing: z.array(z.enum(['name', 'lightning-address', 'rules'])),
+  /**
+   * True after the owner has posted at least one forum note. Optional so current
+   * develop api bodies still parse; the introduce overlay only opens when this
+   * is strictly `false`.
+   */
+  hasPosted: z.boolean().optional(),
 });
 
 /**
@@ -45,6 +51,9 @@ export const accountSchema = z.object({
  * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
  * or `null` when onboarding is complete (including after skips). `missing` lists
  * fields still unset for posting; skipped steps stay listed until filled.
+ * `hasPosted` is true after the owner has posted in the forum, false until then,
+ * and omitted on older api builds (the introduce overlay fails open when the
+ * field is missing).
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -360,6 +369,41 @@ export const conversationThreadSchema = z.object({
  * One private message from the api.
  */
 export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
+
+/**
+ * Runtime schema for one forum-reply notification from `GET /notifications`.
+ *
+ * `text` may be empty when the reply is photo-only. `readAt` is `null` until
+ * the session marks the row read.
+ */
+export const notificationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('forum_reply'),
+  parentId: z.string().min(1),
+  replyId: z.string().min(1),
+  name: z.string(),
+  text: z.string(),
+  createdAt: z.string().datetime({ offset: true }),
+  readAt: z.string().datetime({ offset: true }).nullable(),
+});
+
+/**
+ * Runtime schema for `GET /notifications`.
+ */
+export const notificationListSchema = z.object({
+  notifications: z.array(notificationSchema),
+  unreadCount: z.number().int().nonnegative(),
+});
+
+/**
+ * One forum-reply notification from the api.
+ */
+export type Notification = z.infer<typeof notificationSchema>;
+
+/**
+ * Signed-in notification list from the api.
+ */
+export type NotificationList = z.infer<typeof notificationListSchema>;
 
 /**
  * Runtime schema for `GET /push/vapid-public` success body.

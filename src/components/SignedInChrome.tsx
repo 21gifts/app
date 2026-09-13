@@ -3,6 +3,7 @@
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  Bell,
   Home,
   Inbox,
   Menu,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
@@ -19,21 +21,30 @@ import { PwaInstall } from '@/components/PwaInstall';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { formatBitcoin } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Profile with same-line given/received amounts only when that
- * side is non-zero, living-room rules, messages, contact, optional PWA
- * install, language, theme, and log out).
+ * side is non-zero, living-room rules, notifications, messages, contact,
+ * optional PWA install, language, theme, and log out). When onboarding is
+ * complete and `hasPosted` is false, also mounts {@link IntroduceYourselfOverlay}.
  *
  * @returns The signed-in Menu chrome.
  */
 export function SignedInChrome(): ReactElement {
   const { t, locale } = useTranslations();
+  const account = useAuthStore((state) => state.account);
   const [open, setOpen] = useState(false);
+  const [introduceDismissed, setIntroduceDismissed] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { donatedSats, receivedSats, loading } = useAccountTotals();
+  const showIntroduce =
+    account !== null &&
+    account.setup === null &&
+    account.hasPosted === false &&
+    !introduceDismissed;
 
   useEffect(() => {
     if (!open) {
@@ -157,6 +168,16 @@ export function SignedInChrome(): ReactElement {
           {t('nav.rules')}
         </Link>
         <Link
+          href="/notifications"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <Bell aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('nav.notifications')}
+        </Link>
+        <Link
           href="/messages"
           onClick={() => {
             setOpen(false);
@@ -186,6 +207,13 @@ export function SignedInChrome(): ReactElement {
         <ThemeSwitcher embedded />
         <LogoutButton />
       </div>
+      {showIntroduce ? (
+        <IntroduceYourselfOverlay
+          onDismiss={() => {
+            setIntroduceDismissed(true);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

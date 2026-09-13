@@ -13,6 +13,7 @@ const en = {
   'nav.legal': 'Legal & Privacy',
   'nav.rules': 'Living room rules',
   'nav.inbox': 'Messages',
+  'nav.notifications': 'Notifications',
   'nav.contact': 'Contact',
 
   'pwa.install': 'Install app',
@@ -247,6 +248,12 @@ const en = {
   'requirements.addressTitle': 'Add your Wallet of Satoshi address',
   'requirements.close': 'Close',
 
+  'introduce.title': 'Introduce yourself',
+  'introduce.body':
+    'Write a short post in the forum so people know who you are. Gifts are only sent to members who have introduced themselves.',
+  'introduce.cta': 'Write an introduction',
+  'introduce.close': 'Close',
+
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
   'profile.received': 'Received {amount}',
@@ -415,6 +422,15 @@ const en = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direct',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Notifications',
+  'notifications.listLabel': 'Notifications',
+  'notifications.empty': 'No notifications yet.',
+  'notifications.loading': 'Loading…',
+  'notifications.error': 'Could not load notifications. Please try again.',
+  'notifications.retry': 'Try again',
+  'notifications.reply': '{name} replied to your post',
+  'notifications.photoOnly': 'Photo reply',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -435,6 +451,7 @@ const de = {
   'nav.legal': 'Impressum & Datenschutz',
   'nav.rules': 'Wohnzimmerregeln',
   'nav.inbox': 'Posteingang',
+  'nav.notifications': 'Benachrichtigungen',
   'nav.contact': 'Kontakt',
   'pwa.install': 'App installieren',
   'pwa.iosTitle': '21.gifts auf den Home-Bildschirm',
@@ -662,6 +679,12 @@ const de = {
   'requirements.addressTitle': 'Wallet of Satoshi address hinterlegen',
   'requirements.close': 'Schließen',
 
+  'introduce.title': 'Stell dich vor',
+  'introduce.body':
+    'Schreib einen kurzen Beitrag im Forum, damit die anderen dich kennen. Geschenke gehen nur an Mitglieder, die sich vorgestellt haben.',
+  'introduce.cta': 'Vorstellung schreiben',
+  'introduce.close': 'Schließen',
+
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
   'profile.received': 'Erhalten {amount}',
@@ -835,6 +858,16 @@ const de = {
   'inbox.origin.contact': 'Kontakt',
   'inbox.origin.direct': 'Direkt',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Benachrichtigungen',
+  'notifications.listLabel': 'Benachrichtigungen',
+  'notifications.empty': 'Noch keine Benachrichtigungen.',
+  'notifications.loading': 'Wird geladen…',
+  'notifications.error':
+    'Benachrichtigungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'notifications.retry': 'Erneut versuchen',
+  'notifications.reply': '{name} hat auf deinen Beitrag geantwortet',
+  'notifications.photoOnly': 'Foto-Antwort',
 } satisfies Messages;
 
 const es = {
@@ -849,6 +882,7 @@ const es = {
   'nav.legal': 'Aviso legal y privacidad',
   'nav.rules': 'Reglas del salón',
   'nav.inbox': 'Bandeja',
+  'nav.notifications': 'Notificaciones',
   'nav.contact': 'Contacto',
   'pwa.install': 'Instalar app',
   'pwa.iosTitle': 'Añadir 21.gifts a la pantalla de inicio',
@@ -1072,6 +1106,12 @@ const es = {
   'requirements.addressTitle': 'Añade tu Wallet of Satoshi address',
   'requirements.close': 'Cerrar',
 
+  'introduce.title': 'Preséntate',
+  'introduce.body':
+    'Escribe una nota breve en el foro para que la gente sepa quién eres. Los regalos solo se envían a los miembros que se han presentado.',
+  'introduce.cta': 'Escribe una presentación',
+  'introduce.close': 'Cerrar',
+
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
   'profile.received': 'Recibido {amount}',
@@ -1241,6 +1281,15 @@ const es = {
   'inbox.origin.contact': 'Contacto',
   'inbox.origin.direct': 'Directo',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Notificaciones',
+  'notifications.listLabel': 'Notificaciones',
+  'notifications.empty': 'Aún no hay notificaciones.',
+  'notifications.loading': 'Cargando…',
+  'notifications.error': 'No se pudieron cargar las notificaciones. Inténtalo de nuevo.',
+  'notifications.retry': 'Intentar de nuevo',
+  'notifications.reply': '{name} respondió a tu publicación',
+  'notifications.photoOnly': 'Respuesta con foto',
 } satisfies Messages;
 
 const fil = {
@@ -1255,6 +1304,7 @@ const fil = {
   'nav.legal': 'Legal at Privacy',
   'nav.rules': 'Mga patakaran sa living room',
   'nav.inbox': 'Mga mensahe',
+  'nav.notifications': 'Mga abiso',
   'nav.contact': 'Contact',
   'pwa.install': 'I-install ang app',
   'pwa.iosTitle': 'Idagdag ang 21.gifts sa Home Screen',
@@ -1480,6 +1530,12 @@ const fil = {
   'requirements.addressTitle': 'Idagdag ang Wallet of Satoshi address mo',
   'requirements.close': 'Isara',
 
+  'introduce.title': 'Ipakilala ang sarili mo',
+  'introduce.body':
+    'Magsulat ng maikling post sa forum para makilala ka ng iba. Ang mga regalo ay ipinapadala lang sa mga miyembrong nagpakilala na.',
+  'introduce.cta': 'Sumulat ng pagpapakilala',
+  'introduce.close': 'Isara',
+
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',
   'profile.received': 'Natanggap {amount}',
@@ -1655,6 +1711,15 @@ const fil = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direkta',
   'inbox.origin.damus': 'Damus',
+
+  'notifications.heading': 'Mga abiso',
+  'notifications.listLabel': 'Mga abiso',
+  'notifications.empty': 'Wala pang mga abiso.',
+  'notifications.loading': 'Naglo-load…',
+  'notifications.error': 'Hindi ma-load ang mga abiso. Subukan ulit.',
+  'notifications.retry': 'Subukan ulit',
+  'notifications.reply': '{name} sumagot sa iyong post',
+  'notifications.photoOnly': 'Sagot na litrato',
 } satisfies Messages;
 
 /**
