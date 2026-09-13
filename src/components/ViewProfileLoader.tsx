@@ -5,16 +5,15 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { ViewProfileScreen } from '@/components/ViewProfileScreen';
-import { recipientHandleFromAddress } from '@/lib/account-totals';
-import { fetchGiftStats, fetchViewProfile } from '@/lib/api';
+import { fetchViewActivity, fetchViewProfile } from '@/lib/api';
 import type { GiftStats, ViewProfile } from '@/lib/api-types';
 
 const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 
 /**
  * Client loader for `/view/[viewKey]`: validates the key, fetches the public
- * profile, then (if address set) filtered gift stats for `spendOverTime`. Does
- * not use `useAuthStore`.
+ * profile, then given/received activity for the chart (even when the Lightning
+ * Address is blank). Does not use `useAuthStore`.
  *
  * @param props - Dynamic route `viewKey`.
  * @returns Loading, missing, error, or the read-only profile card with activate/claim control.
@@ -26,6 +25,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
   );
   const [profile, setProfile] = useState<ViewProfile | null>(null);
   const [received, setReceived] = useState<GiftStats['spendOverTime']>([]);
+  const [donated, setDonated] = useState<GiftStats['spendOverTime']>([]);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -33,6 +33,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
       setStatus('missing');
       setProfile(null);
       setReceived([]);
+      setDonated([]);
       return;
     }
 
@@ -40,6 +41,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     setStatus('loading');
     setProfile(null);
     setReceived([]);
+    setDonated([]);
 
     void (async () => {
       try {
@@ -54,23 +56,21 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         setProfile(next);
         setStatus('ready');
         setReceived([]);
-
-        const trimmed = next.lightningAddress?.trim() ?? '';
-        if (trimmed === '') {
-          return;
-        }
+        setDonated([]);
 
         try {
-          const stats = await fetchGiftStats(recipientHandleFromAddress(trimmed));
+          const activity = await fetchViewActivity(viewKey);
           if (cancelled) {
             return;
           }
-          setReceived(stats.spendOverTime);
+          setReceived(activity.receivedOverTime);
+          setDonated(activity.donatedOverTime);
         } catch {
           if (cancelled) {
             return;
           }
           setReceived([]);
+          setDonated([]);
         }
       } catch {
         if (!cancelled) {
@@ -114,7 +114,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <ViewProfileScreen profile={readyProfile} received={received} />
+      <ViewProfileScreen profile={readyProfile} received={received} donated={donated} />
       <ViewProfileClaim viewKey={viewKey} hasPasskey={readyProfile.hasPasskey} />
     </div>
   );

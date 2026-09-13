@@ -662,6 +662,24 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const EMPTY_ACTIVITY = {
+    donatedSats: 0,
+    receivedSats: 0,
+    donatedOverTime: [],
+    receivedOverTime: [],
+    fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+  };
+
+  if (method === 'GET' && pathName === '/me/activity') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, EMPTY_ACTIVITY);
+    return;
+  }
+
   if (method === 'GET' && pathName === '/push/vapid-public') {
     const token = bearer(req);
     if (token === null || !byToken.has(token)) {
@@ -749,6 +767,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const membersActivityMatch = pathName.match(/^\/members\/([^/]+)\/activity$/);
+  if (method === 'GET' && membersActivityMatch) {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, EMPTY_ACTIVITY);
+    return;
+  }
+
   const memberPostsMatch = pathName.match(/^\/members\/([^/]+)\/posts$/);
   if (method === 'GET' && memberPostsMatch) {
     const token = bearer(req);
@@ -831,6 +860,12 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  const viewActivityMatch = pathName.match(/^\/view\/([^/]+)\/activity$/);
+  if (method === 'GET' && viewActivityMatch) {
+    json(res, 200, EMPTY_ACTIVITY);
     return;
   }
 

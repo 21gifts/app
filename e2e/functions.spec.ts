@@ -220,6 +220,23 @@ async function stubGiftStats(page: Page, body: unknown): Promise<void> {
   });
 }
 
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [] as const,
+  receivedOverTime: [] as const,
+  fx: FX_USD,
+};
+async function stubAccountActivity(page: Page, body: unknown): Promise<void> {
+  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
 async function openSignedInMenu(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Menu' }).click();
 }
@@ -4271,11 +4288,11 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
       }),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/**/activity**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto('/view/[viewKey]');
@@ -4312,11 +4329,11 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
       }),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/**/activity**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${key}`);
@@ -4348,11 +4365,11 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
       }),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/**/activity**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${key}`);
@@ -4378,11 +4395,11 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
       }),
     });
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/view-key/**/activity**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(EMPTY_STATS),
+      body: JSON.stringify(EMPTY_ACTIVITY),
     });
   });
   await page.goto(`/view/${key}`);
@@ -4394,24 +4411,40 @@ test('Function: proxyViewGet — GET /view-key/[viewKey] is reachable', async ({
   const res = await request.get('/view-key/[viewKey]');
   expect(res.status()).toBeGreaterThanOrEqual(400);
 });
+test('Function: fetchAccountActivity — signed-out GET /me/activity is 401', async ({ request }) => {
+  expect((await request.get('/me/activity')).status()).toBe(401);
+});
+test('Function: fetchMemberActivity — GET /forum/members/[accountId]/activity is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/forum/members/[accountId]/activity')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+test('Function: fetchViewActivity — GET /view-key/[viewKey]/activity is reachable', async ({
+  request,
+}) => {
+  expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
+});
+test('Function: proxyMeActivityGet — GET /me/activity is 401', async ({ request }) => {
+  expect((await request.get('/me/activity')).status()).toBe(401);
+});
+test('Function: proxyMembersActivityGet — GET /forum/members/[accountId]/activity is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/forum/members/[accountId]/activity')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+test('Function: proxyViewActivityGet — GET /view-key/[viewKey]/activity is reachable', async ({
+  request,
+}) => {
+  expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
+});
 
 test('Function: accountTotals — menu shows received sats for alice', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 2,
-        sats: 1000,
-        btc: '0.00001000',
-        usd: '0.95',
-        chf: '0.80',
-        eur: '0.86',
-        php: '53.00',
-      },
-    ],
-  });
+  await stubAccountActivity(page, { ...EMPTY_ACTIVITY, receivedSats: 1000 });
   await page.goto('/profile');
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
@@ -4419,43 +4452,15 @@ test('Function: accountTotals — menu shows received sats for alice', async ({ 
 
 test('Function: recipientHandleFromAddress — alice handle matches stats row', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 2,
-        sats: 1000,
-        btc: '0.00001000',
-        usd: '0.95',
-        chf: '0.80',
-        eur: '0.86',
-        php: '53.00',
-      },
-    ],
-  });
+  await stubAccountActivity(page, { ...EMPTY_ACTIVITY, receivedSats: 1000 });
   await page.goto('/profile');
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
-test('Function: useAccountTotals — profile totals load from gift stats', async ({ page }) => {
+test('Function: useAccountTotals — profile totals load from activity', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 2,
-        sats: 1000,
-        btc: '0.00001000',
-        usd: '0.95',
-        chf: '0.80',
-        eur: '0.86',
-        php: '53.00',
-      },
-    ],
-  });
+  await stubAccountActivity(page, { ...EMPTY_ACTIVITY, receivedSats: 1000 });
   await page.goto('/profile');
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
@@ -4465,7 +4470,7 @@ test('Function: AccountActivityChart — profile shows Given legend and ₿ char
   page,
 }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, EMPTY_STATS);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByLabel('Given and received in ₿')).toHaveCount(0);
@@ -4476,24 +4481,10 @@ test('Function: alignActivitySeries — receive series days appear on the profil
   page,
 }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    totalSats: 1500,
-    giftCount: 2,
-    recipientCount: 1,
-    spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 2,
-        sats: 1500,
-        btc: '0.00001500',
-        usd: '1.43',
-        chf: '1.20',
-        eur: '1.30',
-        php: '80.00',
-      },
-    ],
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    receivedSats: 1500,
+    receivedOverTime: POPULATED_STATS.spendOverTime,
   });
   await page.goto('/profile');
   await expect(page.getByText('2026-06-01')).toBeVisible();
@@ -4504,25 +4495,10 @@ test('Function: activityValue — USD toggle shows received USD on the profile c
   page,
 }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    totalSats: 1500,
-    totalUsd: '1.43',
-    giftCount: 2,
-    recipientCount: 1,
-    spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 2,
-        sats: 1500,
-        btc: '0.00001500',
-        usd: '1.43',
-        chf: '1.20',
-        eur: '1.30',
-        php: '80.00',
-      },
-    ],
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    receivedSats: 1500,
+    receivedOverTime: POPULATED_STATS.spendOverTime,
   });
   await page.goto('/profile');
   await page
@@ -4537,7 +4513,7 @@ test('Function: activityMaxY — empty profile chart shows copy instead of an ax
   page,
 }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, EMPTY_STATS);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByLabel('Given and received in ₿')).toHaveCount(0);
@@ -4547,24 +4523,10 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
   page,
 }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    totalSats: 1500,
-    giftCount: 2,
-    recipientCount: 1,
-    spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 2,
-        sats: 1500,
-        btc: '0.00001500',
-        usd: '1.43',
-        chf: '1.20',
-        eur: '1.30',
-        php: '80.00',
-      },
-    ],
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    receivedSats: 1500,
+    receivedOverTime: POPULATED_STATS.spendOverTime,
   });
   await page.goto('/profile');
   await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
@@ -4572,7 +4534,7 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
 
 test('Function: ThemeProvider — picking Dark sets html.dark on /profile', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, EMPTY_STATS);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
@@ -4580,7 +4542,7 @@ test('Function: ThemeProvider — picking Dark sets html.dark on /profile', asyn
 
 test('Function: ThemeSwitcher — System Light Dark options on /profile', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, EMPTY_STATS);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   const theme = page.getByRole('group', { name: 'Theme' });
   await expect(theme.getByRole('button', { name: 'System' })).toBeVisible();
@@ -4590,14 +4552,14 @@ test('Function: ThemeSwitcher — System Light Dark options on /profile', async 
 
 test('Function: useTheme — ThemeSwitcher on /profile reads provider context', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, EMPTY_STATS);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'Theme' })).toBeVisible();
 });
 
 test('Function: THEME_COOKIE — Dark option persists theme=dark', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, EMPTY_STATS);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   expect(await page.context().cookies()).toEqual(

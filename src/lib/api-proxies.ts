@@ -51,6 +51,16 @@ export async function proxyMeGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /me/activity to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeActivityGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/activity');
+}
+
+/**
  * Proxies POST /me/name to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -89,6 +99,20 @@ export async function proxyMeSetupSkipPost(request: Request): Promise<Response> 
  */
 export async function proxyMembersGet(request: Request, accountId: string): Promise<Response> {
   return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}`);
+}
+
+/**
+ * Proxies GET /members/:accountId/activity to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersActivityGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/activity`);
 }
 
 /**
@@ -378,6 +402,17 @@ export async function proxyMessagesVideoGet(
  */
 export async function proxyViewGet(request: Request, viewKey: string): Promise<Response> {
   return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}`);
+}
+
+/**
+ * Proxies GET /view/:viewKey/activity to the 21.gifts api (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @param viewKey - 64-hex view key from the URL.
+ * @returns The upstream response.
+ */
+export async function proxyViewActivityGet(request: Request, viewKey: string): Promise<Response> {
+  return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}/activity`);
 }
 
 /**

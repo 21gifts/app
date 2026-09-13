@@ -43,6 +43,68 @@ const FX_ALL = {
   ],
 };
 
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [] as const,
+  receivedOverTime: [] as const,
+  fx: FX_USD,
+};
+
+const VIEW_RECEIVED_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 1500,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 500,
+      cumulativeSats: 500,
+      btc: '0.00000500',
+      cumulativeBtc: '0.00000500',
+      usd: '0.48',
+      cumulativeUsd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
+    },
+    {
+      day: '2026-06-02',
+      sats: 0,
+      cumulativeSats: 500,
+      btc: '0.00000000',
+      cumulativeBtc: '0.00000500',
+      usd: '0.00',
+      cumulativeUsd: '0.48',
+      chf: '0.00',
+      eur: '0.00',
+      php: '0.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
+    },
+    {
+      day: '2026-07-01',
+      sats: 1000,
+      cumulativeSats: 1500,
+      btc: '0.00001000',
+      cumulativeBtc: '0.00001500',
+      usd: '0.95',
+      cumulativeUsd: '1.43',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '1.20',
+      cumulativeEur: '1.30',
+      cumulativePhp: '80.00',
+    },
+  ],
+  fx: FX_ALL,
+};
+
 const STATS_DEFAULT = {
   totalSats: 1500,
   totalBtc: '0.00001500',
@@ -1187,6 +1249,13 @@ test.describe('onboarding screens', () => {
           setup: null,
           missing: [],
         }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto('/profile');
@@ -2502,11 +2571,11 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/view-key/**/activity**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(STATS_DEFAULT),
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
@@ -2568,11 +2637,11 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/view-key/**/activity**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(STATS_DEFAULT),
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
@@ -2601,11 +2670,11 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/view-key/**/activity**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(STATS_DEFAULT),
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
@@ -2618,17 +2687,10 @@ test.describe('onboarding screens', () => {
 });
 
 const PROFILE_RECEIVE_STATS = {
-  totalSats: 1500,
-  totalBtc: '0.00001500',
-  totalUsd: '1.43',
-  totalChf: '1.20',
-  totalEur: '1.30',
-  totalPhp: '80.00',
-  giftCount: 2,
-  recipientCount: 1,
-  firstPaidAt: '2026-06-01T00:00:00.000Z',
-  lastPaidAt: '2026-06-03T00:00:00.000Z',
-  spendOverTime: [
+  donatedSats: 0,
+  receivedSats: 1500,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
     {
       day: '2026-06-01',
       sats: 500,
@@ -2675,34 +2737,14 @@ const PROFILE_RECEIVE_STATS = {
       cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1500,
-      btc: '0.00001500',
-      usd: '1.43',
-      chf: '1.20',
-      eur: '1.30',
-      php: '80.00',
-    },
-  ],
-  byMonth: [],
   fx: FX_ALL,
 };
 
 const PROFILE_SINGLE_DAY_STATS = {
-  totalSats: 21,
-  totalBtc: '0.00000021',
-  totalUsd: '0.02',
-  totalChf: '0.02',
-  totalEur: '0.02',
-  totalPhp: '1.00',
-  giftCount: 1,
-  recipientCount: 1,
-  firstPaidAt: '2026-06-01T00:00:00.000Z',
-  lastPaidAt: '2026-06-01T00:00:00.000Z',
-  spendOverTime: [
+  donatedSats: 0,
+  receivedSats: 21,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
     {
       day: '2026-06-01',
       sats: 21,
@@ -2719,34 +2761,14 @@ const PROFILE_SINGLE_DAY_STATS = {
       cumulativePhp: '1.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 1,
-      sats: 21,
-      btc: '0.00000021',
-      usd: '0.02',
-      chf: '0.02',
-      eur: '0.02',
-      php: '1.00',
-    },
-  ],
-  byMonth: [],
   fx: FX_ALL,
 };
 
 const PROFILE_LARGE_USD_STATS = {
-  totalSats: 1_500_000,
-  totalBtc: '0.01500000',
-  totalUsd: '1425.00',
-  totalChf: '1200.00',
-  totalEur: '1300.00',
-  totalPhp: '80000.00',
-  giftCount: 2,
-  recipientCount: 1,
-  firstPaidAt: '2026-06-01T00:00:00.000Z',
-  lastPaidAt: '2026-06-02T00:00:00.000Z',
-  spendOverTime: [
+  donatedSats: 0,
+  receivedSats: 1_500_000,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
     {
       day: '2026-06-01',
       sats: 500_000,
@@ -2778,19 +2800,30 @@ const PROFILE_LARGE_USD_STATS = {
       cumulativePhp: '80000.00',
     },
   ],
-  byRecipient: [
+  fx: FX_ALL,
+};
+
+const GIVEN_RECEIVED_ACTIVITY = {
+  donatedSats: 2100,
+  receivedSats: 1500,
+  donatedOverTime: [
     {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1_500_000,
-      btc: '0.01500000',
-      usd: '1425.00',
-      chf: '1200.00',
-      eur: '1300.00',
-      php: '80000.00',
+      day: '2026-06-02',
+      sats: 2100,
+      cumulativeSats: 2100,
+      btc: '0.00002100',
+      cumulativeBtc: '0.00002100',
+      usd: '2.00',
+      cumulativeUsd: '2.00',
+      chf: '2.00',
+      eur: '2.00',
+      php: '2.00',
+      cumulativeChf: '2.00',
+      cumulativeEur: '2.00',
+      cumulativePhp: '2.00',
     },
   ],
-  byMonth: [],
+  receivedOverTime: PROFILE_RECEIVE_STATS.receivedOverTime,
   fx: FX_ALL,
 };
 
@@ -2818,7 +2851,7 @@ test.describe('profile activity chart variants', () => {
   }
 
   async function stubProfileStats(page: Page, body: unknown): Promise<void> {
-    await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -2866,6 +2899,15 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByLabel('Given and received in USD')).toBeVisible();
     await expect(page.getByText("$1'425")).toBeVisible();
     await shotScreen(page, 'state-profile-large-usd');
+  });
+
+  test('profile given-received', async ({ page }) => {
+    // state-profile-given-received
+    await seedAdaProfile(page);
+    await stubProfileStats(page, GIVEN_RECEIVED_ACTIVITY);
+    await page.goto('/profile');
+    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await shotScreen(page, 'state-profile-given-received');
   });
 });
 

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
-import { fetchGiftStats } from '@/lib/api';
+import { fetchAccountActivity } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { isStandaloneDisplay } from '@/lib/push';
@@ -62,21 +62,26 @@ vi.mock('@/lib/push', () => ({
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
 }));
+const EMPTY_FX = {
+  quote: 'BTC-USD' as const,
+  dayBasis: 'utc' as const,
+  source: 'coinbase-exchange-daily-close' as const,
+  quotes: [{ code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [],
+  receivedOverTime: [],
+  fx: EMPTY_FX,
+};
+
 vi.mock('@/lib/api', () => ({
-  fetchGiftStats: vi.fn().mockResolvedValue({
-    totalSats: 0,
-    totalBtc: '0.00000000',
-    totalUsd: '0.00',
-    totalChf: '0.00',
-    totalEur: '0.00',
-    totalPhp: '0.00',
-    giftCount: 0,
-    recipientCount: 0,
-    firstPaidAt: null,
-    lastPaidAt: null,
-    spendOverTime: [],
-    byRecipient: [],
-    byMonth: [],
+  fetchAccountActivity: vi.fn().mockResolvedValue({
+    donatedSats: 0,
+    receivedSats: 0,
+    donatedOverTime: [],
+    receivedOverTime: [],
     fx: {
       quote: 'BTC-USD',
       dayBasis: 'utc',
@@ -115,27 +120,7 @@ beforeEach(() => {
   vi.mocked(isStandaloneDisplay).mockReturnValue(false);
   vi.mocked(isInAppBrowser).mockReturnValue(false);
   vi.mocked(useAccountTotals).mockImplementation(useAccountTotalsActual);
-  vi.mocked(fetchGiftStats).mockResolvedValue({
-    totalSats: 0,
-    totalBtc: '0.00000000',
-    totalUsd: '0.00',
-    totalChf: '0.00',
-    totalEur: '0.00',
-    totalPhp: '0.00',
-    giftCount: 0,
-    recipientCount: 0,
-    firstPaidAt: null,
-    lastPaidAt: null,
-    spendOverTime: [],
-    byRecipient: [],
-    byMonth: [],
-    fx: {
-      quote: 'BTC-USD',
-      dayBasis: 'utc',
-      source: 'coinbase-exchange-daily-close',
-      quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-    },
-  });
+  vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status: 'idle',
     login: vi.fn(),
@@ -262,37 +247,9 @@ describe('SignedInChrome', () => {
   });
 
   it('formats a single received amount as BIP-177 ₿1', async () => {
-    vi.mocked(fetchGiftStats).mockResolvedValue({
-      totalSats: 1,
-      totalBtc: '0.00000001',
-      totalUsd: '0.00',
-      totalChf: '0.00',
-      totalEur: '0.00',
-      totalPhp: '0.00',
-      giftCount: 1,
-      recipientCount: 1,
-      firstPaidAt: null,
-      lastPaidAt: null,
-      spendOverTime: [],
-      byRecipient: [
-        {
-          recipient: 'alice',
-          giftCount: 1,
-          sats: 1,
-          btc: '0.00000001',
-          usd: '0.00',
-          chf: '0.00',
-          eur: '0.00',
-          php: '0.00',
-        },
-      ],
-      byMonth: [],
-      fx: {
-        quote: 'BTC-USD',
-        dayBasis: 'utc',
-        source: 'coinbase-exchange-daily-close',
-        quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-      },
+    vi.mocked(fetchAccountActivity).mockResolvedValue({
+      ...EMPTY_ACTIVITY,
+      receivedSats: 1,
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -306,37 +263,9 @@ describe('SignedInChrome', () => {
   });
 
   it("formats a single received amount as BIP-177 ₿1'000 and hides zero given", async () => {
-    vi.mocked(fetchGiftStats).mockResolvedValue({
-      totalSats: 1000,
-      totalBtc: '0.00001000',
-      totalUsd: '0.00',
-      totalChf: '0.00',
-      totalEur: '0.00',
-      totalPhp: '0.00',
-      giftCount: 1,
-      recipientCount: 1,
-      firstPaidAt: null,
-      lastPaidAt: null,
-      spendOverTime: [],
-      byRecipient: [
-        {
-          recipient: 'alice',
-          giftCount: 1,
-          sats: 1000,
-          btc: '0.00001000',
-          usd: '0.00',
-          chf: '0.00',
-          eur: '0.00',
-          php: '0.00',
-        },
-      ],
-      byMonth: [],
-      fx: {
-        quote: 'BTC-USD',
-        dayBasis: 'utc',
-        source: 'coinbase-exchange-daily-close',
-        quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-      },
+    vi.mocked(fetchAccountActivity).mockResolvedValue({
+      ...EMPTY_ACTIVITY,
+      receivedSats: 1000,
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -353,6 +282,7 @@ describe('SignedInChrome', () => {
     vi.mocked(useAccountTotals).mockReturnValue({
       donatedSats: 0,
       receivedSats: 0,
+      donateOverTime: [],
       receiveOverTime: [],
       loading: true,
     });
@@ -368,6 +298,7 @@ describe('SignedInChrome', () => {
     vi.mocked(useAccountTotals).mockReturnValue({
       donatedSats: 1,
       receivedSats: 0,
+      donateOverTime: [],
       receiveOverTime: [],
       loading: false,
     });
@@ -384,6 +315,7 @@ describe('SignedInChrome', () => {
     vi.mocked(useAccountTotals).mockReturnValue({
       donatedSats: 1,
       receivedSats: 1000,
+      donateOverTime: [],
       receiveOverTime: [],
       loading: false,
     });

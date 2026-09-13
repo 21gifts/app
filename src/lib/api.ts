@@ -13,6 +13,7 @@ import {
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
+  accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
   passkeyBeginSchema,
@@ -29,6 +30,7 @@ import {
   type ForumMessage,
   type GiftDay,
   type GiftStats,
+  type AccountActivity,
   type LnAddressResolved,
   type MemberProfile,
   type MessageInvoice,
@@ -497,6 +499,99 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
       throw new Error('Could not load gift stats. Please try again.');
     }
     return giftStatsSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches given and received activity for the signed-in account.
+ *
+ * Hits same-origin `GET /me/activity` (Bearer). Totals include house gifts and
+ * forum zaps and do not require a Lightning Address.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The {@link AccountActivity} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link accountActivitySchema}.
+ */
+export async function fetchAccountActivity(sessionToken: string): Promise<AccountActivity> {
+  try {
+    const response = await fetch('/me/activity', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    return accountActivitySchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches given and received activity for a signed-in member profile.
+ *
+ * Hits same-origin `GET /forum/members/:id/activity` (Bearer).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param accountId - Member account id.
+ * @returns The {@link AccountActivity} payload.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on 401/404, other non-2xx, or a body
+ * that fails {@link accountActivitySchema}.
+ */
+export async function fetchMemberActivity(
+  sessionToken: string,
+  accountId: string,
+): Promise<AccountActivity> {
+  try {
+    const response = await fetch(`/forum/members/${encodeURIComponent(accountId)}/activity`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (response.status === 409) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        throw new Error('Could not load gift stats. Please try again.');
+      }
+      const missing = parseMissingRequirements(body);
+      if (missing !== null) {
+        throw missing;
+      }
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    return accountActivitySchema.parse(await response.json());
+  } catch (err) {
+    if (err instanceof MissingRequirementsError) {
+      throw err;
+    }
+    throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches given and received activity for a public view-key profile.
+ *
+ * Hits same-origin `GET /view-key/:viewKey/activity` (no auth).
+ *
+ * @param viewKey - 64 lowercase hex capability key.
+ * @returns The {@link AccountActivity} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link accountActivitySchema}. Callers that keep the profile card
+ * on a stats failure should catch and treat both series as empty.
+ */
+export async function fetchViewActivity(viewKey: string): Promise<AccountActivity> {
+  try {
+    const response = await fetch(`/view-key/${encodeURIComponent(viewKey)}/activity`);
+    if (!response.ok) {
+      throw new Error('Could not load gift stats. Please try again.');
+    }
+    return accountActivitySchema.parse(await response.json());
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
   }

@@ -199,6 +199,27 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * Runtime schema for signed-in, member, and public-view activity
+ * (`GET /me/activity`, `GET /members/:id/activity`, `GET /view/:viewKey/activity`).
+ *
+ * `donatedOverTime` / `receivedOverTime` are the same {@link spendDaySchema}
+ * objects as {@link GiftStats.spendOverTime}. Totals include house gifts and
+ * forum zaps.
+ */
+export const accountActivitySchema = z.object({
+  donatedSats: z.number().int().nonnegative(),
+  receivedSats: z.number().int().nonnegative(),
+  donatedOverTime: z.array(spendDaySchema),
+  receivedOverTime: z.array(spendDaySchema),
+  fx: giftStatsFxSchema,
+});
+
+/**
+ * Given and received sat totals plus cumulative series for one account.
+ */
+export type AccountActivity = z.infer<typeof accountActivitySchema>;
+
+/**
  * One outbound gift in `GET /gifts?day=`.
  */
 export const giftDayGiftSchema = z.object({

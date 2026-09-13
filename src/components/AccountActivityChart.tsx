@@ -22,11 +22,12 @@ import {
 
 /** Props for {@link AccountActivityChart}. */
 export interface AccountActivityChartProps {
-  /** Cumulative receive series from filtered gift stats. */
+  /** Cumulative receive series from account activity. */
   received: GiftStats['spendOverTime'];
   /**
-   * Cumulative give series. Defaults to `[]` so Given stays zero on the same
-   * days as `received` (v1: payments are not attributed).
+   * Cumulative give series from account activity. Defaults to `[]` so Given
+   * stays zero on the same days as `received` when omitted. Do not pass
+   * `undefined`; omit the prop or pass `[]`.
    */
   donated?: GiftStats['spendOverTime'];
 }

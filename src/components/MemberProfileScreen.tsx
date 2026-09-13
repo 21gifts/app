@@ -172,15 +172,17 @@ const IDLE_BOARD = {
  * role pill, post/reply counts, optional pinned forum note, and stacked
  * activity feeds.
  *
- * @param props - Member profile and receive series for the chart.
+ * @param props - Member profile and both activity series for the chart.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
   profile,
   received,
+  donated = [],
 }: {
   profile: MemberProfile;
   received: GiftStats['spendOverTime'];
+  donated?: GiftStats['spendOverTime'];
 }): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
@@ -817,7 +819,7 @@ export function MemberProfileScreen({
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
-          <AccountActivityChart received={received} />
+          <AccountActivityChart received={received} donated={donated} />
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
               {t('name.heading')}
