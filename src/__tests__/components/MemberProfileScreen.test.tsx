@@ -95,6 +95,7 @@ beforeEach(() => {
   vi.mocked(fetchReplies).mockResolvedValue([]);
   vi.mocked(openConversation).mockResolvedValue({
     id: 'conv-1',
+    kind: 'member_member',
     name: 'Carol',
     lastText: '',
     lastAt: '2026-01-01T00:00:00.000Z',
@@ -602,6 +603,7 @@ describe('MemberProfileScreen', () => {
   it('ignores a second PM click while a request is in flight', async () => {
     let resolveThread!: (value: {
       id: string;
+      kind: 'member_member' | 'member_platform' | 'member_damus';
       name: string;
       lastText: string;
       lastAt: string;
@@ -619,6 +621,7 @@ describe('MemberProfileScreen', () => {
     expect(openConversation).toHaveBeenCalledTimes(1);
     resolveThread({
       id: 'conv-1',
+      kind: 'member_member',
       name: 'Carol',
       lastText: '',
       lastAt: '2026-01-01T00:00:00.000Z',

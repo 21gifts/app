@@ -11,6 +11,13 @@ import {
 } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 
+/** Catalog key for each conversation.kind origin label. */
+const CONVERSATION_ORIGIN_KEY = {
+  member_member: 'inbox.origin.direct',
+  member_platform: 'inbox.origin.contact',
+  member_damus: 'inbox.origin.damus',
+} as const;
+
 /** Client-side composer validation or request failure. */
 export type InboxFormError = 'empty' | 'tooLong' | 'request' | null;
 
@@ -52,7 +59,7 @@ export interface InboxScreenProps {
 
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
- * a 500-character composer.
+ * a 500-character composer. Origin labels come from {@link Conversation} `kind`.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.
@@ -101,9 +108,16 @@ export function InboxScreen({
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </IconButton>
-          <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-            {open?.name ?? t('inbox.heading')}
-          </h1>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+              {open?.name ?? t('inbox.heading')}
+            </h1>
+            {open !== null ? (
+              <p className="text-center text-xs text-app-subtle">
+                {t(CONVERSATION_ORIGIN_KEY[open.kind])}
+              </p>
+            ) : null}
+          </div>
         </div>
         {messagesLoading && messages === null ? (
           <p className="text-center text-sm text-app-muted">{t('inbox.loading')}</p>
@@ -229,6 +243,9 @@ export function InboxScreen({
                   <time dateTime={row.lastAt} className="text-xs text-app-subtle">
                     {formatForumTime(row.lastAt, locale)}
                   </time>
+                </span>
+                <span className="text-xs text-app-subtle">
+                  {t(CONVERSATION_ORIGIN_KEY[row.kind])}
                 </span>
                 {row.lastText !== '' ? (
                   <span className="line-clamp-2 text-sm text-app-muted">{row.lastText}</span>

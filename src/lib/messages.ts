@@ -412,6 +412,9 @@ const en = {
   'inbox.errorEmpty': 'Enter a message',
   'inbox.errorTooLong': 'Keep it to 500 characters',
   'inbox.errorRequest': 'Could not send your message',
+  'inbox.origin.contact': 'Contact',
+  'inbox.origin.direct': 'Direct',
+  'inbox.origin.damus': 'Damus',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -829,6 +832,9 @@ const de = {
   'inbox.errorEmpty': 'Bitte schreiben Sie eine Nachricht',
   'inbox.errorTooLong': 'Maximal 500 Zeichen',
   'inbox.errorRequest': 'Nachricht konnte nicht gesendet werden',
+  'inbox.origin.contact': 'Kontakt',
+  'inbox.origin.direct': 'Direkt',
+  'inbox.origin.damus': 'Damus',
 } satisfies Messages;
 
 const es = {
@@ -1232,6 +1238,9 @@ const es = {
   'inbox.errorEmpty': 'Escribe un mensaje',
   'inbox.errorTooLong': 'Máximo 500 caracteres',
   'inbox.errorRequest': 'No se pudo enviar el mensaje',
+  'inbox.origin.contact': 'Contacto',
+  'inbox.origin.direct': 'Directo',
+  'inbox.origin.damus': 'Damus',
 } satisfies Messages;
 
 const fil = {
@@ -1643,6 +1652,9 @@ const fil = {
   'inbox.errorEmpty': 'Maglagay ng mensahe',
   'inbox.errorTooLong': 'Hanggang 500 na karakter',
   'inbox.errorRequest': 'Hindi maipadala ang mensahe',
+  'inbox.origin.contact': 'Contact',
+  'inbox.origin.direct': 'Direkta',
+  'inbox.origin.damus': 'Damus',
 } satisfies Messages;
 
 /**

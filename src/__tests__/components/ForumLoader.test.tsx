@@ -3015,6 +3015,7 @@ describe('ForumLoader', () => {
     ]);
     openConversationMock.mockResolvedValue({
       id: 'conv-bob',
+      kind: 'member_member',
       name: 'Bob',
       lastText: '',
       lastAt: '2026-08-28T11:00:00.000Z',
@@ -3116,6 +3117,7 @@ describe('ForumLoader', () => {
     expect(openConversationMock).toHaveBeenCalledTimes(1);
     resolveOpen?.({
       id: 'conv-bob',
+      kind: 'member_member',
       name: 'Bob',
       lastText: '',
       lastAt: '2026-08-28T11:00:00.000Z',

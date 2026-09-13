@@ -1460,14 +1460,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: conversation list or one open thread with a 500-character composer.
+- **Purpose:** Presentational inbox: conversation list or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus).
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`.
 
 ## Function: fetchConversations
 
-- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`.
+- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`.
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation list, or throws visitor copy.
 - **Used by:** `InboxLoader`, `ContactLoader`.

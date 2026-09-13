@@ -16,11 +16,11 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
+/** @type {Array<{ id: string, accountId?: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
-/** @type {Array<{ id: string, name: string, lastText: string, lastAt: string, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string }> }>} */
+/** @type {Array<{ id: string, kind: 'member_member' | 'member_platform' | 'member_damus', name: string, lastText: string, lastAt: string, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string }> }>} */
 const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
@@ -371,6 +371,7 @@ const server = http.createServer(async (req, res) => {
     if (thread === undefined) {
       thread = {
         id: `conv_${hex(randomBytes(8))}`,
+        kind: 'member_platform',
         name: '21.gifts',
         lastText: text,
         lastAt: created.createdAt,
@@ -378,6 +379,8 @@ const server = http.createServer(async (req, res) => {
         messages: [],
       };
       conversations.unshift(thread);
+    } else {
+      thread.kind = thread.kind ?? 'member_platform';
     }
     thread.messages.push({
       id: created.id,
@@ -403,6 +406,7 @@ const server = http.createServer(async (req, res) => {
         .filter((row) => row.ownerId === account.id)
         .map((row) => ({
           id: row.id,
+          kind: row.kind ?? 'member_member',
           name: row.name,
           lastText: row.lastText,
           lastAt: row.lastAt,
@@ -439,8 +443,13 @@ const server = http.createServer(async (req, res) => {
     let thread = conversations.find((row) => row.ownerId === account.id && row.name === note.name);
     if (thread === undefined) {
       const now = new Date().toISOString();
+      const kind =
+        typeof note.accountId === 'string' && note.accountId !== ''
+          ? 'member_member'
+          : 'member_damus';
       thread = {
         id: `conv_${hex(randomBytes(8))}`,
+        kind,
         name: note.name,
         lastText: '',
         lastAt: now,
@@ -451,6 +460,7 @@ const server = http.createServer(async (req, res) => {
     }
     json(res, 200, {
       id: thread.id,
+      kind: thread.kind ?? 'member_member',
       name: thread.name,
       lastText: thread.lastText,
       lastAt: thread.lastAt,

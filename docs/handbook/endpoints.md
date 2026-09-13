@@ -205,14 +205,14 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (private threads the session may see).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (private threads the session may see). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author.
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author. Response is the same conversation list-row shape, including required `kind`.
 - **Errors:** Upstream 400 (self), 404 (unknown note), 401/503, or 502 if the api is unreachable.
 - **Used by:** `openConversation` from the forum PM control.
 - **Auth:** Bearer.
