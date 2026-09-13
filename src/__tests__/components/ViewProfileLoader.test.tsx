@@ -17,6 +17,7 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 
 const profile: ViewProfile = {
   name: 'Ada',
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   createdAt: 1,

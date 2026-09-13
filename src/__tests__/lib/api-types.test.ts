@@ -27,6 +27,7 @@ const account = {
   linkingKey: '02abcdef',
   role: 'basis' as const,
   name: null,
+  location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
@@ -42,6 +43,7 @@ describe('memberProfileSchema', () => {
     const profile = {
       id: '22222222-2222-4222-8222-222222222222',
       name: 'Carol',
+      location: null,
       role: 'verified' as const,
       lightningAddress: 'carol@walletofsatoshi.com',
       createdAt: '2026-01-15T12:00:00.000Z',
@@ -71,12 +73,27 @@ describe('memberProfileSchema', () => {
       memberProfileSchema.parse({
         id: 'x',
         name: '',
+        location: null,
         role: 'basis',
         lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
         postCount: 0,
         replyCount: 0,
+      }),
+    ).toThrow();
+  });
+
+  it('rejects an empty location', () => {
+    expect(() =>
+      memberProfileSchema.parse({
+        id: '22222222-2222-4222-8222-222222222222',
+        name: 'Carol',
+        location: '',
+        role: 'verified',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
       }),
     ).toThrow();
   });
@@ -387,11 +404,20 @@ describe('accountSchema', () => {
   it('rejects a viewKey with the wrong length', () => {
     expect(() => accountSchema.parse({ ...account, viewKey: 'a'.repeat(63) })).toThrow();
   });
+
+  it('accepts a location string', () => {
+    expect(accountSchema.parse({ ...account, location: 'Zug' }).location).toBe('Zug');
+  });
+
+  it('rejects an empty location', () => {
+    expect(() => accountSchema.parse({ ...account, location: '' })).toThrow();
+  });
 });
 
 describe('viewProfileSchema', () => {
   const profile = {
     name: 'Ada',
+    location: null,
     lightningAddress: 'alice@walletofsatoshi.com',
     lightningAddressVerified: false,
     createdAt: 1_700_000_000,
@@ -409,6 +435,10 @@ describe('viewProfileSchema', () => {
 
   it('rejects an empty name', () => {
     expect(() => viewProfileSchema.parse({ ...profile, name: '' })).toThrow();
+  });
+
+  it('rejects an empty location', () => {
+    expect(() => viewProfileSchema.parse({ ...profile, location: '' })).toThrow();
   });
 });
 

@@ -19,6 +19,7 @@ beforeEach(() => {
       linkingKey: null,
       role: 'basis',
       name: null,
+      location: null,
       lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: false,

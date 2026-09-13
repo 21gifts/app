@@ -28,6 +28,7 @@ const memberId = '22222222-2222-4222-8222-222222222222';
 const profile: MemberProfile = {
   id: memberId,
   name: 'Carol',
+  location: null,
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
@@ -68,6 +69,7 @@ beforeEach(() => {
       linkingKey: null,
       role: 'basis',
       name: 'Ada',
+      location: null,
       lightningAddress: 'alice@walletofsatoshi.com',
       lightningAddressVerified: false,
       forumLawsDismissed: true,

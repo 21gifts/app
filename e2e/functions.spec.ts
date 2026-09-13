@@ -237,6 +237,7 @@ async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis')
         linkingKey: null,
         role,
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -519,6 +520,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -577,6 +579,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -612,6 +615,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1033,6 +1037,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
         linkingKey: `02${'a'.repeat(62)}`,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1051,6 +1056,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
       body: JSON.stringify({
         id: memberId,
         name: 'Carol',
+        location: null,
         role: 'verified',
         lightningAddress: 'carol@walletofsatoshi.com',
         createdAt: '2026-01-15T12:00:00.000Z',
@@ -1158,6 +1164,34 @@ test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({
   expect(tooLong.status()).toBe(400);
 });
 
+test('Function: proxyMeLocationPost — POST /me/location sets a location', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: 'Zug' },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { location: string | null }).location).toBe('Zug');
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { location: string | null }).location).toBe('Zug');
+  const cleared = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: '' },
+  });
+  expect(cleared.status()).toBe(200);
+  expect(((await cleared.json()) as { location: string | null }).location).toBeNull();
+  const maxOk = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: 'A'.repeat(80) },
+  });
+  expect(maxOk.status()).toBe(200);
+  const tooLong = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: 'A'.repeat(81) },
+  });
+  expect(tooLong.status()).toBe(400);
+});
+
 test('Function: proxyMeForumLawsDismissedPost — POST /me/forum-laws-dismissed sets the flag', async ({
   request,
 }) => {
@@ -1240,6 +1274,7 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1268,6 +1303,7 @@ test('Function: RulesDocument — onboarding first chapter is the lead', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1301,6 +1337,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1331,6 +1368,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1691,6 +1729,7 @@ test('Function: NotificationsPage — notifications heading is visible', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1726,6 +1765,7 @@ test('Function: NotificationsLoader — empty notifications copy is visible', as
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1761,6 +1801,7 @@ test('Function: NotificationsScreen — empty notifications copy is visible', as
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1796,6 +1837,7 @@ test('Function: fetchNotifications — empty notifications copy is visible', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1841,6 +1883,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1892,6 +1935,7 @@ test('Function: markAllNotificationsRead — list fetch POSTs read-all', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1939,6 +1983,7 @@ test('Function: MessagesPage — inbox heading is visible', async ({ page }) => 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1974,6 +2019,7 @@ test('Function: InboxLoader — empty inbox copy is visible', async ({ page }) =
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2009,6 +2055,7 @@ test('Function: InboxScreen — empty inbox copy is visible', async ({ page }) =
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2044,6 +2091,7 @@ test('Function: fetchConversations — empty inbox copy is visible', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2079,6 +2127,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2140,6 +2189,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2201,6 +2251,7 @@ test('Function: openConversation — Send a private message is on other notes', 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: true,
@@ -2947,6 +2998,7 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2975,6 +3027,7 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3003,6 +3056,7 @@ test('Function: AddressSetupPage — address screen heading is visible', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3031,6 +3085,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3063,6 +3118,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3098,6 +3154,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3133,6 +3190,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3168,6 +3226,7 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3196,6 +3255,7 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3228,6 +3288,7 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3256,6 +3317,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3293,6 +3355,7 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3362,6 +3425,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3412,6 +3476,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: true,
@@ -3504,6 +3569,7 @@ test('Function: OnboardingGate — name and address without agreement go to rule
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3550,6 +3616,7 @@ test('Function: hasLightningAddress — named account without address stays on a
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3611,6 +3678,21 @@ test('Function: ProfilePage — profile heading is visible', async ({ page }) =>
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+});
+
+test('Function: LocationForm — profile shows the location heading', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByText('Location')).toBeVisible();
+});
+
+test('Function: setLocation — signed-in form saves a location', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Edit location' }).click();
+  await page.getByRole('textbox', { name: 'Location' }).fill('Zug');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Zug')).toBeVisible();
 });
 
 test('Function: ProfileScreen — back to forum is visible', async ({ page }) => {
@@ -3705,6 +3787,7 @@ test('Function: AppShellTopLeft — rules setup shows the wordmark', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'ada@walletofsatoshi.com',
         lightningAddressVerified: true,
         forumLawsDismissed: false,
@@ -3749,6 +3832,7 @@ test('Function: AppShellHeader — name screen heading is visible', async ({ pag
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3777,6 +3861,7 @@ test('Function: AppShellFooter — name screen Continue is visible', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3936,6 +4021,7 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
@@ -3976,6 +4062,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
@@ -4011,6 +4098,7 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
@@ -4040,6 +4128,7 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,

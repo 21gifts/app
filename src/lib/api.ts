@@ -145,6 +145,36 @@ export async function setName(sessionToken: string, name: string): Promise<Accou
 }
 
 /**
+ * Sets, replaces, or clears the account free-text location.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param location - The location as typed. An empty string is a valid request
+ * and clears the stored value.
+ * @returns The updated {@link Account}.
+ * @throws Error when the api rejects the location (400) — the api error string
+ * when present, otherwise a fallback — on any other non-2xx status, or when
+ * the body fails {@link accountSchema} validation.
+ */
+export async function setLocation(sessionToken: string, location: string): Promise<Account> {
+  const response = await fetch('/me/location', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ location }),
+  });
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not save your location' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not save your location');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Fetches the account behind a session token.
  *
  * @param sessionToken - A bearer token from a completed challenge.

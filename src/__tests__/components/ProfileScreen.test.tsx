@@ -29,6 +29,7 @@ vi.mock('@/lib/api', () => ({
     },
   }),
   setName: vi.fn(),
+  setLocation: vi.fn(),
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
 }));
@@ -88,6 +89,7 @@ beforeEach(() => {
       linkingKey: null,
       role: 'basis',
       name: 'Ada',
+      location: null,
       lightningAddress: 'alice@walletofsatoshi.com',
       lightningAddressVerified: false,
       forumLawsDismissed: false,
@@ -109,6 +111,7 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
+    expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Theme' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
