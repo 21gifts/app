@@ -21,6 +21,9 @@ import {
   proxyConversationPost,
   proxyConversationsGet,
   proxyConversationsPost,
+  proxyNotificationReadPost,
+  proxyNotificationsGet,
+  proxyNotificationsReadAllPost,
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
   proxyMessagesGet,
@@ -204,6 +207,31 @@ describe('api proxy wrappers', () => {
       'a/b',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/a%2Fb');
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+  });
+
+  it('proxyNotificationsGet hits /notifications', async () => {
+    const fetchMock = stubApi();
+    await proxyNotificationsGet(new Request('http://localhost/forum/notifications'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/notifications');
+  });
+
+  it('proxyNotificationsReadAllPost hits POST /notifications/read-all', async () => {
+    const fetchMock = stubApi();
+    await proxyNotificationsReadAllPost(
+      new Request('http://localhost/forum/notifications/read-all', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/notifications/read-all');
+  });
+
+  it('proxyNotificationReadPost encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyNotificationReadPost(
+      new Request('http://localhost/forum/notifications/a%2Fb/read', { method: 'POST' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/notifications/a%2Fb/read');
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
   });
 
