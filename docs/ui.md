@@ -103,7 +103,7 @@ Live tokens from `src/app/globals.css` `@theme` and `html.dark`.
 | `app-qr-bg` | `#ffffff` | `#ffffff` | QR plate — **always paper** |
 | `app-qr-fg` | `#000000` | `#000000` | QR modules — always black |
 
-**Orange rule (closed, two shells).** Live marketing uses orange as the **dark-shell primary**. Pay-sheet **Open Wallet of Satoshi** is `bg-app-btn` (labeled sentence-length, not accent). App **Log in** stays `app-btn`.
+**Orange rule (closed, two shells).** Live marketing uses orange as the **dark-shell primary**. Pay-sheet **Pay** (`forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”) is `bg-app-btn` (labeled sentence-length, not accent). App **Log in** stays `app-btn`.
 
 **(A) Marketing shell** (`bg-ink`): orange is the primary filled CTA plus kickers.
 
@@ -119,7 +119,7 @@ This is not “Log in is a gift.” Ink pages have one filled accent, and it is 
 
 | Orange | Not orange |
 | --- | --- |
-| `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, **Open Wallet of Satoshi** (`app-btn`) |
+| `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`) |
 | Charts: received series, ₿ selected in ₿\|USD | Forum Active/No gifts yet/All/Most popular selected (`app-btn`) |
 | | Menu, language/theme, app body links (`text-app-fg underline`) |
 | | **Rules kickers and ticks** — see (B′) |
@@ -141,7 +141,7 @@ flowchart TD
   acc --> M[A: Marketing primary CTA + kicker + stats paint]
   acc --> G[B: App gift-money fill + donate Open the forum]
   acc --> H["B′: decorative THE TEST bar only"]
-  acc -.-> X[Not: app form primary / Post / Open Wallet / filter / RULE n text / Welcome ticks]
+  acc -.-> X[Not: app form primary / Post / Pay (pay sheet) / filter / RULE n text / Welcome ticks]
 ```
 
 **QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). No QR on smartphone UA (`isSmartphoneUserAgent`, not viewport).
@@ -490,7 +490,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
 
-Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet CTAs: **Continue** (`Button` primary) then labeled **Open Wallet of Satoshi** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"` — sentence-length, **not** accent). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link.
+Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet CTAs: **Continue** (`Button` primary) then labeled **Pay** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link.
 
 **USD.** `$1.43` via `formatUsdDisplay`. Stats KPI shows ₿ on the first line and USD on the second.
 
@@ -514,7 +514,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 
 | Labeled (`Button` / `ButtonLink`) | Icon-only (`IconButton`, required `aria-label`) |
 | --- | --- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Open Wallet of Satoshi**, **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile/rules-setup/inbox back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”), **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile/rules-setup/inbox back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
 
@@ -622,14 +622,14 @@ Do not over-type `href` as `'/' | '/welcome'` — unsigned app also uses `/` fro
 
 ### `ButtonLink`
 
-Same visual variants/sizes as `Button`, rendered as `next/link` `Link` (or `<a>` for external). Used by marketing CTAs, 404, donate **Open the forum**, legal **Open the app**, pay-sheet **Open Wallet of Satoshi**. Optional `icon`. Optional `aria-label`.
+Same visual variants/sizes as `Button`, rendered as `next/link` `Link` (or `<a>` for external). Used by marketing CTAs, 404, donate **Open the forum**, legal **Open the app**, pay-sheet **Pay**. Optional `icon`. Optional `aria-label`.
 
 | `tone` | `variant="secondary"` | `variant="accent"` / `primary` |
 | --- | --- | --- |
 | `app` (default) | `border-app-border-strong bg-app-card text-app-fg` | accent = `bg-app-accent text-ink`; primary = `bg-app-btn` |
 | `dark` | `border-paper/20 bg-transparent text-paper hover:bg-paper/10` | accent fill unchanged (`text-ink` on orange) |
 
-Hero **Send help**: `ButtonLink href="/donate" variant="secondary" tone="dark"`. Header **Log in** / **Ask for help** / 404 **Back home**: `variant="accent"`. Pay **Open Wallet of Satoshi**: `variant="primary" tone="app"` (not accent).
+Hero **Send help**: `ButtonLink href="/donate" variant="secondary" tone="dark"`. Header **Log in** / **Ask for help** / 404 **Back home**: `variant="accent"`. Pay-sheet **Pay**: `variant="primary" tone="app"` (not accent; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”).
 
 ### `IconButton`
 
@@ -681,7 +681,9 @@ export function SegmentedControl<T extends string>(props: {
 | --- | --- | --- | --- | --- |
 | `gift` + `app` | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg` | `text-app-muted` | Profile ₿\|USD |
 | `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs` | `bg-accent text-ink` | `text-paper/70` | Stats ₿\|USD |
-| `neutral` | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular |
+| `neutral` | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`) |
+
+Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill).
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
 
@@ -751,7 +753,7 @@ Inbox thread rows reuse this note recipe.
 
 **Invoice step.** Centered column, back, confirm sentence with one `formatBitcoin`, then:
 
-- Desktop (`!isSmartphoneUserAgent`): `QrCode` 232px on white plate (`border-app-border`) + `ButtonLink` **Open Wallet of Satoshi** `variant="primary"` `size="md"` `tone="app"` with `wos-icon.png` 20×20 (`rounded-md ring-1 ring-white/30`) as `icon`.
+- Desktop (`!isSmartphoneUserAgent`): `QrCode` 232px on white plate (`border-app-border`) + `ButtonLink` **Pay** `variant="primary"` `size="md"` `tone="app"` with `wos-icon.png` 20×20 (`rounded-md ring-1 ring-white/30`) as `icon` (visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”).
 - Smartphone: deep link only (`walletofsatoshi:` / Android intent). **No QR.** Detection is UA, not viewport.
 
 Waiting: `text-xs text-app-muted`. Author-wallet error: `role="alert"` `text-app-danger`.
@@ -875,7 +877,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
-- `SegmentedControl tone="neutral"` Active / No gifts yet / All / Most popular.
+- `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular.
 - Note cards: amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Footer `gap-5`.
 - Founder/moderator: icon-only Trash2 + inline confirm.
 - Composer.
