@@ -54,12 +54,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/login:theme-open",
-    "label": "/login theme-open",
-    "visual": "state-login-theme",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/donate:default",
     "label": "/donate default",
     "visual": "screen-donate",
@@ -339,12 +333,6 @@
     "id": "/welcome:menu-language-open",
     "label": "/welcome menu-language-open",
     "visual": "state-welcome-menu-language",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:menu-theme-open",
-    "label": "/welcome menu-theme-open",
-    "visual": "state-welcome-menu-theme",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

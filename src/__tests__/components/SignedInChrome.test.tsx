@@ -186,7 +186,7 @@ describe('SignedInChrome', () => {
     expect(notifications.nextElementSibling).toBe(messages);
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
-    expect(screen.getByLabelText('Theme')).toBeTruthy();
+    expect(screen.queryByLabelText('Theme')).toBeNull();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Profile' })).toBeTruthy();

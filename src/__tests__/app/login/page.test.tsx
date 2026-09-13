@@ -16,10 +16,6 @@ vi.mock('@/components/LanguageSwitcher', () => ({
   LanguageSwitcher: () => <div data-testid="language-switcher" />,
 }));
 
-vi.mock('@/components/ThemeSwitcher', () => ({
-  ThemeSwitcher: () => <div data-testid="theme-switcher" />,
-}));
-
 afterEach(cleanup);
 
 describe('LoginPage', () => {
@@ -31,10 +27,5 @@ describe('LoginPage', () => {
   it('renders the language switcher', () => {
     renderWithLocale(<LoginPage />);
     expect(screen.getByTestId('language-switcher')).toBeTruthy();
-  });
-
-  it('renders the theme switcher', () => {
-    renderWithLocale(<LoginPage />);
-    expect(screen.getByTestId('theme-switcher')).toBeTruthy();
   });
 });
