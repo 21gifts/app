@@ -210,8 +210,10 @@ describe('MemberTrustActions', () => {
     renderWithLocale(<MemberTrustActions profile={profile} />);
     const button = screen.getByRole('button', { name: 'Verify' }) as HTMLButtonElement;
     fireEvent.click(button);
+    await waitFor(() => {
+      expect(button.disabled).toBe(true);
+    });
     fireEvent.click(button);
-    expect(button.disabled).toBe(true);
     expect(postTrustVerify).toHaveBeenCalledTimes(1);
     resolveVerify?.({ id: profile.id, name: profile.name, role: 'verified' });
     await waitFor(() => {

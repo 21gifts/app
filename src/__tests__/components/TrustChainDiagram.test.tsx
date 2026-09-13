@@ -1,5 +1,5 @@
 import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TrustChainDiagram } from '@/components/TrustChainDiagram';
 import type { TrustChain } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -39,5 +39,22 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByText('confirmed')).toBeTruthy();
     expect(screen.getByText('appointed')).toBeTruthy();
     expect(screen.queryByTestId('trust-node-ghost')).toBeNull();
+  });
+
+  it('renders a zero-length self-edge without throwing', () => {
+    const hypot = vi.spyOn(Math, 'hypot').mockReturnValue(0);
+    try {
+      renderWithLocale(
+        <TrustChainDiagram
+          chain={{
+            nodes: [{ id: 'loop', name: 'Loop', role: 'founder' }],
+            edges: [{ from: 'loop', to: 'loop', kind: 'verify' }],
+          }}
+        />,
+      );
+      expect(screen.getByRole('img', { name: 'Trust Chain diagram' })).toBeTruthy();
+    } finally {
+      hypot.mockRestore();
+    }
   });
 });

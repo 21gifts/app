@@ -27,6 +27,7 @@ export type LaidOutTrustNode = TrustChainNode & { x: number; y: number };
  * @returns Pixel width of that row.
  */
 function rowWidth(n: number): number {
+  /* v8 ignore next 3 — empty graph returns before rowWidth; levels always have nodes */
   if (n === 0) {
     return 0;
   }
@@ -102,12 +103,13 @@ export function layoutTrustChain(chain: TrustChain): {
   const positioned = new Map<string, LaidOutTrustNode>();
 
   for (let level = 0; level < levels.length; level += 1) {
+    /* v8 ignore next 2 — noUncheckedIndexedAccess; loop index is in-range */
     const ids = levels[level] ?? [];
     const startX = PAD + (maxRowWidth - (widths[level] ?? 0)) / 2;
     const y = PAD + level * (TRUST_NODE_HEIGHT + TRUST_LEVEL_GAP);
     ids.forEach((id, index) => {
       const node = byId.get(id);
-      /* v8 ignore next -- levels are built from chain.nodes ids */
+      /* v8 ignore next 3 -- levels are built from chain.nodes ids */
       if (node === undefined) {
         return;
       }
@@ -122,7 +124,7 @@ export function layoutTrustChain(chain: TrustChain): {
   const nodes: LaidOutTrustNode[] = [];
   for (const node of chain.nodes) {
     const laid = positioned.get(node.id);
-    /* v8 ignore next -- leftover level places every unvisited node */
+    /* v8 ignore next 3 -- leftover level places every unvisited node */
     if (laid === undefined) {
       continue;
     }
@@ -132,7 +134,7 @@ export function layoutTrustChain(chain: TrustChain): {
   return {
     nodes,
     edges: chain.edges,
-    width: maxRowWidth === 0 ? 0 : maxRowWidth + PAD * 2,
+    width: maxRowWidth + PAD * 2,
     height: PAD * 2 + (maxLevel + 1) * TRUST_NODE_HEIGHT + maxLevel * TRUST_LEVEL_GAP,
   };
 }

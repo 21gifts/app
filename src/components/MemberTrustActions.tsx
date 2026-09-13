@@ -86,6 +86,7 @@ export function MemberTrustActions({
     account.role === 'founder' && (profile.role === 'basis' || profile.role === 'verified');
 
   const run = (action: () => Promise<unknown>): void => {
+    /* v8 ignore next 3 — the action button is disabled while busy */
     if (busy) {
       return;
     }
