@@ -114,6 +114,8 @@ export function MemberProfileScreen({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const expandedIdRef = useRef(expandedId);
+  expandedIdRef.current = expandedId;
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
@@ -216,7 +218,20 @@ export function MemberProfileScreen({
           if (prev === null) {
             return prev;
           }
+          if (prev.id !== parentId) {
+            return prev;
+          }
           return { ...prev, replyCount: Math.max(prev.replyCount, prev.replyCount + 1) };
+        });
+        setPosts((prev) => {
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) =>
+            message.id === parentId
+              ? { ...message, replyCount: Math.max(message.replyCount, message.replyCount + 1) }
+              : message,
+          );
         });
       }
       setReplyDraft('');
@@ -325,11 +340,17 @@ export function MemberProfileScreen({
     void (async () => {
       try {
         const next = await fetchReplies(session, messageId);
-        setReplies(next);
+        if (expandedIdRef.current === messageId) {
+          setReplies(next);
+        }
       } catch {
-        setRepliesError(true);
+        if (expandedIdRef.current === messageId) {
+          setRepliesError(true);
+        }
       } finally {
-        setRepliesLoading(false);
+        if (expandedIdRef.current === messageId) {
+          setRepliesLoading(false);
+        }
       }
     })();
   };
@@ -367,11 +388,17 @@ export function MemberProfileScreen({
     void (async () => {
       try {
         const next = await fetchReplies(session, messageId);
-        setReplies(next);
+        if (expandedIdRef.current === messageId) {
+          setReplies(next);
+        }
       } catch {
-        setRepliesError(true);
+        if (expandedIdRef.current === messageId) {
+          setRepliesError(true);
+        }
       } finally {
-        setRepliesLoading(false);
+        if (expandedIdRef.current === messageId) {
+          setRepliesLoading(false);
+        }
       }
     })();
   };

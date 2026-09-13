@@ -83,6 +83,22 @@ const secondPost = {
   sats: 0,
 };
 
+const stalePinReply = {
+  ...note,
+  id: '77777777-7777-4777-8777-777777777777',
+  text: 'Stale pin thread reply.',
+  sats: 0,
+  payable: false,
+};
+
+const liveSecondReply = {
+  ...secondPost,
+  id: '88888888-8888-4888-8888-888888888888',
+  text: 'Live second-post reply.',
+  sats: 0,
+  payable: false,
+};
+
 const activityReply = {
   ...note,
   id: '66666666-6666-4666-8666-666666666666',
@@ -117,6 +133,24 @@ async function expandNote(): Promise<void> {
       false,
     );
   });
+}
+
+function expandCard(text: string): HTMLLIElement {
+  const row = screen.getByText(text).closest('li');
+  expect(row).toBeTruthy();
+  const expand = row?.querySelector<HTMLButtonElement>('[aria-label="Show replies"]');
+  expect(expand).toBeTruthy();
+  fireEvent.click(expand as HTMLButtonElement);
+  return row as HTMLLIElement;
+}
+
+async function renderTwoPostFeed(): Promise<void> {
+  vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost, note]);
+  renderWithLocale(
+    <MemberProfileScreen profile={{ ...profileWithNote, postCount: 2 }} received={[]} />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+  await screen.findByText('Second post from Carol.');
 }
 
 beforeEach(() => {
@@ -406,6 +440,145 @@ describe('MemberProfileScreen', () => {
       expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
     });
     expect(screen.getByText('1 replies')).toBeTruthy();
+  });
+
+  it('does not bump the pinned note reply count when posting on a posts-feed card', async () => {
+    vi.mocked(postMessage).mockResolvedValue({
+      ...secondPost,
+      id: '99999999-9999-4999-8999-999999999999',
+      text: 'reply',
+      payable: false,
+    });
+    await renderTwoPostFeed();
+    const secondRow = expandCard('Second post from Carol.');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', {
+        text: 'reply',
+        inReplyTo: secondPost.id,
+      });
+    });
+    expect(secondRow.textContent).toMatch(/1 replies/);
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    const pinRow = screen.getByText('Hello from my profile note.').closest('li');
+    expect(pinRow?.textContent).toMatch(/0 replies/);
+    expect(screen.getByRole('button', { name: '0 replies' })).toBeTruthy();
+  });
+
+  it('does not apply a stale expand onto a newer thread', async () => {
+    let resolveNoteReplies!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies).mockImplementation((_session, messageId) => {
+      if (messageId === note.id) {
+        return new Promise((resolve) => {
+          resolveNoteReplies = resolve;
+        });
+      }
+      return Promise.resolve([liveSecondReply]);
+    });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveNoteReplies([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
+  });
+
+  it('does not apply a stale expand error onto a newer thread', async () => {
+    let rejectNoteReplies!: (reason: Error) => void;
+    vi.mocked(fetchReplies).mockImplementation((_session, messageId) => {
+      if (messageId === note.id) {
+        return new Promise((_resolve, reject) => {
+          rejectNoteReplies = reject;
+        });
+      }
+      return Promise.resolve([liveSecondReply]);
+    });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      rejectNoteReplies(new Error('fail'));
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Could not load replies. Please try again.')).toBeNull();
+  });
+
+  it('does not apply a stale replies retry onto a newer thread', async () => {
+    let resolveNoteRetry!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockImplementation((_session, messageId) => {
+        if (messageId === note.id) {
+          return new Promise((resolve) => {
+            resolveNoteRetry = resolve;
+          });
+        }
+        return Promise.resolve([liveSecondReply]);
+      });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveNoteRetry([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
+  });
+
+  it('does not apply a stale replies retry error onto a newer thread', async () => {
+    let rejectNoteRetry!: (reason: Error) => void;
+    vi.mocked(fetchReplies)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockImplementation((_session, messageId) => {
+        if (messageId === note.id) {
+          return new Promise((_resolve, reject) => {
+            rejectNoteRetry = reject;
+          });
+        }
+        return Promise.resolve([liveSecondReply]);
+      });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      rejectNoteRetry(new Error('fail'));
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Could not load replies. Please try again.')).toBeNull();
   });
 
   it('does not post a reply after the session is cleared', async () => {
