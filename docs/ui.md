@@ -622,7 +622,7 @@ Do not over-type `href` as `'/' | '/welcome'` — unsigned app also uses `/` fro
 
 ### `ButtonLink`
 
-Same visual variants/sizes as `Button`, rendered as `next/link` `Link` (or `<a>` for external). Used by marketing CTAs, 404, donate **Open the forum**, legal **Open the app**, pay-sheet **Pay**. Optional `icon`. Optional `aria-label`.
+Same visual variants/sizes as `Button`, rendered as `next/link` `Link` (or `<a>` for external). Used by marketing CTAs, 404, donate **Open the forum**, pay-sheet **Pay**. Optional `icon`. Optional `aria-label`. Legal **Open the app** is an inline `text-accent` link, not `ButtonLink`.
 
 | `tone` | `variant="secondary"` | `variant="accent"` / `primary` |
 | --- | --- | --- |
@@ -798,6 +798,7 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 | --- | --- | --- |
 | Forum no messages | muted `text-sm` catalog `forum.empty` | Composer still shown |
 | Forum no paid | `forum.emptyPaid` | Mode switcher still shown |
+| Forum no gifts yet / unpaid | `forum.emptyUnpaid` | Mode switcher still shown |
 | Inbox none | `inbox.empty` | None |
 | Notifications none | `notifications.empty` | None |
 | Stats none | “No gifts recorded yet.” | None |
