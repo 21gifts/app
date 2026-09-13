@@ -55,6 +55,10 @@ export function TrustChainLoader(): ReactElement {
       loading={loading}
       expandingId={expandingId}
       onRetry={() => {
+        if (chain !== null && chain.nodes.length > 0) {
+          setError(null);
+          return;
+        }
         setAttempt((n) => n + 1);
       }}
       onExpand={(accountId) => {

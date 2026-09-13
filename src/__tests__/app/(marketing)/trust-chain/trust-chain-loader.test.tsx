@@ -111,6 +111,11 @@ describe('TrustChainLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
     });
+    expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(screen.queryByText('Could not load the Trust Chain. Please try again.')).toBeNull();
+    expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('ignores a second click while a hop is in flight', async () => {

@@ -29,8 +29,9 @@ export function TrustChainScreen({
 }): ReactElement {
   const { t } = useTranslations();
 
+  const hasNodes = chain !== null && chain.nodes.length > 0;
   let body: ReactElement;
-  if (error !== null) {
+  if (error !== null && !hasNodes) {
     body = (
       <div className="mt-12 space-y-4">
         <p className="text-paper/80">{t('trustChain.error')}</p>
@@ -39,13 +40,21 @@ export function TrustChainScreen({
         </Button>
       </div>
     );
-  } else if (loading) {
+  } else if (loading && !hasNodes) {
     body = <p className="mt-12 text-paper/60">{t('trustChain.loading')}</p>;
   } else if (chain === null || chain.nodes.length === 0) {
     body = <p className="mt-12 text-paper/60">{t('trustChain.empty')}</p>;
   } else {
     body = (
-      <div className="mt-12">
+      <div className="mt-12 space-y-4">
+        {error !== null ? (
+          <div className="space-y-4">
+            <p className="text-paper/80">{t('trustChain.error')}</p>
+            <Button type="button" variant="accent" tone="dark" onClick={onRetry}>
+              {t('trustChain.retry')}
+            </Button>
+          </div>
+        ) : null}
         <TrustChainDiagram chain={chain} expandingId={expandingId} onExpand={onExpand} />
       </div>
     );

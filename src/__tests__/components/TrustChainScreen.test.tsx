@@ -52,6 +52,20 @@ describe('TrustChainScreen', () => {
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
   });
 
+  it('keeps the diagram when a hop error arrives with nodes', () => {
+    renderWithLocale(
+      <TrustChainScreen
+        chain={{ nodes: [{ id: 'f', name: 'Cyrill', role: 'founder' }], edges: [] }}
+        error="Could not load the Trust Chain. Please try again."
+        loading={false}
+        onRetry={() => undefined}
+        onExpand={() => undefined}
+      />,
+    );
+    expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
+    expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+  });
+
   it('shows empty copy and no svg when the chain has no nodes', () => {
     const { container } = renderWithLocale(
       <TrustChainScreen
