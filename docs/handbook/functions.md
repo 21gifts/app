@@ -625,10 +625,10 @@
 
 ## Function: accountTotals
 
-- **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
+- **Purpose:** Test-only helper that derives given/received sat totals from public gift stats. Production profile, menu, member, and view loaders use account activity instead.
 - **Inputs:** `GiftStats` and the Lightning Address (or null).
-- **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
-- **Used by:** `useAccountTotals`.
+- **Returns / side effects:** `{ donatedSats, receivedSats }` — `donatedSats` is always `0` because public gift stats do not attribute outbound payments; received matches the address handle against `byRecipient` case-insensitively.
+- **Used by:** Unit tests (`account-totals.test.ts`) via `recipientHandleFromAddress`.
 
 ## Function: alignActivitySeries
 

@@ -11,8 +11,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * Calls `GET /me/activity` whenever a session exists, including when the
  * Lightning Address is blank (forum zaps do not need a handle). No session
  * → zeros, empty series, `loading: false`. On each fetch start (including
- * session change) totals and series reset to zeros/empty; the profile chart
- * SVG remains mounted on empty series. Drops stale responses when the session
+ * session change) totals and series reset to zeros/empty; `AccountActivityChart`
+ * then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale
+ * responses when the session
  * changes mid-flight. Errors resolve to zeros and empty series without
  * throwing into the UI. Does not call `fetchGiftStats`.
  *
