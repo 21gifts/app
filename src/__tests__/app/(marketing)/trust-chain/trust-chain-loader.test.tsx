@@ -118,6 +118,25 @@ describe('TrustChainLoader', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('clears the hop error after a later hop succeeds', async () => {
+    fetchMock.mockResolvedValueOnce(POPULATED);
+    fetchMock.mockRejectedValueOnce(new Error('Could not load the Trust Chain. Please try again.'));
+    fetchMock.mockResolvedValueOnce(HOP);
+    renderWithLocale(<TrustChainLoader />);
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    await waitFor(() => {
+      expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-m')).toBeTruthy();
+    });
+    expect(screen.queryByText('Could not load the Trust Chain. Please try again.')).toBeNull();
+  });
+
   it('ignores a second click while a hop is in flight', async () => {
     fetchMock.mockResolvedValueOnce(POPULATED);
     let resolveHop: ((value: TrustChain) => void) | undefined;

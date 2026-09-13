@@ -865,7 +865,6 @@
 - **Purpose:** Signed-in member identity card (chart from given and received activity, name, location, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, or founder may `POST /messages` unpaid; everyone else (including `verified`) invoices ≥ 1 sat with optional text — empty or `0` amount is billed as 1 sat. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for the pinned profile note, posts feed, and replies feed (the stacked activity list) via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.- **Inputs:** `MemberProfile` plus received and donated series; session/account from the auth store.
 - **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
-
 ## Function: MemberProfilePage
 
 - **Purpose:** Route `/members/[accountId]` with profile onboarding gate and signed-in chrome.
@@ -987,16 +986,16 @@
 
 ## Function: TrustChainScreen
 
-- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy.
+- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy. A hop-load error with nodes already on screen keeps the diagram and shows the catalog error plus **Try again** above it.
 - **Inputs:** `chain`, `error`, `loading`, optional `expandingId`, `onExpand`, `onRetry`.
 - **Returns / side effects:** Marketing screen element.
 - **Used by:** `TrustChainLoader`.
 
 ## Function: TrustChainLoader
 
-- **Purpose:** Client loader for `/trust-chain`: fetches the graph and renders `TrustChainScreen`.
+- **Purpose:** Client loader for `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain; retry with nodes only clears the banner (does not re-fetch seeds). A later successful hop also clears the banner.
 - **Inputs:** none (fetches on mount).
-- **Returns / side effects:** Loading, error+retry, empty, or diagram states.
+- **Returns / side effects:** Loading, error+retry, empty, diagram, or diagram-plus-hop-error states.
 - **Used by:** `TrustChainPage`.
 
 ## Function: TrustChainPage
@@ -1528,7 +1527,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingLayout
 
-- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, and `/stats`.
+- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, `/stats`, and `/trust-chain`.
 - **Inputs:** `children`. Awaits `MarketingFooter()` (does not render it as a JSX child).
 - **Returns / side effects:** Wrapper div with header, page, and awaited footer.
 - **Used by:** Marketing route group.

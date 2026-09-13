@@ -696,6 +696,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/trust-chain:hop-error",
+    "label": "/trust-chain hop-error",
+    "visual": "state-trust-chain-hop-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/stats/[day]:default",
     "label": "/stats/[day] default",
     "visual": "screen-stats-day",

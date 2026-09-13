@@ -4719,6 +4719,55 @@ test.describe('stats variant baselines', () => {
     await shotScreen(page, 'state-stats-usd-scale');
   });
 
+  test('trust-chain empty', async ({ page }) => {
+    await page.route('**/trust/graph', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ nodes: [], edges: [] }),
+      });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-empty');
+  });
+
+  test('trust-chain loading', async ({ page }) => {
+    await page.route('**/trust/graph', () => new Promise(() => undefined));
+    await page.goto('/trust-chain');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-loading');
+  });
+
+  test('trust-chain error', async ({ page }) => {
+    await page.route('**/trust/graph', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-error');
+  });
+
+  test('trust-chain hop-error', async ({ page }) => {
+    await page.route('**/trust/graph**', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get('around')) {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(TRUST_CHAIN_SEED),
+      });
+    });
+    await page.goto('/trust-chain');
+    await page.getByTestId('trust-node-f1').click();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-hop-error');
+  });
+
   test('stats empty', async ({ page }) => {
     await page.route('**/gifts/stats', async (route) => {
       await route.fulfill({

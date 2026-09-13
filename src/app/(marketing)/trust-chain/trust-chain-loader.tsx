@@ -77,6 +77,7 @@ export function TrustChainLoader(): ReactElement {
               }
               return mergeTrustChain(current, hop);
             });
+            setError(null);
           } catch {
             setError('Could not load the Trust Chain. Please try again.');
           } finally {

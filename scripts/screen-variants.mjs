@@ -898,6 +898,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Try again',
   },
   {
+    route: '/trust-chain',
+    id: 'hop-error',
+    image: 'trust-chain-hop-error.png',
+    visual: 'state-trust-chain-hop-error',
+    needle: 'state-trust-chain-hop-error',
+  },
+  {
     route: '/stats/[day]',
     id: 'default',
     image: 'stats-day.png',
