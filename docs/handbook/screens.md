@@ -601,6 +601,42 @@ Identity card; replies pressed; profile note still visible; reply card 'A reply 
 
 ![21.gifts member replies open](images/members-replies-open.png)
 
+### Variant: posts-loading
+
+Identity card; posts count pressed; feed shows Loading…; pinned profile note hidden.
+
+![21.gifts member posts loading](images/members-posts-loading.png)
+
+### Variant: replies-loading
+
+Identity card; replies count pressed; feed shows Loading…; pinned profile note still visible.
+
+![21.gifts member replies loading](images/members-replies-loading.png)
+
+### Variant: posts-error
+
+Identity card; posts count pressed; feed error `Could not load messages. Please try again.` and Try again; pinned profile note hidden.
+
+![21.gifts member posts error](images/members-posts-error.png)
+
+### Variant: replies-error
+
+Identity card; replies count pressed; feed error and Try again; pinned profile note still visible.
+
+![21.gifts member replies error](images/members-replies-error.png)
+
+### Variant: posts-truncated
+
+Identity card; posts count 3 pressed; one listed post; muted `Showing the latest 1 of 3.`; pinned profile note hidden.
+
+![21.gifts member posts truncated](images/members-posts-truncated.png)
+
+### Variant: replies-truncated
+
+Identity card; replies count 3 pressed; one listed reply; muted `Showing the latest 1 of 3.`; pinned profile note still visible.
+
+![21.gifts member replies truncated](images/members-replies-truncated.png)
+
 ### Variant: note-null
 
 Member identity card only (`profileMessage: null`); no forum card under the identity section.
