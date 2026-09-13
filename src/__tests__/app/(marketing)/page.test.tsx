@@ -82,8 +82,8 @@ describe('Home', () => {
     expect(code?.className).toContain('font-mono');
   });
 
-  it('asks whether this is a Christian project', async () => {
+  it('does not ask whether this is a Christian project', async () => {
     renderWithLocale(await Home());
-    expect(screen.getByText('Is this a Christian project?')).toBeTruthy();
+    expect(screen.queryByText('Is this a Christian project?')).toBeNull();
   });
 });

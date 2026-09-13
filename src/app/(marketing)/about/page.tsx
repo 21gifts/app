@@ -10,11 +10,11 @@ import { translate } from '@/lib/translate';
  */
 export const metadata: Metadata = {
   title: 'About — 21.gifts',
-  description: 'Where 21.gifts comes from: a house of hospitality, open to everyone.',
+  description: 'Where 21.gifts comes from.',
 };
 
 /**
- * Origin of the house at `/about`: hospitality, one verse, and an open door.
+ * Origin of the house at `/about`: hospitality, one verse, and a Christian origin.
  *
  * @returns The about screen.
  */
@@ -49,8 +49,6 @@ export default async function AboutPage(): Promise<ReactElement> {
         <h2 className="mt-3 text-2xl font-semibold">{t('about.originTitle')}</h2>
         <div className="mt-8 space-y-6 text-paper/60">
           <p>{t('about.originBody1')}</p>
-          <p>{t('about.originBody2')}</p>
-          <p>{t('about.originBody3')}</p>
         </div>
         <ButtonLink href="/welcome" variant="accent" tone="dark" className="mt-10">
           {t('about.ctaForum')}

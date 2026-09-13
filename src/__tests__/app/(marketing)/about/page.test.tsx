@@ -27,10 +27,13 @@ describe('AboutPage', () => {
     expect(screen.getByText('Freely you have received; freely give.')).toBeTruthy();
   });
 
-  it('states the house is rooted, not restricted', async () => {
+  it('states a Christian origin', async () => {
     renderWithLocale(await AboutPage());
-    expect(screen.getByRole('heading', { name: 'Rooted, not restricted' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'A Christian origin' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Where this house comes from' })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/rooted, not restricted/i);
+    expect(document.body.textContent).not.toMatch(/creed at the door/i);
+    expect(document.body.textContent).not.toMatch(/Good Samaritan/i);
   });
 
   it('links Open the living room to /welcome', async () => {

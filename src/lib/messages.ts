@@ -83,9 +83,6 @@ const en = {
   'home.faq1Q': 'Who can use this?',
   'home.faq1A':
     'Anyone with a Wallet of Satoshi address. There is no application and no review process.',
-  'home.faqFaithQ': 'Is this a Christian project?',
-  'home.faqFaithA':
-    'Most of the founders, and many of the people who give here, are rooted in Christian faith. 21.gifts does not prescribe a religion. Anyone can give or receive. The faith explains why this house was built — not who may enter.',
   'home.faq2Q': 'Do you take a cut of the gifts?',
   'home.faq2A':
     "No. Payments go directly from the donor's Wallet of Satoshi to the receiver's Wallet of Satoshi address. 21.gifts is never in the payment path and earns nothing per transaction.",
@@ -110,17 +107,13 @@ const en = {
   'about.kicker': 'About',
   'about.heading': 'A house of hospitality',
   'about.lead':
-    '21.gifts is a place to ask for help or send help, with no organization in the middle. Anyone can sit here.',
+    '21.gifts is a place to ask for help or send help, with no organization in the middle.',
   'about.verse': 'Freely you have received; freely give.',
   'about.verseRef': 'Matthew 10:8',
   'about.originKicker': 'Where this house comes from',
-  'about.originTitle': 'Rooted, not restricted',
+  'about.originTitle': 'A Christian origin',
   'about.originBody1':
-    'Most of the people who started 21.gifts, and most of the people who give here, stand in Christian faith. That faith taught them that a gift has no price, that a guest is welcome without a test, and that help should travel the shortest path from one person to another.',
-  'about.originBody2':
-    'You do not need that faith to sit in this room. There is no creed at the door, no prayer, and no check. Give or receive as you are. The living-room rules are house rules, not a liturgy.',
-  'about.originBody3':
-    'The neighbour in the story of the Good Samaritan is not the person who shares a religion. The neighbour is the one who shows mercy. That is the door of this house.',
+    'Most of the people who started 21.gifts, and most of the people who give here, stand in Christian faith. That faith taught them that a gift has no price, and that help should travel the shortest path from one person to another.',
   'about.ctaForum': 'Open the living room',
 
   'donate.pageTitle': 'Send help',
@@ -559,9 +552,6 @@ const de = {
   'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
   'home.faq1Q': 'Wer kann das nutzen?',
   'home.faq1A': 'Jede Person mit einer Wallet of Satoshi address. Kein Antrag, keine Prüfung.',
-  'home.faqFaithQ': 'Ist das ein christliches Projekt?',
-  'home.faqFaithA':
-    'Die meisten Gründer und viele, die hier geben, stehen im christlichen Glauben. 21.gifts schreibt niemandem eine Religion vor. Geben und Empfangen steht jeder Person offen. Der Glaube erklärt, warum dieses Haus gebaut wurde — nicht, wer eintreten darf.',
   'home.faq2Q': 'Behält 21.gifts einen Anteil der Geschenke?',
   'home.faq2A':
     'Nein. Zahlungen gehen direkt von der Wallet of Satoshi der gebenden Person an die Wallet of Satoshi address der empfangenden Person. 21.gifts liegt nicht im Zahlungsweg und verdient pro Transaktion nichts.',
@@ -585,17 +575,13 @@ const de = {
   'about.kicker': 'Über uns',
   'about.heading': 'Ein Haus der Gastfreundschaft',
   'about.lead':
-    '21.gifts ist ein Ort, um Hilfe zu erbitten oder zu senden, ohne Organisation dazwischen. Jede Person darf hier sitzen.',
+    '21.gifts ist ein Ort, um Hilfe zu erbitten oder zu senden, ohne Organisation dazwischen.',
   'about.verse': "Umsonst habt ihr's empfangen, umsonst gebt es auch.",
   'about.verseRef': 'Matthäus 10,8',
   'about.originKicker': 'Woher dieses Haus kommt',
-  'about.originTitle': 'Verwurzelt, nicht beschränkt',
+  'about.originTitle': 'Christlicher Ursprung',
   'about.originBody1':
-    'Die meisten, die 21.gifts begonnen haben, und die meisten, die hier geben, stehen im christlichen Glauben. Dieser Glaube hat sie gelehrt: ein Geschenk hat keinen Preis, ein Gast ist willkommen ohne Prüfung, und Hilfe soll den kürzesten Weg von einer Person zur anderen nehmen.',
-  'about.originBody2':
-    'Denselben Glauben braucht niemand, um in diesem Zimmer zu sitzen. Kein Bekenntnis an der Tür, kein Gebet, keine Kontrolle. Geben oder empfangen, so wie Sie sind. Die Wohnzimmerregeln sind Hausrecht, keine Liturgie.',
-  'about.originBody3':
-    'Im Gleichnis vom barmherzigen Samariter ist der Nächste nicht, wer denselben Glauben hat. Der Nächste ist, wer sich erbarmt. Das ist die Tür dieses Hauses.',
+    'Die meisten, die 21.gifts begonnen haben, und die meisten, die hier geben, stehen im christlichen Glauben. Dieser Glaube hat sie gelehrt: ein Geschenk hat keinen Preis, und Hilfe soll den kürzesten Weg von einer Person zur anderen nehmen.',
   'about.ctaForum': 'Wohnzimmer öffnen',
   'donate.pageTitle': 'Hilfe senden',
   'donate.lead':
@@ -1033,9 +1019,6 @@ const es = {
   'home.faq1Q': '¿Quién puede usarlo?',
   'home.faq1A':
     'Cualquiera con una Wallet of Satoshi address. No hay solicitud ni proceso de revisión.',
-  'home.faqFaithQ': '¿Es este un proyecto cristiano?',
-  'home.faqFaithA':
-    'La mayoría de los fundadores, y muchas de las personas que dan aquí, están arraigados en la fe cristiana. 21.gifts no prescribe ninguna religión. Cualquiera puede dar o recibir. La fe explica por qué se construyó esta casa — no quién puede entrar.',
   'home.faq2Q': '¿Se quedan con una parte de los regalos?',
   'home.faq2A':
     'No. Los pagos van directamente de la Wallet of Satoshi de quien da a la Wallet of Satoshi address de quien recibe. 21.gifts nunca está en la ruta del pago y no gana nada por transacción.',
@@ -1059,17 +1042,13 @@ const es = {
   'about.kicker': 'Acerca de',
   'about.heading': 'Una casa de hospitalidad',
   'about.lead':
-    '21.gifts es un lugar para pedir ayuda o enviarla, sin una organización en el medio. Cualquiera puede sentarse aquí.',
+    '21.gifts es un lugar para pedir ayuda o enviarla, sin una organización en el medio.',
   'about.verse': 'De gracia recibisteis; dad de gracia.',
   'about.verseRef': 'Mateo 10:8',
   'about.originKicker': 'De dónde viene esta casa',
-  'about.originTitle': 'Arraigada, no restringida',
+  'about.originTitle': 'Un origen cristiano',
   'about.originBody1':
-    'La mayoría de quienes empezaron 21.gifts, y la mayoría de quienes dan aquí, están en la fe cristiana. Esa fe les enseñó que un regalo no tiene precio, que un huésped es bienvenido sin examen, y que la ayuda debe recorrer el camino más corto de una persona a otra.',
-  'about.originBody2':
-    'No hace falta esa fe para sentarse en esta sala. No hay credo en la puerta, ni oración, ni comprobación. Da o recibe como eres. Las reglas del salón son reglas de la casa, no una liturgia.',
-  'about.originBody3':
-    'En la historia del buen samaritano, el prójimo no es quien comparte una religión. El prójimo es quien muestra misericordia. Esa es la puerta de esta casa.',
+    'La mayoría de quienes empezaron 21.gifts, y la mayoría de quienes dan aquí, están en la fe cristiana. Esa fe les enseñó que un regalo no tiene precio, y que la ayuda debe recorrer el camino más corto de una persona a otra.',
   'about.ctaForum': 'Abrir el salón',
   'donate.pageTitle': 'Enviar ayuda',
   'donate.lead': 'Elige un mensaje en el foro y envía Bitcoin a la persona que lo escribió.',
@@ -1496,9 +1475,6 @@ const fil = {
   'home.faq1Q': 'Sino ang puwedeng gumamit nito?',
   'home.faq1A':
     'Sinumang may Wallet of Satoshi address. Walang application at walang review process.',
-  'home.faqFaithQ': 'Kristiyanong proyekto ba ito?',
-  'home.faqFaithA':
-    'Karamihan sa mga nagtatag, at marami sa mga nagbibigay dito, ay nakaugat sa pananampalatayang Kristiyano. Hindi nagtatakda ang 21.gifts ng relihiyon. Sinuman ay maaaring magbigay o tumanggap. Ipinapaliwanag ng pananampalataya kung bakit itinayo ang bahay na ito — hindi kung sino ang maaaring pumasok.',
   'home.faq2Q': 'Kumukuha ba kayo ng parte sa mga regalo?',
   'home.faq2A':
     'Hindi. Diretso ang bayad mula sa Wallet of Satoshi ng nagbibigay patungo sa Wallet of Satoshi address ng tumatanggap. Hindi kailanman nasa payment path ang 21.gifts at wala itong kita sa bawat transaksyon.',
@@ -1522,17 +1498,13 @@ const fil = {
   'about.kicker': 'Tungkol sa amin',
   'about.heading': 'Isang bahay ng pagkamapagpatuloy',
   'about.lead':
-    'Ang 21.gifts ay isang lugar para humiling ng tulong o magpadala ng tulong, nang walang organisasyon sa gitna. Sinuman ay maaaring umupo rito.',
+    'Ang 21.gifts ay isang lugar para humiling ng tulong o magpadala ng tulong, nang walang organisasyon sa gitna.',
   'about.verse': 'Tinanggap ninyo nang walang bayad; magbigay din kayo nang walang bayad.',
   'about.verseRef': 'Mateo 10:8',
   'about.originKicker': 'Saan nanggaling ang bahay na ito',
-  'about.originTitle': 'Nakaugat, hindi pinaghihigpitan',
+  'about.originTitle': 'Isang Kristiyanong pinagmulan',
   'about.originBody1':
-    'Karamihan sa mga nagsimula ng 21.gifts, at karamihan sa mga nagbibigay dito, ay nasa pananampalatayang Kristiyano. Tinuruan sila ng pananampalatayang iyon na walang presyo ang isang regalo, na malugod ang bisita nang walang pagsusulit, at dapat dumaan ang tulong sa pinakamaikling daan mula sa isang tao patungo sa iba.',
-  'about.originBody2':
-    'Hindi kailangan ang pananampalatayang iyon para umupo sa silid na ito. Walang kredo sa pinto, walang dasal, walang tseke. Magbigay o tumanggap ayon sa kung sino ka. Ang mga patakaran sa living room ay patakaran ng bahay, hindi liturhiya.',
-  'about.originBody3':
-    'Sa kuwento ng mabuting Samaritano, ang kapwa ay hindi ang taong kapareho ng relihiyon. Ang kapwa ay ang nagpapakita ng awa. Iyon ang pinto ng bahay na ito.',
+    'Karamihan sa mga nagsimula ng 21.gifts, at karamihan sa mga nagbibigay dito, ay nasa pananampalatayang Kristiyano. Tinuruan sila ng pananampalatayang iyon na walang presyo ang isang regalo, at dapat dumaan ang tulong sa pinakamaikling daan mula sa isang tao patungo sa iba.',
   'about.ctaForum': 'Buksan ang living room',
   'donate.pageTitle': 'Magpadala ng tulong',
   'donate.lead': 'Pumili ng mensahe sa forum at magpadala ng Bitcoin sa taong sumulat nito.',
