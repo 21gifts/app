@@ -441,7 +441,7 @@ flowchart LR
 
 ## Iconography
 
-**Set.** `lucide-react` only. No second icon pack. No custom SVG icons except favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 in the pay CTA), and handbook images.
+**Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, and handbook images.
 
 **Stroke.** Default lucide 2px. At 16px glyph use stroke 2; at 20–24px use stroke 1.75 if the glyph looks heavy on goldens after Outfit — otherwise leave default. Do not mix fills.
 
@@ -512,9 +512,9 @@ Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `ton
 
 The labeled vs icon-only table is the **binding** rule. Reviewers follow this table and `CONTRIBUTING.md` **Icon controls**, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink`) | Icon-only (`IconButton`, required `aria-label`) |
+| Labeled (`Button` / `ButtonLink` / inline `Link`) | Icon-only (`IconButton`, required `aria-label`) |
 | --- | --- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”), **Open the forum**, **Open the app**, **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile/rules-setup/inbox back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”), **Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile/rules-setup/inbox back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
 
@@ -959,7 +959,7 @@ WCAG 2.2 AA.
 - **Target 2.5.8.** Labeled buttons and `IconButton` `md`/`lg` ≥ 44×44 **painted**. In-card `sm` stays 24px paint with `::before` slop (`content-['']` + `-inset-2.5`). Clustered `sm` rows use `gap-5` so 44px hits touch and do not overlap.
 - **Non-text 1.4.11.** Focus ring 2px `app-focus`, offset 2px. Do not use orange rings.
 - **Reduced motion 2.3.3.** Global CSS in `globals.css`. Keep `scrollIntoView` auto; no theme fade.
-- **Focus order:** Wordmark → back (if any) → main title → fields → primary action → chrome Menu/switchers. Menu open: focus stays on trigger; Escape closes.
+- **Focus order:** unsigned chrome is Wordmark then switchers. Signed-in `ProfileChromeLeft` is back **then** wordmark, then main title → fields → primary action → Menu. Menu open: focus stays on trigger; Escape closes.
 - **`aria-label`:** required on every `IconButton`; catalog key, all four locales. Decorative glyphs `aria-hidden`.
 - **Color not the only encoding:** profile Given/Received have text labels; forum payable is a Gift button plus amount, not color; errors have text; role badges have text + optional hint; push On/Off + filled vs outline bell.
 - **QR:** `role="img"` + catalog label (`QrCode`). Not mounted on smartphone UA.
@@ -970,7 +970,7 @@ WCAG 2.2 AA.
 
 Four Playwright combos: `desktop-light`, `desktop-dark`, `mobile-light`, `mobile-dark`. Goldens under `e2e/visual.spec.ts-snapshots/`. Filenames `${visual}-${combo}-linux.png`. `maxDiffPixelRatio` 0 except handbook 0.05.
 
-Never regenerate goldens on the session host. Regen is CI / Linux Playwright. `screenshot:check`, `handbook:check`, Function e2e.
+Do not regenerate goldens on a developer machine. Regen is CI / Linux Playwright. `screenshot:check`, `handbook:check`, Function e2e.
 
 Marketing light/dark goldens are identical (always ink) — accepted.
 
@@ -989,7 +989,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.
 11. **Photo/story is a reserved 96×96 circle + story clamp**, not a shipped feature.
-12. **No rebrand.** Live marketing is the product face: ink, Outfit, `#f7931a`, wordmark `21.gifts`. Do not kill light theme. Do not regenerate goldens on the session host.
+12. **No rebrand.** Live marketing is the product face: ink, Outfit, `#f7931a`, wordmark `21.gifts`. Do not kill light theme. Do not regenerate goldens on a developer machine.
 
 ## File map
 
