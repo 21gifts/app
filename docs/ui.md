@@ -476,7 +476,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 ## Money
 
-**Visitor amounts.** Always `formatBitcoin(sats, locale)` from `src/lib/stats-money.ts`. Leading `₿` (U+20BF), locale grouping, no fraction, no extra ₿. Class: `tabular-nums lining-nums`. JSON fields remain `sats` / `totalSats`.
+**Visitor amounts.** Always `formatBitcoin(sats, numberFormat)` from `src/lib/stats-money.ts`. Leading `₿` (U+20BF), `NumberFormatStyle` grouping (`ch` / `us` / `de`), no fraction, no extra ₿. Class: `tabular-nums lining-nums`. JSON fields remain `sats` / `totalSats`.
 
 **Pay control is not a second ₿.** Note footer:
 
@@ -484,8 +484,8 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 [ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ] [ PM ]  [ N replies ]
 ```
 
-- Amount: `<p className="text-xs font-medium text-app-muted tabular-nums lining-nums">{formatBitcoin(message.sats, locale)}</p>` — **not a button**.
-- Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**). Disabled while `payBusy`.
+- Amount: `<p className="text-xs font-medium text-app-muted tabular-nums lining-nums">{formatBitcoin(message.sats, numberFormat)}</p>` — **not a button**.
+- Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
 
