@@ -4456,7 +4456,9 @@ test('Function: recipientHandleFromAddress — marketing stats page still loads 
   await expect(page.getByRole('heading', { name: /Gifts/i })).toBeVisible();
 });
 
-test('Function: useAccountTotals — menu shows received sats from /me/activity', async ({ page }) => {
+test('Function: useAccountTotals — menu shows received sats from /me/activity', async ({
+  page,
+}) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, { ...EMPTY_ACTIVITY, receivedSats: 1000 });
   await page.goto('/profile');
