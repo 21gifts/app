@@ -583,7 +583,7 @@ export async function fetchMemberActivity(
  * @returns The {@link AccountActivity} payload.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link accountActivitySchema}. Callers that keep the profile card
- * on a stats failure should catch and treat both series as empty.
+ * on an activity failure should catch and treat both series as empty.
  */
 export async function fetchViewActivity(viewKey: string): Promise<AccountActivity> {
   try {
