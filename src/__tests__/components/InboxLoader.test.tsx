@@ -130,7 +130,7 @@ describe('InboxLoader', () => {
       createdAt: '2026-08-28T13:00:00.000Z',
       fromMe: true,
     });
-    renderWithLocale(<InboxLoader />);
+    const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Follow up  ' } });
@@ -141,7 +141,9 @@ describe('InboxLoader', () => {
     });
     expect(screen.getByText('You')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
-    expect(screen.getByText('You: Follow up')).toBeTruthy();
+    searchParams.delete('c');
+    view.rerender(<InboxLoader />);
+    expect(await screen.findByText('You: Follow up')).toBeTruthy();
   });
 
   it('posts when the opened id is not in the conversation list', async () => {
