@@ -631,9 +631,10 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
  * optional JPEG photo payload (`contentType` + raw base64 `data`), and optional
  * `inReplyTo` parent id (thread composer only; omit for top-level notes).
  * @returns The created {@link ForumMessage}.
- * @throws Error when the api rejects the body (400 or 429) — the api error
- * string when present, otherwise a fallback — on any other non-2xx status, or
- * when the body fails {@link forumMessageSchema} validation.
+ * @throws Error when the api rejects the body (400, 403, or 429) — the api
+ * error string when present, otherwise a fallback — {@link MissingRequirementsError}
+ * on 409, on any other non-2xx status, or when the body fails
+ * {@link forumMessageSchema} validation.
  */
 export async function postMessage(
   sessionToken: string,
@@ -660,6 +661,10 @@ export async function postMessage(
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
+  }
+  if (response.status === 403) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'A reply needs a Bitcoin payment' : toUserFacingError(raw));
   }
   if (response.status === 409) {
     let body: unknown;
@@ -737,14 +742,17 @@ export async function postMessageVideo(
  * @param sessionToken - A bearer token from a completed challenge.
  * @param messageId - Forum message UUID from the public JSON.
  * @param sats - Whole satoshis to pay (≥ 1).
+ * @param text - Optional NIP-57 comment shown as the gift reply body.
  * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
- * non-2xx), or when the body fails {@link messageInvoiceSchema}.
+ * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
+ * {@link messageInvoiceSchema}.
  */
 export async function postMessageInvoice(
   sessionToken: string,
   messageId: string,
   sats: number,
+  text?: string,
 ): Promise<MessageInvoice> {
   const response = await fetch(`/messages/${encodeURIComponent(messageId)}/invoice`, {
     method: 'POST',
@@ -752,11 +760,24 @@ export async function postMessageInvoice(
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ sats }),
+    body: JSON.stringify(text === undefined || text === '' ? { sats } : { sats, text }),
   });
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not start the Bitcoin payment');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not start the Bitcoin payment');
   }
   if (response.status === 404) {
     throw new Error('Could not start the Bitcoin payment');

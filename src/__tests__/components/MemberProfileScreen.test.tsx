@@ -156,6 +156,11 @@ async function renderTwoPostFeed(): Promise<void> {
   await screen.findByText('Second post from Carol.');
 }
 
+function fillPaidReply(text: string, amount = '1'): void {
+  fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: text } });
+  fireEvent.change(screen.getByLabelText('Amount'), { target: { value: amount } });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockClear();
@@ -572,15 +577,16 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '21');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21, 'reply');
     });
-    expect(screen.getByText('1 replies')).toBeTruthy();
+    expect(postMessage).not.toHaveBeenCalled();
   });
 
   it('does not bump the pinned note reply count when posting on a posts-feed card', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postMessage).mockResolvedValue({
       ...secondPost,
       id: '99999999-9999-4999-8999-999999999999',
@@ -775,6 +781,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('does not append an in-flight reply POST into a different expanded thread', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     let resolvePost!: (value: typeof note) => void;
     vi.mocked(postMessage).mockReturnValue(
       new Promise((resolve) => {
@@ -819,6 +826,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('still lists an in-flight reply when the same parent is expanded', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     let resolvePost!: (value: typeof note) => void;
     vi.mocked(postMessage).mockReturnValue(
       new Promise((resolve) => {
@@ -875,27 +883,23 @@ describe('MemberProfileScreen', () => {
   });
 
   it('ignores a second reply submit while posting', async () => {
-    let resolvePost!: (value: typeof note) => void;
-    vi.mocked(postMessage).mockReturnValue(
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
       new Promise((resolve) => {
-        resolvePost = resolve;
+        resolveInvoice = resolve;
       }),
     );
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(postMessage).toHaveBeenCalledTimes(1);
-    resolvePost({
-      ...note,
-      id: '44444444-4444-4444-8444-444444444444',
-      text: 'reply',
-    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    resolveInvoice({ pr: 'lnbc1', amountSats: 1 });
     await waitFor(() => {
-      expect(postMessage).toHaveBeenCalledTimes(1);
+      expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -923,6 +927,152 @@ describe('MemberProfileScreen', () => {
   });
 
   it('shows a request error when a reply fails', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('fail'));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('requires a sat amount to reply on someone else’s note', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-numeric reply amount', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', 'abc');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('invoices a gift-only reply from the composer', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('retries an unpaid staff reply after a missing_requirements overlay is satisfied', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      role: 'founder',
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+    });
+    vi.mocked(postMessage).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    vi.mocked(postMessage).mockResolvedValueOnce({
+      ...note,
+      id: '44444444-4444-4444-8444-444444444444',
+      text: 'reply',
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('opens the overlay when an unpaid staff reply returns missing_requirements', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+  });
+
+  it('does not reopen the overlay when a retried unpaid staff reply is still missing requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'founder', name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      role: 'founder',
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
+  it('maps a reply invoice rate-limit onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
+    });
+  });
+
+  it('maps an over-long invoice comment onto the reply length error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/500 characters/i);
+    });
+  });
+
+  it('shows a request error when an unpaid staff reply fails', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postMessage).mockRejectedValue(new Error('fail'));
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
@@ -931,8 +1081,50 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+  });
+
+  it('maps a staff reply rate-limit onto the reply error', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(postMessage).mockRejectedValue(new Error('Too many messages'));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
+    });
+  });
+
+  it('maps an unpaid-reply 403 onto the amount error', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    });
+  });
+
+  it('lets a founder reply without paying', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('opens the requirements overlay when a reply is missing a name', async () => {
@@ -982,14 +1174,14 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
       target: { value: 'alice@walletofsatoshi.com' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
     await waitFor(() => {
-      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
     });
   });
 
@@ -1010,12 +1202,12 @@ describe('MemberProfileScreen', () => {
   });
 
   it('opens the overlay when a reply returns missing_requirements', async () => {
-    vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['name']));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
@@ -1035,12 +1227,12 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
-      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
     });
   });
 
@@ -1077,24 +1269,20 @@ describe('MemberProfileScreen', () => {
       missing: [],
       setup: null,
     });
-    vi.mocked(postMessage).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
-    vi.mocked(postMessage).mockResolvedValueOnce({
-      ...note,
-      id: '44444444-4444-4444-8444-444444444444',
-      text: 'reply',
-    });
+    vi.mocked(postMessageInvoice).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    vi.mocked(postMessageInvoice).mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     await waitFor(() => {
-      expect(postMessage).toHaveBeenCalledTimes(2);
+      expect(postMessageInvoice).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -1109,17 +1297,17 @@ describe('MemberProfileScreen', () => {
       missing: [],
       setup: null,
     });
-    vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['name']));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
-      expect(postMessage).toHaveBeenCalled();
+      expect(postMessageInvoice).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
@@ -1262,10 +1450,11 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
     });
+    expect(postMessage).not.toHaveBeenCalled();
   });
 });

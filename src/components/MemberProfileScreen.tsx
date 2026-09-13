@@ -34,6 +34,76 @@ import {
 } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
+/**
+ * True when the signed-in account may reply without paying.
+ *
+ * @param account - Live account, or `null` when the snapshot is missing.
+ * @param parentAccountId - Profile note `accountId`, if the api sent one.
+ * @returns Whether `POST /messages` is allowed without a zap.
+ */
+function isReplyPaymentExempt(
+  account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
+  parentAccountId: string | undefined,
+): boolean {
+  if (account === null) {
+    return false;
+  }
+  if (account.role === 'founder' || account.role === 'moderator') {
+    return true;
+  }
+  return parentAccountId !== undefined && parentAccountId === account.id;
+}
+
+/**
+ * Parses the reply-composer sats draft.
+ *
+ * @param raw - Amount field value.
+ * @returns Whole sats, `'empty'` when blank, or `'invalid'`.
+ */
+function parseReplySats(raw: string): number | 'empty' | 'invalid' {
+  const trimmed = raw.trim();
+  if (trimmed === '') {
+    return 'empty';
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return 'invalid';
+  }
+  const sats = Number.parseInt(trimmed, 10);
+  /* v8 ignore next 3 -- /^\d+$/ parseInt is non-negative; overflow is defensive */
+  if (sats <= 0 || !Number.isSafeInteger(sats)) {
+    return 'invalid';
+  }
+  return sats;
+}
+
+/**
+ * True when the api rejected an unpaid reply.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message is the unpaid-reply copy.
+ */
+function isReplyPaymentError(err: unknown): boolean {
+  /* v8 ignore next 3 -- non-Error throw is defensive */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /reply needs a bitcoin payment/i.test(err.message);
+}
+
+/**
+ * True when a thrown value is the api rate-limit copy for posts or payments.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message looks like a rate-limit error.
+ */
+function isRateLimitError(err: unknown): boolean {
+  /* v8 ignore next 3 -- non-Error throw is defensive */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /too many (messages|payments)/i.test(err.message);
+}
+
 /** Roles that show a clickable tag beside the author name. */
 type MemberTaggedRole = 'founder' | 'moderator' | 'verified';
 
@@ -123,6 +193,7 @@ export function MemberProfileScreen({
   const [repliesError, setRepliesError] = useState(false);
   const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState('');
+  const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
@@ -249,6 +320,7 @@ export function MemberProfileScreen({
           );
         });
       }
+      setReplyAmountDraft('');
       pendingPostRef.current = null;
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
@@ -262,8 +334,55 @@ export function MemberProfileScreen({
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError('request');
+        setReplyFormError(
+          isReplyPaymentError(err) ? 'amount' : isRateLimitError(err) ? 'rateLimit' : 'request',
+        );
       }
+    } finally {
+      setReplyPosting(false);
+    }
+  };
+
+  const runPaidReply = async (
+    token: string,
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    setReplyPosting(true);
+    setReplyFormError(null);
+    try {
+      const invoice =
+        trimmed === ''
+          ? await postMessageInvoice(token, parentId, sats)
+          : await postMessageInvoice(token, parentId, sats, trimmed);
+      setPayMessageId(parentId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: parentId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+    } catch (err) {
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runPaidReply(token, trimmed, parentId, sats, true);
+          return;
+        }
+        setReplyFormError('request');
+        return;
+      }
+      setReplyFormError(
+        err instanceof Error && /1[-–]500 characters/i.test(err.message)
+          ? 'tooLong'
+          : isRateLimitError(err)
+            ? 'rateLimit'
+            : 'request',
+      );
     } finally {
       setReplyPosting(false);
     }
@@ -348,6 +467,9 @@ export function MemberProfileScreen({
       setReplies(null);
       setRepliesError(false);
       setRepliesLoading(false);
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      setReplyFormError(null);
       return;
     }
     const gen = ++expandGen.current;
@@ -355,6 +477,9 @@ export function MemberProfileScreen({
     setReplies(null);
     setRepliesLoading(true);
     setRepliesError(false);
+    setReplyDraft('');
+    setReplyAmountDraft('');
+    setReplyFormError(null);
     if (session === null) {
       setRepliesLoading(false);
       setRepliesError(true);
@@ -383,22 +508,36 @@ export function MemberProfileScreen({
       return;
     }
     const trimmed = replyDraft.trim();
-    if (trimmed === '') {
-      setReplyFormError('empty');
-      return;
-    }
     if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
     }
-    const token = session;
-    const parentId = expandedId;
-    const missing = account?.missing ?? [];
-    if (openOverlayForMissing(missing)) {
-      pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+    const parsed = parseReplySats(replyAmountDraft);
+    if (trimmed === '' && parsed === 'empty') {
+      setReplyFormError('empty');
       return;
     }
-    void runReplyPost(token, trimmed, parentId, false);
+    const token = session;
+    const parentId = expandedId;
+    const parentRow =
+      listedNote?.id === parentId ? listedNote : posts?.find((message) => message.id === parentId);
+    const exempt = isReplyPaymentExempt(account, parentRow?.accountId);
+    const continueReply = (isRetry: boolean): Promise<void> => {
+      if (parsed === 'invalid' || (!exempt && parsed === 'empty')) {
+        setReplyFormError('amount');
+        return Promise.resolve();
+      }
+      if (parsed === 'empty') {
+        return runReplyPost(token, trimmed, parentId, isRetry);
+      }
+      return runPaidReply(token, trimmed, parentId, parsed, isRetry);
+    };
+    const missing = account?.missing ?? [];
+    if (openOverlayForMissing(missing)) {
+      pendingPostRef.current = () => continueReply(true);
+      return;
+    }
+    void continueReply(false);
   };
 
   const handleRetryReplies = (): void => {
@@ -463,6 +602,11 @@ export function MemberProfileScreen({
     replyDraft,
     onReplyDraftChange: (value: string): void => {
       setReplyDraft(value);
+      setReplyFormError(null);
+    },
+    replyAmountDraft,
+    onReplyAmountDraftChange: (value: string): void => {
+      setReplyAmountDraft(value);
       setReplyFormError(null);
     },
     replyPosting,

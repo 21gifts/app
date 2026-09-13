@@ -280,6 +280,16 @@ describe('forumMessageSchema', () => {
     expect(() => forumMessageSchema.parse({ ...base, text: '', hasPhoto: false })).toThrow();
   });
 
+  it('accepts an empty text when sats is positive', () => {
+    const giftOnly = { ...base, text: '', sats: 21 };
+    expect(forumMessageSchema.parse(giftOnly)).toEqual({
+      ...giftOnly,
+      hasVideo: false,
+      videoContentType: null,
+      replyCount: 0,
+    });
+  });
+
   it('rejects a missing hasPhoto flag', () => {
     expect(() =>
       forumMessageSchema.parse({

@@ -2292,6 +2292,102 @@ describe('ForumBoard', () => {
     ).toBeTruthy();
   });
 
+  it('renders a gift-only reply as send plus the formatted amount', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-gift',
+            name: 'Bob',
+            text: '',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('send ₿21,000')).toBeTruthy();
+  });
+
+  it('renders reply text with the gift amount underneath', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-both',
+            name: 'Bob',
+            text: 'Thanks',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Thanks')).toBeTruthy();
+    expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
+  it('forwards reply amount draft changes', () => {
+    const onReplyAmountDraftChange = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyAmountDraft=""
+        onReplyAmountDraftChange={onReplyAmountDraftChange}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    expect(onReplyAmountDraftChange).toHaveBeenCalledWith('21');
+  });
+
   it('shows replyFormError tooLong, request, and rateLimit when expanded', () => {
     const { rerender } = renderWithLocale(
       <ForumBoard
@@ -2312,6 +2408,30 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="amount"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
 
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
