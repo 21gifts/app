@@ -523,6 +523,12 @@ Named member with living-room rules agreed and no Wallet of Satoshi address. Com
 
 ![21.gifts welcome overlay address](images/welcome-overlay-address.png)
 
+### Variant: overlay-introduce
+
+Named member with living-room rules agreed, a Wallet of Satoshi address, and `hasPosted` false. After login on `/welcome`, `IntroduceYourselfOverlay` dialog **Introduce yourself** with body copy and **Write an introduction**. Close (X) is icon-only.
+
+![21.gifts welcome overlay introduce](images/welcome-overlay-introduce.png)
+
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.

@@ -491,6 +491,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })",
   },
   {
+    route: '/welcome',
+    id: 'overlay-introduce',
+    image: 'welcome-overlay-introduce.png',
+    visual: 'state-welcome-overlay-introduce',
+    needle: "getByRole('dialog', { name: 'Introduce yourself' })",
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',
