@@ -112,6 +112,7 @@ describe('ContactLoader', () => {
         name: '21.gifts',
         lastText: 'Hello',
         lastAt: '2026-08-28T14:00:00.000Z',
+        lastFromMe: true,
       },
     ]);
     renderWithLocale(<ContactLoader />);
@@ -139,6 +140,7 @@ describe('ContactLoader', () => {
         name: 'Bob',
         lastText: 'Hi',
         lastAt: '2026-08-28T14:00:00.000Z',
+        lastFromMe: false,
       },
     ]);
     renderWithLocale(<ContactLoader />);

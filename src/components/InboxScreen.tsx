@@ -60,6 +60,8 @@ export interface InboxScreenProps {
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 500-character composer. Origin labels come from {@link Conversation} `kind`.
+ * Outbound last-text previews use `inbox.sentPreview`; `fromMe` messages render
+ * as sent bubbles with `inbox.you`.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.
@@ -138,10 +140,17 @@ export function InboxScreen({
               <li
                 key={message.id}
                 data-message-id={message.id}
-                className="rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
+                data-from-me={message.fromMe ? 'true' : 'false'}
+                className={
+                  message.fromMe
+                    ? 'self-end ml-8 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
+                    : 'self-start mr-8 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
+                }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                  <span className="text-sm font-medium text-app-fg">
+                    {message.fromMe ? t('inbox.you') : message.name}
+                  </span>
                   <time dateTime={message.createdAt} className="text-xs text-app-subtle">
                     {formatForumTime(message.createdAt, locale)}
                   </time>
@@ -252,7 +261,11 @@ export function InboxScreen({
                   {t(CONVERSATION_ORIGIN_KEY[row.kind])}
                 </span>
                 {row.lastText !== '' ? (
-                  <span className="line-clamp-2 text-sm text-app-muted">{row.lastText}</span>
+                  <span className="line-clamp-2 text-sm text-app-muted">
+                    {row.lastFromMe
+                      ? t('inbox.sentPreview', { text: row.lastText })
+                      : row.lastText}
+                  </span>
                 ) : null}
               </button>
             </li>

@@ -474,6 +474,8 @@ const en = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direct',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'You',
+  'inbox.sentPreview': 'You: {text}',
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
@@ -960,6 +962,8 @@ const de = {
   'inbox.origin.contact': 'Kontakt',
   'inbox.origin.direct': 'Direkt',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'Du',
+  'inbox.sentPreview': 'Du: {text}',
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
@@ -1432,6 +1436,8 @@ const es = {
   'inbox.origin.contact': 'Contacto',
   'inbox.origin.direct': 'Directo',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'Tú',
+  'inbox.sentPreview': 'Tú: {text}',
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
@@ -1912,6 +1918,8 @@ const fil = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direkta',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'Ikaw',
+  'inbox.sentPreview': 'Ikaw: {text}',
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',

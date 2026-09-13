@@ -15,6 +15,7 @@ const THREAD: Conversation = {
   name: '21.gifts',
   lastText: 'Hello team',
   lastAt: '2026-08-28T12:00:00.000Z',
+  lastFromMe: false,
 };
 
 const MESSAGE: ConversationMessage = {
@@ -22,6 +23,7 @@ const MESSAGE: ConversationMessage = {
   name: 'Ada',
   text: 'Hello team',
   createdAt: '2026-08-28T12:00:00.000Z',
+  fromMe: false,
 };
 
 describe('InboxScreen', () => {
@@ -126,6 +128,8 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('list', { name: 'Conversations' })).toBeTruthy();
+    expect(screen.getByText('Hello team', { exact: true })).toBeTruthy();
+    expect(screen.queryByText('You: Hello team')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(onOpen).toHaveBeenCalledWith('conv-1');
   });
@@ -142,6 +146,7 @@ describe('InboxScreen', () => {
             name: 'Bob',
             lastText: 'Later',
             lastAt: '2026-08-28T13:00:00.000Z',
+            lastFromMe: false,
           },
           {
             id: 'conv-3',
@@ -149,6 +154,7 @@ describe('InboxScreen', () => {
             name: 'npub1abc…xyz',
             lastText: 'Hi',
             lastAt: '2026-08-28T14:00:00.000Z',
+            lastFromMe: false,
           },
         ]}
         error={false}
@@ -244,6 +250,59 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Contact')).toBeTruthy();
   });
 
+  it('prefixes lastText with You: when lastFromMe is true', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...THREAD, lastFromMe: true }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(row.textContent).toContain('21.gifts');
+    expect(screen.getByText('You: Hello team')).toBeTruthy();
+    expect(screen.queryByText('Hello team', { exact: true })).toBeNull();
+  });
+
+  it('hides the preview when lastText is empty even if lastFromMe is true', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...THREAD, lastText: '', lastFromMe: true }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(row.querySelector('.line-clamp-2')).toBeNull();
+    expect(screen.queryByText('You:')).toBeNull();
+  });
+
   it('shows an open thread, composer errors, and posts', () => {
     const onPost = vi.fn();
     const onBack = vi.fn();
@@ -271,7 +330,9 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('heading', { name: '21.gifts' })).toBeTruthy();
     expect(screen.getByText('Contact')).toBeTruthy();
+    expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Hello team')).toBeTruthy();
+    expect(screen.getByRole('listitem').getAttribute('data-from-me')).toBe('false');
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
     expect(onBack).toHaveBeenCalledTimes(1);
@@ -361,5 +422,33 @@ describe('InboxScreen', () => {
     expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetryMessages).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders fromMe messages as You on the sent side', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[THREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-1"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[{ ...MESSAGE, fromMe: true }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+      />,
+    );
+    expect(screen.getByText('You')).toBeTruthy();
+    expect(screen.queryByText('Ada')).toBeNull();
+    const bubble = screen.getByRole('listitem');
+    expect(bubble.getAttribute('data-from-me')).toBe('true');
+    expect(bubble.className).toContain('self-end');
   });
 });

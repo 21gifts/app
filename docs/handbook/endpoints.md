@@ -226,21 +226,21 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (private threads the session may see). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`.
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (private threads the session may see). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe`.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author. Response is the same conversation list-row shape, including required `kind`.
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author. Response is the same conversation list-row shape, including required `kind` and `lastFromMe`.
 - **Errors:** Upstream 400 (self), 404 (unknown note), 401/503, or 502 if the api is unreachable.
 - **Used by:** `openConversation` from the forum PM control.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe`.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversation` on `/messages?c=`.
 - **Auth:** Bearer.

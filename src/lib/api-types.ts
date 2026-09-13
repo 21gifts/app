@@ -366,7 +366,9 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * `kind` is `member_member` (in-app member conversation), `member_platform`
  * (contact / official 21.gifts thread), or `member_damus` (Nostr-only
  * counterpart). `lastText` may be empty when the thread was opened from a
- * forum note and has no messages yet.
+ * forum note and has no messages yet. `lastFromMe` is true when the last
+ * message was sent by the session (including staff sending as the platform
+ * account).
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
@@ -374,6 +376,7 @@ export const conversationSchema = z.object({
   name: z.string().min(1),
   lastText: z.string(),
   lastAt: z.string().datetime({ offset: true }),
+  lastFromMe: z.boolean(),
 });
 
 /**
@@ -390,12 +393,16 @@ export type Conversation = z.infer<typeof conversationSchema>;
 
 /**
  * Runtime schema for one message in `GET /conversations/:id`.
+ *
+ * `fromMe` is true when this message was sent by the session (including staff
+ * sending as the platform account).
  */
 export const conversationMessageSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   text: z.string().min(1),
   createdAt: z.string().datetime({ offset: true }),
+  fromMe: z.boolean(),
 });
 
 /**

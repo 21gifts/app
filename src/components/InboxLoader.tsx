@@ -153,7 +153,7 @@ export function InboxLoader(): ReactElement | null {
           }
           const next = prev.map((row) =>
             row.id === conversationId
-              ? { ...row, lastText: created.text, lastAt: created.createdAt }
+              ? { ...row, lastText: created.text, lastAt: created.createdAt, lastFromMe: true }
               : row,
           );
           const opened = next.find((row) => row.id === conversationId);
