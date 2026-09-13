@@ -1139,7 +1139,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Show replies' }).click();
     await expect(page.getByLabel('Your reply')).toBeVisible();
     await page.getByLabel('Your reply').fill('Hello');
-    await page.getByRole('button', { name: 'Post' }).click();
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(
       page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeVisible();
