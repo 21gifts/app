@@ -189,6 +189,36 @@ describe('NoteTranslate', () => {
     expect(await screen.findByRole('button', { name: 'Translate' })).toBeTruthy();
   });
 
+  it('clears a finished translation when the note text changes', async () => {
+    const otherGerman = 'Bitte hilf mir diese Woche mit ein paar Satoshi.';
+    vi.mocked(translateNote).mockResolvedValue('Can anyone lend me a few satoshi this week?');
+    const { rerender } = renderWithLocale(<NoteTranslate text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
+    rerender(<NoteTranslate text={otherGerman} />);
+    expect(screen.queryByText('Can anyone lend me a few satoshi this week?')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Translate' })).toBeTruthy();
+  });
+
+  it('ignores in-flight success after the note text changes', async () => {
+    const otherGerman = 'Bitte hilf mir diese Woche mit ein paar Satoshi.';
+    let resolveTranslation: ((text: string) => void) | undefined;
+    vi.mocked(translateNote).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveTranslation = resolve;
+        }),
+    );
+    const { rerender } = renderWithLocale(<NoteTranslate text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    rerender(<NoteTranslate text={otherGerman} />);
+    await act(async () => {
+      resolveTranslation?.('stale success');
+    });
+    expect(screen.queryByText('stale success')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Translate' })).toBeTruthy();
+  });
+
   it('stops click and keydown events at its wrapper', async () => {
     const onClick = vi.fn();
     const onKeyDown = vi.fn();

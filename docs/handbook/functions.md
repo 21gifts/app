@@ -1918,5 +1918,5 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Client control that offers on-demand translation when the note language differs from the active UI locale and GET `/translate` reports available. **Translate** sits under the note body (not in the footer icon row). Success shows the translated body plus **Show original**; failure shows **Could not translate this note. Please try again.** and keeps Translate.
 - **Inputs:** `text` — raw public note or reply body.
-- **Returns / side effects:** The control, or `null` when the text is blank, translation is unavailable, or `shouldOfferNoteTranslate` is false. Calls `fetchTranslateAvailable` on mount and `translateNote` on click. Stops click/keydown so forum expand does not fire.
+- **Returns / side effects:** The control, or `null` when the text is blank, translation is unavailable, or `shouldOfferNoteTranslate` is false. Calls `fetchTranslateAvailable` on mount and `translateNote` on click. During render, a change of `text` or UI locale resets status, clears the translated body, shows the translation slot again, and invalidates in-flight requests (`identity = text + locale`). Stops click/keydown so forum expand does not fire.
 - **Used by:** `ForumBoard` (notes and replies) and `PublicMessageLoader`.
