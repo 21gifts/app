@@ -6,7 +6,7 @@ vi.mock('next/font/google', () => ({
   Outfit: (): { variable: string } => ({ variable: '__outfit_variable' }),
 }));
 
-import RootLayout, { metadata } from '@/app/layout';
+import RootLayout, { metadata, viewport } from '@/app/layout';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
@@ -86,6 +86,17 @@ describe('metadata', () => {
 
     expect(twitter.card).toBe('summary_large_image');
     expect(twitter.images[0]?.url).toBe('/og.png');
+  });
+});
+
+describe('viewport', () => {
+  it('locks scale to device-width at 1 so iOS Safari does not auto-zoom fields', () => {
+    expect(viewport).toEqual({
+      width: 'device-width',
+      initialScale: 1,
+      maximumScale: 1,
+      userScalable: false,
+    });
   });
 });
 

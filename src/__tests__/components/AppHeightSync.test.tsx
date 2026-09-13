@@ -69,4 +69,37 @@ describe('useAppHeight', () => {
 
     expect(winRemove).toHaveBeenCalledWith('resize', expect.any(Function));
   });
+
+  it('does not shrink --app-height while visualViewport is zoomed', () => {
+    document.documentElement.style.setProperty('--app-height', '640px');
+    const visualViewport = {
+      height: 320,
+      scale: 2,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('visualViewport', visualViewport);
+
+    renderHook(() => {
+      useAppHeight();
+    });
+
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('640px');
+  });
+
+  it('sets --app-height when visualViewport.scale is 1', () => {
+    const visualViewport = {
+      height: 480,
+      scale: 1,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('visualViewport', visualViewport);
+
+    renderHook(() => {
+      useAppHeight();
+    });
+
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('480px');
+  });
 });

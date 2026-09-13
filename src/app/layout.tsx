@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
@@ -69,6 +69,17 @@ export const metadata: Metadata = {
       },
     ],
   },
+};
+
+/**
+ * Root viewport: device-width at scale 1. `maximumScale` and `userScalable`
+ * stop iOS Safari from auto-zooming focused form fields.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 /**

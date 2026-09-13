@@ -4,13 +4,23 @@ import { useEffect, type ReactElement } from 'react';
 
 /**
  * After hydration: keep `--app-height` in sync with the visible viewport.
+ * Skips updates while `visualViewport.scale` is present and not ≈ 1.
  *
  * @returns void
  */
 export function useAppHeight(): void {
   useEffect(() => {
     const setAppHeight = (): void => {
-      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      const vv = window.visualViewport;
+      if (
+        vv !== null &&
+        vv !== undefined &&
+        typeof vv.scale === 'number' &&
+        Math.abs(vv.scale - 1) > 0.01
+      ) {
+        return;
+      }
+      const h = vv !== null && vv !== undefined ? vv.height : window.innerHeight;
       document.documentElement.style.setProperty('--app-height', `${Math.round(h)}px`);
     };
 
