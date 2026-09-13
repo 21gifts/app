@@ -5403,7 +5403,7 @@ test('Function: TrustChainDiagram — a mocked chain renders named nodes', async
   await expect(page.getByTestId('trust-node-m1')).toBeVisible();
 });
 
-test('Function: layoutTrustChain — appointed moderator sits below the founder', async ({
+test('Function: layoutTrustChain — appointed moderator sits to the right of the founder', async ({
   page,
 }) => {
   await page.route('**/trust/graph', async (route) => {
@@ -5428,7 +5428,8 @@ test('Function: layoutTrustChain — appointed moderator sits below the founder'
   const moderatorBox = await moderator.boundingBox();
   expect(founderBox).not.toBeNull();
   expect(moderatorBox).not.toBeNull();
-  expect((moderatorBox?.y ?? 0) > (founderBox?.y ?? 0)).toBe(true);
+  expect((moderatorBox?.x ?? 0) > (founderBox?.x ?? 0)).toBe(true);
+  expect(Math.abs((moderatorBox?.y ?? 0) - (founderBox?.y ?? 0)) < 8).toBe(true);
 });
 
 test('Function: proxyTrustVerifyPost — unauthenticated verify is 401', async ({ request }) => {

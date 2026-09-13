@@ -126,13 +126,13 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /trust-chain
 
 - **URL:** `/trust-chain` — public Trust Chain (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Trust Chain**, a short lead, then a data-driven diagram of who verified or appointed whom (founder at the root, moderators, then verified people). Below the diagram, three short explanations: **Verified**, **Moderator**, and **Founder**. Empty copy: **No one is on the Trust Chain yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Trust Chain**, a short lead, then a data-driven diagram of who verified or appointed whom as one horizontal chain (founder first on the left, each later person to the right — never a pyramid). Below the diagram, three short explanations: **Verified**, **Moderator**, and **Founder**. Empty copy: **No one is on the Trust Chain yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Change language. Read the diagram and the role explanations. Open a member card (`/members/{id}`) from a node (then requires login). Header **Trust Chain** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `TrustChainPage`, `TrustChainLoader`, `TrustChainScreen`, `TrustChainDiagram`, `layoutTrustChain`, `fetchTrustChain` (same-origin `GET /trust/graph`), `LanguageSwitcher`.
 
 ### Variant: default
 
-Loaded chain: founder **Cyrill** appointed moderator **Severin**, who verified two people. Diagram visible.
+Loaded chain: founder **Cyrill** appointed moderator **Severin**, who verified two people, shown left to right. Diagram visible.
 
 ![21.gifts Trust Chain](images/trust-chain.png)
 

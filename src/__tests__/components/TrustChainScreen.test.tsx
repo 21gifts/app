@@ -16,7 +16,7 @@ const POPULATED: TrustChain = {
   edges: [{ from: 'f', to: 'm', kind: 'moderator_appoint' }],
 };
 
-const EXPLAIN_FOUNDER = 'A founder started 21.gifts and sits at the root of the chain.';
+const EXPLAIN_FOUNDER = 'A founder started 21.gifts and is the first link of the chain.';
 
 describe('TrustChainScreen', () => {
   it('shows loading copy and the role explanation', () => {

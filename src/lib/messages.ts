@@ -514,7 +514,7 @@ const en = {
     'Verified means a moderator or founder met the person in real life and confirmed they are real. It is not a wallet proof.',
   'trustChain.explainModerator':
     'To become a moderator, an existing moderator or founder proposes the person and a different moderator or founder confirms — or a founder appoints them directly.',
-  'trustChain.explainFounder': 'A founder started 21.gifts and sits at the root of the chain.',
+  'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
   'trustChain.action.verify': 'Verify',
   'trustChain.action.propose': 'Propose as moderator',
   'trustChain.action.confirm': 'Confirm as moderator',
@@ -1041,7 +1041,7 @@ const de = {
   'trustChain.explainModerator':
     'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin, ein Moderator oder eine Gründerperson die Person vor, und eine andere Moderatorin, ein Moderator oder eine Gründerperson bestätigt — oder eine Gründerperson ernennt sie direkt.',
   'trustChain.explainFounder':
-    'Eine Gründerperson hat 21.gifts gestartet und sitzt an der Wurzel der Kette.',
+    'Eine Gründerperson hat 21.gifts gestartet und ist das erste Glied der Kette.',
   'trustChain.action.verify': 'Verifizieren',
   'trustChain.action.propose': 'Als Moderator vorschlagen',
   'trustChain.action.confirm': 'Als Moderator bestätigen',
@@ -1554,7 +1554,7 @@ const es = {
   'trustChain.explainModerator':
     'Para ser moderadora o moderador, una persona moderadora o fundadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
   'trustChain.explainFounder':
-    'Una persona fundadora empezó 21.gifts y está en la raíz de la cadena.',
+    'Una persona fundadora empezó 21.gifts y es el primer eslabón de la cadena.',
   'trustChain.action.verify': 'Verificar',
   'trustChain.action.propose': 'Proponer como moderador',
   'trustChain.action.confirm': 'Confirmar como moderador',
@@ -2074,7 +2074,7 @@ const fil = {
   'trustChain.explainModerator':
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator o founder at ibang moderator o founder ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
   'trustChain.explainFounder':
-    'Isang founder ang nagsimula ng 21.gifts at nakaupo sa ugat ng kadena.',
+    'Isang founder ang nagsimula ng 21.gifts at siya ang unang kawing ng kadena.',
   'trustChain.action.verify': 'I-verify',
   'trustChain.action.propose': 'Ipanukala bilang moderator',
   'trustChain.action.confirm': 'Kumpirmahin bilang moderator',

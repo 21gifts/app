@@ -6,6 +6,8 @@ import type { TrustChain, TrustChainEdge, TrustChainNode } from '@/lib/api-types
 import type { MessageKey } from '@/lib/messages';
 import {
   layoutTrustChain,
+  TRUST_CHAIN_ARC_LIFT,
+  TRUST_NODE_GAP,
   TRUST_NODE_HEIGHT,
   TRUST_NODE_WIDTH,
   type LaidOutTrustNode,
@@ -68,7 +70,19 @@ function arrowHeadPoints(x1: number, y1: number, x2: number, y2: number): string
 }
 
 /**
- * Scrollable SVG forest of who verified or appointed whom.
+ * How many chain slots sit between two laid-out nodes (0 = same block).
+ *
+ * @param fromX - Actor block left.
+ * @param toX - Subject block left.
+ * @returns Non-negative hop count.
+ */
+function edgeHops(fromX: number, toX: number): number {
+  const step = TRUST_NODE_WIDTH + TRUST_NODE_GAP;
+  return Math.round(Math.abs(toX - fromX) / step);
+}
+
+/**
+ * Scrollable SVG chain of who verified or appointed whom, left to right.
  *
  * @param props - Public Trust Chain payload.
  * @returns The diagram.
@@ -93,19 +107,29 @@ export function TrustChainDiagram({ chain }: { chain: TrustChain }): ReactElemen
           if (from === undefined || to === undefined) {
             return null;
           }
-          const x1 = from.x + TRUST_NODE_WIDTH / 2;
-          const y1 = from.y + TRUST_NODE_HEIGHT;
-          const x2 = to.x + TRUST_NODE_WIDTH / 2;
-          const y2 = to.y;
+          const hops = edgeHops(from.x, to.x);
+          const y1 = from.y + TRUST_NODE_HEIGHT / 2;
+          const y2 = to.y + TRUST_NODE_HEIGHT / 2;
+          const x1 = to.x >= from.x ? from.x + TRUST_NODE_WIDTH : from.x;
+          const x2 = to.x >= from.x ? to.x : to.x + TRUST_NODE_WIDTH;
           const midX = (x1 + x2) / 2;
-          const midY = (y1 + y2) / 2;
+          const lift = hops >= 2 ? TRUST_CHAIN_ARC_LIFT + (hops - 2) * 16 : 0;
+          const labelY = y1 - (lift === 0 ? 8 : lift / 2) - 6;
           return (
             <g key={`${edge.from}-${edge.to}-${edge.kind}`}>
-              <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-paper/40" />
+              {hops >= 2 ? (
+                <path
+                  d={`M ${x1} ${y1} Q ${midX} ${y1 - lift} ${x2} ${y2}`}
+                  className="stroke-paper/40"
+                  fill="none"
+                />
+              ) : (
+                <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-paper/40" />
+              )}
               <polygon points={arrowHeadPoints(x1, y1, x2, y2)} className="fill-paper/40" />
               <text
                 x={midX}
-                y={midY - 6}
+                y={labelY}
                 textAnchor="middle"
                 className="fill-paper"
                 fontSize="12"

@@ -967,14 +967,14 @@
 
 ## Function: layoutTrustChain
 
-- **Purpose:** BFS forest layout of Trust Chain nodes and edges into x/y coordinates (no graph library).
+- **Purpose:** Horizontal chain layout of Trust Chain nodes and edges into x/y coordinates (one row, left to right, no graph library). Never stacked as a pyramid of levels.
 - **Inputs:** `TrustChain` `{ nodes, edges }`.
 - **Returns / side effects:** `{ nodes, edges, width, height }` with pixel positions. Empty input is zero size.
 - **Used by:** `TrustChainDiagram`.
 
 ## Function: TrustChainDiagram
 
-- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, arrow, kind label). Nodes link to `/members/{id}`.
+- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, left-to-right arrow, kind label). Nodes link to `/members/{id}`.
 - **Inputs:** `chain: TrustChain`.
 - **Returns / side effects:** SVG with `data-testid="trust-node-{id}"`. Empty chain is not rendered by the parent screen.
 - **Used by:** `TrustChainScreen`.

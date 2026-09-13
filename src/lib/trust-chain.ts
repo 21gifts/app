@@ -1,33 +1,36 @@
 import type { TrustChain, TrustChainNode } from '@/lib/api-types';
 
 /** Laid-out node width in CSS pixels. */
-export const TRUST_NODE_WIDTH = 200;
+export const TRUST_NODE_WIDTH = 176;
 
 /** Laid-out node height in CSS pixels. */
 export const TRUST_NODE_HEIGHT = 72;
 
-/** Vertical gap between BFS levels in CSS pixels. */
-export const TRUST_LEVEL_GAP = 96;
+/** Horizontal gap between consecutive chain blocks in CSS pixels. */
+export const TRUST_NODE_GAP = 88;
 
-/** Horizontal gap between nodes on the same level in CSS pixels. */
-export const TRUST_NODE_GAP = 24;
+/**
+ * Extra lift in CSS pixels for an edge that skips one block; each further
+ * skipped block adds 16px.
+ */
+export const TRUST_CHAIN_ARC_LIFT = 56;
 
 /** Outer padding around the graph in CSS pixels. */
 const PAD = 16;
 
 /**
- * A Trust Chain node with BFS layout coordinates.
+ * A Trust Chain node with chain-layout coordinates.
  */
 export type LaidOutTrustNode = TrustChainNode & { x: number; y: number };
 
 /**
- * Row width for `n` nodes (0 when the row is empty).
+ * Row width for `n` blocks (0 when the chain is empty).
  *
- * @param n - Node count on the level.
+ * @param n - Node count.
  * @returns Pixel width of that row.
  */
-function rowWidth(n: number): number {
-  /* v8 ignore next 3 — empty graph returns before rowWidth; levels always have nodes */
+function chainWidth(n: number): number {
+  /* v8 ignore next 3 — empty graph returns before chainWidth; order always has nodes */
   if (n === 0) {
     return 0;
   }
@@ -35,11 +38,11 @@ function rowWidth(n: number): number {
 }
 
 /**
- * Positions Trust Chain nodes in a forest BFS layout (no DOM).
+ * Positions Trust Chain nodes in one horizontal row (no DOM).
  *
- * Roots (no incoming edge) share level 0 in `chain.nodes` order. Children follow
- * first appearance in `chain.edges`. Unvisited nodes (cycles with no root) sit
- * on an extra level in `chain.nodes` order so none are dropped.
+ * Visit order is BFS from roots (no incoming edge) in `chain.nodes` order,
+ * then leftover unvisited nodes (cycles with no root). Every node shares the
+ * same `y`; `x` increases left to right. Never stacked as a pyramid of levels.
  *
  * @param chain - Nodes and directed edges from `GET /trust-chain`.
  * @returns Laid-out nodes, the input edges unchanged, and bounding width/height.
@@ -71,12 +74,12 @@ export function layoutTrustChain(chain: TrustChain): {
 
   const roots = chain.nodes.filter((node) => !incoming.has(node.id)).map((node) => node.id);
   const visited = new Set<string>();
-  const levels: string[][] = [];
+  const order: string[] = [];
   let current = roots;
   while (current.length > 0) {
-    levels.push(current);
     for (const id of current) {
       visited.add(id);
+      order.push(id);
     }
     const next: string[] = [];
     const queued = new Set<string>();
@@ -91,40 +94,47 @@ export function layoutTrustChain(chain: TrustChain): {
     current = next;
   }
 
-  const leftover = chain.nodes.filter((node) => !visited.has(node.id)).map((node) => node.id);
-  if (leftover.length > 0) {
-    levels.push(leftover);
+  for (const node of chain.nodes) {
+    if (!visited.has(node.id)) {
+      order.push(node.id);
+    }
   }
 
-  const widths = levels.map((level) => rowWidth(level.length));
-  const maxRowWidth = widths.reduce((max, width) => (width > max ? width : max), 0);
-  const maxLevel = levels.length - 1;
+  const indexOf = new Map(order.map((id, index) => [id, index]));
+  let maxHops = 1;
+  for (const edge of chain.edges) {
+    const fromIndex = indexOf.get(edge.from);
+    const toIndex = indexOf.get(edge.to);
+    if (fromIndex === undefined || toIndex === undefined) {
+      continue;
+    }
+    const hops = Math.abs(toIndex - fromIndex);
+    if (hops > maxHops) {
+      maxHops = hops;
+    }
+  }
+  const extraTop = maxHops > 1 ? TRUST_CHAIN_ARC_LIFT + (maxHops - 2) * 16 : 0;
+  const y = PAD + extraTop;
   const byId = new Map(chain.nodes.map((node) => [node.id, node]));
   const positioned = new Map<string, LaidOutTrustNode>();
 
-  for (let level = 0; level < levels.length; level += 1) {
-    /* v8 ignore next 2 — noUncheckedIndexedAccess; loop index is in-range */
-    const ids = levels[level] ?? [];
-    const startX = PAD + (maxRowWidth - (widths[level] ?? 0)) / 2;
-    const y = PAD + level * (TRUST_NODE_HEIGHT + TRUST_LEVEL_GAP);
-    ids.forEach((id, index) => {
-      const node = byId.get(id);
-      /* v8 ignore next 3 -- levels are built from chain.nodes ids */
-      if (node === undefined) {
-        return;
-      }
-      positioned.set(id, {
-        ...node,
-        x: startX + index * (TRUST_NODE_WIDTH + TRUST_NODE_GAP),
-        y,
-      });
+  order.forEach((id, index) => {
+    const node = byId.get(id);
+    /* v8 ignore next 3 -- order is built from chain.nodes ids */
+    if (node === undefined) {
+      return;
+    }
+    positioned.set(id, {
+      ...node,
+      x: PAD + index * (TRUST_NODE_WIDTH + TRUST_NODE_GAP),
+      y,
     });
-  }
+  });
 
   const nodes: LaidOutTrustNode[] = [];
   for (const node of chain.nodes) {
     const laid = positioned.get(node.id);
-    /* v8 ignore next 3 -- leftover level places every unvisited node */
+    /* v8 ignore next 3 -- leftover append places every unvisited node */
     if (laid === undefined) {
       continue;
     }
@@ -134,7 +144,7 @@ export function layoutTrustChain(chain: TrustChain): {
   return {
     nodes,
     edges: chain.edges,
-    width: maxRowWidth + PAD * 2,
-    height: PAD * 2 + (maxLevel + 1) * TRUST_NODE_HEIGHT + maxLevel * TRUST_LEVEL_GAP,
+    width: chainWidth(order.length) + PAD * 2,
+    height: extraTop + TRUST_NODE_HEIGHT + PAD * 2,
   };
 }

@@ -41,6 +41,26 @@ describe('TrustChainDiagram', () => {
     expect(screen.queryByTestId('trust-node-ghost')).toBeNull();
   });
 
+  it('draws a back-edge from a later block to an earlier one', () => {
+    renderWithLocale(
+      <TrustChainDiagram
+        chain={{
+          nodes: [
+            { id: 'a', name: 'Ada', role: 'verified' },
+            { id: 'b', name: 'Bob', role: 'verified' },
+          ],
+          edges: [
+            { from: 'a', to: 'b', kind: 'verify' },
+            { from: 'b', to: 'a', kind: 'verify' },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByTestId('trust-node-a')).toBeTruthy();
+    expect(screen.getByTestId('trust-node-b')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Trust Chain diagram' })).toBeTruthy();
+  });
+
   it('renders a zero-length self-edge without throwing', () => {
     const hypot = vi.spyOn(Math, 'hypot').mockReturnValue(0);
     try {

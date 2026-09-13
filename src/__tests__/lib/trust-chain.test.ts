@@ -19,23 +19,23 @@ describe('layoutTrustChain', () => {
     expect(layoutTrustChain({ nodes: [FOUNDER], edges: [] })).toEqual({
       nodes: [{ ...FOUNDER, x: 16, y: 16 }],
       edges: [],
-      width: 232,
+      width: 208,
       height: 104,
     });
   });
 
-  it('places two roots on level 0 in nodes array order', () => {
+  it('places two roots in one row in nodes array order', () => {
     const a = { id: 'a', name: 'A', role: 'founder' as const };
     const b = { id: 'b', name: 'B', role: 'founder' as const };
     const laid = layoutTrustChain({ nodes: [a, b], edges: [] });
     expect(laid.nodes.map((node) => node.id)).toEqual(['a', 'b']);
     expect(laid.nodes[0]).toMatchObject({ x: 16, y: 16 });
-    expect(laid.nodes[1]).toMatchObject({ x: 240, y: 16 });
-    expect(laid.width).toBe(456);
+    expect(laid.nodes[1]).toMatchObject({ x: 280, y: 16 });
+    expect(laid.width).toBe(472);
     expect(laid.height).toBe(104);
   });
 
-  it('centers a shorter top row above two verify children', () => {
+  it('places a verify fan-out as one left-to-right chain, never a pyramid', () => {
     const edges: TrustChain['edges'] = [
       { from: 'f', to: 'm', kind: 'moderator_appoint' },
       { from: 'm', to: 'ada', kind: 'verify' },
@@ -46,12 +46,12 @@ describe('layoutTrustChain', () => {
       edges,
     });
     expect(laid.edges).toBe(edges);
-    expect(laid.nodes.find((node) => node.id === 'f')).toMatchObject({ x: 128, y: 16 });
-    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 128, y: 184 });
-    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 16, y: 352 });
-    expect(laid.nodes.find((node) => node.id === 'bob')).toMatchObject({ x: 240, y: 352 });
-    expect(laid.width).toBe(456);
-    expect(laid.height).toBe(440);
+    expect(laid.nodes.find((node) => node.id === 'f')).toMatchObject({ x: 16, y: 72 });
+    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 72 });
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 544, y: 72 });
+    expect(laid.nodes.find((node) => node.id === 'bob')).toMatchObject({ x: 808, y: 72 });
+    expect(laid.width).toBe(1000);
+    expect(laid.height).toBe(160);
   });
 
   it('still places both nodes of a leftover cycle with no root', () => {
@@ -66,7 +66,7 @@ describe('layoutTrustChain', () => {
     });
     expect(laid.nodes).toHaveLength(2);
     expect(laid.nodes[0]).toMatchObject({ id: 'a', x: 16, y: 16 });
-    expect(laid.nodes[1]).toMatchObject({ id: 'b', x: 240, y: 16 });
+    expect(laid.nodes[1]).toMatchObject({ id: 'b', x: 280, y: 16 });
   });
 
   it('ignores an edge to an unknown id', () => {
@@ -74,7 +74,7 @@ describe('layoutTrustChain', () => {
     const laid = layoutTrustChain({ nodes: [FOUNDER], edges });
     expect(laid.nodes).toEqual([{ ...FOUNDER, x: 16, y: 16 }]);
     expect(laid.edges).toBe(edges);
-    expect(laid.width).toBe(232);
+    expect(laid.width).toBe(208);
     expect(laid.height).toBe(104);
   });
 
@@ -94,8 +94,8 @@ describe('layoutTrustChain', () => {
       ],
     });
     expect(laid.nodes.find((node) => node.id === 'f')).toMatchObject({ x: 16, y: 16 });
-    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 16, y: 184 });
-    expect(laid.width).toBe(232);
-    expect(laid.height).toBe(272);
+    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.width).toBe(472);
+    expect(laid.height).toBe(104);
   });
 });
