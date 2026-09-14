@@ -414,7 +414,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Home                 | `Home`                        | `/welcome`                                                                          |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
-| Notifications        | `Bell`                        | `/notifications`                                                                    |
+| Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero               |
 | Messages             | `Inbox`                       | `/messages`                                                                         |
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
 | optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
@@ -735,7 +735,7 @@ NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: up
 
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Menu has no number format.
+See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Notifications unread count only when greater than zero. Menu has no number format.
 
 ### Banner (living-room laws)
 

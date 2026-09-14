@@ -139,6 +139,92 @@ describe('enablePush', () => {
     });
   });
 
+  it('throws when notification permission is denied', async () => {
+    const registration = { pushManager: { subscribe: vi.fn() } };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', {
+      requestPermission: vi.fn().mockResolvedValue('denied'),
+    });
+    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([1])));
+
+    await expect(enablePush('sess')).rejects.toThrow('Notification permission denied');
+    expect(fetchVapidPublicKey).not.toHaveBeenCalled();
+    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+  });
+
+  it('throws when the browser omits subscription keys', async () => {
+    const unsubscribe = vi.fn().mockResolvedValue(true);
+    const subscribe = vi.fn().mockResolvedValue({
+      toJSON: () => ({ endpoint: '', keys: {} }),
+      unsubscribe,
+    });
+    const registration = { pushManager: { subscribe } };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', {
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+    });
+    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([9, 8, 7])));
+
+    await expect(enablePush('sess')).rejects.toThrow('Invalid subscription');
+    expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it('unsubscribes when posting the subscription fails', async () => {
+    const unsubscribe = vi.fn().mockResolvedValue(true);
+    const subscribe = vi.fn().mockResolvedValue({
+      toJSON: () => ({
+        endpoint: 'https://push.example/sub',
+        keys: { p256dh: 'p256', auth: 'auth' },
+      }),
+      unsubscribe,
+    });
+    const registration = { pushManager: { subscribe } };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', {
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+    });
+    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([9, 8, 7])));
+    vi.mocked(postPushSubscription).mockRejectedValue(
+      new Error('Could not save push subscription'),
+    );
+
+    await expect(enablePush('sess')).rejects.toThrow('Could not save push subscription');
+    expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it('rethrows when push is not configured', async () => {
+    const registration = { pushManager: { subscribe: vi.fn() } };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', {
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+    });
+    vi.mocked(fetchVapidPublicKey).mockRejectedValue(new Error('Push is not configured'));
+
+    await expect(enablePush('sess')).rejects.toThrow('Push is not configured');
+  });
+});
+
+describe('resyncPushSubscription', () => {
   it('resyncs an existing subscription when permission is already granted', async () => {
     const unsubscribe = vi.fn();
     const registration = {
@@ -262,90 +348,6 @@ describe('enablePush', () => {
     vi.mocked(postPushSubscription).mockRejectedValue(new Error('Push is not configured'));
     await expect(resyncPushSubscription('sess')).rejects.toThrow('Push is not configured');
     expect(unsubscribe).not.toHaveBeenCalled();
-  });
-
-  it('throws when notification permission is denied', async () => {
-    const registration = { pushManager: { subscribe: vi.fn() } };
-    vi.stubGlobal('navigator', {
-      serviceWorker: {
-        register: vi.fn().mockResolvedValue(registration),
-        ready: Promise.resolve(registration),
-      },
-    });
-    vi.stubGlobal('Notification', {
-      requestPermission: vi.fn().mockResolvedValue('denied'),
-    });
-    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([1])));
-
-    await expect(enablePush('sess')).rejects.toThrow('Notification permission denied');
-    expect(fetchVapidPublicKey).not.toHaveBeenCalled();
-    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
-  });
-
-  it('throws when the browser omits subscription keys', async () => {
-    const unsubscribe = vi.fn().mockResolvedValue(true);
-    const subscribe = vi.fn().mockResolvedValue({
-      toJSON: () => ({ endpoint: '', keys: {} }),
-      unsubscribe,
-    });
-    const registration = { pushManager: { subscribe } };
-    vi.stubGlobal('navigator', {
-      serviceWorker: {
-        register: vi.fn().mockResolvedValue(registration),
-        ready: Promise.resolve(registration),
-      },
-    });
-    vi.stubGlobal('Notification', {
-      requestPermission: vi.fn().mockResolvedValue('granted'),
-    });
-    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([9, 8, 7])));
-
-    await expect(enablePush('sess')).rejects.toThrow('Invalid subscription');
-    expect(unsubscribe).toHaveBeenCalled();
-  });
-
-  it('unsubscribes when posting the subscription fails', async () => {
-    const unsubscribe = vi.fn().mockResolvedValue(true);
-    const subscribe = vi.fn().mockResolvedValue({
-      toJSON: () => ({
-        endpoint: 'https://push.example/sub',
-        keys: { p256dh: 'p256', auth: 'auth' },
-      }),
-      unsubscribe,
-    });
-    const registration = { pushManager: { subscribe } };
-    vi.stubGlobal('navigator', {
-      serviceWorker: {
-        register: vi.fn().mockResolvedValue(registration),
-        ready: Promise.resolve(registration),
-      },
-    });
-    vi.stubGlobal('Notification', {
-      requestPermission: vi.fn().mockResolvedValue('granted'),
-    });
-    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([9, 8, 7])));
-    vi.mocked(postPushSubscription).mockRejectedValue(
-      new Error('Could not save push subscription'),
-    );
-
-    await expect(enablePush('sess')).rejects.toThrow('Could not save push subscription');
-    expect(unsubscribe).toHaveBeenCalled();
-  });
-
-  it('rethrows when push is not configured', async () => {
-    const registration = { pushManager: { subscribe: vi.fn() } };
-    vi.stubGlobal('navigator', {
-      serviceWorker: {
-        register: vi.fn().mockResolvedValue(registration),
-        ready: Promise.resolve(registration),
-      },
-    });
-    vi.stubGlobal('Notification', {
-      requestPermission: vi.fn().mockResolvedValue('granted'),
-    });
-    vi.mocked(fetchVapidPublicKey).mockRejectedValue(new Error('Push is not configured'));
-
-    await expect(enablePush('sess')).rejects.toThrow('Push is not configured');
   });
 });
 

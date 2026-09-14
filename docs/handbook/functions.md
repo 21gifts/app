@@ -401,7 +401,7 @@
 - **Purpose:** GET `/push/vapid-public` with the bearer session and return the VAPID public key string.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `string`. Throws `Push is not configured` on 503; other non-2xx throw with status.
-- **Used by:** `enablePush`, `resyncPushSubscription`.
+- **Used by:** `enablePush`.
 
 ## Function: postPushSubscription
 
