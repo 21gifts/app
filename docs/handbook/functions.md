@@ -1055,7 +1055,7 @@
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
 - **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader` only.
+- **Used by:** `StatsLoader`, `ForumLoader`, `PublicMessageLoader`.
 
 ## Function: fetchAccountActivity
 
