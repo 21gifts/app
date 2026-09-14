@@ -150,9 +150,14 @@ function isReplyPaymentError(err: unknown): boolean {
  *
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the api.
+ * @param frozenReplyCounts - Parent ids whose replyCount must not rise this session.
  * @returns Merged newest-first list.
  */
-function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): ForumMessage[] {
+function mergeMessages(
+  prev: ForumMessage[] | null,
+  next: ForumMessage[],
+  frozenReplyCounts: ReadonlySet<string> = new Set(),
+): ForumMessage[] {
   if (prev === null) {
     return next;
   }
@@ -164,7 +169,9 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
     }
     return {
       ...message,
-      replyCount: Math.max(prior.replyCount, message.replyCount),
+      replyCount: frozenReplyCounts.has(message.id)
+        ? Math.min(prior.replyCount, message.replyCount)
+        : Math.max(prior.replyCount, message.replyCount),
     };
   });
   const ids = new Set(next.map((message) => message.id));
@@ -230,6 +237,8 @@ export function ForumLoader(): ReactElement | null {
   const setAccount = useAuthStore((state) => state.setAccount);
   /** Session-local hidden post ids so a stale GET cannot resurrect a post already hidden this session. */
   const deletedIds = useRef(new Set<string>());
+  /** Parents whose replyCount must not rise after a session reply delete. */
+  const frozenReplyCounts = useRef(new Set<string>());
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -383,7 +392,9 @@ export function ForumLoader(): ReactElement | null {
         return 'ok';
       }
       setMessages((prev) =>
-        mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)),
+        mergeMessages(prev, next, frozenReplyCounts.current).filter(
+          (row) => !deletedIds.current.has(row.id),
+        ),
       );
       setNewPostsAvailable(false);
       if (next.some((message) => message.payable === false)) {
@@ -701,7 +712,17 @@ export function ForumLoader(): ReactElement | null {
       try {
         const next = await fetchReplies(session, expandedId);
         if (!cancelled) {
-          setReplies(next.filter((row) => !deletedIds.current.has(row.id)));
+          const filtered = next.filter((row) => !deletedIds.current.has(row.id));
+          setReplies(filtered);
+          if (frozenReplyCounts.current.has(expandedId)) {
+            setMessages((prev) =>
+              prev === null
+                ? prev
+                : prev.map((row) =>
+                    row.id === expandedId ? { ...row, replyCount: filtered.length } : row,
+                  ),
+            );
+          }
         }
       } catch {
         if (!cancelled) {
@@ -808,7 +829,9 @@ export function ForumLoader(): ReactElement | null {
                     ? {
                         ...row,
                         ...next,
-                        replyCount: Math.max(row.replyCount, next.replyCount),
+                        replyCount: frozenReplyCounts.current.has(next.id)
+                          ? Math.min(row.replyCount, next.replyCount)
+                          : Math.max(row.replyCount, next.replyCount),
                       }
                     : row,
                 )
@@ -1384,12 +1407,15 @@ export function ForumLoader(): ReactElement | null {
           deletedIds.current.add(messageId);
           const loadedReplies = repliesRef.current;
           if (loadedReplies !== null && loadedReplies.some((row) => row.id === messageId)) {
-            setReplies(loadedReplies.filter((row) => row.id !== messageId));
+            const remaining = loadedReplies.filter((row) => row.id !== messageId);
+            const parentId = expandedIdRef.current;
+            if (parentId !== null) {
+              frozenReplyCounts.current.add(parentId);
+            }
+            setReplies(remaining);
             setMessages((prev) =>
               prev!.map((row) =>
-                row.id === expandedIdRef.current
-                  ? { ...row, replyCount: Math.max(0, row.replyCount - 1) }
-                  : row,
+                row.id === parentId ? { ...row, replyCount: remaining.length } : row,
               ),
             );
             return;
