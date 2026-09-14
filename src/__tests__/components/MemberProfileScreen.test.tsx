@@ -2324,6 +2324,41 @@ describe('MemberProfileScreen', () => {
     expect(fetchReplies).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a replies error when expanding after the session disappears', async () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note, postCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await openPostsShowingNote();
+    await act(async () => {
+      useAuthStore.setState({ session: null, account });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    expect(fetchReplies).not.toHaveBeenCalled();
+  });
+
+  it('does not open a feed conversation after the session disappears', async () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note, postCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await openPostsShowingNote();
+    await act(async () => {
+      useAuthStore.setState({ session: null, account });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    expect(openConversation).not.toHaveBeenCalled();
+  });
+
   it('clears the Message busy state when opening a conversation fails', async () => {
     vi.mocked(openConversation).mockRejectedValue(new Error('fail'));
     renderWithLocale(
