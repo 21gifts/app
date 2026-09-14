@@ -121,7 +121,7 @@ This is not “Log in is a gift.” Ink pages have one filled accent, and it is 
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`) |
 | Charts: received series, ₿ selected in ₿\|USD                        | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
-|                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                   |
+|                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                         |
 |                                                                      | **Rules kickers and ticks** — see (B′)                                                                                           |
 
 **(B′) Living-room house chrome (closed exception, not a third job).** `RulesDocument` paints:
