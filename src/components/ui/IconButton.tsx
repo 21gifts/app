@@ -42,7 +42,7 @@ const SIZE_CLASS: Record<NonNullable<IconButtonProps['size']>, string> = {
 /**
  * Icon-only control with a required accessible name.
  *
- * @param props - Native button props plus variant/size.
+ * @param props - Native button props plus variant, size, and tone (default `app`).
  * @returns The icon button element.
  */
 export function IconButton({
