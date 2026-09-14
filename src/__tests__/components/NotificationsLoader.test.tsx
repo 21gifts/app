@@ -72,7 +72,7 @@ describe('NotificationsLoader', () => {
   it('loads the notification list', async () => {
     listMock.mockResolvedValue(LIST);
     renderWithLocale(<NotificationsLoader />);
-    expect(await screen.findByText('Bob replied to your post')).toBeTruthy();
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
     await waitFor(() => {
       expect(markAllMock).toHaveBeenCalledWith('sess');
     });
@@ -92,7 +92,7 @@ describe('NotificationsLoader', () => {
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByText('Bob replied to your post')).toBeTruthy();
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
   });
 
   it('ignores a stale list resolve after unmount', async () => {
@@ -134,7 +134,7 @@ describe('NotificationsLoader', () => {
     listMock.mockResolvedValue(LIST);
     markAllMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<NotificationsLoader />);
-    expect(await screen.findByText('Bob replied to your post')).toBeTruthy();
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
     await waitFor(() => {
       expect(markAllMock).toHaveBeenCalledWith('sess');
     });
@@ -144,8 +144,8 @@ describe('NotificationsLoader', () => {
     listMock.mockResolvedValue(LIST);
     markReadMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<NotificationsLoader />);
-    expect(await screen.findByText('Bob replied to your post')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Bob replied to your post/ }));
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Bob replied/ }));
     expect(markReadMock).toHaveBeenCalledWith('sess', 'n1');
     expect(push).toHaveBeenCalledWith('/messages/parent-1');
   });

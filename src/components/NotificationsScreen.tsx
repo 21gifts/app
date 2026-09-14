@@ -6,6 +6,13 @@ import { Button, Card } from '@/components/ui';
 import type { Notification } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 
+/** Catalog key for each {@link Notification} `type` title line. */
+const NOTIFICATION_TITLE_KEY = {
+  forum_post: 'notifications.post',
+  forum_reply: 'notifications.reply',
+  zap: 'notifications.zap',
+} as const;
+
 /** Props for {@link NotificationsScreen}. */
 export interface NotificationsScreenProps {
   /** Loaded rows newest-first, or `null` before the first successful load. */
@@ -21,8 +28,8 @@ export interface NotificationsScreenProps {
 }
 
 /**
- * Presentational signed-in notifications list of forum replies to the
- * session's posts. There is no composer and no thread view.
+ * Presentational signed-in notifications list of living-room posts, replies,
+ * and payments. There is no composer, no thread view, and no filter.
  *
  * @param props - List state from {@link NotificationsLoader}.
  * @returns The notifications card.
@@ -78,6 +85,12 @@ export function NotificationsScreen({
         <ul aria-label={t('notifications.listLabel')} className="flex w-full flex-col gap-3">
           {notifications.map((row) => {
             const unread = row.readAt === null;
+            const bodyLine =
+              row.type === 'zap'
+                ? row.text
+                : row.text !== ''
+                  ? row.text
+                  : t('notifications.photoOnly');
             return (
               <li key={row.id}>
                 <button
@@ -95,19 +108,21 @@ export function NotificationsScreen({
                           : 'text-sm font-medium text-app-fg'
                       }
                     >
-                      {t('notifications.reply', { name: row.name })}
+                      {t(NOTIFICATION_TITLE_KEY[row.type], { name: row.name })}
                     </span>
                     <time dateTime={row.createdAt} className="text-xs text-app-subtle">
                       {formatForumTime(row.createdAt, locale)}
                     </time>
                   </span>
-                  <span
-                    className={
-                      unread ? 'text-sm font-semibold text-app-fg' : 'text-sm text-app-muted'
-                    }
-                  >
-                    {row.text !== '' ? row.text : t('notifications.photoOnly')}
-                  </span>
+                  {bodyLine !== '' ? (
+                    <span
+                      className={
+                        unread ? 'text-sm font-semibold text-app-fg' : 'text-sm text-app-muted'
+                      }
+                    >
+                      {bodyLine}
+                    </span>
+                  ) : null}
                 </button>
               </li>
             );

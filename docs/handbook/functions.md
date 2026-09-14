@@ -1761,7 +1761,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsPage
 
-- **Purpose:** Next.js page for `/notifications` (signed-in forum-reply notifications).
+- **Purpose:** Next.js page for `/notifications` (signed-in notifications for living-room posts, replies, and payments).
 - **Inputs:** None.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `NotificationsLoader`. Notification HTTP is under `/forum/notifications` (no `route.ts` beside this page).
 - **Used by:** Route `/notifications`.
@@ -1775,7 +1775,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsScreen
 
-- **Purpose:** Presentational notifications list (actor `{name} replied to your post`, reply text or photo-only, time; unread semibold). No composer and no thread view.
+- **Purpose:** Presentational notifications list of living-room posts, replies, and payments (actor `{name} posted` / `{name} replied` / `{name} sent sats`; post/reply text or photo-only, zap amount as stored, time; unread semibold). No composer, no thread view, and no filter.
 - **Inputs:** List state from `NotificationsLoader` (`notifications`, `error`, `loading`, `onRetry`, `onOpen`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `NotificationsLoader`.

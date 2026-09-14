@@ -1085,7 +1085,7 @@ export async function openConversation(
 }
 
 /**
- * Fetches forum-reply notifications for the signed-in session.
+ * Fetches notifications (living-room posts, replies, and payments) for the signed-in session.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns `{ notifications, unreadCount }` newest-first from the api.

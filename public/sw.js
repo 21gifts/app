@@ -15,24 +15,16 @@ self.addEventListener('push', (event) => {
   const url = typeof payload.url === 'string' && payload.url !== '' ? payload.url : '/welcome';
   const tag = typeof payload.tag === 'string' ? payload.tag : undefined;
 
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      const anyFocused = clientList.some((client) => client.focused === true);
-      if (anyFocused) {
-        return undefined;
-      }
-      const options = {
-        body,
-        data: { url },
-        renotify: true,
-        icon: '/apple-touch-icon.png',
-      };
-      if (tag !== undefined) {
-        options.tag = tag;
-      }
-      return self.registration.showNotification(title, options);
-    }),
-  );
+  const options = {
+    body,
+    data: { url },
+    renotify: true,
+    icon: '/apple-touch-icon.png',
+  };
+  if (tag !== undefined) {
+    options.tag = tag;
+  }
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {

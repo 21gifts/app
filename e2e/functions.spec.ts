@@ -2108,7 +2108,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
     });
   });
   await page.goto('/notifications');
-  await page.getByRole('button', { name: /Bob replied to your post/ }).click();
+  await page.getByRole('button', { name: /Bob replied/ }).click();
   await expect(page).toHaveURL(/\/messages\/p1$/);
 });
 

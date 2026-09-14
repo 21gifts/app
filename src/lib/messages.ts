@@ -488,7 +488,9 @@ const en = {
   'notifications.loading': 'Loading…',
   'notifications.error': 'Could not load notifications. Please try again.',
   'notifications.retry': 'Try again',
-  'notifications.reply': '{name} replied to your post',
+  'notifications.post': '{name} posted',
+  'notifications.reply': '{name} replied',
+  'notifications.zap': '{name} sent sats',
   'notifications.photoOnly': 'Photo reply',
 } as const;
 
@@ -982,7 +984,9 @@ const de = {
   'notifications.error':
     'Benachrichtigungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'notifications.retry': 'Erneut versuchen',
-  'notifications.reply': '{name} hat auf deinen Beitrag geantwortet',
+  'notifications.post': '{name} hat gepostet',
+  'notifications.reply': '{name} hat geantwortet',
+  'notifications.zap': '{name} hat Sats gesendet',
   'notifications.photoOnly': 'Foto-Antwort',
 } satisfies Messages;
 
@@ -1460,7 +1464,9 @@ const es = {
   'notifications.loading': 'Cargando…',
   'notifications.error': 'No se pudieron cargar las notificaciones. Inténtalo de nuevo.',
   'notifications.retry': 'Intentar de nuevo',
-  'notifications.reply': '{name} respondió a tu publicación',
+  'notifications.post': '{name} publicó',
+  'notifications.reply': '{name} respondió',
+  'notifications.zap': '{name} envió sats',
   'notifications.photoOnly': 'Respuesta con foto',
 } satisfies Messages;
 
@@ -1947,7 +1953,9 @@ const fil = {
   'notifications.loading': 'Naglo-load…',
   'notifications.error': 'Hindi ma-load ang mga abiso. Subukan ulit.',
   'notifications.retry': 'Subukan ulit',
-  'notifications.reply': '{name} sumagot sa iyong post',
+  'notifications.post': '{name} nag-post',
+  'notifications.reply': '{name} sumagot',
+  'notifications.zap': '{name} nagpadala ng sats',
   'notifications.photoOnly': 'Sagot na litrato',
 } satisfies Messages;
 

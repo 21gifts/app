@@ -459,14 +459,16 @@ export const conversationThreadSchema = z.object({
 export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 
 /**
- * Runtime schema for one forum-reply notification from `GET /notifications`.
+ * Runtime schema for one notification from `GET /notifications`.
  *
- * `text` may be empty when the reply is photo-only. `readAt` is `null` until
- * the session marks the row read.
+ * `type` is `forum_post` (new living-room post), `forum_reply`, or `zap`
+ * (payment). Unknown `type` values fail parse. `text` may be empty when a
+ * post or reply is photo-only, or when a zap has no amount string. `readAt`
+ * is `null` until the session marks the row read.
  */
 export const notificationSchema = z.object({
   id: z.string().min(1),
-  type: z.literal('forum_reply'),
+  type: z.enum(['forum_post', 'forum_reply', 'zap']),
   parentId: z.string().min(1),
   replyId: z.string().min(1),
   name: z.string(),
@@ -484,7 +486,7 @@ export const notificationListSchema = z.object({
 });
 
 /**
- * One forum-reply notification from the api.
+ * One notification from the api (post, reply, or zap).
  */
 export type Notification = z.infer<typeof notificationSchema>;
 
