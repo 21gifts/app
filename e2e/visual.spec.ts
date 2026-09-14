@@ -1891,6 +1891,8 @@ test.describe('onboarding screens', () => {
             role: 'verified',
             replyCount: 0,
           },
+          postCount: 1,
+          replyCount: 0,
         }),
       });
     });
@@ -1942,6 +1944,8 @@ test.describe('onboarding screens', () => {
             role: 'verified',
             replyCount: 0,
           },
+          postCount: 1,
+          replyCount: 0,
         }),
       });
     });
@@ -1997,6 +2001,8 @@ test.describe('onboarding screens', () => {
             role: 'verified',
             replyCount: 0,
           },
+          postCount: 1,
+          replyCount: 0,
         }),
       });
     });
@@ -2049,6 +2055,8 @@ test.describe('onboarding screens', () => {
             role: 'verified',
             replyCount: 0,
           },
+          postCount: 1,
+          replyCount: 0,
         }),
       });
     });
@@ -2103,6 +2111,8 @@ test.describe('onboarding screens', () => {
             role: 'verified',
             replyCount: 0,
           },
+          postCount: 1,
+          replyCount: 0,
         }),
       });
     });
