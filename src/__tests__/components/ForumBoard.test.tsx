@@ -570,6 +570,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
     expect(screen.getByText('₿21').className).toContain('font-medium');
+    expect(screen.queryByText('$0.02')).toBeNull();
     expect(screen.getByText(formatForumTime(SAMPLE.createdAt, 'en'))).toBeTruthy();
     const preWrap = screen.getByText(
       (content) => content.includes('Line one') && content.includes('Line two'),
@@ -1142,6 +1143,7 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payDraft="21"
+
         {...modeProps('all')}
       />,
       'de',

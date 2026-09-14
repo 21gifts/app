@@ -22,6 +22,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchPublicReplies: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 
 import { useHydrateSession } from '@/hooks/useHydrateSession';
