@@ -3265,6 +3265,28 @@ describe('ForumBoard', () => {
     expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
   });
 
+  it('renders an empty thread when expanded replies is not an array', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={{ messages: [] } as unknown as ForumMessage[]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    expect(document.querySelector('[data-reply-id]')).toBeNull();
+  });
+
   it('shows an icon-only Delete reply on nested replies when onDeleted is provided', () => {
     useAuthStore.setState({
       session: 'token',
