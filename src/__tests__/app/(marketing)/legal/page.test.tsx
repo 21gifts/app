@@ -60,4 +60,13 @@ describe('LegalPage', () => {
       expect(link.getAttribute('href')).toBe('/contact');
     }
   });
+
+  it('credits the four Bible editions', () => {
+    render(<LegalPage />);
+    expect(screen.getByRole('heading', { name: 'Scripture quotations', level: 2 })).toBeTruthy();
+    expect(screen.getByText(/by Biblica, Inc\./)).toBeTruthy();
+    expect(screen.getByText(/Deutsche Bibelgesellschaft, Stuttgart/)).toBeTruthy();
+    expect(screen.getByText(/Sociedades Bíblicas Unidas, 1988/)).toBeTruthy();
+    expect(screen.getByText(/Philippine Bible Society/)).toBeTruthy();
+  });
 });
