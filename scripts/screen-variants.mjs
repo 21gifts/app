@@ -779,6 +779,27 @@ export const SCREEN_VARIANTS = [
     needle: 'state-profile-given-received',
   },
   {
+    route: '/profile',
+    id: 'about-filled',
+    image: 'profile-about-filled.png',
+    visual: 'state-profile-about-filled',
+    needle: 'I build on Bitcoin',
+  },
+  {
+    route: '/profile',
+    id: 'about-editing',
+    image: 'profile-about-editing.png',
+    visual: 'state-profile-about-editing',
+    needle: "getByLabel('About me')",
+  },
+  {
+    route: '/profile',
+    id: 'about-save-error',
+    image: 'profile-about-save-error.png',
+    visual: 'state-profile-about-save-error',
+    needle: 'Could not save. Please try again.',
+  },
+  {
     route: '/view/[viewKey]',
     id: 'default',
     image: 'view-viewKey.png',

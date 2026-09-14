@@ -62,6 +62,9 @@ export function ProfileScreen(): ReactElement {
               }
               setAccount({ ...current, aboutMe: updated.aboutMe });
             } catch (err) {
+              if (useAuthStore.getState().session !== session) {
+                return;
+              }
               if (err instanceof MissingRequirementsError) {
                 router.replace('/setup/rules');
                 return;

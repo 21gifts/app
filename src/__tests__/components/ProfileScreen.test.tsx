@@ -283,6 +283,28 @@ describe('ProfileScreen', () => {
     expect(useAuthStore.getState().account?.aboutMe).toBeNull();
   });
 
+  it('does not redirect to setup/rules when putAboutMe throws MissingRequirementsError after the session changed', async () => {
+    let rejectUpdated!: (reason: unknown) => void;
+    const pending = new Promise<Account>((_resolve, reject) => {
+      rejectUpdated = reject;
+    });
+    vi.mocked(putAboutMe).mockReturnValue(pending);
+    renderWithLocale(<ProfileScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+
+    act(() => {
+      useAuthStore.setState({ session: 'other' });
+    });
+
+    await act(async () => {
+      rejectUpdated(new MissingRequirementsError(['name']));
+    });
+
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it('redirects to setup/rules when putAboutMe throws MissingRequirementsError', async () => {
     vi.mocked(putAboutMe).mockRejectedValue(new MissingRequirementsError(['rules']));
     renderWithLocale(<ProfileScreen />);

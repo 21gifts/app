@@ -873,6 +873,24 @@ Both series non-zero: received ₿1,500 over three UTC days and given ₿2,100 o
 
 ![21.gifts profile given and received](images/profile-given-received.png)
 
+### Variant: about-filled
+
+Owner card with a real bio not equal to the display name. Seed GET /me with `name: 'Ada'`, `aboutMe: 'I build on Bitcoin'`, setup complete. Shows filled About me text plus the icon-only pencil (`Edit About me`), not the empty CTA (`Tell others who you are.` / **Write your About me**).
+
+![21.gifts profile About me filled](images/profile-about-filled.png)
+
+### Variant: about-editing
+
+Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByLabel('About me')` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`.
+
+![21.gifts profile About me editing](images/profile-about-editing.png)
+
+### Variant: about-save-error
+
+Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500, opening the editor from empty, and clicking Save. Copy **Could not save. Please try again.**
+
+![21.gifts profile About me save error](images/profile-about-save-error.png)
+
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
