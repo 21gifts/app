@@ -70,11 +70,14 @@ export interface InboxScreenProps {
   posting: boolean;
   /** Client-side composer validation or request failure. */
   formError: InboxFormError;
+  /** True for founder/moderator: show Direct/Contact/Damus. Members see the full inbound list. */
+  showFilter: boolean;
 }
 
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
- * a 500-character composer. The list is filtered by the origin control
+ * a 500-character composer. Members (`showFilter` false) see the unfiltered
+ * inbound list. Founder/moderator (`showFilter` true) see the origin control
  * (Direct / Contact / Damus); default Direct. Origin labels come from
  * {@link Conversation} `kind`. Outbound last-text previews use
  * `inbox.sentPreview` as a filled chip. Incoming thread messages are full-width
@@ -101,6 +104,7 @@ export function InboxScreen({
   onPost,
   posting,
   formError,
+  showFilter,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const [filter, setFilter] = useState<InboxFilter>('direct');
@@ -111,7 +115,11 @@ export function InboxScreen({
   };
 
   const filtered =
-    conversations === null ? [] : conversations.filter((row) => row.kind === FILTER_KIND[filter]);
+    conversations === null
+      ? []
+      : showFilter
+        ? conversations.filter((row) => row.kind === FILTER_KIND[filter])
+        : conversations;
 
   const open =
     openId === null || conversations === null
@@ -272,19 +280,23 @@ export function InboxScreen({
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('inbox.heading')}
         </h1>
-        <SegmentedControl
-          value={filter}
-          options={[
-            { value: 'direct', label: t('inbox.origin.direct') },
-            { value: 'contact', label: t('inbox.origin.contact') },
-            { value: 'damus', label: t('inbox.origin.damus') },
-          ]}
-          onChange={setFilter}
-          ariaLabel={t('inbox.filterLabel')}
-          tone="neutral"
-        />
+        {showFilter ? (
+          <SegmentedControl
+            value={filter}
+            options={[
+              { value: 'direct', label: t('inbox.origin.direct') },
+              { value: 'contact', label: t('inbox.origin.contact') },
+              { value: 'damus', label: t('inbox.origin.damus') },
+            ]}
+            onChange={setFilter}
+            ariaLabel={t('inbox.filterLabel')}
+            tone="neutral"
+          />
+        ) : null}
         {filtered.length === 0 ? (
-          <p className="text-center text-sm text-app-muted">{t(FILTER_EMPTY_KEY[filter])}</p>
+          <p className="text-center text-sm text-app-muted">
+            {t(showFilter ? FILTER_EMPTY_KEY[filter] : 'inbox.empty')}
+          </p>
         ) : (
           <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
             {filtered.map((row) => (

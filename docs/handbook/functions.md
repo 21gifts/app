@@ -1670,14 +1670,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxLoader
 
-- **Purpose:** Client loader for `/messages`. Fetches `GET /conversations`, opens `?c=`, posts replies.
-- **Inputs:** None (session from the auth store; `useSearchParams`).
+- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=`, posts replies. Founder/moderator get `showFilter` true; members see the unfiltered inbound list.
+- **Inputs:** None (reads session and account from the auth store; `useSearchParams`).
 - **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Used by:** `MessagesPage`.
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: incoming threads as a conversation list filtered by the origin control (Direct / Contact / Damus; default Direct), or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Inbound last text is raw muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Members (`showFilter` false) see the full inbound list and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Inbound last text is raw muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`.
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`.

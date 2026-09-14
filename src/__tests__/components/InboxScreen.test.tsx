@@ -66,6 +66,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
       />,
     );
     expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
@@ -93,6 +94,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
       />,
     );
     const alert = screen.getByRole('alert');
@@ -122,6 +124,34 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.getByText('No private messages yet.')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
+  });
+
+  it('shows empty copy with origin filters for staff', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={true}
       />,
     );
     expect(screen.getByText('No private messages yet.')).toBeTruthy();
@@ -158,13 +188,10 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
       />,
     );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Conversation type' })).getByRole('button', {
-        name: 'Contact',
-      }),
-    );
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
     expect(screen.getByRole('list', { name: 'Conversations' })).toBeTruthy();
     const inboundPreview = screen.getByText('Hello team', { exact: true });
     expect(inboundPreview).toBeTruthy();
@@ -172,6 +199,44 @@ describe('InboxScreen', () => {
     expect(screen.queryByText('You: Hello team')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(onOpen).toHaveBeenCalledWith('conv-1');
+  });
+
+  it('lists all inbound origins without a chooser', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <InboxScreen
+        conversations={THREE}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={onOpen}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
+    const list = screen.getByRole('list', { name: 'Conversations' });
+    expect(list.textContent).toContain('Bob');
+    expect(list.textContent).toContain('21.gifts');
+    expect(list.textContent).toContain('npub');
+    const bobRow = screen.getByRole('button', { name: /Bob/ });
+    expect(bobRow.textContent).toContain('Direct');
+    const giftsRow = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(giftsRow.textContent).toContain('Contact');
+    const npubRow = screen.getByRole('button', { name: /npub1abc/ });
+    expect(npubRow.textContent).toContain('Damus');
+    fireEvent.click(bobRow);
+    expect(onOpen).toHaveBeenCalledWith('conv-2');
   });
 
   it('defaults to Direct and lists only member_member rows', () => {
@@ -194,6 +259,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={true}
       />,
     );
     const group = screen.getByRole('group', { name: 'Conversation type' });
@@ -232,6 +298,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={true}
       />,
     );
     const group = screen.getByRole('group', { name: 'Conversation type' });
@@ -267,6 +334,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={true}
       />,
     );
     const group = screen.getByRole('group', { name: 'Conversation type' });
@@ -302,6 +370,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
       />,
     );
     expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
@@ -332,6 +401,36 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
+    expect(onOpen).toHaveBeenCalledWith('conv-1');
+    expect(screen.getByRole('button', { name: /21\.gifts/ }).textContent).toContain('Contact');
+  });
+
+  it('lists a thread with empty lastText for staff after Contact', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...THREAD, lastText: '' }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={onOpen}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={true}
       />,
     );
     fireEvent.click(
@@ -363,6 +462,38 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
+    const row = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(row.textContent).toContain('21.gifts');
+    const sentPreview = screen.getByText('You: Hello team');
+    expect(sentPreview).toBeTruthy();
+    expect(sentPreview.className).toContain('bg-app-btn');
+    expect(screen.queryByText('Hello team', { exact: true })).toBeNull();
+  });
+
+  it('prefixes lastText with You: for staff after Contact', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...THREAD, lastFromMe: true }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={true}
       />,
     );
     fireEvent.click(
@@ -397,13 +528,10 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
       />,
     );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Conversation type' })).getByRole('button', {
-        name: 'Contact',
-      }),
-    );
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
     const row = screen.getByRole('button', { name: /21\.gifts/ });
     expect(row.querySelector('.line-clamp-2')).toBeNull();
     expect(screen.queryByText('You:')).toBeNull();
@@ -432,6 +560,7 @@ describe('InboxScreen', () => {
         onPost={onPost}
         posting={false}
         formError="empty"
+        showFilter={false}
       />,
     );
     expect(screen.getByRole('heading', { name: '21.gifts' })).toBeTruthy();
@@ -473,6 +602,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={true}
         formError="tooLong"
+        showFilter={false}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
@@ -498,6 +628,7 @@ describe('InboxScreen', () => {
             onPost={() => undefined}
             posting={false}
             formError="request"
+            showFilter={false}
           />
         </ThemeProvider>
       </LocaleProvider>,
@@ -526,6 +657,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
       />,
     );
     const alert = screen.getByRole('alert');
@@ -554,6 +686,7 @@ describe('InboxScreen', () => {
         onPost={() => undefined}
         posting={false}
         formError={null}
+        showFilter={false}
       />,
     );
     expect(screen.getByText('You')).toBeTruthy();

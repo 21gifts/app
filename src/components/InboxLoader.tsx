@@ -16,11 +16,13 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * Reads the session from the auth store, fetches the conversation list, and
  * opens `?c=` when present. Renders nothing when there is no session.
+ * Founder/moderator get the origin filter; members see the full inbound list.
  *
  * @returns The inbox screen, or `null` without a session.
  */
 export function InboxLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
+  const account = useAuthStore((state) => state.account);
   const router = useRouter();
   const searchParams = useSearchParams();
   const openId = searchParams.get('c');
@@ -175,6 +177,7 @@ export function InboxLoader(): ReactElement | null {
 
   /* v8 ignore next -- empty ?c= is the same as no thread */
   const threadId = openId === null || openId === '' ? null : openId;
+  const showFilter = account?.role === 'moderator' || account?.role === 'founder';
   return (
     <InboxScreen
       conversations={conversations}
@@ -209,6 +212,7 @@ export function InboxLoader(): ReactElement | null {
       onPost={onPost}
       posting={posting}
       formError={formError}
+      showFilter={showFilter}
     />
   );
 }

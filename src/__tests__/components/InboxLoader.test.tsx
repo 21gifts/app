@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InboxLoader } from '@/components/InboxLoader';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -87,10 +87,11 @@ describe('InboxLoader', () => {
   });
 
   it('loads the thread list', async () => {
-    listMock.mockResolvedValue([THREAD]);
+    listMock.mockResolvedValue([THREAD, OLDER]);
     renderWithLocale(<InboxLoader />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Contact' }));
     expect(await screen.findByText('21.gifts')).toBeTruthy();
+    expect(screen.getByText('Bob')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
   });
@@ -99,6 +100,7 @@ describe('InboxLoader', () => {
     listMock.mockResolvedValue([]);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('No private messages yet.')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
   });
 
   it('shows a list error and retries', async () => {
@@ -106,8 +108,35 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Contact' }));
     expect(await screen.findByText('21.gifts')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
+  });
+
+  it('shows the origin filter for a moderator', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    listMock.mockResolvedValue([THREAD]);
+    renderWithLocale(<InboxLoader />);
+    const group = await screen.findByRole('group', { name: 'Conversation type' });
+    expect(group).toBeTruthy();
+    expect(screen.queryByText('21.gifts')).toBeNull();
+    fireEvent.click(within(group).getByRole('button', { name: 'Contact' }));
+    expect(await screen.findByText('21.gifts')).toBeTruthy();
+  });
+
+  it('shows the origin filter for a founder', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    listMock.mockResolvedValue([THREAD]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByRole('group', { name: 'Conversation type' })).toBeTruthy();
+    expect(screen.queryByText('21.gifts')).toBeNull();
+  });
+
+  it('hides the origin filter for a verified member', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    listMock.mockResolvedValue([THREAD]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('21.gifts')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
   });
 
   it('clears thread state when ?c= changes', async () => {
