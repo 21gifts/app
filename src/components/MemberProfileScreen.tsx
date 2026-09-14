@@ -17,6 +17,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { Button, IconButton } from '@/components/ui';
 import {
+  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -38,6 +39,7 @@ import {
   nextPostRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
+import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -230,6 +232,7 @@ export function MemberProfileScreen({
   const repliesLoadGen = useRef(0);
   const address = listedProfile.lightningAddress;
 
+  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -251,6 +254,24 @@ export function MemberProfileScreen({
     .map((message) => message.id)
     .sort()
     .join('\0');
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchGiftStats()
+      .then((stats) => {
+        if (!cancelled) {
+          setRateDay(latestRateDay(stats.spendOverTime));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRateDay(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {
@@ -884,6 +905,7 @@ export function MemberProfileScreen({
 
   const sharedForumProps = {
     photoUrls,
+    rateDay,
     payMessageId,
     payDraft,
     payBusy,

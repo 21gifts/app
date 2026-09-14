@@ -116,13 +116,13 @@ function PublicThreadCard({
       {note.text !== '' ? <NoteTranslate text={note.text} /> : null}
       <p
         className={
-          rateDay === null
+          rateDay === null || satsToFiatAmount(note.sats, rateDay, fiat) === null
             ? 'text-sm font-medium text-app-fg'
             : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
         }
       >
         {formatBitcoin(note.sats, numberFormat)}
-        {rateDay !== null ? (
+        {rateDay !== null && satsToFiatAmount(note.sats, rateDay, fiat) !== null ? (
           <>
             <span aria-hidden="true"> · </span>
             <span>

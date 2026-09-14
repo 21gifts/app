@@ -1282,6 +1282,35 @@ describe('ForumBoard', () => {
     expect(locationStub.href).toBe('http://localhost/');
   });
 
+  it('keeps ₿-only when the preferred fiat has no rate on that gift day', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[FIVE_SATS]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: null,
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByText('₿5')).toBeTruthy();
+    expect(screen.queryByText('—')).toBeNull();
+    expect(screen.queryByText(/CHF/)).toBeNull();
+  });
+
   it('shows pay amount error', () => {
     renderWithLocale(
       <ForumBoard

@@ -35,6 +35,21 @@ describe('FiatPreferenceProvider', () => {
     expect(screen.getByTestId('code').textContent).toBe('EUR');
   });
 
+  it('follows a new initial when the server locale default changes', () => {
+    const { rerender } = render(
+      <FiatPreferenceProvider initial="USD">
+        <Probe />
+      </FiatPreferenceProvider>,
+    );
+    expect(screen.getByTestId('code').textContent).toBe('USD');
+    rerender(
+      <FiatPreferenceProvider initial="CHF">
+        <Probe />
+      </FiatPreferenceProvider>,
+    );
+    expect(screen.getByTestId('code').textContent).toBe('CHF');
+  });
+
   it('writes a CHF cookie with Path Max-Age SameSite Lax', () => {
     const cookieSet = vi.fn();
     const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');

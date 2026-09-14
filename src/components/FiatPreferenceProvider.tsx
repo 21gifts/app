@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactElement,
@@ -66,6 +67,10 @@ export function FiatPreferenceProvider(props: {
 }): ReactElement {
   const { initial, children } = props;
   const [fiat, setFiatState] = useState<FiatCode>(initial);
+
+  useEffect(() => {
+    setFiatState(initial);
+  }, [initial]);
 
   const setFiat = useCallback(
     (next: FiatCode): void => {

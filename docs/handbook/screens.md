@@ -58,7 +58,7 @@ The only state: three convictions, verse, and forum CTA, marketing chrome.
 
 - **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
 - **What the user sees:** Dark 21.gifts header, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, preferred fiat code), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. No FiatPicker. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
-- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Pick a fiat; the fourth column and summary follow it. Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). The fourth column and summary follow the Profile (or locale-default) preference; preferred fiat is changed only on Profile. Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
 - **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`).
 - **Auth:** None.
 
@@ -989,12 +989,12 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 - **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). No `OnboardingGate`, no pay sheet, no composer, no copy control on this page. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
 - **Inputs:** Dynamic route `id` (UUID). Note from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Replies from `GET /public-messages/:id/replies` (`fetchPublicReplies`) using the parent id. If the opened note has `parentId`, a second public GET loads that parent, then its replies. Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags.
-- **Actions:** Change language (unsigned), or open **Menu** / back to the forum (signed-in). On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`) below the thread. Logged-in **Back to the forum** → `/welcome` (`profile.back`) in chrome and below the thread. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
+- **Actions:** Change language (unsigned), or open **Menu** / back to the forum (signed-in). On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`) below the thread. Logged-in **Back to the forum** → `/welcome` (`profile.back`) in chrome and below the thread. States reuse `view.missing` / `view.error`+retry / `forum.loading`.>>>>>>> 4c92dc47 (Show ₿-only when a fiat rate is missing and follow locale default on refresh.)
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
 
 ### Variant: default
 
-Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo or clip-aspect `<video>`. Auth CTA below the card.
+Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `formatFiatDisplay` when a rate day exists, optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 
