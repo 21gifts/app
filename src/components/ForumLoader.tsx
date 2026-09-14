@@ -1183,7 +1183,6 @@ export function ForumLoader(): ReactElement | null {
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
-    /* v8 ignore start -- async reply success/error after post */
     try {
       const created = await postMessage(session, { text: trimmed, inReplyTo: parentId });
       applyCreatedReply(created, parentId, parentBaseline);
@@ -1211,7 +1210,6 @@ export function ForumLoader(): ReactElement | null {
     } finally {
       setReplyPosting(false);
     }
-    /* v8 ignore stop */
   };
 
   const runPaidReply = async (
@@ -1224,7 +1222,6 @@ export function ForumLoader(): ReactElement | null {
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;
-    /* v8 ignore start -- async invoice success/error after submit */
     try {
       const invoice =
         trimmed === ''
@@ -1269,7 +1266,6 @@ export function ForumLoader(): ReactElement | null {
     } finally {
       setReplyPosting(false);
     }
-    /* v8 ignore stop */
   };
 
   const onReplyPost = (): void => {

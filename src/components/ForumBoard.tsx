@@ -256,7 +256,9 @@ function showForumPm(
  * Active/No gifts yet/All/Most popular selector, composer under the mode
  * filters above the newest-first list (new notes only, photo or video
  * attach), newest-first list (social feed) or empty/loading/error, per-card
- * expand for oldest-first replies + reply composer, copy-link control,
+ * expand for oldest-first replies + reply composer (labeled Amount field;
+ * gift-only rows use `forum.giftReply` + `formatBitcoin(sats, numberFormat)`,
+ * text-plus-gift shows the amount under the body), copy-link control,
  * PM control on other people's notes, pay-on-note sheet, optional inline
  * photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a

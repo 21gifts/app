@@ -150,7 +150,7 @@
 ## Endpoint: POST /forum/messages
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo).
-- **Errors:** Upstream 401/400/429, or 502 if the api is unreachable.
+- **Errors:** Upstream 401/400/403/429, or 502 if the api is unreachable. 403 is an unpaid-reply rejection (`A reply needs a Bitcoin payment`, or the api error string).
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.
 
@@ -170,8 +170,8 @@
 
 ## Endpoint: POST /messages/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note).
-- **Errors:** Upstream 401/400/404/429/503, or 502 if the api is unreachable.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).
+- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error.
 - **Used by:** `postMessageInvoice`.
 - **Auth:** Bearer.
 
