@@ -140,9 +140,6 @@ export function AccountActivityChart({
   const yAt = (v: number): number => PAD_T + innerH - (v / maxY) * innerH;
 
   const linePoints = (series: 'donated' | 'received'): string => {
-    if (n === 0) {
-      return '';
-    }
     if (n === 1) {
       const y = yAt(
         activityValue(points[0] as (typeof points)[number], series, scale, fiat),
