@@ -34,7 +34,7 @@ const FiatPreferenceContext = createContext<FiatPreferenceContextValue | null>(n
  */
 function readFiatCookie(): string | undefined {
   const match = document.cookie.match(/(?:^|; )fiat=([^;]*)/);
-  if (match === null) {
+  if (match === null || match[1] === undefined) {
     return undefined;
   }
   try {
