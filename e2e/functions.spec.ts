@@ -918,7 +918,7 @@ test('Function: AboutMeSection — signed-in profile shows the empty About me pr
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
+  await reachWelcome(page, request);
   await page.goto('/profile');
   await expect(page.getByText('Tell others who you are.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Write your About me' })).toBeVisible();
@@ -1132,6 +1132,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
         hasPosted: false,
