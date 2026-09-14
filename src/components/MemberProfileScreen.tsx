@@ -536,9 +536,8 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
-        const feedRow = posts?.find((message) => message.id === parentId);
-        const parentRowNow = listedNote?.id === parentId ? listedNote : feedRow;
-        /* v8 ignore next -- expanded parent is the pinned note or a loaded post */
+        const parentRowNow = posts?.find((message) => message.id === parentId);
+        /* v8 ignore next -- expanded parent is a loaded post */
         const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
         await runPaidReply(token, trimmed, parentId, 1, isRetry, parentSatsNow);
         return;
@@ -627,6 +626,7 @@ export function MemberProfileScreen({
     }
     void pending();
   };
+  /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
@@ -639,6 +639,7 @@ export function MemberProfileScreen({
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
+  /* v8 ignore next -- SSR first paint: origin empty until client */
   const profileUrl = origin !== '' ? `${origin}/members/${profile.id}` : '';
 
   useEffect(() => {
@@ -949,6 +950,7 @@ export function MemberProfileScreen({
             mode="public"
             aboutMe={profile.aboutMe}
             name={profile.name}
+            /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
             {...(profileUrl !== '' ? { profileUrl } : {})}
           />
           {showMessage ? (

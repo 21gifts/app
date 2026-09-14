@@ -26,12 +26,14 @@ export function ViewProfileScreen({
 }): ReactElement {
   const { t } = useTranslations();
   const address = profile.lightningAddress;
+  /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
 
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
 
+  /* v8 ignore next -- SSR first paint: origin empty until client */
   const profileUrl = origin !== '' ? `${origin}/view/${viewKey}` : '';
 
   return (
@@ -44,6 +46,7 @@ export function ViewProfileScreen({
         mode="public"
         aboutMe={profile.aboutMe}
         name={profile.name}
+        /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
         {...(profileUrl !== '' ? { profileUrl } : {})}
       />
       <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">

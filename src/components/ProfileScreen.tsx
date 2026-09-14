@@ -32,6 +32,7 @@ export function ProfileScreen(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
+  /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export function ProfileScreen(): ReactElement {
           mode="owner"
           aboutMe={account.aboutMe}
           name={account.name}
+          /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
           {...(origin !== '' ? { profileUrl: `${origin}/view/${account.viewKey}` } : {})}
           onSave={async (text) => {
             try {
