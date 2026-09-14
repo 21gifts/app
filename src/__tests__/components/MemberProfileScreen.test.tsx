@@ -5,6 +5,7 @@ import {
   agreeToRules,
   fetchMemberPosts,
   fetchMemberReplies,
+  fetchPublicMessage,
   fetchReplies,
   openConversation,
   postMessage,
@@ -31,6 +32,7 @@ vi.mock('@/lib/api', () => ({
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   postMessageInvoice: vi.fn(),
+  fetchPublicMessage: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchMemberPosts: vi.fn(),
@@ -175,6 +177,7 @@ beforeEach(() => {
     lastAt: '2026-01-01T00:00:00.000Z',
   });
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
+  vi.mocked(fetchPublicMessage).mockResolvedValue(null);
   vi.mocked(postMessage).mockResolvedValue({
     ...note,
     id: '44444444-4444-4444-8444-444444444444',
@@ -583,6 +586,95 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21, 'reply');
     });
     expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('unlocks the composer and marks hasPosted after a paid reply poll', async () => {
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.hasPosted).toBe(true);
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+  });
+
+  it('shows a replies error when refetch after pay fails', async () => {
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
+    vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('fail'));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+  });
+
+  it('polls the parent after paying a profile note from the gift button', async () => {
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42 });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+    });
+  });
+
+  it('polls a posts-feed note after pay', async () => {
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...secondPost, sats: 21 });
+    await renderTwoPostFeed();
+    const row = screen.getByText('Second post from Carol.').closest('li');
+    const pay = row?.querySelector<HTMLButtonElement>('[aria-label="Send Bitcoin"]');
+    expect(pay).toBeTruthy();
+    fireEvent.click(pay as HTMLButtonElement);
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+    });
+  });
+
+  it('stops polling when the pay sheet is closed after a fetch error', async () => {
+    vi.useFakeTimers();
+    vi.mocked(fetchPublicMessage).mockRejectedValueOnce(new Error('poll failed'));
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42 });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    vi.useRealTimers();
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
   it('does not bump the pinned note reply count when posting on a posts-feed card', async () => {

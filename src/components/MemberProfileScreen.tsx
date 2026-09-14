@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import {
   ForumBoard,
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui';
 import {
   fetchMemberPosts,
   fetchMemberReplies,
+  fetchPublicMessage,
   fetchReplies,
   openConversation,
   postMessage,
@@ -33,6 +34,9 @@ import {
   type MissingRequirement,
 } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Delay between pay polls (ms). */
+const PAY_POLL_MS = 2000;
 
 /**
  * True when the signed-in account may reply without paying.
@@ -179,11 +183,15 @@ export function MemberProfileScreen({
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const setAccount = useAuthStore((state) => state.setAccount);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
+  const [payWaiting, setPayWaiting] = useState(false);
+  const payPollAbortRef = useRef<AbortController | null>(null);
+  const payPollGeneration = useRef(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
   expandedIdRef.current = expandedId;
@@ -261,6 +269,112 @@ export function MemberProfileScreen({
     if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
       void loadActivityFeed('replies');
     }
+  };
+
+  const bumpPayPollGeneration = (): number => {
+    payPollAbortRef.current?.abort();
+    payPollAbortRef.current = new AbortController();
+    payPollGeneration.current += 1;
+    return payPollGeneration.current;
+  };
+
+  useEffect(() => {
+    return () => {
+      bumpPayPollGeneration();
+    };
+  }, []);
+
+  const startPayPoll = (messageId: string, baselineSats: number): void => {
+    const generation = bumpPayPollGeneration();
+    const controller = payPollAbortRef.current;
+    /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
+    if (controller === null) {
+      return;
+    }
+    const signal = controller.signal;
+    setPayWaiting(true);
+    void (async () => {
+      for (;;) {
+        try {
+          const next = await fetchPublicMessage(messageId, {
+            sinceSats: baselineSats,
+            signal,
+          });
+          /* v8 ignore next 3 -- aborted while the public fetch was in flight */
+          if (generation !== payPollGeneration.current || signal.aborted) {
+            return;
+          }
+          if (next !== null && next.sats > baselineSats) {
+            setListedNote((prev) => {
+              if (prev === null || prev.id !== next.id) {
+                return prev;
+              }
+              return {
+                ...prev,
+                ...next,
+                replyCount: Math.max(prev.replyCount, next.replyCount),
+              };
+            });
+            setPosts((prev) => {
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) =>
+                row.id === next.id
+                  ? {
+                      ...row,
+                      ...next,
+                      replyCount: Math.max(row.replyCount, next.replyCount),
+                    }
+                  : row,
+              );
+            });
+            setPayWaiting(false);
+            setPayInvoice(null);
+            setPayMessageId(null);
+            setPayDraft('');
+            setPayError(null);
+            const current = useAuthStore.getState();
+            if (current.session !== null && current.account !== null) {
+              setAccount({ ...current.account, hasPosted: true });
+            }
+            if (expandedIdRef.current === messageId && current.session !== null) {
+              const gen = ++expandGen.current;
+              setRepliesLoading(true);
+              setRepliesError(false);
+              try {
+                const repliesNext = await fetchReplies(current.session, messageId);
+                if (expandGen.current === gen) {
+                  setReplies(repliesNext);
+                }
+              } catch {
+                if (expandGen.current === gen) {
+                  setRepliesError(true);
+                }
+              } finally {
+                if (expandGen.current === gen) {
+                  setRepliesLoading(false);
+                }
+              }
+            }
+            return;
+          }
+        } catch {
+          // Keep waiting while the sheet is open.
+        }
+        /* v8 ignore next 3 -- aborted after a poll error */
+        if (generation !== payPollGeneration.current || signal.aborted) {
+          return;
+        }
+        await new Promise((resolve) => {
+          setTimeout(resolve, PAY_POLL_MS);
+        });
+        /* v8 ignore next 3 -- aborted during the poll delay */
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+      }
+    })();
   };
 
   const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
@@ -349,6 +463,7 @@ export function MemberProfileScreen({
     parentId: string,
     sats: number,
     isRetry: boolean,
+    baselineSats: number,
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
@@ -367,10 +482,13 @@ export function MemberProfileScreen({
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
+      setReplyPosting(false);
+      startPayPoll(parentId, baselineSats);
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runPaidReply(token, trimmed, parentId, sats, true);
+          pendingPostRef.current = () =>
+            runPaidReply(token, trimmed, parentId, sats, true, baselineSats);
           return;
         }
         setReplyFormError('request');
@@ -441,20 +559,30 @@ export function MemberProfileScreen({
           pr: invoice.pr,
           amountSats: invoice.amountSats,
         });
+        setPayBusy(false);
+        const parent =
+          listedNote?.id === payMessageId
+            ? listedNote
+            : posts?.find((message) => message.id === payMessageId);
+        /* v8 ignore next 3 -- pay sheet only opens on a listed note */
+        const baselineSats = parent === undefined ? 0 : parent.sats;
+        startPayPoll(payMessageId, baselineSats);
       } catch {
         setPayError('request');
-      } finally {
         setPayBusy(false);
       }
     })();
   };
 
   const handlePayCancel = (): void => {
+    bumpPayPollGeneration();
     setPayMessageId(null);
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
+    setPayWaiting(false);
+    setReplyPosting(false);
   };
 
   const handleToggleExpand = (messageId: string): void => {
@@ -530,7 +658,9 @@ export function MemberProfileScreen({
       if (parsed === 'empty') {
         return runReplyPost(token, trimmed, parentId, isRetry);
       }
-      return runPaidReply(token, trimmed, parentId, parsed, isRetry);
+      /* v8 ignore next 3 -- expanded parent is always in the loaded list */
+      const baselineSats = parentRow === undefined ? 0 : parentRow.sats;
+      return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
@@ -587,6 +717,7 @@ export function MemberProfileScreen({
     payBusy,
     payError,
     payInvoice,
+    payWaiting,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);

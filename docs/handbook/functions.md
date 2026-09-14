@@ -963,8 +963,8 @@
 
 - **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, inReplyTo? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or photo).
 - **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, and optional `inReplyTo` parent id (thread composer only).
-- **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` from the JSON body when absent. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`.
-- **Used by:** `ForumLoader`.
+- **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` from the JSON body when absent. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 uses the api error string when present; otherwise throws `A reply needs a Bitcoin payment`.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`.
 
 ## Function: postContact
 

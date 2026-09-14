@@ -756,6 +756,7 @@ export function ForumLoader(): ReactElement | null {
     setPayError(null);
     setPayInvoice(null);
     setPayWaiting(false);
+    setReplyPosting(false);
   };
 
   const startPayPoll = (messageId: string, baselineSats: number): void => {
@@ -800,6 +801,10 @@ export function ForumLoader(): ReactElement | null {
             setPayMessageId(null);
             setPayDraft('');
             setPayError(null);
+            const current = useAuthStore.getState();
+            if (current.session !== null && current.account !== null) {
+              setAccount({ ...current.account, hasPosted: true });
+            }
             if (expandedIdRef.current === messageId) {
               setRepliesAttempt((n) => n + 1);
             }
@@ -1222,6 +1227,7 @@ export function ForumLoader(): ReactElement | null {
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
+      setReplyPosting(false);
       startPayPoll(parentId, baselineSats);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
@@ -1245,9 +1251,7 @@ export function ForumLoader(): ReactElement | null {
         );
       }
     } finally {
-      if (generation === payPollGeneration.current) {
-        setReplyPosting(false);
-      }
+      setReplyPosting(false);
     }
     /* v8 ignore stop */
   };
