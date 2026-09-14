@@ -188,8 +188,8 @@ export async function setLocation(sessionToken: string, location: string): Promi
  * @returns The updated {@link Account}.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
  * @throws Error `'Could not save. Please try again.'` on any other non-2xx
- * status, a 409 body that is not `missing_requirements`, or when the body
- * fails {@link accountSchema} validation.
+ * status or a 409 body that is not `missing_requirements`.
+ * @throws when the 2xx body fails {@link accountSchema} validation.
  */
 export async function putAboutMe(sessionToken: string, text: string): Promise<Account> {
   const response = await fetch('/me/about', {

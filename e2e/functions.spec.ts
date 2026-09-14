@@ -909,9 +909,18 @@ test('Function: PUT — PUT /me/about without bearer is 401', async ({ request }
   expect(res.status()).toBe(401);
 });
 
-test('Function: putAboutMe — PUT /me/about without bearer is 401', async ({ request }) => {
-  const res = await request.put('/me/about', { data: { text: 'Hi' } });
-  expect(res.status()).toBe(401);
+test('Function: putAboutMe — signed-in profile saves About me', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/profile');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  if (await intro.isVisible()) {
+    await page.getByRole('button', { name: 'Close' }).click();
+  }
+  await page.getByRole('button', { name: 'Write your About me' }).click();
+  await page.getByLabel('About me').fill('I build on Bitcoin');
+  await page.getByRole('button', { name: 'Save About me' }).click();
+  await expect(page.getByText('I build on Bitcoin')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
 });
 
 test('Function: AboutMeSection — signed-in profile shows the empty About me prompt', async ({

@@ -206,7 +206,9 @@ test('public view profile error shows Try again and retries', async ({ page }) =
   await expect(page.getByText('Ada')).toBeVisible();
 });
 
-test('signed-in profile does not show the copy control or the view-key URL', async ({ page }) => {
+test('signed-in profile shows the unlabeled profile copy control without exposing the view-key URL', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });

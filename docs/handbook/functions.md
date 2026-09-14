@@ -1462,7 +1462,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** PUT `/me/about` with bearer + `{ text }` and return the updated account.
 - **Inputs:** `sessionToken`, `text`.
-- **Returns / side effects:** Updated `Account`. Throws `MissingRequirementsError` on 409 `missing_requirements`; otherwise `'Could not save. Please try again.'` on non-2xx or a body that fails `accountSchema`.
+- **Returns / side effects:** Updated `Account`. Throws `MissingRequirementsError` on 409 `missing_requirements`; `'Could not save. Please try again.'` on other non-2xx. A 2xx body that fails `accountSchema` throws the schema error.
 - **Used by:** `ProfileScreen`.
 
 ## Function: dismissForumLaws

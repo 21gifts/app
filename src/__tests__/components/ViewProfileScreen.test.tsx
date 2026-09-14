@@ -72,7 +72,7 @@ describe('ViewProfileScreen', () => {
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
   });
 
-  it('has no edit, copy, or remove action buttons', () => {
+  it('has copy but no edit or remove action buttons', () => {
     renderWithLocale(
       <ViewProfileScreen profile={named} viewKey={VIEW_KEY} received={[]} donated={[]} />,
     );
