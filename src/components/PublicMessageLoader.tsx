@@ -7,7 +7,7 @@ import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import { fetchPublicMessage, fetchPublicMessagePhoto } from '@/lib/api';
+import { fetchPublicMessage, fetchPublicMessagePhoto, fetchPublicReplies } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
@@ -16,65 +16,22 @@ import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Client loader for `/messages/[id]`: validates the UUID, fetches the public
- * note (and optional photo blob), and shows a Log in / Back to the forum link
- * from session hydrate state. No pay sheet, no composer, no copy control.
- *
- * @param props - Dynamic route `id`.
- * @returns Loading, missing, error, or the read-only note card.
- */
-export function PublicMessageLoader({ id }: { id: string }): ReactElement {
+function PublicThreadCard({
+  note,
+  highlight,
+  indent,
+}: {
+  note: ForumMessage;
+  highlight: boolean;
+  indent: boolean;
+}): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { ready } = useHydrateSession();
-  const account = useAuthStore((state) => state.account);
-  const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
-    MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
-  );
-  const [message, setMessage] = useState<ForumMessage | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [videoFailed, setVideoFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!MESSAGE_ID_RE.test(id)) {
-      setStatus('missing');
-      setMessage(null);
-      return;
-    }
-
-    let cancelled = false;
-    setStatus('loading');
-    setMessage(null);
-    setVideoFailed(false);
-
-    void (async () => {
-      try {
-        const next = await fetchPublicMessage(id);
-        if (cancelled) {
-          return;
-        }
-        if (next === null) {
-          setStatus('missing');
-          return;
-        }
-        setMessage(next);
-        setStatus('ready');
-      } catch {
-        if (!cancelled) {
-          setStatus('error');
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id, attempt]);
-
-  useEffect(() => {
-    if (message === null || !message.hasPhoto) {
+    if (!note.hasPhoto) {
       setPhotoUrl(null);
       return;
     }
@@ -84,7 +41,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
 
     void (async () => {
       try {
-        const blob = await fetchPublicMessagePhoto(message.id);
+        const blob = await fetchPublicMessagePhoto(note.id);
         if (cancelled) {
           return;
         }
@@ -103,11 +60,138 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [message]);
+  }, [note.hasPhoto, note.id]);
 
-  if (status === 'loading') {
-    return <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
+  const card = (
+    <Card
+      maxWidth="md"
+      className={`items-stretch text-left${highlight ? ' ring-1 ring-app-fg' : ''}`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="text-sm font-medium text-app-fg">{note.name}</span>
+        <time dateTime={note.createdAt} className="text-xs text-app-subtle">
+          {formatForumTime(note.createdAt, locale)}
+        </time>
+      </div>
+      {note.hasVideo && !videoFailed ? (
+        <video
+          src={forumVideoSrc(note.id, note.videoContentType)}
+          poster={photoUrl ?? undefined}
+          controls
+          playsInline
+          preload="metadata"
+          className="mx-auto block h-auto w-auto max-h-80 max-w-full rounded-xl object-contain"
+          onError={() => {
+            setVideoFailed(true);
+          }}
+        />
+      ) : photoUrl !== null ? (
+        /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+        <img
+          src={photoUrl}
+          alt={t('forum.photoAlt', { name: note.name })}
+          className="max-h-80 w-full rounded-xl object-contain"
+        />
+      ) : null}
+      {note.text !== '' ? (
+        <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
+      ) : null}
+      {note.text !== '' ? <NoteTranslate text={note.text} /> : null}
+      <p className="text-sm font-medium text-app-fg">{formatBitcoin(note.sats, numberFormat)}</p>
+    </Card>
+  );
+
+  if (!indent) {
+    return card;
   }
+
+  return (
+    <div
+      className="w-full max-w-md pl-4"
+      {...(highlight ? { 'data-permalink-target': 'true' } : {})}
+    >
+      {card}
+    </div>
+  );
+}
+
+/**
+ * Client loader for `/messages/[id]`: validates the UUID, fetches the public
+ * parent and live replies (and optional photo blobs), and shows a Log in /
+ * Back to the forum link from session hydrate state. Opening a reply UUID
+ * still shows the parent thread. No pay sheet, no composer, no copy control.
+ *
+ * @param props - Dynamic route `id`.
+ * @returns Loading, missing, error, or the read-only thread cards.
+ */
+export function PublicMessageLoader({ id }: { id: string }): ReactElement {
+  const { t } = useTranslations();
+  const { ready } = useHydrateSession();
+  const account = useAuthStore((state) => state.account);
+  const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
+    MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
+  );
+  const [root, setRoot] = useState<ForumMessage | null>(null);
+  const [replies, setReplies] = useState<ForumMessage[]>([]);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!MESSAGE_ID_RE.test(id)) {
+      setStatus('missing');
+      setRoot(null);
+      setReplies([]);
+      setHighlightId(null);
+      return;
+    }
+
+    let cancelled = false;
+    setStatus('loading');
+    setRoot(null);
+    setReplies([]);
+    setHighlightId(null);
+
+    void (async () => {
+      try {
+        const next = await fetchPublicMessage(id);
+        if (cancelled) {
+          return;
+        }
+        if (next === null) {
+          setStatus('missing');
+          return;
+        }
+        let rootNote = next;
+        if (next.parentId !== undefined && next.parentId !== '') {
+          const parent = await fetchPublicMessage(next.parentId);
+          if (cancelled) {
+            return;
+          }
+          if (parent === null) {
+            setStatus('missing');
+            return;
+          }
+          rootNote = parent;
+        }
+        const nextReplies = await fetchPublicReplies(rootNote.id);
+        if (cancelled) {
+          return;
+        }
+        setRoot(rootNote);
+        setReplies(nextReplies);
+        setHighlightId(next.parentId !== undefined && next.parentId !== '' ? id : null);
+        setStatus('ready');
+      } catch {
+        if (!cancelled) {
+          setStatus('error');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, attempt]);
 
   if (status === 'missing') {
     return <p className="text-center text-sm text-app-muted">{t('view.missing')}</p>;
@@ -131,43 +215,16 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     );
   }
 
-  const note = message as ForumMessage;
+  if (root === null) {
+    return <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
+  }
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <Card maxWidth="md" className="items-stretch text-left">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <span className="text-sm font-medium text-app-fg">{note.name}</span>
-          <time dateTime={note.createdAt} className="text-xs text-app-subtle">
-            {formatForumTime(note.createdAt, locale)}
-          </time>
-        </div>
-        {note.hasVideo && !videoFailed ? (
-          <video
-            src={forumVideoSrc(note.id, note.videoContentType)}
-            poster={photoUrl ?? undefined}
-            controls
-            playsInline
-            preload="metadata"
-            className="mx-auto block h-auto w-auto max-h-80 max-w-full rounded-xl object-contain"
-            onError={() => {
-              setVideoFailed(true);
-            }}
-          />
-        ) : photoUrl !== null ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
-          <img
-            src={photoUrl}
-            alt={t('forum.photoAlt', { name: note.name })}
-            className="max-h-80 w-full rounded-xl object-contain"
-          />
-        ) : null}
-        {note.text !== '' ? (
-          <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
-        ) : null}
-        {note.text !== '' ? <NoteTranslate text={note.text} /> : null}
-        <p className="text-sm font-medium text-app-fg">{formatBitcoin(note.sats, numberFormat)}</p>
-      </Card>
+      <PublicThreadCard note={root} highlight={false} indent={false} />
+      {replies.map((reply) => (
+        <PublicThreadCard key={reply.id} note={reply} highlight={highlightId === reply.id} indent />
+      ))}
       {ready ? (
         account === null ? (
           <Link

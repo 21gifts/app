@@ -189,6 +189,13 @@
 - **Used by:** `fetchPublicMessage`.
 - **Auth:** Public.
 
+## Endpoint: GET /public-messages/[id]/replies
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/replies` (oldest-first live replies, no Bearer). The HTML public thread is `/messages/[id]`.
+- **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchPublicReplies`.
+- **Auth:** Public.
+
 ## Endpoint: POST /messages/[id]/invoice
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).

@@ -353,6 +353,21 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
+/** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
+async function fulfillPublicThreadReplies(
+  page: Page,
+  id: string,
+  messages: unknown[] = [],
+): Promise<void> {
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages }),
+    });
+  });
+}
+
 const RULES_SETUP_ACCOUNT = {
   ...E2E_ACCOUNT,
   name: 'Ada',
@@ -2414,6 +2429,7 @@ test.describe('onboarding screens', () => {
 
   test('screen /messages/[id] default', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2444,6 +2460,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] loading', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async () => {
       /* hang */
     });
@@ -2454,6 +2471,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] error', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 500,
@@ -2468,6 +2486,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2493,6 +2512,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-loading', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2522,6 +2542,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-done', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2548,6 +2569,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-hidden', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2576,6 +2598,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-error', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2598,6 +2621,95 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-messages-id-translate-error');
+  });
+
+  test('state /messages/[id] thread', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+      createdAt: '2026-08-28T12:01:00.000Z',
+    };
+    await fulfillPublicThreadReplies(page, parentId, [reply]);
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${parentId}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('Pater Severin')).toBeVisible();
+    await expect(page.getByText("\u20BF3'000")).toBeVisible();
+    await shotScreen(page, 'state-messages-id-thread');
+  });
+
+  test('state /messages/[id] reply', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+      createdAt: '2026-08-28T12:01:00.000Z',
+    };
+    await fulfillPublicThreadReplies(page, parentId, [reply]);
+    await page.route(`**/public-messages/${replyId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(reply),
+      });
+    });
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${replyId}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('Pater Severin')).toBeVisible();
+    await expect(page.getByText("\u20BF3'000")).toBeVisible();
+    await shotScreen(page, 'state-messages-id-reply');
   });
 
   test('screen /view/[viewKey] default', async ({ page }) => {
