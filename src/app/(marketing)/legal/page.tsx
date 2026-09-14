@@ -112,8 +112,10 @@ export default function LegalPage(): ReactElement {
           Deutsche Bibelgesellschaft, Stuttgart.
         </p>
         <p className="text-paper/70">
-          <strong>Spanish:</strong> Reina-Valera 1960® © Sociedades Bíblicas en América Latina,
-          1960. Renovado © Sociedades Bíblicas Unidas, 1988. Utilizado con permiso.
+          <strong>Spanish:</strong> Texto bíblico: Reina-Valera 1960® © Sociedades Bíblicas en
+          América Latina, 1960. Renovado © Sociedades Bíblicas Unidas, 1988. Utilizado con permiso.
+          Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas, y se puede usar
+          solamente bajo licencia.
         </p>
         <p className="text-paper/70">
           <strong>Filipino:</strong> Magandang Balita Biblia (Revised) © Philippine Bible Society
