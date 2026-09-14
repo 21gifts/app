@@ -2226,6 +2226,102 @@ describe('MemberProfileScreen', () => {
     expect(openConversation).not.toHaveBeenCalled();
   });
 
+  it('opens a conversation from a posts-feed card', async () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note, postCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await openPostsShowingNote();
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    await waitFor(() => {
+      expect(openConversation).toHaveBeenCalledWith('sess', note.id);
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
+    });
+  });
+
+  it('clears the posts-feed PM busy state when opening a conversation fails', async () => {
+    vi.mocked(openConversation).mockRejectedValue(new Error('fail'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note, postCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await openPostsShowingNote();
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    await waitFor(() => {
+      expect(openConversation).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    await waitFor(() => {
+      expect(openConversation).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('ignores a second posts-feed PM click while a request is in flight', async () => {
+    let resolveThread!: (value: {
+      id: string;
+      kind: 'member_member' | 'member_platform' | 'member_damus';
+      name: string;
+      lastText: string;
+      lastAt: string;
+    }) => void;
+    vi.mocked(openConversation).mockReturnValue(
+      new Promise((resolve) => {
+        resolveThread = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note, postCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await openPostsShowingNote();
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    expect(openConversation).toHaveBeenCalledTimes(1);
+    resolveThread({
+      id: 'conv-1',
+      kind: 'member_member',
+      name: 'Carol',
+      lastText: '',
+      lastAt: '2026-01-01T00:00:00.000Z',
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
+    });
+  });
+
+  it('does not retry replies after the session disappears', async () => {
+    vi.mocked(fetchReplies).mockRejectedValueOnce(new Error('fail'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note, postCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await openPostsShowingNote();
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    useAuthStore.setState({ session: null, account });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(fetchReplies).toHaveBeenCalledTimes(1);
+  });
+
   it('clears the Message busy state when opening a conversation fails', async () => {
     vi.mocked(openConversation).mockRejectedValue(new Error('fail'));
     renderWithLocale(
