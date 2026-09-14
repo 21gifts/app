@@ -694,6 +694,13 @@ export const SCREEN_VARIANTS = [
     needle: "$1'425",
   },
   {
+    route: '/profile',
+    id: 'given-received',
+    image: 'profile-given-received.png',
+    visual: 'state-profile-given-received',
+    needle: 'state-profile-given-received',
+  },
+  {
     route: '/view/[viewKey]',
     id: 'default',
     image: 'view-viewKey.png',

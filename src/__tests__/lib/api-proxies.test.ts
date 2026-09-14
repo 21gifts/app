@@ -8,6 +8,7 @@ import {
   proxyLightningAddressGet,
   proxyGiftsGet,
   proxyGiftsStatsGet,
+  proxyMeActivityGet,
   proxyMeGet,
   proxyMeForumLawsDismissedPost,
   proxyMeLightningAddressDelete,
@@ -16,6 +17,7 @@ import {
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
   proxyMeSetupSkipPost,
+  proxyMembersActivityGet,
   proxyMembersGet,
   proxyMembersPostsGet,
   proxyMembersRepliesGet,
@@ -37,6 +39,7 @@ import {
   proxyMessagesVideoGet,
   proxyPublicMessageGet,
   proxyPushVapidPublicGet,
+  proxyViewActivityGet,
   proxyViewGet,
 } from '@/lib/api-proxies';
 
@@ -58,6 +61,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMeGet(new Request('http://localhost/me'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me');
+  });
+
+  it('proxyMeActivityGet hits /me/activity', async () => {
+    const fetchMock = stubApi();
+    await proxyMeActivityGet(new Request('http://localhost/me/activity'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/activity');
   });
 
   it('proxyMeNamePost hits POST /me/name', async () => {
@@ -89,6 +98,15 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMembersGet(new Request('http://localhost/forum/members/acc%201'), 'acc 1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/acc%201');
+  });
+
+  it('proxyMembersActivityGet hits GET /members/:id/activity', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersActivityGet(
+      new Request('http://localhost/forum/members/acc%201/activity'),
+      'acc 1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/acc%201/activity');
   });
 
   it('proxyMembersPostsGet encodes the id in GET /members/:id/posts', async () => {
@@ -356,6 +374,16 @@ describe('api proxy wrappers', () => {
     const viewKey = 'a'.repeat(64);
     await proxyViewGet(new Request(`http://localhost/view-key/${viewKey}`), viewKey);
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}`);
+  });
+
+  it('proxyViewActivityGet hits /view/:viewKey/activity', async () => {
+    const fetchMock = stubApi();
+    const viewKey = 'a'.repeat(64);
+    await proxyViewActivityGet(
+      new Request(`http://localhost/view-key/${viewKey}/activity`),
+      viewKey,
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/activity`);
   });
 
   it('proxyPushVapidPublicGet hits /push/vapid-public', async () => {

@@ -5,9 +5,8 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { Button } from '@/components/ui';
-import { recipientHandleFromAddress } from '@/lib/account-totals';
-import { fetchGiftStats, fetchMember } from '@/lib/api';
-import type { GiftStats, MemberProfile } from '@/lib/api-types';
+import { fetchMember, fetchMemberActivity } from '@/lib/api';
+import type { AccountActivity, MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -15,7 +14,8 @@ const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 
 /**
  * Client loader for `/members/[accountId]`: validates the id, fetches the
- * member profile, then (if address set) filtered gift stats for the chart.
+ * member profile, then given/received activity for the chart (even when the
+ * Lightning Address is blank).
  *
  * @param props - Dynamic route `accountId`.
  * @returns Loading note, missing, error, or the member profile screen.
@@ -28,7 +28,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
     ACCOUNT_ID_RE.test(accountId) ? 'loading' : 'missing',
   );
   const [profile, setProfile] = useState<MemberProfile | null>(null);
-  const [received, setReceived] = useState<GiftStats['spendOverTime']>([]);
+  const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
+  const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
       setStatus('missing');
       setProfile(null);
       setReceived([]);
+      setDonated([]);
       return;
     }
     if (session === null) {
@@ -46,6 +48,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
     setStatus('loading');
     setProfile(null);
     setReceived([]);
+    setDonated([]);
 
     void (async () => {
       try {
@@ -60,23 +63,21 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
         setProfile(next);
         setStatus('ready');
         setReceived([]);
-
-        const trimmed = next.lightningAddress?.trim() ?? '';
-        if (trimmed === '') {
-          return;
-        }
+        setDonated([]);
 
         try {
-          const stats = await fetchGiftStats(recipientHandleFromAddress(trimmed));
+          const activity = await fetchMemberActivity(session, accountId);
           if (cancelled) {
             return;
           }
-          setReceived(stats.spendOverTime);
+          setReceived(activity.receivedOverTime);
+          setDonated(activity.donatedOverTime);
         } catch {
           if (cancelled) {
             return;
           }
           setReceived([]);
+          setDonated([]);
         }
       } catch (err) {
         if (cancelled) {
@@ -128,5 +129,5 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
 
   const readyProfile = profile as MemberProfile;
 
-  return <MemberProfileScreen profile={readyProfile} received={received} />;
+  return <MemberProfileScreen profile={readyProfile} received={received} donated={donated} />;
 }

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
-import type { GiftStats, ViewProfile } from '@/lib/api-types';
+import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -24,46 +24,39 @@ const profile: ViewProfile = {
   hasPasskey: false,
 };
 
-const EMPTY_STATS: GiftStats = {
-  totalSats: 0,
-  totalBtc: '0.00000000',
-  totalUsd: '0.00',
-  totalChf: '0.00',
-  totalEur: '0.00',
-  totalPhp: '0.00',
-  giftCount: 0,
-  recipientCount: 0,
-  firstPaidAt: null,
-  lastPaidAt: null,
-  spendOverTime: [],
-  byRecipient: [],
-  byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-  },
+const EMPTY_FX = {
+  quote: 'BTC-USD' as const,
+  dayBasis: 'utc' as const,
+  source: 'coinbase-exchange-daily-close' as const,
+  quotes: [{ code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+const EMPTY_ACTIVITY: AccountActivity = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [],
+  receivedOverTime: [],
+  fx: EMPTY_FX,
 };
 
 vi.mock('@/lib/api', () => ({
   fetchViewProfile: vi.fn(),
-  fetchGiftStats: vi.fn(),
+  fetchViewActivity: vi.fn(),
 }));
 
-import { fetchGiftStats, fetchViewProfile } from '@/lib/api';
+import { fetchViewActivity, fetchViewProfile } from '@/lib/api';
 
 const fetchProfile = vi.mocked(fetchViewProfile);
-const fetchStats = vi.mocked(fetchGiftStats);
+const fetchActivity = vi.mocked(fetchViewActivity);
 
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
+  fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
 });
 
 afterEach(() => {
   cleanup();
   fetchProfile.mockReset();
-  fetchStats.mockReset();
+  fetchActivity.mockReset();
 });
 
 describe('ViewProfileLoader', () => {
@@ -71,6 +64,7 @@ describe('ViewProfileLoader', () => {
     renderWithLocale(<ViewProfileLoader viewKey="not-a-key" />);
     expect(screen.getByText('This profile could not be found.')).toBeTruthy();
     expect(fetchProfile).not.toHaveBeenCalled();
+    expect(fetchActivity).not.toHaveBeenCalled();
   });
 
   it('shows missing when fetchViewProfile returns null', async () => {
@@ -85,7 +79,6 @@ describe('ViewProfileLoader', () => {
   it('shows an error and retries', async () => {
     fetchProfile.mockRejectedValueOnce(new Error('boom'));
     fetchProfile.mockResolvedValueOnce(profile);
-    fetchStats.mockResolvedValue(EMPTY_STATS);
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
@@ -102,9 +95,10 @@ describe('ViewProfileLoader', () => {
 
   it('renders the profile card on success', async () => {
     fetchProfile.mockResolvedValue(profile);
-    fetchStats.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
+    fetchActivity.mockResolvedValue({
+      ...EMPTY_ACTIVITY,
+      receivedSats: 21,
+      receivedOverTime: [
         {
           day: '2026-06-01',
           sats: 21,
@@ -121,18 +115,6 @@ describe('ViewProfileLoader', () => {
           cumulativePhp: '1.00',
         },
       ],
-      byRecipient: [
-        {
-          recipient: 'alice',
-          giftCount: 1,
-          sats: 21,
-          btc: '0.00000021',
-          usd: '0.02',
-          chf: '0.02',
-          eur: '0.02',
-          php: '1.00',
-        },
-      ],
     });
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
@@ -143,12 +125,12 @@ describe('ViewProfileLoader', () => {
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Action required, the account must be activated')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Activate' })).toBeTruthy();
-    expect(fetchStats).toHaveBeenCalledWith('alice');
+    expect(fetchActivity).toHaveBeenCalledWith(VIEW_KEY);
   });
 
-  it('still shows the card when gift stats fail', async () => {
+  it('still shows the card when activity fails', async () => {
     fetchProfile.mockResolvedValue(profile);
-    fetchStats.mockRejectedValue(new Error('stats down'));
+    fetchActivity.mockRejectedValue(new Error('activity down'));
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeTruthy();
@@ -158,23 +140,23 @@ describe('ViewProfileLoader', () => {
     });
   });
 
-  it('skips gift stats when lightningAddress is null', async () => {
+  it('fetches activity when lightningAddress is null', async () => {
     fetchProfile.mockResolvedValue({ ...profile, lightningAddress: null });
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
-    expect(fetchStats).not.toHaveBeenCalled();
+    expect(fetchActivity).toHaveBeenCalledWith(VIEW_KEY);
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
   });
 
-  it('skips gift stats when lightningAddress is blank', async () => {
+  it('fetches activity when lightningAddress is blank', async () => {
     fetchProfile.mockResolvedValue({ ...profile, name: null, lightningAddress: '   ' });
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
       expect(screen.getByText('Unnamed')).toBeTruthy();
     });
-    expect(fetchStats).not.toHaveBeenCalled();
+    expect(fetchActivity).toHaveBeenCalledWith(VIEW_KEY);
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
   });
 
@@ -208,39 +190,39 @@ describe('ViewProfileLoader', () => {
     expect(fetchProfile).toHaveBeenCalled();
   });
 
-  it('ignores a stale stats resolve after unmount', async () => {
+  it('ignores a stale activity resolve after unmount', async () => {
     fetchProfile.mockResolvedValue(profile);
-    let resolveStats: ((value: GiftStats) => void) | undefined;
-    fetchStats.mockImplementationOnce(
+    let resolveActivity: ((value: AccountActivity) => void) | undefined;
+    fetchActivity.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
-          resolveStats = resolve;
+          resolveActivity = resolve;
         }),
     );
     const view = renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
-      expect(fetchStats).toHaveBeenCalled();
+      expect(fetchActivity).toHaveBeenCalled();
     });
     view.unmount();
-    resolveStats?.(EMPTY_STATS);
+    resolveActivity?.(EMPTY_ACTIVITY);
     await Promise.resolve();
   });
 
-  it('ignores a stale stats reject after unmount', async () => {
+  it('ignores a stale activity reject after unmount', async () => {
     fetchProfile.mockResolvedValue(profile);
-    let rejectStats: ((reason: Error) => void) | undefined;
-    fetchStats.mockImplementationOnce(
+    let rejectActivity: ((reason: Error) => void) | undefined;
+    fetchActivity.mockImplementationOnce(
       () =>
         new Promise((_, reject) => {
-          rejectStats = reject;
+          rejectActivity = reject;
         }),
     );
     const view = renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
-      expect(fetchStats).toHaveBeenCalled();
+      expect(fetchActivity).toHaveBeenCalled();
     });
     view.unmount();
-    rejectStats?.(new Error('gone'));
+    rejectActivity?.(new Error('gone'));
     await Promise.resolve();
   });
 

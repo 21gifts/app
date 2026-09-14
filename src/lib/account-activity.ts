@@ -1,4 +1,4 @@
-import type { GiftStats } from '@/lib/api-types';
+import type { AccountActivity } from '@/lib/api-types';
 import type { FiatCode } from '@/lib/stats-money';
 
 /** Money unit for the profile activity chart. */
@@ -36,8 +36,8 @@ export interface ActivityPoint {
  * @param value - Two-decimal string, or `null` when unsummed.
  * @returns `Number(value)`, or `0` when `value` is `null`.
  */
-function parseOptionalFiat(value: string | null): number {
-  return value === null ? 0 : Number(value);
+function parseOptionalFiat(value: string | null | undefined): number {
+  return value === null || value === undefined ? 0 : Number(value);
 }
 
 /**
@@ -69,20 +69,20 @@ function cumulativeForFiat(
 /**
  * Align receive + donate series onto one UTC-day axis.
  *
- * v1 profile passes `donated=[]` and `received=spendOverTime` from filtered stats.
+ * Both series come from account activity (`receivedOverTime` / `donatedOverTime`).
  * Empty donated → donated cumulatives are 0 on every received day (same days, no fake
- * extra calendar). Empty received and empty donated → `[]`. When donated is later
+ * extra calendar). Empty received and empty donated → `[]`. When both series are
  * non-empty, days are the sorted union; cumulatives step-hold on gap days (a day
  * present in only one series contributes 0 that day to the other; cumulative carries
  * forward). CHF/EUR/PHP `null` strings become `0` for scale.
  *
- * @param received - Cumulative receive series (`spendOverTime`).
- * @param donated - Cumulative give series (`spendOverTime`), often empty in v1.
+ * @param received - Cumulative receive series (`receivedOverTime`).
+ * @param donated - Cumulative give series (`donatedOverTime`); pass `[]` when none.
  * @returns Aligned points sorted by day, or `[]` when both inputs are empty.
  */
 export function alignActivitySeries(
-  received: GiftStats['spendOverTime'],
-  donated: GiftStats['spendOverTime'],
+  received: AccountActivity['receivedOverTime'],
+  donated: AccountActivity['donatedOverTime'],
 ): ActivityPoint[] {
   if (received.length === 0 && donated.length === 0) {
     return [];

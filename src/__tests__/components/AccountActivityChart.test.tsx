@@ -1,13 +1,13 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
-import type { GiftStats } from '@/lib/api-types';
+import type { AccountActivity } from '@/lib/api-types';
 import { formatFiatTick, formatUsdTick } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(cleanup);
 
-type SpendPoint = GiftStats['spendOverTime'][number];
+type SpendPoint = AccountActivity['receivedOverTime'][number];
 
 function fiatFromUsd(usd: string): { chf: string; eur: string; php: string } {
   switch (usd) {

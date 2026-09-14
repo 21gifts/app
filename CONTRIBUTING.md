@@ -66,7 +66,8 @@ app/
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
-│   │   │   └── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
 │   │   ├── contact/
@@ -98,7 +99,9 @@ app/
 │   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy
 │   │   │   │   └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
 │   │   │   └── members/
-│   │   │       └── [accountId]/route.ts  # GET /forum/members/:id → api GET /members/:id
+│   │   │       └── [accountId]/
+│   │   │           ├── route.ts  # GET /forum/members/:id → api GET /members/:id
+│   │   │           └── activity/route.ts  # GET /forum/members/:id/activity → api GET /members/:id/activity
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -112,7 +115,9 @@ app/
 
 │   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
 │   │   ├── view-key/
-│   │   │   └── [viewKey]/route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
+│   │   │   └── [viewKey]/
+│   │   │       ├── route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
+│   │   │       └── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -124,14 +129,15 @@ app/
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
+│   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/location/address + push bell + theme + number format)
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
-│   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
+│   │   ├── ViewProfileLoader.tsx # Public view fetch states + GET /view-key/:viewKey/activity
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/location/address, no actions)
-│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + filtered spendOverTime
+│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + GET /forum/members/:id/activity
 │   │   ├── MemberProfileScreen.tsx # Member identity card + optional profile note
 │   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
@@ -174,6 +180,7 @@ app/
 │   │   ├── translate-upstream.ts # Optional server-side translation upstream proxy
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
+│   │   ├── account-activity.ts  # Align given/received series for the profile chart
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos

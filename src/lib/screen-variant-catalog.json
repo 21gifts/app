@@ -552,6 +552,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:given-received",
+    "label": "/profile given-received",
+    "visual": "state-profile-given-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",
