@@ -10,17 +10,17 @@ export interface FiatPickerProps {
   value: FiatCode;
   /** Called when the visitor picks another code. */
   onChange: (value: FiatCode) => void;
-  /** Defaults to `'dark'` (stats). Profile passes `'app'`. */
+  /** Defaults to `'dark'`. Profile passes `'app'`. */
   shell?: 'app' | 'dark';
-  /** Defaults to `'Fiat currency'` (stats English). Profile passes `t('profile.fiatCurrency')`. */
+  /** Defaults to `'Fiat currency'`. Profile passes `t('profile.fiatCurrency')`. */
   ariaLabel?: string;
 }
 
 /**
  * Four-way CHF | EUR | USD | PHP control (no ₿).
  *
- * Stats keep the marketing-dark shell and English aria. Profile passes
- * `shell="app"` and a catalog `ariaLabel`.
+ * The only production mount is Profile `FiatPreferenceSwitcher`
+ * (`shell="app"`, catalog `ariaLabel`).
  *
  * @param props - Selected code, change handler, optional shell and aria label.
  * @returns Segmented control labelled from `ariaLabel`.

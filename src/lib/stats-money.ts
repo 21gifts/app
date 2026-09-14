@@ -6,7 +6,7 @@ import {
   type NumberFormatStyle,
 } from '@/lib/number-format';
 
-/** Fiat codes offered on public stats (one selected at a time). */
+/** Supported preferred-fiat codes (chosen on Profile; other screens display that code). */
 export const FIAT_CODES = ['CHF', 'EUR', 'USD', 'PHP'] as const;
 
 /** One of {@link FIAT_CODES}. */
@@ -36,7 +36,7 @@ export function parseFiatCode(value: string | undefined, fallback: FiatCode): Fi
 }
 
 /**
- * Default stats fiat for a UI locale.
+ * Default preferred fiat for a UI locale when the `fiat` cookie is absent.
  *
  * @param locale - Active UI locale.
  * @returns CHF for `de`, PHP for `fil`, EUR for `es`, USD for `en`.
