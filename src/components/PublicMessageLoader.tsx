@@ -229,6 +229,9 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   }, [id, attempt]);
 
   useEffect(() => {
+    if (!MESSAGE_ID_RE.test(id)) {
+      return;
+    }
     let cancelled = false;
     void fetchGiftStats()
       .then((stats) => {
@@ -244,7 +247,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [id]);
 
   if (status === 'missing') {
     return <p className="text-center text-sm text-app-muted">{t('view.missing')}</p>;

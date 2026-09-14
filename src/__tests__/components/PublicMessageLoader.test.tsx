@@ -107,6 +107,7 @@ describe('PublicMessageLoader', () => {
     renderWithLocale(<PublicMessageLoader id="not-a-uuid" />);
     expect(screen.getByText('This profile could not be found.')).toBeTruthy();
     expect(fetchMessage).not.toHaveBeenCalled();
+    expect(fetchGiftStatsMock).not.toHaveBeenCalled();
   });
 
   it('shows missing when fetchPublicMessage returns null', async () => {
