@@ -190,6 +190,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.useRealTimers();
   await act(async () => {
     await Promise.resolve();
   });
