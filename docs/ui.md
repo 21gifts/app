@@ -759,7 +759,7 @@ Expand: the whole card is `role="button"` (click to expand replies). Inner contr
 
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
-**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies use the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Nested reply action row is `flex flex-wrap items-start gap-5` with optional PM + delete. Not a labeled button.
+**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies use the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Nested reply action row is `mt-2 flex flex-wrap items-start gap-5` only when PM and trash are both visible; a single control stays `mt-2`. Not a labeled button.
 
 ### Inbox thread bubbles
 
