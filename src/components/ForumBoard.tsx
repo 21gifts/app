@@ -828,7 +828,7 @@ export function ForumBoard({
                   ) : null}
                   {repliesError ? (
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-center text-sm text-app-muted">
+                      <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.repliesError')}
                       </p>
                       <Button type="button" variant="secondary" onClick={onRetryReplies}>

@@ -2055,6 +2055,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
+    expect(screen.getByRole('alert').className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetryReplies).toHaveBeenCalledTimes(1);
   });

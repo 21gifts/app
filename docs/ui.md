@@ -851,7 +851,7 @@ Handbook states: live marketing home.
 
 ### `/legal`
 
-`MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 Legal Notice, H2 Imprint (`text-xl font-semibold`), body, accent **Open the app** → Privacy Policy (H2 Overview `text-xl font-semibold`)… → footer. English legal body is a catalog exception. Inline links `text-accent underline underline-offset-2`.
+`MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 Legal Notice, H2 Imprint (`text-xl font-semibold`), body, accent **Open the app** → H2 Privacy Policy (`text-3xl font-semibold`), H3 Overview (`text-xl font-semibold`)… → footer. English legal body is a catalog exception. Inline links `text-accent underline underline-offset-2`.
 
 ### `/stats`
 
