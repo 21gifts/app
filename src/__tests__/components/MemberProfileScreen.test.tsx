@@ -1128,7 +1128,7 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
-  it('does not bump the pinned note reply count when posting on a posts-feed card', async () => {
+  it('does not bump another post reply count when posting on a posts-feed card', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postMessage).mockResolvedValue({
       ...secondPost,
@@ -1155,6 +1155,9 @@ describe('MemberProfileScreen', () => {
     });
     expect(secondRow.textContent).toMatch(/1 replies/);
     fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.queryByText('Hello from my profile note.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(await screen.findByText('Hello from my profile note.')).toBeTruthy();
     const pinRow = screen.getByText('Hello from my profile note.').closest('li');
     expect(pinRow?.textContent).toMatch(/0 replies/);
     expect(screen.getByRole('button', { name: '0 replies' })).toBeTruthy();
