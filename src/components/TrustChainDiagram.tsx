@@ -89,7 +89,8 @@ function edgeHops(fromX: number, toX: number): number {
 /**
  * Scrollable SVG chain of who verified or appointed whom.
  *
- * Starts as one horizontal row. Drag a person to move them. A plain click
+ * A single next person sits to the right. Several people hanging off one
+ * person stack top to bottom. Drag a person to move them. A plain click
  * loads the person's neighborhood (`onExpand`). Modifier-click keeps the
  * member-card link.
  *
@@ -227,11 +228,12 @@ export function TrustChainDiagram({
           const x1 = to.x >= from.x ? from.x + TRUST_NODE_WIDTH : from.x;
           const x2 = to.x >= from.x ? to.x : to.x + TRUST_NODE_WIDTH;
           const midX = (x1 + x2) / 2;
-          const lift = hops >= 2 ? TRUST_CHAIN_ARC_LIFT + (hops - 2) * 16 : 0;
-          const labelY = y1 - (lift === 0 ? 8 : lift / 2) - 6;
+          const sameRow = Math.abs(from.y - to.y) < 1;
+          const lift = sameRow && hops >= 2 ? TRUST_CHAIN_ARC_LIFT + (hops - 2) * 16 : 0;
+          const labelY = sameRow ? y1 - (lift === 0 ? 8 : lift / 2) - 6 : (y1 + y2) / 2 - 6;
           return (
             <g key={`${edge.from}-${edge.to}-${edge.kind}`}>
-              {hops >= 2 ? (
+              {lift > 0 ? (
                 <path
                   d={`M ${x1} ${y1} Q ${midX} ${y1 - lift} ${x2} ${y2}`}
                   className="stroke-paper/40"

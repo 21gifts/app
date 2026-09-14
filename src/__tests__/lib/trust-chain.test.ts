@@ -54,7 +54,7 @@ describe('layoutTrustChain', () => {
     expect(laid.height).toBe(104);
   });
 
-  it('places a verify fan-out as one left-to-right chain, never a pyramid', () => {
+  it('stacks several people hanging off one person top to bottom', () => {
     const edges: TrustChain['edges'] = [
       { from: 'f', to: 'm', kind: 'moderator_appoint' },
       { from: 'm', to: 'ada', kind: 'verify' },
@@ -65,12 +65,12 @@ describe('layoutTrustChain', () => {
       edges,
     });
     expect(laid.edges).toBe(edges);
-    expect(laid.nodes.find((node) => node.id === 'f')).toMatchObject({ x: 16, y: 72 });
-    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 72 });
-    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 544, y: 72 });
-    expect(laid.nodes.find((node) => node.id === 'bob')).toMatchObject({ x: 808, y: 72 });
-    expect(laid.width).toBe(1000);
-    expect(laid.height).toBe(160);
+    expect(laid.nodes.find((node) => node.id === 'f')).toMatchObject({ x: 16, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 544, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'bob')).toMatchObject({ x: 544, y: 112 });
+    expect(laid.width).toBe(736);
+    expect(laid.height).toBe(200);
   });
 
   it('still places both nodes of a leftover cycle with no root', () => {
