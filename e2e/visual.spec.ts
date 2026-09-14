@@ -3206,14 +3206,19 @@ test.describe('welcome forum variants', () => {
     });
   }
 
+  const replyDeleteTitles = {
+    'reply-moderation': 'welcome reply-moderation',
+    'reply-delete-confirm': 'welcome reply-delete-confirm',
+    'reply-deleting': 'welcome reply-deleting',
+    'reply-delete-error': 'welcome reply-delete-error',
+  } as const;
   for (const state of [
     'reply-moderation',
     'reply-delete-confirm',
     'reply-deleting',
     'reply-delete-error',
   ] as const) {
-    // e2e:check needle: welcome reply-deleting
-    test('welcome ' + state, async ({ page }) => {
+    test(replyDeleteTitles[state], async ({ page }) => {
       await seedAda(page, 'moderator');
       await fulfillMixedSatsMessages(page);
       await page.route('**/forum/messages/m1/replies', async (route) => {
