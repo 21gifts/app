@@ -142,6 +142,7 @@ export function layoutTrustChain(chain: TrustChain): {
 
   let rootX = PAD;
   for (const id of roots) {
+    /* v8 ignore next 3 -- a root has no incoming edge, so an earlier root cannot have placed it */
     if (positioned.has(id)) {
       continue;
     }

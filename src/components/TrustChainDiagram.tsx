@@ -266,7 +266,7 @@ export function TrustChainDiagram({
               href={`/members/${node.id}`}
               data-testid={`trust-node-${node.id}`}
               aria-busy={busy ? 'true' : undefined}
-              style={{ touchAction: 'none', cursor: 'grab' }}
+              className="touch-none cursor-grab"
               onPointerDown={(event) => {
                 onNodePointerDown(event, node.id);
               }}
