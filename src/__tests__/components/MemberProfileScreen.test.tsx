@@ -641,6 +641,31 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText('Could not load replies. Please try again.')).toBeNull();
   });
 
+  it('does not apply a stale expand onto the same thread after collapse and re-expand', async () => {
+    let resolveFirstExpand!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirstExpand = resolve;
+          }),
+      )
+      .mockResolvedValue([liveSecondReply]);
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expandCard('Hello from my profile note.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveFirstExpand([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
+  });
+
   it('does not apply a stale replies retry onto a newer thread', async () => {
     let resolveNoteRetry!: (value: Array<typeof note>) => void;
     vi.mocked(fetchReplies)
@@ -699,6 +724,36 @@ describe('MemberProfileScreen', () => {
     });
     expect(screen.getByText('Live second-post reply.')).toBeTruthy();
     expect(screen.queryByText('Could not load replies. Please try again.')).toBeNull();
+  });
+
+  it('does not apply a stale replies retry onto the same thread after collapse and re-expand', async () => {
+    let resolveNoteRetry!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveNoteRetry = resolve;
+          }),
+      )
+      .mockResolvedValue([liveSecondReply]);
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expandCard('Hello from my profile note.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveNoteRetry([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
   });
 
   it('does not post a reply after the session is cleared', async () => {

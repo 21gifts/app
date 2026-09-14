@@ -114,8 +114,7 @@ export function MemberProfileScreen({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const expandedIdRef = useRef(expandedId);
-  expandedIdRef.current = expandedId;
+  const expandGen = useRef(0);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
@@ -332,12 +331,14 @@ export function MemberProfileScreen({
 
   const handleToggleExpand = (messageId: string): void => {
     if (expandedId === messageId) {
+      ++expandGen.current;
       setExpandedId(null);
       setReplies(null);
       setRepliesError(false);
       setRepliesLoading(false);
       return;
     }
+    const gen = ++expandGen.current;
     setExpandedId(messageId);
     setReplies(null);
     setRepliesLoading(true);
@@ -350,15 +351,15 @@ export function MemberProfileScreen({
     void (async () => {
       try {
         const next = await fetchReplies(session, messageId);
-        if (expandedIdRef.current === messageId) {
+        if (expandGen.current === gen) {
           setReplies(next);
         }
       } catch {
-        if (expandedIdRef.current === messageId) {
+        if (expandGen.current === gen) {
           setRepliesError(true);
         }
       } finally {
-        if (expandedIdRef.current === messageId) {
+        if (expandGen.current === gen) {
           setRepliesLoading(false);
         }
       }
@@ -392,21 +393,22 @@ export function MemberProfileScreen({
     if (expandedId === null || session === null) {
       return;
     }
+    const gen = ++expandGen.current;
     setRepliesLoading(true);
     setRepliesError(false);
     const messageId = expandedId;
     void (async () => {
       try {
         const next = await fetchReplies(session, messageId);
-        if (expandedIdRef.current === messageId) {
+        if (expandGen.current === gen) {
           setReplies(next);
         }
       } catch {
-        if (expandedIdRef.current === messageId) {
+        if (expandGen.current === gen) {
           setRepliesError(true);
         }
       } finally {
-        if (expandedIdRef.current === messageId) {
+        if (expandGen.current === gen) {
           setRepliesLoading(false);
         }
       }
