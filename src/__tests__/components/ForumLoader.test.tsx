@@ -1547,9 +1547,8 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /^No gifts yet$/ }).getAttribute('aria-pressed')).toBe(
-        'true',
-      );
+      const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
+      expect(unpaid.getAttribute('aria-pressed')).toBe('true');
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Unpaid note' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
