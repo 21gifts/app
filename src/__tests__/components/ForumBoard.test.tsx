@@ -590,7 +590,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
-    expect(screen.getByText('₿21').className).toContain('font-medium');
+    expect(screen.getByText('₿21').closest('p')?.className).toContain('font-medium');
     expect(screen.queryByText('$0.02')).toBeNull();
     expect(screen.getByText(formatForumTime(SAMPLE.createdAt, 'en'))).toBeTruthy();
     const preWrap = screen.getByText(
@@ -1132,7 +1132,7 @@ describe('ForumBoard', () => {
     });
     const { unmount } = renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[MULTILINE]}
         error={false}
         loading={false}
         posting={false}
