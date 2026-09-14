@@ -117,6 +117,10 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
     });
   });
   await page.goto('/messages');
+  await page
+    .getByRole('group', { name: 'Conversation type' })
+    .getByRole('button', { name: 'Contact' })
+    .click();
   await expect(page.getByText('You: Hello team')).toBeVisible();
 });
 

@@ -693,13 +693,13 @@ export function SegmentedControl<T extends string>(props: {
 }): ReactElement;
 ```
 
-| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                             |
-| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                  |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                    |
-| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`) |
+| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                               |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                 |
+| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); inbox Direct / Contact / Damus (three pills, one row, no extra `className`) |
 
-Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill).
+Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Inbox uses the default one-row flex track (three pills, not a 2×2 grid).
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
 
@@ -949,7 +949,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + list of note-like rows (default list shows Contact / Direct / Damus origin rows (inbound last text); inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send. Empty / loading / error as catalog. In-card back is **All conversations**; page chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + `SegmentedControl tone="neutral"` Direct / Contact / Damus (three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`) + list of note-like rows for that origin only (inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread). Empty is per-filter catalog copy with the control still visible. Loading / error hide the control. In-card back is **All conversations**; page chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 

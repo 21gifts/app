@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -17,6 +17,26 @@ const THREAD: Conversation = {
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
 };
+
+const DIRECT: Conversation = {
+  id: 'conv-2',
+  kind: 'member_member',
+  name: 'Bob',
+  lastText: 'Later',
+  lastAt: '2026-08-28T13:00:00.000Z',
+  lastFromMe: false,
+};
+
+const DAMUS: Conversation = {
+  id: 'conv-3',
+  kind: 'member_damus',
+  name: 'npub1abc…xyz',
+  lastText: 'Hi',
+  lastAt: '2026-08-28T14:00:00.000Z',
+  lastFromMe: false,
+};
+
+const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
 
 const MESSAGE: ConversationMessage = {
   id: 'm1',
@@ -50,6 +70,7 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
     expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
   });
 
   it('shows an error and retries', () => {
@@ -77,6 +98,7 @@ describe('InboxScreen', () => {
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toBe('Could not load messages. Please try again.');
     expect(alert.className).toContain('text-app-danger');
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -103,6 +125,17 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByText('No private messages yet.')).toBeTruthy();
+    const emptyGroup = screen.getByRole('group', { name: 'Conversation type' });
+    expect(emptyGroup).toBeTruthy();
+    expect(
+      within(emptyGroup).getByRole('button', { name: 'Direct' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
+    fireEvent.click(within(emptyGroup).getByRole('button', { name: 'Contact' }));
+    expect(screen.getByText('No contact messages yet.')).toBeTruthy();
+    fireEvent.click(within(emptyGroup).getByRole('button', { name: 'Damus' }));
+    expect(screen.getByText('No Damus messages yet.')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Conversation type' })).toBeTruthy();
   });
 
   it('lists threads and opens one', () => {
@@ -127,6 +160,11 @@ describe('InboxScreen', () => {
         formError={null}
       />,
     );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Conversation type' })).getByRole('button', {
+        name: 'Contact',
+      }),
+    );
     expect(screen.getByRole('list', { name: 'Conversations' })).toBeTruthy();
     const inboundPreview = screen.getByText('Hello team', { exact: true });
     expect(inboundPreview).toBeTruthy();
@@ -136,29 +174,11 @@ describe('InboxScreen', () => {
     expect(onOpen).toHaveBeenCalledWith('conv-1');
   });
 
-  it('lists several conversations', () => {
+  it('defaults to Direct and lists only member_member rows', () => {
     const onOpen = vi.fn();
     renderWithLocale(
       <InboxScreen
-        conversations={[
-          THREAD,
-          {
-            id: 'conv-2',
-            kind: 'member_member',
-            name: 'Bob',
-            lastText: 'Later',
-            lastAt: '2026-08-28T13:00:00.000Z',
-            lastFromMe: false,
-          },
-          {
-            id: 'conv-3',
-            kind: 'member_damus',
-            name: 'npub1abc…xyz',
-            lastText: 'Hi',
-            lastAt: '2026-08-28T14:00:00.000Z',
-            lastFromMe: false,
-          },
-        ]}
+        conversations={THREE}
         error={false}
         loading={false}
         onRetry={() => undefined}
@@ -176,25 +196,91 @@ describe('InboxScreen', () => {
         formError={null}
       />,
     );
+    const group = screen.getByRole('group', { name: 'Conversation type' });
+    expect(group).toBeTruthy();
+    expect(within(group).getByRole('button', { name: 'Direct' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
     const list = screen.getByRole('list', { name: 'Conversations' });
-    expect(list.textContent).toContain('21.gifts');
-    expect(list.textContent).toContain('Hello team');
     expect(list.textContent).toContain('Bob');
-    expect(list.textContent).toContain('Later');
-    const giftsRow = screen.getByRole('button', { name: /21\.gifts/ });
-    expect(giftsRow.textContent).toContain('Contact');
-    expect(giftsRow.textContent).not.toContain('Direct');
-    expect(giftsRow.textContent).not.toContain('Damus');
+    expect(list.textContent).not.toContain('21.gifts');
+    expect(list.textContent).not.toContain('npub');
     const bobRow = screen.getByRole('button', { name: /Bob/ });
     expect(bobRow.textContent).toContain('Direct');
     expect(bobRow.textContent).not.toContain('Contact');
     expect(bobRow.textContent).not.toContain('Damus');
+    fireEvent.click(bobRow);
+    expect(onOpen).toHaveBeenCalledWith('conv-2');
+  });
+
+  it('lists Contact rows after clicking Contact', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={THREE}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Conversation type' });
+    fireEvent.click(within(group).getByRole('button', { name: 'Contact' }));
+    expect(
+      within(group).getByRole('button', { name: 'Contact' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    const list = screen.getByRole('list', { name: 'Conversations' });
+    expect(list.textContent).toContain('21.gifts');
+    expect(list.textContent).not.toContain('Bob');
+    const giftsRow = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(giftsRow.textContent).toContain('Contact');
+    expect(giftsRow.textContent).not.toContain('Direct');
+    expect(giftsRow.textContent).not.toContain('Damus');
+  });
+
+  it('lists Damus rows after clicking Damus', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={THREE}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Conversation type' });
+    fireEvent.click(within(group).getByRole('button', { name: 'Damus' }));
+    expect(within(group).getByRole('button', { name: 'Damus' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const list = screen.getByRole('list', { name: 'Conversations' });
+    expect(list.textContent).toContain('npub');
+    expect(list.textContent).not.toContain('Bob');
     const npubRow = screen.getByRole('button', { name: /npub1abc/ });
     expect(npubRow.textContent).toContain('Damus');
     expect(npubRow.textContent).not.toContain('Contact');
     expect(npubRow.textContent).not.toContain('Direct');
-    fireEvent.click(screen.getByRole('button', { name: /Bob/ }));
-    expect(onOpen).toHaveBeenCalledWith('conv-2');
   });
 
   it('uses the inbox heading when openId is not in the conversation list', () => {
@@ -220,6 +306,7 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
     expect(screen.queryByText('Contact')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
     expect(screen.getByRole('button', { name: 'All conversations' })).toBeTruthy();
     expect(screen.queryByText('All conversations')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
@@ -247,9 +334,14 @@ describe('InboxScreen', () => {
         formError={null}
       />,
     );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Conversation type' })).getByRole('button', {
+        name: 'Contact',
+      }),
+    );
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(onOpen).toHaveBeenCalledWith('conv-1');
-    expect(screen.getByText('Contact')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /21\.gifts/ }).textContent).toContain('Contact');
   });
 
   it('prefixes lastText with You: when lastFromMe is true', () => {
@@ -272,6 +364,11 @@ describe('InboxScreen', () => {
         posting={false}
         formError={null}
       />,
+    );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Conversation type' })).getByRole('button', {
+        name: 'Contact',
+      }),
     );
     const row = screen.getByRole('button', { name: /21\.gifts/ });
     expect(row.textContent).toContain('21.gifts');
@@ -301,6 +398,11 @@ describe('InboxScreen', () => {
         posting={false}
         formError={null}
       />,
+    );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Conversation type' })).getByRole('button', {
+        name: 'Contact',
+      }),
     );
     const row = screen.getByRole('button', { name: /21\.gifts/ });
     expect(row.querySelector('.line-clamp-2')).toBeNull();
@@ -334,6 +436,7 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('heading', { name: '21.gifts' })).toBeTruthy();
     expect(screen.getByText('Contact')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Hello team')).toBeTruthy();
     const incoming = screen.getByRole('listitem');

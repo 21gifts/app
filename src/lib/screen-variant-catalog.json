@@ -738,6 +738,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:contact",
+    "label": "/messages contact",
+    "visual": "state-messages-contact",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:damus",
+    "label": "/messages damus",
+    "visual": "state-messages-damus",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:sent-preview",
     "label": "/messages sent-preview",
     "visual": "state-messages-sent-preview",

@@ -3892,8 +3892,7 @@ test.describe('inbox screens', () => {
     });
   }
 
-  test('screen /messages', async ({ page }) => {
-    await seedAda(page);
+  async function mockThreeConversations(page: Page): Promise<void> {
     await page.route(/\/conversations$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -3928,15 +3927,45 @@ test.describe('inbox screens', () => {
         }),
       });
     });
+  }
+
+  test('screen /messages', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
     await page.goto('/messages');
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole('button', { name: 'Direct' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     const list = page.getByRole('list', { name: 'Conversations' });
-    await expect(list.getByText('Contact', { exact: true })).toBeVisible();
-    await expect(list.getByText('Direct', { exact: true })).toBeVisible();
-    await expect(list.getByText('Damus', { exact: true })).toBeVisible();
-    await expect(list.getByText('21.gifts')).toBeVisible();
     await expect(list.getByText('Bob')).toBeVisible();
+    await expect(list.getByText('21.gifts')).toHaveCount(0);
     await shotScreen(page, 'screen-messages');
+  });
+
+  test('messages contact', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await group.getByRole('button', { name: 'Contact' }).click();
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('21.gifts')).toBeVisible();
+    await shotScreen(page, 'state-messages-contact');
+  });
+
+  test('messages damus', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await group.getByRole('button', { name: 'Damus' }).click();
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('npub1abc…xyz')).toBeVisible();
+    await shotScreen(page, 'state-messages-damus');
   });
 
   test('messages sent-preview', async ({ page }) => {
@@ -3948,9 +3977,9 @@ test.describe('inbox screens', () => {
         body: JSON.stringify({
           conversations: [
             {
-              id: 'conv-21',
-              kind: 'member_platform',
-              name: '21.gifts',
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
               lastFromMe: true,
@@ -3975,6 +4004,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages');
     await expect(page.getByText('No private messages yet.')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Conversation type' })).toBeVisible();
     await shotScreen(page, 'state-messages-empty');
   });
 

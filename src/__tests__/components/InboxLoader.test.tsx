@@ -89,6 +89,7 @@ describe('InboxLoader', () => {
   it('loads the thread list', async () => {
     listMock.mockResolvedValue([THREAD]);
     renderWithLocale(<InboxLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Contact' }));
     expect(await screen.findByText('21.gifts')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
@@ -105,6 +106,7 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Contact' }));
     expect(await screen.findByText('21.gifts')).toBeTruthy();
   });
 
