@@ -4,7 +4,7 @@
  * screenshot baseline, an unexpected PNG is present under
  * `e2e/visual.spec.ts-snapshots/`, or a variant is not shot in
  * `e2e/visual.spec.ts`. Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are
- * skipped: they nest other screen PNGs.
+ * skipped: they are documentation pages, not product screens.
  * `/setup/rules` must list one variant per `RULES_CHAPTER_IDS` chapter.
  * Run from the repo root. No extra packages.
  *

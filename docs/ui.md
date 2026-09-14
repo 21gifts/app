@@ -890,7 +890,7 @@ Back link `text-accent underline underline-offset-2` “All stats” → display
 
 ### `/handbook` (+ screens / functions / endpoints)
 
-Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, accent section links. Screens page: three-level contents (chapter / screen / variant), compact cards with ~220px thumbs, description, permalink/copy-link, and click-to-lightbox full size. Handbook markdown is English (catalog exception). No Playwright goldens of these pages — they nest other screen PNGs.
+Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, accent section links. Screens page: three-level contents (chapter / screen / variant), compact cards with ~220px thumbs, description, permalink/copy-link, and click-to-lightbox full size. Handbook markdown is English (catalog exception). No Playwright goldens of these documentation pages. `/handbook/screens` shows product-screen goldens and is not itself a golden.
 
 ### `/login`
 

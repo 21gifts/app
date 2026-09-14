@@ -3,8 +3,9 @@
  * Handbook, e2e:check, and screenshot:check all read this list — adding a
  * state without a variant here is how coverage silently drops.
  *
- * Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are not listed: they nest other
- * screen PNGs, so a golden of the handbook is a screenshot of screenshots.
+ * Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are not listed: they are
+ * documentation pages, not product screens. `/handbook/screens` shows other
+ * screen PNGs and is not itself a golden.
  *
  * `needle` must appear in e2e/*.spec.ts (the behavioral assertion for that state).
  * `image` is the handbook filename (URL `/handbook-images/<file>`), filled from

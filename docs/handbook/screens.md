@@ -988,7 +988,7 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 - **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files. After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
 - **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
 - **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`.
-- **Screenshots:** none. Handbook doc pages nest other screen PNGs; they are not screenshot-gated.
+- **Screenshots:** none. Documentation page, not a product screen.
 
 ## Screen: /handbook/screens
 

@@ -389,9 +389,11 @@ exported function/class in `src/`, and every HTTP endpoint **must** have a
 complete section:
 
 - Screens: `## Screen: /path` (one per `src/app/**/page.tsx`, plus `/404` from `not-found.tsx`)
-- Screen variants: `### Variant: id` (one per **distinct UI state** of that
-  screen; the list in `scripts/screen-variants.mjs` is the source of truth.
-  Omitting a state from the list is an undeclared deviation)
+- Screen variants: `### Variant: id` (one per **distinct UI state** of every
+  screenshot-gated screen; the list in `scripts/screen-variants.mjs` is the
+  source of truth. Omitting a gated state from the list is an undeclared
+  deviation. `HANDBOOK_DOC_ROUTES` keep `## Screen:` prose and e2e `page.goto`
+  only — no `### Variant:`, no goldens, not in `SCREEN_VARIANTS`)
 - Functions: `## Function: name` (one per `export function`,
   `export default function`, exported callable const, or `export class`)
 - Endpoints: `## Endpoint: METHOD /path` (one per `src/app/**/route.ts` HTTP export)
@@ -441,9 +443,10 @@ Every public UI screen (`src/app/**/page.tsx`, plus `/404`) **must** have a
 `toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`,
 **except** the handbook doc routes in `HANDBOOK_DOC_ROUTES`
 (`/handbook`, `/handbook/screens`, `/handbook/functions`, `/handbook/endpoints`).
-Those pages nest other screen PNGs; a golden of the handbook is a screenshot of
-screenshots and is not gated. They still need `## Screen:` prose and e2e
-`page.goto`. They are **not** listed in `SCREEN_VARIANTS`.
+Those are documentation pages, not product screens, and are not screenshot-gated.
+`/handbook/screens` *shows* product-screen goldens and is not itself a golden.
+They still need `## Screen:` prose and e2e `page.goto`. They are **not** listed
+in `SCREEN_VARIANTS`.
 Visual specs run in four projects (`desktop-light`, `desktop-dark`,
 `mobile-light`, `mobile-dark`) so each shot is stored as
 `${arg}-${combo}-linux.png`. Handbook Markdown keeps `images/<name>.png`
@@ -452,9 +455,10 @@ references for product screens; those bytes are filled into
 from the desktop-light baseline. Do not commit PNGs under
 `docs/handbook/images/` or `public/handbook-images/`.
 
-Every **distinct UI state** of every screen **must** be listed in
-`scripts/screen-variants.mjs`. Omitting a state from that list is an undeclared
-deviation and is rejected. `/setup/rules` is one screen with **one state per
+Every **distinct UI state** of every screenshot-gated screen (not
+`HANDBOOK_DOC_ROUTES`) **must** be listed in `scripts/screen-variants.mjs`.
+Omitting a gated state from that list is an undeclared deviation and is
+rejected. `/setup/rules` is one screen with **one state per
 living-room rules chapter** (`RULES_CHAPTER_IDS` in `src/lib/rules-chapters.ts`);
 each chapter is a variant. Viewport and theme are combo shots of those
 variants, not a substitute for a missing chapter.
