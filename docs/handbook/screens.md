@@ -371,7 +371,7 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: expanded
 
-On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply** plus an **Amount** sats field. Gift-only replies render as **send ₿…**; a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Non-exempt visitors must send at least 1 sat to post a reply.
+On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply** plus an **Amount** sats field. Gift-only replies render as **send ₿…**; a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Non-exempt visitors send at least 1 sat: an empty or 0 amount is billed as 1 sat and opens the pay sheet.
 
 ![21.gifts welcome expanded](images/welcome-expanded.png)
 
@@ -633,7 +633,7 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and clickable post/reply counts from `postCount` / `replyCount`) with an optional pinned profile forum note and on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). The in-card reply composer includes an **Amount** sats field; non-exempt visitors invoice at least 1 sat. Visible inline photos on the pinned profile note, posts feed, and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and clickable post/reply counts from `postCount` / `replyCount`) with an optional pinned profile forum note and on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). The in-card reply composer includes an **Amount** sats field; non-exempt visitors invoice at least 1 sat (empty or `0` is billed as 1 sat). Visible inline photos on the pinned profile note, posts feed, and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
 - **Actions:** Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**; icon-only back to the forum; expand role hint; open author profile links on the note when present; translate a foreign-language note or reply (**Translate** / Show original / Show translation); click the post or reply count to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. The posts feed hides the separately pinned profile note because that note is already in the feed; the replies feed keeps the pinned note above it. Posts retain the pinned note's pay, PM, expand, and reply actions. Reply cards are not payable, and expanding one with a `parentId` navigates to `/messages/{parentId}`. When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
@@ -805,56 +805,56 @@ Both series non-zero: received ₿1,500 over three UTC days and given ₿2,100 o
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Messages**, then a `SegmentedControl tone="neutral"` **Direct** | **Contact** | **Damus** (default **Direct**, one row). The list shows only rows of the selected origin (counterpart name, origin label, last text, time). Empty copy is per filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**); the control stays visible. **Loading…** and **Try again** hide the control. Inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`). Open a thread (`?c=`) for oldest-first messages and a 500-character composer (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`). Open a thread (`?c=`) for oldest-first messages and a 500-character composer (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**. Forum PM and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
 
-Direct selected. List shows inbound Direct **Bob** only. Control Direct | Contact | Damus under the heading.
+Member list. No chooser. All inbound origins: **Bob**, official **21.gifts**, and **npub1abc…xyz**.
 
 ![21.gifts inbox](images/messages.png)
 
 ### Variant: contact
 
-Contact selected. List shows official **21.gifts**.
+Staff (moderator). Contact selected. List shows official **21.gifts**. Chooser present.
 
 ![21.gifts inbox contact](images/messages-contact.png)
 
 ### Variant: damus
 
-Damus selected. List shows **npub1abc…xyz**.
+Staff (moderator). Damus selected. List shows **npub1abc…xyz**. Chooser present.
 
 ![21.gifts inbox damus](images/messages-damus.png)
 
 ### Variant: sent-preview
 
-Direct selected. Loaded list whose last text is the viewer's own send (**Bob**, `Hello team`). Preview **You: Hello team** as a compact filled chip on the right of the muted row, not muted body text.
+Member. No chooser. Loaded list whose last text is the viewer's own send (**Bob**, `Hello team`). Preview **You: Hello team** as a compact filled chip on the right of the muted row, not muted body text.
 
 ![21.gifts inbox sent preview](images/messages-sent-preview.png)
 
 ### Variant: empty
 
-No threads. Direct selected. Copy **No private messages yet.** Control Direct | Contact | Damus stays visible.
+Member. No threads. Copy **No private messages yet.** Chooser absent.
 
 ![21.gifts inbox empty](images/messages-empty.png)
 
 ### Variant: loading
 
-Waiting on `GET /conversations`. Copy **Loading…**
+Waiting on `GET /conversations`. Copy **Loading…** Chooser absent.
 
 ![21.gifts inbox loading](images/messages-loading.png)
 
 ### Variant: error
 
-List fetch failed. Button **Try again**.
+List fetch failed. Button **Try again**. Chooser absent.
 
 ![21.gifts inbox error](images/messages-error.png)
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts**, origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible.
+Open official thread. Heading **21.gifts**, origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 

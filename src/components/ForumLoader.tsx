@@ -93,6 +93,7 @@ function isAuthorWalletError(err: unknown): boolean {
  *
  * @param account - Live account, or `null` when the snapshot is missing.
  * @param parentAccountId - Parent note `accountId`, if the api sent one.
+ *   Missing id is not treated as exempt; the caller may POST unpaid and map 403.
  * @returns Whether `POST /messages` is allowed without a zap.
  */
 function isReplyPaymentExempt(
@@ -112,7 +113,7 @@ function isReplyPaymentExempt(
  * Parses the reply-composer sats draft.
  *
  * @param raw - Amount field value.
- * @returns Whole sats, `'empty'` when blank, or `'invalid'`.
+ * @returns Whole sats (`0` becomes `1`), `'empty'` when blank, or `'invalid'`.
  */
 function parseReplySats(raw: string): number | 'empty' | 'invalid' {
   const trimmed = raw.trim();
@@ -123,13 +124,10 @@ function parseReplySats(raw: string): number | 'empty' | 'invalid' {
     return 'invalid';
   }
   const sats = Number.parseInt(trimmed, 10);
-  if (sats <= 0) {
-    return 'invalid';
-  }
   if (!Number.isSafeInteger(sats)) {
     return 'invalid';
   }
-  return sats;
+  return sats < 1 ? 1 : sats;
 }
 
 /**
@@ -1231,11 +1229,16 @@ export function ForumLoader(): ReactElement | null {
         setReplyFormError('request');
         return;
       }
+      if (isReplyPaymentError(err)) {
+        const parentRowNow = messagesRef.current?.find((message) => message.id === parentId);
+        /* v8 ignore next -- expanded parent is always in the loaded list */
+        const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
+        await runPaidReply(trimmed, parentId, 1, parentSatsNow, isRetry);
+        return;
+      }
       /* v8 ignore next 3 -- reply error after the thread was closed */
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          isReplyPaymentError(err) ? 'amount' : isRateLimitError(err) ? 'rateLimit' : 'request',
-        );
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       setReplyPosting(false);
@@ -1319,16 +1322,19 @@ export function ForumLoader(): ReactElement | null {
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
     const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
     const parentSats = parentRow === undefined ? 0 : parentRow.sats;
-    const exempt = isReplyPaymentExempt(account, parentRow?.accountId);
+    const parentAccountId = parentRow?.accountId;
+    const exempt = isReplyPaymentExempt(account, parentAccountId);
+    const authorUnknown = parentAccountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
-      if (parsed === 'invalid' || (!exempt && parsed === 'empty')) {
+      if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
       }
-      if (parsed === 'empty') {
+      if (parsed === 'empty' && (exempt || authorUnknown)) {
         return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
       }
-      return runPaidReply(trimmed, parentId, parsed, parentSats, isRetry);
+      const sats = parsed === 'empty' ? 1 : parsed;
+      return runPaidReply(trimmed, parentId, sats, parentSats, isRetry);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {

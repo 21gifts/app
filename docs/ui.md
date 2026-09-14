@@ -695,13 +695,13 @@ export function SegmentedControl<T extends string>(props: {
 
 Chip: an `aria-hidden` span with `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`. Omitted when `badge` is missing or ≤ 0. The option button gets `aria-label` only when `badge` > 0 and `badgeAriaLabel` is non-empty.
 
-| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                                                                                                          |
-| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                               |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                 |
-| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); inbox Direct / Contact / Damus (three pills, one row, no extra `className`) |
+| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                                                                                                                |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                                     |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                       |
+| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`) |
 
-Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Inbox uses the default one-row flex track (three pills, not a 2×2 grid).
+Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Staff inbox (founder/moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it.
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
 
@@ -776,7 +776,7 @@ Inbox direction is unmistakable without a Sent folder and without orange. Incomi
 
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer only.
 - Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
-- Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`.
+- Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`. Empty or `0` invoices 1 sat for non-exempt visitors.
 - Send/Post: `IconButton` lg primary, lucide `Send`. Loading: `Loader2`.
 - Preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
 
@@ -837,9 +837,10 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 | Forum no messages           | muted `text-sm` catalog `forum.empty` | Composer still shown      |
 | Forum no paid               | `forum.emptyPaid`                     | Mode switcher still shown |
 | Forum no gifts yet / unpaid | `forum.emptyUnpaid`                   | Mode switcher still shown |
-| Inbox none (Direct)         | `inbox.empty`                         | Filter still shown        |
-| Inbox none (Contact)        | `inbox.empty.contact`                 | Filter still shown        |
-| Inbox none (Damus)          | `inbox.empty.damus`                   | Filter still shown        |
+| Inbox none (member)         | `inbox.empty`                         | None                      |
+| Inbox none (staff Direct)   | `inbox.empty`                         | Filter still shown        |
+| Inbox none (staff Contact)  | `inbox.empty.contact`                 | Filter still shown        |
+| Inbox none (staff Damus)    | `inbox.empty.damus`                   | Filter still shown        |
 | Notifications none          | `notifications.empty`                 | None                      |
 | Stats none                  | “No gifts recorded yet.”              | None                      |
 | Profile chart none          | `profile.chartEmpty`                  | None                      |
@@ -956,7 +957,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + `SegmentedControl tone="neutral"` Direct / Contact / Damus (three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`) + list of note-like rows for that origin only (inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread). Empty is per-filter catalog copy with the control still visible. Loading / error hide the control. In-card back is **All conversations**; page chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is founder/moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Inbound last text muted; last outbound text a filled sent chip. Open thread: in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. In-card back is **All conversations**; page chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 

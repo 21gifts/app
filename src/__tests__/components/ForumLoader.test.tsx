@@ -3326,11 +3326,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi Bob');
+    });
     expect(postMock).not.toHaveBeenCalled();
-    expect(invoiceMock).not.toHaveBeenCalled();
   });
 
   it('invoices a reply with text on someone else’s note', async () => {
@@ -3610,10 +3612,68 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
+    });
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('lets the parent author reply unpaid when the note omits accountId', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, accountId: undefined }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-own',
+      name: 'Ada',
+      text: 'own',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'own', inReplyTo: 'm1' });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('starts a 1-sat invoice when unpaid reply is 403 and the parent omits accountId', async () => {
+    fetchMock.mockResolvedValue([{ ...FOREIGN, accountId: undefined }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
+    });
+    expect(postMock).toHaveBeenCalled();
   });
 
   it('rejects an empty reply without an amount', async () => {
@@ -3653,9 +3713,10 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
-  it('rejects a zero reply amount', async () => {
+  it('sends 1 sat when the reply amount is 0', async () => {
     fetchMock.mockResolvedValue([FOREIGN]);
     repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -3668,8 +3729,9 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
-    expect(invoiceMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
+    });
   });
 
   it('rejects an overflowing reply amount', async () => {
@@ -3693,10 +3755,11 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
-  it('maps an unpaid-reply 403 onto the amount error', async () => {
+  it('starts a 1-sat invoice when an unpaid reply is 403', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -3709,7 +3772,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 1, 'own');
     });
   });
 
