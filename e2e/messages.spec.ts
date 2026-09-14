@@ -82,6 +82,7 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -93,7 +94,7 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
       }),
     });
   });
-  // The api omits outbound-only threads; this stub is a two-way-shaped list row.
+  // Default filter is Direct; lastFromMe on a member_member row is visible without a click.
   await page.route(/\/conversations$/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
@@ -105,9 +106,9 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
       body: JSON.stringify({
         conversations: [
           {
-            id: 'conv-21',
-            kind: 'member_platform',
-            name: '21.gifts',
+            id: 'conv-bob',
+            kind: 'member_member',
+            name: 'Bob',
             lastText: 'Hello team',
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: true,
@@ -117,10 +118,6 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
     });
   });
   await page.goto('/messages');
-  await page
-    .getByRole('group', { name: 'Conversation type' })
-    .getByRole('button', { name: 'Contact' })
-    .click();
   await expect(page.getByText('You: Hello team')).toBeVisible();
 });
 

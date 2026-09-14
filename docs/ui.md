@@ -832,7 +832,9 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 | Forum no messages           | muted `text-sm` catalog `forum.empty` | Composer still shown      |
 | Forum no paid               | `forum.emptyPaid`                     | Mode switcher still shown |
 | Forum no gifts yet / unpaid | `forum.emptyUnpaid`                   | Mode switcher still shown |
-| Inbox none                  | `inbox.empty` / `inbox.empty.contact` / `inbox.empty.damus` | Filter still shown        |
+| Inbox none (Direct)         | `inbox.empty`                         | Filter still shown        |
+| Inbox none (Contact)        | `inbox.empty.contact`                 | Filter still shown        |
+| Inbox none (Damus)          | `inbox.empty.damus`                   | Filter still shown        |
 | Notifications none          | `notifications.empty`                 | None                      |
 | Stats none                  | “No gifts recorded yet.”              | None                      |
 | Profile chart none          | `profile.chartEmpty`                  | None                      |
