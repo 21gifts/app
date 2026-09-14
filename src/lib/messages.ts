@@ -122,11 +122,11 @@ const en = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direct, with no middleman',
   'about.conv2Body':
-    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. The whole gift arrives: nobody takes a cut, freezes it, or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The receiving address is yours, not ours; if 21.gifts disappeared tomorrow, it would keep working.',
+    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. The whole gift arrives: nobody takes a cut, delays it, or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The receiving address is yours, not ours; if 21.gifts disappeared tomorrow, it would keep working.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin is the most effective money',
   'about.conv3Body':
-    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless: no bank, no ID, no opening hours. It reaches the whole world around the clock, and for a gift across a border it is the simplest way to send money — as simple as an email address. Small amounts arrive fast and cheap. Nobody can print more of it, freeze it, or stop it at a border, and it lands with the receiver, not with us. That matters most to people who already have little.',
+    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless: no bank, no ID, no opening hours. It reaches the whole world around the clock, and for a gift across a border it is the simplest way to send money — as simple as an email address. Small amounts arrive fast and cheap. Nobody can print more of it or stop it at a border, and it lands with the receiver, not with us. That matters most to people who already have little.',
   'about.ctaForum': 'Open the living room',
 
   'donate.pageTitle': 'Send help',
@@ -603,11 +603,11 @@ const de = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkt, niemand dazwischen',
   'about.conv2Body':
-    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Das ganze Geschenk kommt an. Niemand behält einen Anteil, friert es ein oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Empfangsadresse gehört der empfangenden Person, nicht uns; verschwände 21.gifts morgen, liefe sie weiter.',
+    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Das ganze Geschenk kommt an. Niemand behält einen Anteil, hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Empfangsadresse gehört der empfangenden Person, nicht uns; verschwände 21.gifts morgen, liefe sie weiter.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin ist das wirksamste Geld',
   'about.conv3Body':
-    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeiten. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es der einfachste Weg, Geld zu senden — so einfach wie eine E-Mail-Adresse. Kleine Beträge kommen schnell und günstig an. Es landet bei der empfangenden Person, nicht bei uns. Niemand kann mehr davon drucken, es einfrieren oder an der Grenze zurückhalten. Am meisten zählt das für Menschen, die ohnehin wenig haben.',
+    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeiten. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es der einfachste Weg, Geld zu senden — so einfach wie eine E-Mail-Adresse. Kleine Beträge kommen schnell und günstig an. Es landet bei der empfangenden Person, nicht bei uns. Niemand kann mehr davon drucken oder es an der Grenze zurückhalten. Am meisten zählt das für Menschen, die ohnehin wenig haben.',
   'about.ctaForum': 'Wohnzimmer öffnen',
   'donate.pageTitle': 'Hilfe senden',
   'donate.lead':
@@ -1082,11 +1082,11 @@ const es = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Directo, sin intermediario',
   'about.conv2Body':
-    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Llega entero. Nadie se queda con una parte, lo congela ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La dirección de recepción es de quien recibe, no nuestra; si 21.gifts desapareciera mañana, seguiría funcionando.',
+    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Llega entero. Nadie se queda con una parte, lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La dirección de recepción es de quien recibe, no nuestra; si 21.gifts desapareciera mañana, seguiría funcionando.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin es el dinero más eficaz',
   'about.conv3Body':
-    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Las cantidades pequeñas llegan rápido y cuestan poco. Llega a quien recibe, no a nosotros. Nadie puede emitir más, congelarlo ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
+    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Las cantidades pequeñas llegan rápido y cuestan poco. Llega a quien recibe, no a nosotros. Nadie puede emitir más ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
   'about.ctaForum': 'Abrir el salón',
   'donate.pageTitle': 'Enviar ayuda',
   'donate.lead': 'Elige un mensaje en el foro y envía Bitcoin a la persona que lo escribió.',
@@ -1551,11 +1551,11 @@ const fil = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkta, walang tagapamagitan',
   'about.conv2Body':
-    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Buo itong dumarating. Walang kumukuha ng parte, walang pumipigil dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang address, hindi sa amin; kung mawala man ang 21.gifts bukas, gagana pa rin ito.',
+    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Buo itong dumarating. Walang kumukuha ng parte, walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang address, hindi sa amin; kung mawala man ang 21.gifts bukas, gagana pa rin ito.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Ang Bitcoin ang pinakamabisang pera',
   'about.conv3Body':
-    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Mabilis at mura ang pagpapadala ng maliliit na halaga. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito, walang makakapag-freeze nito, at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
+    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Mabilis at mura ang pagpapadala ng maliliit na halaga. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
   'about.ctaForum': 'Buksan ang living room',
   'donate.pageTitle': 'Magpadala ng tulong',
   'donate.lead': 'Pumili ng mensahe sa forum at magpadala ng Bitcoin sa taong sumulat nito.',
