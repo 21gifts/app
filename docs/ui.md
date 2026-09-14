@@ -825,7 +825,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title`, then chart, name, Lightning Address, optional role pill. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title`, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -893,11 +893,11 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
 
 ### `/members/[accountId]`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, Lightning Address, optional role pill) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile.
 
 Handbook states: default (note present), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (`RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip).
 
@@ -925,7 +925,7 @@ Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<
 
 ### `/view/[viewKey]`
 
-Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart + name + address, no actions). Below: `ViewProfileClaim`.
+Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart + name + location + address, no actions; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.
