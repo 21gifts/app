@@ -3466,29 +3466,7 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
 test('Function: ForumLoader — scrolled silent refresh shows New posts without inserting the note', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        setup: null,
-        missing: [],
-      }),
-    });
-  });
+  await seedAdaSession(page);
   const first = Array.from({ length: 12 }, (_, index) => ({
     id: `m-tall-${String(index)}`,
     name: 'Ada',
@@ -3557,29 +3535,7 @@ test('Function: ForumLoader — scrolled silent refresh shows New posts without 
 test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id behind New posts', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        setup: null,
-        missing: [],
-      }),
-    });
-  });
+  await seedAdaSession(page);
   const first = Array.from({ length: 12 }, (_, index) => ({
     id: `m-tall-${String(index)}`,
     name: 'Ada',
@@ -3643,29 +3599,7 @@ test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id b
 });
 
 test('Function: ForumLoader — wordmark click on /welcome refetches', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        setup: null,
-        missing: [],
-      }),
-    });
-  });
+  await seedAdaSession(page);
   let messagesBody: unknown = { messages: [] };
   await page.route(/\/messages$/, async (route) => {
     await route.fulfill({
@@ -3700,29 +3634,7 @@ test('Function: ForumLoader — wordmark click on /welcome refetches', async ({ 
 test('Function: ForumHomeWordmark — clicking 21.gifts on /welcome does not leave the forum', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        setup: null,
-        missing: [],
-      }),
-    });
-  });
+  await seedAdaSession(page);
   await page.route(/\/messages$/, async (route) => {
     await route.fulfill({
       status: 200,
