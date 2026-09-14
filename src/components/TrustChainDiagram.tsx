@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import type { TrustChain, TrustChainEdge, TrustChainNode } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
@@ -12,6 +12,11 @@ import {
   TRUST_NODE_WIDTH,
   type LaidOutTrustNode,
 } from '@/lib/trust-chain';
+
+/** Pointer travel in CSS pixels before a press counts as a drag, not a click. */
+const DRAG_THRESHOLD = 6;
+
+type NodePos = { x: number; y: number };
 
 /**
  * Catalog key for a Trust Chain node role pill.
@@ -82,10 +87,11 @@ function edgeHops(fromX: number, toX: number): number {
 }
 
 /**
- * Scrollable SVG chain of who verified or appointed whom, left to right.
+ * Scrollable SVG chain of who verified or appointed whom.
  *
- * A plain click loads the person's neighborhood (`onExpand`). Modifier-click
- * keeps the member-card link.
+ * Starts as one horizontal row. Drag a person to move them. A plain click
+ * loads the person's neighborhood (`onExpand`). Modifier-click keeps the
+ * member-card link.
  *
  * @param props - Public Trust Chain payload and optional expand handler.
  * @returns The diagram.
@@ -100,15 +106,112 @@ export function TrustChainDiagram({
   onExpand?: (accountId: string) => void;
 }): ReactElement {
   const { t } = useTranslations();
-  const { nodes, edges, width, height } = layoutTrustChain(chain);
-  const byId = new Map<string, LaidOutTrustNode>(nodes.map((node) => [node.id, node]));
+  const laid = layoutTrustChain(chain);
+  const [placed, setPlaced] = useState<Record<string, NodePos>>({});
+  const drag = useRef<{
+    id: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    moved: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const nextLaid = layoutTrustChain(chain);
+    setPlaced((prev) => {
+      const next: Record<string, NodePos> = {};
+      for (const node of nextLaid.nodes) {
+        next[node.id] = prev[node.id] ?? { x: node.x, y: node.y };
+      }
+      return next;
+    });
+  }, [chain]);
+
+  const byId = new Map<string, LaidOutTrustNode>(
+    laid.nodes.map((node) => {
+      const pos = placed[node.id] ?? { x: node.x, y: node.y };
+      return [node.id, { ...node, x: pos.x, y: pos.y }];
+    }),
+  );
+  const nodes = [...byId.values()];
+  const edges = laid.edges;
+
+  let minX = 0;
+  let minY = 0;
+  let maxX = laid.width;
+  let maxY = laid.height;
+  for (const node of nodes) {
+    minX = Math.min(minX, node.x);
+    minY = Math.min(minY, node.y);
+    maxX = Math.max(maxX, node.x + TRUST_NODE_WIDTH);
+    maxY = Math.max(maxY, node.y + TRUST_NODE_HEIGHT);
+  }
+  const width = Math.max(0, maxX - minX);
+  const height = Math.max(0, maxY - minY);
+
+  function onNodePointerDown(event: PointerEvent<HTMLAnchorElement>, id: string): void {
+    if (event.metaKey || event.ctrlKey || event.shiftKey) {
+      return;
+    }
+    const pos = byId.get(id);
+    if (pos === undefined) {
+      return;
+    }
+    if (typeof event.currentTarget.setPointerCapture === 'function') {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    drag.current = {
+      id,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      origX: pos.x,
+      origY: pos.y,
+      moved: false,
+    };
+  }
+
+  function onNodePointerMove(event: PointerEvent<HTMLAnchorElement>): void {
+    const current = drag.current;
+    if (current === null || current.pointerId !== event.pointerId) {
+      return;
+    }
+    if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+      return;
+    }
+    const dx = event.clientX - current.startX;
+    const dy = event.clientY - current.startY;
+    if (!current.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) {
+      return;
+    }
+    current.moved = true;
+    setPlaced((prev) => ({
+      ...prev,
+      [current.id]: { x: current.origX + dx, y: current.origY + dy },
+    }));
+  }
+
+  function onNodePointerUp(event: PointerEvent<HTMLAnchorElement>): void {
+    const current = drag.current;
+    if (current === null || current.pointerId !== event.pointerId) {
+      return;
+    }
+    if (
+      typeof event.currentTarget.hasPointerCapture === 'function' &&
+      event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
 
   return (
     <div className="overflow-auto">
       <svg
         width={width}
         height={height}
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`${minX} ${minY} ${width} ${height}`}
         role="group"
         aria-label={t('aria.trustChain')}
       >
@@ -161,7 +264,20 @@ export function TrustChainDiagram({
               href={`/members/${node.id}`}
               data-testid={`trust-node-${node.id}`}
               aria-busy={busy ? 'true' : undefined}
+              style={{ touchAction: 'none', cursor: 'grab' }}
+              onPointerDown={(event) => {
+                onNodePointerDown(event, node.id);
+              }}
+              onPointerMove={onNodePointerMove}
+              onPointerUp={onNodePointerUp}
+              onPointerCancel={onNodePointerUp}
               onClick={(event) => {
+                if (drag.current?.id === node.id && drag.current.moved) {
+                  event.preventDefault();
+                  drag.current = null;
+                  return;
+                }
+                drag.current = null;
                 if (onExpand === undefined || event.metaKey || event.ctrlKey || event.shiftKey) {
                   return;
                 }

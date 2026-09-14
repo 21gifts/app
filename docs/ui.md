@@ -891,7 +891,7 @@ Handbook states: loading, empty, error + **Try again**, populated charts.
 
 ### `/trust-chain`
 
-Marketing shell, always ink. `MarketingHeader` → display/h1 Trust Chain (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`), lead, then `TrustChainLoader` / `TrustChainScreen` / `TrustChainDiagram` (one horizontal chain, never a pyramid). First paint is founder seeds; a click loads one hop. Empty / loading / error + **Try again**; hop-error keeps the diagram. Modifier-click opens `/members/{id}`.
+Marketing shell, always ink. `MarketingHeader` → display/h1 Trust Chain (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`), lead, then `TrustChainLoader` / `TrustChainScreen` / `TrustChainDiagram` (starts as one horizontal chain, never a pyramid). First paint is founder seeds; a click loads one hop; drag moves a person. Empty / loading / error + **Try again**; hop-error keeps the diagram. Modifier-click opens `/members/{id}`.
 
 Handbook states: default, expanded, empty, loading, error, hop-error.
 

@@ -4,6 +4,17 @@ import { TrustChainDiagram } from '@/components/TrustChainDiagram';
 import type { TrustChain } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+if (typeof globalThis.PointerEvent === 'undefined') {
+  class PointerEventPolyfill extends MouseEvent {
+    pointerId: number;
+    constructor(type: string, init: MouseEventInit & { pointerId?: number } = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 0;
+    }
+  }
+  globalThis.PointerEvent = PointerEventPolyfill as unknown as typeof PointerEvent;
+}
+
 afterEach(cleanup);
 
 const CHAIN: TrustChain = {
@@ -48,6 +59,32 @@ describe('TrustChainDiagram', () => {
     expect(onExpand).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('trust-node-m'));
     expect(onExpand).toHaveBeenCalledTimes(1);
+    expect(onExpand).toHaveBeenCalledWith('m');
+  });
+
+  it('moves a node on pointer drag and does not expand after a drag', () => {
+    const onExpand = vi.fn();
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} onExpand={onExpand} />);
+    const node = screen.getByTestId('trust-node-f');
+    const rect = node.querySelector('rect');
+    expect(rect).toBeTruthy();
+    const startX = Number(rect?.getAttribute('x'));
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 40, clientY: 20 });
+    fireEvent.pointerMove(node, { pointerId: 1, clientX: 80, clientY: 50 });
+    fireEvent.pointerUp(node, { pointerId: 1, clientX: 80, clientY: 50 });
+    fireEvent.click(node);
+    expect(Number(node.querySelector('rect')?.getAttribute('x'))).toBe(startX + 40);
+    expect(onExpand).not.toHaveBeenCalled();
+  });
+
+  it('still expands on a click that did not move past the drag threshold', () => {
+    const onExpand = vi.fn();
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} onExpand={onExpand} />);
+    const node = screen.getByTestId('trust-node-m');
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(node, { pointerId: 1, clientX: 12, clientY: 11 });
+    fireEvent.pointerUp(node, { pointerId: 1, clientX: 12, clientY: 11 });
+    fireEvent.click(node);
     expect(onExpand).toHaveBeenCalledWith('m');
   });
 

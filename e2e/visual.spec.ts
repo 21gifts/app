@@ -131,7 +131,6 @@ const TRUST_CHAIN_AROUND_MODERATOR = {
     { from: 'm1', to: 'v2', kind: 'verify' as const },
   ],
 };
-};
 
 const STATS_DEFAULT = {
   totalSats: 1500,
