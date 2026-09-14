@@ -116,18 +116,6 @@ describe('ViewProfileLoader', () => {
           cumulativePhp: '1.00',
         },
       ],
-      byRecipient: [
-        {
-          recipient: 'alice',
-          giftCount: 1,
-          sats: 21,
-          btc: '0.00000021',
-          usd: '0.02',
-          chf: '0.02',
-          eur: '0.02',
-          php: '1.00',
-        },
-      ],
     });
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {

@@ -139,6 +139,12 @@ describe('useAccountTotals', () => {
           cumulativeBtc: '0.00000200',
           usd: '0.19',
           cumulativeUsd: '0.19',
+          chf: '0.16',
+          eur: '0.17',
+          php: '11.00',
+          cumulativeChf: '0.16',
+          cumulativeEur: '0.17',
+          cumulativePhp: '11.00',
         },
       ],
     });
