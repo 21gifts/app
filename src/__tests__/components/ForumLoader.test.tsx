@@ -5441,7 +5441,9 @@ it('removes a moderated reply, keeps the parent, and ignores restored replies', 
   await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeRefresh));
   expect(screen.queryByText('A reply')).toBeNull();
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
-  expect(within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies')).toBeTruthy();
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+  ).toBeTruthy();
 
   const stillExpanded = screen.getByText('Hello from Ada').closest('li')!;
   fireEvent.click(within(stillExpanded).getByRole('button', { name: 'Hide replies' }));
@@ -5449,7 +5451,9 @@ it('removes a moderated reply, keeps the parent, and ignores restored replies', 
   await waitFor(() => expect(repliesMock.mock.calls.length).toBeGreaterThan(1));
   expect(screen.queryByText('A reply')).toBeNull();
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
-  expect(within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies')).toBeTruthy();
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+  ).toBeTruthy();
 });
 
 it('hides reply deletion for ordinary members', async () => {
