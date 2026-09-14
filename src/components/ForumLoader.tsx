@@ -1453,9 +1453,9 @@ export function ForumLoader(): ReactElement | null {
                 return {
                   ...row,
                   replyCount:
-                    repliesRef.current === null
-                      ? Math.max(0, row.replyCount - 1)
-                      : remaining.length,
+                    expandedIdRef.current === parentId && repliesRef.current !== null
+                      ? remaining.length
+                      : Math.max(0, row.replyCount - 1),
                 };
               }),
             );
