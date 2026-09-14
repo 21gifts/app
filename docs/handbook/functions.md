@@ -1019,16 +1019,16 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: formatFiatDisplay
 
-- **Purpose:** Formats an API fiat amount string for stats display. `null` becomes `—` (U+2014). USD uses a dollar symbol; CHF/EUR/PHP use `currencyDisplay: 'code'` rebuilt so the code prefixes the number (`"CHF 1,425.00"`).
-- **Inputs:** `amount` (`string | null`) and `code` (`FiatCode`).
-- **Returns / side effects:** Display string. No network.
+- **Purpose:** Formats an API fiat amount string for stats display using the visitor grouping style. `null` becomes `—` (U+2014). USD uses a dollar symbol; CHF/EUR/PHP prefix the code (`CHF 1'425.00`).
+- **Inputs:** `amount` (`string | null`), `code` (`FiatCode`), and optional `style` `NumberFormatStyle` (default `ch`).
+- **Returns / side effects:** Display string such as `$1'425.00` / `CHF 1'425.00`. No `Intl.NumberFormat`. No network.
 - **Used by:** `StatsDashboard`, `GiftDayTable`, `DayLoader`.
 
 ## Function: formatFiatTick
 
-- **Purpose:** Formats a parsed fiat chart-axis value with grouping and a currency prefix. USD matches `formatUsdTick`; other codes are `CHF 0` / `CHF 1.43` / `CHF 1,425`.
-- **Inputs:** `amount` number (layout scale only) and `code` (`FiatCode`).
-- **Returns / side effects:** Axis label. Does not itself map a null series to `—` — `StatsDashboard` does that when every selected cumulative is `null`.
+- **Purpose:** Formats a parsed fiat chart-axis value with grouping and a currency prefix. USD matches `formatUsdTick`; other codes are `CHF 0` / `CHF 1.43` / `CHF 1'425`.
+- **Inputs:** `amount` number (layout scale only), `code` (`FiatCode`), and optional `style` `NumberFormatStyle` (default `ch`).
+- **Returns / side effects:** Axis label. Values under 10 keep trimmed decimals and use the style decimal separator. Does not itself map a null series to `—` — `StatsDashboard` does that when every selected cumulative is `null`.
 - **Used by:** `StatsDashboard` over-time fiat scale.
 
 ## Function: defaultFiatForLocale
