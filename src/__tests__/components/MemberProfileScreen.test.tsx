@@ -2355,11 +2355,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalled();
-    });
-    expect(screen.queryByRole('dialog')).toBeNull();
-    await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
     });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows a replies error when expanding without a session', async () => {
