@@ -828,7 +828,7 @@ Load and request failures next to labeled **Try again** use this grammar (`login
 
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile.
 
-**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between`; the nav wraps (`flex flex-wrap gap-4`). Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
+**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between`; the nav wraps (`flex flex-wrap gap-4`). Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, Trust Chain, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
 
 **Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`.
 

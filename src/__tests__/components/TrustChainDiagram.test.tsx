@@ -98,6 +98,37 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
   });
 
+  it('releases pointer capture on pointer up after a drag start', () => {
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
+    const node = screen.getByTestId('trust-node-f');
+    const release = vi.fn();
+    node.hasPointerCapture = (): boolean => true;
+    node.releasePointerCapture = release;
+    fireEvent.pointerDown(node, { pointerId: 7, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(node, { pointerId: 7, clientX: 10, clientY: 10 });
+    expect(release).toHaveBeenCalledWith(7);
+  });
+
+  it('draws an arc when a same-row edge skips at least one person', () => {
+    renderWithLocale(
+      <TrustChainDiagram
+        chain={{
+          nodes: [
+            { id: 'f', name: 'F', role: 'founder' },
+            { id: 'm', name: 'M', role: 'moderator' },
+            { id: 'v', name: 'V', role: 'verified' },
+          ],
+          edges: [
+            { from: 'f', to: 'm', kind: 'moderator_appoint' },
+            { from: 'm', to: 'v', kind: 'verify' },
+            { from: 'f', to: 'v', kind: 'verify' },
+          ],
+        }}
+      />,
+    );
+    expect(document.querySelector('svg path')).toBeTruthy();
+  });
+
   it('draws a back-edge from a later block to an earlier one', () => {
     renderWithLocale(
       <TrustChainDiagram
