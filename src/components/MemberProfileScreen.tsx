@@ -60,6 +60,9 @@ function isReplyPaymentExempt(
   return parentAccountId !== undefined && parentAccountId === account.id;
 }
 
+/** Default invoice amount when the reply amount field is empty or whitespace-only for a gift-only reply. */
+const DEFAULT_FORUM_PAY_SATS = 21;
+
 /**
  * Parses the reply-composer sats draft.
  *
@@ -788,10 +791,6 @@ export function MemberProfileScreen({
       return;
     }
     const parsed = parseReplySats(replyAmountDraft);
-    if (trimmed === '' && parsed === 'empty') {
-      setReplyFormError('empty');
-      return;
-    }
     const token = session;
     const parentId = expandedId;
     const parentRow =
@@ -802,12 +801,15 @@ export function MemberProfileScreen({
         setReplyFormError('amount');
         return Promise.resolve();
       }
+      /* v8 ignore next -- expanded parent is always in the loaded list */
+      const baselineSats = parentRow === undefined ? 0 : parentRow.sats;
+      if (trimmed === '' && parsed === 'empty') {
+        return runPaidReply(token, trimmed, parentId, DEFAULT_FORUM_PAY_SATS, isRetry, baselineSats);
+      }
       if (parsed === 'empty' && exempt) {
         return runReplyPost(token, trimmed, parentId, isRetry);
       }
       const sats = parsed === 'empty' ? 1 : parsed;
-      /* v8 ignore next -- expanded parent is always in the loaded list */
-      const baselineSats = parentRow === undefined ? 0 : parentRow.sats;
       return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
     };
     const missing = account?.missing ?? [];

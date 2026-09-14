@@ -1353,20 +1353,6 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('does not post an empty reply', async () => {
-    renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: note }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    await expandNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
-    expect(postMessage).not.toHaveBeenCalled();
-  });
-
   it('does not post a reply longer than the forum limit', async () => {
     renderWithLocale(
       <MemberProfileScreen
@@ -1497,6 +1483,19 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('invoices a gift-only reply when text and amount are empty', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);

@@ -3380,6 +3380,30 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('invoices a gift-only reply when text and amount are empty', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+    });
+    expect(postMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')?.textContent).not.toBe(
+      'Enter a message or add a photo or video',
+    );
+  });
+
   it('drops a late paid-reply invoice after Gift is opened', async () => {
     let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
     invoiceMock.mockReturnValue(
@@ -3674,24 +3698,6 @@ describe('ForumLoader', () => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
     });
     expect(postMock).toHaveBeenCalled();
-  });
-
-  it('rejects an empty reply without an amount', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
-    repliesMock.mockResolvedValue([]);
-    renderWithLocale(<ForumLoader />);
-    await revealAll();
-    await waitFor(() => {
-      expect(screen.getByText('Hello from Bob')).toBeTruthy();
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
-    await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
-    });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
-    expect(postMock).not.toHaveBeenCalled();
-    expect(invoiceMock).not.toHaveBeenCalled();
   });
 
   it('rejects a non-numeric reply amount', async () => {
