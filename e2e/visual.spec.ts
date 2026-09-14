@@ -2684,7 +2684,7 @@ test.describe('profile activity chart variants', () => {
       .getByRole('button', { name: 'USD' })
       .click();
     await expect(page.getByLabel('Given and received in USD')).toBeVisible();
-    await expect(page.getByText('$1,425')).toBeVisible();
+    await expect(page.getByText("$1'425")).toBeVisible();
     await shotScreen(page, 'state-profile-large-usd');
   });
 });
