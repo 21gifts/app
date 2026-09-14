@@ -627,9 +627,7 @@ export function MemberProfileScreen({
     }
     void pending();
   };
-  const [origin, setOrigin] = useState(
-    typeof window === 'undefined' ? '' : window.location.origin,
-  );
+  const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const tagged =

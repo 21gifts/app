@@ -26,9 +26,7 @@ export function ViewProfileScreen({
 }): ReactElement {
   const { t } = useTranslations();
   const address = profile.lightningAddress;
-  const [origin, setOrigin] = useState(
-    typeof window === 'undefined' ? '' : window.location.origin,
-  );
+  const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
 
   useEffect(() => {
     setOrigin(window.location.origin);
