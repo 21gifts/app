@@ -6,9 +6,9 @@ import {
   alignActivitySeries,
   type ActivityPoint,
 } from '@/lib/account-activity';
-import type { GiftStats } from '@/lib/api-types';
+import type { AccountActivity } from '@/lib/api-types';
 
-type SpendPoint = GiftStats['spendOverTime'][number];
+type SpendPoint = AccountActivity['receivedOverTime'][number];
 
 function fiatFromUsd(usd: string): { chf: string; eur: string; php: string } {
   switch (usd) {

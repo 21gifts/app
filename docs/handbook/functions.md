@@ -434,7 +434,7 @@
 ## Function: AccountActivityChart
 
 - **Purpose:** Compact dual-line cumulative SVG of Given and Received. Always renders FiatPicker (`tone="gift"` via picker, `shell="app"`, aria `profile.fiatCurrency`). Empty/all-zero sats: picker + `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: picker + legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Own `useState<FiatCode>` from `defaultFiatForLocale(locale)` (mount-time). Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
-- **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`) from account activity `donatedOverTime`.
+- **Inputs:** `received` (`AccountActivity.receivedOverTime`); optional `donated` (default `[]`) from `AccountActivity.donatedOverTime`.
 - **Returns / side effects:** Always FiatPicker. When the series is empty or all zeros: picker + `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise picker, one chrome row (legend left, ₿ | selected FiatCode right), and SVG. Client state for fiat and scale. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`, `MemberProfileScreen`.
 
@@ -625,8 +625,8 @@
 
 ## Function: alignActivitySeries
 
-- **Purpose:** Align receive and donate cumulative `spendOverTime` series onto one sorted UTC-day axis for the profile chart.
-- **Inputs:** `received` and `donated` arrays from `GiftStats.spendOverTime`.
+- **Purpose:** Align receive and donate cumulative account-activity series onto one sorted UTC-day axis for the profile chart.
+- **Inputs:** `received` (`AccountActivity.receivedOverTime`) and `donated` (`AccountActivity.donatedOverTime`).
 - **Returns / side effects:** `ActivityPoint[]`. Empty+empty → `[]`. Empty donated → zero Given on each received day. Non-empty both → day union with step-hold carry-forward. Also aligns CHF/EUR/PHP cumulatives (`null` string → `0`); missing series side stays at the carried value (0 until first point).
 - **Used by:** `AccountActivityChart`.
 
