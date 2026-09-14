@@ -300,7 +300,6 @@ export function MemberProfileScreen({
             sinceSats: baselineSats,
             signal,
           });
-          /* v8 ignore next 3 -- aborted while the public fetch was in flight */
           if (generation !== payPollGeneration.current || signal.aborted) {
             return;
           }
@@ -363,14 +362,12 @@ export function MemberProfileScreen({
         } catch {
           // Keep waiting while the sheet is open.
         }
-        /* v8 ignore next 3 -- aborted after a poll error */
         if (generation !== payPollGeneration.current || signal.aborted) {
           return;
         }
         await new Promise((resolve) => {
           setTimeout(resolve, PAY_POLL_MS);
         });
-        /* v8 ignore next 3 -- aborted during the poll delay */
         if (generation !== payPollGeneration.current) {
           return;
         }
@@ -599,7 +596,6 @@ export function MemberProfileScreen({
               pendingPostRef.current = () => continuePay(true);
               return;
             }
-            /* v8 ignore next 3 -- isRetry after overlay; sheet may already be closed */
             setPayError('request');
             return;
           }

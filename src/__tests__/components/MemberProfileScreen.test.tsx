@@ -681,8 +681,12 @@ describe('MemberProfileScreen', () => {
   });
 
   it('stops polling when the pay sheet is closed after a fetch error', async () => {
-    vi.useFakeTimers();
-    vi.mocked(fetchPublicMessage).mockRejectedValueOnce(new Error('poll failed'));
+    let rejectPoll!: (reason: Error) => void;
+    vi.mocked(fetchPublicMessage).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectPoll = reject;
+      }),
+    );
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42 });
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
@@ -690,14 +694,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await act(async () => {
-      await Promise.resolve();
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
+      rejectPoll(new Error('poll failed'));
     });
-    vi.useRealTimers();
     expect(screen.queryByText('Pay ₿21')).toBeNull();
     expect(fetchPublicMessage).toHaveBeenCalledTimes(1);
   });
@@ -1691,6 +1694,7 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
   });
 
   it('shows a replies error when expanding without a session', async () => {
