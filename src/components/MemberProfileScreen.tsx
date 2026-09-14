@@ -16,6 +16,7 @@ import { Button } from '@/components/ui';
 import {
   fetchMemberPosts,
   fetchMemberReplies,
+  fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
   openConversation,
@@ -224,6 +225,99 @@ export function MemberProfileScreen({
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
   const address = profile.lightningAddress;
+
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const photoUrlsRef = useRef(photoUrls);
+  photoUrlsRef.current = photoUrls;
+
+  const photoSource: ForumMessage[] = [];
+  if (listedNote !== null && activity !== 'posts') {
+    photoSource.push(listedNote);
+  }
+  if (activity === 'posts' && posts !== null) {
+    photoSource.push(...posts);
+  }
+  if (activity === 'replies' && activityReplies !== null) {
+    photoSource.push(...activityReplies);
+  }
+  if (replies !== null) {
+    photoSource.push(...replies);
+  }
+  const photoSourceRef = useRef(photoSource);
+  photoSourceRef.current = photoSource;
+  const photoIdsKey = photoSource
+    .filter((message) => message.hasPhoto)
+    .map((message) => message.id)
+    .sort()
+    .join('\0');
+
+  useEffect(() => {
+    if (session === null || photoIdsKey === '') {
+      return;
+    }
+    const listed = photoSourceRef.current;
+    let cancelled = false;
+    const missing = listed.filter(
+      (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
+    );
+    if (missing.length === 0) {
+      return;
+    }
+    void (async () => {
+      for (const message of missing) {
+        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
+        if (photoUrlsRef.current[message.id] !== undefined) {
+          continue;
+        }
+        /* v8 ignore stop */
+        let blob: Blob;
+        try {
+          blob = await fetchMessagePhoto(session, message.id);
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          try {
+            blob = await fetchMessagePhoto(session, message.id);
+          } catch {
+            if (cancelled) {
+              return;
+            }
+            // Leave the row text-only when the photo cannot load.
+            continue;
+          }
+        }
+        if (cancelled) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        setPhotoUrls((prev) => {
+          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
+          if (prev[message.id] !== undefined) {
+            URL.revokeObjectURL(url);
+            return prev;
+          }
+          /* v8 ignore stop */
+          return { ...prev, [message.id]: url };
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [photoIdsKey, session]);
+
+  useEffect(() => {
+    return () => {
+      for (const url of Object.values(photoUrlsRef.current)) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, []);
 
   const loadActivityFeed = async (kind: 'posts' | 'replies'): Promise<void> => {
     const setLoading = kind === 'posts' ? setPostsLoading : setActivityRepliesLoading;
@@ -762,6 +856,7 @@ export function MemberProfileScreen({
   };
 
   const sharedForumProps = {
+    photoUrls,
     payMessageId,
     payDraft,
     payBusy,
