@@ -264,6 +264,7 @@ describe('activityValue', () => {
     expect(activityValue(point, 'received', 'sat')).toBe(20);
     expect(activityValue(point, 'donated', 'fiat', 'USD')).toBe(1.5);
     expect(activityValue(point, 'received', 'fiat', 'USD')).toBe(2.5);
+    expect(activityValue(point, 'received', 'fiat')).toBe(2.5);
   });
 
   it('reads CHF from a received-only helper day', () => {
@@ -271,6 +272,10 @@ describe('activityValue', () => {
     const first = aligned[0];
     expect(first && activityValue(first, 'received', 'fiat', 'CHF')).toBe(0.4);
     expect(first && activityValue(first, 'donated', 'fiat', 'CHF')).toBe(0);
+    expect(first && activityValue(first, 'received', 'fiat', 'EUR')).toBe(0.44);
+    expect(first && activityValue(first, 'received', 'fiat', 'PHP')).toBe(27);
+    expect(first && activityMaxY(aligned, 'fiat', 'EUR')).toBe(0.44);
+    expect(first && activityMaxY(aligned, 'fiat', 'PHP')).toBe(27);
   });
 
   it('maps a null CHF cumulative to 0 after align', () => {

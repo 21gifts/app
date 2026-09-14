@@ -145,4 +145,21 @@ describe('AccountActivityChart', () => {
     expect(screen.getByRole('img', { name: 'Given and received in CHF' })).toBeTruthy();
     expect(screen.getByText(formatFiatTick(1.2, 'CHF'))).toBeTruthy();
   });
+
+  it('uses an em dash tick when every CHF cumulative is null', () => {
+    const unsummable: SpendPoint[] = [
+      { ...day('2026-06-01', 500, '0.48', 500), cumulativeChf: null, chf: null },
+      { ...day('2026-06-03', 1500, '1.43', 1000), cumulativeChf: null, chf: null },
+    ];
+    renderWithLocale(<AccountActivityChart received={unsummable} />);
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
+        name: 'CHF',
+      }),
+    );
+    clickChartScale('CHF');
+    expect(screen.getByRole('img', { name: 'Given and received in CHF' })).toBeTruthy();
+    expect(screen.getAllByText('\u2014').length).toBeGreaterThan(0);
+    expect(screen.queryByText(formatFiatTick(1.2, 'CHF'))).toBeNull();
+  });
 });
