@@ -5392,3 +5392,70 @@ it('does not treat a session-deleted id as unseen on silent refresh', async () =
   expect(screen.queryByText('Hello from Ada')).toBeNull();
   expect(screen.getByText('Keep this post')).toBeTruthy();
 });
+
+const NESTED_REPLY: ForumMessage = {
+  id: 'r1',
+  name: 'Bob',
+  text: 'A reply',
+  createdAt: '2026-08-28T12:30:00.000Z',
+  sats: 0,
+  payable: false,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'basis',
+  replyCount: 0,
+};
+
+it('removes a moderated reply, keeps the parent, and ignores restored replies', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue([
+    { ...SAMPLE, replyCount: 1 },
+    { ...SAMPLE, id: 'keep', text: 'Keep this post' },
+  ]);
+  repliesMock.mockResolvedValue([NESTED_REPLY]);
+  vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  await screen.findByText('Hello from Ada');
+  const postCard = screen.getByText('Hello from Ada').closest('li')!;
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Show replies' }));
+  await screen.findByText('A reply');
+  expect(within(postCard).getByText('1 replies')).toBeTruthy();
+  const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
+  await waitFor(() => expect(screen.queryByText('A reply')).toBeNull());
+  expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  expect(screen.getByText('Keep this post')).toBeTruthy();
+  expect(deleteMessage).toHaveBeenCalledWith('token', 'r1');
+  const keptCard = screen.getByText('Hello from Ada').closest('li')!;
+  expect(within(keptCard).getByText('0 replies')).toBeTruthy();
+  expect(screen.getByLabelText('Your reply')).toBeTruthy();
+
+  const event = new Event('pageshow');
+  Object.defineProperty(event, 'persisted', { value: true });
+  fireEvent(window, event);
+  expect(screen.queryByText('A reply')).toBeNull();
+  expect(screen.getByText('Hello from Ada')).toBeTruthy();
+
+  const stillExpanded = screen.getByText('Hello from Ada').closest('li')!;
+  fireEvent.click(within(stillExpanded).getByRole('button', { name: 'Hide replies' }));
+  fireEvent.click(within(stillExpanded).getByRole('button', { name: 'Show replies' }));
+  await waitFor(() => expect(repliesMock.mock.calls.length).toBeGreaterThan(1));
+  expect(screen.queryByText('A reply')).toBeNull();
+  expect(screen.getByText('Hello from Ada')).toBeTruthy();
+});
+
+it('hides reply deletion for ordinary members', async () => {
+  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  repliesMock.mockResolvedValue([NESTED_REPLY]);
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  await screen.findByText('Hello from Ada');
+  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  await screen.findByText('A reply');
+  expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+});

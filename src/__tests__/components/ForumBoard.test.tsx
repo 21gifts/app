@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -16,6 +16,7 @@ import {
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
@@ -48,6 +49,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.getState().clearAuth();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   Object.defineProperty(navigator, 'userAgent', {
     configurable: true,
@@ -3261,5 +3263,169 @@ describe('ForumBoard', () => {
       />,
     );
     expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
+  });
+
+  it('shows an icon-only Delete reply on nested replies when onDeleted is provided', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r1"]');
+    expect(replyCard).not.toBeNull();
+    expect(
+      within(replyCard as HTMLElement).getByRole('button', { name: 'Delete reply' }),
+    ).toBeTruthy();
+    expect(within(replyCard as HTMLElement).queryByText('Delete reply')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete post' })).toBeTruthy();
+    expect(screen.queryByText('Delete post')).toBeNull();
+  });
+
+  it('hides Delete reply on nested replies when onDeleted is omitted', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+  });
+
+  it('shows Delete reply on own replies that have no PM', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'founder',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        ownName="Ada"
+        replies={[
+          { ...SAMPLE, id: 'r-own', name: 'Ada', text: 'Own reply', sats: 0, payable: false },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-own"]');
+    expect(replyCard).not.toBeNull();
+    expect(
+      within(replyCard as HTMLElement).getByRole('button', { name: 'Delete reply' }),
+    ).toBeTruthy();
+    expect(
+      within(replyCard as HTMLElement).queryByRole('button', { name: 'Send a private message' }),
+    ).toBeNull();
   });
 });

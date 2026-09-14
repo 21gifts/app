@@ -701,7 +701,7 @@ export function ForumLoader(): ReactElement | null {
       try {
         const next = await fetchReplies(session, expandedId);
         if (!cancelled) {
-          setReplies(next);
+          setReplies(next.filter((row) => !deletedIds.current.has(row.id)));
         }
       } catch {
         if (!cancelled) {
@@ -1382,6 +1382,18 @@ export function ForumLoader(): ReactElement | null {
         onShowNewPosts={showNewPosts}
         onDeleted={(messageId) => {
           deletedIds.current.add(messageId);
+          const loadedReplies = repliesRef.current;
+          if (loadedReplies !== null && loadedReplies.some((row) => row.id === messageId)) {
+            setReplies(loadedReplies.filter((row) => row.id !== messageId));
+            setMessages((prev) =>
+              prev!.map((row) =>
+                row.id === expandedIdRef.current
+                  ? { ...row, replyCount: Math.max(0, row.replyCount - 1) }
+                  : row,
+              ),
+            );
+            return;
+          }
           setMessages((prev) => prev!.filter((row) => row.id !== messageId));
           if (expandedIdRef.current === messageId) {
             setExpandedId(null);

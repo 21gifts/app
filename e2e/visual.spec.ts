@@ -3206,6 +3206,87 @@ test.describe('welcome forum variants', () => {
     });
   }
 
+  for (const state of [
+    'reply-moderation',
+    'reply-delete-confirm',
+    'reply-deleting',
+    'reply-delete-error',
+  ] as const) {
+    // e2e:check needle: welcome reply-deleting
+    test('welcome ' + state, async ({ page }) => {
+      await seedAda(page, 'moderator');
+      await fulfillMixedSatsMessages(page);
+      await page.route('**/forum/messages/m1/replies', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            messages: [
+              {
+                id: 'r1',
+                name: 'Pat',
+                text: 'A reply',
+                createdAt: '2026-08-28T10:30:00.000Z',
+                sats: 0,
+                payable: false,
+                hasPhoto: false,
+                role: 'basis',
+              },
+            ],
+          }),
+        });
+      });
+      let release: () => void = () => undefined;
+      await page.route('**/forum/messages/r1', async (route) => {
+        if (route.request().method() !== 'DELETE') {
+          await route.fallback();
+          return;
+        }
+        if (state === 'reply-deleting') {
+          await new Promise<void>((resolve) => {
+            release = resolve;
+          });
+        }
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: '{"error":"Unavailable"}',
+        });
+      });
+      await page.goto('/welcome');
+      await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+      await page.getByRole('button', { name: 'Show replies', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toBeVisible();
+      if (state !== 'reply-moderation') {
+        await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+        await expect(
+          page.getByRole('group', { name: 'Delete this reply from 21.gifts?' }),
+        ).toBeVisible();
+      }
+      if (state === 'reply-deleting' || state === 'reply-delete-error') {
+        await page.getByRole('button', { name: 'Confirm deletion' }).click();
+        if (state === 'reply-deleting') {
+          await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeDisabled();
+        } else {
+          await expect(
+            page
+              .getByRole('group', { name: 'Delete this reply from 21.gifts?' })
+              .getByRole('alert'),
+          ).toHaveText('Could not delete the reply. Please try again.');
+        }
+      }
+      if (state === 'reply-moderation') await shotScreen(page, 'state-welcome-reply-moderation');
+      if (state === 'reply-delete-confirm') {
+        await shotScreen(page, 'state-welcome-reply-delete-confirm');
+      }
+      if (state === 'reply-deleting') await shotScreen(page, 'state-welcome-reply-deleting');
+      if (state === 'reply-delete-error') {
+        await shotScreen(page, 'state-welcome-reply-delete-error');
+      }
+      release();
+    });
+  }
+
   test('welcome all', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);

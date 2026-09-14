@@ -1979,10 +1979,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: DeletePostControl
 
-- **Purpose:** Inline founder/moderator post deletion with confirmation, pending and error states.
-- **Inputs:** messageId, onDeleted; reads the current account and Bearer session.
-- **Returns / side effects:** Hidden for other roles; idle trash sits in the note footer icon row; confirming wraps to the next line via `basis-full w-full`. Calls deleteMessage on explicit confirmation, then onDeleted. Error keeps the post and permits retry.
-- **Used by:** `ForumBoard`.
+- **Purpose:** Inline founder/moderator post or nested-reply deletion with confirmation, pending and error states.
+- **Inputs:** messageId, onDeleted, optional kind (`'post'` default, `'reply'` for nested replies); reads the current account and Bearer session.
+- **Returns / side effects:** Hidden for other roles; idle trash sits in the note footer icon row (parent) or the nested reply action row (`kind="reply"`); confirming wraps to the next line via `basis-full w-full`. Idle/confirm/error copy is `forum.delete*` for posts and `forum.deleteReply*` for replies. Calls deleteMessage on explicit confirmation, then onDeleted. Error keeps the post or reply and permits retry.
+- **Used by:** `ForumBoard` on the parent footer and on nested reply cards.
 
 ## Function: deleteMessage
 
