@@ -44,7 +44,7 @@ The only state: imprint plus privacy, marketing chrome.
 
 - **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
 - **What the user sees:** Dark 21.gifts header, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, **FiatPicker** (CHF|EUR|USD|PHP) above the table, then either the gift table (Time, Recipient, ₿, {selected fiat code}), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, fiat, numberFormat)` follows the selected fiat and visitor grouping. Stats body copy stays English.
-- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Pick a fiat; the fourth column and summary follow it. Open **All stats**. Change language. Number format is a signed-in Menu setting, not on this public header. Header **Log in** goes to `/login`.
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Pick a fiat; the fourth column and summary follow it. Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
 - **Calls:** `GiftDayPage`, `DayLoader`, `FiatPicker`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`).
 - **Auth:** None.
 
