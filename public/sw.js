@@ -13,26 +13,18 @@ self.addEventListener('push', (event) => {
     typeof payload.title === 'string' && payload.title !== '' ? payload.title : '21.gifts';
   const body = typeof payload.body === 'string' ? payload.body : '';
   const url = typeof payload.url === 'string' && payload.url !== '' ? payload.url : '/welcome';
-  const tag = typeof payload.tag === 'string' ? payload.tag : undefined;
+  const tag = typeof payload.tag === 'string' && payload.tag !== '' ? payload.tag : undefined;
 
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      const anyFocused = clientList.some((client) => client.focused === true);
-      if (anyFocused) {
-        return undefined;
-      }
-      const options = {
-        body,
-        data: { url },
-        renotify: true,
-        icon: '/apple-touch-icon.png',
-      };
-      if (tag !== undefined) {
-        options.tag = tag;
-      }
-      return self.registration.showNotification(title, options);
-    }),
-  );
+  const options = {
+    body,
+    data: { url },
+    icon: '/apple-touch-icon.png',
+  };
+  if (tag !== undefined) {
+    options.tag = tag;
+    options.renotify = true;
+  }
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {

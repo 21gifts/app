@@ -282,7 +282,7 @@
 
 ## Endpoint: GET /forum/notifications
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (forum-reply notifications for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
+- **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, and payments for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchNotifications` on `/notifications`.
 - **Auth:** Bearer.

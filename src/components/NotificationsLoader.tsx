@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Client loader for the signed-in notifications list on `/notifications`.
  *
- * Reads the session from the auth store and fetches forum-reply notifications.
+ * Reads the session from the auth store and fetches notifications (posts, replies, and payments).
  * After a successful list fetch, marks all as read fire-and-forget. Renders
  * nothing when there is no session. There is no composer; opening a row goes
  * to the public forum note.

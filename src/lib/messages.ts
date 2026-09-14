@@ -488,8 +488,11 @@ const en = {
   'notifications.loading': 'Loading…',
   'notifications.error': 'Could not load notifications. Please try again.',
   'notifications.retry': 'Try again',
-  'notifications.reply': '{name} replied to your post',
+  'notifications.post': '{name} posted',
+  'notifications.reply': '{name} replied',
+  'notifications.zap': '{name} sent bitcoin',
   'notifications.photoOnly': 'Photo reply',
+  'notifications.photoPost': 'Photo',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -982,8 +985,11 @@ const de = {
   'notifications.error':
     'Benachrichtigungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'notifications.retry': 'Erneut versuchen',
-  'notifications.reply': '{name} hat auf deinen Beitrag geantwortet',
+  'notifications.post': '{name} hat gepostet',
+  'notifications.reply': '{name} hat geantwortet',
+  'notifications.zap': '{name} hat Bitcoin gesendet',
   'notifications.photoOnly': 'Foto-Antwort',
+  'notifications.photoPost': 'Foto',
 } satisfies Messages;
 
 const es = {
@@ -1460,8 +1466,11 @@ const es = {
   'notifications.loading': 'Cargando…',
   'notifications.error': 'No se pudieron cargar las notificaciones. Inténtalo de nuevo.',
   'notifications.retry': 'Intentar de nuevo',
-  'notifications.reply': '{name} respondió a tu publicación',
+  'notifications.post': '{name} publicó',
+  'notifications.reply': '{name} respondió',
+  'notifications.zap': '{name} envió bitcoin',
   'notifications.photoOnly': 'Respuesta con foto',
+  'notifications.photoPost': 'Foto',
 } satisfies Messages;
 
 const fil = {
@@ -1947,8 +1956,11 @@ const fil = {
   'notifications.loading': 'Naglo-load…',
   'notifications.error': 'Hindi ma-load ang mga abiso. Subukan ulit.',
   'notifications.retry': 'Subukan ulit',
-  'notifications.reply': '{name} sumagot sa iyong post',
+  'notifications.post': '{name} nag-post',
+  'notifications.reply': '{name} sumagot',
+  'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Sagot na litrato',
+  'notifications.photoPost': 'Litrato',
 } satisfies Messages;
 
 /**

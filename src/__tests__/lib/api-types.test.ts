@@ -242,22 +242,37 @@ describe('conversationMessageSchema', () => {
 });
 
 describe('notificationSchema', () => {
-  it('accepts a well-formed notification and list, including readAt null and empty text', () => {
-    const row = {
-      id: 'n1',
-      type: 'forum_reply' as const,
-      parentId: 'p1',
-      replyId: 'r1',
-      name: 'Bob',
-      text: '',
-      createdAt: '2026-08-28T12:00:00.000Z',
-      readAt: null,
-    };
+  const base = {
+    id: 'n1',
+    parentId: 'p1',
+    replyId: 'r1',
+    name: 'Bob',
+    text: '',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    readAt: null,
+  };
+
+  it('accepts a well-formed forum_reply and list, including readAt null and empty text', () => {
+    const row = { ...base, type: 'forum_reply' as const };
     expect(notificationSchema.parse(row)).toEqual(row);
     expect(notificationListSchema.parse({ notifications: [row], unreadCount: 1 })).toEqual({
       notifications: [row],
       unreadCount: 1,
     });
+  });
+
+  it('accepts forum_post', () => {
+    const row = { ...base, type: 'forum_post' as const, text: 'Hello living room' };
+    expect(notificationSchema.parse(row)).toEqual(row);
+  });
+
+  it('accepts zap', () => {
+    const row = { ...base, type: 'zap' as const, text: '21' };
+    expect(notificationSchema.parse(row)).toEqual(row);
+  });
+
+  it('rejects an unknown type', () => {
+    expect(() => notificationSchema.parse({ ...base, type: 'other' })).toThrow();
   });
 });
 
