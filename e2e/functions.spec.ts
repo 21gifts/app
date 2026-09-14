@@ -2704,6 +2704,41 @@ test('Function: formatUsdTick — populated profile chart shows USD ticks', asyn
   await expect(page.getByLabel('Given and received in USD').getByText('$1.43')).toBeVisible();
 });
 
+test('Function: formatFiatTick — populated profile chart shows CHF ticks', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 1500,
+    totalUsd: '1.43',
+    giftCount: 2,
+    recipientCount: 1,
+    spendOverTime: POPULATED_STATS.spendOverTime,
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
+  });
+  await page.goto('/profile');
+  await page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'CHF' })
+    .click();
+  await page
+    .getByRole('group', { name: 'Chart scale' })
+    .getByRole('button', { name: 'CHF' })
+    .click();
+  await expect(page.getByLabel('Given and received in CHF')).toBeVisible();
+  await expect(page.getByLabel('Given and received in CHF').getByText('CHF 1.2')).toBeVisible();
+});
+
 test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
@@ -2714,6 +2749,21 @@ test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page
   await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Fiat currency' });
+  await expect(group).toBeVisible();
+  await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Chart scale' })).toHaveCount(0);
 });
 
 test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ page }) => {

@@ -10,23 +10,35 @@ export interface FiatPickerProps {
   value: FiatCode;
   /** Called when the visitor picks another code. */
   onChange: (value: FiatCode) => void;
+  /** Defaults to `'dark'` (stats). Profile passes `'app'`. */
+  shell?: 'app' | 'dark';
+  /** Defaults to `'Fiat currency'` (stats English). Profile passes `t('profile.fiatCurrency')`. */
+  ariaLabel?: string;
 }
 
 /**
- * Four-way CHF | EUR | USD | PHP control for public stats (no ₿).
+ * Four-way CHF | EUR | USD | PHP control (no ₿).
  *
- * @param props - Selected code and change handler.
- * @returns Segmented control labelled "Fiat currency".
+ * Stats keep the marketing-dark shell and English aria. Profile passes
+ * `shell="app"` and a catalog `ariaLabel`.
+ *
+ * @param props - Selected code, change handler, optional shell and aria label.
+ * @returns Segmented control labelled from `ariaLabel`.
  */
-export function FiatPicker({ value, onChange }: FiatPickerProps): ReactElement {
+export function FiatPicker({
+  value,
+  onChange,
+  shell = 'dark',
+  ariaLabel = 'Fiat currency',
+}: FiatPickerProps): ReactElement {
   return (
     <SegmentedControl
       value={value}
       options={OPTIONS}
       onChange={onChange}
-      ariaLabel="Fiat currency"
+      ariaLabel={ariaLabel}
       tone="gift"
-      shell="dark"
+      shell={shell}
     />
   );
 }

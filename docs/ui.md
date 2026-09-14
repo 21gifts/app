@@ -120,7 +120,7 @@ This is not “Log in is a gift.” Ink pages have one filled accent, and it is 
 | Orange                                                               | Not orange                                                                                                                       |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`) |
-| Charts: received series, ₿ selected in ₿\|USD                        | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
+| Charts: received series, ₿ selected in ₿ \| selected fiat            | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
 |                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                         |
 |                                                                      | **Rules kickers and ticks** — see (B′)                                                                                           |
 
@@ -226,7 +226,7 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 
 **`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, style-grouped via `NumberFormatStyle`, no space, no fraction. Default Swiss `₿1'500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
 
-Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash; Swiss grouping default). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: `formatFiatTick` on stats; `formatUsdTick` on the profile ₿|USD chart (`$0`, `$1.43`, `$1'425`). Visitor styles `us` / `de` change grouping, not the currency. Toggle anatomy in §10.
+Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash; Swiss grouping default). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: stats and profile fiat ticks use `formatFiatTick` (USD selected may still call `formatUsdTick` as a wrapper; `$0`, `$1.43`, `$1'425`). Visitor styles `us` / `de` change grouping, not the currency. Toggle anatomy in §10.
 
 **Link type.** Marketing inline links: `text-accent underline underline-offset-2`. App inline links (rules, contact): `text-app-fg underline underline-offset-2 font-medium`. Do not make app body links orange (fails on paper; also not a gift CTA).
 
@@ -491,21 +491,21 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet CTAs: **Continue** (`Button` primary) then labeled **Pay** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link.
 
-**Fiat.** Stats KPI shows ₿ on the first line and the selected fiat (CHF/EUR/USD/PHP) on the second via `FiatPicker` plus `formatFiatDisplay` (USD selected uses `formatUsdDisplay`). Profile activity stays ₿|USD.
+**Fiat.** Stats KPI shows ₿ on the first line and the selected fiat (CHF/EUR/USD/PHP) on the second via `FiatPicker` plus `formatFiatDisplay` (USD selected uses `formatUsdDisplay`). Profile activity uses FiatPicker (`tone="gift"` `shell="app"`) always; populated chart is ₿ | selected FiatCode, not ₿|USD only.
 
-**₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the FiatPicker code. Profile: ₿ and `USD`.
+**₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the FiatPicker code. Profile: ₿ and the FiatPicker code (same as stats charts, app shell).
 
-| Part       | Spec                                                                                                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Track      | Gift app: `inline-flex overflow-hidden rounded-md border border-app-border text-xs`. Gift dark: `border-paper/20`.                                                        |
-| Segment    | `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop                                                                                                                   |
-| Selected   | Gift app: `bg-app-accent text-app-accent-fg`. Gift dark: `bg-accent text-ink`                                                                                             |
-| Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                                                                                    |
-| Labels     | Stats charts: `₿` and the selected FiatPicker code (CHF/EUR/USD/PHP). Profile: `₿` and `USD` (not “sats”). `aria-pressed` on each. Group `role="group"` with catalog name |
+| Part       | Spec                                                                                                                                                                                                                       |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Track      | Gift app: `inline-flex overflow-hidden rounded-md border border-app-border text-xs`. Gift dark: `border-paper/20`.                                                                                                         |
+| Segment    | `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop                                                                                                                                                                    |
+| Selected   | Gift app: `bg-app-accent text-app-accent-fg`. Gift dark: `bg-accent text-ink`                                                                                                                                              |
+| Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                                                                                                                                     |
+| Labels     | Stats charts: `₿` and the selected FiatPicker code (CHF/EUR/USD/PHP). Profile: `₿` and the selected FiatCode (CHF/EUR/USD/PHP), group `profile.chartScale`. `aria-pressed` on each. Group `role="group"` with catalog name |
 
 Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
-**Empty profile chart.** If both series are empty, do **not** render the SVG. Render `<p className="text-sm text-app-muted" role="status">{t('profile.chartEmpty')}</p>`. Hide SVG and toggle. Legend without data is noise.
+**Empty profile chart.** Always render FiatPicker above the copy. If both series empty/all-zero sats: `profile.chartEmpty` `role="status"`; **no SVG / no ₿|fiat scale**. Picker stays. Legend without data is noise.
 
 ## Control grammar
 
@@ -680,8 +680,8 @@ export function SegmentedControl<T extends string>(props: {
 
 | Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                             |
 | --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿\|USD                                                                                  |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿\|USD                                                                                    |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                  |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                    |
 | `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`) |
 
 Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill).
@@ -777,7 +777,7 @@ Do not restyle QR for dark mode.
 
 **Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No gifts recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
 
-**Profile activity.** Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). ₿\|USD `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty: `profile.chartEmpty` `role="status"`, no SVG.
+**Profile activity.** FiatPicker always. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty: picker + `profile.chartEmpty` `role="status"`, no SVG.
 
 ### Alert / error
 
@@ -893,7 +893,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` always includes FiatPicker; empty = picker + `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
 
 ### `/members/[accountId]`
 
@@ -990,7 +990,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
 6. **Pay control is lucide Gift, not ₿.** Amount is a single `formatBitcoin` string. Accessible name stays **Send Bitcoin** (`forum.pay`).
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
-8. **Empty profile chart is copy**, not an axis. `profile.chartEmpty` `role="status"`.
+8. **Empty profile chart is picker + copy**, not an axis; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.
 11. **Photo/story is a reserved 96×96 circle + story clamp**, not a shipped feature.
