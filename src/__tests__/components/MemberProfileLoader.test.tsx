@@ -133,6 +133,15 @@ describe('MemberProfileLoader', () => {
     });
   });
 
+  it('redirects to rules when activity is missing requirements', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    vi.mocked(fetchMemberActivity).mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
   it('still shows the card with an empty series when activity fails', async () => {
     vi.mocked(fetchMember).mockResolvedValue(profile);
     vi.mocked(fetchMemberActivity).mockRejectedValue(new Error('stats down'));
