@@ -7,11 +7,24 @@ import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import { fetchPublicMessage, fetchPublicMessagePhoto, fetchPublicReplies } from '@/lib/api';
+import {
+  fetchGiftStats,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchPublicReplies,
+} from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
-import { formatBitcoin } from '@/lib/stats-money';
+import {
+  defaultFiatForLocale,
+  formatBitcoin,
+  formatFiatDisplay,
+  latestRateDay,
+  satsToFiatAmount,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,10 +33,14 @@ function PublicThreadCard({
   note,
   highlight,
   indent,
+  rateDay,
+  fiat,
 }: {
   note: ForumMessage;
   highlight: boolean;
   indent: boolean;
+  rateDay: FiatRateDay | null;
+  fiat: FiatCode;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -97,7 +114,17 @@ function PublicThreadCard({
         <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
       ) : null}
       {note.text !== '' ? <NoteTranslate text={note.text} /> : null}
-      <p className="text-sm font-medium text-app-fg">{formatBitcoin(note.sats, numberFormat)}</p>
+      <p className="text-sm font-medium tabular-nums lining-nums text-app-fg">
+        <span>{formatBitcoin(note.sats, numberFormat)}</span>
+        {rateDay !== null ? (
+          <>
+            <span aria-hidden="true"> · </span>
+            <span>
+              {formatFiatDisplay(satsToFiatAmount(note.sats, rateDay, fiat), fiat, numberFormat)}
+            </span>
+          </>
+        ) : null}
+      </p>
     </Card>
   );
 
@@ -125,9 +152,10 @@ function PublicThreadCard({
  * @returns Loading, missing, error, or the read-only thread cards.
  */
 export function PublicMessageLoader({ id }: { id: string }): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { ready } = useHydrateSession();
   const account = useAuthStore((state) => state.account);
+  const fiat = defaultFiatForLocale(locale);
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
   );
@@ -135,6 +163,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const [replies, setReplies] = useState<ForumMessage[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
 
   useEffect(() => {
     if (!MESSAGE_ID_RE.test(id)) {
@@ -193,6 +222,24 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     };
   }, [id, attempt]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetchGiftStats()
+      .then((stats) => {
+        if (!cancelled) {
+          setRateDay(latestRateDay(stats.spendOverTime));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRateDay(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (status === 'missing') {
     return <p className="text-center text-sm text-app-muted">{t('view.missing')}</p>;
   }
@@ -221,9 +268,22 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <PublicThreadCard note={root} highlight={false} indent={false} />
+      <PublicThreadCard
+        note={root}
+        highlight={false}
+        indent={false}
+        rateDay={rateDay}
+        fiat={fiat}
+      />
       {replies.map((reply) => (
-        <PublicThreadCard key={reply.id} note={reply} highlight={highlightId === reply.id} indent />
+        <PublicThreadCard
+          key={reply.id}
+          note={reply}
+          highlight={highlightId === reply.id}
+          indent
+          rateDay={rateDay}
+          fiat={fiat}
+        />
       ))}
       {ready ? (
         account === null ? (

@@ -3158,6 +3158,114 @@ test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ pa
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
+test('Function: satsToFiatAmount — forum note shows a USD equivalent next to ₿', async ({
+  page,
+}) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm2',
+            name: 'Carol',
+            text: 'I can send a small gift tomorrow.',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByText('₿21')).toBeVisible();
+  await expect(page.getByText('$0.02')).toBeVisible();
+});
+
+test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 sats', async ({
+  page,
+}) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-pay',
+            name: 'Carol',
+            text: 'Please send help.',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(page.getByLabel('Amount')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toBeVisible();
+  await expect(page.getAllByText('$0.02')).not.toHaveCount(0);
+});
+
 test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');

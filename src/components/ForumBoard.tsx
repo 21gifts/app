@@ -41,7 +41,15 @@ import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { formatBitcoin } from '@/lib/stats-money';
+import { FiatPicker } from '@/components/FiatPicker';
+import {
+  defaultFiatForLocale,
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
   isSmartphoneUserAgent,
@@ -83,6 +91,30 @@ function forumTaggedRole(role: string | undefined): ForumTaggedRole | null {
 }
 
 const COPY_RESET_MS = 1200;
+
+/** Empty pay-sheet draft submits this many sats (same as the placeholder). */
+const DEFAULT_PAY_PREVIEW_SATS = 21;
+
+/**
+ * Whole sats implied by the pay-sheet draft.
+ *
+ * @param draft - Raw field value.
+ * @returns Preview sats, or `null` when the draft is not a valid amount.
+ */
+function previewPaySats(draft: string): number | null {
+  const raw = draft.trim();
+  if (raw === '') {
+    return DEFAULT_PAY_PREVIEW_SATS;
+  }
+  if (!/^\d+$/.test(raw)) {
+    return null;
+  }
+  const sats = Number.parseInt(raw, 10);
+  if (sats <= 0 || !Number.isSafeInteger(sats)) {
+    return null;
+  }
+  return sats;
+}
 
 /** Active pay invoice shown under a forum card. */
 export interface ForumPayInvoice {
@@ -142,6 +174,11 @@ export interface ForumBoardProps {
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
+  /**
+   * Latest gift-day totals used to scale sats into CHF/EUR/USD/PHP.
+   * Omit or `null` when stats have not loaded — amounts stay ₿-only.
+   */
+  rateDay?: FiatRateDay | null;
   /** Selected feed mode. Default in the loader is Active. */
   mode: ForumFeedMode;
   /** Called when the visitor picks another mode. */
@@ -309,6 +346,7 @@ export function ForumBoard({
   onPayDraftChange,
   onPaySubmit,
   onPayCancel,
+  rateDay = null,
   mode,
   onModeChange,
   unpaidNewCount = 0,
@@ -342,6 +380,7 @@ export function ForumBoard({
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -597,6 +636,7 @@ export function ForumBoard({
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
               : undefined;
           const sheetOpen = payMessageId === message.id;
+          const payPreviewSats = sheetOpen ? previewPaySats(payDraft) : null;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
           /* v8 ignore next 8 -- SSR has no navigator */
@@ -742,7 +782,19 @@ export function ForumBoard({
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-5">
                 <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
-                  {formatBitcoin(message.sats, numberFormat)}
+                  <span>{formatBitcoin(message.sats, numberFormat)}</span>
+                  {rateDay !== null ? (
+                    <>
+                      <span aria-hidden="true"> · </span>
+                      <span>
+                        {formatFiatDisplay(
+                          satsToFiatAmount(message.sats, rateDay, fiat),
+                          fiat,
+                          numberFormat,
+                        )}
+                      </span>
+                    </>
+                  ) : null}
                 </p>
                 {message.payable ? (
                   <IconButton
@@ -823,6 +875,12 @@ export function ForumBoard({
                   >
                     <ArrowLeft aria-hidden="true" className="h-4 w-4" />
                   </IconButton>
+                  <FiatPicker
+                    value={fiat}
+                    onChange={setFiat}
+                    shell="app"
+                    ariaLabel={t('profile.fiatCurrency')}
+                  />
                   <Field
                     label={t('forum.payAmountLabel')}
                     type="text"
@@ -835,6 +893,15 @@ export function ForumBoard({
                     disabled={payBusy || invoiceForCard !== null}
                     onChange={(event) => onPayDraftChange(event.target.value)}
                   />
+                  {rateDay !== null && payPreviewSats !== null ? (
+                    <p className="text-sm tabular-nums lining-nums text-app-muted">
+                      {formatFiatDisplay(
+                        satsToFiatAmount(payPreviewSats, rateDay, fiat),
+                        fiat,
+                        numberFormat,
+                      )}
+                    </p>
+                  ) : null}
                   {payError === 'amount' ? (
                     <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorAmount')}
@@ -899,6 +966,16 @@ export function ForumBoard({
                     {t('forum.payConfirm', {
                       amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
                     })}
+                    {rateDay !== null ? (
+                      <>
+                        {' · '}
+                        {formatFiatDisplay(
+                          satsToFiatAmount(invoiceForCard.amountSats, rateDay, fiat),
+                          fiat,
+                          numberFormat,
+                        )}
+                      </>
+                    ) : null}
                   </p>
                   {showPaymentQr ? (
                     <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />

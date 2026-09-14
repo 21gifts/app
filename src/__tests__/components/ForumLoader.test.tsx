@@ -31,6 +31,7 @@ vi.mock('@/lib/api', () => ({
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
