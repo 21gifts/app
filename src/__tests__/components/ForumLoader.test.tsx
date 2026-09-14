@@ -3951,6 +3951,73 @@ describe('ForumLoader', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
   });
 
+  it('holds an unseen unpaid note behind New posts without counting it on the unpaid chip', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    });
+    const held: ForumMessage = {
+      id: 'm-held-unpaid',
+      name: 'Carol',
+      text: 'Held unpaid from refresh',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([held, SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Held unpaid from refresh')).toBeNull();
+    expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'New posts' }));
+    await waitFor(() => {
+      expect(screen.getByText('Held unpaid from refresh')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'New posts' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'No gifts yet, 2 new' })).toBeTruthy();
+    expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).toBe(
+      '2026-01-01T00:00:00.000Z',
+    );
+    scrollTo.mockRestore();
+  });
+
   it('applies held notes and scrolls to top when New posts is clicked', async () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
