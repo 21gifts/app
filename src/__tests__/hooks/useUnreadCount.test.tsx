@@ -1,4 +1,4 @@
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
@@ -49,6 +49,48 @@ describe('useUnreadCount', () => {
     renderWithLocale(<Probe refreshKey={true} />);
     await waitFor(() => {
       expect(screen.getByText('count:0')).toBeTruthy();
+    });
+  });
+
+  it('drops a stale result when the session changes mid-flight', async () => {
+    let resolveFirst!: (value: { notifications: []; unreadCount: number }) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    fetchMock.mockResolvedValueOnce({ notifications: [], unreadCount: 2 });
+    renderWithLocale(<Probe refreshKey={true} />);
+    await act(async () => {
+      useAuthStore.setState({ session: 'tok2', account: null });
+    });
+    await act(async () => {
+      resolveFirst({ notifications: [], unreadCount: 9 });
+    });
+    await waitFor(() => {
+      expect(screen.getByText('count:2')).toBeTruthy();
+    });
+  });
+
+  it('drops a stale rejection when the session changes mid-flight', async () => {
+    let rejectFirst!: (reason?: unknown) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    fetchMock.mockResolvedValueOnce({ notifications: [], unreadCount: 2 });
+    renderWithLocale(<Probe refreshKey={true} />);
+    await act(async () => {
+      useAuthStore.setState({ session: 'tok2', account: null });
+    });
+    await act(async () => {
+      rejectFirst(new Error('fail'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('count:2')).toBeTruthy();
     });
   });
 });

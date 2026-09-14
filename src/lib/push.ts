@@ -55,15 +55,6 @@ export function isIosSafari(): boolean {
 }
 
 /**
- * Enable Web Push for the signed-in member: register the worker, subscribe, and
- * POST the subscription to the api.
- *
- * @param sessionToken - Bearer session token.
- * @throws Error with message `Notification permission denied` when permission is
- * not granted, `Push is not configured` when the api reports 503, or
- * `Invalid subscription` when the browser omits endpoint or keys.
- */
-/**
  * Subscribe with the VAPID key and POST the endpoint to the api.
  *
  * @param sessionToken - Bearer session token.
@@ -102,6 +93,15 @@ async function subscribeAndPost(sessionToken: string): Promise<void> {
   }
 }
 
+/**
+ * Enable Web Push for the signed-in member: register the worker, subscribe, and
+ * POST the subscription to the api.
+ *
+ * @param sessionToken - Bearer session token.
+ * @throws Error with message `Notification permission denied` when permission is
+ * not granted, `Push is not configured` when the api reports 503, or
+ * `Invalid subscription` when the browser omits endpoint or keys.
+ */
 export async function enablePush(sessionToken: string): Promise<void> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') {
@@ -111,9 +111,10 @@ export async function enablePush(sessionToken: string): Promise<void> {
 }
 
 /**
- * Re-POST the current Web Push subscription when OS permission is already
- * granted. No-op when Push APIs are missing or permission is not `granted`.
- * Does not call `requestPermission` (that needs a user gesture).
+ * Re-POST an existing Web Push subscription when OS permission is already
+ * granted. No-op when Push APIs are missing, permission is not `granted`, or
+ * there is no local subscription (opt-out). Does not call `requestPermission`
+ * or `subscribe()`. POST failure leaves the local subscription in place.
  *
  * @param sessionToken - Bearer session token.
  */
@@ -124,7 +125,29 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
   if (typeof navigator.serviceWorker === 'undefined' || typeof window.PushManager === 'undefined') {
     return;
   }
-  await subscribeAndPost(sessionToken);
+  const registration = await registerPushWorker();
+  const subscription = await registration.pushManager.getSubscription();
+  if (subscription === null) {
+    return;
+  }
+  const json = subscription.toJSON();
+  const endpoint = json.endpoint;
+  const p256dh = json.keys?.['p256dh'];
+  const auth = json.keys?.['auth'];
+  if (
+    typeof endpoint !== 'string' ||
+    endpoint === '' ||
+    typeof p256dh !== 'string' ||
+    p256dh === '' ||
+    typeof auth !== 'string' ||
+    auth === ''
+  ) {
+    return;
+  }
+  await postPushSubscription(sessionToken, {
+    endpoint,
+    keys: { p256dh, auth },
+  });
 }
 
 /**

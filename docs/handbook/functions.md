@@ -384,9 +384,9 @@
 
 ## Function: resyncPushSubscription
 
-- **Purpose:** When `Notification.permission` is already `granted` and Push APIs exist, subscribe (or reuse the existing subscription) and POST it to the api. Does not call `requestPermission`.
+- **Purpose:** When `Notification.permission` is already `granted` and a local `pushManager` subscription exists, POST that endpoint to the api. Does not call `requestPermission` or `subscribe()`. Opt-out (no local subscription) is a no-op. POST failure leaves the local subscription in place.
 - **Inputs:** `sessionToken`.
-- **Returns / side effects:** `void`. No-op when permission is not `granted` or Push APIs are missing. Throws the same subscribe/POST errors as `enablePush` when it does run.
+- **Returns / side effects:** `void`. No-op when permission is not `granted`, Push APIs are missing, or `getSubscription()` is null. Throws api errors from `postPushSubscription` without unsubscribing.
 - **Used by:** `SignedInChrome` (mount and Notifications click when permission is already granted).
 
 ## Function: disablePush
