@@ -16,6 +16,7 @@ export function TrustChainLoader(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandingId, setExpandingId] = useState<string | null>(null);
+  const [failedHopId, setFailedHopId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -55,8 +56,29 @@ export function TrustChainLoader(): ReactElement {
       loading={loading}
       expandingId={expandingId}
       onRetry={() => {
-        if (chain !== null && chain.nodes.length > 0) {
+        if (failedHopId !== null) {
+          const retryId = failedHopId;
+          setFailedHopId(null);
           setError(null);
+          setExpandingId(retryId);
+          void (async () => {
+            try {
+              const hop = await fetchTrustChain(retryId);
+              setChain((current) => {
+                /* v8 ignore next 3 — hop retry starts from a visible node */
+                if (current === null) {
+                  return hop;
+                }
+                return mergeTrustChain(current, hop);
+              });
+              setError(null);
+            } catch {
+              setFailedHopId(retryId);
+              setError('Could not load the Trust Chain. Please try again.');
+            } finally {
+              setExpandingId(null);
+            }
+          })();
           return;
         }
         setAttempt((n) => n + 1);
@@ -77,8 +99,10 @@ export function TrustChainLoader(): ReactElement {
               }
               return mergeTrustChain(current, hop);
             });
+            setFailedHopId(null);
             setError(null);
           } catch {
+            setFailedHopId(accountId);
             setError('Could not load the Trust Chain. Please try again.');
           } finally {
             setExpandingId(null);

@@ -73,6 +73,24 @@ describe('layoutTrustChain', () => {
     expect(laid.height).toBe(200);
   });
 
+  it('places a nested stack below the first child subtree, not in the same cell', () => {
+    const carol = { id: 'carol', name: 'Carol', role: 'verified' as const };
+    const dave = { id: 'dave', name: 'Dave', role: 'verified' as const };
+    const laid = layoutTrustChain({
+      nodes: [FOUNDER, ADA, BOB, carol, dave],
+      edges: [
+        { from: 'f', to: 'ada', kind: 'verify' },
+        { from: 'f', to: 'bob', kind: 'verify' },
+        { from: 'ada', to: 'carol', kind: 'verify' },
+        { from: 'ada', to: 'dave', kind: 'verify' },
+      ],
+    });
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'carol')).toMatchObject({ x: 544, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'dave')).toMatchObject({ x: 544, y: 112 });
+    expect(laid.nodes.find((node) => node.id === 'bob')?.y).toBeGreaterThan(112);
+  });
+
   it('still places both nodes of a leftover cycle with no root', () => {
     const a = { id: 'a', name: 'A', role: 'verified' as const };
     const b = { id: 'b', name: 'B', role: 'verified' as const };

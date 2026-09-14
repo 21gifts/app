@@ -23,6 +23,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * @param accountId - Subject account id.
  * @param action - Verify / propose / confirm / appoint call.
  * @param onUpdated - Optional profile callback after a successful GET.
+ * @param fallback - Subject profile if GET after POST throws.
+ * @param nextRole - Role the POST just wrote, used only when GET throws.
  * @param refresh - App Router refresh.
  */
 async function runTrustAction(
@@ -30,6 +32,8 @@ async function runTrustAction(
   accountId: string,
   action: () => Promise<unknown>,
   onUpdated: ((next: MemberProfile) => void) | undefined,
+  fallback: MemberProfile,
+  nextRole: MemberProfile['role'] | undefined,
   refresh: () => void,
 ): Promise<void> {
   await action();
@@ -39,7 +43,11 @@ async function runTrustAction(
       onUpdated?.(next);
     }
   } catch {
-    /* POST succeeded; a later GET must not look like the write failed. */
+    /* POST succeeded; keep the card from offering the same write again. */
+    onUpdated?.({
+      ...fallback,
+      role: nextRole ?? fallback.role,
+    });
   }
   refresh();
 }
@@ -90,7 +98,7 @@ export function MemberTrustActions({
   const showAppoint =
     account.role === 'founder' && (profile.role === 'basis' || profile.role === 'verified');
 
-  const run = (action: () => Promise<unknown>): void => {
+  const run = (action: () => Promise<unknown>, nextRole?: MemberProfile['role']): void => {
     /* v8 ignore next 3 — the action button is disabled while busy */
     if (busy) {
       return;
@@ -99,7 +107,7 @@ export function MemberTrustActions({
     setFailed(false);
     void (async () => {
       try {
-        await runTrustAction(session, profile.id, action, onUpdated, () => {
+        await runTrustAction(session, profile.id, action, onUpdated, profile, nextRole, () => {
           router.refresh();
         });
       } catch {
@@ -136,7 +144,7 @@ export function MemberTrustActions({
               variant="secondary"
               disabled={busy}
               onClick={() => {
-                run(() => postTrustVerify(session, profile.id));
+                run(() => postTrustVerify(session, profile.id), 'verified');
               }}
             >
               {t('trustChain.action.verify')}
@@ -158,7 +166,7 @@ export function MemberTrustActions({
               variant="secondary"
               disabled={busy}
               onClick={() => {
-                run(() => postTrustConfirm(session, profile.id));
+                run(() => postTrustConfirm(session, profile.id), 'moderator');
               }}
             >
               {t('trustChain.action.confirm')}
@@ -172,7 +180,7 @@ export function MemberTrustActions({
               variant="secondary"
               disabled={busy}
               onClick={() => {
-                run(() => postTrustAppoint(session, profile.id));
+                run(() => postTrustAppoint(session, profile.id), 'moderator');
               }}
             >
               {t('trustChain.action.appoint')}

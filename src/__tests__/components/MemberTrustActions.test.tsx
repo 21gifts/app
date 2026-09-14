@@ -278,7 +278,7 @@ describe('MemberTrustActions', () => {
       expect(fetchMember).toHaveBeenCalledWith('sess', profile.id);
       expect(refresh).toHaveBeenCalled();
     });
-    expect(onUpdated).not.toHaveBeenCalled();
+    expect(onUpdated).toHaveBeenCalledWith(expect.objectContaining({ role: 'verified' }));
     expect(screen.queryByRole('alert')).toBeNull();
   });
 

@@ -109,6 +109,7 @@ export function TrustChainDiagram({
   const { t } = useTranslations();
   const laid = layoutTrustChain(chain);
   const [placed, setPlaced] = useState<Record<string, NodePos>>({});
+  const draggedIds = useRef<Set<string>>(new Set());
   const drag = useRef<{
     id: string;
     pointerId: number;
@@ -124,7 +125,8 @@ export function TrustChainDiagram({
     setPlaced((prev) => {
       const next: Record<string, NodePos> = {};
       for (const node of nextLaid.nodes) {
-        next[node.id] = prev[node.id] ?? { x: node.x, y: node.y };
+        const kept = draggedIds.current.has(node.id) ? prev[node.id] : undefined;
+        next[node.id] = kept ?? { x: node.x, y: node.y };
       }
       return next;
     });
@@ -148,6 +150,20 @@ export function TrustChainDiagram({
     minY = Math.min(minY, node.y);
     maxX = Math.max(maxX, node.x + TRUST_NODE_WIDTH);
     maxY = Math.max(maxY, node.y + TRUST_NODE_HEIGHT);
+  }
+  for (const edge of edges) {
+    const from = byId.get(edge.from);
+    const to = byId.get(edge.to);
+    if (from === undefined || to === undefined) {
+      continue;
+    }
+    const hops = edgeHops(from.x, to.x);
+    const sameRow = Math.abs(from.y - to.y) < 1;
+    const lift = sameRow && hops >= 2 ? TRUST_CHAIN_ARC_LIFT + (hops - 2) * 16 : 0;
+    if (lift > 0) {
+      const y1 = from.y + TRUST_NODE_HEIGHT / 2;
+      minY = Math.min(minY, y1 - lift / 2 - 20);
+    }
   }
   const width = Math.max(0, maxX - minX);
   const height = Math.max(0, maxY - minY);
@@ -190,6 +206,7 @@ export function TrustChainDiagram({
       return;
     }
     current.moved = true;
+    draggedIds.current.add(current.id);
     setPlaced((prev) => ({
       ...prev,
       [current.id]: { x: current.origX + dx, y: current.origY + dy },
@@ -200,6 +217,15 @@ export function TrustChainDiagram({
     const current = drag.current;
     if (current === null || current.pointerId !== event.pointerId) {
       return;
+    }
+    /* v8 ignore next 5 -- PointerEvent constructors reject non-finite clientX/clientY */
+    if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+      const dx = event.clientX - current.startX;
+      const dy = event.clientY - current.startY;
+      if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+        current.moved = true;
+        draggedIds.current.add(current.id);
+      }
     }
     if (
       typeof event.currentTarget.hasPointerCapture === 'function' &&

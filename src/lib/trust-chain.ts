@@ -115,6 +115,21 @@ export function layoutTrustChain(chain: TrustChain): {
     positioned.set(id, { ...node, x, y });
   }
 
+  function subtreeBottom(id: string): number {
+    const node = positioned.get(id);
+    /* v8 ignore next 3 -- called after place */
+    if (node === undefined) {
+      return PAD;
+    }
+    let bottom = node.y + TRUST_NODE_HEIGHT;
+    for (const kid of children.get(id) ?? []) {
+      if (positioned.has(kid)) {
+        bottom = Math.max(bottom, subtreeBottom(kid));
+      }
+    }
+    return bottom;
+  }
+
   function layoutChildren(id: string): void {
     const parent = positioned.get(id);
     /* v8 ignore next 3 -- layoutChildren runs after place */
@@ -136,7 +151,7 @@ export function layoutTrustChain(chain: TrustChain): {
     for (const kid of kids) {
       place(kid, childX, childY);
       layoutChildren(kid);
-      childY += TRUST_NODE_HEIGHT + TRUST_NODE_VGAP;
+      childY = subtreeBottom(kid) + TRUST_NODE_VGAP;
     }
   }
 
