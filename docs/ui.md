@@ -855,7 +855,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Notifications list
 
-**Anatomy.** `Card maxWidth="xl"` + **h1** `notifications.heading` at the **h1** ramp. List of actor / reply / time rows as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`). Unread: semibold `text-app-fg`. Read: actor `font-medium`, reply `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only body: `notifications.photoOnly`. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
+**Anatomy.** `Card maxWidth="xl"` + **h1** `notifications.heading` at the **h1** ramp. List of posts, replies, and payments as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`): actor title (`{name} posted` / `{name} replied` / `{name} sent bitcoin`) + time. Unread: semibold `text-app-fg`. Read: actor `font-medium`, body `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only post body: `notifications.photoPost` (**Photo**). Photo-only reply body: `notifications.photoOnly` (**Photo reply**). Zap body is the stored amount. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
 
 ### Member identity card
 
@@ -943,7 +943,7 @@ Handbook states: default (note present), `note-null`, missing (`view.missing`), 
 
 ### `/notifications`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `NotificationsLoader` → `NotificationsScreen`: **h1** **Notifications** (`h1` ramp), list of posts, replies, and payments (`{name} posted` / `{name} replied` / `{name} sent bitcoin`, post or reply text or `notifications.photoOnly`, zap amount as stored, time). Unread semibold / read muted. Empty `notifications.empty`. Loading. Error + labeled **Try again**. Click row → `/messages/{parentId}`. No composer.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `NotificationsLoader` → `NotificationsScreen`: **h1** **Notifications** (`h1` ramp), list of posts, replies, and payments (`{name} posted` / `{name} replied` / `{name} sent bitcoin`, post text or `notifications.photoPost` (**Photo**), reply text or `notifications.photoOnly` (**Photo reply**), zap amount as stored, time). Unread semibold / read muted. Empty `notifications.empty`. Loading. Error + labeled **Try again**. Click row → `/messages/{parentId}`. No composer.
 
 Handbook states: default list, empty, loading, error.
 
