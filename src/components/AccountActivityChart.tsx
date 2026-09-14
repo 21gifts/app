@@ -68,7 +68,9 @@ function selectedFiatUnsummable(
     return false;
   }
   const key = NON_USD_CUMULATIVE[fiat];
-  return [...received, ...donated].every((point) => point[key] == null);
+  return [...received, ...donated].every(
+    (point) => point[key] === null || point[key] === undefined,
+  );
 }
 
 /**

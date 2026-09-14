@@ -37,7 +37,7 @@ export interface ActivityPoint {
  * @returns `Number(value)`, or `0` when `value` is `null`.
  */
 function parseOptionalFiat(value: string | null | undefined): number {
-  return value == null ? 0 : Number(value);
+  return value === null || value === undefined ? 0 : Number(value);
 }
 
 /**

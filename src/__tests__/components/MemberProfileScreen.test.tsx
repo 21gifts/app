@@ -622,11 +622,7 @@ describe('MemberProfileScreen', () => {
 
   it('posts a reply on the expanded profile note', async () => {
     renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: note }}
-        received={[]}
-        donated={[]}
-      />,
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
     fillPaidReply('reply', '21');
