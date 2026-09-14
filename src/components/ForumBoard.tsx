@@ -1009,7 +1009,14 @@ export function ForumBoard({
                             {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
                             {showForumPm(ownAccountId, ownName, reply) ||
                             onDeleted !== undefined ? (
-                              <div className="mt-2 flex flex-wrap items-start gap-5">
+                              <div
+                                className={
+                                  showForumPm(ownAccountId, ownName, reply) &&
+                                  onDeleted !== undefined
+                                    ? 'mt-2 flex flex-wrap items-start gap-5'
+                                    : 'mt-2'
+                                }
+                              >
                                 {showForumPm(ownAccountId, ownName, reply) ? (
                                   <IconButton
                                     type="button"

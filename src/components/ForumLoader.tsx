@@ -1420,54 +1420,59 @@ export function ForumLoader(): ReactElement | null {
         messages={messages}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
-        onDeleted={(messageId) => {
-          /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
-          if (deletedIds.current.has(messageId)) {
-            return;
-          }
-          deletedIds.current.add(messageId);
-          const isListedPost = messagesRef.current?.some((row) => row.id === messageId) === true;
-          if (!isListedPost) {
-            const remaining = (repliesRef.current ?? []).filter(
-              (row) => !deletedIds.current.has(row.id),
-            );
-            const parentId = replyParentById.current.get(messageId);
-            if (expandedIdRef.current === parentId && repliesRef.current !== null) {
-              setReplies(remaining);
-            }
-            /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
-            if (parentId === undefined) {
-              return;
-            }
-            hiddenReplyCounts.current.set(
-              parentId,
-              (hiddenReplyCounts.current.get(parentId) ?? 0) + 1,
-            );
-            setMessages((prev) =>
-              prev!.map((row) => {
-                if (row.id !== parentId) {
-                  return row;
+        {...(account !== null && (account.role === 'founder' || account.role === 'moderator')
+          ? {
+              onDeleted: (messageId: string) => {
+                /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
+                if (deletedIds.current.has(messageId)) {
+                  return;
                 }
-                return {
-                  ...row,
-                  replyCount:
-                    expandedIdRef.current === parentId && repliesRef.current !== null
-                      ? remaining.length
-                      : Math.max(0, row.replyCount - 1),
-                };
-              }),
-            );
-            return;
-          }
-          setMessages((prev) => prev!.filter((row) => row.id !== messageId));
-          if (expandedIdRef.current === messageId) {
-            setExpandedId(null);
-            setReplies(null);
-          }
-          if (payMessageIdRef.current === messageId) {
-            clearPaySheet();
-          }
-        }}
+                deletedIds.current.add(messageId);
+                const isListedPost =
+                  messagesRef.current?.some((row) => row.id === messageId) === true;
+                if (!isListedPost) {
+                  const remaining = (repliesRef.current ?? []).filter(
+                    (row) => !deletedIds.current.has(row.id),
+                  );
+                  const parentId = replyParentById.current.get(messageId);
+                  if (expandedIdRef.current === parentId && repliesRef.current !== null) {
+                    setReplies(remaining);
+                  }
+                  /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
+                  if (parentId === undefined) {
+                    return;
+                  }
+                  hiddenReplyCounts.current.set(
+                    parentId,
+                    (hiddenReplyCounts.current.get(parentId) ?? 0) + 1,
+                  );
+                  setMessages((prev) =>
+                    prev!.map((row) => {
+                      if (row.id !== parentId) {
+                        return row;
+                      }
+                      return {
+                        ...row,
+                        replyCount:
+                          expandedIdRef.current === parentId && repliesRef.current !== null
+                            ? remaining.length
+                            : Math.max(0, row.replyCount - 1),
+                      };
+                    }),
+                  );
+                  return;
+                }
+                setMessages((prev) => prev!.filter((row) => row.id !== messageId));
+                if (expandedIdRef.current === messageId) {
+                  setExpandedId(null);
+                  setReplies(null);
+                }
+                if (payMessageIdRef.current === messageId) {
+                  clearPaySheet();
+                }
+              },
+            }
+          : {})}
         error={error}
         loading={loading}
         refreshing={refreshing}
