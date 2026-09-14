@@ -62,6 +62,8 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   profileMessage: null,
+  postCount: 0,
+  replyCount: 0,
   trust: NULL_TRUST,
 };
 
