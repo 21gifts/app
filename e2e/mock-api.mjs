@@ -503,7 +503,11 @@ const server = http.createServer(async (req, res) => {
     json(res, 200, {
       conversations: conversations
         .filter((row) => row.ownerId === account.id)
-        .filter((row) => row.messages.some((message) => message.fromMe !== true))
+        .filter(
+          (row) =>
+            row.messages.some((message) => message.fromMe !== true) ||
+            ((row.kind ?? 'member_member') === 'member_platform' && row.messages.length > 0),
+        )
         .map((row) => ({
           id: row.id,
           kind: row.kind ?? 'member_member',

@@ -226,7 +226,7 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads only: threads with an inbound message; empty and outbound-only threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe`.
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe`.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`.
 - **Auth:** Bearer.

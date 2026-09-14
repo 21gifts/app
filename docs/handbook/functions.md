@@ -1621,7 +1621,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: fetchConversations
 
-- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. The api returns incoming threads only (threads with an inbound message). Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe` (true when the last message was sent by the session).
+- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. The api returns incoming threads, plus the member's own 21.gifts contact thread when it has a message. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe` (true when the last message was sent by the session).
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation list, or throws visitor copy.
 - **Used by:** `InboxLoader`, `ContactLoader`.
