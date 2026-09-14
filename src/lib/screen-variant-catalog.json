@@ -336,6 +336,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-number-format-open",
+    "label": "/welcome menu-number-format-open",
+    "visual": "state-welcome-menu-number-format",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-qr",
     "label": "/welcome pay-qr",
     "visual": "state-welcome-pay-qr",

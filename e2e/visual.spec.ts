@@ -3392,6 +3392,16 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-language');
   });
 
+  test('welcome menu-number-format-open', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByLabel('Number format').click();
+    await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-number-format');
+  });
+
   test('welcome pay-qr', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);

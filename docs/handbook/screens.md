@@ -501,7 +501,7 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: menu-open
 
-Open **Menu** top-right only (do not click Language) → Menu includes **Home** first (Home, Profile, Living room rules, Notifications, Messages, Contact, optional Install, Language, Log out). Profile is one line (User + Profile; ₿ totals on the right only when a side is non-zero). Ada’s default welcome-menu shot has zeros, so no ₿ totals on the right. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Language (Globe + label + chevron), Log out. With both totals zero, the Profile link’s accessible name is Profile; otherwise it includes only the visible non-zero indicator labels. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
+Open **Menu** top-right only (do not click Language) → Menu includes **Home** first (Home, Profile, Living room rules, Notifications, Messages, Contact, optional Install, Language, Number format, Log out). Profile is one line (User + Profile; ₿ totals on the right only when a side is non-zero). Ada’s default welcome-menu shot has zeros, so no ₿ totals on the right. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Language (Globe + label + chevron), Number format (Hash + label + chevron), Log out. Theme lives on `/profile`, not in this Menu. With both totals zero, the Profile link’s accessible name is Profile; otherwise it includes only the visible non-zero indicator labels. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
 
 ![21.gifts welcome menu](images/welcome-menu.png)
 
@@ -510,6 +510,12 @@ Open **Menu** top-right only (do not click Language) → Menu includes **Home** 
 After **Menu**, click **Language** → the four endonym rows (English / Deutsch / Español / Filipino) expand in flow under the Language trigger with a check on the current locale. The Menu grows; this is not an absolute popover.
 
 ![21.gifts welcome menu language](images/welcome-menu-language.png)
+
+### Variant: menu-number-format-open
+
+After **Menu**, click **Number format** → sample rows `10'000.23` / `10,000.23` / `23.000,33` expand in flow under the Number format trigger with a check on the current style. The Menu grows; this is not an absolute popover.
+
+![21.gifts welcome menu number format](images/welcome-menu-number-format.png)
 
 ### Variant: pay-qr
 
