@@ -93,6 +93,7 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
       }),
     });
   });
+  // The api omits outbound-only threads; this stub is a two-way-shaped list row.
   await page.route(/\/conversations$/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();

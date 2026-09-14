@@ -1614,14 +1614,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: conversation list or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`). Thread messages with `fromMe` render as sent bubbles with `inbox.you`.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`). Thread messages with `fromMe` render as sent bubbles with `inbox.you`.
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`.
 
 ## Function: fetchConversations
 
-- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe` (true when the last message was sent by the session).
+- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. The api returns incoming threads only (threads with an inbound message). Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe` (true when the last message was sent by the session).
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation list, or throws visitor copy.
 - **Used by:** `InboxLoader`, `ContactLoader`.
