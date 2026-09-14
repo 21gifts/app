@@ -243,11 +243,12 @@ describe('ForumLoader', () => {
 
   it('keeps ₿-only amounts when gift stats fail', async () => {
     fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue([FRESH]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
     });
+    expect(screen.getByText('₿21')).toBeTruthy();
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
