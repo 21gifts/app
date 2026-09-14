@@ -1409,6 +1409,48 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('still requires a sat when someone else’s note omits accountId', async () => {
+    const noteWithoutAccount = { ...note, accountId: undefined };
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: noteWithoutAccount }}
+        received={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('lets the profile owner reply unpaid when the note omits accountId', async () => {
+    const noteWithoutAccount = { ...note, accountId: undefined };
+    vi.mocked(postMessage).mockResolvedValue({
+      ...noteWithoutAccount,
+      id: 'r-own',
+      text: 'own',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, id: account.id, profileMessage: noteWithoutAccount }}
+        received={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', {
+        text: 'own',
+        inReplyTo: note.id,
+      });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('rejects a non-numeric reply amount', async () => {
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,

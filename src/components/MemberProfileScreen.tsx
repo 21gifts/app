@@ -44,7 +44,7 @@ const PAY_POLL_MS = 2000;
  * True when the signed-in account may reply without paying.
  *
  * @param account - Live account, or `null` when the snapshot is missing.
- * @param parentAccountId - Profile note `accountId`, if the api sent one.
+ * @param parentAccountId - Parent note `accountId`, or the profile id when omitted.
  * @returns Whether `POST /messages` is allowed without a zap.
  */
 function isReplyPaymentExempt(
@@ -793,7 +793,7 @@ export function MemberProfileScreen({
     const parentId = expandedId;
     const parentRow =
       listedNote?.id === parentId ? listedNote : posts?.find((message) => message.id === parentId);
-    const exempt = isReplyPaymentExempt(account, parentRow?.accountId);
+    const exempt = isReplyPaymentExempt(account, parentRow?.accountId ?? profile.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid' || (!exempt && parsed === 'empty')) {
         setReplyFormError('amount');

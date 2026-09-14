@@ -93,6 +93,7 @@ function isAuthorWalletError(err: unknown): boolean {
  *
  * @param account - Live account, or `null` when the snapshot is missing.
  * @param parentAccountId - Parent note `accountId`, if the api sent one.
+ *   Missing id is not treated as exempt; the caller may POST unpaid and map 403.
  * @returns Whether `POST /messages` is allowed without a zap.
  */
 function isReplyPaymentExempt(
@@ -1319,9 +1320,18 @@ export function ForumLoader(): ReactElement | null {
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
     const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
     const parentSats = parentRow === undefined ? 0 : parentRow.sats;
-    const exempt = isReplyPaymentExempt(account, parentRow?.accountId);
+    const parentAccountId = parentRow?.accountId;
+    const exempt = isReplyPaymentExempt(account, parentAccountId);
+    const authorUnknown = parentAccountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
-      if (parsed === 'invalid' || (!exempt && parsed === 'empty')) {
+      if (parsed === 'invalid') {
+        setReplyFormError('amount');
+        return Promise.resolve();
+      }
+      if (!exempt && parsed === 'empty') {
+        if (authorUnknown) {
+          return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
+        }
         setReplyFormError('amount');
         return Promise.resolve();
       }

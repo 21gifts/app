@@ -3616,6 +3616,60 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('lets the parent author reply unpaid when the note omits accountId', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, accountId: undefined }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-own',
+      name: 'Ada',
+      text: 'own',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'own', inReplyTo: 'm1' });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('maps a 403 onto the amount error when the parent omits accountId', async () => {
+    fetchMock.mockResolvedValue([{ ...FOREIGN, accountId: undefined }]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    });
+    expect(postMock).toHaveBeenCalled();
+  });
+
   it('rejects an empty reply without an amount', async () => {
     fetchMock.mockResolvedValue([FOREIGN]);
     repliesMock.mockResolvedValue([]);
