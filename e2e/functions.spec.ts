@@ -681,7 +681,8 @@ test('Function: postContact — sending from contact shows the official thread',
   const body = `Contact note ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page).toHaveURL(/\/messages/);
+  await expect(page).toHaveURL(/\/messages\?c=/);
+  await expect(page.getByText(body)).toBeVisible();
 });
 
 async function reachWelcome(page: Page, request: APIRequestContext): Promise<void> {
