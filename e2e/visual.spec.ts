@@ -3697,6 +3697,29 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-language');
   });
 
+  test('welcome pay-amount', async ({ page }, testInfo) => {
+    await seedAda(page);
+    await stubPayInvoice(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'All' }).click();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('21');
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Pay', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
+    }
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-pay-amount');
+  });
+
   test('welcome pay-qr', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);
