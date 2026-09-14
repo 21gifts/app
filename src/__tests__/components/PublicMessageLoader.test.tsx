@@ -26,11 +26,17 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import { fetchPublicMessage, fetchPublicMessagePhoto, fetchPublicReplies } from '@/lib/api';
+import {
+  fetchGiftStats,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchPublicReplies,
+} from '@/lib/api';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
 const fetchRepliesPublic = vi.mocked(fetchPublicReplies);
+const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const hydrate = vi.mocked(useHydrateSession);
 
 const sample: ForumMessage = {
@@ -51,6 +57,7 @@ beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
   hydrate.mockReturnValue({ ready: true });
   fetchRepliesPublic.mockResolvedValue([]);
+  fetchGiftStatsMock.mockResolvedValue({ spendOverTime: [] });
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,

@@ -51,6 +51,7 @@ vi.mock('@/lib/forum-video', () => ({
 import {
   agreeToRules,
   dismissForumLaws,
+  fetchGiftStats,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
@@ -67,6 +68,7 @@ import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
 const fetchMock = vi.mocked(fetchMessages);
+const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
@@ -158,6 +160,7 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
   publicFetchMock.mockResolvedValue(SAMPLE);
+  fetchGiftStatsMock.mockResolvedValue({ spendOverTime: [] });
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
