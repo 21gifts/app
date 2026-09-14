@@ -263,6 +263,25 @@ describe('MemberTrustActions', () => {
     expect(onUpdated).not.toHaveBeenCalled();
   });
 
+  it('does not alert when fetchMember throws after a successful verify', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(postTrustVerify).mockResolvedValue({
+      id: profile.id,
+      name: profile.name,
+      role: 'verified',
+    });
+    vi.mocked(fetchMember).mockRejectedValue(new Error('gone'));
+    const onUpdated = vi.fn();
+    renderWithLocale(<MemberTrustActions profile={profile} onUpdated={onUpdated} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await waitFor(() => {
+      expect(fetchMember).toHaveBeenCalledWith('sess', profile.id);
+      expect(refresh).toHaveBeenCalled();
+    });
+    expect(onUpdated).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('posts propose, confirm, and appoint from the matching buttons', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postTrustPropose).mockResolvedValue({

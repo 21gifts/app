@@ -17,6 +17,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Runs one staff Trust Chain POST, then refreshes the member card.
+ * A later GET throw does not fail the write.
  *
  * @param session - Bearer session.
  * @param accountId - Subject account id.
@@ -32,9 +33,13 @@ async function runTrustAction(
   refresh: () => void,
 ): Promise<void> {
   await action();
-  const next = await fetchMember(session, accountId);
-  if (next !== null) {
-    onUpdated?.(next);
+  try {
+    const next = await fetchMember(session, accountId);
+    if (next !== null) {
+      onUpdated?.(next);
+    }
+  } catch {
+    /* POST succeeded; a later GET must not look like the write failed. */
   }
   refresh();
 }
