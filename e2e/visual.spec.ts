@@ -907,6 +907,47 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-gifts');
   });
 
+  test('state /welcome reply-payment-error', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
+    await page.getByLabel('Your reply').fill('Nice try');
+    await page
+      .locator('form')
+      .filter({ has: page.getByLabel('Your reply') })
+      .getByRole('button', { name: 'Post', exact: true })
+      .click();
+    await expect(page.getByText('Send at least ₿1 with your reply')).toBeVisible();
+    await shotScreen(page, 'state-welcome-reply-payment-error');
+  });
+
   test('state /welcome copy', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -2131,6 +2172,72 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await shotScreen(page, 'state-members-overlay-address');
+  });
+
+  test('state /members reply-payment-error', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show replies' }).click();
+    await expect(page.getByLabel('Your reply')).toBeVisible();
+    await page.getByLabel('Your reply').fill('Hello');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    await expect(page.getByText('Send at least ₿1 with your reply')).toBeVisible();
+    await shotScreen(page, 'state-members-reply-payment-error');
   });
 
   test('state /members translate', async ({ page }) => {

@@ -381,6 +381,12 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ![21.gifts welcome expanded gifts](images/welcome-expanded-gifts.png)
 
+### Variant: reply-payment-error
+
+Expand a note as a non-exempt visitor, type a reply, leave **Amount** empty, and click **Post** → **Send at least ₿1 with your reply**. The reply is not sent.
+
+![21.gifts welcome reply payment error](images/welcome-reply-payment-error.png)
+
 ### Variant: copy
 
 Click **Copy link to this note** — control sets `data-copied` after writing `origin/messages/<uuid>` to the clipboard.
@@ -728,6 +734,12 @@ Signed-in visitor viewing their own `/members/:id` card.
 Named visitor with living-room rules agreed and no Wallet of Satoshi address. Member profile note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
 
 ![21.gifts member overlay address](images/members-overlay-address.png)
+
+### Variant: reply-payment-error
+
+Named visitor with a complete profile. Expand the member profile note, type a reply, leave **Amount** empty, and click **Post** → **Send at least ₿1 with your reply**. The reply is not sent.
+
+![21.gifts member reply payment error](images/members-reply-payment-error.png)
 
 ### Variant: translate
 
