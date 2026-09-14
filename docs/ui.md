@@ -120,7 +120,7 @@ This is not “Log in is a gift.” Ink pages have one filled accent, and it is 
 | Orange                                                               | Not orange                                                                                                                       |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`) |
-| Charts: received series, ₿ selected in ₿\|USD                        | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
+| Charts: received series, ₿ selected in ₿ \| selected fiat            | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
 |                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                         |
 |                                                                      | **Rules kickers and ticks** — see (B′)                                                                                           |
 
@@ -680,8 +680,8 @@ export function SegmentedControl<T extends string>(props: {
 
 | Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                             |
 | --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿\|USD                                                                                  |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿\|USD                                                                                    |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                  |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                    |
 | `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`) |
 
 Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill).
