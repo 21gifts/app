@@ -3263,7 +3263,7 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(page.getByLabel('Amount')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Fiat currency' })).toBeVisible();
-  await expect(page.getAllByText('$0.02')).not.toHaveCount(0);
+  await expect(page.getByText('$0.02').first()).toBeVisible();
 });
 
 test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {
