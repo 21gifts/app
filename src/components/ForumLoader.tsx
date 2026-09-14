@@ -1313,10 +1313,6 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const parsed = parseReplySats(replyAmountDraft);
-    if (trimmed === '' && parsed === 'empty') {
-      setReplyFormError('empty');
-      return;
-    }
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
@@ -1329,6 +1325,9 @@ export function ForumLoader(): ReactElement | null {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
+      }
+      if (trimmed === '' && parsed === 'empty') {
+        return runPaidReply(trimmed, parentId, DEFAULT_FORUM_PAY_SATS, parentSats, isRetry);
       }
       if (parsed === 'empty' && (exempt || authorUnknown)) {
         return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
