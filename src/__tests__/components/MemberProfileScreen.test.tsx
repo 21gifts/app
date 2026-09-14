@@ -39,6 +39,7 @@ vi.mock('@/lib/api', () => ({
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
+  setLocation: vi.fn(),
   setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
@@ -46,6 +47,7 @@ vi.mock('@/lib/api', () => ({
 const profile: MemberProfile = {
   id: '22222222-2222-4222-8222-222222222222',
   name: 'Carol',
+  location: null,
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
@@ -114,6 +116,7 @@ const account: Account = {
   linkingKey: null,
   role: 'basis',
   name: 'Ada',
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   forumLawsDismissed: true,
@@ -193,6 +196,19 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByText('carol@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+  });
+
+  it('shows a read-only location row without edit controls', () => {
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
+    expect(screen.getByText('Location')).toBeTruthy();
+    expect(screen.getByText('Not set')).toBeTruthy();
+    cleanup();
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, location: 'Zug' }} received={[]} />,
+    );
+    expect(screen.getByText('Zug')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
   });
 
   it('toggles the role hint', () => {

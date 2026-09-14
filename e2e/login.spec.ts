@@ -94,6 +94,7 @@ const E2E_ACCOUNT = {
   linkingKey: `02${'a'.repeat(62)}`,
   role: 'basis' as const,
   name: null as string | null,
+  location: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,

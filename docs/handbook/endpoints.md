@@ -77,6 +77,13 @@
 - **Used by:** `setName`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/location
+
+- **Purpose:** Same-origin proxy to set, replace, or clear the free-text profile location (`{ location }`; empty string clears).
+- **Errors:** Upstream 400 (`Location must be at most 80 characters`), 401, or 502 if the api is unreachable.
+- **Used by:** `setLocation` / `LocationForm`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/setup/skip
 
 - **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).

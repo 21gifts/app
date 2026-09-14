@@ -34,6 +34,16 @@ export function ViewProfileScreen({
       </div>
       <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
         <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+          {t('location.heading')}
+        </p>
+        <p className="min-w-0 truncate text-sm text-app-fg">
+          {profile.location !== null && profile.location.trim() !== ''
+            ? profile.location
+            : t('location.unset')}
+        </p>
+      </div>
+      <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+        <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
           {t('la.heading')}
         </p>
         {address !== null && address.trim() !== '' ? (

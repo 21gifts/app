@@ -119,6 +119,7 @@ describe('PublicMessageLoader', () => {
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,

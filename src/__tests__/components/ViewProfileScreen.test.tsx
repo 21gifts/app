@@ -6,6 +6,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const named: ViewProfile = {
   name: 'Ada',
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   createdAt: 1,
@@ -20,6 +21,8 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.getByText('Location')).toBeTruthy();
+    expect(screen.getByText('Not set')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
@@ -38,9 +41,18 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
   });
 
+  it('shows a set location without edit controls', () => {
+    renderWithLocale(<ViewProfileScreen profile={{ ...named, location: 'Zug' }} received={[]} />);
+    expect(screen.getByText('Zug')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
+  });
+
   it('has no edit, copy, or remove action buttons', () => {
     renderWithLocale(<ViewProfileScreen profile={named} received={[]} />);
     expect(screen.queryByRole('button', { name: 'Edit name' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit Wallet of Satoshi address' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove Wallet of Satoshi address' })).toBeNull();

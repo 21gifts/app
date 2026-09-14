@@ -112,6 +112,7 @@ function newAccount(linkingKey) {
     linkingKey,
     role: 'basis',
     name: null,
+    location: null,
     lightningAddress: null,
     lightningAddressVerified: false,
     forumLawsDismissed: false,
@@ -129,6 +130,7 @@ const E2E_MEMBER_ID = '22222222-2222-4222-8222-222222222222';
 const E2E_MEMBER_PROFILE = {
   id: E2E_MEMBER_ID,
   name: 'Carol',
+  location: 'Zug',
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
@@ -818,6 +820,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, {
         id: account.id,
         name: account.name,
+        location: account.location,
         role: account.role,
         lightningAddress: account.lightningAddress,
         createdAt: new Date(account.createdAt).toISOString(),
@@ -854,6 +857,7 @@ const server = http.createServer(async (req, res) => {
     }
     json(res, 200, {
       name: found.name,
+      location: found.location,
       lightningAddress: found.lightningAddress,
       lightningAddressVerified: found.lightningAddressVerified,
       createdAt: found.createdAt,
@@ -887,6 +891,37 @@ const server = http.createServer(async (req, res) => {
     }
     account.name = trimmed;
     afterFieldWrite(account);
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/location') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "location" string' });
+      return;
+    }
+    if (typeof parsed?.location !== 'string') {
+      json(res, 400, { error: 'Expected a JSON body with a "location" string' });
+      return;
+    }
+    const trimmed = parsed.location.trim();
+    if (trimmed.length === 0) {
+      account.location = null;
+    } else if (trimmed.length > 80) {
+      json(res, 400, { error: 'Location must be at most 80 characters' });
+      return;
+    } else {
+      account.location = trimmed;
+    }
     json(res, 200, account);
     return;
   }

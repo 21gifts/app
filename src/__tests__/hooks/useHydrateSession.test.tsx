@@ -21,6 +21,7 @@ const account = {
   linkingKey: `02${'a'.repeat(60)}`,
   role: 'basis' as const,
   name: null,
+  location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,

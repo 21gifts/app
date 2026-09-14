@@ -5,6 +5,7 @@ const MISSING_KEY = 'b'.repeat(64);
 
 const VIEW_PROFILE = {
   name: 'Ada',
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   createdAt: 1,
@@ -101,6 +102,7 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
         linkingKey: null,
         role: 'basis',
         name: 'Other',
+        location: null,
         lightningAddress: 'other@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -223,6 +225,7 @@ test('signed-in profile does not show the copy control or the view-key URL', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,

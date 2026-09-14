@@ -91,8 +91,9 @@ const IDLE_BOARD = {
 /* v8 ignore stop */
 
 /**
- * Signed-in member identity card: chart, name, Lightning Address, role pill,
- * post/reply counts, optional pinned forum note, and stacked activity feeds.
+ * Signed-in member identity card: chart, name, location, Lightning Address,
+ * role pill, post/reply counts, optional pinned forum note, and stacked
+ * activity feeds.
  *
  * @param props - Member profile and receive series for the chart.
  * @returns The presentational member profile.
@@ -523,6 +524,16 @@ export function MemberProfileScreen({
                 {t(roleKeys.hint)}
               </p>
             ) : null}
+          </div>
+          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+              {t('location.heading')}
+            </p>
+            <p className="min-w-0 truncate text-sm text-app-fg">
+              {profile.location !== null && profile.location.trim() !== ''
+                ? profile.location
+                : t('location.unset')}
+            </p>
           </div>
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">

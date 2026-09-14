@@ -11,6 +11,7 @@ export const accountSchema = z.object({
   linkingKey: z.string().nullable(),
   role: z.enum(['basis', 'verified', 'moderator', 'founder']),
   name: z.string().min(1).nullable(),
+  location: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
   forumLawsDismissed: z.boolean(),
@@ -37,6 +38,7 @@ export const accountSchema = z.object({
  * `founder`); `linkingKey` is a leftover wallet public key from the retired
  * LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
+ * `location` is an optional free-text place (never `""`; empty clears to `null`).
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
  * control flag) but unused in the UI — live verification payments are not
@@ -65,6 +67,7 @@ export type Account = z.infer<typeof accountSchema>;
  */
 export const viewProfileSchema = z.object({
   name: z.string().min(1).nullable(),
+  location: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
   createdAt: z.number(),
@@ -473,6 +476,7 @@ export type PushSubscriptionResponse = z.infer<typeof pushSubscriptionResponseSc
 export const memberProfileSchema = z.object({
   id: z.string(),
   name: z.string().min(1).nullable(),
+  location: z.string().min(1).nullable(),
   role: z.enum(['basis', 'verified', 'moderator', 'founder']),
   lightningAddress: z.string().nullable(),
   createdAt: z.string(),

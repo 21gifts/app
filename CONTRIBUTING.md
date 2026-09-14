@@ -61,6 +61,7 @@ app/
 │   │   ├── me/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
 │   │   │   ├── name/route.ts    # POST /me/name
+│   │   │   ├── location/route.ts # POST /me/location
 │   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
@@ -103,7 +104,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + address + push bell
+│   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + push bell
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── manifest.ts          # Web App Manifest (MetadataRoute.Manifest default export)
@@ -123,12 +124,13 @@ app/
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell + theme + number format)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/location/address + push bell + theme + number format)
+│   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
-│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/address, no actions)
+│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/location/address, no actions)
 │   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + filtered spendOverTime
 │   │   ├── MemberProfileScreen.tsx # Member identity card + optional profile note
 │   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post

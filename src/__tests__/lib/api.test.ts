@@ -34,6 +34,7 @@ import {
   postPushSubscription,
   agreeToRules,
   setLightningAddress,
+  setLocation,
   setName,
   skipSetup,
   resolveLightningAddress,
@@ -48,6 +49,7 @@ const account = {
   linkingKey: '02abcdef',
   role: 'basis' as const,
   name: null,
+  location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
@@ -110,6 +112,7 @@ describe('fetchViewProfile', () => {
   const viewKey = 'a'.repeat(64);
   const profile = {
     name: 'Ada',
+    location: null,
     lightningAddress: 'alice@walletofsatoshi.com',
     lightningAddressVerified: false,
     createdAt: 1,
@@ -167,6 +170,7 @@ describe('fetchMember', () => {
   const member = {
     id: '22222222-2222-4222-8222-222222222222',
     name: 'Carol',
+    location: null,
     role: 'verified' as const,
     lightningAddress: 'carol@walletofsatoshi.com',
     createdAt: '2026-01-15T12:00:00.000Z',
@@ -386,6 +390,61 @@ describe('setName', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setName('sess', 'x')).rejects.toThrow();
+  });
+});
+
+describe('setLocation', () => {
+  it('posts the location and returns the validated account', async () => {
+    const located = { ...account, location: 'Zug' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: located });
+
+    await expect(setLocation('sess', 'Zug')).resolves.toEqual(located);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/location`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ location: 'Zug' }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'Location must be at most 80 characters' },
+    });
+    await expect(setLocation('sess', 'x'.repeat(81))).rejects.toThrow(
+      'Location must be at most 80 characters',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setLocation('sess', 'x')).rejects.toThrow('Could not save your location');
+  });
+
+  it('falls back when a 400 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(setLocation('sess', 'x')).rejects.toThrow('Could not save your location');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setLocation('sess', 'x')).rejects.toThrow('Could not save your location');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(setLocation('sess', 'x')).rejects.toThrow();
   });
 });
 

@@ -12,6 +12,7 @@ import {
   proxyMeForumLawsDismissedPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
+  proxyMeLocationPost,
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
   proxyMeSetupSkipPost,
@@ -64,6 +65,15 @@ describe('api proxy wrappers', () => {
     await proxyMeNamePost(new Request('http://localhost/me/name', { method: 'POST', body: '{}' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/name');
+  });
+
+  it('proxyMeLocationPost hits POST /me/location', async () => {
+    const fetchMock = stubApi();
+    await proxyMeLocationPost(
+      new Request('http://localhost/me/location', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/location');
   });
 
   it('proxyMeSetupSkipPost hits POST /me/setup/skip', async () => {
