@@ -151,6 +151,31 @@ describe('ContactLoader', () => {
     });
   });
 
+  it('does not treat a Direct thread named 21.gifts as the official contact thread', async () => {
+    postMock.mockResolvedValue({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hi',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockResolvedValue([
+      {
+        id: 'conv-spoof',
+        kind: 'member_member',
+        name: '21.gifts',
+        lastText: 'Hi',
+        lastAt: '2026-08-28T14:00:00.000Z',
+        lastFromMe: false,
+      },
+    ]);
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages');
+    });
+  });
+
   it('opens /messages when the conversation list cannot be loaded', async () => {
     postMock.mockResolvedValue({
       id: 'c1',

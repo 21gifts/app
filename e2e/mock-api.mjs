@@ -432,7 +432,9 @@ const server = http.createServer(async (req, res) => {
       createdAt: new Date().toISOString(),
     };
     contactMessages.unshift(created);
-    let thread = conversations.find((row) => row.ownerId === account.id && row.name === '21.gifts');
+    let thread = conversations.find(
+      (row) => row.ownerId === account.id && row.kind === 'member_platform',
+    );
     if (thread === undefined) {
       thread = {
         id: `conv_${hex(randomBytes(8))}`,
@@ -445,8 +447,6 @@ const server = http.createServer(async (req, res) => {
         messages: [],
       };
       conversations.unshift(thread);
-    } else {
-      thread.kind = thread.kind ?? 'member_platform';
     }
     thread.messages.push({
       id: created.id,
