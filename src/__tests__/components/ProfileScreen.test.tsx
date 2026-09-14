@@ -295,4 +295,14 @@ describe('ProfileScreen', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     expect(useAuthStore.getState().account?.aboutMe).toBeNull();
   });
+
+  it('shows the About me error when putAboutMe fails for another reason', async () => {
+    vi.mocked(putAboutMe).mockRejectedValue(new Error('network'));
+    renderWithLocale(<ProfileScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not save. Please try again.')).toBeTruthy();
+  });
 });
