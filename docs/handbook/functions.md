@@ -1292,7 +1292,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: defaultFiatForLocale
 
-- **Purpose:** Picks the default public-stats fiat for a UI locale: `de` → CHF, `fil` → PHP, `es` → EUR, `en` → USD.
+- **Purpose:** Picks the locale default for preferred fiat when the `fiat` cookie is absent: `de` → CHF, `fil` → PHP, `es` → EUR, `en` → USD.
 - **Inputs:** `locale` (`Locale`).
 - **Returns / side effects:** A `FiatCode`. No network.
 - **Used by:** `getRequestFiat`.
