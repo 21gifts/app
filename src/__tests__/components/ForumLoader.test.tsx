@@ -241,6 +241,16 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('keeps ₿-only amounts when gift stats fail', async () => {
+    fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
   it('posts when the account snapshot is missing', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
     fetchMock.mockResolvedValue([]);

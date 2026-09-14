@@ -125,7 +125,7 @@ export function formatUsdTick(
 
 /** One gift-day row used to scale sats into CHF/EUR/USD/PHP. */
 export interface FiatRateDay {
-  /** Gift sats on that UTC day (must be > 0). */
+  /** Gift sats on that UTC day (must be greater than 0). */
   sats: number;
   /** USD total for that day. */
   usd: string;
