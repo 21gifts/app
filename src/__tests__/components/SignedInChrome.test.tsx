@@ -71,6 +71,9 @@ vi.mock('@/lib/api', () => ({
     totalSats: 0,
     totalBtc: '0.00000000',
     totalUsd: '0.00',
+    totalChf: '0.00',
+    totalEur: '0.00',
+    totalPhp: '0.00',
     giftCount: 0,
     recipientCount: 0,
     firstPaidAt: null,
@@ -82,6 +85,7 @@ vi.mock('@/lib/api', () => ({
       quote: 'BTC-USD',
       dayBasis: 'utc',
       source: 'coinbase-exchange-daily-close',
+      quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
     },
   }),
 }));
@@ -118,6 +122,9 @@ beforeEach(() => {
     totalSats: 0,
     totalBtc: '0.00000000',
     totalUsd: '0.00',
+    totalChf: '0.00',
+    totalEur: '0.00',
+    totalPhp: '0.00',
     giftCount: 0,
     recipientCount: 0,
     firstPaidAt: null,
@@ -129,6 +136,7 @@ beforeEach(() => {
       quote: 'BTC-USD',
       dayBasis: 'utc',
       source: 'coinbase-exchange-daily-close',
+      quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
     },
   });
   vi.mocked(usePasskeyLogin).mockReturnValue({
@@ -147,6 +155,7 @@ beforeEach(() => {
       linkingKey: null,
       role: 'basis',
       name: 'Ada',
+      location: null,
       lightningAddress: 'alice@walletofsatoshi.com',
       lightningAddressVerified: false,
       forumLawsDismissed: false,
@@ -186,7 +195,7 @@ describe('SignedInChrome', () => {
     expect(notifications.nextElementSibling).toBe(messages);
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
     expect(screen.getByLabelText('Language')).toBeTruthy();
-    expect(screen.getByLabelText('Theme')).toBeTruthy();
+    expect(screen.queryByLabelText('Theme')).toBeNull();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Profile' })).toBeTruthy();
@@ -260,6 +269,9 @@ describe('SignedInChrome', () => {
       totalSats: 1,
       totalBtc: '0.00000001',
       totalUsd: '0.00',
+      totalChf: '0.00',
+      totalEur: '0.00',
+      totalPhp: '0.00',
       giftCount: 1,
       recipientCount: 1,
       firstPaidAt: null,
@@ -272,6 +284,9 @@ describe('SignedInChrome', () => {
           sats: 1,
           btc: '0.00000001',
           usd: '0.00',
+          chf: '0.00',
+          eur: '0.00',
+          php: '0.00',
         },
       ],
       byMonth: [],
@@ -279,6 +294,7 @@ describe('SignedInChrome', () => {
         quote: 'BTC-USD',
         dayBasis: 'utc',
         source: 'coinbase-exchange-daily-close',
+        quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
       },
     });
     renderWithLocale(<SignedInChrome />);
@@ -292,11 +308,14 @@ describe('SignedInChrome', () => {
     expect(profile.textContent?.includes('·')).toBe(false);
   });
 
-  it('formats a single received amount as BIP-177 ₿1,000 and hides zero given', async () => {
+  it("formats a single received amount as BIP-177 ₿1'000 and hides zero given", async () => {
     vi.mocked(fetchGiftStats).mockResolvedValue({
       totalSats: 1000,
       totalBtc: '0.00001000',
       totalUsd: '0.00',
+      totalChf: '0.00',
+      totalEur: '0.00',
+      totalPhp: '0.00',
       giftCount: 1,
       recipientCount: 1,
       firstPaidAt: null,
@@ -309,6 +328,9 @@ describe('SignedInChrome', () => {
           sats: 1000,
           btc: '0.00001000',
           usd: '0.00',
+          chf: '0.00',
+          eur: '0.00',
+          php: '0.00',
         },
       ],
       byMonth: [],
@@ -316,13 +338,14 @@ describe('SignedInChrome', () => {
         quote: 'BTC-USD',
         dayBasis: 'utc',
         source: 'coinbase-exchange-daily-close',
+        quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
       },
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     await waitFor(() => {
-      expect(screen.getByLabelText('Received ₿1,000')).toBeTruthy();
+      expect(screen.getByLabelText("Received ₿1'000")).toBeTruthy();
     });
     expect(screen.queryByLabelText(/Given/)).toBeNull();
     const profile = screen.getByRole('link', { name: /Profile/ });
@@ -371,7 +394,7 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     expect(screen.getByLabelText('Given ₿1')).toBeTruthy();
-    expect(screen.getByLabelText('Received ₿1,000')).toBeTruthy();
+    expect(screen.getByLabelText("Received ₿1'000")).toBeTruthy();
     const profile = screen.getByRole('link', { name: /Profile/ });
     expect(profile.textContent?.includes('·')).toBe(true);
   });

@@ -1,9 +1,20 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { FiatPicker } from '@/components/FiatPicker';
+import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import type { GiftStats } from '@/lib/api-types';
-import { formatBitcoin, formatUsdDisplay, formatUsdTick } from '@/lib/stats-money';
+import { formatGroupedNumber, type NumberFormatStyle } from '@/lib/number-format';
+import {
+  defaultFiatForLocale,
+  formatBitcoin,
+  formatFiatDisplay,
+  formatFiatTick,
+  formatUsdDisplay,
+  type FiatCode,
+} from '@/lib/stats-money';
 
 /** Props for {@link StatsDashboard}. */
 export interface StatsDashboardProps {
@@ -17,33 +28,99 @@ export interface StatsDashboardProps {
   onRetry: () => void;
 }
 
-type BarScale = 'btc' | 'usd';
+type BarScale = 'btc' | 'fiat';
 
-const BAR_SCALE_OPTIONS = [
-  { value: 'btc' as const, label: '₿' },
-  { value: 'usd' as const, label: 'USD' },
-];
+/** Row fields that carry USD plus nullable CHF/EUR/PHP. */
+type FiatAmounts = {
+  usd: string;
+  chf: string | null;
+  eur: string | null;
+  php: string | null;
+};
 
 /**
- * Converts an API USD amount string to integer cents for bar sizing.
+ * Picks the selected fiat total from a stats payload.
  *
- * @param usd - USD amount as a decimal string (e.g. `"50.00"`).
- * @returns Rounded cents.
+ * @param stats - Loaded gift stats.
+ * @param fiat - Selected code.
+ * @returns Two-decimal string, or `null` when unsummed.
  */
-function usdCents(usd: string): number {
-  return Math.round(Number(usd) * 100);
+function totalFor(stats: GiftStats, fiat: FiatCode): string | null {
+  switch (fiat) {
+    case 'USD':
+      return stats.totalUsd;
+    case 'CHF':
+      return stats.totalChf;
+    case 'EUR':
+      return stats.totalEur;
+    case 'PHP':
+      return stats.totalPhp;
+  }
+}
+
+/**
+ * Picks the selected fiat amount from a series or bar row.
+ *
+ * @param row - USD plus nullable CHF/EUR/PHP.
+ * @param fiat - Selected code.
+ * @returns Two-decimal string, or `null` when unsummed.
+ */
+function amountOf(row: FiatAmounts, fiat: FiatCode): string | null {
+  switch (fiat) {
+    case 'USD':
+      return row.usd;
+    case 'CHF':
+      return row.chf;
+    case 'EUR':
+      return row.eur;
+    case 'PHP':
+      return row.php;
+  }
+}
+
+/**
+ * Picks the selected cumulative fiat from an over-time point.
+ *
+ * @param point - Daily cumulative point.
+ * @param fiat - Selected code.
+ * @returns Two-decimal string, or `null` when unsummed.
+ */
+function cumulativeOf(point: GiftStats['spendOverTime'][number], fiat: FiatCode): string | null {
+  switch (fiat) {
+    case 'USD':
+      return point.cumulativeUsd;
+    case 'CHF':
+      return point.cumulativeChf;
+    case 'EUR':
+      return point.cumulativeEur;
+    case 'PHP':
+      return point.cumulativePhp;
+  }
+}
+
+/**
+ * Converts an API fiat amount string to integer cents for bar sizing.
+ *
+ * @param amount - Fiat amount as a decimal string, or `null`.
+ * @returns Rounded cents, or 0 when `amount` is `null`.
+ */
+function fiatCents(amount: string | null): number {
+  if (amount === null) {
+    return 0;
+  }
+  return Math.round(Number(amount) * 100);
 }
 
 /**
  * Numeric bar-scale value for the active unit.
  *
- * @param scale - Whether bars are sized by ₿ (sats) or USD (cents).
+ * @param scale - Whether bars are sized by ₿ (sats) or fiat (cents).
  * @param sats - Whole satoshis.
- * @param usd - USD amount string from the stats payload.
+ * @param amount - Selected fiat amount string, or `null`.
  * @returns Sats when `scale` is `btc`, else cents.
  */
-function scaleValue(scale: BarScale, sats: number, usd: string): number {
-  return scale === 'btc' ? sats : usdCents(usd);
+function scaleValue(scale: BarScale, sats: number, amount: string | null): number {
+  return scale === 'btc' ? sats : fiatCents(amount);
 }
 
 /**
@@ -52,8 +129,8 @@ function scaleValue(scale: BarScale, sats: number, usd: string): number {
  * @param n - Whole count.
  * @returns Grouped decimal string.
  */
-function formatCount(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n);
+function formatCount(n: number, style: NumberFormatStyle): string {
+  return formatGroupedNumber(n, style, 0);
 }
 
 /**
@@ -67,6 +144,19 @@ function utcDay(iso: string | null): string {
     return '—';
   }
   return iso.slice(0, 10);
+}
+
+/**
+ * Footnote for the selected fiat (stats English, not catalogized).
+ *
+ * @param fiat - Selected code.
+ * @returns One sentence.
+ */
+function fiatFootnote(fiat: FiatCode): string {
+  if (fiat === 'USD') {
+    return "USD is the BTC-USD daily close (UTC) on each gift's day.";
+  }
+  return `${fiat} is USD at each gift's UTC-day close, converted with that day's ECB rate.`;
 }
 
 /**
@@ -212,13 +302,19 @@ function CumulativeOverTimeChart(
 /**
  * Horizontal bar chart of spend by recipient.
  *
- * Bars are sized by the active scale (sats or USD cents). Labels show ₿ and USD.
+ * Bars are sized by the active scale (sats or fiat cents). Labels show ₿ and the selected fiat.
  *
  * @param rows - Recipient totals.
- * @param scale - Whether bar widths use sats or USD cents.
+ * @param scale - Whether bar widths use sats or fiat cents.
+ * @param fiat - Selected fiat for labels and fiat-scale sizing.
  * @returns Bar list.
  */
-function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactElement {
+function ByPersonChart(
+  rows: GiftStats['byRecipient'],
+  scale: BarScale,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): ReactElement {
   const width = 800;
   const rowH = 40;
   const padL = 8;
@@ -227,17 +323,17 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
   const valueW = 220;
   const barMax = width - padL - padR - labelW - valueW;
   const height = Math.max(rows.length, 1) * rowH;
-  const max = Math.max(...rows.map((r) => scaleValue(scale, r.sats, r.usd)), 1);
+  const max = Math.max(...rows.map((r) => scaleValue(scale, r.sats, amountOf(r, fiat))), 1);
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
       role="img"
-      aria-label={scale === 'btc' ? 'Spend by person in ₿' : 'Spend by person in USD'}
+      aria-label={scale === 'btc' ? 'Spend by person in ₿' : `Spend by person in ${fiat}`}
     >
       {rows.map((row, i) => {
         const y = i * rowH;
-        const value = scaleValue(scale, row.sats, row.usd);
+        const value = scaleValue(scale, row.sats, amountOf(row, fiat));
         const barW = value === 0 ? 0 : Math.max(2, (value / max) * barMax);
         return (
           <g key={row.recipient}>
@@ -261,7 +357,8 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
               className="fill-paper/60"
               fontSize="14"
             >
-              {formatBitcoin(row.sats)} · ${row.usd}
+              {formatBitcoin(row.sats, numberFormat)} ·{' '}
+              {formatFiatDisplay(amountOf(row, fiat), fiat, numberFormat)}
             </text>
           </g>
         );
@@ -273,16 +370,22 @@ function ByPersonChart(rows: GiftStats['byRecipient'], scale: BarScale): ReactEl
 /**
  * Vertical bar chart of spend by month.
  *
- * Bars are sized by the active scale (sats or USD cents). Labels above each bar show ₿ and USD.
+ * Bars are sized by the active scale (sats or fiat cents). Labels above each bar show ₿ and the selected fiat.
  *
  * @param rows - Monthly totals.
- * @param scale - Whether bar heights use sats or USD cents.
+ * @param scale - Whether bar heights use sats or fiat cents.
+ * @param fiat - Selected fiat for labels and fiat-scale sizing.
  * @returns SVG figure.
  */
-function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement {
+function ByMonthChart(
+  rows: GiftStats['byMonth'],
+  scale: BarScale,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): ReactElement {
   const width = 800;
   const height = 220;
-  const monthAria = scale === 'btc' ? 'Spend by month in ₿' : 'Spend by month in USD';
+  const monthAria = scale === 'btc' ? 'Spend by month in ₿' : `Spend by month in ${fiat}`;
   if (rows.length === 0) {
     return (
       <svg
@@ -299,7 +402,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
   const padB = 36;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
-  const maxY = Math.max(...rows.map((r) => scaleValue(scale, r.sats, r.usd)), 1);
+  const maxY = Math.max(...rows.map((r) => scaleValue(scale, r.sats, amountOf(r, fiat))), 1);
   const barW = innerW / Math.max(rows.length, 1);
   const yAt = (v: number): number => padT + innerH - (v / maxY) * innerH;
 
@@ -314,7 +417,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
         const x = padL + i * barW + barW * 0.15;
         const w = barW * 0.7;
         const axisY = padT + innerH;
-        const value = scaleValue(scale, row.sats, row.usd);
+        const value = scaleValue(scale, row.sats, amountOf(row, fiat));
         const barTop = yAt(value);
         const h = axisY - barTop;
         const displayH = value > 0 ? Math.max(h, 1) : 0;
@@ -338,7 +441,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
               className="fill-paper/70"
               fontSize="11"
             >
-              {formatBitcoin(row.sats)}
+              {formatBitcoin(row.sats, numberFormat)}
             </text>
             <text
               x={x + w / 2}
@@ -347,7 +450,7 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
               className="fill-paper/70"
               fontSize="11"
             >
-              {formatUsdDisplay(row.usd)}
+              {formatFiatDisplay(amountOf(row, fiat), fiat, numberFormat)}
             </text>
             <text
               x={x + w / 2}
@@ -366,24 +469,35 @@ function ByMonthChart(rows: GiftStats['byMonth'], scale: BarScale): ReactElement
 }
 
 /**
- * Non-empty charts branch with independent ₿/USD scale state per diagram.
+ * Non-empty charts branch with independent ₿/fiat scale state per diagram.
  *
  * Over time shows one cumulative series; days with spend link to `/stats/{day}`
  * on the chart. Person and month bars rescale; their labels stay both units.
  *
  * @param stats - Loaded gift stats with at least one gift.
+ * @param fiat - Selected fiat for the second scale cell, footnote, and labels.
  * @returns Diagram sections.
  */
-function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
+function StatsCharts({
+  stats,
+  fiat,
+  numberFormat,
+}: {
+  stats: GiftStats;
+  fiat: FiatCode;
+  numberFormat: NumberFormatStyle;
+}): ReactElement {
   const [overTimeScale, setOverTimeScale] = useState<BarScale>('btc');
   const [personScale, setPersonScale] = useState<BarScale>('btc');
   const [monthScale, setMonthScale] = useState<BarScale>('btc');
+  const scaleOptions = [
+    { value: 'btc' as const, label: '₿' },
+    { value: 'fiat' as const, label: fiat },
+  ];
 
   return (
     <>
-      <p className="text-sm text-paper/60">
-        {"USD is the BTC-USD daily close (UTC) on each gift's day."}
-      </p>
+      <p className="text-sm text-paper/60">{fiatFootnote(fiat)}</p>
       <section>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
@@ -391,7 +505,7 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
           </h2>
           <SegmentedControl
             value={overTimeScale}
-            options={BAR_SCALE_OPTIONS}
+            options={scaleOptions}
             onChange={setOverTimeScale}
             ariaLabel="Over time scale"
             tone="gift"
@@ -403,14 +517,20 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
             ? CumulativeOverTimeChart(
                 stats.spendOverTime,
                 (p) => p.cumulativeSats,
-                formatBitcoin,
+                (value) => formatBitcoin(value, numberFormat),
                 'Spend over time in ₿',
               )
             : CumulativeOverTimeChart(
                 stats.spendOverTime,
-                (p) => Number(p.cumulativeUsd),
-                formatUsdTick,
-                'Spend over time in USD',
+                (p) => {
+                  const raw = cumulativeOf(p, fiat);
+                  return raw === null ? 0 : Number(raw);
+                },
+                (value) => {
+                  const allNull = stats.spendOverTime.every((p) => cumulativeOf(p, fiat) === null);
+                  return allNull ? '\u2014' : formatFiatTick(value, fiat, numberFormat);
+                },
+                `Spend over time in ${fiat}`,
               )}
         </div>
       </section>
@@ -419,35 +539,37 @@ function StatsCharts({ stats }: { stats: GiftStats }): ReactElement {
           <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By person</h2>
           <SegmentedControl
             value={personScale}
-            options={BAR_SCALE_OPTIONS}
+            options={scaleOptions}
             onChange={setPersonScale}
             ariaLabel="By person bar scale"
             tone="gift"
             shell="dark"
           />
         </div>
-        <div className="mt-6">{ByPersonChart(stats.byRecipient, personScale)}</div>
+        <div className="mt-6">
+          {ByPersonChart(stats.byRecipient, personScale, fiat, numberFormat)}
+        </div>
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By month</h2>
           <SegmentedControl
             value={monthScale}
-            options={BAR_SCALE_OPTIONS}
+            options={scaleOptions}
             onChange={setMonthScale}
             ariaLabel="By month bar scale"
             tone="gift"
             shell="dark"
           />
         </div>
-        <div className="mt-6">{ByMonthChart(stats.byMonth, monthScale)}</div>
+        <div className="mt-6">{ByMonthChart(stats.byMonth, monthScale, fiat, numberFormat)}</div>
       </section>
     </>
   );
 }
 
 /**
- * Gift statistics dashboard: KPI cards and diagrams (₿ + USD).
+ * Gift statistics dashboard: KPI cards and diagrams (₿ plus one selected fiat).
  *
  * @param props - Stats payload plus loading/error/retry.
  * @returns The dashboard element.
@@ -458,6 +580,10 @@ export function StatsDashboard({
   loading,
   onRetry,
 }: StatsDashboardProps): ReactElement {
+  const { locale } = useTranslations();
+  const { numberFormat } = useNumberFormat();
+  const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
+
   if (loading && stats === null && error === null) {
     return <p className="text-paper/60">Loading…</p>;
   }
@@ -478,27 +604,35 @@ export function StatsDashboard({
   }
 
   const empty = stats.giftCount === 0;
+  const spentFiat = totalFor(stats, fiat);
 
   return (
     <div className="space-y-12">
+      <FiatPicker value={fiat} onChange={setFiat} />
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Total spent</dt>
           <dd className="mt-2 tabular-nums lining-nums">
-            <div className="text-2xl font-semibold">{formatBitcoin(stats.totalSats)}</div>
-            <div className="text-2xl font-semibold">{formatUsdDisplay(stats.totalUsd)}</div>
+            <div className="text-2xl font-semibold">
+              {formatBitcoin(stats.totalSats, numberFormat)}
+            </div>
+            <div className="text-2xl font-semibold">
+              {fiat === 'USD' && spentFiat !== null
+                ? formatUsdDisplay(spentFiat, numberFormat)
+                : formatFiatDisplay(spentFiat, fiat, numberFormat)}
+            </div>
           </dd>
         </div>
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Gifts</dt>
           <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
-            {formatCount(stats.giftCount)}
+            {formatCount(stats.giftCount, numberFormat)}
           </dd>
         </div>
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">People</dt>
           <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
-            {formatCount(stats.recipientCount)}
+            {formatCount(stats.recipientCount, numberFormat)}
           </dd>
         </div>
         <div className="rounded-2xl border border-paper/10 p-5">
@@ -512,7 +646,7 @@ export function StatsDashboard({
       {empty ? (
         <p className="text-paper/60">No gifts recorded yet.</p>
       ) : (
-        <StatsCharts stats={stats} />
+        <StatsCharts stats={stats} fiat={fiat} numberFormat={numberFormat} />
       )}
     </div>
   );

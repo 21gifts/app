@@ -1,15 +1,29 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import type { GiftStats } from '@/lib/api-types';
-import { formatUsdTick } from '@/lib/stats-money';
+import { formatFiatTick, formatUsdTick } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(cleanup);
 
 type SpendPoint = GiftStats['spendOverTime'][number];
 
+function fiatFromUsd(usd: string): { chf: string; eur: string; php: string } {
+  switch (usd) {
+    case '0.00':
+      return { chf: '0.00', eur: '0.00', php: '0.00' };
+    case '0.48':
+      return { chf: '0.40', eur: '0.44', php: '27.00' };
+    case '1.43':
+      return { chf: '1.20', eur: '1.30', php: '80.00' };
+    default:
+      return { chf: usd, eur: usd, php: usd };
+  }
+}
+
 function day(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 0): SpendPoint {
+  const cumulative = fiatFromUsd(cumulativeUsd);
   return {
     day,
     sats,
@@ -18,6 +32,12 @@ function day(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 
     cumulativeBtc: '0.00000000',
     usd: '0.00',
     cumulativeUsd,
+    chf: '0.00',
+    eur: '0.00',
+    php: '0.00',
+    cumulativeChf: cumulative.chf,
+    cumulativeEur: cumulative.eur,
+    cumulativePhp: cumulative.php,
   };
 }
 
@@ -27,10 +47,18 @@ const MULTI_DAY: SpendPoint[] = [
   day('2026-06-03', 1500, '1.43', 1000),
 ];
 
+function clickChartScale(name: string): void {
+  fireEvent.click(
+    within(screen.getByRole('group', { name: 'Chart scale' })).getByRole('button', { name }),
+  );
+}
+
 describe('AccountActivityChart', () => {
   it('renders empty copy instead of an axis when there is no data', () => {
     renderWithLocale(<AccountActivityChart received={[]} />);
     expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
+    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Given and received' })).toBeNull();
   });
@@ -43,17 +71,21 @@ describe('AccountActivityChart', () => {
     ).toBe(true);
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByText('₿1,500')).toBeTruthy();
+    expect(screen.getByText("₿1'500")).toBeTruthy();
     expect(screen.getByText('2026-06-01')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
   });
 
   it('switches aria and USD ticks when USD is pressed', () => {
     renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    clickChartScale('USD');
     expect(screen.getByRole('img', { name: 'Given and received in USD' })).toBeTruthy();
     expect(screen.getByText(formatUsdTick(1.43))).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'USD' }).getAttribute('aria-pressed')).toBe('true');
+    expect(
+      within(screen.getByRole('group', { name: 'Chart scale' }))
+        .getByRole('button', { name: 'USD' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 
   it('draws two polylines when donated is non-empty', () => {
@@ -80,7 +112,7 @@ describe('AccountActivityChart', () => {
 
   it('skips duplicate USD y-tick labels when max is 0.01', () => {
     renderWithLocale(<AccountActivityChart received={[day('2026-06-01', 1000, '0.01', 1000)]} />);
-    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    clickChartScale('USD');
     expect(formatUsdTick(0.005)).toBe(formatUsdTick(0.01));
     expect(screen.getAllByText(formatUsdTick(0.01))).toHaveLength(1);
     expect(screen.getByText(formatUsdTick(0))).toBeTruthy();
@@ -88,9 +120,46 @@ describe('AccountActivityChart', () => {
 
   it('switches back to ₿ aria when ₿ is pressed after USD', () => {
     renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
-    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    clickChartScale('USD');
     fireEvent.click(screen.getByRole('button', { name: '₿' }));
     expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('defaults the empty German chart to CHF and keeps empty copy', () => {
+    renderWithLocale(<AccountActivityChart received={[]} />, 'de');
+    expect(screen.getByRole('group', { name: 'Fiatwährung' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'CHF' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('status').textContent).toBe('Noch keine Gaben.');
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('shows CHF ticks after picking CHF then Chart scale CHF', () => {
+    renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
+        name: 'CHF',
+      }),
+    );
+    clickChartScale('CHF');
+    expect(screen.getByRole('img', { name: 'Given and received in CHF' })).toBeTruthy();
+    expect(screen.getByText(formatFiatTick(1.2, 'CHF'))).toBeTruthy();
+  });
+
+  it('uses an em dash tick when every CHF cumulative is null', () => {
+    const unsummable: SpendPoint[] = [
+      { ...day('2026-06-01', 500, '0.48', 500), cumulativeChf: null, chf: null },
+      { ...day('2026-06-03', 1500, '1.43', 1000), cumulativeChf: null, chf: null },
+    ];
+    renderWithLocale(<AccountActivityChart received={unsummable} />);
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
+        name: 'CHF',
+      }),
+    );
+    clickChartScale('CHF');
+    expect(screen.getByRole('img', { name: 'Given and received in CHF' })).toBeTruthy();
+    expect(screen.getAllByText('\u2014').length).toBeGreaterThan(0);
+    expect(screen.queryByText(formatFiatTick(1.2, 'CHF'))).toBeNull();
   });
 });

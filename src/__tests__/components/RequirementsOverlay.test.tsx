@@ -19,6 +19,7 @@ const account: Account = {
   linkingKey: null,
   role: 'basis',
   name: null,
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   forumLawsDismissed: false,

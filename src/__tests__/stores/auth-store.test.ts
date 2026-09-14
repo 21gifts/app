@@ -13,6 +13,7 @@ const account = {
   linkingKey: '02abcdef',
   role: 'moderator' as const,
   name: null,
+  location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,

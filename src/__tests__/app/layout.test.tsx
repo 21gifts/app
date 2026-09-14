@@ -9,12 +9,17 @@ vi.mock('next/font/google', () => ({
 import RootLayout, { metadata } from '@/app/layout';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 
 vi.mock('@/lib/request-locale', () => ({
   getRequestLocale: vi.fn(async () => 'en' as const),
+}));
+
+vi.mock('@/lib/request-number-format', () => ({
+  getRequestNumberFormat: vi.fn(async () => 'ch' as const),
 }));
 
 beforeEach(() => {
@@ -120,7 +125,7 @@ describe('RootLayout', () => {
     expect(scripts[1]?.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
   });
 
-  it('wraps children LocaleProvider → ThemeProvider with AppHeightSync first on body', async () => {
+  it('wraps children LocaleProvider → NumberFormatProvider → ThemeProvider with AppHeightSync first on body', async () => {
     const tree = await RootLayout({ children: 'content' });
     const htmlProps = tree.props as {
       children: ReactElement[];
@@ -140,10 +145,16 @@ describe('RootLayout', () => {
       : [body.props.children];
     expect(bodyChildren[0]?.type).toBe(AppHeightSync);
     const localeProvider = bodyChildren[1] as ReactElement<{
-      children: ReactElement<{ children: ReactNode }>;
+      children: ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
     }>;
     expect(localeProvider.type).toBe(LocaleProvider);
-    const themeProvider = localeProvider.props.children;
+    const numberFormatProvider = localeProvider.props.children as ReactElement<{
+      initial: string;
+      children: ReactElement<{ children: ReactNode }>;
+    }>;
+    expect(numberFormatProvider.type).toBe(NumberFormatProvider);
+    expect(numberFormatProvider.props.initial).toBe('ch');
+    const themeProvider = numberFormatProvider.props.children;
     expect(themeProvider.type).toBe(ThemeProvider);
     expect(themeProvider.props.children).toBe('content');
   });

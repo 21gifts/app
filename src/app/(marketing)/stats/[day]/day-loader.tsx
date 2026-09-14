@@ -2,17 +2,46 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
+import { FiatPicker } from '@/components/FiatPicker';
 import { GiftDayTable } from '@/components/GiftDayTable';
+import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
+import { formatGroupedNumber } from '@/lib/number-format';
 import type { GiftDay } from '@/lib/api-types';
-import { formatBitcoin } from '@/lib/stats-money';
+import {
+  defaultFiatForLocale,
+  formatBitcoin,
+  formatFiatDisplay,
+  type FiatCode,
+} from '@/lib/stats-money';
 import { isUtcDay } from '@/lib/utc-day';
 
 /** Props for {@link DayLoader}. */
 export interface DayLoaderProps {
   /** UTC day from the URL. */
   day: string;
+}
+
+/**
+ * Selected fiat total for one UTC day.
+ *
+ * @param payload - Day payload.
+ * @param fiat - Selected code.
+ * @returns Two-decimal string, or `null` when unsummed.
+ */
+function dayTotal(payload: GiftDay, fiat: FiatCode): string | null {
+  switch (fiat) {
+    case 'USD':
+      return payload.totalUsd;
+    case 'CHF':
+      return payload.totalChf;
+    case 'EUR':
+      return payload.totalEur;
+    case 'PHP':
+      return payload.totalPhp;
+  }
 }
 
 /**
@@ -23,6 +52,9 @@ export interface DayLoaderProps {
  */
 export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
+  const { locale } = useTranslations();
+  const { numberFormat } = useNumberFormat();
+  const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,12 +123,14 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
         </div>
       ) : null}
       {!loading && error === null && payload !== null && payload.day === day ? (
-        <div className="mt-8">
-          <p className="mb-4 text-paper/60">
-            {payload.giftCount} gift{payload.giftCount === 1 ? '' : 's'} ·{' '}
-            {formatBitcoin(payload.totalSats)} · {payload.totalUsd} USD
+        <div className="mt-8 space-y-4">
+          <FiatPicker value={fiat} onChange={setFiat} />
+          <p className="text-paper/60">
+            {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
+            {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}
+            · {formatFiatDisplay(dayTotal(payload, fiat), fiat, numberFormat)}
           </p>
-          <GiftDayTable day={payload} />
+          <GiftDayTable day={payload} fiat={fiat} numberFormat={numberFormat} />
         </div>
       ) : null}
     </div>

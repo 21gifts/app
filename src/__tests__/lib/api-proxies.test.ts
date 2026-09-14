@@ -12,10 +12,13 @@ import {
   proxyMeForumLawsDismissedPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
+  proxyMeLocationPost,
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
   proxyMeSetupSkipPost,
   proxyMembersGet,
+  proxyMembersPostsGet,
+  proxyMembersRepliesGet,
   proxyContactPost,
   proxyConversationGet,
   proxyConversationPost,
@@ -64,6 +67,15 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/name');
   });
 
+  it('proxyMeLocationPost hits POST /me/location', async () => {
+    const fetchMock = stubApi();
+    await proxyMeLocationPost(
+      new Request('http://localhost/me/location', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/location');
+  });
+
   it('proxyMeSetupSkipPost hits POST /me/setup/skip', async () => {
     const fetchMock = stubApi();
     await proxyMeSetupSkipPost(
@@ -77,6 +89,21 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMembersGet(new Request('http://localhost/forum/members/acc%201'), 'acc 1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/acc%201');
+  });
+
+  it('proxyMembersPostsGet encodes the id in GET /members/:id/posts', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersPostsGet(new Request('http://localhost/forum/members/a%2Fb/posts'), 'a/b');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/posts');
+  });
+
+  it('proxyMembersRepliesGet encodes the id in GET /members/:id/replies', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersRepliesGet(
+      new Request('http://localhost/forum/members/a%2Fb/replies'),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/replies');
   });
 
   it('proxyMeForumLawsDismissedPost hits POST /me/forum-laws-dismissed', async () => {

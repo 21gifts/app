@@ -3,15 +3,18 @@
 import { type ReactElement } from 'react';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
+import { LocationForm } from '@/components/LocationForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
+import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { PushToggle } from '@/components/PushToggle';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 
 /**
- * Signed-in profile card with compact activity chart, name and address forms,
- * and an icon-only Web Push bell.
+ * Signed-in profile card with compact activity chart, name, location, and
+ * address forms, PushToggle, ThemeSwitcher, and NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Menu totals stay in `SignedInChrome`.
  *
@@ -28,8 +31,11 @@ export function ProfileScreen(): ReactElement {
       </h1>
       <AccountActivityChart received={receiveOverTime} />
       <NameForm variant="profile" />
+      <LocationForm />
       <LightningAddressForm variant="profile" />
       <PushToggle />
+      <ThemeSwitcher />
+      <NumberFormatSwitcher />
     </Card>
   );
 }

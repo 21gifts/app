@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DayLoader } from '@/app/(marketing)/stats/[day]/day-loader';
 import type { GiftDay } from '@/lib/api-types';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
 
@@ -17,18 +18,60 @@ import { fetchGiftDay } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchGiftDay);
 
+const FX_USD: GiftDay['fx'] = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+
+const FX_ALL: GiftDay['fx'] = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [
+    { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+    { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+    { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+    { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+  ],
+};
+
 const EMPTY: GiftDay = {
   day: '2026-06-01',
   giftCount: 0,
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   gifts: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_USD,
+};
+
+const ALICE: GiftDay = {
+  ...EMPTY,
+  giftCount: 1,
+  totalSats: 500,
+  totalBtc: '0.00000500',
+  totalUsd: '0.48',
+  totalChf: '0.40',
+  totalEur: '0.44',
+  totalPhp: '27.00',
+  gifts: [
+    {
+      paidAt: '2026-06-01T12:00:00.000Z',
+      amountSats: 500,
+      amountBtc: '0.00000500',
+      amountUsd: '0.48',
+      amountChf: '0.40',
+      amountEur: '0.44',
+      amountPhp: '27.00',
+      recipient: 'alice',
+    },
+  ],
+  fx: FX_ALL,
 };
 
 afterEach(() => {
@@ -40,7 +83,7 @@ afterEach(() => {
 describe('DayLoader', () => {
   it('shows the empty copy', async () => {
     fetchMock.mockResolvedValue(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
     });
@@ -49,7 +92,7 @@ describe('DayLoader', () => {
   it('shows a fetch error and retries', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Could not load gift stats. Please try again.'));
     fetchMock.mockResolvedValueOnce(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
@@ -61,31 +104,16 @@ describe('DayLoader', () => {
 
   it('falls back when fetch rejects a non-Error', async () => {
     fetchMock.mockRejectedValueOnce('nope');
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByText('Could not load gift stats. Please try again.')).toBeTruthy();
     });
   });
 
   it('hides the previous day payload as soon as the day prop changes', async () => {
-    fetchMock.mockResolvedValueOnce({
-      ...EMPTY,
-      giftCount: 1,
-      totalSats: 500,
-      totalBtc: '0.00000500',
-      totalUsd: '0.48',
-      gifts: [
-        {
-          paidAt: '2026-06-01T12:00:00.000Z',
-          amountSats: 500,
-          amountBtc: '0.00000500',
-          amountUsd: '0.48',
-          recipient: 'alice',
-        },
-      ],
-    });
+    fetchMock.mockResolvedValueOnce(ALICE);
     fetchMock.mockResolvedValueOnce({ ...EMPTY, day: '2026-06-02' });
-    const view = render(<DayLoader day="2026-06-01" />);
+    const view = renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByText('alice')).toBeTruthy();
     });
@@ -97,31 +125,46 @@ describe('DayLoader', () => {
   });
 
   it('uses singular gift copy for one gift', async () => {
-    fetchMock.mockResolvedValue({
-      ...EMPTY,
-      giftCount: 1,
-      totalSats: 500,
-      totalBtc: '0.00000500',
-      totalUsd: '0.48',
-      gifts: [
-        {
-          paidAt: '2026-06-01T12:00:00.000Z',
-          amountSats: 500,
-          amountBtc: '0.00000500',
-          amountUsd: '0.48',
-          recipient: 'alice',
-        },
-      ],
-    });
-    render(<DayLoader day="2026-06-01" />);
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · 0.48 USD')).toBeTruthy();
+      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
     });
+  });
+
+  it('follows the CHF picker in the day summary', async () => {
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
+    await waitFor(() => {
+      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'CHF' }));
+    expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
+  });
+
+  it('follows the EUR picker in the day summary', async () => {
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
+    await waitFor(() => {
+      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'EUR' }));
+    expect(screen.getByText('1 gift · ₿500 · EUR 0.44')).toBeTruthy();
+  });
+
+  it('follows the PHP picker in the day summary', async () => {
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
+    await waitFor(() => {
+      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    expect(screen.getByText('1 gift · ₿500 · PHP 27.00')).toBeTruthy();
   });
 
   it('navigates when the date input changes', async () => {
     fetchMock.mockResolvedValue(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByLabelText('UTC day')).toBeTruthy();
     });
@@ -131,7 +174,7 @@ describe('DayLoader', () => {
 
   it('does not navigate when the date is unchanged or invalid', async () => {
     fetchMock.mockResolvedValue(EMPTY);
-    render(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
       expect(screen.getByLabelText('UTC day')).toBeTruthy();
     });
@@ -148,7 +191,7 @@ describe('DayLoader', () => {
           resolveStale = resolve;
         }),
     );
-    const view = render(<DayLoader day="2026-06-01" />);
+    const view = renderWithLocale(<DayLoader day="2026-06-01" />);
     view.unmount();
     resolveStale?.(EMPTY);
     await Promise.resolve();
@@ -163,7 +206,7 @@ describe('DayLoader', () => {
           rejectStale = reject;
         }),
     );
-    const view = render(<DayLoader day="2026-06-01" />);
+    const view = renderWithLocale(<DayLoader day="2026-06-01" />);
     view.unmount();
     rejectStale?.(new Error('gone'));
     await Promise.resolve();

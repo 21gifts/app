@@ -27,6 +27,7 @@ const account = {
   linkingKey: null as string | null,
   role: 'basis' as const,
   name: null as string | null,
+  location: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,

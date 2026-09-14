@@ -11,6 +11,7 @@ const E2E_ACCOUNT = {
   linkingKey: `02${'a'.repeat(62)}`,
   role: 'basis' as const,
   name: null as string | null,
+  location: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
@@ -23,10 +24,32 @@ const E2E_ACCOUNT = {
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
 
+const FX_USD = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+
+const FX_ALL = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [
+    { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+    { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+    { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+    { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+  ],
+};
+
 const STATS_DEFAULT = {
   totalSats: 1500,
   totalBtc: '0.00001500',
   totalUsd: '1.43',
+  totalChf: '1.20',
+  totalEur: '1.30',
+  totalPhp: '80.00',
   giftCount: 3,
   recipientCount: 2,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -40,6 +63,12 @@ const STATS_DEFAULT = {
       cumulativeBtc: '0.00000500',
       usd: '0.48',
       cumulativeUsd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-06-02',
@@ -49,6 +78,12 @@ const STATS_DEFAULT = {
       cumulativeBtc: '0.00000500',
       usd: '0.00',
       cumulativeUsd: '0.48',
+      chf: '0.00',
+      eur: '0.00',
+      php: '0.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-07-01',
@@ -58,27 +93,68 @@ const STATS_DEFAULT = {
       cumulativeBtc: '0.00001500',
       usd: '0.95',
       cumulativeUsd: '1.43',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '1.20',
+      cumulativeEur: '1.30',
+      cumulativePhp: '80.00',
     },
   ],
   byRecipient: [
-    { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
-    { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
+    {
+      recipient: 'alice',
+      giftCount: 2,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
+    {
+      recipient: 'bob',
+      giftCount: 1,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
   ],
   byMonth: [
-    { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
-    { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
+    {
+      month: '2026-06',
+      giftCount: 2,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
+    {
+      month: '2026-07',
+      giftCount: 1,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
   ],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 const STATS_USD_SCALE = {
   totalSats: 1_100_000,
   totalBtc: '0.01100000',
   totalUsd: '950.00',
+  totalChf: '800.00',
+  totalEur: '860.00',
+  totalPhp: '53200.00',
   giftCount: 2,
   recipientCount: 2,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -92,6 +168,12 @@ const STATS_USD_SCALE = {
       cumulativeBtc: '0.01000000',
       usd: '50.00',
       cumulativeUsd: '50.00',
+      chf: '42.00',
+      eur: '45.00',
+      php: '2800.00',
+      cumulativeChf: '42.00',
+      cumulativeEur: '45.00',
+      cumulativePhp: '2800.00',
     },
     {
       day: '2026-07-01',
@@ -101,27 +183,68 @@ const STATS_USD_SCALE = {
       cumulativeBtc: '0.01100000',
       usd: '900.00',
       cumulativeUsd: '950.00',
+      chf: '756.00',
+      eur: '820.00',
+      php: '50400.00',
+      cumulativeChf: '800.00',
+      cumulativeEur: '860.00',
+      cumulativePhp: '53200.00',
     },
   ],
   byRecipient: [
-    { recipient: 'alice', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
-    { recipient: 'bob', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+    {
+      recipient: 'alice',
+      giftCount: 1,
+      sats: 1_000_000,
+      btc: '0.01000000',
+      usd: '50.00',
+      chf: '42.00',
+      eur: '45.00',
+      php: '2800.00',
+    },
+    {
+      recipient: 'bob',
+      giftCount: 1,
+      sats: 100_000,
+      btc: '0.00100000',
+      usd: '900.00',
+      chf: '756.00',
+      eur: '820.00',
+      php: '50400.00',
+    },
   ],
   byMonth: [
-    { month: '2026-06', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
-    { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+    {
+      month: '2026-06',
+      giftCount: 1,
+      sats: 1_000_000,
+      btc: '0.01000000',
+      usd: '50.00',
+      chf: '42.00',
+      eur: '45.00',
+      php: '2800.00',
+    },
+    {
+      month: '2026-07',
+      giftCount: 1,
+      sats: 100_000,
+      btc: '0.00100000',
+      usd: '900.00',
+      chf: '756.00',
+      eur: '820.00',
+      php: '50400.00',
+    },
   ],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 const STATS_EMPTY = {
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -129,11 +252,7 @@ const STATS_EMPTY = {
   spendOverTime: [],
   byRecipient: [],
   byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_USD,
 };
 
 /**
@@ -259,6 +378,60 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
   });
 }
 
+const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+
+/** One paid German Ada note so Active shows Translate under the body. */
+async function fulfillGermanPaidAdaNote(page: Page): Promise<void> {
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-de',
+            name: 'Ada',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
+      }),
+    });
+  });
+}
+
+/** Intercept same-origin POST /translate; GET continues to the app route. */
+async function fulfillTranslatePost(page: Page, outcome: 'ok' | 'fail' | 'hang'): Promise<void> {
+  await page.route(/\/translate$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    if (outcome === 'hang') {
+      return;
+    }
+    if (outcome === 'fail') {
+      await route.fulfill({
+        status: 502,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Translate upstream failed' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        translatedText: 'Can anyone lend me a few satoshi this week?',
+      }),
+    });
+  });
+}
+
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
     await page.goto('/');
@@ -342,6 +515,7 @@ test.describe('screen baselines', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -452,13 +626,6 @@ test.describe('login variant baselines', () => {
     await page.getByLabel('Language').click();
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-login-language');
-  });
-
-  test('login theme-open', async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Theme').click();
-    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
-    await shotScreen(page, 'state-login-theme');
   });
 });
 
@@ -605,6 +772,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -638,6 +806,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -671,6 +840,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -698,6 +868,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -714,6 +885,144 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-pm');
   });
 
+  test('state /welcome translate', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillGermanPaidAdaNote(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-translate');
+  });
+
+  test('state /welcome translate-loading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillGermanPaidAdaNote(page);
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await shotScreen(page, 'state-welcome-translate-loading');
+  });
+
+  test('state /welcome translate-done', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillGermanPaidAdaNote(page);
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-translate-done');
+  });
+
+  test('state /welcome translate-hidden', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillGermanPaidAdaNote(page);
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-translate-hidden');
+  });
+
+  test('state /welcome translate-error', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillGermanPaidAdaNote(page);
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-translate-error');
+  });
+
   test('screen /profile', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -725,6 +1034,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -750,6 +1060,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -764,6 +1075,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -779,6 +1091,8 @@ test.describe('onboarding screens', () => {
             role: 'verified',
             replyCount: 0,
           },
+          postCount: 1,
+          replyCount: 0,
         }),
       });
     });
@@ -788,7 +1102,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-members-accountId');
   });
 
-  test('state /members note-null', async ({ page }) => {
+  test('state /members posts-open', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -814,10 +1128,576 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Second post from Carol.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await expect(page.getByText('Second post from Carol.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await shotScreen(page, 'state-members-posts-open');
+  });
+
+  test('state /members replies-open', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'A reply from Carol.',
+              createdAt: '2026-08-03T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+              parentId: '55555555-5555-4555-8555-555555555555',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 replies' }).click();
+    await expect(page.getByText('A reply from Carol.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await shotScreen(page, 'state-members-replies-open');
+  });
+
+  test('state-members-posts-loading', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await shotScreen(page, 'state-members-posts-loading');
+    release();
+  });
+
+  test('state-members-replies-loading', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`**/forum/members/${memberId}/replies`, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 replies' }).click();
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await shotScreen(page, 'state-members-replies-loading');
+    release();
+  });
+
+  test('state /members posts-error', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.abort();
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await shotScreen(page, 'state-members-posts-error');
+  });
+
+  test('state-members-replies-error', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/replies`, async (route) => {
+      await route.abort();
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 replies' }).click();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await shotScreen(page, 'state-members-replies-error');
+  });
+
+  test('state /members posts-truncated', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 3,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Second post from Carol.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '3 posts' }).click();
+    await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await shotScreen(page, 'state-members-posts-truncated');
+  });
+
+  test('state-members-replies-truncated', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 3,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'A reply from Carol.',
+              createdAt: '2026-08-03T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+              parentId: '55555555-5555-4555-8555-555555555555',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '3 replies' }).click();
+    await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await shotScreen(page, 'state-members-replies-truncated');
+  });
+
+  test('state /members note-null', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
         }),
       });
     });
@@ -839,6 +1719,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -863,6 +1744,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -891,6 +1773,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           id: ownId,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -905,10 +1788,13 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: ownId,
           name: 'Ada',
+          location: null,
           role: 'basis',
           lightningAddress: 'alice@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
         }),
       });
     });
@@ -931,6 +1817,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: null,
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -945,6 +1832,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -960,6 +1848,8 @@ test.describe('onboarding screens', () => {
             role: 'verified',
             replyCount: 0,
           },
+          postCount: 1,
+          replyCount: 0,
         }),
       });
     });
@@ -976,12 +1866,291 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Show replies' }).click();
     await expect(page.getByLabel('Your reply')).toBeVisible();
     await page.getByLabel('Your reply').fill('Hello');
-    await page.getByRole('button', { name: 'Post' }).click();
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(
       page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await shotScreen(page, 'state-members-overlay-address');
+  });
+
+  test('state /members translate', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await shotScreen(page, 'state-members-translate');
+  });
+
+  test('state /members translate-loading', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await shotScreen(page, 'state-members-translate-loading');
+  });
+
+  test('state /members translate-done', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await shotScreen(page, 'state-members-translate-done');
+  });
+
+  test('state /members translate-hidden', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await shotScreen(page, 'state-members-translate-hidden');
+  });
+
+  test('state /members translate-error', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-members-translate-error');
   });
 
   test('screen /messages/[id] default', async ({ page }) => {
@@ -1038,6 +2207,140 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-error');
   });
 
+  test('state /messages/[id] translate', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: GERMAN_NOTE_TEXT,
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-translate');
+  });
+
+  test('state /messages/[id] translate-loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: GERMAN_NOTE_TEXT,
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await shotScreen(page, 'state-messages-id-translate-loading');
+  });
+
+  test('state /messages/[id] translate-done', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: GERMAN_NOTE_TEXT,
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-translate-done');
+  });
+
+  test('state /messages/[id] translate-hidden', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: GERMAN_NOTE_TEXT,
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-translate-hidden');
+  });
+
+  test('state /messages/[id] translate-error', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: GERMAN_NOTE_TEXT,
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-messages-id-translate-error');
+  });
+
   test('screen /view/[viewKey] default', async ({ page }) => {
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
       await route.fulfill({
@@ -1045,6 +2348,7 @@ test.describe('onboarding screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -1110,6 +2414,7 @@ test.describe('onboarding screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -1142,6 +2447,7 @@ test.describe('onboarding screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -1169,6 +2475,9 @@ const PROFILE_RECEIVE_STATS = {
   totalSats: 1500,
   totalBtc: '0.00001500',
   totalUsd: '1.43',
+  totalChf: '1.20',
+  totalEur: '1.30',
+  totalPhp: '80.00',
   giftCount: 2,
   recipientCount: 1,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -1182,6 +2491,12 @@ const PROFILE_RECEIVE_STATS = {
       cumulativeBtc: '0.00000500',
       usd: '0.48',
       cumulativeUsd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-06-02',
@@ -1191,6 +2506,12 @@ const PROFILE_RECEIVE_STATS = {
       cumulativeBtc: '0.00000500',
       usd: '0.00',
       cumulativeUsd: '0.48',
+      chf: '0.00',
+      eur: '0.00',
+      php: '0.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-06-03',
@@ -1200,21 +2521,37 @@ const PROFILE_RECEIVE_STATS = {
       cumulativeBtc: '0.00001500',
       usd: '0.95',
       cumulativeUsd: '1.43',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '1.20',
+      cumulativeEur: '1.30',
+      cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+  byRecipient: [
+    {
+      recipient: 'alice',
+      giftCount: 2,
+      sats: 1500,
+      btc: '0.00001500',
+      usd: '1.43',
+      chf: '1.20',
+      eur: '1.30',
+      php: '80.00',
+    },
+  ],
   byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 const PROFILE_SINGLE_DAY_STATS = {
   totalSats: 21,
   totalBtc: '0.00000021',
   totalUsd: '0.02',
+  totalChf: '0.02',
+  totalEur: '0.02',
+  totalPhp: '1.00',
   giftCount: 1,
   recipientCount: 1,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -1228,21 +2565,37 @@ const PROFILE_SINGLE_DAY_STATS = {
       cumulativeBtc: '0.00000021',
       usd: '0.02',
       cumulativeUsd: '0.02',
+      chf: '0.02',
+      eur: '0.02',
+      php: '1.00',
+      cumulativeChf: '0.02',
+      cumulativeEur: '0.02',
+      cumulativePhp: '1.00',
     },
   ],
-  byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 21, btc: '0.00000021', usd: '0.02' }],
+  byRecipient: [
+    {
+      recipient: 'alice',
+      giftCount: 1,
+      sats: 21,
+      btc: '0.00000021',
+      usd: '0.02',
+      chf: '0.02',
+      eur: '0.02',
+      php: '1.00',
+    },
+  ],
   byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 const PROFILE_LARGE_USD_STATS = {
   totalSats: 1_500_000,
   totalBtc: '0.01500000',
   totalUsd: '1425.00',
+  totalChf: '1200.00',
+  totalEur: '1300.00',
+  totalPhp: '80000.00',
   giftCount: 2,
   recipientCount: 1,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -1256,6 +2609,12 @@ const PROFILE_LARGE_USD_STATS = {
       cumulativeBtc: '0.00500000',
       usd: '475.00',
       cumulativeUsd: '475.00',
+      chf: '400.00',
+      eur: '430.00',
+      php: '26600.00',
+      cumulativeChf: '400.00',
+      cumulativeEur: '430.00',
+      cumulativePhp: '26600.00',
     },
     {
       day: '2026-06-02',
@@ -1265,17 +2624,28 @@ const PROFILE_LARGE_USD_STATS = {
       cumulativeBtc: '0.01500000',
       usd: '950.00',
       cumulativeUsd: '1425.00',
+      chf: '800.00',
+      eur: '860.00',
+      php: '53200.00',
+      cumulativeChf: '1200.00',
+      cumulativeEur: '1300.00',
+      cumulativePhp: '80000.00',
     },
   ],
   byRecipient: [
-    { recipient: 'alice', giftCount: 2, sats: 1_500_000, btc: '0.01500000', usd: '1425.00' },
+    {
+      recipient: 'alice',
+      giftCount: 2,
+      sats: 1_500_000,
+      btc: '0.01500000',
+      usd: '1425.00',
+      chf: '1200.00',
+      eur: '1300.00',
+      php: '80000.00',
+    },
   ],
   byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 test.describe('profile activity chart variants', () => {
@@ -1290,6 +2660,7 @@ test.describe('profile activity chart variants', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1347,7 +2718,7 @@ test.describe('profile activity chart variants', () => {
       .getByRole('button', { name: 'USD' })
       .click();
     await expect(page.getByLabel('Given and received in USD')).toBeVisible();
-    await expect(page.getByText('$1,425')).toBeVisible();
+    await expect(page.getByText("$1'425")).toBeVisible();
     await shotScreen(page, 'state-profile-large-usd');
   });
 });
@@ -1365,6 +2736,7 @@ test.describe('welcome forum variants', () => {
           ...E2E_ACCOUNT,
           role,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -2055,22 +3427,6 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-language');
   });
 
-  test('welcome menu-theme-open', async ({ page }) => {
-    await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ messages: [] }),
-      });
-    });
-    await page.goto('/welcome');
-    await page.getByRole('button', { name: 'Menu' }).click();
-    await page.getByLabel('Theme').click();
-    await expect(page.getByRole('option', { name: 'Dark' })).toBeVisible();
-    await shotScreen(page, 'state-welcome-menu-theme');
-  });
-
   test('welcome pay-qr', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);
@@ -2208,6 +3564,7 @@ test.describe('welcome forum variants', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: null,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -2271,6 +3628,7 @@ test.describe('contact screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -2375,6 +3733,7 @@ test.describe('inbox screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -2501,6 +3860,7 @@ test.describe('notifications screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),

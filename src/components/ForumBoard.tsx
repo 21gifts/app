@@ -13,6 +13,8 @@ import {
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { NoteTranslate } from '@/components/NoteTranslate';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
@@ -295,6 +297,7 @@ export function ForumBoard({
   onDeleted,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -455,7 +458,10 @@ export function ForumBoard({
   };
 
   const copyMessageLink = async (messageId: string): Promise<void> => {
-    const url = `${window.location.origin}/messages/${messageId}`;
+    /* v8 ignore next -- copy control only mounts when a list is on screen */
+    const message = messages === null ? undefined : messages.find((item) => item.id === messageId);
+    const targetId = message?.parentId ?? messageId;
+    const url = `${window.location.origin}/messages/${targetId}`;
     try {
       await navigator.clipboard.writeText(url);
       /* v8 ignore next 3 -- copy resolved after unmount */
@@ -626,9 +632,10 @@ export function ForumBoard({
                 {message.text !== '' ? (
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
+                {message.text !== '' ? <NoteTranslate text={message.text} /> : null}
                 <div className="mt-3 flex flex-wrap items-center gap-5">
                   <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
-                    {formatBitcoin(message.sats, locale)}
+                    {formatBitcoin(message.sats, numberFormat)}
                   </p>
                   {message.payable ? (
                     <IconButton
@@ -686,9 +693,11 @@ export function ForumBoard({
                   {onDeleted !== undefined ? (
                     <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
                   ) : null}
-                  <span className="ml-auto text-xs text-app-subtle">
-                    {t('forum.replyCount', { count: String(message.replyCount) })}
-                  </span>
+                  {message.parentId === undefined ? (
+                    <span className="ml-auto text-xs text-app-subtle">
+                      {t('forum.replyCount', { count: String(message.replyCount) })}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
@@ -771,7 +780,7 @@ export function ForumBoard({
                   </IconButton>
                   <p className="px-10 text-center text-sm text-app-muted">
                     {t('forum.payConfirm', {
-                      amount: formatBitcoin(invoiceForCard.amountSats, locale),
+                      amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
                     })}
                   </p>
                   {showPaymentQr ? (
@@ -885,6 +894,7 @@ export function ForumBoard({
                                 {reply.text}
                               </p>
                             ) : null}
+                            {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
                             {showForumPm(ownAccountId, ownName, reply) ? (
                               <div className="mt-2">
                                 <IconButton

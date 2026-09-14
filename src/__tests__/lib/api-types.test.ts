@@ -27,6 +27,7 @@ const account = {
   linkingKey: '02abcdef',
   role: 'basis' as const,
   name: null,
+  location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
@@ -42,12 +43,30 @@ describe('memberProfileSchema', () => {
     const profile = {
       id: '22222222-2222-4222-8222-222222222222',
       name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile)).toEqual(profile);
+  });
+
+  it('requires post and reply counts', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
       role: 'verified' as const,
       lightningAddress: 'carol@walletofsatoshi.com',
       createdAt: '2026-01-15T12:00:00.000Z',
       profileMessage: null,
     };
-    expect(memberProfileSchema.parse(profile)).toEqual(profile);
+    expect(() => memberProfileSchema.parse(profile)).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, postCount: 0 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, replyCount: 0 })).toThrow();
   });
 
   it('rejects an empty name string', () => {
@@ -55,10 +74,29 @@ describe('memberProfileSchema', () => {
       memberProfileSchema.parse({
         id: 'x',
         name: '',
+        location: null,
         role: 'basis',
         lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+      }),
+    ).toThrow();
+  });
+
+  it('rejects an empty location', () => {
+    expect(() =>
+      memberProfileSchema.parse({
+        id: '22222222-2222-4222-8222-222222222222',
+        name: 'Carol',
+        location: '',
+        role: 'verified',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
       }),
     ).toThrow();
   });
@@ -214,6 +252,11 @@ describe('forumMessageSchema', () => {
     });
   });
 
+  it('accepts an optional parentId on replies', () => {
+    expect(forumMessageSchema.parse(base).parentId).toBeUndefined();
+    expect(forumMessageSchema.parse({ ...base, parentId: 'parent-1' }).parentId).toBe('parent-1');
+  });
+
   it('accepts an empty text when hasPhoto is true', () => {
     const photoOnly = { ...base, text: '', hasPhoto: true };
     expect(forumMessageSchema.parse(photoOnly)).toEqual({
@@ -364,11 +407,20 @@ describe('accountSchema', () => {
   it('rejects a viewKey with the wrong length', () => {
     expect(() => accountSchema.parse({ ...account, viewKey: 'a'.repeat(63) })).toThrow();
   });
+
+  it('accepts a location string', () => {
+    expect(accountSchema.parse({ ...account, location: 'Zug' }).location).toBe('Zug');
+  });
+
+  it('rejects an empty location', () => {
+    expect(() => accountSchema.parse({ ...account, location: '' })).toThrow();
+  });
 });
 
 describe('viewProfileSchema', () => {
   const profile = {
     name: 'Ada',
+    location: null,
     lightningAddress: 'alice@walletofsatoshi.com',
     lightningAddressVerified: false,
     createdAt: 1_700_000_000,
@@ -386,6 +438,10 @@ describe('viewProfileSchema', () => {
 
   it('rejects an empty name', () => {
     expect(() => viewProfileSchema.parse({ ...profile, name: '' })).toThrow();
+  });
+
+  it('rejects an empty location', () => {
+    expect(() => viewProfileSchema.parse({ ...profile, location: '' })).toThrow();
   });
 });
 
@@ -468,12 +524,21 @@ describe('giftStatsSchema', () => {
     quote: 'BTC-USD' as const,
     dayBasis: 'utc' as const,
     source: 'coinbase-exchange-daily-close' as const,
+    quotes: [
+      { code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+      { code: 'CHF' as const, pair: 'USD-CHF', source: 'ecb-daily' },
+      { code: 'EUR' as const, pair: 'USD-EUR', source: 'ecb-daily' },
+      { code: 'PHP' as const, pair: 'USD-PHP', source: 'ecb-daily' },
+    ],
   };
 
   const stats = {
     totalSats: 10,
     totalBtc: '0.00000010',
     totalUsd: '0.01',
+    totalChf: '0.01',
+    totalEur: '0.01',
+    totalPhp: '0.50',
     giftCount: 1,
     recipientCount: 1,
     firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -487,10 +552,38 @@ describe('giftStatsSchema', () => {
         cumulativeBtc: '0.00000010',
         usd: '0.01',
         cumulativeUsd: '0.01',
+        chf: '0.01',
+        eur: '0.01',
+        php: '0.50',
+        cumulativeChf: '0.01',
+        cumulativeEur: '0.01',
+        cumulativePhp: '0.50',
       },
     ],
-    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
-    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 1,
+        sats: 10,
+        btc: '0.00000010',
+        usd: '0.01',
+        chf: '0.01',
+        eur: '0.01',
+        php: '0.50',
+      },
+    ],
+    byMonth: [
+      {
+        month: '2026-06',
+        giftCount: 1,
+        sats: 10,
+        btc: '0.00000010',
+        usd: '0.01',
+        chf: '0.01',
+        eur: '0.01',
+        php: '0.50',
+      },
+    ],
     fx,
   };
 
@@ -505,6 +598,9 @@ describe('giftStatsSchema', () => {
       totalSats: 0,
       totalBtc: '0.00000000',
       totalUsd: '0.00',
+      totalChf: '0.00',
+      totalEur: '0.00',
+      totalPhp: '0.00',
       recipientCount: 0,
       firstPaidAt: null,
       lastPaidAt: null,

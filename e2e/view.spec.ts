@@ -5,6 +5,7 @@ const MISSING_KEY = 'b'.repeat(64);
 
 const VIEW_PROFILE = {
   name: 'Ada',
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   createdAt: 1,
@@ -15,6 +16,9 @@ const EMPTY_STATS = {
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -26,6 +30,7 @@ const EMPTY_STATS = {
     quote: 'BTC-USD',
     dayBasis: 'utc',
     source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
   },
 };
 
@@ -97,6 +102,7 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
         linkingKey: null,
         role: 'basis',
         name: 'Other',
+        location: null,
         lightningAddress: 'other@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -219,6 +225,7 @@ test('signed-in profile does not show the copy control or the view-key URL', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,

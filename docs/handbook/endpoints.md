@@ -77,6 +77,13 @@
 - **Used by:** `setName`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/location
+
+- **Purpose:** Same-origin proxy to set, replace, or clear the free-text profile location (`{ location }`; empty string clears).
+- **Errors:** Upstream 400 (`Location must be at most 80 characters`), 401, or 502 if the api is unreachable.
+- **Used by:** `setLocation` / `LocationForm`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/setup/skip
 
 - **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).
@@ -89,6 +96,20 @@
 - **Purpose:** Same-origin proxy of api `GET /members/:accountId` for signed-in member profiles.
 - **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
 - **Used by:** `fetchMember` via `MemberProfileLoader`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /forum/members/[accountId]/posts
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/posts` for a signed-in member's top-level forum posts.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberPosts` via `MemberProfileScreen`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /forum/members/[accountId]/replies
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/replies` for a signed-in member's forum replies.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberReplies` via `MemberProfileScreen`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/forum-laws-dismissed
@@ -265,3 +286,17 @@
 - **Auth:** Forwards Bearer authorization; the API requires live founder or moderator role.
 - **Returns:** Upstream 204, 401, 403, 404 or 503; proxy failures return 502.
 - **Side effects:** Deletes the post, direct replies and stored media on 21.gifts. Does not refund gifts or erase external Nostr relay copies.
+
+## Endpoint: GET /translate
+
+- **Purpose:** `{ available: boolean }` from `TRANSLATE_URL` (no upstream call). Always 200.
+- **Errors:** none (invalid URL treated as unavailable).
+- **Used by:** `fetchTranslateAvailable` in `NoteTranslate`.
+- **Auth:** Public.
+
+## Endpoint: POST /translate
+
+- **Purpose:** `{ text, target }` → LibreTranslate-compatible upstream; returns `{ translatedText }`. `fil` maps to `tl`. Max 500 chars. 15s timeout. Does not forward Authorization.
+- **Errors:** 400 invalid body, 503 not configured, 502 upstream.
+- **Used by:** `translateNote` from `NoteTranslate`.
+- **Auth:** Public.

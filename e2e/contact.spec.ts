@@ -5,6 +5,7 @@ const E2E_ACCOUNT = {
   linkingKey: `02${'a'.repeat(62)}`,
   role: 'basis' as const,
   name: 'Ada',
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   forumLawsDismissed: false,

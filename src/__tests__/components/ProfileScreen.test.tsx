@@ -11,6 +11,9 @@ vi.mock('@/lib/api', () => ({
     totalSats: 0,
     totalBtc: '0.00000000',
     totalUsd: '0.00',
+    totalChf: '0.00',
+    totalEur: '0.00',
+    totalPhp: '0.00',
     giftCount: 0,
     recipientCount: 0,
     firstPaidAt: null,
@@ -22,9 +25,11 @@ vi.mock('@/lib/api', () => ({
       quote: 'BTC-USD',
       dayBasis: 'utc',
       source: 'coinbase-exchange-daily-close',
+      quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
     },
   }),
   setName: vi.fn(),
+  setLocation: vi.fn(),
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
 }));
@@ -42,6 +47,19 @@ const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
   source: 'coinbase-exchange-daily-close' as const,
+  quotes: [{ code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+
+const FX_ALL = {
+  quote: 'BTC-USD' as const,
+  dayBasis: 'utc' as const,
+  source: 'coinbase-exchange-daily-close' as const,
+  quotes: [
+    { code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+    { code: 'CHF' as const, pair: 'USD-CHF', source: 'ecb-daily' },
+    { code: 'EUR' as const, pair: 'USD-EUR', source: 'ecb-daily' },
+    { code: 'PHP' as const, pair: 'USD-PHP', source: 'ecb-daily' },
+  ],
 };
 
 const VIEW_KEY = 'a'.repeat(64);
@@ -52,6 +70,9 @@ beforeEach(() => {
     totalSats: 0,
     totalBtc: '0.00000000',
     totalUsd: '0.00',
+    totalChf: '0.00',
+    totalEur: '0.00',
+    totalPhp: '0.00',
     giftCount: 0,
     recipientCount: 0,
     firstPaidAt: null,
@@ -68,6 +89,7 @@ beforeEach(() => {
       linkingKey: null,
       role: 'basis',
       name: 'Ada',
+      location: null,
       lightningAddress: 'alice@walletofsatoshi.com',
       lightningAddressVerified: false,
       forumLawsDismissed: false,
@@ -85,12 +107,27 @@ afterEach(() => {
 });
 
 describe('ProfileScreen', () => {
-  it('shows the heading, back link, name form, address form, and chart', async () => {
+  it('shows the heading, name form, address form, chart, theme group, and number format group', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
+    expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Theme' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Light' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dark' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Number format' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: "10'000.23" }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: '10,000.23' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '23.000,33' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     await waitFor(() => {
@@ -103,6 +140,8 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
     expect(screen.queryByLabelText('Given ₿0')).toBeNull();
@@ -113,6 +152,9 @@ describe('ProfileScreen', () => {
       totalSats: 1500,
       totalBtc: '0.00001500',
       totalUsd: '1.43',
+      totalChf: '1.20',
+      totalEur: '1.30',
+      totalPhp: '80.00',
       giftCount: 2,
       recipientCount: 1,
       firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -126,6 +168,12 @@ describe('ProfileScreen', () => {
           cumulativeBtc: '0.00000500',
           usd: '0.48',
           cumulativeUsd: '0.48',
+          chf: '0.40',
+          eur: '0.44',
+          php: '27.00',
+          cumulativeChf: '0.40',
+          cumulativeEur: '0.44',
+          cumulativePhp: '27.00',
         },
         {
           day: '2026-06-02',
@@ -135,6 +183,12 @@ describe('ProfileScreen', () => {
           cumulativeBtc: '0.00000500',
           usd: '0.00',
           cumulativeUsd: '0.48',
+          chf: '0.00',
+          eur: '0.00',
+          php: '0.00',
+          cumulativeChf: '0.40',
+          cumulativeEur: '0.44',
+          cumulativePhp: '27.00',
         },
         {
           day: '2026-06-03',
@@ -144,20 +198,35 @@ describe('ProfileScreen', () => {
           cumulativeBtc: '0.00001500',
           usd: '0.95',
           cumulativeUsd: '1.43',
+          chf: '0.80',
+          eur: '0.86',
+          php: '53.00',
+          cumulativeChf: '1.20',
+          cumulativeEur: '1.30',
+          cumulativePhp: '80.00',
         },
       ],
       byRecipient: [
-        { recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' },
+        {
+          recipient: 'alice',
+          giftCount: 2,
+          sats: 1500,
+          btc: '0.00001500',
+          usd: '1.43',
+          chf: '1.20',
+          eur: '1.30',
+          php: '80.00',
+        },
       ],
       byMonth: [],
-      fx: EMPTY_FX,
+      fx: FX_ALL,
     };
     vi.mocked(fetchGiftStats).mockResolvedValue(seriesStats);
     renderWithLocale(<ProfileScreen />);
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
     });
-    expect(screen.queryByLabelText('Received ₿1,500')).toBeNull();
+    expect(screen.queryByLabelText("Received ₿1'500")).toBeNull();
   });
 
   it('does not show a copy view-only link control, View key heading, view URL, or raw key', () => {

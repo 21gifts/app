@@ -145,6 +145,36 @@ export async function setName(sessionToken: string, name: string): Promise<Accou
 }
 
 /**
+ * Sets, replaces, or clears the account free-text location.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param location - The location as typed. An empty string is a valid request
+ * and clears the stored value.
+ * @returns The updated {@link Account}.
+ * @throws Error when the api rejects the location (400) — the api error string
+ * when present, otherwise a fallback — on any other non-2xx status, or when
+ * the body fails {@link accountSchema} validation.
+ */
+export async function setLocation(sessionToken: string, location: string): Promise<Account> {
+  const response = await fetch('/me/location', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ location }),
+  });
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not save your location' : toUserFacingError(raw));
+  }
+  if (!response.ok) {
+    throw new Error('Could not save your location');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Fetches the account behind a session token.
  *
  * @param sessionToken - A bearer token from a completed challenge.
@@ -241,6 +271,82 @@ export async function fetchMember(
     throw new Error('Could not load this profile. Please try again.');
   }
   return memberProfileSchema.parse(await response.json());
+}
+
+/**
+ * Fetches a member's top-level forum posts or replies (newest first).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @param suffix - `posts` or `replies`.
+ * @returns The message list.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+async function fetchMemberForumList(
+  sessionToken: string,
+  accountId: string,
+  suffix: 'posts' | 'replies',
+): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch(`/forum/members/${encodeURIComponent(accountId)}/${suffix}`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (response.status === 409) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        throw new Error('Could not load messages. Please try again.');
+      }
+      const missing = parseMissingRequirements(body);
+      if (missing !== null) {
+        throw missing;
+      }
+      throw new Error('Could not load messages. Please try again.');
+    }
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return forumListSchema.parse(await response.json()).messages;
+  } catch (err) {
+    if (err instanceof MissingRequirementsError) {
+      throw err;
+    }
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches a member's top-level forum posts (newest first, api cap 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The message list.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchMemberPosts(
+  sessionToken: string,
+  accountId: string,
+): Promise<ForumMessage[]> {
+  return fetchMemberForumList(sessionToken, accountId, 'posts');
+}
+
+/**
+ * Fetches a member's forum replies (newest first, api cap 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The message list (`payable` false; optional `parentId`).
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchMemberReplies(
+  sessionToken: string,
+  accountId: string,
+): Promise<ForumMessage[]> {
+  return fetchMemberForumList(sessionToken, accountId, 'replies');
 }
 
 /**

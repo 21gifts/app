@@ -30,180 +30,72 @@ beforeEach(() => {
 });
 
 describe('ThemeSwitcher', () => {
-  it('standalone: trigger aria-label from aria.theme and lists System/Light/Dark', async () => {
+  it('renders a Theme group with System Light Dark and System pressed', () => {
     renderWithLocale(<ThemeSwitcher />);
-    await waitFor(() => {
-      expect(screen.getByLabelText('Theme')).toBeTruthy();
-    });
-    fireEvent.click(screen.getByLabelText('Theme'));
-    expect(screen.getByRole('option', { name: /System/ }).getAttribute('id')).toBe(
-      'theme-option-system',
+    expect(screen.getByRole('group', { name: 'Theme' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
+      'true',
     );
-    expect(screen.getByRole('option', { name: /Light/ }).getAttribute('id')).toBe(
-      'theme-option-light',
+    expect(screen.getByRole('button', { name: 'Light' }).getAttribute('aria-pressed')).toBe(
+      'false',
     );
-    expect(screen.getByRole('option', { name: /Dark/ }).getAttribute('id')).toBe(
-      'theme-option-dark',
-    );
+    expect(screen.getByRole('button', { name: 'Dark' }).getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('embedded: Menu-row classes use app tokens', async () => {
-    renderWithLocale(<ThemeSwitcher embedded />);
-    await waitFor(() => {
-      expect(screen.getByLabelText('Theme')).toBeTruthy();
-    });
-    const trigger = screen.getByLabelText('Theme');
-    expect(trigger.className).toContain('text-app-muted');
-    expect(trigger.className).toContain('hover:bg-app-hover');
-    expect(trigger.className).toContain('min-h-11');
+  it('uses the profile settings section chrome, not a chrome pill', () => {
+    const { container } = renderWithLocale(<ThemeSwitcher />);
+    const section = container.firstElementChild;
+    expect(section?.className).toContain('border-t');
+    expect(section?.className).toContain('border-app-border');
+    expect(screen.getByText('Theme').className).toContain('uppercase');
+    expect(screen.getByRole('group', { name: 'Theme' }).className).toContain('rounded-full');
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('selecting Dark writes theme=dark cookie', async () => {
+  it('selecting Dark writes theme=dark and adds html.dark', async () => {
     renderWithLocale(<ThemeSwitcher />);
-    await waitFor(() => {
-      expect(screen.getByLabelText('Theme')).toBeTruthy();
-    });
-    fireEvent.click(screen.getByLabelText('Theme'));
-    fireEvent.click(screen.getByRole('option', { name: /Dark/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
     expect(document.cookie).toContain(`${THEME_COOKIE}=dark`);
+    expect(screen.getByRole('button', { name: 'Dark' }).getAttribute('aria-pressed')).toBe('true');
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
   });
 
-  it('standalone trigger uses the 44px pill recipe', async () => {
+  it('selecting Light writes theme=light and removes html.dark', async () => {
     renderWithLocale(<ThemeSwitcher />);
-    const trigger = screen.getByLabelText('Theme');
-    expect(trigger.className).toContain('min-h-11');
-    expect(trigger.className).toContain('border-app-border-strong');
-  });
-
-  it('Escape closes the listbox and restores focus to the trigger', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    const trigger = screen.getByLabelText('Theme');
-    fireEvent.click(trigger);
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('listbox')).toBeNull();
-    expect(document.activeElement).toBe(trigger);
-  });
-
-  it('Tab while open closes the listbox without selecting', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.click(screen.getByLabelText('Theme'));
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.keyDown(document, { key: 'Tab' });
-    expect(screen.queryByRole('listbox')).toBeNull();
-  });
-
-  it('Enter outside the switcher leaves the open listbox alone', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.click(screen.getByLabelText('Theme'));
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.keyDown(document.body, { key: 'Enter' });
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Enter' });
-    expect(screen.queryByRole('listbox')).toBeNull();
-  });
-
-  it('Home and End move the highlight to first and last', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.keyDown(screen.getByLabelText('Theme'), { key: 'ArrowDown' });
-    const listbox = screen.getByRole('listbox');
-    fireEvent.keyDown(listbox, { key: 'End' });
-    expect(listbox.getAttribute('aria-activedescendant')).toBe('theme-option-dark');
-    fireEvent.keyDown(listbox, { key: 'Home' });
-    expect(listbox.getAttribute('aria-activedescendant')).toBe('theme-option-system');
-  });
-
-  it('ArrowDown wraps from the last option to the first', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.keyDown(screen.getByLabelText('Theme'), { key: 'ArrowDown' });
-    const listbox = screen.getByRole('listbox');
-    fireEvent.keyDown(listbox, { key: 'End' });
-    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
-    expect(listbox.getAttribute('aria-activedescendant')).toBe('theme-option-system');
-  });
-
-  it('ArrowUp wraps from the first option to the last', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.keyDown(screen.getByLabelText('Theme'), { key: 'Enter' });
-    const listbox = screen.getByRole('listbox');
-    expect(listbox.getAttribute('aria-activedescendant')).toBe('theme-option-system');
-    fireEvent.keyDown(listbox, { key: 'ArrowUp' });
-    expect(listbox.getAttribute('aria-activedescendant')).toBe('theme-option-dark');
-  });
-
-  it('mouseEnter on an option moves aria-activedescendant', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.click(screen.getByLabelText('Theme'));
-    const listbox = screen.getByRole('listbox');
-    fireEvent.mouseEnter(screen.getByRole('option', { name: /Light/ }));
-    expect(listbox.getAttribute('aria-activedescendant')).toBe('theme-option-light');
-  });
-
-  it('Space on the highlighted option selects Dark', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.keyDown(screen.getByLabelText('Theme'), { key: ' ' });
-    const listbox = screen.getByRole('listbox');
-    fireEvent.keyDown(listbox, { key: 'End' });
-    fireEvent.keyDown(listbox, { key: ' ' });
-    expect(document.cookie).toContain(`${THEME_COOKIE}=dark`);
-  });
-
-  it('ArrowDown on the open trigger keeps the listbox open', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    const trigger = screen.getByLabelText('Theme');
-    fireEvent.click(trigger);
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-    expect(screen.getByRole('listbox')).toBeTruthy();
-  });
-
-  it('clicking the open trigger collapses the listbox', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    const trigger = screen.getByLabelText('Theme');
-    fireEvent.click(trigger);
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.click(trigger);
-    expect(screen.queryByRole('listbox')).toBeNull();
-  });
-
-  it('mousedown outside the switcher closes the listbox', async () => {
-    renderWithLocale(<ThemeSwitcher />);
-    fireEvent.click(screen.getByLabelText('Theme'));
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole('listbox')).toBeNull();
-  });
-
-  it('embedded Theme click expands System Light Dark options', async () => {
-    renderWithLocale(<ThemeSwitcher embedded />);
-    const trigger = screen.getByLabelText('Theme');
-    fireEvent.click(trigger);
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(trigger.getAttribute('role')).toBe('combobox');
-    expect(screen.getAllByRole('option').map((option) => option.getAttribute('id'))).toEqual([
-      'theme-option-system',
-      'theme-option-light',
-      'theme-option-dark',
-    ]);
-  });
-
-  it('embedded selecting Light writes the cookie and closes', async () => {
-    renderWithLocale(<ThemeSwitcher embedded />);
-    fireEvent.click(screen.getByLabelText('Theme'));
-    const option = screen.getByRole('option', { name: /Light/ });
-    fireEvent.mouseDown(option);
-    fireEvent.click(option);
+    fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Light' }));
     expect(document.cookie).toContain(`${THEME_COOKIE}=light`);
-    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Light' }).getAttribute('aria-pressed')).toBe('true');
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
   });
 
-  it('standalone combobox exposes aria-activedescendant while open', async () => {
+  it('selecting System after Dark clears the cookie', async () => {
     renderWithLocale(<ThemeSwitcher />);
-    const trigger = screen.getByLabelText('Theme');
-    fireEvent.click(trigger);
-    expect(trigger.getAttribute('role')).toBe('combobox');
-    expect(trigger.getAttribute('aria-activedescendant')).toBe('theme-option-system');
-    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowDown' });
-    expect(trigger.getAttribute('aria-activedescendant')).toBe('theme-option-light');
+    fireEvent.click(screen.getByRole('button', { name: 'Dark' }));
+    expect(document.cookie).toContain(`${THEME_COOKIE}=dark`);
+    fireEvent.click(screen.getByRole('button', { name: 'System' }));
+    expect(document.cookie).not.toContain(`${THEME_COOKIE}=dark`);
+    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+  });
+
+  it('selected option uses app-btn, not orange', () => {
+    renderWithLocale(<ThemeSwitcher />);
+    const system = screen.getByRole('button', { name: 'System' });
+    expect(system.className).toContain('bg-app-btn');
+    expect(system.className).not.toContain('bg-app-accent');
+    expect(system.className).not.toContain('bg-accent');
   });
 });

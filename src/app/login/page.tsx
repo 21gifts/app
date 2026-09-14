@@ -3,7 +3,6 @@ import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LoginCard } from '@/components/LoginCard';
 import { OnboardingGate } from '@/components/OnboardingGate';
-import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Wordmark } from '@/components/ui';
 
 /**
@@ -19,12 +18,7 @@ export default function LoginPage(): ReactElement {
       mode="fill"
       align="center"
       topLeft={<Wordmark href="/" />}
-      topRight={
-        <>
-          <ThemeSwitcher />
-          <LanguageSwitcher tone="light" />
-        </>
-      }
+      topRight={<LanguageSwitcher tone="light" />}
     >
       <OnboardingGate screen="login">
         <LoginCard />

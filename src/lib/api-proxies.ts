@@ -61,6 +61,16 @@ export async function proxyMeNamePost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/location to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyMeLocationPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/location');
+}
+
+/**
  * Proxies POST /me/setup/skip to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ step }`).
@@ -79,6 +89,31 @@ export async function proxyMeSetupSkipPost(request: Request): Promise<Response> 
  */
 export async function proxyMembersGet(request: Request, accountId: string): Promise<Response> {
   return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}`);
+}
+
+/**
+ * Proxies GET /members/:accountId/posts to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersPostsGet(request: Request, accountId: string): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/posts`);
+}
+
+/**
+ * Proxies GET /members/:accountId/replies to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersRepliesGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/replies`);
 }
 
 /**

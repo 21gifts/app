@@ -11,6 +11,7 @@ export const accountSchema = z.object({
   linkingKey: z.string().nullable(),
   role: z.enum(['basis', 'verified', 'moderator', 'founder']),
   name: z.string().min(1).nullable(),
+  location: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
   forumLawsDismissed: z.boolean(),
@@ -37,6 +38,7 @@ export const accountSchema = z.object({
  * `founder`); `linkingKey` is a leftover wallet public key from the retired
  * LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
+ * `location` is an optional free-text place (never `""`; empty clears to `null`).
  * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
  * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
  * control flag) but unused in the UI — live verification payments are not
@@ -65,6 +67,7 @@ export type Account = z.infer<typeof accountSchema>;
  */
 export const viewProfileSchema = z.object({
   name: z.string().min(1).nullable(),
+  location: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
   createdAt: z.number(),
@@ -103,13 +106,24 @@ export const btcAmountStringSchema = z.string().regex(/^\d+\.\d{8}$/);
 /** USD amount string from the api: exactly 2 decimals. */
 export const usdAmountStringSchema = z.string().regex(/^\d+\.\d{2}$/);
 
+/** Fiat amount string from the api: two decimals, or `null` when that currency could not be summed. */
+export const fiatAmountSchema = usdAmountStringSchema.nullable();
+
 /**
- * FX metadata for historical BTC-USD conversion on `GET /gifts/stats`.
+ * FX provenance for gift-day BTC-USD closes plus CHF/EUR/PHP quotes on
+ * `GET /gifts/stats` and `GET /gifts?day=`.
  */
 export const giftStatsFxSchema = z.object({
   quote: z.literal('BTC-USD'),
   dayBasis: z.literal('utc'),
   source: z.literal('coinbase-exchange-daily-close'),
+  quotes: z.array(
+    z.object({
+      code: z.enum(['USD', 'CHF', 'EUR', 'PHP']),
+      pair: z.string().min(1),
+      source: z.string().min(1),
+    }),
+  ),
 });
 
 /**
@@ -123,6 +137,12 @@ export const spendDaySchema = z.object({
   cumulativeBtc: btcAmountStringSchema,
   usd: usdAmountStringSchema,
   cumulativeUsd: usdAmountStringSchema,
+  chf: fiatAmountSchema,
+  eur: fiatAmountSchema,
+  php: fiatAmountSchema,
+  cumulativeChf: fiatAmountSchema,
+  cumulativeEur: fiatAmountSchema,
+  cumulativePhp: fiatAmountSchema,
 });
 
 /**
@@ -134,6 +154,9 @@ export const recipientSpendSchema = z.object({
   sats: z.number().int().nonnegative(),
   btc: btcAmountStringSchema,
   usd: usdAmountStringSchema,
+  chf: fiatAmountSchema,
+  eur: fiatAmountSchema,
+  php: fiatAmountSchema,
 });
 
 /**
@@ -145,6 +168,9 @@ export const monthSpendSchema = z.object({
   sats: z.number().int().nonnegative(),
   btc: btcAmountStringSchema,
   usd: usdAmountStringSchema,
+  chf: fiatAmountSchema,
+  eur: fiatAmountSchema,
+  php: fiatAmountSchema,
 });
 
 /**
@@ -154,6 +180,9 @@ export const giftStatsSchema = z.object({
   totalSats: z.number().int().nonnegative(),
   totalBtc: btcAmountStringSchema,
   totalUsd: usdAmountStringSchema,
+  totalChf: fiatAmountSchema,
+  totalEur: fiatAmountSchema,
+  totalPhp: fiatAmountSchema,
   giftCount: z.number().int().nonnegative(),
   recipientCount: z.number().int().nonnegative(),
   firstPaidAt: z.string().nullable(),
@@ -177,6 +206,9 @@ export const giftDayGiftSchema = z.object({
   amountSats: z.number().int().nonnegative(),
   amountBtc: btcAmountStringSchema,
   amountUsd: usdAmountStringSchema,
+  amountChf: fiatAmountSchema,
+  amountEur: fiatAmountSchema,
+  amountPhp: fiatAmountSchema,
   recipient: z.string(),
 });
 
@@ -189,6 +221,9 @@ export const giftDaySchema = z.object({
   totalSats: z.number().int().nonnegative(),
   totalBtc: btcAmountStringSchema,
   totalUsd: usdAmountStringSchema,
+  totalChf: fiatAmountSchema,
+  totalEur: fiatAmountSchema,
+  totalPhp: fiatAmountSchema,
   gifts: z.array(giftDayGiftSchema),
   fx: giftStatsFxSchema,
 });
@@ -246,11 +281,13 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * field still parses and the board stays lit.
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
+ * `parentId` is the parent note id on a reply; omitted on top-level notes.
  */
 export const forumMessageSchema = z
   .object({
     id: z.string().min(1),
     accountId: z.string().min(1).optional(),
+    parentId: z.string().min(1).optional(),
     name: z.string().min(1),
     text: z.string(), // may be '' when hasPhoto
     createdAt: z.string().datetime({ offset: true }),
@@ -434,14 +471,18 @@ export type PushSubscriptionResponse = z.infer<typeof pushSubscriptionResponseSc
  * Runtime schema for a signed-in member profile from `GET /members/:id`.
  *
  * `profileMessage` is the member's pinned forum note when present.
+ * `postCount` / `replyCount` are uncapped totals; activity feeds are capped at 200.
  */
 export const memberProfileSchema = z.object({
   id: z.string(),
   name: z.string().min(1).nullable(),
+  location: z.string().min(1).nullable(),
   role: z.enum(['basis', 'verified', 'moderator', 'founder']),
   lightningAddress: z.string().nullable(),
   createdAt: z.string(),
   profileMessage: forumMessageSchema.nullable(),
+  postCount: z.number().int().nonnegative(),
+  replyCount: z.number().int().nonnegative(),
 });
 
 /**

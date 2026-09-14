@@ -3,10 +3,32 @@ import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
+const FX_USD = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+
+const FX_ALL = {
+  quote: 'BTC-USD',
+  dayBasis: 'utc',
+  source: 'coinbase-exchange-daily-close',
+  quotes: [
+    { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+    { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+    { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+    { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+  ],
+};
+
 const POPULATED_STATS = {
   totalSats: 1500,
   totalBtc: '0.00001500',
   totalUsd: '1.43',
+  totalChf: '1.20',
+  totalEur: '1.30',
+  totalPhp: '80.00',
   giftCount: 3,
   recipientCount: 2,
   firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -20,6 +42,12 @@ const POPULATED_STATS = {
       cumulativeBtc: '0.00000500',
       usd: '0.48',
       cumulativeUsd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-06-02',
@@ -29,6 +57,12 @@ const POPULATED_STATS = {
       cumulativeBtc: '0.00000500',
       usd: '0.00',
       cumulativeUsd: '0.48',
+      chf: '0.00',
+      eur: '0.00',
+      php: '0.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
     },
     {
       day: '2026-07-01',
@@ -38,27 +72,68 @@ const POPULATED_STATS = {
       cumulativeBtc: '0.00001500',
       usd: '0.95',
       cumulativeUsd: '1.43',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '1.20',
+      cumulativeEur: '1.30',
+      cumulativePhp: '80.00',
     },
   ],
   byRecipient: [
-    { recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' },
-    { recipient: 'bob', giftCount: 1, sats: 500, btc: '0.00000500', usd: '0.48' },
+    {
+      recipient: 'alice',
+      giftCount: 2,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
+    {
+      recipient: 'bob',
+      giftCount: 1,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
   ],
   byMonth: [
-    { month: '2026-06', giftCount: 2, sats: 500, btc: '0.00000500', usd: '0.48' },
-    { month: '2026-07', giftCount: 1, sats: 1000, btc: '0.00001000', usd: '0.95' },
+    {
+      month: '2026-06',
+      giftCount: 2,
+      sats: 500,
+      btc: '0.00000500',
+      usd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+    },
+    {
+      month: '2026-07',
+      giftCount: 1,
+      sats: 1000,
+      btc: '0.00001000',
+      usd: '0.95',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+    },
   ],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_ALL,
 };
 
 const EMPTY_STATS = {
   totalSats: 0,
   totalBtc: '0.00000000',
   totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
   giftCount: 0,
   recipientCount: 0,
   firstPaidAt: null,
@@ -66,11 +141,7 @@ const EMPTY_STATS = {
   spendOverTime: [],
   byRecipient: [],
   byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-  },
+  fx: FX_USD,
 };
 
 async function stubPayableNote(page: Page): Promise<void> {
@@ -166,6 +237,7 @@ async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis')
         linkingKey: null,
         role,
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -174,6 +246,33 @@ async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis')
         viewKey: 'a'.repeat(64),
         setup: null,
         missing: [],
+      }),
+    });
+  });
+}
+
+const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+
+/** Signed-in Ada `/welcome` with one paid German note (Active shows Translate). */
+async function seedGermanNoteWelcome(page: Page): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-de',
+            name: 'Ada',
+            text: GERMAN_NOTE_TEXT,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
       }),
     });
   });
@@ -421,6 +520,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -479,6 +579,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -514,6 +615,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -746,11 +848,52 @@ test('Function: proxyMembersGet — GET /forum/members/:id returns a canned prof
   expect(((await res.json()) as { name: string }).name).toBe('Carol');
 });
 
+test('Function: proxyMembersPostsGet — GET /forum/members/:id/posts returns canned posts', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
+  const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222/posts', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(JSON.stringify(await res.json())).toContain('Second post from Carol.');
+});
+
+test('Function: proxyMembersRepliesGet — GET /forum/members/:id/replies returns canned replies', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
+  const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222/replies', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(JSON.stringify(await res.json())).toContain('A reply from Carol.');
+});
+
 test('Function: fetchMember — member page shows the canned profile', async ({ page, request }) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
+});
+
+test('Function: fetchMemberPosts — member posts open from the count', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await page.getByRole('button', { name: '2 posts' }).click();
+  await expect(page.getByText('Second post from Carol.')).toBeVisible();
+});
+
+test('Function: fetchMemberReplies — member replies open from the count', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await page.getByRole('button', { name: '1 replies' }).click();
+  await expect(page.getByText('A reply from Carol.')).toBeVisible();
 });
 
 test('Function: MissingRequirementsError — 409 body is missing_requirements', async ({
@@ -846,6 +989,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -894,6 +1038,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
         linkingKey: `02${'a'.repeat(62)}`,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -912,6 +1057,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
       body: JSON.stringify({
         id: memberId,
         name: 'Carol',
+        location: null,
         role: 'verified',
         lightningAddress: 'carol@walletofsatoshi.com',
         createdAt: '2026-01-15T12:00:00.000Z',
@@ -927,6 +1073,8 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
           role: 'verified',
           replyCount: 0,
         },
+        postCount: 1,
+        replyCount: 0,
       }),
     });
   });
@@ -943,7 +1091,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   await page.getByRole('button', { name: 'Show replies' }).click();
   await expect(page.getByLabel('Your reply')).toBeVisible();
   await page.getByLabel('Your reply').fill('Hello');
-  await page.getByRole('button', { name: 'Post' }).click();
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
   ).toBeVisible();
@@ -991,6 +1139,8 @@ test('Function: MemberProfilePage — member page heading is visible', async ({ 
 test('e2e:check dynamic path token for /members/[accountId]', async ({ page, request }) => {
   await page.goto('/members/[accountId]');
   await request.get('/forum/members/[accountId]');
+  await request.get('/forum/members/[accountId]/posts');
+  await request.get('/forum/members/[accountId]/replies');
 });
 
 test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {
@@ -1011,6 +1161,34 @@ test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({
   const tooLong = await request.post('/me/name', {
     headers: { authorization: `Bearer ${token}` },
     data: { name: 'A'.repeat(81) },
+  });
+  expect(tooLong.status()).toBe(400);
+});
+
+test('Function: proxyMeLocationPost — POST /me/location sets a location', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: 'Zug' },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { location: string | null }).location).toBe('Zug');
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { location: string | null }).location).toBe('Zug');
+  const cleared = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: '' },
+  });
+  expect(cleared.status()).toBe(200);
+  expect(((await cleared.json()) as { location: string | null }).location).toBeNull();
+  const maxOk = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: 'A'.repeat(80) },
+  });
+  expect(maxOk.status()).toBe(200);
+  const tooLong = await request.post('/me/location', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { location: 'A'.repeat(81) },
   });
   expect(tooLong.status()).toBe(400);
 });
@@ -1097,6 +1275,7 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1125,6 +1304,7 @@ test('Function: RulesDocument — onboarding first chapter is the lead', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1158,6 +1338,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1188,6 +1369,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1548,6 +1730,7 @@ test('Function: NotificationsPage — notifications heading is visible', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1583,6 +1766,7 @@ test('Function: NotificationsLoader — empty notifications copy is visible', as
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1618,6 +1802,7 @@ test('Function: NotificationsScreen — empty notifications copy is visible', as
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1653,6 +1838,7 @@ test('Function: fetchNotifications — empty notifications copy is visible', asy
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1698,6 +1884,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1749,6 +1936,7 @@ test('Function: markAllNotificationsRead — list fetch POSTs read-all', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1796,6 +1984,7 @@ test('Function: MessagesPage — inbox heading is visible', async ({ page }) => 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1831,6 +2020,7 @@ test('Function: InboxLoader — empty inbox copy is visible', async ({ page }) =
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1866,6 +2056,7 @@ test('Function: InboxScreen — empty inbox copy is visible', async ({ page }) =
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1901,6 +2092,7 @@ test('Function: fetchConversations — empty inbox copy is visible', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1936,6 +2128,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1997,6 +2190,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2058,6 +2252,7 @@ test('Function: openConversation — Send a private message is on other notes', 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: true,
@@ -2426,8 +2621,26 @@ test('Function: StatsDashboard — month USD scale makes the higher-USD month ta
     ...POPULATED_STATS,
     giftCount: 2,
     byMonth: [
-      { month: '2026-06', giftCount: 1, sats: 1_000_000, btc: '0.01000000', usd: '50.00' },
-      { month: '2026-07', giftCount: 1, sats: 100_000, btc: '0.00100000', usd: '900.00' },
+      {
+        month: '2026-06',
+        giftCount: 1,
+        sats: 1_000_000,
+        btc: '0.01000000',
+        usd: '50.00',
+        chf: '42.00',
+        eur: '45.00',
+        php: '2800.00',
+      },
+      {
+        month: '2026-07',
+        giftCount: 1,
+        sats: 100_000,
+        btc: '0.00100000',
+        usd: '900.00',
+        chf: '756.00',
+        eur: '820.00',
+        php: '50400.00',
+      },
     ],
   });
   await page.goto('/stats');
@@ -2451,10 +2664,115 @@ test('Function: formatBitcoin — populated stats draw the ₿ chart', async ({ 
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
   await expect(page.getByLabel('Spend over time in ₿')).toBeVisible();
-  await expect(page.getByLabel('Spend over time in ₿').getByText('₿1,500')).toBeVisible();
+  await expect(page.getByLabel('Spend over time in ₿').getByText("₿1'500")).toBeVisible();
 });
 
-test('Function: formatUsdTick — populated stats draw the USD chart', async ({ page }) => {
+test("Function: formatGroupedNumber — /stats default grouped ₿1'500", async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.goto('/stats');
+  await expect(page.getByLabel('Spend over time in ₿').getByText("₿1'500")).toBeVisible();
+});
+
+test('Function: formatUsdTick — populated profile chart shows USD ticks', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 1500,
+    totalUsd: '1.43',
+    giftCount: 2,
+    recipientCount: 1,
+    spendOverTime: POPULATED_STATS.spendOverTime,
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
+  });
+  await page.goto('/profile');
+  await page
+    .getByRole('group', { name: 'Chart scale' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+  await expect(page.getByLabel('Given and received in USD').getByText('$1.43')).toBeVisible();
+});
+
+test('Function: formatFiatTick — populated profile chart shows CHF ticks', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 1500,
+    totalUsd: '1.43',
+    giftCount: 2,
+    recipientCount: 1,
+    spendOverTime: POPULATED_STATS.spendOverTime,
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
+  });
+  await page.goto('/profile');
+  await page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'CHF' })
+    .click();
+  await page
+    .getByRole('group', { name: 'Chart scale' })
+    .getByRole('button', { name: 'CHF' })
+    .click();
+  await expect(page.getByLabel('Given and received in CHF')).toBeVisible();
+  await expect(page.getByLabel('Given and received in CHF').getByText('CHF 1.2')).toBeVisible();
+});
+
+test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  const group = page.getByRole('group', { name: 'Fiat currency' });
+  await expect(group).toBeVisible();
+  await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Fiat currency' });
+  await expect(group).toBeVisible();
+  await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Chart scale' })).toHaveCount(0);
+});
+
+test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
+});
+
+test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
   await page
@@ -2463,6 +2781,14 @@ test('Function: formatUsdTick — populated stats draw the USD chart', async ({ 
     .click();
   await expect(page.getByLabel('Spend over time in USD')).toBeVisible();
   await expect(page.getByLabel('Spend over time in USD').getByText('$1.43')).toBeVisible();
+});
+
+test('Function: defaultFiatForLocale — English stats default to USD', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(
+    page.getByRole('group', { name: 'Fiat currency' }).getByRole('button', { name: 'USD' }),
+  ).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a challenge', async ({
@@ -2592,6 +2918,67 @@ test('Function: LanguageSwitcher — landing exposes the language switcher', asy
   await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
 });
 
+test("Function: parseNumberFormat — Number format options include 10'000.23", async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(
+    page.getByRole('group', { name: 'Number format' }).getByRole('button', { name: "10'000.23" }),
+  ).toBeVisible();
+});
+
+test('Function: separatorsFor — same click shows 10,000.23 and 23.000,33', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Number format' });
+  await expect(group.getByRole('button', { name: '10,000.23' })).toBeVisible();
+  await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
+});
+
+test('Function: getRequestNumberFormat — signed-in /profile Number format is visible', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Number format' })).toBeVisible();
+});
+
+test('Function: NumberFormatProvider — picking 23.000,33 writes numberFormat=de cookie', async ({
+  page,
+  context,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await page
+    .getByRole('group', { name: 'Number format' })
+    .getByRole('button', { name: '23.000,33' })
+    .click();
+  const cookies = await context.cookies();
+  expect(cookies.some((cookie) => cookie.name === 'numberFormat' && cookie.value === 'de')).toBe(
+    true,
+  );
+});
+
+test('Function: useNumberFormat — Number format on /profile reads provider', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Number format' })).toBeVisible();
+});
+
+test('Function: NumberFormatSwitcher — /profile lists the three samples', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Number format' });
+  await expect(group.getByRole('button', { name: "10'000.23" })).toBeVisible();
+  await expect(group.getByRole('button', { name: '10,000.23' })).toBeVisible();
+  await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
+});
+
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
@@ -2662,6 +3049,7 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2690,6 +3078,7 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2718,6 +3107,7 @@ test('Function: AddressSetupPage — address screen heading is visible', async (
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2746,6 +3136,7 @@ test('Function: AddressSetup — address screen heading is visible', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2778,6 +3169,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2813,6 +3205,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2848,6 +3241,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2883,6 +3277,7 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2911,6 +3306,7 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2943,6 +3339,7 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -2971,6 +3368,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3008,6 +3406,7 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3077,6 +3476,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3127,6 +3527,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: true,
@@ -3219,6 +3620,7 @@ test('Function: OnboardingGate — name and address without agreement go to rule
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3265,6 +3667,7 @@ test('Function: hasLightningAddress — named account without address stays on a
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3326,6 +3729,21 @@ test('Function: ProfilePage — profile heading is visible', async ({ page }) =>
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+});
+
+test('Function: LocationForm — profile shows the location heading', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByText('Location')).toBeVisible();
+});
+
+test('Function: setLocation — signed-in form saves a location', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Edit location' }).click();
+  await page.getByRole('textbox', { name: 'Location' }).fill('Zug');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Zug')).toBeVisible();
 });
 
 test('Function: ProfileScreen — back to forum is visible', async ({ page }) => {
@@ -3420,6 +3838,7 @@ test('Function: AppShellTopLeft — rules setup shows the wordmark', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'ada@walletofsatoshi.com',
         lightningAddressVerified: true,
         forumLawsDismissed: false,
@@ -3464,6 +3883,7 @@ test('Function: AppShellHeader — name screen heading is visible', async ({ pag
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3492,6 +3912,7 @@ test('Function: AppShellFooter — name screen Continue is visible', async ({ pa
         linkingKey: null,
         role: 'basis',
         name: null,
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -3651,6 +4072,7 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
@@ -3691,6 +4113,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
@@ -3726,6 +4149,7 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
@@ -3755,6 +4179,7 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
       contentType: 'application/json',
       body: JSON.stringify({
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         createdAt: 1,
@@ -3783,33 +4208,66 @@ test('Function: accountTotals — menu shows received sats for alice', async ({ 
   await seedAdaSession(page);
   await stubGiftStats(page, {
     ...EMPTY_STATS,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1000,
+        btc: '0.00001000',
+        usd: '0.95',
+        chf: '0.80',
+        eur: '0.86',
+        php: '53.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: recipientHandleFromAddress — alice handle matches stats row', async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, {
     ...EMPTY_STATS,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1000,
+        btc: '0.00001000',
+        usd: '0.95',
+        chf: '0.80',
+        eur: '0.86',
+        php: '53.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: useAccountTotals — profile totals load from gift stats', async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, {
     ...EMPTY_STATS,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1000, btc: '0.00001000', usd: '0.95' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1000,
+        btc: '0.00001000',
+        usd: '0.95',
+        chf: '0.80',
+        eur: '0.86',
+        php: '53.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1,000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
 
 test('Function: AccountActivityChart — profile shows Given legend and ₿ chart', async ({
@@ -3833,7 +4291,18 @@ test('Function: alignActivitySeries — receive series days appear on the profil
     giftCount: 2,
     recipientCount: 1,
     spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await expect(page.getByText('2026-06-01')).toBeVisible();
@@ -3851,7 +4320,18 @@ test('Function: activityValue — USD toggle shows received USD on the profile c
     giftCount: 2,
     recipientCount: 1,
     spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
   });
   await page.goto('/profile');
   await page
@@ -3882,36 +4362,53 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
     giftCount: 2,
     recipientCount: 1,
     spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [{ recipient: 'alice', giftCount: 2, sats: 1500, btc: '0.00001500', usd: '1.43' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 2,
+        sats: 1500,
+        btc: '0.00001500',
+        usd: '1.43',
+        chf: '1.20',
+        eur: '1.30',
+        php: '80.00',
+      },
+    ],
   });
   await page.goto('/profile');
-  await expect(page.getByLabel('Given and received in ₿').getByText('₿1,500')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
 });
 
-test('Function: ThemeProvider — picking Dark sets html.dark on /login', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Theme').click();
-  await page.getByRole('option', { name: /Dark/ }).click();
+test('Function: ThemeProvider — picking Dark sets html.dark on /profile', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 });
 
-test('Function: ThemeSwitcher — System Light Dark options on /login', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Theme').click();
-  await expect(page.getByRole('option', { name: /System/ })).toBeVisible();
-  await expect(page.getByRole('option', { name: /Light/ })).toBeVisible();
-  await expect(page.getByRole('option', { name: /Dark/ })).toBeVisible();
+test('Function: ThemeSwitcher — System Light Dark options on /profile', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const theme = page.getByRole('group', { name: 'Theme' });
+  await expect(theme.getByRole('button', { name: 'System' })).toBeVisible();
+  await expect(theme.getByRole('button', { name: 'Light' })).toBeVisible();
+  await expect(theme.getByRole('button', { name: 'Dark' })).toBeVisible();
 });
 
-test('Function: useTheme — ThemeSwitcher on /login reads provider context', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByLabel('Theme')).toBeVisible();
+test('Function: useTheme — ThemeSwitcher on /profile reads provider context', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Theme' })).toBeVisible();
 });
 
 test('Function: THEME_COOKIE — Dark option persists theme=dark', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Theme').click();
-  await page.getByRole('option', { name: /Dark/ }).click();
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   expect(await page.context().cookies()).toEqual(
     expect.arrayContaining([expect.objectContaining({ name: 'theme', value: 'dark' })]),
   );
@@ -3939,7 +4436,6 @@ test('Function: THEME_BOOTSTRAP_SCRIPT — dark cookie paints html.dark before i
   await page.context().addCookies([{ name: 'theme', value: 'dark', url: 'http://localhost:3000' }]);
   await page.goto('/login');
   await expect(page.locator('html')).toHaveClass(/dark/);
-  await expect(page.getByLabel('Theme')).toBeVisible();
 });
 
 test('Function: APP_HEIGHT_BOOTSTRAP_SCRIPT — document has --app-height', async ({ page }) => {
@@ -4293,4 +4789,64 @@ test('Function: DeletePostControl — ordinary members have no delete action', a
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
+});
+
+test('Function: detectNoteLanguage — German note offers Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: shouldOfferNoteTranslate — Translate is under the German body', async ({
+  page,
+}) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: fetchTranslateAvailable — GET /translate enables Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+});
+
+test('Function: translateNote — Translate then Show original', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+});
+
+test('Function: getTranslateUpstream — GET /translate reports available', async ({ request }) => {
+  const res = await request.get('/translate');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ available: true });
+});
+
+test('Function: proxyTranslateGet — GET /translate is available', async ({ request }) => {
+  const res = await request.get('/translate');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ available: true });
+});
+
+test('Function: proxyTranslatePost — POST /translate returns translatedText', async ({
+  request,
+}) => {
+  const res = await request.post('/translate', {
+    data: { text: GERMAN_NOTE_TEXT, target: 'en' },
+  });
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({
+    translatedText: 'Can anyone lend me a few satoshi this week?',
+  });
+});
+
+test('Function: NoteTranslate — German welcome note shows Translate', async ({ page }) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
 });

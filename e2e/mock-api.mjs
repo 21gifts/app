@@ -112,6 +112,7 @@ function newAccount(linkingKey) {
     linkingKey,
     role: 'basis',
     name: null,
+    location: null,
     lightningAddress: null,
     lightningAddressVerified: false,
     forumLawsDismissed: false,
@@ -129,6 +130,7 @@ const E2E_MEMBER_ID = '22222222-2222-4222-8222-222222222222';
 const E2E_MEMBER_PROFILE = {
   id: E2E_MEMBER_ID,
   name: 'Carol',
+  location: 'Zug',
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
@@ -146,7 +148,45 @@ const E2E_MEMBER_PROFILE = {
     role: 'verified',
     replyCount: 0,
   },
+  postCount: 2,
+  replyCount: 1,
 };
+
+const E2E_MEMBER_POSTS = [
+  {
+    id: '44444444-4444-4444-8444-444444444444',
+    accountId: E2E_MEMBER_ID,
+    name: 'Carol',
+    text: 'Second post from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified',
+    replyCount: 0,
+  },
+  E2E_MEMBER_PROFILE.profileMessage,
+];
+
+const E2E_MEMBER_REPLIES = [
+  {
+    id: '66666666-6666-4666-8666-666666666666',
+    accountId: E2E_MEMBER_ID,
+    name: 'Carol',
+    text: 'A reply from Carol.',
+    createdAt: '2026-08-03T10:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified',
+    replyCount: 0,
+    parentId: '55555555-5555-4555-8555-555555555555',
+  },
+];
 
 /** True when a forum POST needs name, rules, or lightning-address. */
 function missingForumPostRequirements(account) {
@@ -189,6 +229,29 @@ const server = http.createServer(async (req, res) => {
 
   if (method === 'GET' && pathName === '/healthz') {
     json(res, 200, { status: 'ok' });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/translate') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const q = parsed?.q;
+    if (typeof q !== 'string') {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    if (q.includes('Kann mir jemand')) {
+      json(res, 200, {
+        translatedText: 'Can anyone lend me a few satoshi this week?',
+      });
+      return;
+    }
+    json(res, 200, { translatedText: '[' + (parsed.target || 'en') + '] ' + q });
     return;
   }
 
@@ -686,6 +749,56 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const memberPostsMatch = pathName.match(/^\/members\/([^/]+)\/posts$/);
+  if (method === 'GET' && memberPostsMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
+    const id = decodeURIComponent(memberPostsMatch[1]);
+    if (id === E2E_MEMBER_ID) {
+      json(res, 200, { messages: E2E_MEMBER_POSTS });
+      return;
+    }
+    if (id === account.id) {
+      json(res, 200, { messages: [] });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  const memberRepliesMatch = pathName.match(/^\/members\/([^/]+)\/replies$/);
+  if (method === 'GET' && memberRepliesMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
+    const id = decodeURIComponent(memberRepliesMatch[1]);
+    if (id === E2E_MEMBER_ID) {
+      json(res, 200, { messages: E2E_MEMBER_REPLIES });
+      return;
+    }
+    if (id === account.id) {
+      json(res, 200, { messages: [] });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
   const membersMatch = pathName.match(/^\/members\/([^/]+)$/);
   if (method === 'GET' && membersMatch) {
     const token = bearer(req);
@@ -707,10 +820,13 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, {
         id: account.id,
         name: account.name,
+        location: account.location,
         role: account.role,
         lightningAddress: account.lightningAddress,
         createdAt: new Date(account.createdAt).toISOString(),
         profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
       });
       return;
     }
@@ -741,6 +857,7 @@ const server = http.createServer(async (req, res) => {
     }
     json(res, 200, {
       name: found.name,
+      location: found.location,
       lightningAddress: found.lightningAddress,
       lightningAddressVerified: found.lightningAddressVerified,
       createdAt: found.createdAt,
@@ -774,6 +891,37 @@ const server = http.createServer(async (req, res) => {
     }
     account.name = trimmed;
     afterFieldWrite(account);
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/location') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "location" string' });
+      return;
+    }
+    if (typeof parsed?.location !== 'string') {
+      json(res, 400, { error: 'Expected a JSON body with a "location" string' });
+      return;
+    }
+    const trimmed = parsed.location.trim();
+    if (trimmed.length === 0) {
+      account.location = null;
+    } else if (trimmed.length > 80) {
+      json(res, 400, { error: 'Location must be at most 80 characters' });
+      return;
+    } else {
+      account.location = trimmed;
+    }
     json(res, 200, account);
     return;
   }
@@ -843,16 +991,32 @@ const server = http.createServer(async (req, res) => {
         totalSats: 500,
         totalBtc: '0.00000500',
         totalUsd: '0.48',
+        totalChf: '0.40',
+        totalEur: '0.44',
+        totalPhp: '27.00',
         gifts: [
           {
             paidAt: '2026-06-01T12:00:00.000Z',
             amountSats: 500,
             amountBtc: '0.00000500',
             amountUsd: '0.48',
+            amountChf: '0.40',
+            amountEur: '0.44',
+            amountPhp: '27.00',
             recipient: 'alice',
           },
         ],
-        fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [
+            { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+            { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+            { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+            { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+          ],
+        },
       });
       return;
     }
@@ -863,8 +1027,16 @@ const server = http.createServer(async (req, res) => {
         totalSats: 0,
         totalBtc: '0.00000000',
         totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
         gifts: [],
-        fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
       });
       return;
     }
@@ -877,6 +1049,9 @@ const server = http.createServer(async (req, res) => {
       totalSats: 0,
       totalBtc: '0.00000000',
       totalUsd: '0.00',
+      totalChf: '0.00',
+      totalEur: '0.00',
+      totalPhp: '0.00',
       giftCount: 0,
       recipientCount: 0,
       firstPaidAt: null,
@@ -884,7 +1059,12 @@ const server = http.createServer(async (req, res) => {
       spendOverTime: [],
       byRecipient: [],
       byMonth: [],
-      fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+      fx: {
+        quote: 'BTC-USD',
+        dayBasis: 'utc',
+        source: 'coinbase-exchange-daily-close',
+        quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+      },
     });
     return;
   }

@@ -16,6 +16,7 @@ const baseAccount: Account = {
   linkingKey: '02abcdef',
   role: 'basis',
   name: null,
+  location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,

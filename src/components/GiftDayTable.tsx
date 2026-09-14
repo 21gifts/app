@@ -1,11 +1,16 @@
 import type { ReactElement } from 'react';
-import type { GiftDay } from '@/lib/api-types';
-import { formatBitcoin } from '@/lib/stats-money';
+import type { GiftDay, GiftDayGift } from '@/lib/api-types';
+import type { NumberFormatStyle } from '@/lib/number-format';
+import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-money';
 
 /** Props for {@link GiftDayTable}. */
 export interface GiftDayTableProps {
   /** Per-day payload from `GET /gifts`. */
   day: GiftDay;
+  /** Selected fiat for the fourth column. */
+  fiat: FiatCode;
+  /** Visitor grouping style for the ₿ and fiat columns. */
+  numberFormat: NumberFormatStyle;
 }
 
 /**
@@ -26,12 +31,32 @@ function formatUtcTime(iso: string): string {
 }
 
 /**
+ * Selected fiat amount on one gift row.
+ *
+ * @param gift - Day gift.
+ * @param fiat - Selected code.
+ * @returns Two-decimal string, or `null` when unsummed.
+ */
+function giftFiat(gift: GiftDayGift, fiat: FiatCode): string | null {
+  switch (fiat) {
+    case 'USD':
+      return gift.amountUsd;
+    case 'CHF':
+      return gift.amountChf;
+    case 'EUR':
+      return gift.amountEur;
+    case 'PHP':
+      return gift.amountPhp;
+  }
+}
+
+/**
  * Table of individual outbound gifts on one UTC day.
  *
- * @param props - Day payload.
+ * @param props - Day payload, selected fiat, and visitor grouping style.
  * @returns A table, or the empty-day copy.
  */
-export function GiftDayTable({ day }: GiftDayTableProps): ReactElement {
+export function GiftDayTable({ day, fiat, numberFormat }: GiftDayTableProps): ReactElement {
   if (day.gifts.length === 0) {
     return <p className="text-paper/60">No gifts recorded on this day.</p>;
   }
@@ -45,7 +70,7 @@ export function GiftDayTable({ day }: GiftDayTableProps): ReactElement {
             <th className="py-2 pr-4 font-medium">Time</th>
             <th className="py-2 pr-4 font-medium">Recipient</th>
             <th className="py-2 pr-4 font-medium">₿</th>
-            <th className="py-2 font-medium">USD</th>
+            <th className="py-2 font-medium">{fiat}</th>
           </tr>
         </thead>
         <tbody>
@@ -58,8 +83,12 @@ export function GiftDayTable({ day }: GiftDayTableProps): ReactElement {
                 <time dateTime={gift.paidAt}>{formatUtcTime(gift.paidAt)}</time>
               </td>
               <td className="py-2 pr-4 font-medium">{gift.recipient}</td>
-              <td className="py-2 pr-4 tabular-nums">{formatBitcoin(gift.amountSats)}</td>
-              <td className="py-2 tabular-nums text-paper/80">{gift.amountUsd}</td>
+              <td className="py-2 pr-4 tabular-nums">
+                {formatBitcoin(gift.amountSats, numberFormat)}
+              </td>
+              <td className="py-2 tabular-nums text-paper/80">
+                {formatFiatDisplay(giftFiat(gift, fiat), fiat, numberFormat)}
+              </td>
             </tr>
           ))}
         </tbody>

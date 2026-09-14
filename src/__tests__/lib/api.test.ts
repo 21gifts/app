@@ -11,6 +11,8 @@ import {
   fetchGiftStats,
   fetchMe,
   fetchMember,
+  fetchMemberPosts,
+  fetchMemberReplies,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
@@ -32,6 +34,7 @@ import {
   postPushSubscription,
   agreeToRules,
   setLightningAddress,
+  setLocation,
   setName,
   skipSetup,
   resolveLightningAddress,
@@ -46,6 +49,7 @@ const account = {
   linkingKey: '02abcdef',
   role: 'basis' as const,
   name: null,
+  location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
@@ -108,6 +112,7 @@ describe('fetchViewProfile', () => {
   const viewKey = 'a'.repeat(64);
   const profile = {
     name: 'Ada',
+    location: null,
     lightningAddress: 'alice@walletofsatoshi.com',
     lightningAddressVerified: false,
     createdAt: 1,
@@ -165,10 +170,13 @@ describe('fetchMember', () => {
   const member = {
     id: '22222222-2222-4222-8222-222222222222',
     name: 'Carol',
+    location: null,
     role: 'verified' as const,
     lightningAddress: 'carol@walletofsatoshi.com',
     createdAt: '2026-01-15T12:00:00.000Z',
     profileMessage: null,
+    postCount: 0,
+    replyCount: 0,
   };
 
   it('returns the validated member profile', async () => {
@@ -224,6 +232,118 @@ describe('fetchMember', () => {
   });
 });
 
+describe('fetchMemberPosts', () => {
+  const accountId = '22222222-2222-4222-8222-222222222222';
+  const post = {
+    id: 'post-1',
+    accountId,
+    name: 'Carol',
+    text: 'A post from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+  };
+
+  it('returns the validated post list', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [post] } });
+    await expect(fetchMemberPosts('sess', accountId)).resolves.toEqual([post]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(accountId)}/posts`,
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberReplies', () => {
+  const accountId = '22222222-2222-4222-8222-222222222222';
+  const reply = {
+    id: 'reply-1',
+    accountId,
+    parentId: 'parent-1',
+    name: 'Carol',
+    text: 'A reply from Carol.',
+    createdAt: '2026-08-03T10:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+  };
+
+  it('returns the validated reply list', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [reply] } });
+    await expect(fetchMemberReplies('sess', accountId)).resolves.toEqual([reply]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(accountId)}/replies`,
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberReplies('sess', accountId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberReplies('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
 describe('setName', () => {
   it('posts the name and returns the validated account', async () => {
     const named = { ...account, name: 'Ada' };
@@ -270,6 +390,61 @@ describe('setName', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setName('sess', 'x')).rejects.toThrow();
+  });
+});
+
+describe('setLocation', () => {
+  it('posts the location and returns the validated account', async () => {
+    const located = { ...account, location: 'Zug' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: located });
+
+    await expect(setLocation('sess', 'Zug')).resolves.toEqual(located);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/location`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ location: 'Zug' }),
+    });
+  });
+
+  it('throws the api error message on a 400', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'Location must be at most 80 characters' },
+    });
+    await expect(setLocation('sess', 'x'.repeat(81))).rejects.toThrow(
+      'Location must be at most 80 characters',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setLocation('sess', 'x')).rejects.toThrow('Could not save your location');
+  });
+
+  it('falls back when a 400 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(setLocation('sess', 'x')).rejects.toThrow('Could not save your location');
+  });
+
+  it('throws on a non-400 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setLocation('sess', 'x')).rejects.toThrow('Could not save your location');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(setLocation('sess', 'x')).rejects.toThrow();
   });
 });
 
@@ -507,12 +682,18 @@ describe('fetchGiftDay', () => {
     totalSats: 500,
     totalBtc: '0.00000500',
     totalUsd: '0.48',
+    totalChf: '0.40',
+    totalEur: '0.44',
+    totalPhp: '27.00',
     gifts: [
       {
         paidAt: '2026-06-01T12:00:00.000Z',
         amountSats: 500,
         amountBtc: '0.00000500',
         amountUsd: '0.48',
+        amountChf: '0.40',
+        amountEur: '0.44',
+        amountPhp: '27.00',
         recipient: 'alice',
       },
     ],
@@ -520,6 +701,12 @@ describe('fetchGiftDay', () => {
       quote: 'BTC-USD',
       dayBasis: 'utc',
       source: 'coinbase-exchange-daily-close',
+      quotes: [
+        { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+        { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+        { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+        { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+      ],
     },
   };
 
@@ -542,6 +729,9 @@ describe('fetchGiftStats', () => {
     totalSats: 10,
     totalBtc: '0.00000010',
     totalUsd: '0.01',
+    totalChf: '0.01',
+    totalEur: '0.01',
+    totalPhp: '0.50',
     giftCount: 1,
     recipientCount: 1,
     firstPaidAt: '2026-06-01T00:00:00.000Z',
@@ -555,14 +745,48 @@ describe('fetchGiftStats', () => {
         cumulativeBtc: '0.00000010',
         usd: '0.01',
         cumulativeUsd: '0.01',
+        chf: '0.01',
+        eur: '0.01',
+        php: '0.50',
+        cumulativeChf: '0.01',
+        cumulativeEur: '0.01',
+        cumulativePhp: '0.50',
       },
     ],
-    byRecipient: [{ recipient: 'alice', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
-    byMonth: [{ month: '2026-06', giftCount: 1, sats: 10, btc: '0.00000010', usd: '0.01' }],
+    byRecipient: [
+      {
+        recipient: 'alice',
+        giftCount: 1,
+        sats: 10,
+        btc: '0.00000010',
+        usd: '0.01',
+        chf: '0.01',
+        eur: '0.01',
+        php: '0.50',
+      },
+    ],
+    byMonth: [
+      {
+        month: '2026-06',
+        giftCount: 1,
+        sats: 10,
+        btc: '0.00000010',
+        usd: '0.01',
+        chf: '0.01',
+        eur: '0.01',
+        php: '0.50',
+      },
+    ],
     fx: {
       quote: 'BTC-USD',
       dayBasis: 'utc',
       source: 'coinbase-exchange-daily-close',
+      quotes: [
+        { code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+        { code: 'CHF', pair: 'USD-CHF', source: 'ecb-daily' },
+        { code: 'EUR', pair: 'USD-EUR', source: 'ecb-daily' },
+        { code: 'PHP', pair: 'USD-PHP', source: 'ecb-daily' },
+      ],
     },
   };
 
