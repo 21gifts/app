@@ -558,7 +558,7 @@ export function MemberProfileScreen({
     setPayBusy(false);
   };
 
-  const handlePaySubmit = (): void => {
+  const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
@@ -575,34 +575,36 @@ export function MemberProfileScreen({
         : posts?.find((message) => message.id === messageId);
     /* v8 ignore next -- pay sheet only opens on a listed note */
     const baselineSats = parent === undefined ? 0 : parent.sats;
-    const continuePay = (isRetry: boolean): Promise<void> => {
+    const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
       const generation = payPollGeneration.current;
       setPayBusy(true);
       setPayError(null);
       return (async () => {
+        let minted: ForumPayInvoice | null = null;
         try {
           const invoice = await postMessageInvoice(token, messageId, sats);
           if (generation !== payPollGeneration.current) {
-            return;
+            return null;
           }
-          setPayInvoice({
+          minted = {
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
-          });
+          };
+          setPayInvoice(minted);
           setPayBusy(false);
           startPayPoll(messageId, baselineSats);
         } catch (err) {
           if (generation !== payPollGeneration.current) {
-            return;
+            return null;
           }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
-              pendingPostRef.current = () => continuePay(true);
-              return;
+              pendingPostRef.current = () => continuePay(true).then(() => undefined);
+              return null;
             }
             setPayError('request');
-            return;
+            return null;
           }
           setPayError('request');
         } finally {
@@ -610,13 +612,14 @@ export function MemberProfileScreen({
             setPayBusy(false);
           }
         }
+        return minted;
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
-      pendingPostRef.current = () => continuePay(true);
+      pendingPostRef.current = () => continuePay(true).then(() => undefined);
       return;
     }
-    void continuePay(false);
+    return continuePay(false);
   };
 
   const handlePayCancel = (): void => {

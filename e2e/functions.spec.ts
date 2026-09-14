@@ -180,6 +180,31 @@ async function stubPayableNote(page: Page): Promise<void> {
   });
 }
 
+type WalletAssignWindow = Window & { __wosAssign?: string };
+
+async function stubWalletLocationAssign(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const originalAssign = Location.prototype.assign;
+    Location.prototype.assign = function assign(url: string | URL): void {
+      const href = String(url);
+      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+        (window as WalletAssignWindow).__wosAssign = href;
+        return;
+      }
+      originalAssign.call(this, url);
+    };
+  });
+}
+
+async function submitPayAmount(page: Page): Promise<void> {
+  const payNow = page.getByRole('button', { name: 'Pay', exact: true });
+  if ((await payNow.count()) > 0) {
+    await payNow.click();
+    return;
+  }
+  await page.getByRole('button', { name: 'Continue' }).click();
+}
+
 async function agreeToLivingRoomRules(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/setup\/rules/);
   for (let i = 0; i < RULES_CHAPTER_IDS.length; i += 1) {
@@ -196,6 +221,7 @@ async function agreeToLivingRoomRules(page: Page): Promise<void> {
 }
 
 async function openPayInvoice(page: Page, request: APIRequestContext): Promise<void> {
+  await stubWalletLocationAssign(page);
   await stubPayableNote(page);
   await signInViaStub(page, request);
   await saveOnboardingName(page);
@@ -206,7 +232,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByLabel('Amount').fill('21');
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await submitPayAmount(page);
   await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 }
 
@@ -2377,6 +2403,7 @@ test('Function: openInSystemBrowser — Open in browser is shown in Telegram Web
 test('Function: QrCode — pay sheet shows the invoice QR', async ({ page, request }) => {
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  expect(await page.evaluate(() => (window as WalletAssignWindow).__wosAssign)).toBeUndefined();
 });
 
 test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet link', async ({
@@ -2392,6 +2419,8 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  const assigned = await page.evaluate(() => (window as WalletAssignWindow).__wosAssign);
+  expect(assigned?.startsWith('walletofsatoshi:lightning:')).toBe(true);
 });
 
 test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({

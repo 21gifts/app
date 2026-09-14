@@ -1017,7 +1017,7 @@ export function ForumLoader(): ReactElement | null {
     startNotePost(trimmed, pendingPhoto, pendingVideo, false);
   };
 
-  const onPaySubmit = (): void => {
+  const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
     /* v8 ignore next 3 -- button is disabled when no sheet is open */
     if (payMessageId === null || payBusy) {
       return;
@@ -1044,34 +1044,36 @@ export function ForumLoader(): ReactElement | null {
     }
     const messageId = payMessageId;
     const baseline = listed.sats;
-    const continuePay = (isRetry: boolean): Promise<void> => {
+    const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
       const generation = payPollGeneration.current;
       setPayBusy(true);
       setPayError(null);
       return (async () => {
+        let minted: ForumPayInvoice | null = null;
         try {
           const invoice = await postMessageInvoice(session, messageId, sats);
           if (generation !== payPollGeneration.current) {
-            return;
+            return null;
           }
-          setPayInvoice({
+          minted = {
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
-          });
+          };
+          setPayInvoice(minted);
           setPayBusy(false);
           startPayPoll(messageId, baseline);
         } catch (err) {
           if (generation !== payPollGeneration.current) {
-            return;
+            return null;
           }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
-              pendingPostRef.current = () => continuePay(true);
-              return;
+              pendingPostRef.current = () => continuePay(true).then(() => undefined);
+              return null;
             }
             setPayError('request');
-            return;
+            return null;
           }
           setPayError(
             isRateLimitError(err)
@@ -1085,13 +1087,14 @@ export function ForumLoader(): ReactElement | null {
             setPayBusy(false);
           }
         }
+        return minted;
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
-      pendingPostRef.current = () => continuePay(true);
+      pendingPostRef.current = () => continuePay(true).then(() => undefined);
       return;
     }
-    void continuePay(false);
+    return continuePay(false);
   };
 
   const onModeChange = (next: ForumFeedMode): void => {

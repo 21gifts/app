@@ -64,6 +64,7 @@ import {
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
+import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 
 const fetchMock = vi.mocked(fetchMessages);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
@@ -140,6 +141,7 @@ const FOREIGN: ForumMessage = {
 };
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+const originalUserAgent = navigator.userAgent;
 
 async function revealAll(): Promise<void> {
   fireEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -174,6 +176,11 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  Object.defineProperty(navigator, 'userAgent', {
+    configurable: true,
+    value: originalUserAgent,
+  });
+  vi.unstubAllGlobals();
   Object.defineProperty(document, 'visibilityState', {
     configurable: true,
     get: () => 'visible',
@@ -1967,6 +1974,34 @@ describe('ForumLoader', () => {
       }),
     );
     expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('requests the invoice and opens Wallet of Satoshi on iPhone Pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
+    });
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledWith(walletOfSatoshiHref('lnbc21n1example'));
+    });
   });
 
   it('keeps list order when a public pay fetch updates the first of two notes', async () => {

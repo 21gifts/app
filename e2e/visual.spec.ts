@@ -2927,13 +2927,39 @@ test.describe('welcome forum variants', () => {
     });
   }
 
+  type WalletAssignWindow = Window & { __wosAssign?: string };
+
+  async function stubWalletLocationAssign(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      const originalAssign = Location.prototype.assign;
+      Location.prototype.assign = function assign(url: string | URL): void {
+        const href = String(url);
+        if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+          (window as WalletAssignWindow).__wosAssign = href;
+          return;
+        }
+        originalAssign.call(this, url);
+      };
+    });
+  }
+
+  async function submitPayAmount(page: Page): Promise<void> {
+    const payNow = page.getByRole('button', { name: 'Pay', exact: true });
+    if ((await payNow.count()) > 0) {
+      await payNow.click();
+      return;
+    }
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+
   async function openPaySheet(page: Page): Promise<void> {
+    await stubWalletLocationAssign(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await submitPayAmount(page);
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
 
@@ -3599,6 +3625,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome pay-author-wallet', async ({ page }) => {
+    await stubWalletLocationAssign(page);
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {
       if (route.request().method() !== 'GET') {
@@ -3638,7 +3665,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await submitPayAmount(page);
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toBeVisible();

@@ -133,7 +133,7 @@ export interface ForumBoardProps {
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
   /** Submits the pay amount for an invoice. */
-  onPaySubmit: () => void;
+  onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
   /** Selected feed mode. Default in the loader is Active. */
@@ -456,7 +456,20 @@ export function ForumBoard({
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    onPaySubmit();
+    void (async () => {
+      const invoice = await Promise.resolve(onPaySubmit());
+      if (invoice === null || invoice === undefined) {
+        return;
+      }
+      /* v8 ignore next 3 -- SSR has no navigator */
+      if (typeof navigator === 'undefined') {
+        return;
+      }
+      const ua = navigator.userAgent;
+      if (isSmartphoneUserAgent(ua) && !isAndroidUserAgent(ua)) {
+        window.location.assign(walletOfSatoshiHref(invoice.pr));
+      }
+    })();
   };
 
   const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -559,6 +572,10 @@ export function ForumBoard({
           /* v8 ignore start -- Android vs iOS wallet href */
           const android =
             typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
+          const isIosPhone =
+            typeof navigator !== 'undefined'
+              ? isSmartphoneUserAgent(navigator.userAgent) && !android
+              : false;
           const wosHref =
             invoiceForCard === null
               ? null
@@ -790,7 +807,7 @@ export function ForumBoard({
                       ) : undefined
                     }
                   >
-                    {t('forum.payContinue')}
+                    {isIosPhone ? t('forum.payNow') : t('forum.payContinue')}
                   </Button>
                 </form>
               ) : null}
