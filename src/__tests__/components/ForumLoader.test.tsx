@@ -5475,10 +5475,26 @@ it('drops overlapping nested reply deletes without restoring the first', async (
   await revealAll();
   fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
   await screen.findByText('A reply');
-  fireEvent.click(within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', { name: 'Delete reply' }));
-  fireEvent.click(within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', { name: 'Confirm deletion' }));
-  fireEvent.click(within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', { name: 'Delete reply' }));
-  fireEvent.click(within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', { name: 'Confirm deletion' }));
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', {
+      name: 'Delete reply',
+    }),
+  );
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', {
+      name: 'Confirm deletion',
+    }),
+  );
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', {
+      name: 'Delete reply',
+    }),
+  );
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', {
+      name: 'Confirm deletion',
+    }),
+  );
   expect(pending).toHaveLength(2);
   await act(async () => {
     pending[0]!();

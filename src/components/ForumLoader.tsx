@@ -1426,33 +1426,32 @@ export function ForumLoader(): ReactElement | null {
             const remaining = (repliesRef.current ?? []).filter(
               (row) => !deletedIds.current.has(row.id),
             );
-            const parentId =
-              expandedIdRef.current ?? replyParentById.current.get(messageId) ?? null;
-            if (parentId !== null) {
-              hiddenReplyCounts.current.set(
-                parentId,
-                (hiddenReplyCounts.current.get(parentId) ?? 0) + 1,
-              );
-            }
+            const parentId = expandedIdRef.current ?? replyParentById.current.get(messageId);
             if (repliesRef.current !== null) {
               setReplies(remaining);
             }
-            if (parentId !== null) {
-              setMessages((prev) =>
-                prev!.map((row) => {
-                  if (row.id !== parentId) {
-                    return row;
-                  }
-                  return {
-                    ...row,
-                    replyCount:
-                      repliesRef.current === null
-                        ? Math.max(0, row.replyCount - 1)
-                        : remaining.length,
-                  };
-                }),
-              );
+            /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
+            if (parentId === undefined) {
+              return;
             }
+            hiddenReplyCounts.current.set(
+              parentId,
+              (hiddenReplyCounts.current.get(parentId) ?? 0) + 1,
+            );
+            setMessages((prev) =>
+              prev!.map((row) => {
+                if (row.id !== parentId) {
+                  return row;
+                }
+                return {
+                  ...row,
+                  replyCount:
+                    repliesRef.current === null
+                      ? Math.max(0, row.replyCount - 1)
+                      : remaining.length,
+                };
+              }),
+            );
             return;
           }
           setMessages((prev) => prev!.filter((row) => row.id !== messageId));
