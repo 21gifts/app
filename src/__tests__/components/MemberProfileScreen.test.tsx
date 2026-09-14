@@ -572,6 +572,7 @@ describe('MemberProfileScreen', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Message' })).toBeTruthy();
+    expect(screen.queryByText('Message')).toBeNull();
     expect(screen.queryByText('Hello from my profile note.')).toBeNull();
   });
 
