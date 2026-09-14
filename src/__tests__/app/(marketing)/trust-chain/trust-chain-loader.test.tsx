@@ -154,7 +154,9 @@ describe('TrustChainLoader', () => {
     });
     fireEvent.click(screen.getByTestId('trust-node-f'));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Try again' })).toBeDisabled();
+      expect(
+        (screen.getByRole('button', { name: 'Try again' }) as HTMLButtonElement).disabled,
+      ).toBe(true);
     });
   });
 
