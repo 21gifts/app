@@ -3901,11 +3901,27 @@ test.describe('inbox screens', () => {
         body: JSON.stringify({
           conversations: [
             {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Can you help?',
+              lastAt: '2026-08-28T14:00:00.000Z',
+              lastFromMe: false,
+            },
+            {
               id: 'conv-21',
               kind: 'member_platform',
               name: '21.gifts',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+            },
+            {
+              id: 'conv-damus',
+              kind: 'member_damus',
+              name: 'npub1abc…xyz',
+              lastText: 'Hi from Damus',
+              lastAt: '2026-08-28T11:00:00.000Z',
               lastFromMe: false,
             },
           ],
@@ -3914,6 +3930,12 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages');
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('Contact', { exact: true })).toBeVisible();
+    await expect(list.getByText('Direct', { exact: true })).toBeVisible();
+    await expect(list.getByText('Damus', { exact: true })).toBeVisible();
+    await expect(list.getByText('21.gifts')).toBeVisible();
+    await expect(list.getByText('Bob')).toBeVisible();
     await shotScreen(page, 'screen-messages');
   });
 

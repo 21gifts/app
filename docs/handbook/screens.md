@@ -788,7 +788,7 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 
 ### Variant: default
 
-Loaded list with at least one thread (counterpart **21.gifts**, origin **Contact**, last text inbound as muted left preview).
+Loaded list with three inbound threads: Direct **Bob** (`Can you help?`), official Contact **21.gifts** (`Hello team`), Damus **npub1abc…xyz**. Each row shows counterpart name, origin label, last text, time.
 
 ![21.gifts inbox](images/messages.png)
 

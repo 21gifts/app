@@ -949,7 +949,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + list of note-like rows (inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send. Empty / loading / error as catalog. In-card back is **All conversations**; page chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + list of note-like rows (default list shows Contact / Direct / Damus origin rows (inbound last text); inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send. Empty / loading / error as catalog. In-card back is **All conversations**; page chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 
