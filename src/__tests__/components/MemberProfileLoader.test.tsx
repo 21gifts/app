@@ -1,12 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileLoader } from '@/components/MemberProfileLoader';
-import {
-  fetchMember,
-  fetchMemberActivity,
-  fetchMemberPosts,
-  fetchMemberReplies,
-} from '@/lib/api';
+import { fetchMember, fetchMemberActivity, fetchMemberPosts, fetchMemberReplies } from '@/lib/api';
 import type { AccountActivity, MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
