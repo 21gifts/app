@@ -24,7 +24,9 @@ export function ViewProfileScreen({
 
   return (
     <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
-      <h1 className="text-center text-2xl font-semibold tracking-tight">{t('profile.title')}</h1>
+      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+        {t('profile.title')}
+      </h1>
       <AccountActivityChart received={received} />
       <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
         <p className="text-center text-xs tracking-widest text-app-subtle uppercase">

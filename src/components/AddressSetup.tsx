@@ -18,7 +18,7 @@ export function AddressSetup(): ReactElement {
     <section className="mx-auto flex w-full max-w-sm flex-col">
       <AppShellHeader>
         <div className="pt-24">
-          <h1 className="text-center text-2xl font-semibold tracking-tight">
+          <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('setup.addressTitle')}
           </h1>
           {name !== null && name !== undefined && name.trim() !== '' ? (

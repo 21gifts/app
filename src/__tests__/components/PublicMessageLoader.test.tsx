@@ -91,7 +91,9 @@ describe('PublicMessageLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
-    expect(screen.getByText('Could not load this profile. Please try again.')).toBeTruthy();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Could not load this profile. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
@@ -135,9 +137,8 @@ describe('PublicMessageLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Back to the forum' })).toBeTruthy();
     });
-    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
-      '/welcome',
-    );
+    const back = screen.getByRole('link', { name: 'Back to the forum' });
+    expect(back.getAttribute('href')).toBe('/welcome');
   });
 
   it('shows Loading… while session hydrate is not ready', async () => {
@@ -166,6 +167,8 @@ describe('PublicMessageLoader', () => {
     });
     expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID);
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:public');
+    expect(screen.getByAltText('Photo from Ada').className).toContain('rounded-xl');
+    expect(screen.getByAltText('Photo from Ada').className).not.toContain('rounded-2xl');
   });
 
   it('renders a video when hasVideo is true', async () => {
@@ -184,8 +187,16 @@ describe('PublicMessageLoader', () => {
     expect(video?.hasAttribute('controls')).toBe(true);
     const tokens = (video?.getAttribute('class') ?? '').split(/\s+/);
     expect(tokens).toEqual(
-      expect.arrayContaining(['h-auto', 'w-auto', 'max-h-80', 'max-w-full', 'object-contain']),
+      expect.arrayContaining([
+        'h-auto',
+        'w-auto',
+        'max-h-80',
+        'max-w-full',
+        'rounded-xl',
+        'object-contain',
+      ]),
     );
+    expect(tokens).not.toContain('rounded-2xl');
     expect(tokens).not.toContain('w-full');
     expect(tokens).not.toContain('bg-black');
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();

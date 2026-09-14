@@ -15,7 +15,7 @@ export function NameSetup(): ReactElement {
   return (
     <section className="mx-auto flex w-full max-w-sm flex-col">
       <AppShellHeader>
-        <h1 className="pt-24 text-center text-2xl font-semibold tracking-tight">
+        <h1 className="pt-24 text-center text-2xl font-semibold tracking-tight sm:text-3xl">
           {t('setup.nameTitle')}
         </h1>
       </AppShellHeader>

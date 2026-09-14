@@ -134,7 +134,9 @@ describe('MemberProfileLoader', () => {
     vi.mocked(fetchMember).mockResolvedValueOnce(profile);
     vi.mocked(fetchGiftStats).mockResolvedValue(EMPTY_STATS);
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
-    expect(await screen.findByText('Could not load this profile. Please try again.')).toBeTruthy();
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Could not load this profile. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Carol')).toBeTruthy();
     expect(fetchMember).toHaveBeenCalledTimes(2);

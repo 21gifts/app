@@ -53,7 +53,9 @@ afterEach(() => {
 describe('AddressSetup', () => {
   it('asks for a Wallet of Satoshi address after the name', () => {
     renderWithLocale(<AddressSetup />);
-    expect(screen.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeTruthy();
+    expect(
+      screen.getByRole('heading', { name: 'Your Wallet of Satoshi address' }).className,
+    ).toContain('sm:text-3xl');
     expect(screen.getByText('Hi, Ada')).toBeTruthy();
     expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /save name/i })).toBeNull();

@@ -3,6 +3,7 @@
 import { Check, Link2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { IconButton } from '@/components/ui';
 
 const RESET_MS = 1200;
 
@@ -103,21 +104,21 @@ export function HandbookCopyLink({
   const ariaName = t('handbook.copyLink', { label });
 
   return (
-    <button
+    <IconButton
       type="button"
+      size="sm"
+      variant="ghost"
       onClick={handleClick}
       aria-label={ariaName}
       title={ariaName}
       data-copied={copied ? 'true' : undefined}
-      className={`inline-flex items-center shrink-0 rounded px-1.5 py-0.5 text-xs leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper ${
-        copied ? 'text-accent' : 'text-paper/40 hover:text-accent'
-      }`}
+      className={copied ? 'text-accent' : 'text-paper/40 hover:text-accent'}
     >
       {copied ? (
         <Check aria-hidden="true" className="h-4 w-4" />
       ) : (
         <Link2 aria-hidden="true" className="h-4 w-4" />
       )}
-    </button>
+    </IconButton>
   );
 }

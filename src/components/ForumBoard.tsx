@@ -485,7 +485,9 @@ export function ForumBoard({
 
   const errorBlock = (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-center text-sm text-app-fg">{t('forum.error')}</p>
+      <p role="alert" className="text-center text-sm text-app-danger">
+        {t('forum.error')}
+      </p>
       <Button type="button" variant="secondary" onClick={onRetry}>
         {t('forum.retry')}
       </Button>

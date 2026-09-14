@@ -267,12 +267,12 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 
 **Elevation.**
 
-| Level   | Recipe                               | Use                                                  |
-| ------- | ------------------------------------ | ---------------------------------------------------- |
-| 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes |
-| 1       | `border border-app-border shadow-sm` | `Card`                                               |
-| 2       | `border border-app-border shadow-lg` | Menu, language listbox                               |
-| Overlay | `bg-app-overlay`                     | `HandbookLightbox` scrim                             |
+| Level   | Recipe                               | Use                                                                                       |
+| ------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes                                      |
+| 1       | `border border-app-border shadow-sm` | `Card`                                                                                    |
+| 2       | `border border-app-border shadow-lg` | Menu, language listbox                                                                    |
+| Overlay | `bg-app-overlay`                     | `HandbookLightbox`, `PwaInstall`, `IntroduceYourselfOverlay`, `RequirementsOverlay` scrim |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
@@ -644,6 +644,16 @@ Hero **Send help**: `ButtonLink href="/donate" variant="secondary" tone="dark"`.
 
 Glyph: `aria-hidden` on the lucide node.
 
+### Overlay
+
+**Anatomy.** Full-viewport scrim `fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4`. Panel is catalog `Card maxWidth="sm"` (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`, `gap-6`). Close is `IconButton` ghost. `role="dialog"` `aria-modal="true"`.
+
+**Introduce yourself.** Title, body, labeled `ButtonLink` CTA **Write an introduction** to `/welcome`. Close dismisses this mount. No Skip.
+
+**Requirements.** Name, Lightning Address, or living-room rules before a pending post retries. Close dismisses without posting. No Skip.
+
+**States.** Open / dismissed (parent).
+
 ### `Field`
 
 **Anatomy.** `<label className="flex flex-col gap-1 text-left text-sm text-app-fg">` + control.
@@ -785,7 +795,7 @@ Do not restyle QR for dark mode.
 <p role="alert" className="text-center text-sm text-app-danger">
 ```
 
-Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above the sentence, then `Button` **Try again**. Do not use color alone — the sentence is required.
+Load and request failures next to labeled **Try again** use this grammar (`login.error`, `forum.error`, `inbox.error`, `notifications.error`, `view.error`). Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above the sentence, then `Button` **Try again**. Validation alerts already use the same `role="alert"` + `text-app-danger`. Missing (`view.missing`) stays muted, not danger. Do not use color alone — the sentence is required.
 
 ### Marketing header / footer / CTA pair
 
@@ -821,11 +831,11 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Notifications list
 
-**Anatomy.** `Card maxWidth="xl"` + **h1** `notifications.heading` at the **h1** ramp. List of actor / reply / time rows as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`). Unread: semibold `text-app-fg`. Read: actor `font-medium`, reply `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only body: `notifications.photoOnly`. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: copy + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
+**Anatomy.** `Card maxWidth="xl"` + **h1** `notifications.heading` at the **h1** ramp. List of actor / reply / time rows as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`). Unread: semibold `text-app-fg`. Read: actor `font-medium`, reply `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only body: `notifications.photoOnly`. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title`, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Activity **Posts** / **Replies** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -839,17 +849,17 @@ Handbook states: live marketing home.
 
 ### `/legal`
 
-`MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 Legal Notice, H2 Imprint, body, accent **Open the app** → Privacy Policy… → footer. English legal body is a catalog exception. Inline links `text-accent underline underline-offset-2`.
+`MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 Legal Notice, H2 Imprint (`text-xl font-semibold`), body, accent **Open the app** → Privacy Policy (H2 Overview `text-xl font-semibold`)… → footer. English legal body is a catalog exception. Inline links `text-accent underline underline-offset-2`.
 
 ### `/stats`
 
-Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Gifts” → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
+Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Gifts” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
 Handbook states: loading, empty, error + **Try again**, populated charts.
 
 ### `/stats/[day]`
 
-Back link `text-accent underline` “All stats” → display “Gifts on YYYY-MM-DD” → subtitle → `DayLoader` / `GiftDayTable`. Invalid day: `notFound()` (404 shell).
+Back link `text-accent underline underline-offset-2` “All stats” → display “Gifts on YYYY-MM-DD” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → subtitle → `DayLoader` / `GiftDayTable`. Invalid day: `notFound()` (404 shell).
 
 ### `/handbook` (+ screens / functions / endpoints)
 
@@ -887,7 +897,9 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Laws `Banner`.
 - `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular.
 - Composer.
-- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
+- `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `ButtonLink` CTA) when setup is complete and the member has not posted.
+- `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
 
 Author names with `accountId` open `/members/[accountId]`.
 
@@ -897,7 +909,7 @@ Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<
 
 ### `/members/[accountId]`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill, activity **Posts** / **Replies** as labeled `Button sm` toggles) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
 
 Handbook states: default (note present), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (`RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip).
 
@@ -921,7 +933,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/messages/[id]` — public note
 
-Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `PublicMessageLoader`: public note card (`Card md`), amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg` underline. Loading / missing / error + **Try again**.
+Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 

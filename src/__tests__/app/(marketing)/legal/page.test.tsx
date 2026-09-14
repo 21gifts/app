@@ -15,6 +15,13 @@ describe('LegalPage', () => {
   it('shows the legal notice heading', () => {
     render(<LegalPage />);
     expect(screen.getByRole('heading', { name: 'Legal Notice' })).toBeTruthy();
+    const imprint = screen.getByRole('heading', { name: 'Imprint' });
+    expect(imprint.className).toContain('text-xl');
+    expect(imprint.className).toContain('font-semibold');
+    expect(imprint.className).not.toContain('text-paper/70');
+    const overview = screen.getByRole('heading', { name: 'Overview' });
+    expect(overview.className).toContain('text-xl font-semibold');
+    expect(overview.className).not.toContain('text-paper/70');
   });
 
   it('does not describe the app as a separate domain', () => {

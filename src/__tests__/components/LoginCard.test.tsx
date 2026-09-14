@@ -112,6 +112,10 @@ describe('LoginCard', () => {
   it('shows a passkey error with try again', () => {
     mockPasskey('error');
     renderWithLocale(<LoginCard />);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Something went wrong. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
+    expect(alert.className).not.toContain('text-app-muted');
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
     expect(retrySpy).toHaveBeenCalledTimes(1);
   });

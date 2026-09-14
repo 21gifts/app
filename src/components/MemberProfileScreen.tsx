@@ -494,7 +494,7 @@ export function MemberProfileScreen({
       ) : null}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
         <section className="flex w-full flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
-          <h1 className="text-center text-2xl font-semibold tracking-tight">
+          <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} />
@@ -546,22 +546,24 @@ export function MemberProfileScreen({
             )}
           </div>
           <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">
-            <button
+            <Button
               type="button"
+              size="sm"
+              variant={activity === 'posts' ? 'primary' : 'secondary'}
               aria-pressed={activity === 'posts'}
               onClick={() => openActivity('posts')}
-              className="rounded-full border border-app-border-strong px-3 py-1 text-sm text-app-muted"
             >
               {t('profile.postCount', { count: String(profile.postCount) })}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              size="sm"
+              variant={activity === 'replies' ? 'primary' : 'secondary'}
               aria-pressed={activity === 'replies'}
               onClick={() => openActivity('replies')}
-              className="rounded-full border border-app-border-strong px-3 py-1 text-sm text-app-muted"
             >
               {t('profile.replyCount', { count: String(profile.replyCount) })}
-            </button>
+            </Button>
           </div>
         </section>
         {listedNote !== null && activity !== 'posts' ? (
@@ -572,7 +574,9 @@ export function MemberProfileScreen({
             <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
           ) : activityError ? (
             <div className="flex flex-col items-center gap-4">
-              <p className="text-center text-sm text-app-muted">{t('forum.error')}</p>
+              <p role="alert" className="text-center text-sm text-app-danger">
+                {t('forum.error')}
+              </p>
               <Button type="button" onClick={() => void loadActivityFeed(activity)}>
                 {t('view.retry')}
               </Button>

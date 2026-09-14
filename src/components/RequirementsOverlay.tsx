@@ -5,7 +5,7 @@ import { useState, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
-import { Button, IconButton } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
 import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -80,10 +80,10 @@ export function RequirementsOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={t(titleKey)}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
     >
-      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-3xl border border-app-border bg-app-card p-6 shadow-lg">
-        <div className="flex items-start justify-between gap-3">
+      <Card maxWidth="sm">
+        <div className="flex w-full items-start justify-between gap-3">
           <h2 className="text-lg font-semibold tracking-tight text-app-fg">{t(titleKey)}</h2>
           <IconButton
             type="button"
@@ -121,7 +121,7 @@ export function RequirementsOverlay({
             </Button>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
