@@ -594,7 +594,7 @@ const de = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Geben ist Pflicht',
   'about.conv1Body':
-    'Wir glauben: Geben ist Pflicht eines jeden Christen. Die Schrift fragt nicht, ob du gibst — sie setzt es voraus: «Wenn du nun Almosen gibst» (Matthäus 6,2). Wer dieser Welt Güter hat und seinen Bruder darben sieht und sein Herz vor ihm verschliesst, in dem bleibt die Liebe Gottes nicht (1. Johannes 3,17). Glaube ohne Werke ist tot (Jakobus 2,17). Wie viel, bleibt jedem selbst überlassen (2. Korinther 9,7).',
+    'Wir glauben: Geben ist Pflicht eines jeden Christen. Die Schrift fragt nicht, ob du gibst — sie setzt es voraus: «Wenn du nun Almosen gibst» (Matthäus 6,2). Wer dieser Welt Güter hat und seinen Bruder darben sieht und sein Herz vor ihm verschliesst, in dem bleibt die Liebe Gottes nicht (1. Johannes 3,17). Glaube ohne Werke ist tot (Jakobus 2,17). Wie viel, ist eine Sache zwischen der gebenden Person und Gott (2. Korinther 9,7).',
   'about.conv1Body2':
     'Geben ist nicht nur Geld. Ein freundliches Lächeln, Zeit, ein Mantel, ein Besuch — Matthäus 25 nennt die Hungrigen, die Durstigen, den Fremden, die Nackten, die Kranken und die Gefangenen. 21.gifts ist der Weg für das Geldgeschenk: von einer Person zur anderen.',
   'about.conv1Verse':
@@ -1074,7 +1074,7 @@ const es = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Dar es un deber',
   'about.conv1Body':
-    'Creemos que dar es un deber de todo cristiano. La Escritura no dice si das — dice cuándo: «Cuando des limosna» (Mateo 6:2). Quien tiene bienes de este mundo, ve a su hermano en necesidad y le cierra el corazón no tiene en sí el amor de Dios (1 Juan 3:17). La fe sin obras está muerta (Santiago 2:17). Cuánto dar, lo decide cada uno (2 Corintios 9:7).',
+    'Creemos que dar es un deber de todo cristiano. La Escritura no dice si das — dice cuándo: «Cuando des limosna» (Mateo 6:2). Quien tiene bienes de este mundo, ve a su hermano en necesidad y le cierra el corazón no tiene en sí el amor de Dios (1 Juan 3:17). La fe sin obras está muerta (Santiago 2:17). Cuánto dar queda entre quien da y Dios (2 Corintios 9:7).',
   'about.conv1Body2':
     'Dar no es solo dinero. Una sonrisa amable, tiempo, un abrigo, una visita — Mateo 25 nombra al hambriento, al sediento, al forastero, al desnudo, al enfermo y al preso. 21.gifts es el camino para el regalo de dinero: de una persona a otra.',
   'about.conv1Verse': 'Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad.',
@@ -1542,7 +1542,7 @@ const fil = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Tungkulin ang magbigay',
   'about.conv1Body':
-    'Naniniwala kami: tungkulin ng bawat Kristiyano ang magbigay. Hindi sinasabi ng Kasulatan na “kung” magbibigay ka — kundi “kapag”: “Kapag naglilimos ka” (Mateo 6:2). Hindi nananahan ang pag-ibig ng Diyos sa taong may kaya sa buhay, nakakakita ng kapatid na nangangailangan, at nagpapakatigas ng puso (1 Juan 3:17). Patay ang pananampalatayang walang gawa (Santiago 2:17). Kung magkano, sariling pasya ng bawat isa (2 Corinto 9:7).',
+    'Naniniwala kami: tungkulin ng bawat Kristiyano ang magbigay. Hindi sinasabi ng Kasulatan na “kung” magbibigay ka — kundi “kapag”: “Kapag naglilimos ka” (Mateo 6:2). Hindi nananahan ang pag-ibig ng Diyos sa taong may kaya sa buhay, nakakakita ng kapatid na nangangailangan, at nagpapakatigas ng puso (1 Juan 3:17). Patay ang pananampalatayang walang gawa (Santiago 2:17). Kung magkano, nasa pagitan iyon ng nagbibigay at ng Diyos (2 Corinto 9:7).',
   'about.conv1Body2':
     'Hindi pera lang ang pagbibigay. Isang magiliw na ngiti, oras, isang damit, isang dalaw — binabanggit ng Mateo 25 ang nagugutom, ang nauuhaw, ang dayuhan, ang walang damit, ang maysakit, at ang nakabilanggo. Ang 21.gifts ang daan para sa regalong pera: mula sa isang tao patungo sa iba.',
   'about.conv1Verse':
