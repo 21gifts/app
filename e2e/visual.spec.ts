@@ -927,7 +927,42 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await fulfillMixedSatsMessages(page);
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              accountId: 'acc_ada',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+            {
+              id: 'm2',
+              accountId: 'acc_carol',
+              name: 'Carol',
+              text: 'I can send a small gift tomorrow.',
+              createdAt: '2026-08-28T11:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+            },
+          ],
+        }),
+      });
+    });
     await page.route('**/forum/messages/**/replies', async (route) => {
       await route.fulfill({
         status: 200,
