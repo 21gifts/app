@@ -142,7 +142,7 @@ export interface ForumBoardProps {
   onModeChange: (mode: ForumFeedMode) => void;
   /**
    * Unseen zero-sat notes since the last No gifts yet visit. Chip is shown
-   * only when this is > 0 and unpaid is not selected. Default 0.
+   * only when this is \> 0 and unpaid is not selected. Default 0.
    */
   unpaidNewCount?: number;
   /** When true, render the living-room laws hint box. */
@@ -262,7 +262,7 @@ function showForumPm(
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
  * Active/No gifts yet/All/Most popular selector (unpaid may show a count
- * chip of unseen zero-sat notes when `unpaidNewCount` is > 0 and that mode
+ * chip of unseen zero-sat notes when `unpaidNewCount` is \> 0 and that mode
  * is not selected), composer under the mode
  * filters above the newest-first list (new notes only, photo or video
  * attach), newest-first list (social feed) or empty/loading/error, per-card

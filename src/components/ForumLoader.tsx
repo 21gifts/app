@@ -1432,9 +1432,7 @@ export function ForumLoader(): ReactElement | null {
         mode={feedMode}
         onModeChange={onModeChange}
         unpaidNewCount={
-          feedMode === 'unpaid' || messages === null
-            ? 0
-            : unpaidNewCount(messages, unpaidSeenAt)
+          feedMode === 'unpaid' || messages === null ? 0 : unpaidNewCount(messages, unpaidSeenAt)
         }
         lawsVisible={lawsVisible}
         onDismissLaws={onDismissLaws}

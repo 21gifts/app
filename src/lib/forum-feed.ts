@@ -82,10 +82,7 @@ export function visibleForumMessages(
  * @param seenAt - ISO last-visit stamp, or `null` when never opened.
  * @returns How many currently loaded unpaid notes are strictly newer than `seenAt`.
  */
-export function unpaidNewCount(
-  messages: readonly ForumMessage[],
-  seenAt: string | null,
-): number {
+export function unpaidNewCount(messages: readonly ForumMessage[], seenAt: string | null): number {
   if (seenAt === null) {
     return 0;
   }

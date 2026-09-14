@@ -14,7 +14,7 @@ export type SegmentedControlOption<T extends string> = {
   label: string;
   /** Numeric chip; omitted from the DOM when undefined or ≤ 0. */
   badge?: number;
-  /** Accessible name when `badge` > 0. */
+  /** Accessible name when `badge` \> 0. */
   badgeAriaLabel?: string;
 };
 
