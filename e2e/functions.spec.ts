@@ -180,20 +180,21 @@ async function stubPayableNote(page: Page): Promise<void> {
   });
 }
 
-type WalletAssignWindow = Window & { __wosAssign?: string };
+const walletAssignByPage = new WeakMap<Page, string>();
 
 async function stubWalletLocationAssign(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    const originalAssign = Location.prototype.assign;
-    Location.prototype.assign = function assign(url: string | URL): void {
-      const href = String(url);
-      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
-        (window as WalletAssignWindow).__wosAssign = href;
-        return;
-      }
-      originalAssign.call(this, url);
-    };
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Page.enable');
+  cdp.on('Page.frameRequestedNavigation', (event: { url?: string }) => {
+    const href = event.url ?? '';
+    if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+      walletAssignByPage.set(page, href);
+    }
   });
+}
+
+function recordedWalletAssign(page: Page): string | undefined {
+  return walletAssignByPage.get(page);
 }
 
 async function submitPayAmount(page: Page): Promise<void> {
@@ -2403,7 +2404,7 @@ test('Function: openInSystemBrowser — Open in browser is shown in Telegram Web
 test('Function: QrCode — pay sheet shows the invoice QR', async ({ page, request }) => {
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-  expect(await page.evaluate(() => (window as WalletAssignWindow).__wosAssign)).toBeUndefined();
+  expect(recordedWalletAssign(page)).toBeUndefined();
 });
 
 test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet link', async ({
@@ -2419,8 +2420,7 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  const assigned = await page.evaluate(() => (window as WalletAssignWindow).__wosAssign);
-  expect(assigned?.startsWith('walletofsatoshi:lightning:')).toBe(true);
+  expect(recordedWalletAssign(page)?.startsWith('walletofsatoshi:lightning:')).toBe(true);
 });
 
 test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({

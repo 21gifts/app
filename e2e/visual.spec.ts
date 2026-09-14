@@ -2927,19 +2927,16 @@ test.describe('welcome forum variants', () => {
     });
   }
 
-  type WalletAssignWindow = Window & { __wosAssign?: string };
+  const walletAssignByPage = new WeakMap<Page, string>();
 
   async function stubWalletLocationAssign(page: Page): Promise<void> {
-    await page.addInitScript(() => {
-      const originalAssign = Location.prototype.assign;
-      Location.prototype.assign = function assign(url: string | URL): void {
-        const href = String(url);
-        if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
-          (window as WalletAssignWindow).__wosAssign = href;
-          return;
-        }
-        originalAssign.call(this, url);
-      };
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Page.enable');
+    cdp.on('Page.frameRequestedNavigation', (event: { url?: string }) => {
+      const href = event.url ?? '';
+      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+        walletAssignByPage.set(page, href);
+      }
     });
   }
 
