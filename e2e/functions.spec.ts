@@ -917,7 +917,7 @@ test('Function: putAboutMe — signed-in profile saves About me', async ({ page,
     await page.getByRole('button', { name: 'Close' }).click();
   }
   await page.getByRole('button', { name: 'Write your About me' }).click();
-  await page.getByLabel('About me').fill('I build on Bitcoin');
+  await page.getByRole('textbox', { name: 'About me' }).fill('I build on Bitcoin');
   await page.getByRole('button', { name: 'Save About me' }).click();
   await expect(page.getByText('I build on Bitcoin')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
