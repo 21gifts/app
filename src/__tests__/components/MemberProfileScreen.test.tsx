@@ -243,11 +243,7 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByText('Not set')).toBeTruthy();
     cleanup();
     renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, location: 'Zug' }}
-        received={[]}
-        donated={[]}
-      />,
+      <MemberProfileScreen profile={{ ...profile, location: 'Zug' }} received={[]} donated={[]} />,
     );
     expect(screen.getByText('Zug')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
