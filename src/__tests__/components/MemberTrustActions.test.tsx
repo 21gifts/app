@@ -186,13 +186,13 @@ describe('MemberTrustActions', () => {
     expect(screen.getByRole('link', { name: 'Already on the Trust Chain.' })).toBeTruthy();
   });
 
-  it('sets role=status when the action fails', async () => {
+  it('sets role=alert when the action fails', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     vi.mocked(postTrustVerify).mockRejectedValue(new Error('fail'));
     renderWithLocale(<MemberTrustActions profile={profile} />);
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
     await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toBe(
+      expect(screen.getByRole('alert').textContent).toBe(
         'Could not update this member. Please try again.',
       );
     });
