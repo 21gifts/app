@@ -551,7 +551,7 @@ Same pay sheet captured at desktop and mobile. On a smartphone user-agent: **Pay
 
 ### Variant: pay-author-wallet
 
-Payable note, amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. No QR and no Pay button.
+Payable note, amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) otherwise. No payment QR and no invoice-step **Pay with Wallet of Satoshi** button.
 
 ![21.gifts welcome pay author wallet](images/welcome-pay-author-wallet.png)
 

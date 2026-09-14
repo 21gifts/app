@@ -569,13 +569,15 @@ export function ForumBoard({
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
+          /* v8 ignore next 5 -- SSR has no navigator */
+          const isIosPhone =
+            typeof navigator !== 'undefined'
+              ? isSmartphoneUserAgent(navigator.userAgent) &&
+                !isAndroidUserAgent(navigator.userAgent)
+              : false;
           /* v8 ignore start -- Android vs iOS wallet href */
           const android =
             typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
-          const isIosPhone =
-            typeof navigator !== 'undefined'
-              ? isSmartphoneUserAgent(navigator.userAgent) && !android
-              : false;
           const wosHref =
             invoiceForCard === null
               ? null
