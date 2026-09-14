@@ -101,9 +101,12 @@ describe('forum-feed', () => {
     expect(hasUnseenForumPosts([ADA], [CAROL, ADA])).toBe(true);
   });
 
-  it('does not report unseen posts before or without an initial list', () => {
+  it('does not report unseen posts before the initial list', () => {
     expect(hasUnseenForumPosts(null, [ADA])).toBe(false);
-    expect(hasUnseenForumPosts([], [ADA])).toBe(false);
+  });
+
+  it('treats a loaded empty list with a fetched id as unseen', () => {
+    expect(hasUnseenForumPosts([], [ADA])).toBe(true);
   });
 
   it('compares ids rather than updated message values', () => {

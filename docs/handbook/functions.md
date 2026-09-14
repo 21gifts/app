@@ -1033,7 +1033,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: hasUnseenForumPosts
 
-- **Purpose:** True when a fetched forum list contains at least one message id that the currently loaded list does not. Empty or null current is not unseen so the first load applies instead of showing **New posts**.
+- **Purpose:** True when a fetched forum list contains at least one message id that the currently loaded list does not. `null` current is not unseen so the first load applies instead of showing **New posts**. A loaded empty list (`[]`) with new ids is unseen.
 - **Inputs:** `current` (`ForumMessage[]` or `null`) and `fetched` (newest-first GET payload).
 - **Returns / side effects:** Boolean. Compares ids only; sat changes on existing ids are not unseen.
 - **Used by:** `ForumLoader`.

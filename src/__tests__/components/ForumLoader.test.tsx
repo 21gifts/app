@@ -3518,6 +3518,36 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Fresh from refresh')).toBeNull();
   });
 
+  it('holds unseen ids on a loaded empty feed while scrolled', async () => {
+    fetchMock.mockResolvedValueOnce([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    fetchMock.mockResolvedValueOnce([FRESH]);
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Fresh from refresh')).toBeNull();
+  });
+
   it('does not double-fetch on first mount before any visibility event', async () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);

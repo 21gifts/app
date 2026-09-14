@@ -18,15 +18,15 @@ export const FORUM_FEED_MODES: readonly ForumFeedMode[] = ['active', 'unpaid', '
 /**
  * Checks whether a fetched forum list contains a message not present in the loaded list.
  *
- * @param current - The currently loaded forum messages, or null before the initial load.
+ * @param current - The currently loaded forum messages, or null before the initial load. An empty array is a loaded empty feed.
  * @param fetched - The newly fetched forum messages.
- * @returns True when a non-empty current list is missing at least one fetched message id.
+ * @returns True when a loaded list (including empty) is missing at least one fetched message id. Null current is not unseen.
  */
 export function hasUnseenForumPosts(
   current: readonly ForumMessage[] | null,
   fetched: readonly ForumMessage[],
 ): boolean {
-  if (!current || current.length === 0) {
+  if (current === null) {
     return false;
   }
 
