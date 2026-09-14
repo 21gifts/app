@@ -444,7 +444,7 @@ Every public UI screen (`src/app/**/page.tsx`, plus `/404`) **must** have a
 **except** the handbook doc routes in `HANDBOOK_DOC_ROUTES`
 (`/handbook`, `/handbook/screens`, `/handbook/functions`, `/handbook/endpoints`).
 Those are documentation pages, not product screens, and are not screenshot-gated.
-`/handbook/screens` *shows* product-screen goldens and is not itself a golden.
+`/handbook/screens` _shows_ product-screen goldens and is not itself a golden.
 They still need `## Screen:` prose and e2e `page.goto`. They are **not** listed
 in `SCREEN_VARIANTS`.
 Visual specs run in four projects (`desktop-light`, `desktop-dark`,
