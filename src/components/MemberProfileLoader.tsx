@@ -72,12 +72,9 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
           }
           setReceived(activity.receivedOverTime);
           setDonated(activity.donatedOverTime);
-        } catch (err) {
+        } catch {
           if (cancelled) {
             return;
-          }
-          if (err instanceof MissingRequirementsError) {
-            throw err;
           }
           setReceived([]);
           setDonated([]);
