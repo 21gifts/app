@@ -968,12 +968,14 @@ export function ForumBoard({
                     })}
                     {rateDay !== null ? (
                       <>
-                        {' · '}
-                        {formatFiatDisplay(
-                          satsToFiatAmount(invoiceForCard.amountSats, rateDay, fiat),
-                          fiat,
-                          numberFormat,
-                        )}
+                        <span aria-hidden="true"> · </span>
+                        <span>
+                          {formatFiatDisplay(
+                            satsToFiatAmount(invoiceForCard.amountSats, rateDay, fiat),
+                            fiat,
+                            numberFormat,
+                          )}
+                        </span>
                       </>
                     ) : null}
                   </p>
