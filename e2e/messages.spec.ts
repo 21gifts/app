@@ -68,7 +68,9 @@ test('signed-in inbox heading is Messages', async ({ page }) => {
   await page.goto('/messages');
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Conversation type' })).toHaveCount(0);
-  await expect(page.getByText('21.gifts')).toBeVisible();
+  await expect(
+    page.getByRole('list', { name: 'Conversations' }).getByText('21.gifts'),
+  ).toBeVisible();
 });
 
 test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
