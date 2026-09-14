@@ -1027,7 +1027,7 @@ export function ForumBoard({
                         autoComplete="off"
                         autoCorrect="off"
                         spellCheck={false}
-                        placeholder={t('forum.replyAmountPlaceholder')}
+                        placeholder={t('forum.payAmountPlaceholder')}
                         value={replyAmountDraft}
                         disabled={
                           replyPosting || repliesLoading || repliesError || replies === null
