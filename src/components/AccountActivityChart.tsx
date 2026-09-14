@@ -165,8 +165,7 @@ export function AccountActivityChart({
     yTickLabels.add(label);
     yTicks.push(tick);
   }
-  const xIdx =
-    n === 0 ? [] : [...new Set(n <= 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1])];
+  const xIdx = [...new Set(n <= 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1])];
 
   const donatedLine = linePoints('donated');
   const receivedLine = linePoints('received');
