@@ -1351,6 +1351,37 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
   });
 
+  it('shows a fiat equivalent on the pay confirm line', async () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        payWaiting={true}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(screen.getByText('$0.02')).toBeTruthy();
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+  });
+
   it('hides the invoice QR on iPhone and keeps the wallet button', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
