@@ -186,6 +186,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:unpaid-new-count",
+    "label": "/welcome unpaid-new-count",
+    "visual": "state-welcome-unpaid-new-count",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:empty-unpaid",
     "label": "/welcome empty-unpaid",
     "visual": "state-welcome-empty-unpaid",

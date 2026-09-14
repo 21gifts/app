@@ -135,4 +135,103 @@ describe('SegmentedControl', () => {
     );
     expect(screen.getByRole('group', { name: 'Chart scale' }).className).not.toContain('undefined');
   });
+
+  it('keeps an unbadged option as a text-node label without aria-label', () => {
+    renderWithLocale(
+      <SegmentedControl
+        value="active"
+        options={NEUTRAL_OPTIONS}
+        onChange={() => undefined}
+        ariaLabel="Forum view"
+        tone="neutral"
+      />,
+    );
+    const active = screen.getByRole('button', { name: /^Active$/ });
+    expect(active.hasAttribute('aria-label')).toBe(false);
+    expect(active.childElementCount).toBe(0);
+  });
+
+  it('exposes a positive badge as an aria-hidden chip and uses badgeAriaLabel', () => {
+    renderWithLocale(
+      <SegmentedControl
+        value="active"
+        options={[
+          { value: 'active' as const, label: 'Active' },
+          {
+            value: 'unpaid' as const,
+            label: 'No gifts yet',
+            badge: 3,
+            badgeAriaLabel: 'No gifts yet, 3 new',
+          },
+        ]}
+        onChange={() => undefined}
+        ariaLabel="Forum view"
+        tone="neutral"
+      />,
+    );
+    const unpaid = screen.getByRole('button', { name: 'No gifts yet, 3 new' });
+    expect(unpaid.getAttribute('aria-label')).toBe('No gifts yet, 3 new');
+    const chip = screen.getByText('3');
+    expect(chip.tagName).toBe('SPAN');
+    expect(chip.getAttribute('aria-hidden')).toBe('true');
+    expect(unpaid.contains(chip)).toBe(true);
+  });
+
+  it('treats badge 0 like no badge', () => {
+    renderWithLocale(
+      <SegmentedControl
+        value="active"
+        options={[
+          { value: 'active' as const, label: 'Active', badge: 0 },
+          { value: 'all' as const, label: 'All' },
+        ]}
+        onChange={() => undefined}
+        ariaLabel="Forum view"
+        tone="neutral"
+      />,
+    );
+    const active = screen.getByRole('button', { name: /^Active$/ });
+    expect(active.hasAttribute('aria-label')).toBe(false);
+    expect(active.childElementCount).toBe(0);
+    expect(screen.queryByText('0')).toBeNull();
+  });
+
+  it('covers a gift-tone option with a positive badge', () => {
+    renderWithLocale(
+      <SegmentedControl
+        value="sat"
+        options={[
+          { value: 'sat' as const, label: '₿', badge: 2, badgeAriaLabel: '2 new' },
+          { value: 'usd' as const, label: 'USD' },
+        ]}
+        onChange={() => undefined}
+        ariaLabel="Chart scale"
+        tone="gift"
+      />,
+    );
+    const sat = screen.getByRole('button', { name: '2 new' });
+    expect(sat.getAttribute('aria-label')).toBe('2 new');
+    const chip = screen.getByText('2');
+    expect(chip.tagName).toBe('SPAN');
+    expect(chip.getAttribute('aria-hidden')).toBe('true');
+    expect(sat.contains(chip)).toBe(true);
+  });
+
+  it('keeps the visible label as the accessible name when badgeAriaLabel is empty', () => {
+    renderWithLocale(
+      <SegmentedControl
+        value="active"
+        options={[
+          { value: 'active' as const, label: 'Active' },
+          { value: 'unpaid' as const, label: 'No gifts yet', badge: 3, badgeAriaLabel: '' },
+        ]}
+        onChange={() => undefined}
+        ariaLabel="Forum view"
+        tone="neutral"
+      />,
+    );
+    const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
+    expect(unpaid.hasAttribute('aria-label')).toBe(false);
+    expect(screen.getByText('3').getAttribute('aria-hidden')).toBe('true');
+  });
 });

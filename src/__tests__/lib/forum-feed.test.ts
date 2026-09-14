@@ -4,6 +4,7 @@ import {
   DEFAULT_FORUM_FEED_MODE,
   FORUM_FEED_MODES,
   hasUnseenForumPosts,
+  unpaidNewCount,
   visibleForumMessages,
 } from '@/lib/forum-feed';
 
@@ -155,5 +156,42 @@ describe('forum-feed', () => {
     expect(active).not.toBe(input);
     expect(popular).not.toBe(input);
     expect(visibleForumMessages(input, 'all')).not.toBe(input);
+  });
+
+  it('unpaidNewCount is 0 when seenAt is null even with unpaid rows', () => {
+    expect(unpaidNewCount([BOB], null)).toBe(0);
+  });
+
+  it('unpaidNewCount is 0 when seenAt is invalid', () => {
+    expect(unpaidNewCount([BOB], 'not-a-date')).toBe(0);
+  });
+
+  it('unpaidNewCount counts unpaid notes created after seenAt', () => {
+    expect(unpaidNewCount([BOB], '2026-01-01T00:00:00.000Z')).toBe(1);
+  });
+
+  it('unpaidNewCount is 0 when unpaid createdAt equals seenAt', () => {
+    expect(unpaidNewCount([BOB], BOB.createdAt)).toBe(0);
+  });
+
+  it('unpaidNewCount is 0 when unpaid createdAt is before seenAt', () => {
+    expect(unpaidNewCount([BOB], '2026-12-01T00:00:00.000Z')).toBe(0);
+  });
+
+  it('unpaidNewCount ignores paid notes created after seenAt', () => {
+    expect(unpaidNewCount([ADA], '2026-01-01T00:00:00.000Z')).toBe(0);
+  });
+
+  it('unpaidNewCount is 0 for an empty list', () => {
+    expect(unpaidNewCount([], '2026-01-01T00:00:00.000Z')).toBe(0);
+  });
+
+  it('unpaidNewCount counts only newer unpaid rows in a mixed list', () => {
+    const newerUnpaid = { ...BOB, id: 'm-new', createdAt: '2026-08-29T10:00:00.000Z' };
+    const olderUnpaid = { ...BOB, id: 'm-old', createdAt: '2025-01-01T00:00:00.000Z' };
+    const invalidUnpaid = { ...BOB, id: 'm-bad', createdAt: 'not-a-date' };
+    const input = Object.freeze([ADA, newerUnpaid, olderUnpaid, invalidUnpaid, BOB]);
+    expect(unpaidNewCount(input, '2026-08-28T09:00:00.000Z')).toBe(2);
+    expect(input).toEqual([ADA, newerUnpaid, olderUnpaid, invalidUnpaid, BOB]);
   });
 });

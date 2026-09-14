@@ -6,12 +6,24 @@ export type SegmentedControlTone = 'gift' | 'neutral';
 /** Shell for gift tone (ignored for neutral). Default `app`. */
 export type SegmentedControlShell = 'app' | 'dark';
 
+/** One option in {@link SegmentedControl}. */
+export type SegmentedControlOption<T extends string> = {
+  /** Option value reported to `onChange`. */
+  value: T;
+  /** Visible label. */
+  label: string;
+  /** Numeric chip; omitted from the DOM when undefined or ≤ 0. */
+  badge?: number;
+  /** Accessible name when `badge` \> 0. */
+  badgeAriaLabel?: string;
+};
+
 /** Props for {@link SegmentedControl}. */
 export interface SegmentedControlProps<T extends string> {
   /** Active option value. */
   value: T;
   /** Options to render as pressed buttons. */
-  options: readonly { value: T; label: string }[];
+  options: readonly SegmentedControlOption<T>[];
   /** Called with the next value when an option is pressed. */
   onChange: (value: T) => void;
   /** Accessible name for the group. */
@@ -22,6 +34,46 @@ export interface SegmentedControlProps<T extends string> {
   shell?: SegmentedControlShell;
   /** Extra classes on the outer track. */
   className?: string;
+}
+
+const BADGE_CLASS =
+  'ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg';
+
+/**
+ * Chip for an option whose `badge` is a positive count, or `null` when omitted.
+ *
+ * @param badge - Optional count from the option.
+ * @returns The chip element, or `null`.
+ */
+function optionBadge(badge: number | undefined): ReactElement | null {
+  if (badge === undefined || badge <= 0) {
+    return null;
+  }
+  return (
+    <span aria-hidden="true" className={BADGE_CLASS}>
+      {badge}
+    </span>
+  );
+}
+
+/**
+ * Button `aria-label` when a positive badge has a non-empty accessible name.
+ *
+ * @param badge - Optional count from the option.
+ * @param badgeAriaLabel - Optional accessible name for the badged button.
+ * @returns The label, or `undefined` so the visible text remains the name.
+ */
+function optionBadgeAriaLabel(
+  badge: number | undefined,
+  badgeAriaLabel: string | undefined,
+): string | undefined {
+  if (badge === undefined || badge <= 0) {
+    return undefined;
+  }
+  if (badgeAriaLabel === undefined || badgeAriaLabel === '') {
+    return undefined;
+  }
+  return badgeAriaLabel;
 }
 
 /**
@@ -55,12 +107,14 @@ export function SegmentedControl<T extends string>({
               key={opt.value}
               type="button"
               aria-pressed={selected}
+              aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
               onClick={() => onChange(opt.value)}
               className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
                 selected ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
               }`}
             >
               {opt.label}
+              {optionBadge(opt.badge)}
             </button>
           );
         })}
@@ -84,10 +138,12 @@ export function SegmentedControl<T extends string>({
             key={opt.value}
             type="button"
             aria-pressed={selected}
+            aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
             onClick={() => onChange(opt.value)}
             className={`min-h-11 min-w-11 px-2 py-1 ${selected ? selectedClass : unselectedClass}`}
           >
             {opt.label}
+            {optionBadge(opt.badge)}
           </button>
         );
       })}

@@ -268,6 +268,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'unpaid-new-count',
+    image: 'welcome-unpaid-new-count.png',
+    visual: 'state-welcome-unpaid-new-count',
+    needle: 'No gifts yet, 1 new',
+  },
+  {
+    route: '/welcome',
     id: 'empty-unpaid',
     image: 'welcome-empty-unpaid.png',
     visual: 'state-welcome-empty-unpaid',
