@@ -5456,6 +5456,50 @@ it('removes a moderated reply, keeps the parent, and ignores restored replies', 
   ).toBeTruthy();
 });
 
+it('lets a later server reply raise the count after a session delete', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  repliesMock.mockResolvedValue([NESTED_REPLY]);
+  vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  await screen.findByText('A reply');
+  const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
+  await waitFor(() => expect(screen.queryByText('A reply')).toBeNull());
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+  ).toBeTruthy();
+
+  fetchMock.mockResolvedValueOnce([{ ...SAMPLE, replyCount: 2 }]);
+  const before = fetchMock.mock.calls.length;
+  const event = new Event('pageshow');
+  Object.defineProperty(event, 'persisted', { value: true });
+  fireEvent(window, event);
+  await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+  ).toBeTruthy();
+
+  fetchMock.mockResolvedValueOnce([{ ...SAMPLE, replyCount: 1 }]);
+  const beforeCatchUp = fetchMock.mock.calls.length;
+  fireEvent(window, event);
+  await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeCatchUp));
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+  ).toBeTruthy();
+  const card = screen.getByText('Hello from Ada').closest('li')!;
+  fireEvent.click(within(card).getByRole('button', { name: 'Hide replies' }));
+  fireEvent.click(within(card).getByRole('button', { name: 'Show replies' }));
+  await waitFor(() => expect(repliesMock.mock.calls.length).toBeGreaterThan(1));
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+  ).toBeTruthy();
+});
+
 it('drops overlapping nested reply deletes without restoring the first', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
   fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 2 }]);

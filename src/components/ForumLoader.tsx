@@ -144,9 +144,38 @@ function isReplyPaymentError(err: unknown): boolean {
   return /reply needs a bitcoin payment/i.test(err.message);
 }
 
-/** Raise the count with the server, minus replies still hidden this session. */
-function combineReplyCount(prior: number, incoming: number, hidden: number): number {
-  return Math.max(prior, Math.max(0, incoming - hidden));
+/**
+ * Server replyCount minus session-hidden replies. When the server count
+ * drops, shrink hidden — those deletes are already reflected in `incoming`.
+ */
+function combineReplyCount(
+  incoming: number,
+  hidden: number,
+  lastIncoming: number,
+): { replyCount: number; hidden: number; lastIncoming: number } {
+  const drop = Math.max(0, lastIncoming - incoming);
+  const nextHidden = Math.max(0, hidden - drop);
+  return {
+    replyCount: Math.max(0, incoming - nextHidden),
+    hidden: nextHidden,
+    lastIncoming: incoming,
+  };
+}
+
+function applySessionReplyCount(
+  id: string,
+  incoming: number,
+  hiddenReplyCounts: Map<string, number>,
+  lastServerReplyCount: Map<string, number>,
+): number {
+  const combined = combineReplyCount(
+    incoming,
+    hiddenReplyCounts.get(id) ?? 0,
+    lastServerReplyCount.get(id) ?? incoming,
+  );
+  hiddenReplyCounts.set(id, combined.hidden);
+  lastServerReplyCount.set(id, combined.lastIncoming);
+  return combined.replyCount;
 }
 
 /**
@@ -156,31 +185,28 @@ function combineReplyCount(prior: number, incoming: number, hidden: number): num
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the api.
  * @param hiddenReplyCounts - Session-deleted reply counts keyed by parent id.
+ * @param lastServerReplyCount - Last merged server replyCount per parent id.
  * @returns Merged newest-first list.
  */
 function mergeMessages(
   prev: ForumMessage[] | null,
   next: ForumMessage[],
-  hiddenReplyCounts: ReadonlyMap<string, number> = new Map(),
+  hiddenReplyCounts: Map<string, number> = new Map(),
+  lastServerReplyCount: Map<string, number> = new Map(),
 ): ForumMessage[] {
-  if (prev === null) {
-    return next;
-  }
-  const prevById = new Map(prev.map((message) => [message.id, message]));
-  const mergedNext = next.map((message) => {
-    const prior = prevById.get(message.id);
-    if (prior === undefined) {
-      return message;
-    }
-    return {
-      ...message,
-      replyCount: combineReplyCount(
-        prior.replyCount,
-        message.replyCount,
-        hiddenReplyCounts.get(message.id) ?? 0,
-      ),
-    };
+  const withHiddenCount = (message: ForumMessage): ForumMessage => ({
+    ...message,
+    replyCount: applySessionReplyCount(
+      message.id,
+      message.replyCount,
+      hiddenReplyCounts,
+      lastServerReplyCount,
+    ),
   });
+  if (prev === null) {
+    return next.map(withHiddenCount);
+  }
+  const mergedNext = next.map(withHiddenCount);
   const ids = new Set(next.map((message) => message.id));
   const extra = prev.filter((message) => !ids.has(message.id));
   return [...extra, ...mergedNext];
@@ -242,10 +268,12 @@ export function ForumLoader(): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const router = useRouter();
   const setAccount = useAuthStore((state) => state.setAccount);
-  /** Session-local hidden post ids so a stale GET cannot resurrect a post already hidden this session. */
+  /** Session-local hidden message ids (posts and replies) so stale GETs cannot resurrect either. */
   const deletedIds = useRef(new Set<string>());
   /** Session-deleted nested reply counts keyed by parent id. */
   const hiddenReplyCounts = useRef(new Map<string, number>());
+  /** Last merged server replyCount per parent, for shrinking hidden on catch-up. */
+  const lastServerReplyCount = useRef(new Map<string, number>());
   /** Last known parent id for each loaded reply, kept after collapse. */
   const replyParentById = useRef(new Map<string, string>());
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
@@ -401,7 +429,7 @@ export function ForumLoader(): ReactElement | null {
         return 'ok';
       }
       setMessages((prev) =>
-        mergeMessages(prev, next, hiddenReplyCounts.current).filter(
+        mergeMessages(prev, next, hiddenReplyCounts.current, lastServerReplyCount.current).filter(
           (row) => !deletedIds.current.has(row.id),
         ),
       );
@@ -726,7 +754,8 @@ export function ForumLoader(): ReactElement | null {
           }
           const filtered = next.filter((row) => !deletedIds.current.has(row.id));
           setReplies(filtered);
-          if ((hiddenReplyCounts.current.get(expandedId) ?? 0) > 0) {
+          const hiddenForThread = hiddenReplyCounts.current.get(expandedId);
+          if (hiddenForThread !== undefined && hiddenForThread > 0) {
             setMessages((prev) => {
               /* v8 ignore next 3 -- expanded fetchReplies only runs after the list has loaded */
               if (prev === null) {
@@ -843,10 +872,11 @@ export function ForumLoader(): ReactElement | null {
                     ? {
                         ...row,
                         ...next,
-                        replyCount: combineReplyCount(
-                          row.replyCount,
+                        replyCount: applySessionReplyCount(
+                          next.id,
                           next.replyCount,
-                          hiddenReplyCounts.current.get(next.id) ?? 0,
+                          hiddenReplyCounts.current,
+                          lastServerReplyCount.current,
                         ),
                       }
                     : row,
@@ -1431,21 +1461,23 @@ export function ForumLoader(): ReactElement | null {
                 const isListedPost =
                   messagesRef.current?.some((row) => row.id === messageId) === true;
                 if (!isListedPost) {
-                  const remaining = (repliesRef.current ?? []).filter(
-                    (row) => !deletedIds.current.has(row.id),
-                  );
                   const parentId = replyParentById.current.get(messageId);
-                  if (expandedIdRef.current === parentId && repliesRef.current !== null) {
-                    setReplies(remaining);
+                  if (expandedIdRef.current === parentId) {
+                    setReplies((prev) => {
+                      /* v8 ignore next 3 -- replies are null only before the first fetch returns */
+                      if (prev === null) {
+                        return prev;
+                      }
+                      return prev.filter((row) => !deletedIds.current.has(row.id));
+                    });
                   }
                   /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
                   if (parentId === undefined) {
                     return;
                   }
-                  hiddenReplyCounts.current.set(
-                    parentId,
-                    (hiddenReplyCounts.current.get(parentId) ?? 0) + 1,
-                  );
+                  /* v8 ignore next -- first delete has no map entry yet */
+                  const prevHidden = hiddenReplyCounts.current.get(parentId) ?? 0;
+                  hiddenReplyCounts.current.set(parentId, prevHidden + 1);
                   setMessages((prev) =>
                     prev!.map((row) => {
                       if (row.id !== parentId) {
@@ -1453,10 +1485,7 @@ export function ForumLoader(): ReactElement | null {
                       }
                       return {
                         ...row,
-                        replyCount:
-                          expandedIdRef.current === parentId && repliesRef.current !== null
-                            ? remaining.length
-                            : Math.max(0, row.replyCount - 1),
+                        replyCount: Math.max(0, row.replyCount - 1),
                       };
                     }),
                   );
