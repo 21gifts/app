@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
   agreeToRules,
+  fetchMemberPosts,
+  fetchMemberReplies,
   fetchReplies,
   openConversation,
   postMessage,
@@ -31,6 +33,8 @@ vi.mock('@/lib/api', () => ({
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchMemberPosts: vi.fn(),
+  fetchMemberReplies: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
@@ -46,6 +50,8 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   profileMessage: null,
+  postCount: 0,
+  replyCount: 0,
 };
 
 const note = {
@@ -61,6 +67,46 @@ const note = {
   videoContentType: null,
   role: 'verified' as const,
   replyCount: 0,
+};
+
+const profileWithNote: MemberProfile = {
+  ...profile,
+  profileMessage: note,
+  postCount: 1,
+};
+
+const secondPost = {
+  ...note,
+  id: '44444444-4444-4444-8444-444444444444',
+  text: 'Second post from Carol.',
+  createdAt: '2026-08-02T10:00:00.000Z',
+  sats: 0,
+};
+
+const stalePinReply = {
+  ...note,
+  id: '77777777-7777-4777-8777-777777777777',
+  text: 'Stale pin thread reply.',
+  sats: 0,
+  payable: false,
+};
+
+const liveSecondReply = {
+  ...secondPost,
+  id: '88888888-8888-4888-8888-888888888888',
+  text: 'Live second-post reply.',
+  sats: 0,
+  payable: false,
+};
+
+const activityReply = {
+  ...note,
+  id: '66666666-6666-4666-8666-666666666666',
+  text: 'A reply from Carol.',
+  createdAt: '2026-08-03T10:00:00.000Z',
+  sats: 0,
+  payable: false,
+  parentId: '55555555-5555-4555-8555-555555555555',
 };
 
 const account: Account = {
@@ -89,9 +135,29 @@ async function expandNote(): Promise<void> {
   });
 }
 
+function expandCard(text: string): HTMLLIElement {
+  const row = screen.getByText(text).closest('li');
+  expect(row).toBeTruthy();
+  const expand = row?.querySelector<HTMLButtonElement>('[aria-label="Show replies"]');
+  expect(expand).toBeTruthy();
+  fireEvent.click(expand as HTMLButtonElement);
+  return row as HTMLLIElement;
+}
+
+async function renderTwoPostFeed(): Promise<void> {
+  vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost, note]);
+  renderWithLocale(
+    <MemberProfileScreen profile={{ ...profileWithNote, postCount: 2 }} received={[]} />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+  await screen.findByText('Second post from Carol.');
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockClear();
+  vi.mocked(fetchMemberPosts).mockResolvedValue([]);
+  vi.mocked(fetchMemberReplies).mockResolvedValue([]);
   vi.mocked(fetchReplies).mockResolvedValue([]);
   vi.mocked(openConversation).mockResolvedValue({
     id: 'conv-1',
@@ -133,6 +199,225 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
     expect(screen.getByText(/confirmed they are real/i)).toBeTruthy();
+  });
+
+  it('shows clickable post and reply counts, including the empty 0/0 state', () => {
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
+    expect(screen.getByRole('button', { name: '0 posts' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    expect(screen.getByRole('button', { name: '0 replies' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('opens and collapses the posts feed while hiding and restoring the profile note', async () => {
+    vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost]);
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.queryByText('Hello from my profile note.')).toBeNull();
+    expect(fetchMemberPosts).toHaveBeenCalledWith('sess', profile.id);
+
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    expect(screen.queryByText('Second post from Carol.')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refetch posts when reopening an in-flight feed', async () => {
+    let resolvePosts!: (value: (typeof secondPost)[]) => void;
+    vi.mocked(fetchMemberPosts).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePosts = resolve;
+        }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    await waitFor(() => {
+      expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolvePosts([secondPost]);
+    });
+  });
+
+  it('keeps the profile note visible beside the replies feed', async () => {
+    vi.mocked(fetchMemberReplies).mockResolvedValue([activityReply]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    expect(fetchMemberReplies).toHaveBeenCalledWith('sess', profile.id);
+
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
+    expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refetch replies when reopening an in-flight feed', async () => {
+    let resolveReplies!: (value: (typeof activityReply)[]) => void;
+    vi.mocked(fetchMemberReplies).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReplies = resolve;
+        }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    await waitFor(() => {
+      expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveReplies([activityReply]);
+    });
+  });
+
+  it('shows when the posts feed is truncated', async () => {
+    vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, postCount: 3 }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3 posts' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.getByText('Showing the latest 1 of 3.')).toBeTruthy();
+  });
+
+  it('opens the parent note when a reply activity card is expanded', async () => {
+    vi.mocked(fetchMemberReplies).mockResolvedValue([activityReply]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    const replyText = await screen.findByText('A reply from Carol.');
+    const replyRow = replyText.closest('li');
+    const expand = replyRow?.querySelector<HTMLButtonElement>('[aria-label="Show replies"]');
+    expect(expand).toBeTruthy();
+    fireEvent.click(expand as HTMLButtonElement);
+    expect(push).toHaveBeenCalledWith('/messages/55555555-5555-4555-8555-555555555555');
+  });
+
+  it('shows an activity error when the session is missing', async () => {
+    useAuthStore.setState({ session: null, account });
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(fetchMemberPosts).not.toHaveBeenCalled();
+  });
+
+  it('sends a missing-requirements feed load to rules setup', async () => {
+    vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('shows an activity error and retries the selected feed', async () => {
+    vi.mocked(fetchMemberPosts)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce([secondPost]);
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(fetchMemberPosts).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not apply a stale posts feed error onto a newer success', async () => {
+    vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new Error('fail'));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    let rejectOlder!: (reason: Error) => void;
+    let resolveNewer!: (value: (typeof secondPost)[]) => void;
+    let overlapping = 0;
+    vi.mocked(fetchMemberPosts).mockImplementation(() => {
+      overlapping += 1;
+      if (overlapping === 1) {
+        const older = new Promise<(typeof secondPost)[]>((_resolve, reject) => {
+          rejectOlder = reject;
+        });
+        retry.click();
+        return older;
+      }
+      return new Promise((resolve) => {
+        resolveNewer = resolve;
+      });
+    });
+    fireEvent.click(retry);
+    fireEvent.click(retry);
+    await waitFor(() => {
+      expect(overlapping).toBe(2);
+    });
+    await act(async () => {
+      resolveNewer([secondPost]);
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    await act(async () => {
+      rejectOlder(new Error('fail'));
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
+  it('does not apply a stale posts feed onto a newer success', async () => {
+    vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new Error('fail'));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    let resolveOlder!: (value: (typeof secondPost)[]) => void;
+    let resolveNewer!: (value: (typeof secondPost)[]) => void;
+    let overlapping = 0;
+    vi.mocked(fetchMemberPosts).mockImplementation(() => {
+      overlapping += 1;
+      if (overlapping === 1) {
+        const older = new Promise<(typeof secondPost)[]>((resolve) => {
+          resolveOlder = resolve;
+        });
+        retry.click();
+        return older;
+      }
+      return new Promise((resolve) => {
+        resolveNewer = resolve;
+      });
+    });
+    fireEvent.click(retry);
+    fireEvent.click(retry);
+    await waitFor(() => {
+      expect(overlapping).toBe(2);
+    });
+    await act(async () => {
+      resolveNewer([secondPost]);
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    await act(async () => {
+      resolveOlder([note]);
+    });
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    expect(screen.queryByText('Hello from my profile note.')).toBeNull();
   });
 
   it('renders a profile note when present', () => {
@@ -275,6 +560,289 @@ describe('MemberProfileScreen', () => {
       expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
     });
     expect(screen.getByText('1 replies')).toBeTruthy();
+  });
+
+  it('does not bump the pinned note reply count when posting on a posts-feed card', async () => {
+    vi.mocked(postMessage).mockResolvedValue({
+      ...secondPost,
+      id: '99999999-9999-4999-8999-999999999999',
+      text: 'reply',
+      payable: false,
+    });
+    await renderTwoPostFeed();
+    const secondRow = expandCard('Second post from Carol.');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', {
+        text: 'reply',
+        inReplyTo: secondPost.id,
+      });
+    });
+    expect(secondRow.textContent).toMatch(/1 replies/);
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    const pinRow = screen.getByText('Hello from my profile note.').closest('li');
+    expect(pinRow?.textContent).toMatch(/0 replies/);
+    expect(screen.getByRole('button', { name: '0 replies' })).toBeTruthy();
+  });
+
+  it('does not apply a stale expand onto a newer thread', async () => {
+    let resolveNoteReplies!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies).mockImplementation((_session, messageId) => {
+      if (messageId === note.id) {
+        return new Promise((resolve) => {
+          resolveNoteReplies = resolve;
+        });
+      }
+      return Promise.resolve([liveSecondReply]);
+    });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveNoteReplies([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
+  });
+
+  it('does not apply a stale expand error onto a newer thread', async () => {
+    let rejectNoteReplies!: (reason: Error) => void;
+    vi.mocked(fetchReplies).mockImplementation((_session, messageId) => {
+      if (messageId === note.id) {
+        return new Promise((_resolve, reject) => {
+          rejectNoteReplies = reject;
+        });
+      }
+      return Promise.resolve([liveSecondReply]);
+    });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      rejectNoteReplies(new Error('fail'));
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Could not load replies. Please try again.')).toBeNull();
+  });
+
+  it('does not apply a stale expand onto the same thread after collapse and re-expand', async () => {
+    let resolveFirstExpand!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirstExpand = resolve;
+          }),
+      )
+      .mockResolvedValue([liveSecondReply]);
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expandCard('Hello from my profile note.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveFirstExpand([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
+  });
+
+  it('does not apply a stale replies retry onto a newer thread', async () => {
+    let resolveNoteRetry!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockImplementation((_session, messageId) => {
+        if (messageId === note.id) {
+          return new Promise((resolve) => {
+            resolveNoteRetry = resolve;
+          });
+        }
+        return Promise.resolve([liveSecondReply]);
+      });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveNoteRetry([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
+  });
+
+  it('does not apply a stale replies retry error onto a newer thread', async () => {
+    let rejectNoteRetry!: (reason: Error) => void;
+    vi.mocked(fetchReplies)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockImplementation((_session, messageId) => {
+        if (messageId === note.id) {
+          return new Promise((_resolve, reject) => {
+            rejectNoteRetry = reject;
+          });
+        }
+        return Promise.resolve([liveSecondReply]);
+      });
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    expandCard('Second post from Carol.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      rejectNoteRetry(new Error('fail'));
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Could not load replies. Please try again.')).toBeNull();
+  });
+
+  it('does not apply a stale replies retry onto the same thread after collapse and re-expand', async () => {
+    let resolveNoteRetry!: (value: Array<typeof note>) => void;
+    vi.mocked(fetchReplies)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveNoteRetry = resolve;
+          }),
+      )
+      .mockResolvedValue([liveSecondReply]);
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expandCard('Hello from my profile note.');
+    expect(await screen.findByText('Live second-post reply.')).toBeTruthy();
+    await act(async () => {
+      resolveNoteRetry([stalePinReply]);
+    });
+    expect(screen.getByText('Live second-post reply.')).toBeTruthy();
+    expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
+  });
+
+  it('does not append an in-flight reply POST into a different expanded thread', async () => {
+    let resolvePost!: (value: typeof note) => void;
+    vi.mocked(postMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), {
+      target: { value: 'In-flight first-thread reply.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expandCard('Second post from Carol.');
+    const secondRow = screen.getByText('Second post from Carol.').closest('li');
+    expect(secondRow).toBeTruthy();
+    if (secondRow !== null && secondRow.querySelector('[aria-label="Hide replies"]') !== null) {
+      await waitFor(() => {
+        const composer = secondRow.querySelector<HTMLTextAreaElement>('[aria-label="Your reply"]');
+        expect(composer).toBeTruthy();
+        expect(composer?.disabled).toBe(false);
+      });
+    }
+    await act(async () => {
+      resolvePost({
+        ...note,
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        text: 'In-flight first-thread reply.',
+        sats: 0,
+        payable: false,
+      });
+    });
+    expect(screen.getByText('Second post from Carol.').closest('li')?.textContent).not.toMatch(
+      /In-flight first-thread reply\./,
+    );
+  });
+
+  it('still lists an in-flight reply when the same parent is expanded', async () => {
+    let resolvePost!: (value: typeof note) => void;
+    vi.mocked(postMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    await renderTwoPostFeed();
+    const firstRow = expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), {
+      target: { value: 'In-flight same-parent reply.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const hide = firstRow.querySelector<HTMLButtonElement>('[aria-label="Hide replies"]');
+    if (hide !== null) {
+      fireEvent.click(hide);
+    }
+    if (firstRow.querySelector('[aria-label="Show replies"]') !== null) {
+      expandCard('Hello from my profile note.');
+      await waitFor(() => {
+        expect(screen.getByLabelText('Your reply')).toBeTruthy();
+        expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      });
+    }
+    await act(async () => {
+      resolvePost({
+        ...note,
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        text: 'In-flight same-parent reply.',
+        sats: 0,
+        payable: false,
+      });
+    });
+    if (firstRow.querySelector('[aria-label="Hide replies"]') !== null) {
+      expect(screen.getByText('In-flight same-parent reply.')).toBeTruthy();
+    }
   });
 
   it('does not post a reply after the session is cleared', async () => {

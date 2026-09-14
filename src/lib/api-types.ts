@@ -246,11 +246,13 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * field still parses and the board stays lit.
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
+ * `parentId` is the parent note id on a reply; omitted on top-level notes.
  */
 export const forumMessageSchema = z
   .object({
     id: z.string().min(1),
     accountId: z.string().min(1).optional(),
+    parentId: z.string().min(1).optional(),
     name: z.string().min(1),
     text: z.string(), // may be '' when hasPhoto
     createdAt: z.string().datetime({ offset: true }),
@@ -434,6 +436,7 @@ export type PushSubscriptionResponse = z.infer<typeof pushSubscriptionResponseSc
  * Runtime schema for a signed-in member profile from `GET /members/:id`.
  *
  * `profileMessage` is the member's pinned forum note when present.
+ * `postCount` / `replyCount` are uncapped totals; activity feeds are capped at 200.
  */
 export const memberProfileSchema = z.object({
   id: z.string(),
@@ -442,6 +445,8 @@ export const memberProfileSchema = z.object({
   lightningAddress: z.string().nullable(),
   createdAt: z.string(),
   profileMessage: forumMessageSchema.nullable(),
+  postCount: z.number().int().nonnegative(),
+  replyCount: z.number().int().nonnegative(),
 });
 
 /**

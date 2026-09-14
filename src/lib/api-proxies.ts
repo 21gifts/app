@@ -82,6 +82,31 @@ export async function proxyMembersGet(request: Request, accountId: string): Prom
 }
 
 /**
+ * Proxies GET /members/:accountId/posts to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersPostsGet(request: Request, accountId: string): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/posts`);
+}
+
+/**
+ * Proxies GET /members/:accountId/replies to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersRepliesGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/replies`);
+}
+
+/**
  * Proxies POST /me/forum-laws-dismissed to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).

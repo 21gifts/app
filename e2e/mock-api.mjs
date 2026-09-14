@@ -146,7 +146,45 @@ const E2E_MEMBER_PROFILE = {
     role: 'verified',
     replyCount: 0,
   },
+  postCount: 2,
+  replyCount: 1,
 };
+
+const E2E_MEMBER_POSTS = [
+  {
+    id: '44444444-4444-4444-8444-444444444444',
+    accountId: E2E_MEMBER_ID,
+    name: 'Carol',
+    text: 'Second post from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified',
+    replyCount: 0,
+  },
+  E2E_MEMBER_PROFILE.profileMessage,
+];
+
+const E2E_MEMBER_REPLIES = [
+  {
+    id: '66666666-6666-4666-8666-666666666666',
+    accountId: E2E_MEMBER_ID,
+    name: 'Carol',
+    text: 'A reply from Carol.',
+    createdAt: '2026-08-03T10:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified',
+    replyCount: 0,
+    parentId: '55555555-5555-4555-8555-555555555555',
+  },
+];
 
 /** True when a forum POST needs name, rules, or lightning-address. */
 function missingForumPostRequirements(account) {
@@ -686,6 +724,56 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const memberPostsMatch = pathName.match(/^\/members\/([^/]+)\/posts$/);
+  if (method === 'GET' && memberPostsMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
+    const id = decodeURIComponent(memberPostsMatch[1]);
+    if (id === E2E_MEMBER_ID) {
+      json(res, 200, { messages: E2E_MEMBER_POSTS });
+      return;
+    }
+    if (id === account.id) {
+      json(res, 200, { messages: [] });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  const memberRepliesMatch = pathName.match(/^\/members\/([^/]+)\/replies$/);
+  if (method === 'GET' && memberRepliesMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
+    const id = decodeURIComponent(memberRepliesMatch[1]);
+    if (id === E2E_MEMBER_ID) {
+      json(res, 200, { messages: E2E_MEMBER_REPLIES });
+      return;
+    }
+    if (id === account.id) {
+      json(res, 200, { messages: [] });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
   const membersMatch = pathName.match(/^\/members\/([^/]+)$/);
   if (method === 'GET' && membersMatch) {
     const token = bearer(req);
@@ -711,6 +799,8 @@ const server = http.createServer(async (req, res) => {
         lightningAddress: account.lightningAddress,
         createdAt: new Date(account.createdAt).toISOString(),
         profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
       });
       return;
     }

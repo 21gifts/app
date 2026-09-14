@@ -91,6 +91,20 @@
 - **Used by:** `fetchMember` via `MemberProfileLoader`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/members/[accountId]/posts
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/posts` for a signed-in member's top-level forum posts.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberPosts` via `MemberProfileScreen`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /forum/members/[accountId]/replies
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/replies` for a signed-in member's forum replies.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberReplies` via `MemberProfileScreen`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/forum-laws-dismissed
 
 - **Purpose:** Same-origin proxy to permanently dismiss the welcome-forum living-room laws hint (`forumLawsDismissed: true` on the account).

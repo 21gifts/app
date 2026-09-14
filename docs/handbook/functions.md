@@ -648,7 +648,7 @@
 
 - **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/No gifts yet/All/Most popular `SegmentedControl tone="neutral"`, list of posts (name, optional Founder / Moderator / Verified role pill on notes **and replies** when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), ₿ amount with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` for paid-only modes or `forum.emptyUnpaid` for No gifts yet when the filter hides all loaded rows. Props `messages` are newest-first (API window); Active, No gifts yet, and All keep that order (newest at the top). Most popular stays sats-descending. The composer sits under the mode selector / filters, above the newest-first list; replies remain oldest-first. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged.
 - **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer), and PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`). PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
-- **Returns / side effects:** React tree. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
+- **Returns / side effects:** React tree. Copy-link uses `parentId ?? messageId`: reply cards copy `/messages/{parentId}`; top-level notes copy `/messages/{messageId}`. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. No fetch. No mode state of its own.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
@@ -739,15 +739,29 @@
 
 - **Purpose:** Loads a signed-in member profile by account id.
 - **Inputs:** Bearer session and `accountId`.
-- **Returns / side effects:** Validated `MemberProfile`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`.
+- **Returns / side effects:** Validated `MemberProfile`, including `postCount` and `replyCount`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`.
 - **Used by:** `MemberProfileLoader`.
+
+## Function: fetchMemberPosts
+
+- **Purpose:** Loads a member's top-level forum posts with `GET /forum/members/:id/posts`.
+- **Inputs:** Bearer session and `accountId`.
+- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
+- **Used by:** `MemberProfileScreen`.
+
+## Function: fetchMemberReplies
+
+- **Purpose:** Loads a member's forum replies with `GET /forum/members/:id/replies`.
+- **Inputs:** Bearer session and `accountId`.
+- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200; reply messages are not payable and may include `parentId`. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
+- **Used by:** `MemberProfileScreen`.
 
 ## Function: parseMissingRequirements
 
 - **Purpose:** Parses a 409 `{ error: 'missing_requirements', missing: [...] }` body.
 - **Inputs:** Unknown JSON body.
 - **Returns / side effects:** `MissingRequirementsError` or `null`.
-- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`.
+- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`, `fetchMemberPosts`, `fetchMemberReplies`.
 
 ## Function: MissingRequirementsError
 
@@ -786,16 +800,16 @@
 
 ## Function: MemberProfileLoader
 
-- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, optional gift stats for the chart.
+- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, and optional gift stats for the chart. It does not prefetch activity feeds; `postCount` and `replyCount` arrive with the profile JSON.
 - **Inputs:** Route `accountId`; session from auth store.
 - **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`.
 - **Used by:** `MemberProfilePage`.
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill) plus optional one-item `ForumBoard` when `profileMessage` is set (`composerHidden`). Pay, PM, and expand/replies use the signed-in session; PM is hidden on the viewer's own note. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Purpose:** Signed-in member identity card (chart, name, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
 - **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
-- **Returns / side effects:** React tree; may `POST` invoice/conversation/replies and navigate to `/messages?c=`.
+- **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: MemberProfilePage
@@ -818,6 +832,20 @@
 - **Inputs:** App Router request and `accountId`.
 - **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}`.
 - **Used by:** `/forum/members/[accountId]` route.
+
+## Function: proxyMembersPostsGet
+
+- **Purpose:** Proxies `GET /members/:accountId/posts` to the api.
+- **Inputs:** App Router request and `accountId`.
+- **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}/posts`.
+- **Used by:** `/forum/members/[accountId]/posts` route.
+
+## Function: proxyMembersRepliesGet
+
+- **Purpose:** Proxies `GET /members/:accountId/replies` to the api.
+- **Inputs:** App Router request and `accountId`.
+- **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}/replies`.
+- **Used by:** `/forum/members/[accountId]/replies` route.
 
 ## Function: useHydrateSession
 

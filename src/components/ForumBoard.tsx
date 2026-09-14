@@ -455,7 +455,10 @@ export function ForumBoard({
   };
 
   const copyMessageLink = async (messageId: string): Promise<void> => {
-    const url = `${window.location.origin}/messages/${messageId}`;
+    /* v8 ignore next -- copy control only mounts when a list is on screen */
+    const message = messages === null ? undefined : messages.find((item) => item.id === messageId);
+    const targetId = message?.parentId ?? messageId;
+    const url = `${window.location.origin}/messages/${targetId}`;
     try {
       await navigator.clipboard.writeText(url);
       /* v8 ignore next 3 -- copy resolved after unmount */
@@ -686,9 +689,11 @@ export function ForumBoard({
                   {onDeleted !== undefined ? (
                     <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
                   ) : null}
-                  <span className="ml-auto text-xs text-app-subtle">
-                    {t('forum.replyCount', { count: String(message.replyCount) })}
-                  </span>
+                  {message.parentId === undefined ? (
+                    <span className="ml-auto text-xs text-app-subtle">
+                      {t('forum.replyCount', { count: String(message.replyCount) })}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
