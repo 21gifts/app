@@ -112,6 +112,29 @@ function mergeMessages(prev: ForumMessage[] | null, next: ForumMessage[]): Forum
 }
 
 /**
+ * Updates sats/payable on ids already in `prev`. Does not insert unseen ids
+ * (those wait behind the New posts pill while the visitor is scrolled down).
+ *
+ * @param prev - Current list, or `null` before the first successful load.
+ * @param next - Fresh list from the payable poll GET.
+ * @returns Same-length list as `prev`, or `next` when `prev` is null.
+ */
+function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): ForumMessage[] {
+  /* v8 ignore next 3 -- payable poll starts only after a listed fetch */
+  if (prev === null) {
+    return next;
+  }
+  const byId = new Map(next.map((message) => [message.id, message]));
+  return prev.map((row) => {
+    const fresh = byId.get(row.id);
+    if (fresh === undefined || (fresh.payable === row.payable && fresh.sats === row.sats)) {
+      return row;
+    }
+    return { ...row, payable: fresh.payable, sats: fresh.sats };
+  });
+}
+
+/**
  * Client loader for the public forum on `/welcome`.
  *
  * Reads the session and account from the auth store, fetches messages with a
@@ -203,7 +226,6 @@ export function ForumLoader(): ReactElement | null {
   const refreshGeneration = useRef(0);
   const wasHiddenRef = useRef(false);
   const pendingRefreshRef = useRef(false);
-  const forceApplyRef = useRef(false);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const loadingRef = useRef(loading);
@@ -253,9 +275,9 @@ export function ForumLoader(): ReactElement | null {
           if (generation !== payablePollGeneration.current) {
             return;
           }
-          const merged = mergeMessages(messagesRef.current, next);
+          const merged = mergePayableStatus(messagesRef.current, next);
           setMessages((prev) =>
-            mergeMessages(prev, next).filter((row) => !deletedIds.current.has(row.id)),
+            mergePayableStatus(prev, next).filter((row) => !deletedIds.current.has(row.id)),
           );
           if (merged.length > 0 && merged.every((message) => message.payable)) {
             return;
@@ -272,13 +294,11 @@ export function ForumLoader(): ReactElement | null {
    *
    * @param activeSession - Session token for the fetch.
    * @param shouldContinue - False when the caller was cancelled or superseded.
-   * @param forceApply - Whether to apply fetched ids even while the page is scrolled down.
    * @returns `ok` when the list was applied, `error` on failure, `aborted` when skipped.
    */
   const loadMessagesOnce = async (
     activeSession: string,
     shouldContinue: () => boolean,
-    forceApply = true,
   ): Promise<'ok' | 'error' | 'aborted' | 'requirements'> => {
     try {
       const next = await fetchMessages(activeSession);
@@ -286,7 +306,7 @@ export function ForumLoader(): ReactElement | null {
         return 'aborted';
       }
       const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
-      if (!forceApply && !atTop && hasUnseenForumPosts(messagesRef.current, next)) {
+      if (!atTop && hasUnseenForumPosts(messagesRef.current, next)) {
         setNewPostsAvailable(true);
         return 'ok';
       }
@@ -338,8 +358,6 @@ export function ForumLoader(): ReactElement | null {
       return false;
     }
     pendingRefreshRef.current = false;
-    const forceApply = forceApplyRef.current;
-    forceApplyRef.current = false;
     const activeSession = session;
     const generation = ++refreshGeneration.current;
     refreshingRef.current = true;
@@ -348,7 +366,6 @@ export function ForumLoader(): ReactElement | null {
       const result = await loadMessagesOnce(
         activeSession,
         () => generation === refreshGeneration.current,
-        forceApply,
       );
       if (generation !== refreshGeneration.current) {
         return;
@@ -381,11 +398,7 @@ export function ForumLoader(): ReactElement | null {
 
   const showNewPosts = useCallback((): void => {
     window.scrollTo(0, 0);
-    forceApplyRef.current = true;
-    const started = refreshMessagesRef.current();
-    if (!started && !pendingRefreshRef.current) {
-      forceApplyRef.current = false;
-    }
+    refreshMessagesRef.current();
   }, []);
 
   useEffect(() => {

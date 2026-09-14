@@ -3224,7 +3224,9 @@ describe('ForumLoader', () => {
 
   it('applies held notes and scrolls to top when New posts is clicked', async () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
-    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    });
     fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -3261,7 +3263,9 @@ describe('ForumLoader', () => {
 
   it('clears force-apply when New posts is clicked while a refresh is already running', async () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
-    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    });
     fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -3334,7 +3338,9 @@ describe('ForumLoader', () => {
 
   it('scrolls to top and force-applies on the forum home event', async () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
-    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    });
     fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -3391,6 +3397,30 @@ describe('ForumLoader', () => {
       vi.advanceTimersByTime(FORUM_LIST_POLL_MS);
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not insert unseen ids from the payable poll while scrolled', async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const unsigned: ForumMessage = { ...SAMPLE, payable: false };
+    fetchMock.mockResolvedValueOnce([unsigned]).mockResolvedValue([FRESH, unsigned]);
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByText('Fresh from refresh')).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByText('Fresh from refresh')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
   it('does not double-fetch on first mount before any visibility event', async () => {
