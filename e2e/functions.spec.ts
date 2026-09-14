@@ -989,6 +989,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
         forumLawsDismissed: false,
