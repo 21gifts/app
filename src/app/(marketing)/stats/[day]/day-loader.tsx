@@ -127,8 +127,8 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
           <FiatPicker value={fiat} onChange={setFiat} />
           <p className="text-paper/60">
             {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
-            {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)} ·{' '}
-            {formatFiatDisplay(dayTotal(payload, fiat), fiat, numberFormat)}
+            {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}
+            · {formatFiatDisplay(dayTotal(payload, fiat), fiat, numberFormat)}
           </p>
           <GiftDayTable day={payload} fiat={fiat} numberFormat={numberFormat} />
         </div>
