@@ -438,13 +438,18 @@ There is **one** source for screen images: Playwright Linux Chromium baselines
 under `e2e/visual.spec.ts-snapshots/`.
 
 Every public UI screen (`src/app/**/page.tsx`, plus `/404`) **must** have a
-`toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`.
+`toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`,
+**except** the handbook doc routes in `HANDBOOK_DOC_ROUTES`
+(`/handbook`, `/handbook/screens`, `/handbook/functions`, `/handbook/endpoints`).
+Those pages nest other screen PNGs; a golden of the handbook is a screenshot of
+screenshots and is not gated. They still need `## Screen:` prose and e2e
+`page.goto`. They are **not** listed in `SCREEN_VARIANTS`.
 Visual specs run in four projects (`desktop-light`, `desktop-dark`,
 `mobile-light`, `mobile-dark`) so each shot is stored as
 `${arg}-${combo}-linux.png`. Handbook Markdown keeps `images/<name>.png`
-references; those bytes are filled into `public/handbook-images/` by
-`npm run handbook:images` / `prebuild` / `predev` from the desktop-light
-baseline. Do not commit PNGs under
+references for product screens; those bytes are filled into
+`public/handbook-images/` by `npm run handbook:images` / `prebuild` / `predev`
+from the desktop-light baseline. Do not commit PNGs under
 `docs/handbook/images/` or `public/handbook-images/`.
 
 Every **distinct UI state** of every screen **must** be listed in

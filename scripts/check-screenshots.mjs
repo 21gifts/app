@@ -3,7 +3,8 @@
  * Fail if a UI screen or listed variant lacks a committed Playwright
  * screenshot baseline, an unexpected PNG is present under
  * `e2e/visual.spec.ts-snapshots/`, or a variant is not shot in
- * `e2e/visual.spec.ts`.
+ * `e2e/visual.spec.ts`. Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are
+ * skipped: they nest other screen PNGs.
  * `/setup/rules` must list one variant per `RULES_CHAPTER_IDS` chapter.
  * Run from the repo root. No extra packages.
  *
@@ -22,6 +23,7 @@ import {
   BASELINE_COMBOS,
   SCREEN_VARIANTS,
   comboSnapshotStem,
+  isHandbookDocRoute,
   variantComboIds,
 } from './screen-variants.mjs';
 
@@ -117,6 +119,9 @@ const screensMd = fs.existsSync(SCREENS_MD) ? fs.readFileSync(SCREENS_MD, 'utf8'
 const visualSrc = fs.readFileSync(E2E_VISUAL, 'utf8');
 
 for (const route of [...screens].sort()) {
+  if (isHandbookDocRoute(route)) {
+    continue;
+  }
   const arg = screenArg(route);
   const defaultVariant = SCREEN_VARIANTS.find((v) => v.route === route);
   const comboIds =

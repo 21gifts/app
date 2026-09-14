@@ -985,21 +985,10 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook hub (no auth gate). Header **Handbook** stays here.
-- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files. After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
 - **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
 - **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`.
-
-### Variant: default
-
-Hub with heading **Handbook** and links to the three parts.
-
-![21.gifts handbook](images/handbook.png)
-
-### Variant: copied
-
-After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
-
-![21.gifts handbook copied](images/handbook-copied.png)
+- **Screenshots:** none. Handbook doc pages nest other screen PNGs; they are not screenshot-gated.
 
 ## Screen: /handbook/screens
 
@@ -1007,24 +996,7 @@ After tapping the link icon on the Handbook heading, that button shows the check
 - **What the user sees:** Heading **Screens**, a three-level table of contents (chapter = first path segment, screen, variant), and nested compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). Topics that lack the selected combo are omitted. No topic picker.
 - **Actions:** Jump via the contents nav, switch viewport/theme when available (applies to every card), open a preview at full size, step through every visible variant with Left/Right arrows or lightbox chevrons, copy a chapter/screen/card deep link, follow a hash deep link, return to the hub.
 - **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookOutline`, `HandbookSectionHeading`, `HandbookFigure`, `HandbookLightbox`, `HandbookIntro`, `HandbookCopyLink`, `buildHandbookOutline`, `nextOutlineIndex`, `topicAnchor`, `parseScreenVariantDescriptions`, `loadHandbookDocuments`.
-
-### Variant: default
-
-Contents nav plus nested thumbnail cards for topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog — not stacked full-width shots.
-
-![21.gifts handbook screens](images/handbook-screens.png)
-
-### Variant: mobile
-
-**Mobile** selected; every visible thumbnail card shows that mobile combo.
-
-![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
-
-### Variant: dark
-
-**Dark** selected; every visible thumbnail card shows that dark combo.
-
-![21.gifts handbook screens dark](images/handbook-screens-dark.png)
+- **Screenshots:** none. This page _shows_ product-screen goldens; it is not itself a golden.
 
 ## Screen: /handbook/functions
 
@@ -1032,12 +1004,7 @@ Contents nav plus nested thumbnail cards for topics that have the selected combo
 - **What the user sees:** Heading **Functions** and the functions markdown (`## Function: name`) only. No image switches.
 - **Actions:** Read the markdown, return to the hub.
 - **Calls:** `HandbookFunctionsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
-
-### Variant: default
-
-Markdown list of `## Function:` headings.
-
-![21.gifts handbook functions](images/handbook-functions.png)
+- **Screenshots:** none.
 
 ## Screen: /handbook/endpoints
 
@@ -1045,12 +1012,7 @@ Markdown list of `## Function:` headings.
 - **What the user sees:** Heading **Endpoints** and the endpoints markdown only. No image switches.
 - **Actions:** Read the markdown, return to the hub.
 - **Calls:** `HandbookEndpointsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
-
-### Variant: default
-
-Markdown list of `## Endpoint:` headings.
-
-![21.gifts handbook endpoints](images/handbook-endpoints.png)
+- **Screenshots:** none.
 
 ## Screen: /404
 

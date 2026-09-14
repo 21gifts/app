@@ -1,7 +1,10 @@
 /**
- * Every distinct UI state of every public screen. Handbook, e2e:check, and
- * screenshot:check all read this list — adding a state without a variant here
- * is how coverage silently drops.
+ * Every distinct UI state of every public screen that is screenshot-gated.
+ * Handbook, e2e:check, and screenshot:check all read this list — adding a
+ * state without a variant here is how coverage silently drops.
+ *
+ * Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are not listed: they nest other
+ * screen PNGs, so a golden of the handbook is a screenshot of screenshots.
  *
  * `needle` must appear in e2e/*.spec.ts (the behavioral assertion for that state).
  * `image` is the handbook filename (URL `/handbook-images/<file>`), filled from
@@ -12,6 +15,24 @@
  * `variantComboIds` still honours an explicit `combos` list when present (tests);
  * do not restrict production variants that way.
  */
+
+/** Public handbook pages. Not screenshot-gated; still have `## Screen:` prose and e2e `goto`. */
+export const HANDBOOK_DOC_ROUTES = new Set([
+  '/handbook',
+  '/handbook/screens',
+  '/handbook/functions',
+  '/handbook/endpoints',
+]);
+
+/**
+ * True when `route` is a handbook doc page rather than a product screen.
+ *
+ * @param {string} route - App Router public path.
+ * @returns {boolean}
+ */
+export function isHandbookDocRoute(route) {
+  return HANDBOOK_DOC_ROUTES.has(route);
+}
 
 /** One required visual baseline combo: viewport × theme. */
 export const BASELINE_COMBOS = [
@@ -811,55 +832,6 @@ export const SCREEN_VARIANTS = [
     image: 'stats-day-error.png',
     visual: 'state-stats-day-error',
     needle: 'Try again',
-  },
-  {
-    route: '/handbook',
-    id: 'default',
-    image: 'handbook.png',
-    visual: 'screen-handbook',
-    needle: "getByRole('heading', { name: 'Handbook' })",
-  },
-  {
-    route: '/handbook',
-    id: 'copied',
-    image: 'handbook-copied.png',
-    visual: 'state-handbook-copied',
-    needle: "toHaveAttribute('data-copied', 'true')",
-  },
-  {
-    route: '/handbook/screens',
-    id: 'default',
-    image: 'handbook-screens.png',
-    visual: 'screen-handbook-screens',
-    needle: "getByRole('heading', { name: 'Screens' })",
-  },
-  {
-    route: '/handbook/screens',
-    id: 'mobile',
-    image: 'handbook-screens-mobile.png',
-    visual: 'state-handbook-screens-mobile',
-    needle: "getByRole('button', { name: 'Mobile', exact: true })",
-  },
-  {
-    route: '/handbook/screens',
-    id: 'dark',
-    image: 'handbook-screens-dark.png',
-    visual: 'state-handbook-screens-dark',
-    needle: "getByRole('button', { name: 'Dark', exact: true })",
-  },
-  {
-    route: '/handbook/functions',
-    id: 'default',
-    image: 'handbook-functions.png',
-    visual: 'screen-handbook-functions',
-    needle: "getByRole('heading', { name: 'Functions' })",
-  },
-  {
-    route: '/handbook/endpoints',
-    id: 'default',
-    image: 'handbook-endpoints.png',
-    visual: 'screen-handbook-endpoints',
-    needle: "getByRole('heading', { name: 'Endpoints' })",
   },
   {
     route: '/messages',
