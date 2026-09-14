@@ -768,6 +768,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:expanded-gifts",
+    "label": "/welcome expanded-gifts",
+    "visual": "state-welcome-expanded-gifts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:copy",
     "label": "/welcome copy",
     "visual": "state-welcome-copy",

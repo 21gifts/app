@@ -6,6 +6,7 @@ import { AccountActivityChart } from '@/components/AccountActivityChart';
 import {
   ForumBoard,
   type ForumFormError,
+  type ForumReplyFormError,
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
@@ -76,7 +77,6 @@ function parseReplySats(raw: string): number | 'empty' | 'invalid' {
   if (sats <= 0) {
     return 'invalid';
   }
-  /* v8 ignore next 3 -- /^\d+$/ parseInt overflow is defensive */
   if (!Number.isSafeInteger(sats)) {
     return 'invalid';
   }
@@ -158,7 +158,7 @@ const IDLE_BOARD = {
   onReplyDraftChange: (): void => undefined,
   onReplyPost: (): void => undefined,
   replyPosting: false,
-  replyFormError: null as ForumFormError,
+  replyFormError: null as ForumReplyFormError,
   ownName: null as string | null,
   ownAccountId: null as string | null,
   onPm: (): void => undefined,
@@ -206,7 +206,7 @@ export function MemberProfileScreen({
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
-  const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
+  const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
     'name' | 'rules' | 'lightning-address' | null
   >(null);

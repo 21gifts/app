@@ -355,6 +355,12 @@ On **All**, click **Show replies** on a note — card expands (`aria-expanded`),
 
 ![21.gifts welcome expanded](images/welcome-expanded.png)
 
+### Variant: expanded-gifts
+
+On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21**) and a text reply with the gift amount under the body. The in-card composer still has **Write a reply** and **Amount**.
+
+![21.gifts welcome expanded gifts](images/welcome-expanded-gifts.png)
+
 ### Variant: copy
 
 Click **Copy link to this note** — control sets `data-copied` after writing `origin/messages/<uuid>` to the clipboard.

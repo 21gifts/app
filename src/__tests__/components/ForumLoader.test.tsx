@@ -3500,6 +3500,27 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('rejects an overflowing reply amount', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '9007199254740992' },
+    });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
   it('maps an unpaid-reply 403 onto the amount error', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     repliesMock.mockResolvedValue([]);

@@ -1239,6 +1239,17 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('rejects an overflowing reply amount', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '9007199254740992');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('invoices a gift-only reply from the composer', async () => {
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
@@ -1319,7 +1330,9 @@ describe('MemberProfileScreen', () => {
       expect(postMessage).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
   });
 
   it('maps a reply invoice rate-limit onto the reply error', async () => {

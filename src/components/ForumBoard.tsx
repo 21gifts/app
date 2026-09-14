@@ -45,7 +45,10 @@ import {
 
 /** Client-side composer validation or request failure. */
 export type ForumFormError =
-  'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | 'amount' | null;
+  'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | null;
+
+/** Reply composer validation; `amount` is the paid-reply sats field. */
+export type ForumReplyFormError = ForumFormError | 'amount';
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | null;
@@ -178,7 +181,7 @@ export interface ForumBoardProps {
   /** True while a reply post is in flight. */
   replyPosting: boolean;
   /** Reply composer validation or request failure. */
-  replyFormError: ForumFormError;
+  replyFormError: ForumReplyFormError;
   /** Signed-in display name, used to hide PM on own notes and replies. */
   ownName: string | null;
   /**

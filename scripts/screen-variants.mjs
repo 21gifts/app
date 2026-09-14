@@ -947,6 +947,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'expanded-gifts',
+    image: 'welcome-expanded-gifts.png',
+    visual: 'state-welcome-expanded-gifts',
+    needle: 'send ₿21',
+  },
+  {
+    route: '/welcome',
     id: 'copy',
     image: 'welcome-copy.png',
     visual: 'state-welcome-copy',

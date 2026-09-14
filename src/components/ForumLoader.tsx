@@ -6,6 +6,7 @@ import { flushSync } from 'react-dom';
 import {
   ForumBoard,
   type ForumFormError,
+  type ForumReplyFormError,
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
@@ -123,7 +124,6 @@ function parseReplySats(raw: string): number | 'empty' | 'invalid' {
   if (sats <= 0) {
     return 'invalid';
   }
-  /* v8 ignore next 3 -- /^\d+$/ parseInt overflow is defensive */
   if (!Number.isSafeInteger(sats)) {
     return 'invalid';
   }
@@ -271,7 +271,7 @@ export function ForumLoader(): ReactElement | null {
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
   const [pmBusyId, setPmBusyId] = useState<string | null>(null);
-  const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
+  const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
     'name' | 'rules' | 'lightning-address' | null
   >(null);
