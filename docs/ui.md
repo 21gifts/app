@@ -328,7 +328,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).
 
 - Canvas: `min-h-[var(--app-height)] bg-ink text-paper [color-scheme:dark]`.
-- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/handbook`, `/404`.
+- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/trust-chain`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
 **App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher is a Profile identity-card settings row, not chrome.
@@ -341,6 +341,7 @@ flowchart TB
     A["/about"]
     S["/stats"]
     SD["/stats/day"]
+    TC["/trust-chain"]
     H["/handbook/*"]
     F["/404"]
   end
@@ -414,6 +415,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Home                 | `Home`                        | `/welcome`                                                                          |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
+| Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
 | Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero               |
 | Messages             | `Inbox`                       | `/messages`                                                                         |
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
@@ -429,7 +431,7 @@ Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`
 ```mermaid
 flowchart LR
   subgraph marketingShell [Marketing shell — always ink]
-    MH[MarketingHeader: Wordmark + nav + orange Log in + Language]
+    MH[MarketingHeader: Wordmark + nav incl. Trust Chain + orange Log in + Language]
     MC[Page]
     MF[MarketingFooter: Wordmark + links + verse + GitHub]
   end
@@ -822,7 +824,7 @@ Load and request failures next to labeled **Try again** use this grammar (`login
 
 ### Marketing header / footer / CTA pair
 
-**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
+**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, Trust Chain, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
 
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile.
 
@@ -861,7 +863,8 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Activity **Posts** / **Replies** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+
+**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Activity **Posts** / **Replies** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -886,6 +889,12 @@ Handbook states: live marketing home.
 Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Gifts” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
 Handbook states: loading, empty, error + **Try again**, populated charts.
+
+### `/trust-chain`
+
+Marketing shell, always ink. `MarketingHeader` → **h1** Trust Chain, lead, then `TrustChainLoader` / `TrustChainScreen` / `TrustChainDiagram` (one horizontal chain, never a pyramid). First paint is founder seeds; a click loads one hop. Empty / loading / error + **Try again**; hop-error keeps the diagram. Modifier-click opens `/members/{id}`.
+
+Handbook states: default, expanded, empty, loading, error, hop-error.
 
 ### `/stats/[day]`
 
@@ -939,9 +948,10 @@ Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<
 
 ### `/members/[accountId]`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill, activity **Posts** / **Replies** as labeled `Button sm` toggles) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
 
-Handbook states: default (note present), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (`RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip).
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill, activity **Posts** / **Replies** as labeled `Button sm` toggles, labeled staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` when the viewer is staff and the subject is someone else) + optional one-item forum note (`composerHidden`) and on-demand activity feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
+
+Handbook states: default (note present), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (`RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip), `staff-verify`.
 
 ### `/notifications`
 

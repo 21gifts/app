@@ -111,7 +111,7 @@ export function MemberTrustActions({
       className="flex w-full flex-col items-stretch gap-3 border-t border-app-border bg-app-card pt-6"
     >
       {failed ? (
-        <p role="status" className="text-center text-sm text-app-muted">
+        <p role="alert" className="text-center text-sm text-app-danger">
           {t('trustChain.actionFailed')}
         </p>
       ) : null}
