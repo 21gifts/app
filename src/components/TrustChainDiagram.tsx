@@ -157,6 +157,7 @@ export function TrustChainDiagram({
       return;
     }
     const pos = byId.get(id);
+    /* v8 ignore next 3 -- onNodePointerDown is only called with ids from laid-out nodes */
     if (pos === undefined) {
       return;
     }

@@ -98,6 +98,17 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
   });
 
+  it('does not start a drag on a modifier pointer down', () => {
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
+    const node = screen.getByTestId('trust-node-f');
+    const capture = vi.fn();
+    node.setPointerCapture = capture;
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10, metaKey: true });
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10, ctrlKey: true });
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10, shiftKey: true });
+    expect(capture).not.toHaveBeenCalled();
+  });
+
   it('captures the pointer when setPointerCapture exists', () => {
     renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
     const node = screen.getByTestId('trust-node-f');
