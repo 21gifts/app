@@ -193,7 +193,11 @@ function expandCard(text: string): HTMLLIElement {
 async function renderTwoPostFeed(): Promise<void> {
   vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost, note]);
   renderWithLocale(
-    <MemberProfileScreen profile={{ ...profileWithNote, postCount: 2 }} received={[]} donated={[]} />,
+    <MemberProfileScreen
+      profile={{ ...profileWithNote, postCount: 2 }}
+      received={[]}
+      donated={[]}
+    />,
   );
   fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
   await screen.findByText('Second post from Carol.');
@@ -337,7 +341,11 @@ describe('MemberProfileScreen', () => {
   it('opens the replies feed without a pinned forum bio', async () => {
     vi.mocked(fetchMemberReplies).mockResolvedValue([activityReply]);
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} donated={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
@@ -360,7 +368,11 @@ describe('MemberProfileScreen', () => {
         }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} donated={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
     );
     fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
     await waitFor(() => {
@@ -377,7 +389,11 @@ describe('MemberProfileScreen', () => {
   it('shows when the posts feed is truncated', async () => {
     vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost]);
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profileWithNote, postCount: 3 }} received={[]} donated={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, postCount: 3 }}
+        received={[]}
+        donated={[]}
+      />,
     );
     fireEvent.click(screen.getByRole('button', { name: '3 posts' }));
     expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
@@ -387,7 +403,11 @@ describe('MemberProfileScreen', () => {
   it('opens the parent note when a reply activity card is expanded', async () => {
     vi.mocked(fetchMemberReplies).mockResolvedValue([activityReply]);
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} donated={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
     );
     fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
     const replyText = await screen.findByText('A reply from Carol.');

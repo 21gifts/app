@@ -2311,11 +2311,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2328,7 +2329,39 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
     await shotScreen(page, 'state-members-translate');
@@ -2365,11 +2398,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2382,8 +2416,40 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'hang');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
       'aria-busy',
@@ -2423,11 +2489,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2440,8 +2507,40 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await shotScreen(page, 'state-members-translate-done');
@@ -2478,11 +2577,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2495,8 +2595,40 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).click();
@@ -2535,11 +2667,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2552,8 +2685,40 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'fail');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-members-translate-error');
