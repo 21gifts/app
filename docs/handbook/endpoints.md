@@ -101,7 +101,7 @@
 ## Endpoint: GET /forum/members/[accountId]/activity
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /members/:accountId/activity` for a member's given and received series.
-- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchMemberActivity` via `MemberProfileLoader`.
 - **Auth:** Bearer.
 
@@ -143,7 +143,7 @@
 ## Endpoint: GET /me/activity
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /me/activity` for given and received sat totals plus both cumulative day series (house gifts and forum zaps).
-- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Errors:** Upstream 401, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchAccountActivity` via `useAccountTotals` on `/profile` and the signed-in menu.
 - **Auth:** Bearer.
 
@@ -157,7 +157,7 @@
 ## Endpoint: GET /view-key/[viewKey]/activity
 
 - **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/activity` for the public profile given and received series.
-- **Errors:** Upstream 404, or 502 if the api is unreachable.
+- **Errors:** Upstream 404, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchViewActivity` via `ViewProfileLoader`.
 - **Auth:** Public.
 
