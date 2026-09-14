@@ -794,6 +794,12 @@ Signed-in visitor viewing their own `/members/:id` card.
 
 ![21.gifts member profile own](images/members-own.png)
 
+### Variant: overlay-address
+
+Named visitor with living-room rules agreed and no Wallet of Satoshi address. Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
+
+![21.gifts member overlay address](images/members-overlay-address.png)
+
 ### Variant: translate
 
 Signed-in `/members/:id` with a German post in the posts feed. **Translate** is visible under the body (not in the footer icon row).

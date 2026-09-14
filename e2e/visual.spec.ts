@@ -2199,6 +2199,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
@@ -2216,6 +2217,30 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2225,10 +2250,12 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show replies' }).click();
     await expect(page.getByLabel('Your reply')).toBeVisible();
     await page.getByLabel('Your reply').fill('Hello');
+    await page.getByLabel('Amount').fill('1');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(
       page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),

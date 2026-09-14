@@ -703,6 +703,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'overlay-address',
+    image: 'members-overlay-address.png',
+    visual: 'state-members-overlay-address',
+    needle: 'state-members-overlay-address',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'translate',
     image: 'members-translate.png',
     visual: 'state-members-translate',
