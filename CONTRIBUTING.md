@@ -209,7 +209,7 @@ app/
 │       └── images/              # Markdown still references images/<file>.png; PNGs are not committed
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
-│   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
+│   ├── screen-variants.mjs      # Distinct UI states of screenshot-gated screens (e2e needles + visual args)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
 │   └── check-screenshots.mjs    # CI gate: missing or unexpected PNG, or variant with no visual.spec.ts shot → exit 1
