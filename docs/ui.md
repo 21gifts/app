@@ -490,7 +490,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 [ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ] [ PM ]  [ N replies ]
 ```
 
-- Amount: `<p className="text-xs font-medium text-app-muted tabular-nums lining-nums">` ₿ via `formatBitcoin` then ` · ` plus `formatFiatDisplay` of `satsToFiatAmount` when `rateDay` is present — **not a button**.
+- Amount: ₿ via `formatBitcoin`, then ` · ` plus `formatFiatDisplay` of `satsToFiatAmount` when `rateDay` is present — **not a button**.
 - Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
