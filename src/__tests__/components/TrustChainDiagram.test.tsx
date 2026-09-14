@@ -98,6 +98,24 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
   });
 
+  it('captures the pointer when setPointerCapture exists', () => {
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
+    const node = screen.getByTestId('trust-node-f');
+    const capture = vi.fn();
+    node.setPointerCapture = capture;
+    fireEvent.pointerDown(node, { pointerId: 3, clientX: 10, clientY: 10 });
+    expect(capture).toHaveBeenCalledWith(3);
+  });
+
+  it('ignores pointer move from a different pointer than the drag', () => {
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
+    const node = screen.getByTestId('trust-node-f');
+    const startX = Number(node.querySelector('rect')?.getAttribute('x'));
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(node, { pointerId: 2, clientX: 80, clientY: 50 });
+    expect(Number(node.querySelector('rect')?.getAttribute('x'))).toBe(startX);
+  });
+
   it('ignores pointer up from a different pointer than the drag', () => {
     renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
     const node = screen.getByTestId('trust-node-f');
