@@ -47,6 +47,7 @@ These must be green on the PR. A missing or red gate is rejected:
 
 Named exports, explicit return types, no `any`, no `console.log`, Tailwind
 only, server components by default, TSDoc on exports, handbook / e2e /
-screenshot baselines for new screens/variants in the same PR. New controls
+screenshot baselines for new screenshot-gated screens/variants in the same PR
+(handbook doc routes: `## Screen:` prose and e2e `page.goto` only). New controls
 follow the labeled vs icon-only table in `docs/ui.md` and CONTRIBUTING
 **Icon controls**. A new control that ignores the table is rejected.

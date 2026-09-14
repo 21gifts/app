@@ -1698,9 +1698,9 @@ test('Function: topicVariant — pay-qr contents link is visible', async ({ page
   ).toBeVisible();
 });
 
-test('Function: screenChapter — handbook chapter heading is visible', async ({ page }) => {
+test('Function: screenChapter — nested stats chapter heading is visible', async ({ page }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByRole('heading', { level: 2, name: '/handbook' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: '/stats' })).toBeVisible();
 });
 
 test('Function: nextOutlineIndex — ArrowRight opens the first screen', async ({ page }) => {

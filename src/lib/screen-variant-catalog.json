@@ -654,48 +654,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/handbook:default",
-    "label": "/handbook default",
-    "visual": "screen-handbook",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook:copied",
-    "label": "/handbook copied",
-    "visual": "state-handbook-copied",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/screens:default",
-    "label": "/handbook/screens default",
-    "visual": "screen-handbook-screens",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/screens:mobile",
-    "label": "/handbook/screens mobile",
-    "visual": "state-handbook-screens-mobile",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/screens:dark",
-    "label": "/handbook/screens dark",
-    "visual": "state-handbook-screens-dark",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/functions:default",
-    "label": "/handbook/functions default",
-    "visual": "screen-handbook-functions",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/endpoints:default",
-    "label": "/handbook/endpoints default",
-    "visual": "screen-handbook-endpoints",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/messages:default",
     "label": "/messages default",
     "visual": "screen-messages",

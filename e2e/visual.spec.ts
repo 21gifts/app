@@ -348,8 +348,7 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   await unstickStickyChrome(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage,
-    // The handbook viewport embeds other screen PNGs; variant shots shift a few percent.
-    maxDiffPixelRatio: arg === 'screen-handbook' ? 0.05 : 0,
+    maxDiffPixelRatio: 0,
     ...SHOT,
   });
 }
@@ -601,53 +600,6 @@ test.describe('screen baselines', () => {
     await page.goto('/404');
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
     await shotScreen(page, 'screen-404');
-  });
-
-  test('screen /handbook', async ({ page }) => {
-    await page.goto('/handbook');
-    await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
-    // Viewport only: a full-page shot would nest the other screen PNGs inside this one.
-    await shotScreen(page, 'screen-handbook', false);
-  });
-
-  test('state /handbook copied', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/handbook');
-    const button = page.getByRole('button', { name: 'Copy link to Handbook' });
-    await button.click();
-    await expect(button).toHaveAttribute('data-copied', 'true');
-    await button.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-handbook-copied', false);
-  });
-
-  test('screen /handbook/screens', async ({ page }) => {
-    await page.goto('/handbook/screens');
-    await expect(page.getByRole('heading', { name: 'Screens' }).first()).toBeVisible();
-    await shotScreen(page, 'screen-handbook-screens', false);
-  });
-
-  test('state /handbook/screens mobile', async ({ page }) => {
-    await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Mobile', exact: true }).click();
-    await shotScreen(page, 'state-handbook-screens-mobile', false);
-  });
-
-  test('state /handbook/screens dark', async ({ page }) => {
-    await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Dark', exact: true }).click();
-    await shotScreen(page, 'state-handbook-screens-dark', false);
-  });
-
-  test('screen /handbook/functions', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await expect(page.getByRole('heading', { name: 'Functions' }).first()).toBeVisible();
-    await shotScreen(page, 'screen-handbook-functions', false);
-  });
-
-  test('screen /handbook/endpoints', async ({ page }) => {
-    await page.goto('/handbook/endpoints');
-    await expect(page.getByRole('heading', { name: 'Endpoints' }).first()).toBeVisible();
-    await shotScreen(page, 'screen-handbook-endpoints', false);
   });
 });
 

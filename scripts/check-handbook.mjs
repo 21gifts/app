@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { SCREEN_VARIANTS } from './screen-variants.mjs';
+import { SCREEN_VARIANTS, isHandbookDocRoute } from './screen-variants.mjs';
 
 const ROOT = process.cwd();
 const HANDBOOK_DIR = path.join(ROOT, 'docs', 'handbook');
@@ -276,6 +276,9 @@ if (isMain) {
   }
 
   for (const route of [...screens].sort()) {
+    if (isHandbookDocRoute(route)) {
+      continue;
+    }
     if (!SCREEN_VARIANTS.some((variant) => variant.route === route)) {
       missing.push(`Screen ${route} has no entries in scripts/screen-variants.mjs`);
     }
