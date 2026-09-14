@@ -169,6 +169,15 @@ async function openPostsShowingNote(): Promise<void> {
   await screen.findByText('Hello from my profile note.');
 }
 
+async function openPostsShowingPhotoNote(): Promise<void> {
+  vi.mocked(fetchMemberPosts).mockResolvedValue([{ ...note, hasPhoto: true }]);
+  const postsButton = screen.getByRole('button', { name: /posts/ });
+  if (postsButton.getAttribute('aria-pressed') !== 'true') {
+    fireEvent.click(postsButton);
+  }
+  await screen.findByText('Hello from my profile note.');
+}
+
 async function expandNote(): Promise<void> {
   await openPostsShowingNote();
   fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
@@ -642,8 +651,13 @@ describe('MemberProfileScreen', () => {
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
@@ -671,8 +685,13 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
@@ -699,8 +718,13 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
@@ -727,8 +751,13 @@ describe('MemberProfileScreen', () => {
       }),
     );
     const { unmount } = renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
@@ -2686,13 +2715,15 @@ describe('MemberProfileScreen', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
   });
 
-  it('loads a photo blob URL for a pinned profile note', async () => {
+  it('loads a photo blob URL for a listed profile note', async () => {
     renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true } }}
+        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
         received={[]}
+        donated={[]}
       />,
     );
+    await openPostsShowingPhotoNote();
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', note.id);
     });
@@ -2731,10 +2762,12 @@ describe('MemberProfileScreen', () => {
     photoMock.mockRejectedValueOnce(new Error('transient'));
     renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true } }}
+        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
         received={[]}
+        donated={[]}
       />,
     );
+    await openPostsShowingPhotoNote();
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:mock');
     });
@@ -2748,10 +2781,13 @@ describe('MemberProfileScreen', () => {
         profile={{
           ...profile,
           profileMessage: { ...note, hasPhoto: true, text: 'Hello from my profile note.' },
+          postCount: 1,
         }}
         received={[]}
+        donated={[]}
       />,
     );
+    await openPostsShowingPhotoNote();
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledTimes(2);
     });
@@ -2769,10 +2805,12 @@ describe('MemberProfileScreen', () => {
     );
     const view = renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true } }}
+        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
         received={[]}
+        donated={[]}
       />,
     );
+    await openPostsShowingPhotoNote();
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalled();
     });
@@ -2791,10 +2829,12 @@ describe('MemberProfileScreen', () => {
     );
     const view = renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true } }}
+        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
         received={[]}
+        donated={[]}
       />,
     );
+    await openPostsShowingPhotoNote();
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalled();
     });
@@ -2841,10 +2881,12 @@ describe('MemberProfileScreen', () => {
     );
     const view = renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true } }}
+        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
         received={[]}
+        donated={[]}
       />,
     );
+    await openPostsShowingPhotoNote();
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledTimes(2);
     });
