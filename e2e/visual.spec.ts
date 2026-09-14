@@ -335,6 +335,7 @@ test.beforeEach(async ({ page }, testInfo) => {
 /**
  * Playwright fullPage stitches viewport chunks; sticky chrome is painted
  * into every chunk. Force document flow so each header appears once.
+ * The fixed New posts pill is a viewport shot, not unstuck here.
  *
  * @param page - Page under test.
  */
@@ -1195,7 +1196,8 @@ test.describe('onboarding screens', () => {
     });
     await expect(page.getByRole('button', { name: 'New posts' })).toBeVisible();
     await expect(page.getByText('Held unseen note for the New posts pill.')).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-new-posts');
+    // Viewport shot: fullPage stitches the fixed New posts pill into a random chunk.
+    await shotScreen(page, 'state-welcome-new-posts', false);
   });
 
   test('screen /profile', async ({ page }) => {

@@ -539,6 +539,12 @@ variable is unset or empty.
 `NEXT_PUBLIC_API_URL` is the **upstream api**. The browser calls same-origin
 paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL.
 
+`GIT_SHA` is a Docker **build-arg** (default `dev`), passed by the deploy
+workflows as `github.sha`. It is inlined at `next build` as
+`NEXT_PUBLIC_GIT_SHA` and shown in the signed-in Menu via `getAppVersion()`.
+It is not substituted at container start and is not an `entrypoint.sh`
+placeholder.
+
 ## CI / CD
 
 | Workflow               | Trigger                                    | Action                                                                                                                                                                                       |

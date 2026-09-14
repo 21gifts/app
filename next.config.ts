@@ -4,6 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
+function gitShaForBuild(): string {
+  const raw = process.env.NEXT_PUBLIC_GIT_SHA ?? process.env.GIT_SHA ?? 'dev';
+  if (raw === '') return 'dev';
+  return raw.length <= 7 ? raw : raw.slice(0, 7);
+}
+
 /**
  * `output: 'standalone'` makes `next build` emit a self-contained server
  * under `.next/standalone` — that is what the Dockerfile runtime stage ships.
@@ -18,6 +24,9 @@ const nextConfig: NextConfig = {
     '/handbook/screens': ['./docs/handbook/**/*', './scripts/screen-variants.mjs'],
     '/handbook/functions': ['./docs/handbook/**/*'],
     '/handbook/endpoints': ['./docs/handbook/**/*'],
+  },
+  env: {
+    NEXT_PUBLIC_GIT_SHA: gitShaForBuild(),
   },
   async redirects() {
     return [{ source: '/legal.html', destination: '/legal', permanent: true }];
