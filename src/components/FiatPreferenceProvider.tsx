@@ -57,6 +57,8 @@ function writeFiatCookie(next: FiatCode): void {
 
 /**
  * Provides the visitor fiat preference and a setter that writes the cookie.
+ * In-memory code follows `initial` when that prop changes (locale default
+ * after a refresh with no cookie).
  *
  * @param props - Server-negotiated `initial` code and children.
  * @returns Provider element wrapping `children`.
