@@ -804,7 +804,14 @@ export function MemberProfileScreen({
       /* v8 ignore next -- expanded parent is always in the loaded list */
       const baselineSats = parentRow === undefined ? 0 : parentRow.sats;
       if (trimmed === '' && parsed === 'empty') {
-        return runPaidReply(token, trimmed, parentId, DEFAULT_FORUM_PAY_SATS, isRetry, baselineSats);
+        return runPaidReply(
+          token,
+          trimmed,
+          parentId,
+          DEFAULT_FORUM_PAY_SATS,
+          isRetry,
+          baselineSats,
+        );
       }
       if (parsed === 'empty' && exempt) {
         return runReplyPost(token, trimmed, parentId, isRetry);
