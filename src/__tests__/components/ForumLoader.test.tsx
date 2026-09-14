@@ -3404,6 +3404,49 @@ describe('ForumLoader', () => {
     );
   });
 
+  it('invoices a gift-only reply when text and amount are empty as a founder', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('invoices a gift-only reply when text and amount are empty and the parent omits accountId', async () => {
+    fetchMock.mockResolvedValue([{ ...FOREIGN, accountId: undefined }]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
   it('drops a late paid-reply invoice after Gift is opened', async () => {
     let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
     invoiceMock.mockReturnValue(
@@ -3719,6 +3762,24 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('rejects a non-numeric reply amount when the reply text is empty', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'abc' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
   it('sends 1 sat when the reply amount is 0', async () => {
     fetchMock.mockResolvedValue([FOREIGN]);
     repliesMock.mockResolvedValue([]);
@@ -3737,6 +3798,26 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
+    });
+  });
+
+  it('sends 1 sat when the reply amount is 0 and the reply text is empty', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1);
     });
   });
 
