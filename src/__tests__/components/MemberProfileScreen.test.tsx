@@ -50,6 +50,7 @@ vi.mock('@/lib/api', () => ({
   postTrustPropose: vi.fn(),
   postTrustConfirm: vi.fn(),
   postTrustAppoint: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 
 const photoMock = vi.mocked(fetchMessagePhoto);
