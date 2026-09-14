@@ -693,13 +693,13 @@ export function SegmentedControl<T extends string>(props: {
 }): ReactElement;
 ```
 
-| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                             |
-| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                  |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                    |
-| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`) |
+| Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                               |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                 |
+| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); inbox Direct / Contact / Damus (three pills, one row, no extra `className`) |
 
-Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill).
+Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Inbox uses the default one-row flex track (three pills, not a 2×2 grid).
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
 
@@ -754,9 +754,19 @@ Do not use orange. This is law, not a gift CTA.
 
 Expand: the whole card is `role="button"` (click to expand replies). Inner controls `stopPropagation`. Focus ring on the expandable region.
 
-Inbox thread rows share only this chrome (rounded-2xl card, name, time, body). They do not reuse the forum footer (amount, Gift pay, copy, PM, expand).
+Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
 **Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Not a labeled button.
+
+### Inbox thread bubbles
+
+Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, PM, expand).
+
+**Incoming (`fromMe === false`).** Full-width muted note card (same chrome as the forum note card body): `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`. Inner: name `text-sm font-medium text-app-fg`, time `text-xs text-app-subtle`, body `mt-2 whitespace-pre-wrap text-sm text-app-fg`.
+
+**Sent (`fromMe === true`).** Filled form-primary, right, content-sized: `self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg`. No border, no muted fill. Inner: name `text-sm font-medium text-app-btn-fg`, time `text-xs text-app-btn-fg/70`, body `mt-2 whitespace-pre-wrap text-sm text-app-btn-fg`. Label `inbox.you`.
+
+**List outbound last-text.** Compact sent chip on the right of the (still muted) conversation row, same fill: `self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg`. Copy stays `inbox.sentPreview`. Inbound last text stays `line-clamp-2 text-sm text-app-muted`. Empty `lastText` omits the preview.
 
 ### Composer
 
@@ -825,7 +835,9 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 | Forum no messages           | muted `text-sm` catalog `forum.empty` | Composer still shown      |
 | Forum no paid               | `forum.emptyPaid`                     | Mode switcher still shown |
 | Forum no gifts yet / unpaid | `forum.emptyUnpaid`                   | Mode switcher still shown |
-| Inbox none                  | `inbox.empty`                         | None                      |
+| Inbox none (Direct)         | `inbox.empty`                         | Filter still shown        |
+| Inbox none (Contact)        | `inbox.empty.contact`                 | Filter still shown        |
+| Inbox none (Damus)          | `inbox.empty.damus`                   | Filter still shown        |
 | Notifications none          | `notifications.empty`                 | None                      |
 | Stats none                  | “No gifts recorded yet.”              | None                      |
 | Profile chart none          | `profile.chartEmpty`                  | None                      |
@@ -942,7 +954,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + list of note-like rows, or thread with in-card back `IconButton` + counterpart name as heading + origin caption + composer icon send. Empty / loading / error as catalog. In-card back is **All conversations**; page chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + `SegmentedControl tone="neutral"` Direct / Contact / Damus (three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`) + list of note-like rows for that origin only (inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread). Empty is per-filter catalog copy with the control still visible. Loading / error hide the control. In-card back is **All conversations**; page chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 

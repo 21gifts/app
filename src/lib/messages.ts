@@ -460,8 +460,11 @@ const en = {
 
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
+  'inbox.filterLabel': 'Conversation type',
   'inbox.threadLabel': 'Messages in this conversation',
   'inbox.empty': 'No private messages yet.',
+  'inbox.empty.contact': 'No contact messages yet.',
+  'inbox.empty.damus': 'No Damus messages yet.',
   'inbox.loading': 'Loading…',
   'inbox.error': 'Could not load messages. Please try again.',
   'inbox.retry': 'Try again',
@@ -475,6 +478,8 @@ const en = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direct',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'You',
+  'inbox.sentPreview': 'You: {text}',
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
@@ -947,8 +952,11 @@ const de = {
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
+  'inbox.filterLabel': 'Art der Unterhaltung',
   'inbox.threadLabel': 'Nachrichten in dieser Unterhaltung',
   'inbox.empty': 'Noch keine privaten Nachrichten.',
+  'inbox.empty.contact': 'Noch keine Kontakt-Nachrichten.',
+  'inbox.empty.damus': 'Noch keine Damus-Nachrichten.',
   'inbox.loading': 'Wird geladen…',
   'inbox.error': 'Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'inbox.retry': 'Erneut versuchen',
@@ -962,6 +970,8 @@ const de = {
   'inbox.origin.contact': 'Kontakt',
   'inbox.origin.direct': 'Direkt',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'Du',
+  'inbox.sentPreview': 'Du: {text}',
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
@@ -1420,8 +1430,11 @@ const es = {
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
+  'inbox.filterLabel': 'Tipo de conversación',
   'inbox.threadLabel': 'Mensajes de esta conversación',
   'inbox.empty': 'Aún no hay mensajes privados.',
+  'inbox.empty.contact': 'Aún no hay mensajes de contacto.',
+  'inbox.empty.damus': 'Aún no hay mensajes de Damus.',
   'inbox.loading': 'Cargando…',
   'inbox.error': 'No se pudieron cargar los mensajes. Inténtalo de nuevo.',
   'inbox.retry': 'Intentar de nuevo',
@@ -1435,6 +1448,8 @@ const es = {
   'inbox.origin.contact': 'Contacto',
   'inbox.origin.direct': 'Directo',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'Tú',
+  'inbox.sentPreview': 'Tú: {text}',
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
@@ -1901,8 +1916,11 @@ const fil = {
 
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',
+  'inbox.filterLabel': 'Uri ng usapan',
   'inbox.threadLabel': 'Mga mensahe sa usapang ito',
   'inbox.empty': 'Wala pang pribadong mensahe.',
+  'inbox.empty.contact': 'Wala pang mga mensahe sa contact.',
+  'inbox.empty.damus': 'Wala pang mga mensahe sa Damus.',
   'inbox.loading': 'Naglo-load…',
   'inbox.error': 'Hindi ma-load ang mga mensahe. Subukan ulit.',
   'inbox.retry': 'Subukan ulit',
@@ -1916,6 +1934,8 @@ const fil = {
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direkta',
   'inbox.origin.damus': 'Damus',
+  'inbox.you': 'Ikaw',
+  'inbox.sentPreview': 'Ikaw: {text}',
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',

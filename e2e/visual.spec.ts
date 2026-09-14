@@ -3862,6 +3862,7 @@ test.describe('contact screens', () => {
               name: '21.gifts',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
             },
           ],
         }),
@@ -3878,6 +3879,7 @@ test.describe('contact screens', () => {
               name: 'Ada',
               text: 'Hello team',
               createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
             },
           ],
         }),
@@ -3914,7 +3916,83 @@ test.describe('inbox screens', () => {
     });
   }
 
+  async function mockThreeConversations(page: Page): Promise<void> {
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Can you help?',
+              lastAt: '2026-08-28T14:00:00.000Z',
+              lastFromMe: false,
+            },
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+            },
+            {
+              id: 'conv-damus',
+              kind: 'member_damus',
+              name: 'npub1abc…xyz',
+              lastText: 'Hi from Damus',
+              lastAt: '2026-08-28T11:00:00.000Z',
+              lastFromMe: false,
+            },
+          ],
+        }),
+      });
+    });
+  }
+
   test('screen /messages', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole('button', { name: 'Direct' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('Bob')).toBeVisible();
+    await expect(list.getByText('21.gifts')).toHaveCount(0);
+    await shotScreen(page, 'screen-messages');
+  });
+
+  test('messages contact', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await group.getByRole('button', { name: 'Contact' }).click();
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('21.gifts')).toBeVisible();
+    await shotScreen(page, 'state-messages-contact');
+  });
+
+  test('messages damus', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await group.getByRole('button', { name: 'Damus' }).click();
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('npub1abc…xyz')).toBeVisible();
+    await shotScreen(page, 'state-messages-damus');
+  });
+
+  test('messages sent-preview', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
       await route.fulfill({
@@ -3923,19 +4001,20 @@ test.describe('inbox screens', () => {
         body: JSON.stringify({
           conversations: [
             {
-              id: 'conv-21',
-              kind: 'member_platform',
-              name: '21.gifts',
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: true,
             },
           ],
         }),
       });
     });
     await page.goto('/messages');
-    await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
-    await shotScreen(page, 'screen-messages');
+    await expect(page.getByText('You: Hello team')).toBeVisible();
+    await shotScreen(page, 'state-messages-sent-preview');
   });
 
   test('messages empty', async ({ page }) => {
@@ -3949,6 +4028,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages');
     await expect(page.getByText('No private messages yet.')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Conversation type' })).toBeVisible();
     await shotScreen(page, 'state-messages-empty');
   });
 
@@ -3990,6 +4070,7 @@ test.describe('inbox screens', () => {
               name: '21.gifts',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
             },
           ],
         }),
@@ -4003,9 +4084,17 @@ test.describe('inbox screens', () => {
           messages: [
             {
               id: 'm1',
-              name: 'Ada',
+              name: '21.gifts',
               text: 'Hello team',
               createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+            },
+            {
+              id: 'm2',
+              name: 'Ada',
+              text: 'Thanks',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              fromMe: true,
             },
           ],
         }),
@@ -4013,6 +4102,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
+    await expect(page.getByText('You')).toBeVisible();
     await shotScreen(page, 'state-messages-thread');
   });
 });

@@ -856,6 +856,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'contact',
+    image: 'messages-contact.png',
+    visual: 'state-messages-contact',
+    needle: 'Hello team',
+  },
+  {
+    route: '/messages',
+    id: 'damus',
+    image: 'messages-damus.png',
+    visual: 'state-messages-damus',
+    needle: 'Hi from Damus',
+  },
+  {
+    route: '/messages',
+    id: 'sent-preview',
+    image: 'messages-sent-preview.png',
+    visual: 'state-messages-sent-preview',
+    needle: 'You: Hello team',
+  },
+  {
+    route: '/messages',
     id: 'empty',
     image: 'messages-empty.png',
     visual: 'state-messages-empty',

@@ -708,7 +708,7 @@ test('Function: postContact — sending from contact shows the official thread',
   const body = `Contact note ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page).toHaveURL(/\/messages/);
+  await expect(page).toHaveURL(/\/messages\?c=/);
   await expect(page.getByText(body)).toBeVisible();
 });
 
@@ -2184,6 +2184,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
             name: '21.gifts',
             lastText: 'Hello team',
             lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
           },
         ],
       }),
@@ -2200,6 +2201,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
             name: 'Ada',
             text: 'Hello team',
             createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
           },
         ],
       }),
@@ -2246,6 +2248,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
             name: '21.gifts',
             lastText: 'Hello team',
             lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
           },
         ],
       }),
@@ -2262,6 +2265,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
             name: 'Ada',
             text: 'Hello team',
             createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
           },
         ],
       }),

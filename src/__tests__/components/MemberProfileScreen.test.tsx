@@ -178,6 +178,7 @@ beforeEach(() => {
     name: 'Carol',
     lastText: '',
     lastAt: '2026-01-01T00:00:00.000Z',
+    lastFromMe: false,
   });
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
   vi.mocked(fetchPublicMessage).mockResolvedValue(null);
@@ -1931,6 +1932,7 @@ describe('MemberProfileScreen', () => {
       name: string;
       lastText: string;
       lastAt: string;
+      lastFromMe: boolean;
     }) => void;
     vi.mocked(openConversation).mockReturnValue(
       new Promise((resolve) => {
@@ -1949,6 +1951,7 @@ describe('MemberProfileScreen', () => {
       name: 'Carol',
       lastText: '',
       lastAt: '2026-01-01T00:00:00.000Z',
+      lastFromMe: false,
     });
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages?c=conv-1');

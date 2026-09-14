@@ -468,6 +468,11 @@ screenshot of that markdown.
 combo projects as parallel jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.
 
+A PR's snapshot diff must contain only screens whose intended appearance
+changed. Do not commit a baseline whose pixels moved only as an incidental
+side-effect of a shared-component tweak that was not meant to restyle that
+screen.
+
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
 `npm run e2e` still runs the behavioral specs. FullPage shots unstick
 `header.sticky` so Playwright does not paint the marketing header into every
