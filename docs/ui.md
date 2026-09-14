@@ -863,7 +863,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Activity **Posts** / **Replies** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post), name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill, copy-profile-link, optional Message. Activity **Posts** / **Replies** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -975,7 +975,7 @@ App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitc
 
 ### `/view/[viewKey]`
 
-Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart + name + location + address, no actions; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
+Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.

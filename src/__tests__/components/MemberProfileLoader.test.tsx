@@ -133,12 +133,13 @@ describe('MemberProfileLoader', () => {
     });
   });
 
-  it('still shows the card when activity is missing requirements', async () => {
+  it('redirects to rules when activity is missing requirements', async () => {
     vi.mocked(fetchMember).mockResolvedValue(profile);
     vi.mocked(fetchMemberActivity).mockRejectedValue(new MissingRequirementsError(['rules']));
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
-    expect(await screen.findByText('Carol')).toBeTruthy();
-    expect(replace).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
   });
 
   it('still shows the card when activity fails', async () => {
