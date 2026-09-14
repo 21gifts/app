@@ -5519,6 +5519,8 @@ test('Function: MemberTrustActions — ordinary members have no verify action', 
         lightningAddress: 'alice@walletofsatoshi.com',
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
       }),
     });
   });
