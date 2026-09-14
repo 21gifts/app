@@ -32,7 +32,9 @@ export function ProfileScreen(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
-  const [origin, setOrigin] = useState('');
+  const [origin, setOrigin] = useState(
+    typeof window === 'undefined' ? '' : window.location.origin,
+  );
 
   useEffect(() => {
     setOrigin(window.location.origin);
