@@ -1128,6 +1128,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -1205,6 +1206,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -1283,6 +1285,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -1346,6 +1349,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -1409,6 +1413,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -1467,6 +1472,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -1525,6 +1531,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -1603,6 +1610,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Carol',
+          location: null,
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
