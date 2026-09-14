@@ -1948,6 +1948,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '3 posts' }).click();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Showing the latest 1 of 3.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-truncated');
   });
 
@@ -2029,6 +2030,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '3 replies' }).click();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Showing the latest 1 of 3.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-truncated');
   });
 
@@ -2406,6 +2408,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate');
   });
 
@@ -2497,6 +2500,7 @@ test.describe('onboarding screens', () => {
       'aria-busy',
       'true',
     );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-loading');
   });
 
@@ -2585,6 +2589,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-done');
   });
 
@@ -2675,6 +2680,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).click();
     await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-hidden');
   });
 
@@ -2763,6 +2769,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await page.getByText('Could not translate this note. Please try again.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-error');
   });
 
