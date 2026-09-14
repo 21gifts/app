@@ -54,6 +54,15 @@ function day(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 
   };
 }
 
+const ZERO_FIAT = {
+  cumulativeDonatedChf: 0,
+  cumulativeReceivedChf: 0,
+  cumulativeDonatedEur: 0,
+  cumulativeReceivedEur: 0,
+  cumulativeDonatedPhp: 0,
+  cumulativeReceivedPhp: 0,
+} as const;
+
 describe('alignActivitySeries', () => {
   it('returns empty when both series are empty', () => {
     expect(alignActivitySeries([], [])).toEqual([]);
@@ -72,6 +81,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 500,
         cumulativeDonatedUsd: 0,
         cumulativeReceivedUsd: 0.48,
+        cumulativeDonatedChf: 0,
+        cumulativeReceivedChf: 0.4,
+        cumulativeDonatedEur: 0,
+        cumulativeReceivedEur: 0.44,
+        cumulativeDonatedPhp: 0,
+        cumulativeReceivedPhp: 27,
       },
       {
         day: '2026-06-02',
@@ -79,6 +94,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 500,
         cumulativeDonatedUsd: 0,
         cumulativeReceivedUsd: 0.48,
+        cumulativeDonatedChf: 0,
+        cumulativeReceivedChf: 0.4,
+        cumulativeDonatedEur: 0,
+        cumulativeReceivedEur: 0.44,
+        cumulativeDonatedPhp: 0,
+        cumulativeReceivedPhp: 27,
       },
       {
         day: '2026-06-03',
@@ -86,6 +107,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 1500,
         cumulativeDonatedUsd: 0,
         cumulativeReceivedUsd: 1.43,
+        cumulativeDonatedChf: 0,
+        cumulativeReceivedChf: 1.2,
+        cumulativeDonatedEur: 0,
+        cumulativeReceivedEur: 1.3,
+        cumulativeDonatedPhp: 0,
+        cumulativeReceivedPhp: 80,
       },
     ]);
   });
@@ -99,6 +126,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 0,
         cumulativeDonatedUsd: 0.02,
         cumulativeReceivedUsd: 0,
+        cumulativeDonatedChf: 0.02,
+        cumulativeReceivedChf: 0,
+        cumulativeDonatedEur: 0.02,
+        cumulativeReceivedEur: 0,
+        cumulativeDonatedPhp: 1,
+        cumulativeReceivedPhp: 0,
       },
     ]);
   });
@@ -113,6 +146,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 100,
         cumulativeDonatedUsd: 0.05,
         cumulativeReceivedUsd: 0.1,
+        cumulativeDonatedChf: 0.04,
+        cumulativeReceivedChf: 0.08,
+        cumulativeDonatedEur: 0.05,
+        cumulativeReceivedEur: 0.09,
+        cumulativeDonatedPhp: 2.8,
+        cumulativeReceivedPhp: 5.6,
       },
       {
         day: '2026-06-02',
@@ -120,6 +159,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 200,
         cumulativeDonatedUsd: 0.05,
         cumulativeReceivedUsd: 0.2,
+        cumulativeDonatedChf: 0.04,
+        cumulativeReceivedChf: 0.17,
+        cumulativeDonatedEur: 0.05,
+        cumulativeReceivedEur: 0.18,
+        cumulativeDonatedPhp: 2.8,
+        cumulativeReceivedPhp: 11.2,
       },
     ]);
   });
@@ -134,6 +179,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 100,
         cumulativeDonatedUsd: 0,
         cumulativeReceivedUsd: 0.1,
+        cumulativeDonatedChf: 0,
+        cumulativeReceivedChf: 0.08,
+        cumulativeDonatedEur: 0,
+        cumulativeReceivedEur: 0.09,
+        cumulativeDonatedPhp: 0,
+        cumulativeReceivedPhp: 5.6,
       },
       {
         day: '2026-06-02',
@@ -141,6 +192,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 100,
         cumulativeDonatedUsd: 0.04,
         cumulativeReceivedUsd: 0.1,
+        cumulativeDonatedChf: 0.03,
+        cumulativeReceivedChf: 0.08,
+        cumulativeDonatedEur: 0.04,
+        cumulativeReceivedEur: 0.09,
+        cumulativeDonatedPhp: 2.2,
+        cumulativeReceivedPhp: 5.6,
       },
       {
         day: '2026-06-03',
@@ -148,6 +205,12 @@ describe('alignActivitySeries', () => {
         cumulativeReceivedSats: 300,
         cumulativeDonatedUsd: 0.04,
         cumulativeReceivedUsd: 0.3,
+        cumulativeDonatedChf: 0.03,
+        cumulativeReceivedChf: 0.25,
+        cumulativeDonatedEur: 0.04,
+        cumulativeReceivedEur: 0.27,
+        cumulativeDonatedPhp: 2.2,
+        cumulativeReceivedPhp: 16.8,
       },
     ]);
   });
@@ -163,10 +226,11 @@ describe('activityMaxY', () => {
         cumulativeReceivedSats: 0,
         cumulativeDonatedUsd: 0,
         cumulativeReceivedUsd: 0,
+        ...ZERO_FIAT,
       },
     ];
     expect(activityMaxY(zeros, 'sat')).toBe(1);
-    expect(activityMaxY(zeros, 'usd')).toBe(1);
+    expect(activityMaxY(zeros, 'fiat', 'USD')).toBe(1);
   });
 
   it('returns the max of both series', () => {
@@ -177,10 +241,11 @@ describe('activityMaxY', () => {
         cumulativeReceivedSats: 500,
         cumulativeDonatedUsd: 0.1,
         cumulativeReceivedUsd: 0.5,
+        ...ZERO_FIAT,
       },
     ];
     expect(activityMaxY(points, 'sat')).toBe(500);
-    expect(activityMaxY(points, 'usd')).toBe(0.5);
+    expect(activityMaxY(points, 'fiat', 'USD')).toBe(0.5);
   });
 });
 
@@ -191,12 +256,30 @@ describe('activityValue', () => {
     cumulativeReceivedSats: 20,
     cumulativeDonatedUsd: 1.5,
     cumulativeReceivedUsd: 2.5,
+    ...ZERO_FIAT,
   };
 
-  it('reads sat and usd cumulatives per series', () => {
+  it('reads sat and fiat cumulatives per series', () => {
     expect(activityValue(point, 'donated', 'sat')).toBe(10);
     expect(activityValue(point, 'received', 'sat')).toBe(20);
-    expect(activityValue(point, 'donated', 'usd')).toBe(1.5);
-    expect(activityValue(point, 'received', 'usd')).toBe(2.5);
+    expect(activityValue(point, 'donated', 'fiat', 'USD')).toBe(1.5);
+    expect(activityValue(point, 'received', 'fiat', 'USD')).toBe(2.5);
+  });
+
+  it('reads CHF from a received-only helper day', () => {
+    const aligned = alignActivitySeries([day('2026-06-01', 500, '0.48', 500)], []);
+    const first = aligned[0];
+    expect(first && activityValue(first, 'received', 'fiat', 'CHF')).toBe(0.4);
+    expect(first && activityValue(first, 'donated', 'fiat', 'CHF')).toBe(0);
+  });
+
+  it('maps a null CHF cumulative to 0 after align', () => {
+    const received: SpendPoint[] = [
+      { ...day('2026-06-01', 500, '0.48', 500), cumulativeChf: null },
+    ];
+    const aligned = alignActivitySeries(received, []);
+    const first = aligned[0];
+    expect(first?.cumulativeReceivedChf).toBe(0);
+    expect(first && activityValue(first, 'received', 'fiat', 'CHF')).toBe(0);
   });
 });

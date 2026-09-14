@@ -115,10 +115,10 @@
 
 ## Function: FiatPicker
 
-- **Purpose:** Four-way CHF | EUR | USD | PHP control for public stats. Uses `SegmentedControl tone="gift" shell="dark"` with `ariaLabel="Fiat currency"`. Does not include ₿ (chart scale stays a separate ₿ | selected fiat control).
-- **Inputs:** `value` (`FiatCode`) and `onChange`.
+- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'` (stats) and `ariaLabel` default `'Fiat currency'`. Profile passes `shell="app"` and catalog `profile.fiatCurrency`. Chart scale stays a separate ₿ | selected fiat control (`tone="gift"` via the picker).
+- **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); optional `ariaLabel` (default `'Fiat currency'`).
 - **Returns / side effects:** React element. No network.
-- **Used by:** `StatsDashboard`, `DayLoader`.
+- **Used by:** `StatsDashboard`, `DayLoader`, `AccountActivityChart`.
 
 ## Function: fetchGiftDay
 
@@ -316,7 +316,7 @@
 
 - **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), and a number-format settings row (`NumberFormatSwitcher`). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
 - **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no SVG/toggle; otherwise legend + ₿ | USD + SVG), name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: PushToggle
@@ -433,10 +433,10 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received with a ₿ | USD `SegmentedControl tone="gift"` (catalog `profile.scaleSat` = `₿`) and a visible legend (no title heading; page heading is **Profile**). Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. When the series is empty or all zeros, the SVG and toggle are omitted and `profile.chartEmpty` is shown (`role="status"`). v1 Given defaults to zeros on the received days.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Always renders FiatPicker (`tone="gift"` via picker, `shell="app"`, aria `profile.fiatCurrency`). Empty/all-zero sats: picker + `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: picker + legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Own `useState<FiatCode>` from `defaultFiatForLocale(locale)` (mount-time). Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. v1 Given defaults to zeros on the received days.
 - **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
-- **Returns / side effects:** When the series is empty or all zeros, only `profile.chartEmpty` (`role="status"`) — no legend, toggle, or SVG. Otherwise one chrome row (legend left, ₿ | USD right) and SVG. Client state for scale only. No network.
-- **Used by:** `ProfileScreen`, `ViewProfileScreen`.
+- **Returns / side effects:** Always FiatPicker. When the series is empty or all zeros: picker + `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise picker, one chrome row (legend left, ₿ | selected FiatCode right), and SVG. Client state for fiat and scale. No network.
+- **Used by:** `ProfileScreen`, `ViewProfileScreen`, `MemberProfileScreen`.
 
 ## Function: Button
 
@@ -627,20 +627,20 @@
 
 - **Purpose:** Align receive and donate cumulative `spendOverTime` series onto one sorted UTC-day axis for the profile chart.
 - **Inputs:** `received` and `donated` arrays from `GiftStats.spendOverTime`.
-- **Returns / side effects:** `ActivityPoint[]`. Empty+empty → `[]`. Empty donated → zero Given on each received day. Non-empty both → day union with step-hold carry-forward.
+- **Returns / side effects:** `ActivityPoint[]`. Empty+empty → `[]`. Empty donated → zero Given on each received day. Non-empty both → day union with step-hold carry-forward. Also aligns CHF/EUR/PHP cumulatives (`null` string → `0`); missing series side stays at the carried value (0 until first point).
 - **Used by:** `AccountActivityChart`.
 
 ## Function: activityValue
 
 - **Purpose:** Read one cumulative chart value from an aligned activity point.
-- **Inputs:** `point`, `series` (`donated` | `received`), `scale` (`sat` | `usd`).
+- **Inputs:** `point`, `series` (`donated` | `received`), `scale` (`sat` | `fiat`); when `'fiat'`, `fiat` (`FiatCode`) selects `cumulative*Usd|*Chf|*Eur|*Php`. `'sat'` ignores `fiat`.
 - **Returns / side effects:** Number used to place the polyline.
 - **Used by:** `AccountActivityChart`, `activityMaxY`.
 
 ## Function: activityMaxY
 
 - **Purpose:** Y-axis max for the dual-line chart: max of both series at the active scale, or `1` when empty/all zeros.
-- **Inputs:** `points`, `scale`.
+- **Inputs:** `points`, `scale` (`sat` | `fiat`), optional `fiat` (`FiatCode`) — same as `activityValue`.
 - **Returns / side effects:** Positive number for SVG scale.
 - **Used by:** `AccountActivityChart`.
 
@@ -1035,15 +1035,15 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Formats a parsed fiat chart-axis value with grouping and a currency prefix. USD matches `formatUsdTick`; other codes are `CHF 0` / `CHF 1.43` / `CHF 1'425`.
 - **Inputs:** `amount` number (layout scale only), `code` (`FiatCode`), and optional `style` `NumberFormatStyle` (default `ch`).
-- **Returns / side effects:** Axis label. Values under 10 keep trimmed decimals and use the style decimal separator. Does not itself map a null series to `—` — `StatsDashboard` does that when every selected cumulative is `null`.
-- **Used by:** `StatsDashboard` over-time fiat scale.
+- **Returns / side effects:** Axis label. Values under 10 keep trimmed decimals and use the style decimal separator. Does not itself map a null series to `—` — `StatsDashboard` does that when every selected cumulative is `null`. `AccountActivityChart` maps all-null CHF/EUR/PHP to `—` itself.
+- **Used by:** `StatsDashboard` over-time fiat scale, `AccountActivityChart` (profile fiat scale).
 
 ## Function: defaultFiatForLocale
 
 - **Purpose:** Picks the default public-stats fiat for a UI locale: `de` → CHF, `fil` → PHP, `es` → EUR, `en` → USD.
 - **Inputs:** `locale` (`Locale`).
 - **Returns / side effects:** A `FiatCode`. No network.
-- **Used by:** `StatsDashboard`, `DayLoader`.
+- **Used by:** `StatsDashboard`, `DayLoader`, `AccountActivityChart`.
 
 ## Function: formatUsdDisplay
 
@@ -1057,7 +1057,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Formats a parsed USD chart-axis value as a grouped dollar label.
 - **Inputs:** `usd` number (layout scale only); optional `style` `NumberFormatStyle` (default `ch`).
 - **Returns / side effects:** Label such as `$1'425`. Values under 10 keep trimmed decimals and use the style decimal separator (`.` for `ch`/`us`, `,` for `de`).
-- **Used by:** `AccountActivityChart` USD scale (profile ₿|USD). Stats over-time uses `formatFiatTick`.
+- **Used by:** `AccountActivityChart` when USD is selected. Stats over-time uses `formatFiatTick`.
 
 ## Function: ThemeProvider
 
