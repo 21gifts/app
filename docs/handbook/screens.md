@@ -786,7 +786,7 @@ Owner card with a real bio not equal to the display name. Seed GET /me with `nam
 
 ### Variant: about-editing
 
-Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByLabel('About me')` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`.
+Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`.
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
 

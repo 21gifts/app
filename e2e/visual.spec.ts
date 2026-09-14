@@ -3025,7 +3025,7 @@ test.describe('profile activity chart variants', () => {
     await stubProfileActivity(page, EMPTY_ACTIVITY);
     await page.goto('/profile');
     await page.getByRole('button', { name: 'Write your About me' }).click();
-    await expect(page.getByLabel('About me')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
     await shotScreen(page, 'state-profile-about-editing');
   });

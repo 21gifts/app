@@ -705,7 +705,7 @@ export const SCREEN_VARIANTS = [
     id: 'about-editing',
     image: 'profile-about-editing.png',
     visual: 'state-profile-about-editing',
-    needle: "getByLabel('About me')",
+    needle: "getByRole('textbox', { name: 'About me' })",
   },
   {
     route: '/profile',
