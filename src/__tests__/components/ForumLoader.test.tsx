@@ -3170,6 +3170,65 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('drops a late paid-reply invoice after Gift is opened', async () => {
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    invoiceMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(publicFetchMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
+  it('drops a late paid-reply invoice error after Gift is opened', async () => {
+    let rejectInvoice!: (reason: Error) => void;
+    invoiceMock.mockReturnValue(
+      new Promise((_, reject) => {
+        rejectInvoice = reject;
+      }),
+    );
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await act(async () => {
+      rejectInvoice(new Error('fail'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
   async function expandForeignAndPayReply(text: string, sats: string): Promise<void> {
     fetchMock.mockResolvedValue([FOREIGN]);
     repliesMock.mockResolvedValue([]);
