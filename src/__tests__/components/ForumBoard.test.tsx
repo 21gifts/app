@@ -1147,7 +1147,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Weiter' })).toBeNull();
   });
 
-  it('assigns the Wallet of Satoshi href on iPhone after Pay', async () => {
+  it('does not assign the wallet href on iPhone after Pay', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: IPHONE_UA,
@@ -1157,73 +1157,6 @@ describe('ForumBoard', () => {
       pr: 'lnbc21n1example',
       amountSats: 21,
     });
-    renderWithLocale(
-      <ForumBoard
-        messages={[SAMPLE]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payDraft="21"
-        onPaySubmit={onPaySubmit}
-        {...modeProps('all')}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
-    await waitFor(() => {
-      expect(locationAssign).toHaveBeenCalledWith('walletofsatoshi:lightning:LNBC21N1EXAMPLE');
-    });
-  });
-
-  it('does not assign the wallet href on iPhone after unmounting during an in-flight pay', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
-    let resolveInvoice!: (value: { messageId: string; pr: string; amountSats: number }) => void;
-    const onPaySubmit = vi.fn().mockReturnValue(
-      new Promise((resolve) => {
-        resolveInvoice = resolve;
-      }),
-    );
-    const { unmount } = renderWithLocale(
-      <ForumBoard
-        messages={[SAMPLE]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payDraft="21"
-        onPaySubmit={onPaySubmit}
-        {...modeProps('all')}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
-    unmount();
-    await act(async () => {
-      resolveInvoice({ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 });
-    });
-    expect(locationAssign).not.toHaveBeenCalled();
-  });
-
-  it('does not assign the wallet href on iPhone when onPaySubmit resolves null', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
-    const onPaySubmit = vi.fn().mockResolvedValue(null);
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -2064,6 +1997,34 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.queryByText('0 replies')).toBeNull();
+  });
+
+  it('keeps pay and copy outside the expand control', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(
+      screen
+        .getByRole('button', { name: 'Show replies' })
+        .contains(screen.getByRole('button', { name: 'Send Bitcoin' })),
+    ).toBe(false);
+    expect(
+      screen
+        .getByRole('button', { name: 'Show replies' })
+        .contains(screen.getByRole('button', { name: 'Copy link to this note' })),
+    ).toBe(false);
   });
 
   it('expands and collapses via the card aria-label, not pay/role/copy', () => {

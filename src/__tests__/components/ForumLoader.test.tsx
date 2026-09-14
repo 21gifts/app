@@ -64,7 +64,6 @@ import {
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 
 const fetchMock = vi.mocked(fetchMessages);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
@@ -2113,7 +2112,7 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
-  it('requests the invoice and opens Wallet of Satoshi on iPhone Pay', async () => {
+  it('requests the invoice on iPhone Pay without assigning the wallet href', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
@@ -2136,8 +2135,9 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
     });
+    expect(assign).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(assign).toHaveBeenCalledWith(walletOfSatoshiHref('lnbc21n1example'));
+      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
   });
 

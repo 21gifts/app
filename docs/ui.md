@@ -493,7 +493,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
 
-Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) then auto-assigns `walletofsatoshi:`; desktop, Android phone, and iPad stay **Continue** (`forum.payContinue`). Invoice-step labeled **Pay** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link.
+Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) mints the invoice and shows the invoice step (no `location.assign`); desktop, Android phone, and iPad stay **Continue** (`forum.payContinue`). Invoice-step labeled **Pay** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent). The wallet opens only via that `ButtonLink`. Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link.
 
 **Fiat.** Stats KPI shows ₿ on the first line and the selected fiat (CHF/EUR/USD/PHP) on the second via `FiatPicker` plus `formatFiatDisplay` (USD selected uses `formatUsdDisplay`). Profile activity uses FiatPicker (`tone="gift"` `shell="app"`) always; populated chart is ₿ | selected FiatCode, not ₿|USD only.
 
@@ -755,7 +755,7 @@ Do not use orange. This is law, not a gift CTA.
 4. Body `text-sm text-app-fg whitespace-pre-wrap`.
 5. Footer: `flex flex-wrap items-center gap-5` + amount + IconButtons (pay, copy, PM, delete when present) + reply count `ml-auto text-xs text-app-subtle`. Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
-Expand: the whole card is `role="button"` (click to expand replies). Inner controls `stopPropagation`. Focus ring on the expandable region.
+Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). The action row (amount, Gift pay, copy, PM, delete, reply count) is a sibling after that control, still inside the `li`. Inner controls `stopPropagation`. Focus ring on the expandable region.
 
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
@@ -787,7 +787,7 @@ Inbox direction is unmistakable without a Sent folder and without orange. Incomi
 
 **Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Alerts. `Button` primary:
 
-- iPhone / iPod (`isSmartphoneUserAgent` and not `isAndroidUserAgent`): **Pay** (`forum.payNow`; DE **Bezahlen**). One tap mints the invoice and `window.location.assign`s `walletOfSatoshiHref(pr)` (`walletofsatoshi:`). Invoice step stays as fallback (wallet `ButtonLink`, no QR).
+- iPhone / iPod (`isSmartphoneUserAgent` and not `isAndroidUserAgent`): **Pay** (`forum.payNow`; DE **Bezahlen**). One tap mints the invoice and shows the invoice step. It does not `window.location.assign`. The wallet opens only via the invoice-step `ButtonLink` (`walletofsatoshi:`, no QR).
 - Desktop, Android phone, iPad: **Continue** (`forum.payContinue`). Click only requests the invoice, then the invoice step.
 
 **Invoice step.** Centered column, back, confirm sentence with one `formatBitcoin`, then:

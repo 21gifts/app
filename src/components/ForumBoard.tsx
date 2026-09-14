@@ -353,7 +353,6 @@ export function ForumBoard({
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
-  const payMounted = useRef(false);
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
   const loadingRef = useRef(loading);
@@ -466,13 +465,6 @@ export function ForumBoard({
   }, []);
 
   useEffect(() => {
-    payMounted.current = true;
-    return () => {
-      payMounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
     const tryFocusComposer = (): boolean => {
       const el = composerRef.current;
       if (el === null) {
@@ -503,23 +495,7 @@ export function ForumBoard({
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    void (async () => {
-      const invoice = await Promise.resolve(onPaySubmit());
-      if (invoice === null || invoice === undefined) {
-        return;
-      }
-      if (!payMounted.current) {
-        return;
-      }
-      /* v8 ignore next 3 -- SSR has no navigator */
-      if (typeof navigator === 'undefined') {
-        return;
-      }
-      const ua = navigator.userAgent;
-      if (isSmartphoneUserAgent(ua) && !isAndroidUserAgent(ua)) {
-        window.location.assign(walletOfSatoshiHref(invoice.pr));
-      }
-    })();
+    void Promise.resolve(onPaySubmit());
   };
 
   const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -734,72 +710,72 @@ export function ForumBoard({
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
                 {message.text !== '' ? <NoteTranslate text={message.text} /> : null}
-                <div className="mt-3 flex flex-wrap items-center gap-5">
-                  <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
-                    {formatBitcoin(message.sats, numberFormat)}
-                  </p>
-                  {message.payable ? (
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.pay')}
-                      disabled={payBusy}
-                      onClick={(event) => {
-                        stopCardToggle(event);
-                        onPayOpen(message.id);
-                      }}
-                    >
-                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                    </IconButton>
-                  ) : null}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-5">
+                <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
+                  {formatBitcoin(message.sats, numberFormat)}
+                </p>
+                {message.payable ? (
                   <IconButton
                     type="button"
                     size="sm"
                     variant="ghost"
-                    aria-label={t('forum.copyLink')}
-                    title={t('forum.copyLink')}
-                    data-copied={copied ? 'true' : undefined}
+                    aria-label={t('forum.pay')}
+                    disabled={payBusy}
                     onClick={(event) => {
                       stopCardToggle(event);
-                      void copyMessageLink(message.id);
+                      onPayOpen(message.id);
                     }}
                   >
-                    {copied ? (
-                      <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                  </IconButton>
+                ) : null}
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t('forum.copyLink')}
+                  title={t('forum.copyLink')}
+                  data-copied={copied ? 'true' : undefined}
+                  onClick={(event) => {
+                    stopCardToggle(event);
+                    void copyMessageLink(message.id);
+                  }}
+                >
+                  {copied ? (
+                    <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                  ) : (
+                    <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                  )}
+                </IconButton>
+                {showForumPm(ownAccountId, ownName, message) ? (
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t('forum.pm')}
+                    title={t('forum.pm')}
+                    disabled={pmBusyId !== null}
+                    onClick={(event) => {
+                      stopCardToggle(event);
+                      onPm(message.id);
+                    }}
+                  >
+                    {pmBusyId === message.id ? (
+                      <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                      <Mail aria-hidden="true" className="h-3.5 w-3.5" />
                     )}
                   </IconButton>
-                  {showForumPm(ownAccountId, ownName, message) ? (
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.pm')}
-                      title={t('forum.pm')}
-                      disabled={pmBusyId !== null}
-                      onClick={(event) => {
-                        stopCardToggle(event);
-                        onPm(message.id);
-                      }}
-                    >
-                      {pmBusyId === message.id ? (
-                        <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Mail aria-hidden="true" className="h-3.5 w-3.5" />
-                      )}
-                    </IconButton>
-                  ) : null}
-                  {onDeleted !== undefined ? (
-                    <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
-                  ) : null}
-                  {message.parentId === undefined ? (
-                    <span className="ml-auto text-xs text-app-subtle">
-                      {t('forum.replyCount', { count: String(message.replyCount) })}
-                    </span>
-                  ) : null}
-                </div>
+                ) : null}
+                {onDeleted !== undefined ? (
+                  <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
+                ) : null}
+                {message.parentId === undefined ? (
+                  <span className="ml-auto text-xs text-app-subtle">
+                    {t('forum.replyCount', { count: String(message.replyCount) })}
+                  </span>
+                ) : null}
               </div>
 
               {sheetOpen && invoiceForCard === null ? (

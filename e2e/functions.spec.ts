@@ -2587,7 +2587,7 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  expect(recordedWalletAssign(page)?.startsWith('walletofsatoshi:lightning:')).toBe(true);
+  expect(recordedWalletAssign(page)).toBeUndefined();
 });
 
 test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({
