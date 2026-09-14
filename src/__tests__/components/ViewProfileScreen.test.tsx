@@ -59,7 +59,14 @@ describe('ViewProfileScreen', () => {
   });
 
   it('shows a set location without edit controls', () => {
-    renderWithLocale(<ViewProfileScreen profile={{ ...named, location: 'Zug' }} received={[]} />);
+    renderWithLocale(
+      <ViewProfileScreen
+        profile={{ ...named, location: 'Zug' }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
     expect(screen.getByText('Zug')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
