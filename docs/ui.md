@@ -21,7 +21,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 3. **Orange is shell-split.** On the **marketing shell**, `#f7931a` is the primary filled CTA (header **Log in**, **Ask for help**, 404 **Back home**) plus kickers. On the **app shell**, it is gift-money fill only (charts, ₿ selected, donate **Open the forum**). _Implication:_ do not call marketing **Log in** a gift. App form primaries (`Button variant="primary"`) stay `bg-app-btn`. `Button variant="accent"` is the orange fill; marketing uses it as shell primary, the app uses it for gift-intent only.
 
-4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1,500`). No `npub`, no “zap”, no “LNURL” on any screen.
+4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1'500`; visitor may pick US `10,000.23` / German `23.000,33`). No `npub`, no “zap”, no “LNURL” on any screen.
 
 5. **People first.** Receiver names and notes are the hero; chrome is quiet. _Implication:_ forum note body is `text-sm text-app-fg`; chrome labels are `text-app-muted`. When photo/story lands, it occupies the reserved profile slot, not a new layout.
 
@@ -224,9 +224,9 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 
 **One title per page.** The document outline has one `h1` (or `card-title` used as the sole heading). Card must not repeat a page title. `LoginPage` has no outer “Log in to 21.gifts”; the only heading is `LoginCard` `login.heading` at **card-title**. Do not add the outer title back. Welcome has no Forum heading; the only `h1` is “Welcome, {name}”.
 
-**`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, locale-grouped integer, no space, no fraction. Example: `₿1,500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
+**`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, style-grouped via `NumberFormatStyle`, no space, no fraction. Default Swiss `₿1'500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
 
-Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1,425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: `formatFiatTick` on stats; `formatUsdTick` on the profile ₿|USD chart. Toggle anatomy in §10.
+Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash; Swiss grouping default). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: `formatFiatTick` on stats; `formatUsdTick` on the profile ₿|USD chart (`$0`, `$1.43`, `$1'425`). Visitor styles `us` / `de` change grouping, not the currency. Toggle anatomy in §10.
 
 **Link type.** Marketing inline links: `text-accent underline underline-offset-2`. App inline links (rules, contact): `text-app-fg underline underline-offset-2 font-medium`. Do not make app body links orange (fails on paper; also not a gift CTA).
 
@@ -476,7 +476,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 ## Money
 
-**Visitor amounts.** Always `formatBitcoin(sats, locale)` from `src/lib/stats-money.ts`. Leading `₿` (U+20BF), locale grouping, no fraction, no extra ₿. Class: `tabular-nums lining-nums`. JSON fields remain `sats` / `totalSats`.
+**Visitor amounts.** Always `formatBitcoin(sats, numberFormat)` from `src/lib/stats-money.ts`. Leading `₿` (U+20BF), `NumberFormatStyle` grouping (`ch` / `us` / `de`), no fraction, no extra ₿. Class: `tabular-nums lining-nums`. JSON fields remain `sats` / `totalSats`.
 
 **Pay control is not a second ₿.** Note footer:
 
@@ -484,8 +484,8 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 [ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ] [ PM ]  [ N replies ]
 ```
 
-- Amount: `<p className="text-xs font-medium text-app-muted tabular-nums lining-nums">{formatBitcoin(message.sats, locale)}</p>` — **not a button**.
-- Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**). Disabled while `payBusy`.
+- Amount: `<p className="text-xs font-medium text-app-muted tabular-nums lining-nums">{formatBitcoin(message.sats, numberFormat)}</p>` — **not a button**.
+- Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
 
@@ -518,6 +518,8 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
 
 **Notifications** list rows are full-row links/buttons with visible text (not icon-only).
+
+Content translation under a note or reply body is a labeled underline text control (`forum.translate` / show original / show translation), not an `IconButton` in the footer icon row.
 
 **Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`).
 
@@ -709,9 +711,13 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox.
 
 ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`theme.label`), then `SegmentedControl tone="neutral"` with System / Light / Dark. Not a labeled chrome pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors follow the cookie if one exists, otherwise the OS.
 
+#### NumberFormatSwitcher profile settings section
+
+NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`numberFormat.label`), then `SegmentedControl tone="neutral"` with sample labels `10'000.23` / `10,000.23` / `23.000,33`. Not a Hash pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors keep the Swiss default unless a cookie exists.
+
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero.
+See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Menu has no number format.
 
 ### Banner (living-room laws)
 
@@ -887,7 +893,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` last settings row (overline + `SegmentedControl tone="neutral"` System / Light / Dark). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
 
 ### `/members/[accountId]`
 
@@ -946,7 +952,7 @@ Short, warm, direct. People helping people. English examples (catalogs translate
 | Something went wrong. Please try again. | “Request failed with 500”                             |
 | You are a guest in a living room…       | “Community guidelines / ToS summary”                  |
 | Open the forum                          | “Go to messenger surface”                             |
-| `₿1,500`                                | “1500 sats” as the visitor-facing string              |
+| `₿1'500`                                | “1500 sats” as the visitor-facing string              |
 
 Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook), invoice jargon. Push copy stays English `{ title, body }` as the API already sends.
 

@@ -307,7 +307,7 @@ describe('SignedInChrome', () => {
     expect(profile.textContent?.includes('·')).toBe(false);
   });
 
-  it('formats a single received amount as BIP-177 ₿1,000 and hides zero given', async () => {
+  it("formats a single received amount as BIP-177 ₿1'000 and hides zero given", async () => {
     vi.mocked(fetchGiftStats).mockResolvedValue({
       totalSats: 1000,
       totalBtc: '0.00001000',
@@ -344,7 +344,7 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     await waitFor(() => {
-      expect(screen.getByLabelText('Received ₿1,000')).toBeTruthy();
+      expect(screen.getByLabelText("Received ₿1'000")).toBeTruthy();
     });
     expect(screen.queryByLabelText(/Given/)).toBeNull();
     const profile = screen.getByRole('link', { name: /Profile/ });
@@ -393,7 +393,7 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     expect(screen.getByLabelText('Given ₿1')).toBeTruthy();
-    expect(screen.getByLabelText('Received ₿1,000')).toBeTruthy();
+    expect(screen.getByLabelText("Received ₿1'000")).toBeTruthy();
     const profile = screen.getByRole('link', { name: /Profile/ });
     expect(profile.textContent?.includes('·')).toBe(true);
   });

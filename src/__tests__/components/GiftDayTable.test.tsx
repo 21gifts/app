@@ -63,19 +63,19 @@ const ALICE: GiftDay = {
 
 describe('GiftDayTable', () => {
   it('shows the empty copy', () => {
-    render(<GiftDayTable day={EMPTY} fiat="USD" />);
+    render(<GiftDayTable day={EMPTY} fiat="USD" numberFormat="ch" />);
     expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
   });
 
   it('lists gifts', () => {
-    render(<GiftDayTable day={ALICE} fiat="USD" />);
+    render(<GiftDayTable day={ALICE} fiat="USD" numberFormat="ch" />);
     expect(screen.getByText('alice')).toBeTruthy();
     expect(screen.getByText('₿500')).toBeTruthy();
     expect(screen.getByText('12:00:00 UTC')).toBeTruthy();
   });
 
   it('shows a CHF header and cell', () => {
-    render(<GiftDayTable day={ALICE} fiat="CHF" />);
+    render(<GiftDayTable day={ALICE} fiat="CHF" numberFormat="ch" />);
     expect(screen.getByText('CHF')).toBeTruthy();
     expect(screen.getByText('CHF 0.40')).toBeTruthy();
   });
@@ -100,6 +100,7 @@ describe('GiftDayTable', () => {
           ],
         }}
         fiat="USD"
+        numberFormat="ch"
       />,
     );
     expect(screen.getByText('12:00:00 UTC')).toBeTruthy();
@@ -125,6 +126,7 @@ describe('GiftDayTable', () => {
           ],
         }}
         fiat="USD"
+        numberFormat="ch"
       />,
     );
     expect(screen.getByText('not-a-time')).toBeTruthy();

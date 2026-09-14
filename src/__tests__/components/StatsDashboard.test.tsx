@@ -266,8 +266,8 @@ describe('StatsDashboard', () => {
     renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
-    expect(screen.getAllByText('₿1,500,000')).toHaveLength(3);
-    expect(screen.getAllByText('$1,425.00')).toHaveLength(2);
+    expect(screen.getAllByText("₿1'500'000")).toHaveLength(3);
+    expect(screen.getAllByText("$1'425.00")).toHaveLength(2);
     expect(
       screen.getByText("USD is the BTC-USD daily close (UTC) on each gift's day."),
     ).toBeTruthy();
@@ -277,7 +277,7 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend by person in ₿')).toBeTruthy();
     expect(screen.getByLabelText('Spend by month in ₿')).toBeTruthy();
     expect(screen.getByText('alice')).toBeTruthy();
-    expect(screen.getByText('₿1,000,000 · $950.00')).toBeTruthy();
+    expect(screen.getByText("₿1'000'000 · $950.00")).toBeTruthy();
     const svg = screen.getByLabelText('Spend over time in ₿');
     expect(svg.getAttribute('role')).toBe('group');
     expect(within(svg).getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
@@ -395,13 +395,13 @@ describe('StatsDashboard', () => {
     renderWithLocale(
       <StatsDashboard stats={large} error={null} loading={false} onRetry={() => undefined} />,
     );
-    expect(screen.getByLabelText('Spend over time in ₿').textContent).toContain('₿15,000,000');
+    expect(screen.getByLabelText('Spend over time in ₿').textContent).toContain("₿15'000'000");
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
         name: 'USD',
       }),
     );
-    expect(screen.getByLabelText('Spend over time in USD').textContent).toMatch(/\$14,250/);
+    expect(screen.getByLabelText('Spend over time in USD').textContent).toMatch(/\$14'250/);
   });
 
   it('does not duplicate the zero ₿ y tick when the series is tiny', () => {
@@ -475,8 +475,8 @@ describe('StatsDashboard', () => {
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     const svg = screen.getByLabelText('Spend by month in ₿');
-    expect(svg.textContent).toContain('₿1,500,000');
-    expect(svg.textContent).toContain('$1,425.00');
+    expect(svg.textContent).toContain("₿1'500'000");
+    expect(svg.textContent).toContain("$1'425.00");
   });
 
   it('labels zero-amount months on the by-month chart', () => {
@@ -741,7 +741,7 @@ describe('StatsDashboard', () => {
     );
     const spent = screen.getByText('Total spent').parentElement;
     expect(spent).not.toBeNull();
-    expect(within(spent as HTMLElement).getByText('CHF 1,200.00')).toBeTruthy();
+    expect(within(spent as HTMLElement).getByText("CHF 1'200.00")).toBeTruthy();
     expect(
       screen.getByText(
         "CHF is USD at each gift's UTC-day close, converted with that day's ECB rate.",
