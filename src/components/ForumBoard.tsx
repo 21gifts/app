@@ -921,7 +921,7 @@ export function ForumBoard({
                                 {reply.text}
                               </p>
                             ) : reply.sats > 0 ? (
-                              <p className="mt-1 text-sm text-app-fg">
+                              <p className="mt-1 text-sm tabular-nums lining-nums text-app-fg">
                                 {t('forum.giftReply', {
                                   amount: formatBitcoin(reply.sats, locale),
                                 })}
