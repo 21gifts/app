@@ -146,7 +146,7 @@ describe('SegmentedControl', () => {
         tone="neutral"
       />,
     );
-    const active = screen.getByRole('button', { name: 'Active', exact: true });
+    const active = screen.getByRole('button', { name: /^Active$/ });
     expect(active.hasAttribute('aria-label')).toBe(false);
     expect(active.childElementCount).toBe(0);
   });
@@ -190,7 +190,7 @@ describe('SegmentedControl', () => {
         tone="neutral"
       />,
     );
-    const active = screen.getByRole('button', { name: 'Active', exact: true });
+    const active = screen.getByRole('button', { name: /^Active$/ });
     expect(active.hasAttribute('aria-label')).toBe(false);
     expect(active.childElementCount).toBe(0);
     expect(screen.queryByText('0')).toBeNull();
@@ -230,7 +230,7 @@ describe('SegmentedControl', () => {
         tone="neutral"
       />,
     );
-    const unpaid = screen.getByRole('button', { name: 'No gifts yet', exact: true });
+    const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
     expect(unpaid.hasAttribute('aria-label')).toBe(false);
     expect(screen.getByText('3').getAttribute('aria-hidden')).toBe('true');
   });

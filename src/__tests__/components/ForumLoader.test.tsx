@@ -377,7 +377,7 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
     });
   });
 
@@ -394,7 +394,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
     });
     await waitFor(() => {
       expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).not.toBe(
@@ -403,7 +403,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
     });
   });
 

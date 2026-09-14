@@ -696,7 +696,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
   });
 
   it('keeps No gifts yet unbadged when unpaidNewCount is 0', () => {
@@ -716,7 +716,7 @@ describe('ForumBoard', () => {
         unpaidNewCount={0}
       />,
     );
-    expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
   });
 
   it('omits the unpaid chip when No gifts yet is selected', () => {
@@ -736,7 +736,7 @@ describe('ForumBoard', () => {
         unpaidNewCount={3}
       />,
     );
-    const unpaid = screen.getByRole('button', { name: 'No gifts yet', exact: true });
+    const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
     expect(unpaid).toBeTruthy();
     expect(unpaid.textContent).not.toContain('3');
   });
