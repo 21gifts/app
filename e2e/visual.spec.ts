@@ -1393,6 +1393,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1563,6 +1564,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1608,7 +1610,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await shotScreen(page, 'state-members-replies-open');
   });
 
@@ -1642,6 +1644,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1706,6 +1709,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1735,7 +1739,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('Loading…')).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await shotScreen(page, 'state-members-replies-loading');
     release();
   });
@@ -1770,6 +1774,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1829,6 +1834,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1854,7 +1860,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await shotScreen(page, 'state-members-replies-error');
   });
 
@@ -1888,6 +1894,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1967,6 +1974,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -2013,7 +2021,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '3 replies' }).click();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await shotScreen(page, 'state-members-replies-truncated');
   });
 
