@@ -781,20 +781,20 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Messages**, a conversation list (counterpart name, origin label Contact / Direct / Damus, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Messages**, a conversation list (counterpart name, origin label Contact / Direct / Damus, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`). Open a thread (`?c=`) for oldest-first messages and a 500-character composer: incoming bubbles are muted left note cards, sent bubbles are filled `app-btn` on the right labelled **You**. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**. Forum PM and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
 
-Loaded list with at least one thread (counterpart **21.gifts**, origin **Contact**, last text inbound).
+Loaded list with at least one thread (counterpart **21.gifts**, origin **Contact**, last text inbound as muted left preview).
 
 ![21.gifts inbox](images/messages.png)
 
 ### Variant: sent-preview
 
-Loaded list whose last text is the viewer's own send. Preview **You: Hello team**.
+Loaded list whose last text is the viewer's own send. Preview **You: Hello team** as a compact filled chip on the right of the muted row, not muted body text.
 
 ![21.gifts inbox sent preview](images/messages-sent-preview.png)
 
@@ -818,7 +818,7 @@ List fetch failed. Button **Try again**.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts**, origin **Contact** under the heading, inbound **Hello team** and a sent bubble labelled **You**, composer visible.
+Open official thread. Heading **21.gifts**, origin **Contact** under the heading, inbound **Hello team** as a muted left note-card bubble and a sent filled `app-btn` bubble on the right labelled **You**, composer visible.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 

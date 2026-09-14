@@ -128,7 +128,9 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('list', { name: 'Conversations' })).toBeTruthy();
-    expect(screen.getByText('Hello team', { exact: true })).toBeTruthy();
+    const inboundPreview = screen.getByText('Hello team', { exact: true });
+    expect(inboundPreview).toBeTruthy();
+    expect(inboundPreview.className).not.toContain('bg-app-btn');
     expect(screen.queryByText('You: Hello team')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(onOpen).toHaveBeenCalledWith('conv-1');
@@ -273,7 +275,9 @@ describe('InboxScreen', () => {
     );
     const row = screen.getByRole('button', { name: /21\.gifts/ });
     expect(row.textContent).toContain('21.gifts');
-    expect(screen.getByText('You: Hello team')).toBeTruthy();
+    const sentPreview = screen.getByText('You: Hello team');
+    expect(sentPreview).toBeTruthy();
+    expect(sentPreview.className).toContain('bg-app-btn');
     expect(screen.queryByText('Hello team', { exact: true })).toBeNull();
   });
 
@@ -332,7 +336,11 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Contact')).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Hello team')).toBeTruthy();
-    expect(screen.getByRole('listitem').getAttribute('data-from-me')).toBe('false');
+    const incoming = screen.getByRole('listitem');
+    expect(incoming.getAttribute('data-from-me')).toBe('false');
+    expect(incoming.className).toContain('self-start');
+    expect(incoming.className).toContain('bg-app-card-muted');
+    expect(incoming.className).not.toContain('bg-app-btn');
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
     expect(onBack).toHaveBeenCalledTimes(1);
@@ -450,5 +458,7 @@ describe('InboxScreen', () => {
     const bubble = screen.getByRole('listitem');
     expect(bubble.getAttribute('data-from-me')).toBe('true');
     expect(bubble.className).toContain('self-end');
+    expect(bubble.className).toContain('bg-app-btn');
+    expect(bubble.className).not.toContain('bg-app-card-muted');
   });
 });
