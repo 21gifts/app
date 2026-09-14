@@ -372,12 +372,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:new-posts",
-    "label": "/welcome new-posts",
-    "visual": "state-welcome-new-posts",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/rules:default",
     "label": "/rules default",
     "visual": "screen-rules",
@@ -417,6 +411,54 @@
     "id": "/members/[accountId]:default",
     "label": "/members/[accountId] default",
     "visual": "screen-members-accountId",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open",
+    "label": "/members/[accountId] posts-open",
+    "visual": "state-members-posts-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:replies-open",
+    "label": "/members/[accountId] replies-open",
+    "visual": "state-members-replies-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-loading",
+    "label": "/members/[accountId] posts-loading",
+    "visual": "state-members-posts-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:replies-loading",
+    "label": "/members/[accountId] replies-loading",
+    "visual": "state-members-replies-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-error",
+    "label": "/members/[accountId] posts-error",
+    "visual": "state-members-posts-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:replies-error",
+    "label": "/members/[accountId] replies-error",
+    "visual": "state-members-replies-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-truncated",
+    "label": "/members/[accountId] posts-truncated",
+    "visual": "state-members-posts-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:replies-truncated",
+    "label": "/members/[accountId] replies-truncated",
+    "visual": "state-members-replies-truncated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -765,6 +807,12 @@
     "id": "/welcome:translate-error",
     "label": "/welcome translate-error",
     "visual": "state-welcome-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:new-posts",
+    "label": "/welcome new-posts",
+    "visual": "state-welcome-new-posts",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
