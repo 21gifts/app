@@ -97,4 +97,58 @@ describe('FiatPreferenceProvider', () => {
       'useFiatPreference must be used within FiatPreferenceProvider',
     );
   });
+
+  it('does not rewrite when the cookie already matches the current code', () => {
+    const cookieSet = vi.fn();
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => `${FIAT_COOKIE}=USD`,
+      set: cookieSet,
+    });
+    try {
+      render(
+        <FiatPreferenceProvider initial="USD">
+          <Probe />
+        </FiatPreferenceProvider>,
+      );
+      act(() => {
+        screen.getByRole('button', { name: 'set-usd' }).click();
+      });
+      expect(cookieSet).not.toHaveBeenCalled();
+      expect(screen.getByTestId('code').textContent).toBe('USD');
+    } finally {
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
+
+  it('treats a malformed cookie as absent and still writes', () => {
+    const cookieSet = vi.fn();
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => `${FIAT_COOKIE}=%E0%A4%A`,
+      set: cookieSet,
+    });
+    vi.stubGlobal('location', { protocol: 'http:' });
+    try {
+      render(
+        <FiatPreferenceProvider initial="USD">
+          <Probe />
+        </FiatPreferenceProvider>,
+      );
+      act(() => {
+        screen.getByRole('button', { name: 'set-usd' }).click();
+      });
+      expect(cookieSet).toHaveBeenCalledWith(
+        `${FIAT_COOKIE}=USD; Path=/; Max-Age=31536000; SameSite=Lax`,
+      );
+    } finally {
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
 });
