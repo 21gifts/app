@@ -13,8 +13,7 @@ self.addEventListener('push', (event) => {
     typeof payload.title === 'string' && payload.title !== '' ? payload.title : '21.gifts';
   const body = typeof payload.body === 'string' ? payload.body : '';
   const url = typeof payload.url === 'string' && payload.url !== '' ? payload.url : '/welcome';
-  const tag =
-    typeof payload.tag === 'string' && payload.tag !== '' ? payload.tag : undefined;
+  const tag = typeof payload.tag === 'string' && payload.tag !== '' ? payload.tag : undefined;
 
   const options = {
     body,
