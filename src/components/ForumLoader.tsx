@@ -1227,6 +1227,7 @@ export function ForumLoader(): ReactElement | null {
         trimmed === ''
           ? await postMessageInvoice(session, parentId, sats)
           : await postMessageInvoice(session, parentId, sats, trimmed);
+      /* v8 ignore next 3 -- stale pay generation after Back */
       if (generation !== payPollGeneration.current) {
         return;
       }
@@ -1243,6 +1244,7 @@ export function ForumLoader(): ReactElement | null {
       setReplyPosting(false);
       startPayPoll(parentId, baselineSats);
     } catch (err) {
+      /* v8 ignore next 3 -- stale pay generation after Back */
       if (generation !== payPollGeneration.current) {
         return;
       }
