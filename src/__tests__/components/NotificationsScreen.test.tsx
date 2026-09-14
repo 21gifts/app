@@ -192,7 +192,7 @@ describe('NotificationsScreen', () => {
         onOpen={onOpen}
       />,
     );
-    expect(screen.getByText('Photo reply')).toBeTruthy();
+    expect(screen.getByText('Photo')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Ivy posted/ }));
     expect(onOpen).toHaveBeenCalledWith('parent-5', 'n5');
   });

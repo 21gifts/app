@@ -90,7 +90,11 @@ export function NotificationsScreen({
                 ? row.text
                 : row.text !== ''
                   ? row.text
-                  : t('notifications.photoOnly');
+                  : t(
+                      row.type === 'forum_post'
+                        ? 'notifications.photoPost'
+                        : 'notifications.photoOnly',
+                    );
             return (
               <li key={row.id}>
                 <button

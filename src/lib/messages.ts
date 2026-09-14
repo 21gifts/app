@@ -492,6 +492,7 @@ const en = {
   'notifications.reply': '{name} replied',
   'notifications.zap': '{name} sent bitcoin',
   'notifications.photoOnly': 'Photo reply',
+  'notifications.photoPost': 'Photo',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -988,6 +989,7 @@ const de = {
   'notifications.reply': '{name} hat geantwortet',
   'notifications.zap': '{name} hat Bitcoin gesendet',
   'notifications.photoOnly': 'Foto-Antwort',
+  'notifications.photoPost': 'Foto',
 } satisfies Messages;
 
 const es = {
@@ -1468,6 +1470,7 @@ const es = {
   'notifications.reply': '{name} respondió',
   'notifications.zap': '{name} envió bitcoin',
   'notifications.photoOnly': 'Respuesta con foto',
+  'notifications.photoPost': 'Foto',
 } satisfies Messages;
 
 const fil = {
@@ -1957,6 +1960,7 @@ const fil = {
   'notifications.reply': '{name} sumagot',
   'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Sagot na litrato',
+  'notifications.photoPost': 'Litrato',
 } satisfies Messages;
 
 /**

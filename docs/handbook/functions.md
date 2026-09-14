@@ -1775,7 +1775,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsScreen
 
-- **Purpose:** Presentational notifications list of living-room posts, replies, and payments (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin`; post/reply text or photo-only, zap amount as stored, time; unread semibold). No composer, no thread view, and no filter.
+- **Purpose:** Presentational notifications list of living-room posts, replies, and payments (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin`; post text or **Photo**, reply text or **Photo reply**, zap amount as stored, time; unread semibold). No composer, no thread view, and no filter.
 - **Inputs:** List state from `NotificationsLoader` (`notifications`, `error`, `loading`, `onRetry`, `onOpen`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `NotificationsLoader`.
