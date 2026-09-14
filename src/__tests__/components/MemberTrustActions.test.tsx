@@ -282,6 +282,27 @@ describe('MemberTrustActions', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('keeps the verified role when fetchMember throws after propose', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(postTrustPropose).mockResolvedValue({
+      id: profile.id,
+      name: profile.name,
+      role: 'verified',
+    });
+    vi.mocked(fetchMember).mockRejectedValue(new Error('gone'));
+    const onUpdated = vi.fn();
+    renderWithLocale(
+      <MemberTrustActions
+        profile={{ ...profile, role: 'verified', trust: NULL_TRUST }}
+        onUpdated={onUpdated}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Propose as moderator' }));
+    await waitFor(() => {
+      expect(onUpdated).toHaveBeenCalledWith(expect.objectContaining({ role: 'verified' }));
+    });
+  });
+
   it('posts propose, confirm, and appoint from the matching buttons', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postTrustPropose).mockResolvedValue({
