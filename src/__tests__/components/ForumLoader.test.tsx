@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumLoader } from '@/components/ForumLoader';
-import type { Account, Conversation, ForumMessage } from '@/lib/api-types';
+import type { Account, Conversation, ForumMessage, GiftStats } from '@/lib/api-types';
 import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -143,6 +143,28 @@ const FOREIGN: ForumMessage = {
   replyCount: 0,
 };
 
+const EMPTY_STATS: GiftStats = {
+  totalSats: 0,
+  totalBtc: '0.00000000',
+  totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
+  giftCount: 0,
+  recipientCount: 0,
+  firstPaidAt: null,
+  lastPaidAt: null,
+  spendOverTime: [],
+  byRecipient: [],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};
+
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
 
@@ -160,7 +182,7 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
   publicFetchMock.mockResolvedValue(SAMPLE);
-  fetchGiftStatsMock.mockResolvedValue({ spendOverTime: [] });
+  fetchGiftStatsMock.mockResolvedValue(EMPTY_STATS);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
