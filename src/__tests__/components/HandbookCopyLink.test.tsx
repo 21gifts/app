@@ -51,6 +51,7 @@ describe('HandbookCopyLink', () => {
     renderWithLocale(<HandbookCopyLink targetId="screens" label="Screens" />);
 
     const button = screen.getByRole('button', { name: 'Copy link to Screens' });
+    expect(screen.queryByText('Copy link to Screens')).toBeNull();
     expect(button.className).toContain('h-6');
     expect(button.className).not.toContain('px-1.5');
     expect(button.className).toContain('text-paper/40');
