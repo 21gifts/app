@@ -150,18 +150,18 @@ function isReplyPaymentError(err: unknown): boolean {
  *
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the api.
- * @param frozenReplyCounts - Parent ids whose replyCount must not rise this session.
+ * @param hiddenReplyCounts - Session-deleted reply counts keyed by parent id.
  * @returns Merged newest-first list.
  */
-/** Prefer the lower count when this parent had a session reply delete. */
-function combineReplyCount(prior: number, incoming: number, frozen: boolean): number {
-  return frozen ? Math.min(prior, incoming) : Math.max(prior, incoming);
+/** Raise the count with the server, minus replies still hidden this session. */
+function combineReplyCount(prior: number, incoming: number, hidden: number): number {
+  return Math.max(prior, Math.max(0, incoming - hidden));
 }
 
 function mergeMessages(
   prev: ForumMessage[] | null,
   next: ForumMessage[],
-  frozenReplyCounts: ReadonlySet<string> = new Set(),
+  hiddenReplyCounts: ReadonlyMap<string, number> = new Map(),
 ): ForumMessage[] {
   if (prev === null) {
     return next;
@@ -177,7 +177,7 @@ function mergeMessages(
       replyCount: combineReplyCount(
         prior.replyCount,
         message.replyCount,
-        frozenReplyCounts.has(message.id),
+        hiddenReplyCounts.get(message.id) ?? 0,
       ),
     };
   });
@@ -244,8 +244,10 @@ export function ForumLoader(): ReactElement | null {
   const setAccount = useAuthStore((state) => state.setAccount);
   /** Session-local hidden post ids so a stale GET cannot resurrect a post already hidden this session. */
   const deletedIds = useRef(new Set<string>());
-  /** Parents whose replyCount must not rise after a session reply delete. */
-  const frozenReplyCounts = useRef(new Set<string>());
+  /** Session-deleted nested reply counts keyed by parent id. */
+  const hiddenReplyCounts = useRef(new Map<string, number>());
+  /** Last known parent id for each loaded reply, kept after collapse. */
+  const replyParentById = useRef(new Map<string, string>());
   const [messages, setMessages] = useState<ForumMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -399,7 +401,7 @@ export function ForumLoader(): ReactElement | null {
         return 'ok';
       }
       setMessages((prev) =>
-        mergeMessages(prev, next, frozenReplyCounts.current).filter(
+        mergeMessages(prev, next, hiddenReplyCounts.current).filter(
           (row) => !deletedIds.current.has(row.id),
         ),
       );
@@ -719,9 +721,12 @@ export function ForumLoader(): ReactElement | null {
       try {
         const next = await fetchReplies(session, expandedId);
         if (!cancelled) {
+          for (const row of next) {
+            replyParentById.current.set(row.id, expandedId);
+          }
           const filtered = next.filter((row) => !deletedIds.current.has(row.id));
           setReplies(filtered);
-          if (frozenReplyCounts.current.has(expandedId)) {
+          if ((hiddenReplyCounts.current.get(expandedId) ?? 0) > 0) {
             setMessages((prev) => {
               /* v8 ignore next 3 -- expanded fetchReplies only runs after the list has loaded */
               if (prev === null) {
@@ -841,7 +846,7 @@ export function ForumLoader(): ReactElement | null {
                         replyCount: combineReplyCount(
                           row.replyCount,
                           next.replyCount,
-                          frozenReplyCounts.current.has(next.id),
+                          hiddenReplyCounts.current.get(next.id) ?? 0,
                         ),
                       }
                     : row,
@@ -1416,19 +1421,38 @@ export function ForumLoader(): ReactElement | null {
         onShowNewPosts={showNewPosts}
         onDeleted={(messageId) => {
           deletedIds.current.add(messageId);
-          const loadedReplies = repliesRef.current;
-          if (loadedReplies !== null && loadedReplies.some((row) => row.id === messageId)) {
-            const remaining = loadedReplies.filter((row) => row.id !== messageId);
-            const parentId = expandedIdRef.current;
-            if (parentId !== null) {
-              frozenReplyCounts.current.add(parentId);
-            }
-            setReplies(remaining);
-            setMessages((prev) =>
-              prev!.map((row) =>
-                row.id === parentId ? { ...row, replyCount: remaining.length } : row,
-              ),
+          const isListedPost = messagesRef.current?.some((row) => row.id === messageId) === true;
+          if (!isListedPost) {
+            const remaining = (repliesRef.current ?? []).filter(
+              (row) => !deletedIds.current.has(row.id),
             );
+            const parentId =
+              expandedIdRef.current ?? replyParentById.current.get(messageId) ?? null;
+            if (parentId !== null) {
+              hiddenReplyCounts.current.set(
+                parentId,
+                (hiddenReplyCounts.current.get(parentId) ?? 0) + 1,
+              );
+            }
+            if (repliesRef.current !== null) {
+              setReplies(remaining);
+            }
+            if (parentId !== null) {
+              setMessages((prev) =>
+                prev!.map((row) => {
+                  if (row.id !== parentId) {
+                    return row;
+                  }
+                  return {
+                    ...row,
+                    replyCount:
+                      repliesRef.current === null
+                        ? Math.max(0, row.replyCount - 1)
+                        : remaining.length,
+                  };
+                }),
+              );
+            }
             return;
           }
           setMessages((prev) => prev!.filter((row) => row.id !== messageId));

@@ -5456,6 +5456,73 @@ it('removes a moderated reply, keeps the parent, and ignores restored replies', 
   ).toBeTruthy();
 });
 
+it('drops overlapping nested reply deletes without restoring the first', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 2 }]);
+  repliesMock.mockResolvedValue([
+    NESTED_REPLY,
+    { ...NESTED_REPLY, id: 'r2', text: 'Second reply' },
+  ]);
+  const pending: Array<() => void> = [];
+  vi.mocked(deleteMessage).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        pending.push(() => resolve());
+      }),
+  );
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  await screen.findByText('A reply');
+  fireEvent.click(within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', { name: 'Confirm deletion' }));
+  fireEvent.click(within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', { name: 'Confirm deletion' }));
+  expect(pending).toHaveLength(2);
+  await act(async () => {
+    pending[0]!();
+    pending[1]!();
+  });
+  await waitFor(() => expect(screen.queryByText('A reply')).toBeNull());
+  expect(screen.queryByText('Second reply')).toBeNull();
+  expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+  ).toBeTruthy();
+});
+
+it('still hides a reply deleted after the thread is collapsed', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  repliesMock.mockResolvedValue([NESTED_REPLY]);
+  let finishDelete!: () => void;
+  vi.mocked(deleteMessage).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finishDelete = () => resolve();
+      }),
+  );
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  await screen.findByText('A reply');
+  const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+  await act(async () => {
+    finishDelete();
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  await waitFor(() => expect(repliesMock.mock.calls.length).toBeGreaterThan(1));
+  expect(screen.queryByText('A reply')).toBeNull();
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+  ).toBeTruthy();
+});
+
 it('hides reply deletion for ordinary members', async () => {
   fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
   repliesMock.mockResolvedValue([NESTED_REPLY]);
