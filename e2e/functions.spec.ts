@@ -4396,20 +4396,52 @@ test('Function: proxyViewGet — GET /view-key/[viewKey] is reachable', async ({
   const res = await request.get('/view-key/[viewKey]');
   expect(res.status()).toBeGreaterThanOrEqual(400);
 });
-test('Function: fetchAccountActivity — signed-out GET /me/activity is 401', async ({ request }) => {
-  expect((await request.get('/me/activity')).status()).toBe(401);
+test('Function: fetchAccountActivity — signed-in profile menu shows received sats', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubAccountActivity(page, { ...EMPTY_ACTIVITY, receivedSats: 1000 });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
 });
-test('Function: fetchMemberActivity — GET /forum/members/[accountId]/activity is reachable', async ({
+test('Function: fetchMemberActivity — member card shows empty activity copy', async ({
+  page,
   request,
 }) => {
-  expect(
-    (await request.get('/forum/members/[accountId]/activity')).status(),
-  ).toBeGreaterThanOrEqual(400);
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
 });
-test('Function: fetchViewActivity — GET /view-key/[viewKey]/activity is reachable', async ({
-  request,
+test('Function: fetchViewActivity — public view card shows empty activity copy', async ({
+  page,
 }) => {
-  expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
+  const key = 'a'.repeat(64);
+  await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        createdAt: 1,
+        hasPasskey: false,
+      }),
+    });
+  });
+  await page.route('**/view-key/**/activity**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.goto(`/view/${key}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
 });
 test('Function: proxyMeActivityGet — GET /me/activity is 401', async ({ request }) => {
   expect((await request.get('/me/activity')).status()).toBe(401);
