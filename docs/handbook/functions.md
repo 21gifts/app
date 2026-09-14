@@ -576,9 +576,9 @@
 
 ## Function: PublicMessageLoader
 
-- **Purpose:** Client loader for the public note page: validates UUID, fetches via `fetchPublicMessage` / `fetchPublicMessagePhoto`, shows missing/error/retry/loading, a ready card with labeled **Translate** under the note body via `NoteTranslate` when the note language differs from the UI locale, and a Log in or Back to the forum link from `useHydrateSession`.
+- **Purpose:** Client loader for the public thread page: validates UUID, fetches `fetchPublicMessage(routeId)`; if `parentId` is set, fetches that parent (`null` → missing) then `fetchPublicReplies(parent.id)`; else `fetchPublicReplies(root.id)`. Ready only with root + replies (empty replies → parent only). Replies throw → error + **Try again** (whole chain). Vertical stack: parent `Card` then reply Cards with `pl-4`. Gift-only replies (empty text, sats > 0): sats line via `formatBitcoin`, no empty `<p>`. When the route id is a reply, that reply card (or wrapper) has `data-permalink-target="true"` and `ring-1 ring-app-fg`. Auth CTA once below the stack from `useHydrateSession`. Photo/video per card via `fetchPublicMessagePhoto`. Labeled **Translate** under note and reply bodies via `NoteTranslate` when the language differs from the UI locale. No pay, composer, or copy.
 - **Inputs:** `id` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready `Card`. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on the ready card (GET `/translate` on mount, POST on **Translate**). No pay or composer.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready stack. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on note and reply bodies (GET `/translate` on mount, POST on **Translate**). No pay, composer, or copy.
 - **Used by:** `PublicMessagePage`.
 
 ## Function: ViewProfilePage
@@ -944,6 +944,13 @@
 - **Inputs:** Forum message `id` (UUID string). Optional `opts` with `sinceSats` (finite integer ≥ 0; omitted / NaN / Infinity / negatives / non-integers skip the query) and `signal` (`AbortSignal` passed to `fetch` when provided).
 - **Returns / side effects:** `ForumMessage`, or `null` on 404 or abort (`AbortError` / already-aborted signal). Throws visitor copy (`Could not load messages. Please try again.`) on other non-ok, network, or zod failures.
 - **Used by:** `PublicMessageLoader`, `ForumLoader`.
+
+## Function: fetchPublicReplies
+
+- **Purpose:** GET `/public-messages/:id/replies` without a session. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items, and return the survivors oldest-first.
+- **Inputs:** Parent forum message `id`.
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive or HTTP 200 `{ messages: [] }`). Throws visitor copy (`Could not load messages. Please try again.`) on HTTP 404 (not empty), other non-ok, network, non-JSON, or a body that is not `{ messages: array }`.
+- **Used by:** `PublicMessageLoader`.
 
 ## Function: fetchPublicMessagePhoto
 
@@ -1478,6 +1485,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/public-messages/[id]`.
+
+## Function: proxyPublicMessageRepliesGet
+
+- **Purpose:** Public proxy GET `/messages/:id/replies` to the 21.gifts api (oldest-first live replies, no auth). App path is `/public-messages/[id]/replies` so `/messages/[id]` can serve HTML.
+- **Inputs:** Incoming `Request`, plus parent message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/public-messages/[id]/replies`.
 
 ## Function: proxyContactPost
 

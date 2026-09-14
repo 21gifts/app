@@ -294,6 +294,13 @@ test('inbox thread shows Hello team', async ({ page }) => {
 });
 
 test('public message default shows Hello from Ada', async ({ page }) => {
+  await page.route(`**/public-messages/${ID}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.route(`**/public-messages/${ID}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -313,6 +320,13 @@ test('public message missing shows not-found copy', async ({ page }) => {
 });
 
 test('public message loading shows Loading…', async ({ page }) => {
+  await page.route(`**/public-messages/${ID}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.route(`**/public-messages/${ID}`, async () => {
     // never fulfill
   });
@@ -321,6 +335,13 @@ test('public message loading shows Loading…', async ({ page }) => {
 });
 
 test('public message error shows Try again', async ({ page }) => {
+  await page.route(`**/public-messages/${ID}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.route(`**/public-messages/${ID}`, async (route) => {
     await route.fulfill({
       status: 500,

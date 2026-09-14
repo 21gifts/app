@@ -38,6 +38,7 @@ import {
   proxyMessagesRepliesGet,
   proxyMessagesVideoGet,
   proxyPublicMessageGet,
+  proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
   proxyViewActivityGet,
   proxyViewGet,
@@ -213,6 +214,15 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyPublicMessageGet(new Request('http://localhost/public-messages/m1'), 'm1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1');
+  });
+
+  it('proxyPublicMessageRepliesGet hits /messages/:id/replies', async () => {
+    const fetchMock = stubApi();
+    await proxyPublicMessageRepliesGet(
+      new Request('http://localhost/public-messages/m1/replies'),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/replies');
   });
 
   it('proxyContactPost hits POST /contact', async () => {

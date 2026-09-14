@@ -19,6 +19,7 @@ import {
   fetchMessages,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
+  fetchPublicReplies,
   fetchReplies,
   fetchVapidPublicKey,
   fetchViewActivity,
@@ -1670,6 +1671,90 @@ describe('fetchPublicMessagePhoto', () => {
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     await expect(fetchPublicMessagePhoto('m1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchPublicReplies', () => {
+  it('GETs /public-messages/:id/replies without bearer and parses replies', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage] },
+    });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/replies');
+    expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('returns an empty list on HTTP 200 with messages: []', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([]);
+  });
+
+  it('keeps valid replies and skips an invalid empty name', async () => {
+    const invalidEmptyName = { ...forumMessage, id: 'm-invalid', name: '' };
+    const secondValid = { ...forumMessage, id: 'm2' };
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, invalidEmptyName, secondValid] },
+    });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([forumMessage, secondValid]);
+  });
+
+  it('returns an empty list when every reply is invalid', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [{ ...forumMessage, name: '' }] },
+    });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy on HTTP 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not { messages: array }', async () => {
+    stubFetch({ ok: true, status: 200, body: { notMessages: [] } });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      } as unknown as Response),
+    );
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
   });

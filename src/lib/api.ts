@@ -678,6 +678,47 @@ export async function fetchPublicMessage(
 }
 
 /**
+ * Fetches live replies for one public forum note without a session (HTML thread).
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty): the parent GET already 404s unknown ids.
+ *
+ * @param id - Parent forum message UUID.
+ * @returns Reply list oldest-first (Damus authors may omit role; schema
+ * defaults to basis).
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchPublicReplies(id: string): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch(`/public-messages/${encodeURIComponent(id)}/replies`);
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const body: unknown = await response.json();
+    if (
+      typeof body !== 'object' ||
+      body === null ||
+      !('messages' in body) ||
+      !Array.isArray(body.messages)
+    ) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const kept: ForumMessage[] = [];
+    for (const item of body.messages) {
+      const parsed = forumMessageSchema.safeParse(item);
+      if (parsed.success) {
+        kept.push(parsed.data);
+      }
+    }
+    return kept;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
  * Fetches replies for one forum note (oldest first).
  *
  * @param sessionToken - A bearer token from a completed challenge.

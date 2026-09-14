@@ -1078,4 +1078,18 @@ export const SCREEN_VARIANTS = [
     visual: 'state-messages-id-translate-error',
     needle: 'Could not translate this note. Please try again.',
   },
+  {
+    route: '/messages/[id]',
+    id: 'thread',
+    image: 'messages-id-thread.png',
+    visual: 'state-messages-id-thread',
+    needle: 'state-messages-id-thread',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'reply',
+    image: 'messages-id-reply.png',
+    visual: 'state-messages-id-reply',
+    needle: 'state-messages-id-reply',
+  },
 ];

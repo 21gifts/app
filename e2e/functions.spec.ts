@@ -485,6 +485,12 @@ test('Function: proxyPublicMessageGet — GET /public-messages/[id] is reachable
   expect((await request.get('/public-messages/[id]')).status()).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyPublicMessageRepliesGet — GET /public-messages/[id]/replies is reachable', async ({
+  request,
+}) => {
+  expect((await request.get('/public-messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyContactPost — POST /contact/submit without bearer is 401', async ({
   request,
 }) => {
@@ -4141,6 +4147,13 @@ test('Function: AppShellFooter — name screen Continue is visible', async ({ pa
 
 test('Function: PublicMessagePage — public note shows Hello from Ada', async ({ page }) => {
   const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.route(`**/public-messages/${id}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -4169,6 +4182,13 @@ test('Function: PublicMessageLoader — invalid id shows not-found copy', async 
 
 test('Function: fetchPublicMessage — public note loads via the client fetch', async ({ page }) => {
   const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.route(`**/public-messages/${id}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -4192,6 +4212,13 @@ test('Function: fetchPublicMessage — public note loads via the client fetch', 
 
 test('Function: fetchPublicMessagePhoto — public note with photo shows alt', async ({ page }) => {
   const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.route(`**/public-messages/${id}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -4218,6 +4245,54 @@ test('Function: fetchPublicMessagePhoto — public note with photo shows alt', a
   });
   await page.goto(`/messages/${id}`);
   await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+});
+
+test('Function: fetchPublicReplies — public thread loads replies without bearer', async ({
+  page,
+}) => {
+  const parentId = '11111111-1111-4111-8111-111111111111';
+  const replyId = '22222222-2222-4222-8222-222222222222';
+  const parent = {
+    id: parentId,
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis',
+    replyCount: 1,
+  };
+  const reply = {
+    id: replyId,
+    parentId,
+    name: 'Pater Severin',
+    text: '',
+    sats: 3000,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis',
+    replyCount: 0,
+    createdAt: '2026-08-28T12:01:00.000Z',
+  };
+  await page.route(`**/public-messages/${parentId}/replies`, async (route) => {
+    expect(route.request().headers()['authorization']).toBeFalsy();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [reply] }),
+    });
+  });
+  await page.route(`**/public-messages/${parentId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(parent),
+    });
+  });
+  await page.goto(`/messages/${parentId}`);
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
+  await expect(page.getByText('Pater Severin')).toBeVisible();
 });
 
 test('Function: fetchReplies — expanding a welcome note loads replies', async ({ page }) => {
