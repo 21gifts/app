@@ -1439,6 +1439,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Second post from Carol.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open');
   });
 
@@ -1612,6 +1613,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-open');
   });
 
@@ -1676,6 +1678,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Loading…')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Loading…').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-loading');
     release();
   });
@@ -1741,6 +1744,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('Loading…')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Loading…').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-loading');
     release();
   });
@@ -1802,6 +1806,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Could not load messages. Please try again.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-error');
   });
 
@@ -1862,6 +1867,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Could not load messages. Please try again.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-error');
   });
 
