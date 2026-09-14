@@ -25,8 +25,8 @@ export type AboutMeSectionProps = {
   name?: string | null;
   /** Absolute URL to copy; omit or empty string hides the copy control. */
   profileUrl?: string;
-  /** Persist edited text (owner mode). */
-  onSave?: (text: string) => Promise<void>;
+  /** Persist edited text (owner mode). Return `false` to keep the editor open. */
+  onSave?: (text: string) => Promise<boolean | void>;
 };
 
 /**
@@ -124,7 +124,10 @@ export function AboutMeSection({
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft);
+      const saved = await onSave(draft);
+      if (saved === false) {
+        return;
+      }
       setEditing(false);
     } catch (err) {
       /* name 409 stays on /profile with the editor open; NameForm is on this card */

@@ -1077,6 +1077,12 @@ Valid known key. Heading **Profile**, FiatPicker always; empty series shows Fiat
 
 ![21.gifts public view profile](images/view-viewKey.png)
 
+### Variant: about-filled
+
+Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same read-only card as default plus the About me heading and body text. Copy-profile-link remains. No edit.
+
+![21.gifts public view about filled](images/view-about-filled.png)
+
 ### Variant: missing
 
 Unknown or malformed key. Copy **This profile could not be found.**

@@ -3135,6 +3135,36 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-view-viewKey');
   });
 
+  test('state /view about-filled', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: 'I build on Bitcoin',
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
+    await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
+    await shotScreen(page, 'state-view-about-filled');
+  });
+
   test('screen /view/[viewKey] missing', async ({ page }) => {
     const missing = 'b'.repeat(64);
     await page.route(new RegExp(`/view-key/${missing}$`), async (route) => {

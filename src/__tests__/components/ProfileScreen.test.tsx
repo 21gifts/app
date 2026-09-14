@@ -280,6 +280,7 @@ describe('ProfileScreen', () => {
     });
 
     expect(useAuthStore.getState().account?.aboutMe).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'About me' })).toBeTruthy();
   });
 
   it('does not redirect to setup/rules when putAboutMe throws MissingRequirementsError after the session changed', async () => {

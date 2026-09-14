@@ -815,6 +815,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/view/[viewKey]',
+    id: 'about-filled',
+    image: 'view-about-filled.png',
+    visual: 'state-view-about-filled',
+    needle: 'I build on Bitcoin',
+  },
+  {
+    route: '/view/[viewKey]',
     id: 'missing',
     image: 'view-missing.png',
     visual: 'state-view-missing',

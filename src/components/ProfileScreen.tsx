@@ -56,16 +56,16 @@ export function ProfileScreen(): ReactElement {
             try {
               const updated = await putAboutMe(session, text);
               if (useAuthStore.getState().session !== session) {
-                return;
+                return false;
               }
               const current = useAuthStore.getState().account;
               if (current === null) {
-                return;
+                return false;
               }
               setAccount({ ...current, aboutMe: updated.aboutMe });
             } catch (err) {
               if (useAuthStore.getState().session !== session) {
-                return;
+                return false;
               }
               if (err instanceof MissingRequirementsError) {
                 if (err.missing.includes('rules')) {
