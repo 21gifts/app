@@ -401,7 +401,7 @@ describe('StatsDashboard', () => {
         name: 'USD',
       }),
     );
-    expect(screen.getByLabelText('Spend over time in USD').textContent).toMatch(/\$14,250/);
+    expect(screen.getByLabelText('Spend over time in USD').textContent).toMatch(/\$14'250/);
   });
 
   it('does not duplicate the zero ₿ y tick when the series is tiny', () => {
