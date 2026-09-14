@@ -153,6 +153,11 @@ function isReplyPaymentError(err: unknown): boolean {
  * @param frozenReplyCounts - Parent ids whose replyCount must not rise this session.
  * @returns Merged newest-first list.
  */
+/** Prefer the lower count when this parent had a session reply delete. */
+function combineReplyCount(prior: number, incoming: number, frozen: boolean): number {
+  return frozen ? Math.min(prior, incoming) : Math.max(prior, incoming);
+}
+
 function mergeMessages(
   prev: ForumMessage[] | null,
   next: ForumMessage[],
@@ -169,9 +174,11 @@ function mergeMessages(
     }
     return {
       ...message,
-      replyCount: frozenReplyCounts.has(message.id)
-        ? Math.min(prior.replyCount, message.replyCount)
-        : Math.max(prior.replyCount, message.replyCount),
+      replyCount: combineReplyCount(
+        prior.replyCount,
+        message.replyCount,
+        frozenReplyCounts.has(message.id),
+      ),
     };
   });
   const ids = new Set(next.map((message) => message.id));
@@ -715,13 +722,15 @@ export function ForumLoader(): ReactElement | null {
           const filtered = next.filter((row) => !deletedIds.current.has(row.id));
           setReplies(filtered);
           if (frozenReplyCounts.current.has(expandedId)) {
-            setMessages((prev) =>
-              prev === null
-                ? prev
-                : prev.map((row) =>
-                    row.id === expandedId ? { ...row, replyCount: filtered.length } : row,
-                  ),
-            );
+            setMessages((prev) => {
+              /* v8 ignore next 3 -- expanded fetchReplies only runs after the list has loaded */
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) =>
+                row.id === expandedId ? { ...row, replyCount: filtered.length } : row,
+              );
+            });
           }
         }
       } catch {
@@ -829,9 +838,11 @@ export function ForumLoader(): ReactElement | null {
                     ? {
                         ...row,
                         ...next,
-                        replyCount: frozenReplyCounts.current.has(next.id)
-                          ? Math.min(row.replyCount, next.replyCount)
-                          : Math.max(row.replyCount, next.replyCount),
+                        replyCount: combineReplyCount(
+                          row.replyCount,
+                          next.replyCount,
+                          frozenReplyCounts.current.has(next.id),
+                        ),
                       }
                     : row,
                 )
