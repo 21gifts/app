@@ -108,15 +108,12 @@ export function HandbookCopyLink({
       type="button"
       size="sm"
       variant="ghost"
+      tone="dark"
       onClick={handleClick}
       aria-label={ariaName}
       title={ariaName}
       data-copied={copied ? 'true' : undefined}
-      className={
-        copied
-          ? 'text-accent hover:bg-paper/10 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
-          : 'text-paper/40 hover:bg-paper/10 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper'
-      }
+      className={copied ? 'text-accent hover:text-accent' : 'hover:text-accent'}
     >
       {copied ? (
         <Check aria-hidden="true" className="h-4 w-4" />

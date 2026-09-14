@@ -3,6 +3,9 @@ import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
 /** Visual weight for {@link IconButton}. */
 export type IconButtonVariant = 'primary' | 'secondary' | 'ghost';
 
+/** Shell for app tokens vs paper-on-ink marketing. */
+export type IconButtonTone = 'app' | 'dark';
+
 /** Props for {@link IconButton}. */
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Accessible name (required for icon-only controls). */
@@ -13,12 +16,21 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   variant?: IconButtonVariant;
   /** Painted size. Default `md`. `sm` keeps 24px paint with a 44px hit slop. */
   size?: 'sm' | 'md' | 'lg';
+  /** App tokens or marketing ink. Default `app`. */
+  tone?: IconButtonTone;
 }
 
 const VARIANT_CLASS: Record<IconButtonVariant, string> = {
   primary: 'bg-app-btn text-app-btn-fg hover:bg-app-btn-hover',
   secondary: 'border border-app-border-strong text-app-fg hover:bg-app-hover',
   ghost: 'text-app-muted hover:bg-app-hover hover:text-app-fg',
+};
+
+const DARK_VARIANT_CLASS: Record<IconButtonVariant, string> = {
+  primary: 'bg-paper text-ink hover:bg-paper/90',
+  secondary: 'border border-paper/20 text-paper hover:bg-paper/10',
+  ghost:
+    'text-paper/40 hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper',
 };
 
 const SIZE_CLASS: Record<NonNullable<IconButtonProps['size']>, string> = {
@@ -37,15 +49,17 @@ export function IconButton({
   children,
   variant = 'secondary',
   size = 'md',
+  tone = 'app',
   className,
   type = 'button',
   ...rest
 }: IconButtonProps): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
+  const variantClass = tone === 'dark' ? DARK_VARIANT_CLASS[variant] : VARIANT_CLASS[variant];
   return (
     <button
       type={type}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full leading-none transition disabled:cursor-not-allowed disabled:opacity-50 ${SIZE_CLASS[size]} ${VARIANT_CLASS[variant]}${extra}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full leading-none transition disabled:cursor-not-allowed disabled:opacity-50 ${SIZE_CLASS[size]} ${variantClass}${extra}`}
       {...rest}
     >
       <span className="relative z-10 inline-flex items-center justify-center">{children}</span>

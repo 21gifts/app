@@ -42,6 +42,16 @@ describe('IconButton', () => {
     expect(ghost.className).toContain('text-app-muted');
     expect(ghost.className).toContain('h-12');
     expect(ghost.className).toContain('x');
+
+    rerender(
+      <IconButton aria-label="Ink" variant="ghost" tone="dark" size="sm">
+        <span>I</span>
+      </IconButton>,
+    );
+    const ink = screen.getByRole('button', { name: 'Ink' });
+    expect(ink.className).toContain('hover:bg-paper/10');
+    expect(ink.className).toContain('focus-visible:outline-paper');
+    expect(ink.className).not.toContain('hover:bg-app-hover');
   });
 
   it('forwards type and click', () => {

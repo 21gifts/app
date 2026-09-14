@@ -72,14 +72,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root viewport: device-width at scale 1. `maximumScale` and `userScalable`
- * stop iOS Safari from auto-zooming focused form fields.
+ * Root viewport: device-width at scale 1. Form controls use 16px type so
+ * iOS Safari does not auto-zoom on focus. Pinch-zoom stays available (WCAG 1.4.4).
  */
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 /**

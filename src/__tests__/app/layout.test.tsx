@@ -90,12 +90,10 @@ describe('metadata', () => {
 });
 
 describe('viewport', () => {
-  it('locks scale to device-width at 1 so iOS Safari does not auto-zoom fields', () => {
+  it('sets device-width at scale 1 and leaves pinch-zoom available', () => {
     expect(viewport).toEqual({
       width: 'device-width',
       initialScale: 1,
-      maximumScale: 1,
-      userScalable: false,
     });
   });
 });
