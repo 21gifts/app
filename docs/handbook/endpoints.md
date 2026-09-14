@@ -60,7 +60,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats` only.
+- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, and `/members/[accountId]`.
 - **Auth:** Public.
 
 ## Endpoint: GET /lightning-address
