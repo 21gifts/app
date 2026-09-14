@@ -29,7 +29,9 @@ describe('TrustChainScreen', () => {
         onExpand={() => undefined}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Trust Chain' })).toBeTruthy();
+    const heading = screen.getByRole('heading', { name: 'Trust Chain' });
+    expect(heading).toBeTruthy();
+    expect(heading.className).toContain('leading-tight');
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();

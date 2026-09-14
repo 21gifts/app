@@ -62,7 +62,9 @@ export function TrustChainScreen({
 
   return (
     <div>
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">{t('trustChain.title')}</h1>
+      <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+        {t('trustChain.title')}
+      </h1>
       <p className="mt-3 max-w-2xl text-lg text-paper/60">{t('trustChain.lead')}</p>
       {body}
       <section className="mt-16 space-y-8 text-paper">
