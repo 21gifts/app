@@ -3,7 +3,7 @@
 import type { ReactElement } from 'react';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { useTranslations } from '@/components/LocaleProvider';
-import type { GiftStats, ViewProfile } from '@/lib/api-types';
+import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 
 /**
  * Public read-only identity card matching signed-in profile chrome without
@@ -18,8 +18,8 @@ export function ViewProfileScreen({
   donated = [],
 }: {
   profile: ViewProfile;
-  received: GiftStats['spendOverTime'];
-  donated?: GiftStats['spendOverTime'];
+  received: AccountActivity['receivedOverTime'];
+  donated?: AccountActivity['donatedOverTime'];
 }): ReactElement {
   const { t } = useTranslations();
   const address = profile.lightningAddress;

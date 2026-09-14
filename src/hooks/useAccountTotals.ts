@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchAccountActivity } from '@/lib/api';
-import type { GiftStats } from '@/lib/api-types';
+import type { AccountActivity } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -22,15 +22,15 @@ import { useAuthStore } from '@/stores/auth-store';
 export function useAccountTotals(): {
   donatedSats: number;
   receivedSats: number;
-  donateOverTime: GiftStats['spendOverTime'];
-  receiveOverTime: GiftStats['spendOverTime'];
+  donateOverTime: AccountActivity['donatedOverTime'];
+  receiveOverTime: AccountActivity['receivedOverTime'];
   loading: boolean;
 } {
   const session = useAuthStore((state) => state.session);
   const [donatedSats, setDonatedSats] = useState(0);
   const [receivedSats, setReceivedSats] = useState(0);
-  const [donateOverTime, setDonateOverTime] = useState<GiftStats['spendOverTime']>([]);
-  const [receiveOverTime, setReceiveOverTime] = useState<GiftStats['spendOverTime']>([]);
+  const [donateOverTime, setDonateOverTime] = useState<AccountActivity['donatedOverTime']>([]);
+  const [receiveOverTime, setReceiveOverTime] = useState<AccountActivity['receivedOverTime']>([]);
   const [loading, setLoading] = useState(session !== null);
 
   useEffect(() => {

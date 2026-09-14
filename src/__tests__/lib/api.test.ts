@@ -862,6 +862,22 @@ describe('fetchAccountActivity', () => {
     });
   });
 
+  it('accepts activity fx without gift-stats quotes', async () => {
+    const body = {
+      donatedSats: 0,
+      receivedSats: 21,
+      donatedOverTime: [],
+      receivedOverTime: [],
+      fx: {
+        quote: 'BTC-USD',
+        dayBasis: 'utc',
+        source: 'coinbase-exchange-daily-close',
+      },
+    };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(fetchAccountActivity('tok')).resolves.toEqual(body);
+  });
+
   it('throws visitor copy on 401', async () => {
     stubFetch({ ok: false, status: 401, body: {} });
     await expect(fetchAccountActivity('tok')).rejects.toThrow(

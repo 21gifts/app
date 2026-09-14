@@ -6,7 +6,7 @@ import { Button } from '@/components/ui';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { ViewProfileScreen } from '@/components/ViewProfileScreen';
 import { fetchViewActivity, fetchViewProfile } from '@/lib/api';
-import type { GiftStats, ViewProfile } from '@/lib/api-types';
+import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 
 const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 
@@ -24,8 +24,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     VIEW_KEY_RE.test(viewKey) ? 'loading' : 'missing',
   );
   const [profile, setProfile] = useState<ViewProfile | null>(null);
-  const [received, setReceived] = useState<GiftStats['spendOverTime']>([]);
-  const [donated, setDonated] = useState<GiftStats['spendOverTime']>([]);
+  const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
+  const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {

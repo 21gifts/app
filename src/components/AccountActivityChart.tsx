@@ -11,7 +11,7 @@ import {
   alignActivitySeries,
   type ActivityScale,
 } from '@/lib/account-activity';
-import type { GiftStats } from '@/lib/api-types';
+import type { AccountActivity } from '@/lib/api-types';
 import {
   defaultFiatForLocale,
   formatBitcoin,
@@ -23,13 +23,13 @@ import {
 /** Props for {@link AccountActivityChart}. */
 export interface AccountActivityChartProps {
   /** Cumulative receive series from account activity. */
-  received: GiftStats['spendOverTime'];
+  received: AccountActivity['receivedOverTime'];
   /**
    * Cumulative give series from account activity. Defaults to `[]` so Given
    * stays zero on the same days as `received` when omitted. Do not pass
    * `undefined`; omit the prop or pass `[]`.
    */
-  donated?: GiftStats['spendOverTime'];
+  donated?: AccountActivity['donatedOverTime'];
 }
 
 const GIVEN_STROKE = 'var(--color-app-chart-given)';
@@ -54,21 +54,21 @@ const NON_USD_CUMULATIVE: Record<
  * True when every source cumulative for `fiat` on both input series is `null`.
  * USD is never unsummable (the API string is always present).
  *
- * @param received - Receive `spendOverTime`.
- * @param donated - Donate `spendOverTime`.
+ * @param received - Receive `receivedOverTime`.
+ * @param donated - Donate `donatedOverTime`.
  * @param fiat - Selected fiat.
  * @returns Whether y-ticks should be an em dash instead of `formatFiatTick`.
  */
 function selectedFiatUnsummable(
-  received: GiftStats['spendOverTime'],
-  donated: GiftStats['spendOverTime'],
+  received: AccountActivity['receivedOverTime'],
+  donated: AccountActivity['donatedOverTime'],
   fiat: FiatCode,
 ): boolean {
   if (fiat === 'USD') {
     return false;
   }
   const key = NON_USD_CUMULATIVE[fiat];
-  return [...received, ...donated].every((point) => point[key] === null);
+  return [...received, ...donated].every((point) => point[key] == null);
 }
 
 /**

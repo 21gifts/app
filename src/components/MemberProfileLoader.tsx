@@ -6,7 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { Button } from '@/components/ui';
 import { fetchMember, fetchMemberActivity } from '@/lib/api';
-import type { GiftStats, MemberProfile } from '@/lib/api-types';
+import type { AccountActivity, MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -28,8 +28,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
     ACCOUNT_ID_RE.test(accountId) ? 'loading' : 'missing',
   );
   const [profile, setProfile] = useState<MemberProfile | null>(null);
-  const [received, setReceived] = useState<GiftStats['spendOverTime']>([]);
-  const [donated, setDonated] = useState<GiftStats['spendOverTime']>([]);
+  const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
+  const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {

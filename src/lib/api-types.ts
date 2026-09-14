@@ -199,19 +199,39 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * FX on account activity. `quotes` is optional so payloads from an api that
+ * has not yet shipped gift-stats fiat currencies still parse.
+ */
+export const activityFxSchema = giftStatsFxSchema.extend({
+  quotes: giftStatsFxSchema.shape.quotes.optional(),
+});
+
+/**
+ * One UTC day on an activity series. Fiat columns are optional for the same
+ * reason as {@link activityFxSchema}.
+ */
+export const activitySpendDaySchema = spendDaySchema.partial({
+  chf: true,
+  eur: true,
+  php: true,
+  cumulativeChf: true,
+  cumulativeEur: true,
+  cumulativePhp: true,
+});
+
+/**
  * Runtime schema for signed-in, member, and public-view activity
  * (`GET /me/activity`, `GET /members/:id/activity`, `GET /view/:viewKey/activity`).
  *
- * `donatedOverTime` / `receivedOverTime` are the same {@link spendDaySchema}
- * objects as {@link GiftStats.spendOverTime}. Totals include house gifts and
- * forum zaps.
+ * Series share the gift-stats day shape, with optional fiat fields. Totals
+ * include house gifts and forum zaps.
  */
 export const accountActivitySchema = z.object({
   donatedSats: z.number().int().nonnegative(),
   receivedSats: z.number().int().nonnegative(),
-  donatedOverTime: z.array(spendDaySchema),
-  receivedOverTime: z.array(spendDaySchema),
-  fx: giftStatsFxSchema,
+  donatedOverTime: z.array(activitySpendDaySchema),
+  receivedOverTime: z.array(activitySpendDaySchema),
+  fx: activityFxSchema,
 });
 
 /**

@@ -25,7 +25,7 @@ import {
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type ForumMessage,
-  type GiftStats,
+  type AccountActivity,
   type MemberProfile,
 } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
@@ -181,8 +181,8 @@ export function MemberProfileScreen({
   donated = [],
 }: {
   profile: MemberProfile;
-  received: GiftStats['spendOverTime'];
-  donated?: GiftStats['spendOverTime'];
+  received: AccountActivity['receivedOverTime'];
+  donated?: AccountActivity['donatedOverTime'];
 }): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();

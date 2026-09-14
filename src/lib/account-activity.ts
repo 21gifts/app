@@ -1,4 +1,4 @@
-import type { GiftStats } from '@/lib/api-types';
+import type { AccountActivity } from '@/lib/api-types';
 import type { FiatCode } from '@/lib/stats-money';
 
 /** Money unit for the profile activity chart. */
@@ -36,8 +36,8 @@ export interface ActivityPoint {
  * @param value - Two-decimal string, or `null` when unsummed.
  * @returns `Number(value)`, or `0` when `value` is `null`.
  */
-function parseOptionalFiat(value: string | null): number {
-  return value === null ? 0 : Number(value);
+function parseOptionalFiat(value: string | null | undefined): number {
+  return value == null ? 0 : Number(value);
 }
 
 /**
@@ -76,13 +76,13 @@ function cumulativeForFiat(
  * present in only one series contributes 0 that day to the other; cumulative carries
  * forward). CHF/EUR/PHP `null` strings become `0` for scale.
  *
- * @param received - Cumulative receive series (`spendOverTime`).
- * @param donated - Cumulative give series (`spendOverTime`); pass `[]` when none.
+ * @param received - Cumulative receive series (`receivedOverTime`).
+ * @param donated - Cumulative give series (`donatedOverTime`); pass `[]` when none.
  * @returns Aligned points sorted by day, or `[]` when both inputs are empty.
  */
 export function alignActivitySeries(
-  received: GiftStats['spendOverTime'],
-  donated: GiftStats['spendOverTime'],
+  received: AccountActivity['receivedOverTime'],
+  donated: AccountActivity['donatedOverTime'],
 ): ActivityPoint[] {
   if (received.length === 0 && donated.length === 0) {
     return [];
