@@ -98,15 +98,6 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
   });
 
-  it('ignores a pointer move whose client coordinates are not finite', () => {
-    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
-    const node = screen.getByTestId('trust-node-f');
-    const startX = Number(node.querySelector('rect')?.getAttribute('x'));
-    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10 });
-    fireEvent.pointerMove(node, { pointerId: 1, clientX: Number.NaN, clientY: 10 });
-    expect(Number(node.querySelector('rect')?.getAttribute('x'))).toBe(startX);
-  });
-
   it('ignores pointer up from a different pointer than the drag', () => {
     renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
     const node = screen.getByTestId('trust-node-f');

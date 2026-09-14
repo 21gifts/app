@@ -179,6 +179,7 @@ export function TrustChainDiagram({
     if (current === null || current.pointerId !== event.pointerId) {
       return;
     }
+    /* v8 ignore next 3 -- PointerEvent constructors reject non-finite clientX/clientY */
     if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
       return;
     }
