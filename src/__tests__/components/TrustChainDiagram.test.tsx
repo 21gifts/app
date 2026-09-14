@@ -25,7 +25,7 @@ const CHAIN: TrustChain = {
 describe('TrustChainDiagram', () => {
   it('renders named nodes, unnamed fallback, test ids, member links, and edge labels', () => {
     renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
-    expect(screen.getByRole('img', { name: 'Trust Chain diagram' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Trust Chain diagram' })).toBeTruthy();
     expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
     expect(screen.getByTestId('trust-node-m').getAttribute('href')).toBe('/members/m');
     expect(screen.getByTestId('trust-node-ada').getAttribute('href')).toBe('/members/ada');
@@ -78,7 +78,7 @@ describe('TrustChainDiagram', () => {
     );
     expect(screen.getByTestId('trust-node-a')).toBeTruthy();
     expect(screen.getByTestId('trust-node-b')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Trust Chain diagram' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Trust Chain diagram' })).toBeTruthy();
   });
 
   it('renders a zero-length self-edge without throwing', () => {
@@ -92,7 +92,7 @@ describe('TrustChainDiagram', () => {
           }}
         />,
       );
-      expect(screen.getByRole('img', { name: 'Trust Chain diagram' })).toBeTruthy();
+      expect(screen.getByRole('group', { name: 'Trust Chain diagram' })).toBeTruthy();
     } finally {
       hypot.mockRestore();
     }

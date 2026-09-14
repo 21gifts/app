@@ -109,7 +109,7 @@ export function TrustChainDiagram({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        role="img"
+        role="group"
         aria-label={t('aria.trustChain')}
       >
         {edges.map((edge) => {

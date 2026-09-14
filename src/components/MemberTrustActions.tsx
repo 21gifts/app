@@ -117,7 +117,10 @@ export function MemberTrustActions({
       ) : null}
       {alreadyOnChain ? (
         <p className="text-center text-sm text-app-fg">
-          <Link href="/trust-chain" className="underline">
+          <Link
+            href="/trust-chain"
+            className="text-sm font-medium text-app-fg underline underline-offset-2"
+          >
             {t('trustChain.alreadyOnChain')}
           </Link>
         </p>
