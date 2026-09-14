@@ -9,13 +9,15 @@ import { useAuthStore } from '@/stores/auth-store';
  * Fetches given and received activity for the signed-in session.
  *
  * Calls `GET /me/activity` whenever a session exists, including when the
- * Lightning Address is blank (forum zaps do not need a handle). No session
- * → zeros, empty series, `loading: false`. On each fetch start (including
- * session change) totals and series reset to zeros/empty; `AccountActivityChart`
- * then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale
- * responses when the session
- * changes mid-flight. Errors resolve to zeros and empty series without
- * throwing into the UI. Does not call `fetchGiftStats`.
+ * Lightning Address is blank (forum zaps do not need a handle). Refetches when
+ * the session or Lightning Address changes so house gifts to a newly linked
+ * handle appear without a full reload. No session → zeros, empty series,
+ * `loading: false`. On each fetch start (including session or address change)
+ * totals and series reset to zeros/empty; `AccountActivityChart` then shows
+ * `profile.chartEmpty` (no SVG) when the series is empty. Drops stale
+ * responses when the session or address changes mid-flight. Errors resolve to
+ * zeros and empty series without throwing into the UI. Does not call
+ * `fetchGiftStats`.
  *
  * @returns Current totals, both time series, and an in-flight `loading` flag.
  */
@@ -27,6 +29,7 @@ export function useAccountTotals(): {
   loading: boolean;
 } {
   const session = useAuthStore((state) => state.session);
+  const lightningAddress = useAuthStore((state) => state.account?.lightningAddress ?? null);
   const [donatedSats, setDonatedSats] = useState(0);
   const [receivedSats, setReceivedSats] = useState(0);
   const [donateOverTime, setDonateOverTime] = useState<AccountActivity['donatedOverTime']>([]);
@@ -78,7 +81,7 @@ export function useAccountTotals(): {
     return () => {
       cancelled = true;
     };
-  }, [session]);
+  }, [session, lightningAddress]);
 
   return { donatedSats, receivedSats, donateOverTime, receiveOverTime, loading };
 }

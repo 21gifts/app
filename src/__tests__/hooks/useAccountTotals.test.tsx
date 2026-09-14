@@ -245,6 +245,27 @@ describe('useAccountTotals', () => {
     expect(fetchMock).toHaveBeenCalledWith('tok2');
   });
 
+  it('refetches when the Lightning Address changes on the same session', async () => {
+    fetchMock.mockResolvedValueOnce(ACTIVITY);
+    fetchMock.mockResolvedValueOnce(OTHER_ACTIVITY);
+    renderWithLocale(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState((state) => ({
+        account:
+          state.account === null
+            ? null
+            : { ...state.account, lightningAddress: 'bob@walletofsatoshi.com' },
+      }));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('drops a stale result when the session changes mid-flight', async () => {
     let resolveFirst!: (value: AccountActivity) => void;
     fetchMock.mockImplementationOnce(

@@ -1845,7 +1845,9 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+    });
   });
 
   it('shows a replies error when expanding without a session', async () => {

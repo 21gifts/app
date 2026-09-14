@@ -647,8 +647,8 @@
 ## Function: useAccountTotals
 
 - **Purpose:** Session-based GET `/me/activity` via `fetchAccountActivity`; returns given/received sats plus `donateOverTime` and `receiveOverTime`. Fetches even with a blank Lightning Address and does not call `fetchGiftStats`.
-- **Inputs:** Reads `session` from `useAuthStore`; calls `fetchAccountActivity` whenever a session exists.
-- **Returns / side effects:** `{ donatedSats, receivedSats, donateOverTime, receiveOverTime, loading }`. On each fetch start (including session change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the session changes mid-flight; errors resolve to zeros and an empty series.
+- **Inputs:** Reads `session` and `account.lightningAddress` from `useAuthStore`; calls `fetchAccountActivity` whenever a session exists.
+- **Returns / side effects:** `{ donatedSats, receivedSats, donateOverTime, receiveOverTime, loading }`. On each fetch start (including session or Lightning Address change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the session or address changes mid-flight; errors resolve to zeros and an empty series.
 - **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
