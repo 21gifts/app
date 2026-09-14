@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
   agreeToRules,
+  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -234,6 +235,21 @@ afterEach(async () => {
 });
 
 describe('MemberProfileScreen', () => {
+  it('keeps member notes ₿-only when gift stats fail', async () => {
+    vi.mocked(fetchGiftStats).mockRejectedValueOnce(new Error('stats down'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    });
+    expect(screen.queryByText('—')).toBeNull();
+  });
+
   it('shows name, address, chart empty state, and role pill', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');
