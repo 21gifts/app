@@ -2769,7 +2769,9 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
-    await page.getByText('Could not translate this note. Please try again.').scrollIntoViewIfNeeded();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-error');
   });
 
