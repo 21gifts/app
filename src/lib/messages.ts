@@ -113,7 +113,7 @@ const en = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Giving is a duty',
   'about.conv1Body':
-    'We believe giving is a duty of every Christian. Scripture does not say if you give, it says when: “When you give to the needy” (Matthew 6:2). Whoever has this world’s goods, sees a brother in need and closes his heart does not have the love of God in him (1 John 3:17); faith without works is dead (James 2:17). How much you give is between you and God (2 Corinthians 9:7).',
+    'We believe giving is a duty of every Christian. Scripture does not say if you give, it says when: “When you give to the needy” (Matthew 6:2). Whoever has material possessions, sees a brother or sister in need and has no pity on them does not have the love of God in them (1 John 3:17); faith by itself, if it is not accompanied by action, is dead (James 2:17). How much you give is between you and God (2 Corinthians 9:7).',
   'about.conv1Body2':
     'Giving is not only money. A smile, an hour, a coat, a visit all count; Matthew 25 names the hungry, the thirsty, the stranger, the naked, the sick, and the prisoner. 21.gifts is for the money gift, from one person to another.',
   'about.conv1Verse':
@@ -122,7 +122,7 @@ const en = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direct, with no middleman',
   'about.conv2Body':
-    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. The whole gift arrives: nobody takes a cut, freezes it, or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. 21.gifts never holds the Bitcoin; if 21.gifts disappeared tomorrow, your address would keep working.',
+    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. The whole gift arrives: nobody takes a cut, freezes it, or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The receiving address is yours, not ours; if 21.gifts disappeared tomorrow, it would keep working.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin is the most effective money',
   'about.conv3Body':
@@ -603,7 +603,7 @@ const de = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkt, niemand dazwischen',
   'about.conv2Body':
-    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Das ganze Geschenk kommt an. Niemand behält einen Anteil, friert es ein oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. 21.gifts verwahrt den Bitcoin nie; verschwände 21.gifts morgen, liefen die Adressen weiter.',
+    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Das ganze Geschenk kommt an. Niemand behält einen Anteil, friert es ein oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Empfangsadresse gehört der empfangenden Person, nicht uns; verschwände 21.gifts morgen, liefe sie weiter.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin ist das wirksamste Geld',
   'about.conv3Body':
@@ -1082,7 +1082,7 @@ const es = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Directo, sin intermediario',
   'about.conv2Body':
-    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Llega entero. Nadie se queda con una parte, lo congela ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. 21.gifts nunca retiene el Bitcoin; si 21.gifts desapareciera mañana, las direcciones seguirían funcionando.',
+    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Llega entero. Nadie se queda con una parte, lo congela ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La dirección de recepción es de quien recibe, no nuestra; si 21.gifts desapareciera mañana, seguiría funcionando.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin es el dinero más eficaz',
   'about.conv3Body':
@@ -1551,7 +1551,7 @@ const fil = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkta, walang tagapamagitan',
   'about.conv2Body':
-    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Buo itong dumarating. Walang kumukuha ng parte, walang pumipigil dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Hindi kailanman hawak ng 21.gifts ang Bitcoin; kung mawala man ang 21.gifts bukas, gagana pa rin ang mga address.',
+    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Buo itong dumarating. Walang kumukuha ng parte, walang pumipigil dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang address, hindi sa amin; kung mawala man ang 21.gifts bukas, gagana pa rin ito.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Ang Bitcoin ang pinakamabisang pera',
   'about.conv3Body':
