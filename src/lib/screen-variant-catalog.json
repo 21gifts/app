@@ -552,6 +552,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:about-filled",
+    "label": "/profile about-filled",
+    "visual": "state-profile-about-filled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-editing",
+    "label": "/profile about-editing",
+    "visual": "state-profile-about-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-save-error",
+    "label": "/profile about-save-error",
+    "visual": "state-profile-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",

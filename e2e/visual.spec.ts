@@ -2928,7 +2928,7 @@ const PROFILE_GIVEN_RECEIVED_ACTIVITY = {
 };
 
 test.describe('profile activity chart variants', () => {
-  async function seedAdaProfile(page: Page): Promise<void> {
+  async function seedAdaProfile(page: Page, extras?: { aboutMe?: string | null }): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -2943,7 +2943,7 @@ test.describe('profile activity chart variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
-          aboutMe: null,
+          aboutMe: extras?.aboutMe ?? null,
           setup: null,
           missing: [],
         }),
@@ -3008,6 +3008,43 @@ test.describe('profile activity chart variants', () => {
     await page.goto('/profile');
     await expect(page.getByText('2026-06-02')).toBeVisible();
     await shotScreen(page, 'state-profile-given-received');
+  });
+
+  test('profile about-filled', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin' });
+    await stubProfileActivity(page, EMPTY_ACTIVITY);
+    await page.goto('/profile');
+    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
+    await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
+    await shotScreen(page, 'state-profile-about-filled');
+  });
+
+  test('profile about-editing', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileActivity(page, EMPTY_ACTIVITY);
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await expect(page.getByLabel('About me')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
+    await shotScreen(page, 'state-profile-about-editing');
+  });
+
+  test('profile about-save-error', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileActivity(page, EMPTY_ACTIVITY);
+    await page.route('**/me/about', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('button', { name: 'Save About me' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-profile-about-save-error');
   });
 });
 

@@ -945,6 +945,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    if (!hasName(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: ['name'] });
+      return;
+    }
     let parsed;
     try {
       parsed = JSON.parse(rawBody);
