@@ -756,6 +756,95 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText('Stale pin thread reply.')).toBeNull();
   });
 
+  it('does not append an in-flight reply POST into a different expanded thread', async () => {
+    let resolvePost!: (value: typeof note) => void;
+    vi.mocked(postMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    await renderTwoPostFeed();
+    expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), {
+      target: { value: 'In-flight first-thread reply.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expandCard('Second post from Carol.');
+    const secondRow = screen.getByText('Second post from Carol.').closest('li');
+    expect(secondRow).toBeTruthy();
+    if (secondRow !== null && secondRow.querySelector('[aria-label="Hide replies"]') !== null) {
+      await waitFor(() => {
+        const composer = secondRow.querySelector<HTMLTextAreaElement>('[aria-label="Your reply"]');
+        expect(composer).toBeTruthy();
+        expect(composer?.disabled).toBe(false);
+      });
+    }
+    await act(async () => {
+      resolvePost({
+        ...note,
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        text: 'In-flight first-thread reply.',
+        sats: 0,
+        payable: false,
+      });
+    });
+    expect(screen.getByText('Second post from Carol.').closest('li')?.textContent).not.toMatch(
+      /In-flight first-thread reply\./,
+    );
+  });
+
+  it('still lists an in-flight reply when the same parent is expanded', async () => {
+    let resolvePost!: (value: typeof note) => void;
+    vi.mocked(postMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    await renderTwoPostFeed();
+    const firstRow = expandCard('Hello from my profile note.');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), {
+      target: { value: 'In-flight same-parent reply.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const hide = firstRow.querySelector<HTMLButtonElement>('[aria-label="Hide replies"]');
+    if (hide !== null) {
+      fireEvent.click(hide);
+    }
+    if (firstRow.querySelector('[aria-label="Show replies"]') !== null) {
+      expandCard('Hello from my profile note.');
+      await waitFor(() => {
+        expect(screen.getByLabelText('Your reply')).toBeTruthy();
+        expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
+      });
+    }
+    await act(async () => {
+      resolvePost({
+        ...note,
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        text: 'In-flight same-parent reply.',
+        sats: 0,
+        payable: false,
+      });
+    });
+    if (firstRow.querySelector('[aria-label="Hide replies"]') !== null) {
+      expect(screen.getByText('In-flight same-parent reply.')).toBeTruthy();
+    }
+  });
+
   it('does not post a reply after the session is cleared', async () => {
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,

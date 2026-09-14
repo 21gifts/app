@@ -1677,6 +1677,25 @@ describe('ForumBoard', () => {
     expect(screen.getByText('2 replies')).toBeTruthy();
   });
 
+  it('omits the replyCount text on top-level cards that have a parentId', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'reply-1', parentId: 'parent-1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText('0 replies')).toBeNull();
+  });
+
   it('expands and collapses via the card aria-label, not pay/role/copy', () => {
     const onToggleExpand = vi.fn();
     renderWithLocale(

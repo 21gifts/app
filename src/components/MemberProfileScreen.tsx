@@ -114,6 +114,8 @@ export function MemberProfileScreen({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const expandedIdRef = useRef(expandedId);
+  expandedIdRef.current = expandedId;
   const expandGen = useRef(0);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [repliesLoading, setRepliesLoading] = useState(false);
@@ -209,18 +211,21 @@ export function MemberProfileScreen({
     try {
       const created = await postMessage(token, { text: trimmed, inReplyTo: parentId });
       let alreadyListed = false;
-      setReplies((prev) => {
-        /* v8 ignore next 3 -- composer only posts after the thread loaded */
-        if (prev === null) {
-          return [created];
-        }
-        alreadyListed = prev.some((message) => message.id === created.id);
-        /* v8 ignore next 3 -- duplicate id already in the list */
-        if (alreadyListed) {
-          return prev;
-        }
-        return [...prev, created];
-      });
+      if (expandedIdRef.current === parentId) {
+        setReplies((prev) => {
+          /* v8 ignore next 3 -- composer only posts after the thread loaded */
+          if (prev === null) {
+            return [created];
+          }
+          alreadyListed = prev.some((message) => message.id === created.id);
+          /* v8 ignore next 3 -- duplicate id already in the list */
+          if (alreadyListed) {
+            return prev;
+          }
+          return [...prev, created];
+        });
+        setReplyDraft('');
+      }
       if (!alreadyListed) {
         setListedNote((prev) => {
           /* v8 ignore next 3 -- reply composer only mounts with a profile note */
@@ -243,7 +248,6 @@ export function MemberProfileScreen({
           );
         });
       }
-      setReplyDraft('');
       pendingPostRef.current = null;
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
@@ -251,10 +255,14 @@ export function MemberProfileScreen({
           pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
           return;
         }
-        setReplyFormError('request');
+        if (expandedIdRef.current === parentId) {
+          setReplyFormError('request');
+        }
         return;
       }
-      setReplyFormError('request');
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError('request');
+      }
     } finally {
       setReplyPosting(false);
     }
@@ -330,6 +338,9 @@ export function MemberProfileScreen({
   };
 
   const handleToggleExpand = (messageId: string): void => {
+    if (replyPosting) {
+      return;
+    }
     if (expandedId === messageId) {
       ++expandGen.current;
       setExpandedId(null);

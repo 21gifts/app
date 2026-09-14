@@ -689,9 +689,11 @@ export function ForumBoard({
                   {onDeleted !== undefined ? (
                     <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
                   ) : null}
-                  <span className="ml-auto text-xs text-app-subtle">
-                    {t('forum.replyCount', { count: String(message.replyCount) })}
-                  </span>
+                  {message.parentId === undefined ? (
+                    <span className="ml-auto text-xs text-app-subtle">
+                      {t('forum.replyCount', { count: String(message.replyCount) })}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
