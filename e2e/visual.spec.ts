@@ -4014,10 +4014,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Write an introduction' })).toHaveAttribute(
-      'href',
-      '/welcome',
-    );
+    await expect(page.getByRole('button', { name: 'Write an introduction' })).toBeVisible();
     await shotScreen(page, 'state-welcome-overlay-introduce');
   });
 });

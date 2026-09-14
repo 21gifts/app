@@ -30,7 +30,13 @@ import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
-import { FORUM_FEED_MODES, type ForumFeedMode, visibleForumMessages } from '@/lib/forum-feed';
+import {
+  FORUM_COMPOSE_EVENT,
+  FORUM_FEED_MODES,
+  consumePendingForumCompose,
+  type ForumFeedMode,
+  visibleForumMessages,
+} from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
@@ -339,6 +345,7 @@ export function ForumBoard({
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -462,6 +469,30 @@ export function ForumBoard({
     payMounted.current = true;
     return () => {
       payMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const tryFocusComposer = (): boolean => {
+      const el = composerRef.current;
+      if (el === null) {
+        return false;
+      }
+      el.focus();
+      el.scrollIntoView({ block: 'nearest' });
+      return true;
+    };
+    const onCompose = (): void => {
+      if (tryFocusComposer()) {
+        consumePendingForumCompose();
+      }
+    };
+    window.addEventListener(FORUM_COMPOSE_EVENT, onCompose);
+    if (composerRef.current !== null && consumePendingForumCompose()) {
+      tryFocusComposer();
+    }
+    return () => {
+      window.removeEventListener(FORUM_COMPOSE_EVENT, onCompose);
     };
   }, []);
 
@@ -1193,6 +1224,7 @@ export function ForumBoard({
               onChange={handleFileChange}
             />
             <textarea
+              ref={composerRef}
               aria-label={t('forum.composerLabel')}
               placeholder={t('forum.placeholder')}
               value={draft}

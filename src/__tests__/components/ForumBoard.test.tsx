@@ -6,7 +6,13 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
-import type { ForumFeedMode } from '@/lib/forum-feed';
+import {
+  FORUM_COMPOSE_EVENT,
+  consumePendingForumCompose,
+  consumeSkipIntroduceOverlay,
+  requestForumCompose,
+  type ForumFeedMode,
+} from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
@@ -33,6 +39,8 @@ const ANDROID_MOBILE_UA =
 
 beforeEach(() => {
   push.mockClear();
+  consumePendingForumCompose();
+  consumeSkipIntroduceOverlay();
   HTMLElement.prototype.scrollIntoView = vi.fn();
   locationAssign.mockReset();
   vi.stubGlobal('location', { assign: locationAssign });
@@ -3142,5 +3150,116 @@ describe('ForumBoard', () => {
     fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
     fireEvent.touchEnd(window);
     expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('focuses the new-post composer on FORUM_COMPOSE_EVENT', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const textarea = screen.getByLabelText('Your message');
+    const scrollMock = HTMLElement.prototype.scrollIntoView as unknown as ReturnType<typeof vi.fn>;
+    scrollMock.mockClear();
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_COMPOSE_EVENT));
+    });
+    expect(document.activeElement).toBe(textarea);
+    expect(scrollMock).toHaveBeenCalledWith({ block: 'nearest' });
+  });
+
+  it('focuses the new-post composer on mount when compose is pending', () => {
+    requestForumCompose();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+  });
+
+  it('consumes pending compose when the composer is hidden', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerHidden
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(() => {
+      act(() => {
+        requestForumCompose();
+      });
+    }).not.toThrow();
+    expect(consumePendingForumCompose()).toBe(true);
+  });
+
+  it('focuses the new-post composer after a hidden board left compose pending', () => {
+    const { unmount } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerHidden
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    act(() => {
+      requestForumCompose();
+    });
+    unmount();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
   });
 });

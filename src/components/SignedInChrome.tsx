@@ -21,7 +21,7 @@ import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PwaInstall } from '@/components/PwaInstall';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-import { FORUM_HOME_EVENT } from '@/lib/forum-feed';
+import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -31,7 +31,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * side is non-zero, living-room rules, notifications, messages, contact,
  * optional PWA install, language, and log out). When onboarding
  * is complete and `hasPosted` is false, also mounts
- * {@link IntroduceYourselfOverlay}.
+ * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
+ * introduce CTA skips the overlay once so a remount after navigating to
+ * `/welcome` does not show it again.
  *
  * @returns The signed-in Menu chrome.
  */
@@ -41,7 +43,9 @@ export function SignedInChrome(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [introduceDismissed, setIntroduceDismissed] = useState(false);
+  const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
+    consumeSkipIntroduceOverlay,
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { donatedSats, receivedSats, loading } = useAccountTotals();

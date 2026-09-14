@@ -9,6 +9,50 @@ export const DEFAULT_FORUM_FEED_MODE: ForumFeedMode = 'active';
 /** Window event: already-on-home chrome asked to scroll to top and apply new posts. */
 export const FORUM_HOME_EVENT = '21gifts:forum-home';
 
+/** Window event: introduce CTA (or equivalent) asked to focus the new-post composer. */
+export const FORUM_COMPOSE_EVENT = '21gifts:forum-compose';
+
+let skipIntroduceOverlayOnce = false;
+let pendingForumCompose = false;
+
+/**
+ * Ask the welcome composer to take focus and skip the introduce overlay once.
+ *
+ * Sets flags that survive Next.js client navigations until consumed.
+ * Dispatches {@link FORUM_COMPOSE_EVENT} when `window` exists.
+ */
+export function requestForumCompose(): void {
+  skipIntroduceOverlayOnce = true;
+  pendingForumCompose = true;
+  /* v8 ignore next 3 -- SSR has no window */
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.dispatchEvent(new Event(FORUM_COMPOSE_EVENT));
+}
+
+/**
+ * Returns whether a compose-focus is pending, then clears the flag.
+ *
+ * @returns True when {@link requestForumCompose} ran and nothing has consumed it yet.
+ */
+export function consumePendingForumCompose(): boolean {
+  const pending = pendingForumCompose;
+  pendingForumCompose = false;
+  return pending;
+}
+
+/**
+ * Returns whether the introduce overlay should stay hidden for this mount, then clears the flag.
+ *
+ * @returns True when {@link requestForumCompose} ran and nothing has consumed skip yet.
+ */
+export function consumeSkipIntroduceOverlay(): boolean {
+  const skip = skipIntroduceOverlayOnce;
+  skipIntroduceOverlayOnce = false;
+  return skip;
+}
+
 /** Visible-tab poll interval for GET /forum/messages (ms). */
 export const FORUM_LIST_POLL_MS = 30_000;
 
