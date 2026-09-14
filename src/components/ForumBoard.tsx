@@ -473,21 +473,23 @@ export function ForumBoard({
   }, []);
 
   useEffect(() => {
-    const focusComposer = (): void => {
+    const tryFocusComposer = (): boolean => {
       const el = composerRef.current;
       if (el === null) {
-        return;
+        return false;
       }
       el.focus();
       el.scrollIntoView({ block: 'nearest' });
+      return true;
     };
     const onCompose = (): void => {
-      consumePendingForumCompose();
-      focusComposer();
+      if (tryFocusComposer()) {
+        consumePendingForumCompose();
+      }
     };
     window.addEventListener(FORUM_COMPOSE_EVENT, onCompose);
-    if (consumePendingForumCompose()) {
-      focusComposer();
+    if (composerRef.current !== null && consumePendingForumCompose()) {
+      tryFocusComposer();
     }
     return () => {
       window.removeEventListener(FORUM_COMPOSE_EVENT, onCompose);

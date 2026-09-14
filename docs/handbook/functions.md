@@ -1070,7 +1070,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** One-shot read of the pending-compose flag from `requestForumCompose`.
 - **Inputs:** none.
-- **Returns / side effects:** `true` when compose focus is still pending, then clears the flag. `false` on a second call. `ForumBoard` consumes on `FORUM_COMPOSE_EVENT` and on mount so a later board does not steal focus.
+- **Returns / side effects:** `true` when compose focus is still pending, then clears the flag. `false` on a second call. `ForumBoard` consumes only after the new-post textarea is present; a `composerHidden` board does not clear the flag.
 - **Used by:** `ForumBoard`.
 
 ## Function: consumeSkipIntroduceOverlay

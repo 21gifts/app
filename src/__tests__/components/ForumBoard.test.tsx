@@ -3221,6 +3221,45 @@ describe('ForumBoard', () => {
         requestForumCompose();
       });
     }).not.toThrow();
-    expect(consumePendingForumCompose()).toBe(false);
+    expect(consumePendingForumCompose()).toBe(true);
+  });
+
+  it('focuses the new-post composer after a hidden board left compose pending', () => {
+    const { unmount } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerHidden
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    act(() => {
+      requestForumCompose();
+    });
+    unmount();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
   });
 });
