@@ -537,6 +537,12 @@ After **Menu**, click **Language** → the four endonym rows (English / Deutsch 
 
 ![21.gifts welcome menu language](images/welcome-menu-language.png)
 
+### Variant: pay-amount
+
+Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. No error, no payment QR, no invoice-step wallet link.
+
+![21.gifts welcome pay amount](images/welcome-pay-amount.png)
+
 ### Variant: pay-qr
 
 Payable note, amount submitted. Captured at desktop and mobile. On desktop the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same sheet has no QR.

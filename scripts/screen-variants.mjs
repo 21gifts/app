@@ -450,6 +450,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-amount',
+    image: 'welcome-pay-amount.png',
+    visual: 'state-welcome-pay-amount',
+    needle: 'state-welcome-pay-amount',
+  },
+  {
+    route: '/welcome',
     id: 'pay-qr',
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
