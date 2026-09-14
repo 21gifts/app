@@ -132,34 +132,28 @@ describe('DayLoader', () => {
     });
   });
 
-  it('follows the CHF picker in the day summary', async () => {
+  it('follows preferred CHF in the day summary', async () => {
     fetchMock.mockResolvedValue(ALICE);
-    renderWithLocale(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
+      expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'CHF' }));
-    expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
   });
 
-  it('follows the EUR picker in the day summary', async () => {
+  it('follows preferred EUR in the day summary', async () => {
     fetchMock.mockResolvedValue(ALICE);
-    renderWithLocale(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'EUR');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
+      expect(screen.getByText('1 gift · ₿500 · EUR 0.44')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'EUR' }));
-    expect(screen.getByText('1 gift · ₿500 · EUR 0.44')).toBeTruthy();
   });
 
-  it('follows the PHP picker in the day summary', async () => {
+  it('follows preferred PHP in the day summary', async () => {
     fetchMock.mockResolvedValue(ALICE);
-    renderWithLocale(<DayLoader day="2026-06-01" />);
+    renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'PHP');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
+      expect(screen.getByText('1 gift · ₿500 · PHP 27.00')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
-    expect(screen.getByText('1 gift · ₿500 · PHP 27.00')).toBeTruthy();
   });
 
   it('navigates when the date input changes', async () => {
