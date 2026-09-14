@@ -698,6 +698,21 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('invoices 21 sats when the member pay amount is left empty', async () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+    });
+  });
+
   it('requests the invoice on iPhone Pay without assigning the wallet href', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,

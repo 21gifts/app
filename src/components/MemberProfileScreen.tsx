@@ -703,10 +703,19 @@ export function MemberProfileScreen({
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
-    const sats = Number.parseInt(payDraft.trim(), 10);
-    if (!Number.isSafeInteger(sats) || sats <= 0) {
+    const rawAmount = payDraft.trim();
+    let sats: number;
+    if (rawAmount === '') {
+      sats = DEFAULT_FORUM_PAY_SATS;
+    } else if (!/^\d+$/.test(rawAmount)) {
       setPayError('amount');
       return;
+    } else {
+      sats = Number.parseInt(rawAmount, 10);
+      if (sats <= 0 || !Number.isSafeInteger(sats)) {
+        setPayError('amount');
+        return;
+      }
     }
     const token = session;
     const messageId = payMessageId;
