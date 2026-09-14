@@ -3917,6 +3917,31 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'screen-messages');
   });
 
+  test('messages sent-preview', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: true,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages');
+    await expect(page.getByText('You: Hello team')).toBeVisible();
+    await shotScreen(page, 'state-messages-sent-preview');
+  });
+
   test('messages empty', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -3983,10 +4008,17 @@ test.describe('inbox screens', () => {
           messages: [
             {
               id: 'm1',
-              name: 'Ada',
+              name: '21.gifts',
               text: 'Hello team',
               createdAt: '2026-08-28T12:00:00.000Z',
               fromMe: false,
+            },
+            {
+              id: 'm2',
+              name: 'Ada',
+              text: 'Thanks',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              fromMe: true,
             },
           ],
         }),
@@ -3994,6 +4026,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
+    await expect(page.getByText('You')).toBeVisible();
     await shotScreen(page, 'state-messages-thread');
   });
 });

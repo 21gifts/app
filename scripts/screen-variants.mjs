@@ -856,6 +856,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'sent-preview',
+    image: 'messages-sent-preview.png',
+    visual: 'state-messages-sent-preview',
+    needle: 'You: Hello team',
+  },
+  {
+    route: '/messages',
     id: 'empty',
     image: 'messages-empty.png',
     visual: 'state-messages-empty',

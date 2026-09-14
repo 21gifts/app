@@ -788,9 +788,15 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 
 ### Variant: default
 
-Loaded list with at least one thread (counterpart **21.gifts**, origin **Contact**).
+Loaded list with at least one thread (counterpart **21.gifts**, origin **Contact**, last text inbound).
 
 ![21.gifts inbox](images/messages.png)
+
+### Variant: sent-preview
+
+Loaded list whose last text is the viewer's own send. Preview **You: Hello team**.
+
+![21.gifts inbox sent preview](images/messages-sent-preview.png)
 
 ### Variant: empty
 
@@ -812,7 +818,7 @@ List fetch failed. Button **Try again**.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts**, origin **Contact** under the heading, message body **Hello team**, composer visible.
+Open official thread. Heading **21.gifts**, origin **Contact** under the heading, inbound **Hello team** and a sent bubble labelled **You**, composer visible.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
