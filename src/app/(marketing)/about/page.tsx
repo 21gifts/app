@@ -10,7 +10,7 @@ import { translate } from '@/lib/translate';
  */
 export const metadata: Metadata = {
   title: 'About — 21.gifts',
-  description: 'Three convictions 21.gifts stands on.',
+  description: 'The three convictions 21.gifts stands on.',
 };
 
 /**

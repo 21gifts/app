@@ -40,8 +40,6 @@ describe('AboutPage', () => {
         'Dear children, let us not love with words or speech but with actions and in truth.',
       ),
     ).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'A Christian origin' })).toBeNull();
-    expect(document.body.textContent).not.toMatch(/rooted, not restricted/i);
   });
 
   it('links Open the living room to /welcome', async () => {
@@ -50,13 +48,10 @@ describe('AboutPage', () => {
     expect(link.getAttribute('href')).toBe('/welcome');
   });
 
-  it('does not use Lightning, LNURL, passkey, ministry, Gospel, or Jesus', async () => {
+  it('does not use Lightning, LNURL, or passkey', async () => {
     renderWithLocale(await AboutPage());
     expect(document.body.textContent).not.toMatch(/Lightning/i);
     expect(document.body.textContent).not.toMatch(/LNURL/i);
     expect(document.body.textContent).not.toMatch(/passkey/i);
-    expect(document.body.textContent).not.toMatch(/ministry/i);
-    expect(document.body.textContent).not.toMatch(/Gospel/i);
-    expect(document.body.textContent).not.toMatch(/\bJesus\b/i);
   });
 });

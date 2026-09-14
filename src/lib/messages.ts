@@ -107,26 +107,26 @@ const en = {
   'about.kicker': 'About',
   'about.heading': 'Three convictions',
   'about.lead':
-    '21.gifts is a place to ask for help or send help, with no organization in the middle. The house stands on three convictions.',
+    '21.gifts is a place to ask for help or send help, with no organization in the middle. It stands on three convictions.',
   'about.verse': 'Freely you have received; freely give.',
   'about.verseRef': 'Matthew 10:8',
   'about.conv1Num': '1',
   'about.conv1Title': 'Giving is a duty',
   'about.conv1Body':
-    'We believe giving is a duty of every Christian. Scripture does not say if you give — it says when: “When you give to the needy” (Matthew 6:2). Anyone who has this world’s goods, sees a brother in need, and closes his heart does not have the love of God in him (1 John 3:17). Faith without works is dead (James 2:17). How much remains free (2 Corinthians 9:7).',
+    'We believe giving is a duty of every Christian. Scripture does not say if you give, it says when: “When you give to the needy” (Matthew 6:2). Whoever has this world’s goods, sees a brother in need and closes his heart does not have the love of God in him (1 John 3:17); faith without works is dead (James 2:17). How much you give is between you and God (2 Corinthians 9:7).',
   'about.conv1Body2':
-    'Giving is not only money. A kind smile, time, a coat, a visit — Matthew 25 counts hunger, thirst, the stranger, clothing, sickness, and prison. 21.gifts is the path for a money gift: from one person to another.',
+    'Giving is not only money. A smile, an hour, a coat, a visit all count; Matthew 25 names the hungry, the thirsty, the stranger, the naked, the sick, and the prisoner. 21.gifts is for the money gift, from one person to another.',
   'about.conv1Verse':
     'Dear children, let us not love with words or speech but with actions and in truth.',
   'about.conv1VerseRef': '1 John 3:18',
   'about.conv2Num': '2',
   'about.conv2Title': 'Direct, with no middleman',
   'about.conv2Body':
-    'We believe the best and most beautiful gift travels from the giver to the receiver with no organization in between. The whole gift arrives. Nobody takes a cut, freezes it, or turns it into a programme. Both remain persons, not a case file. Dignity stays with both sides. The path is the shortest one possible. 21.gifts never holds the Bitcoin; if the house vanished tomorrow, the addresses would keep working.',
+    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. The whole gift arrives: nobody takes a cut, freezes it, or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. 21.gifts never holds the Bitcoin; if 21.gifts disappeared tomorrow, your address would keep working.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin is the most effective money',
   'about.conv3Body':
-    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless. It needs no bank, no ID, and no opening hours. It joins the whole world, around the clock. For an international gift it is the simplest way to send money — as simple as an email address. Small amounts arrive quickly and cheaply. The receiver owns it. Nobody can print more of it, freeze it, or hold it at a border. That matters most for people who already have little.',
+    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless: no bank, no ID, no opening hours. It reaches the whole world around the clock, and for a gift across a border it is the simplest way to send money — as simple as an email address. Small amounts arrive fast and cheap. Nobody can print more of it, freeze it, or stop it at a border, and it lands with the receiver, not with us. That matters most to people who already have little.',
   'about.ctaForum': 'Open the living room',
 
   'donate.pageTitle': 'Send help',
@@ -588,26 +588,26 @@ const de = {
   'about.kicker': 'Über uns',
   'about.heading': 'Drei Überzeugungen',
   'about.lead':
-    '21.gifts ist ein Ort, um Hilfe zu erbitten oder zu senden, ohne Organisation dazwischen. Das Haus steht auf drei Überzeugungen.',
+    '21.gifts ist ein Ort, um Hilfe zu erbitten oder zu senden, ohne Organisation dazwischen. 21.gifts steht auf drei Überzeugungen.',
   'about.verse': "Umsonst habt ihr's empfangen, umsonst gebt es auch.",
   'about.verseRef': 'Matthäus 10,8',
   'about.conv1Num': '1',
   'about.conv1Title': 'Geben ist Pflicht',
   'about.conv1Body':
-    'Wir glauben: Geben ist Pflicht eines jeden Christen. Die Schrift sagt nicht falls du gibst — sie sagt wenn: «Wenn du nun Almosen gibst» (Matthäus 6,2). Wer dieser Welt Güter hat und den Bruder darben sieht und das Herz verschliesst, in dem bleibt die Liebe Gottes nicht (1. Johannes 3,17). Glaube ohne Werke ist tot (Jakobus 2,17). Wie viel, bleibt frei (2. Korinther 9,7).',
+    'Wir glauben: Geben ist Pflicht eines jeden Christen. Die Schrift fragt nicht, ob du gibst — sie setzt es voraus: «Wenn du nun Almosen gibst» (Matthäus 6,2). Wer dieser Welt Güter hat und seinen Bruder darben sieht und sein Herz vor ihm verschliesst, in dem bleibt die Liebe Gottes nicht (1. Johannes 3,17). Glaube ohne Werke ist tot (Jakobus 2,17). Wie viel, bleibt jedem selbst überlassen (2. Korinther 9,7).',
   'about.conv1Body2':
-    'Geben ist nicht nur Geld. Ein freundliches Lächeln, Zeit, ein Mantel, ein Besuch — Matthäus 25 zählt Hunger, Durst, den Fremden, Kleidung, Krankheit und Gefängnis. 21.gifts ist der Weg für das Geldgeschenk: von einer Person zur anderen.',
+    'Geben ist nicht nur Geld. Ein freundliches Lächeln, Zeit, ein Mantel, ein Besuch — Matthäus 25 nennt die Hungrigen, die Durstigen, den Fremden, die Nackten, die Kranken und die Gefangenen. 21.gifts ist der Weg für das Geldgeschenk: von einer Person zur anderen.',
   'about.conv1Verse':
     'Meine Kinder, lasst uns nicht lieben mit Worten noch mit der Zunge, sondern mit der Tat und mit der Wahrheit.',
   'about.conv1VerseRef': '1. Johannes 3,18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'Direkt, ohne Mittelsmann',
+  'about.conv2Title': 'Direkt, niemand dazwischen',
   'about.conv2Body':
-    'Wir glauben: das direkte Geschenk an den Empfänger, ohne Organisation dazwischen, ist die beste und schönste Art zu geben. Das ganze Geschenk kommt an. Niemand kürzt, friert ein oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, der möglich ist. 21.gifts hält den Bitcoin nie; verschwände das Haus morgen, liefen die Adressen weiter.',
+    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Das ganze Geschenk kommt an. Niemand behält einen Anteil, friert es ein oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. 21.gifts verwahrt den Bitcoin nie; verschwände 21.gifts morgen, liefen die Adressen weiter.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin ist das wirksamste Geld',
   'about.conv3Body':
-    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeit. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es die einfachste Form der Übermittlung — so einfach wie eine E-Mail-Adresse. Kleine Beträge kommen schnell und günstig an. Das Geld gehört der empfangenden Person. Niemand kann mehr davon machen, es einfrieren oder an der Grenze festhalten. Das gilt zuerst für Menschen, die wenig haben.',
+    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeiten. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es der einfachste Weg, Geld zu senden — so einfach wie eine E-Mail-Adresse. Kleine Beträge kommen schnell und günstig an. Es landet bei der empfangenden Person, nicht bei uns. Niemand kann mehr davon drucken, es einfrieren oder an der Grenze zurückhalten. Am meisten zählt das für Menschen, die ohnehin wenig haben.',
   'about.ctaForum': 'Wohnzimmer öffnen',
   'donate.pageTitle': 'Hilfe senden',
   'donate.lead':
@@ -971,7 +971,7 @@ const es = {
   'nav.how': 'Cómo funciona',
   'nav.why': 'Por qué',
   'nav.faq': 'FAQ',
-  'nav.about': 'Acerca de',
+  'nav.about': 'Sobre nosotros',
   'nav.stats': 'Estadísticas',
   'nav.handbook': 'Manual',
   'nav.login': 'Iniciar sesión',
@@ -992,7 +992,7 @@ const es = {
   'aria.menu': 'Menú',
   'aria.footer': 'Pie de página',
   'aria.github': 'GitHub',
-  'footer.verse': 'De gracia recibisteis; dad de gracia.',
+  'footer.verse': 'De gracia recibisteis, dad de gracia.',
   'footer.verseRef': 'Mateo 10:8',
   'aria.handbookSections': 'Secciones del manual',
   'aria.theme': 'Tema',
@@ -1065,28 +1065,28 @@ const es = {
     '21.gifts es una capa de comunicación y descubrimiento sin ánimo de lucro. No es un proveedor de servicios de pago y no mueve fondos. Quien da y quien recibe son responsables de su propio tratamiento fiscal en su jurisdicción.',
   'home.faq8Q': '¿Qué significa ₿1?',
   'home.faq8A': '₿1 es la unidad más pequeña de Bitcoin, también conocida como un sat.',
-  'about.kicker': 'Acerca de',
+  'about.kicker': 'Sobre nosotros',
   'about.heading': 'Tres convicciones',
   'about.lead':
-    '21.gifts es un lugar para pedir ayuda o enviarla, sin una organización en el medio. La casa se sostiene en tres convicciones.',
-  'about.verse': 'De gracia recibisteis; dad de gracia.',
+    '21.gifts es un lugar para pedir ayuda o enviarla, sin ninguna organización de por medio. Se sostiene sobre tres convicciones.',
+  'about.verse': 'De gracia recibisteis, dad de gracia.',
   'about.verseRef': 'Mateo 10:8',
   'about.conv1Num': '1',
   'about.conv1Title': 'Dar es un deber',
   'about.conv1Body':
-    'Creemos que dar es un deber de todo cristiano. La Escritura no dice si das — dice cuando: «Cuando des limosna» (Mateo 6:2). Quien tiene bienes de este mundo y ve a su hermano tener necesidad, y cierra su corazón, ¿cómo mora el amor de Dios en él? (1 Juan 3:17). La fe sin obras está muerta (Santiago 2:17). Cuánto, queda libre (2 Corintios 9:7).',
+    'Creemos que dar es un deber de todo cristiano. La Escritura no dice si das — dice cuándo: «Cuando des limosna» (Mateo 6:2). Quien tiene bienes de este mundo, ve a su hermano en necesidad y le cierra el corazón no tiene en sí el amor de Dios (1 Juan 3:17). La fe sin obras está muerta (Santiago 2:17). Cuánto dar, lo decide cada uno (2 Corintios 9:7).',
   'about.conv1Body2':
-    'Dar no es solo dinero. Una sonrisa, tiempo, un abrigo, una visita — Mateo 25 cuenta el hambre, la sed, el extranjero, la ropa, la enfermedad y la cárcel. 21.gifts es el camino para el regalo de dinero: de una persona a otra.',
+    'Dar no es solo dinero. Una sonrisa amable, tiempo, un abrigo, una visita — Mateo 25 nombra al hambriento, al sediento, al forastero, al desnudo, al enfermo y al preso. 21.gifts es el camino para el regalo de dinero: de una persona a otra.',
   'about.conv1Verse': 'Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
   'about.conv2Title': 'Directo, sin intermediario',
   'about.conv2Body':
-    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin una organización en medio. Llega entero. Nadie se queda con una parte, lo congela ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad queda en los dos lados. El camino es el más corto posible. 21.gifts nunca retiene el Bitcoin; si la casa desapareciera mañana, las direcciones seguirían funcionando.',
+    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Llega entero. Nadie se queda con una parte, lo congela ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. 21.gifts nunca retiene el Bitcoin; si 21.gifts desapareciera mañana, las direcciones seguirían funcionando.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin es el dinero más eficaz',
   'about.conv3Body':
-    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, documento ni horario. Une el mundo entero, a todas horas. Para un regalo internacional es la forma más simple de enviar dinero — tan simple como una dirección de correo. Las cantidades pequeñas llegan rápido y baratas. Quien recibe lo posee. Nadie puede emitir más, congelarlo ni retenerlo en una frontera. Eso importa primero a quien ya tiene poco.',
+    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Las cantidades pequeñas llegan rápido y cuestan poco. Llega a quien recibe, no a nosotros. Nadie puede emitir más, congelarlo ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
   'about.ctaForum': 'Abrir el salón',
   'donate.pageTitle': 'Enviar ayuda',
   'donate.lead': 'Elige un mensaje en el foro y envía Bitcoin a la persona que lo escribió.',
@@ -1460,7 +1460,7 @@ const fil = {
   'aria.menu': 'Menu',
   'aria.footer': 'Pang-ibaba',
   'aria.github': 'GitHub',
-  'footer.verse': 'Tinanggap ninyo nang walang bayad; magbigay din kayo nang walang bayad.',
+  'footer.verse': 'Yamang tumanggap kayo nang walang bayad, magbigay naman kayo nang walang bayad.',
   'footer.verseRef': 'Mateo 10:8',
   'aria.handbookSections': 'Mga seksyon ng handbook',
   'aria.theme': 'Tema',
@@ -1536,26 +1536,26 @@ const fil = {
   'about.kicker': 'Tungkol sa amin',
   'about.heading': 'Tatlong paniniwala',
   'about.lead':
-    'Ang 21.gifts ay isang lugar para humiling ng tulong o magpadala ng tulong, nang walang organisasyon sa gitna. Tatlong paniniwala ang tumatayo sa bahay na ito.',
-  'about.verse': 'Tinanggap ninyo nang walang bayad; magbigay din kayo nang walang bayad.',
+    'Ang 21.gifts ay isang lugar para humiling ng tulong o magpadala ng tulong, nang walang organisasyon sa gitna. Nakatayo ang 21.gifts sa tatlong paniniwala.',
+  'about.verse': 'Yamang tumanggap kayo nang walang bayad, magbigay naman kayo nang walang bayad.',
   'about.verseRef': 'Mateo 10:8',
   'about.conv1Num': '1',
   'about.conv1Title': 'Tungkulin ang magbigay',
   'about.conv1Body':
-    'Naniniwala kami: tungkulin ng bawat Kristiyano ang magbigay. Hindi “kung” magbibigay ang Kasulatan — “kapag”: “Kapag maglilimos ka” (Mateo 6:2). Ang may ari-arian sa mundong ito na nakikita ang kapatid na nangangailangan at isinasara ang puso ay walang pananahanang pag-ibig ng Diyos (1 Juan 3:17). Patay ang pananampalataya kung walang gawa (Santiago 2:17). Magkano, malaya (2 Corinto 9:7).',
+    'Naniniwala kami: tungkulin ng bawat Kristiyano ang magbigay. Hindi sinasabi ng Kasulatan na “kung” magbibigay ka — kundi “kapag”: “Kapag naglilimos ka” (Mateo 6:2). Hindi nananahan ang pag-ibig ng Diyos sa taong may kaya sa buhay, nakakakita ng kapatid na nangangailangan, at nagpapakatigas ng puso (1 Juan 3:17). Patay ang pananampalatayang walang gawa (Santiago 2:17). Kung magkano, sariling pasya ng bawat isa (2 Corinto 9:7).',
   'about.conv1Body2':
-    'Hindi pera lang ang pagbibigay. Isang ngiti, oras, isang damit, isang dalaw — binibilang ng Mateo 25 ang gutom, uhaw, ang dayuhan, damit, sakit, at bilangguan. Ang 21.gifts ang daan para sa regalong pera: mula sa isang tao patungo sa iba.',
+    'Hindi pera lang ang pagbibigay. Isang magiliw na ngiti, oras, isang damit, isang dalaw — binabanggit ng Mateo 25 ang nagugutom, ang nauuhaw, ang dayuhan, ang walang damit, ang maysakit, at ang nakabilanggo. Ang 21.gifts ang daan para sa regalong pera: mula sa isang tao patungo sa iba.',
   'about.conv1Verse':
     'Mga anak, huwag tayong magmahal sa pamamagitan lamang ng salita, subalit ipakita rin natin ang tunay na pag-ibig sa pamamagitan ng gawa.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkta, walang tagapamagitan',
   'about.conv2Body':
-    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay dumadaan mula sa nagbibigay patungo sa tumatanggap, nang walang organisasyon sa gitna. Buo itong dumarating. Walang kumukuha ng parte, nagsasara, o ginagawang programa. Tao pa rin ang dalawa, hindi case file. Sa kanilang dalawa nananatili ang dignidad. Iyon ang pinakamaikling daan. Hindi kailanman hawak ng 21.gifts ang Bitcoin; kung mawala ang bahay bukas, gagana pa rin ang mga address.',
+    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Buo itong dumarating. Walang kumukuha ng parte, walang pumipigil dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Hindi kailanman hawak ng 21.gifts ang Bitcoin; kung mawala man ang 21.gifts bukas, gagana pa rin ang mga address.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Ang Bitcoin ang pinakamabisang pera',
   'about.conv3Body':
-    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi humihingi ng permiso. Walang bangko, walang ID, walang oras ng opisina. Iniuugnay nito ang buong mundo, magdamag. Para sa internasyonal na regalo ito ang pinakasimple paraan ng pagpapadala — kasing-simple ng email address. Mabilis at mura ang maliliit na halaga. Sa tumatanggap ang pera. Walang makakalimbag pa nito, makakapagsara, o makakapigil sa hangganan. Una itong mahalaga sa mga kaunti ang hawak.',
+    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Mabilis at mura ang pagpapadala ng maliliit na halaga. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito, walang makakapag-freeze nito, at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
   'about.ctaForum': 'Buksan ang living room',
   'donate.pageTitle': 'Magpadala ng tulong',
   'donate.lead': 'Pumili ng mensahe sa forum at magpadala ng Bitcoin sa taong sumulat nito.',

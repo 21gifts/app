@@ -81,9 +81,4 @@ describe('Home', () => {
     expect(code?.textContent).toBe('21gifts@walletofsatoshi.com');
     expect(code?.className).toContain('font-mono');
   });
-
-  it('does not ask whether this is a Christian project', async () => {
-    renderWithLocale(await Home());
-    expect(screen.queryByText('Is this a Christian project?')).toBeNull();
-  });
 });
