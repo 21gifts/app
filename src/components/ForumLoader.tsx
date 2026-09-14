@@ -1279,7 +1279,7 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const trimmed = replyDraft.trim();
-    /* v8 ignore start -- empty or over-long reply */
+    /* v8 ignore next 4 -- textarea maxLength */
     if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
@@ -1289,7 +1289,6 @@ export function ForumLoader(): ReactElement | null {
       setReplyFormError('empty');
       return;
     }
-    /* v8 ignore stop */
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */

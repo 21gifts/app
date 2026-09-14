@@ -573,7 +573,7 @@ export function MemberProfileScreen({
       listedNote?.id === messageId
         ? listedNote
         : posts?.find((message) => message.id === messageId);
-    /* v8 ignore next 3 -- pay sheet only opens on a listed note */
+    /* v8 ignore next -- pay sheet only opens on a listed note */
     const baselineSats = parent === undefined ? 0 : parent.sats;
     const continuePay = (isRetry: boolean): Promise<void> => {
       const generation = payPollGeneration.current;
@@ -703,7 +703,7 @@ export function MemberProfileScreen({
       if (parsed === 'empty') {
         return runReplyPost(token, trimmed, parentId, isRetry);
       }
-      /* v8 ignore next 3 -- expanded parent is always in the loaded list */
+      /* v8 ignore next -- expanded parent is always in the loaded list */
       const baselineSats = parentRow === undefined ? 0 : parentRow.sats;
       return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
     };

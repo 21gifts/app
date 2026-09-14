@@ -3444,6 +3444,26 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('rejects an empty reply without an amount', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter a message or add a photo or video',
+    );
+    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
   it('rejects a non-numeric reply amount', async () => {
     fetchMock.mockResolvedValue([FOREIGN]);
     repliesMock.mockResolvedValue([]);
