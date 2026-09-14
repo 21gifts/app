@@ -406,18 +406,17 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 
 **Signed-in Menu** (`SignedInChrome`). Labeled Menu trigger (lucide `Menu` 14px + catalog `aria.menu`). Rows icon+label, in this order:
 
-| Row                  | Icon                            | Href / control                                                                      |
-| -------------------- | ------------------------------- | ----------------------------------------------------------------------------------- |
-| Home                 | `Home`                          | `/welcome`                                                                          |
-| Profile              | `User`                          | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
-| Living room rules    | `ScrollText`                    | `/rules`                                                                            |
-| Notifications        | `Bell`                          | `/notifications`                                                                    |
-| Messages             | `Inbox`                         | `/messages`                                                                         |
-| Contact              | `MessageCircle`                 | `/contact`                                                                          |
-| optional Install app | `PwaInstall placement="menu"`   | labeled row                                                                         |
-| Language             | embedded `LanguageSwitcher`     |                                                                                     |
-| Number format        | embedded `NumberFormatSwitcher` | Menu-only; not marketing or unsigned                                                |
-| Log out              | `LogoutButton`                  | labeled                                                                             |
+| Row                  | Icon                          | Href / control                                                                      |
+| -------------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
+| Home                 | `Home`                        | `/welcome`                                                                          |
+| Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
+| Living room rules    | `ScrollText`                  | `/rules`                                                                            |
+| Notifications        | `Bell`                        | `/notifications`                                                                    |
+| Messages             | `Inbox`                       | `/messages`                                                                         |
+| Contact              | `MessageCircle`               | `/contact`                                                                          |
+| optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
+| Language             | embedded `LanguageSwitcher`   |                                                                                     |
+| Log out              | `LogoutButton`                | labeled                                                                             |
 
 Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`. Panel: `min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 
@@ -712,9 +711,13 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox.
 
 ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`theme.label`), then `SegmentedControl tone="neutral"` with System / Light / Dark. Not a labeled chrome pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors follow the cookie if one exists, otherwise the OS.
 
+#### NumberFormatSwitcher profile settings section
+
+NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`numberFormat.label`), then `SegmentedControl tone="neutral"` with sample labels `10'000.23` / `10,000.23` / `23.000,33`. Not a Hash pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors keep the Swiss default unless a cookie exists.
+
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. **Production.** `NumberFormatSwitcher` is Menu-embedded only (`SignedInChrome`). Marketing never mounts it. Unsigned app routes never mount it. The standalone Hash-pill API remains on the component for tests.
+See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Menu has no number format.
 
 ### Banner (living-room laws)
 
@@ -890,7 +893,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` last settings row (overline + `SegmentedControl tone="neutral"` System / Light / Dark). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
 
 ### `/members/[accountId]`
 

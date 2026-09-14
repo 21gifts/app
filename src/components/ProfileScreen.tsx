@@ -5,6 +5,7 @@ import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
+import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Card } from '@/components/ui';
@@ -12,7 +13,7 @@ import { useAccountTotals } from '@/hooks/useAccountTotals';
 
 /**
  * Signed-in profile card with compact activity chart, name and address forms,
- * an icon-only Web Push bell, and a theme settings row.
+ * PushToggle, ThemeSwitcher, and NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Menu totals stay in `SignedInChrome`.
  *
@@ -32,6 +33,7 @@ export function ProfileScreen(): ReactElement {
       <LightningAddressForm variant="profile" />
       <PushToggle />
       <ThemeSwitcher />
+      <NumberFormatSwitcher />
     </Card>
   );
 }

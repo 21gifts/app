@@ -123,7 +123,7 @@ app/
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/address + push bell + theme + number format)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card

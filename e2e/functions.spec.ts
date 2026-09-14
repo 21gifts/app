@@ -2818,130 +2818,63 @@ test('Function: LanguageSwitcher — landing exposes the language switcher', asy
 
 test("Function: parseNumberFormat — Number format options include 10'000.23", async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/welcome');
-  await openSignedInMenu(page);
-  await page.getByLabel('Number format').click();
-  await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(
+    page.getByRole('group', { name: 'Number format' }).getByRole('button', { name: "10'000.23" }),
+  ).toBeVisible();
 });
 
 test('Function: separatorsFor — same click shows 10,000.23 and 23.000,33', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/welcome');
-  await openSignedInMenu(page);
-  await page.getByLabel('Number format').click();
-  await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
-  await expect(page.getByRole('option', { name: '23.000,33' })).toBeVisible();
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Number format' });
+  await expect(group.getByRole('button', { name: '10,000.23' })).toBeVisible();
+  await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
 });
 
-test('Function: getRequestNumberFormat — signed-in Menu Number format is visible', async ({
+test('Function: getRequestNumberFormat — signed-in /profile Number format is visible', async ({
   page,
 }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/welcome');
-  await openSignedInMenu(page);
-  await expect(page.getByLabel('Number format')).toBeVisible();
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Number format' })).toBeVisible();
 });
 
-test('Function: NumberFormatProvider — picking 23.000,33 in Menu writes numberFormat=de cookie', async ({
+test('Function: NumberFormatProvider — picking 23.000,33 writes numberFormat=de cookie', async ({
   page,
   context,
 }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/welcome');
-  await openSignedInMenu(page);
-  await page.getByLabel('Number format').click();
-  await page.getByRole('option', { name: '23.000,33' }).click();
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await page
+    .getByRole('group', { name: 'Number format' })
+    .getByRole('button', { name: '23.000,33' })
+    .click();
   const cookies = await context.cookies();
   expect(cookies.some((cookie) => cookie.name === 'numberFormat' && cookie.value === 'de')).toBe(
     true,
   );
 });
 
-test('Function: useNumberFormat — Number format in signed-in Menu reads provider', async ({
-  page,
-}) => {
+test('Function: useNumberFormat — Number format on /profile reads provider', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/welcome');
-  await openSignedInMenu(page);
-  await expect(page.getByLabel('Number format')).toBeVisible();
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Number format' })).toBeVisible();
 });
 
-test('Function: NumberFormatSwitcher — signed-in Menu lists the three samples', async ({
-  page,
-}) => {
+test('Function: NumberFormatSwitcher — /profile lists the three samples', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/welcome');
-  await openSignedInMenu(page);
-  await page.getByLabel('Number format').click();
-  await expect(page.getByRole('option', { name: "10'000.23" })).toBeVisible();
-  await expect(page.getByRole('option', { name: '10,000.23' })).toBeVisible();
-  await expect(page.getByRole('option', { name: '23.000,33' })).toBeVisible();
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Number format' });
+  await expect(group.getByRole('button', { name: "10'000.23" })).toBeVisible();
+  await expect(group.getByRole('button', { name: '10,000.23' })).toBeVisible();
+  await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
 });
 
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {

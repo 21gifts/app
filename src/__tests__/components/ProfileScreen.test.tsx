@@ -105,7 +105,7 @@ afterEach(() => {
 });
 
 describe('ProfileScreen', () => {
-  it('shows the heading, back link, name form, address form, chart, and theme group', async () => {
+  it('shows the heading, name form, address form, chart, theme group, and number format group', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
@@ -116,6 +116,12 @@ describe('ProfileScreen', () => {
     );
     expect(screen.getByRole('button', { name: 'Light' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Dark' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Number format' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: "10'000.23" }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: '10,000.23' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '23.000,33' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();

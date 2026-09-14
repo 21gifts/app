@@ -443,13 +443,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'menu-number-format-open',
-    image: 'welcome-menu-number-format.png',
-    visual: 'state-welcome-menu-number-format',
-    needle: "10'000.23",
-  },
-  {
-    route: '/welcome',
     id: 'pay-qr',
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
