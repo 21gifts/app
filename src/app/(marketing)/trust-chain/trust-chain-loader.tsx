@@ -56,6 +56,9 @@ export function TrustChainLoader(): ReactElement {
       loading={loading}
       expandingId={expandingId}
       onRetry={() => {
+        if (expandingId !== null) {
+          return;
+        }
         if (failedHopId !== null) {
           const retryId = failedHopId;
           setFailedHopId(null);

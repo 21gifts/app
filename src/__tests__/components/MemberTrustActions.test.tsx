@@ -299,7 +299,14 @@ describe('MemberTrustActions', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Propose as moderator' }));
     await waitFor(() => {
-      expect(onUpdated).toHaveBeenCalledWith(expect.objectContaining({ role: 'verified' }));
+      expect(onUpdated).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: 'verified',
+          trust: expect.objectContaining({
+            proposedBy: expect.objectContaining({ id: account.id }),
+          }),
+        }),
+      );
     });
   });
 

@@ -91,6 +91,19 @@ describe('layoutTrustChain', () => {
     expect(laid.nodes.find((node) => node.id === 'bob')?.y).toBeGreaterThan(112);
   });
 
+  it('does not recurse forever when stacked children verify each other', () => {
+    const laid = layoutTrustChain({
+      nodes: [FOUNDER, ADA, BOB],
+      edges: [
+        { from: 'f', to: 'ada', kind: 'verify' },
+        { from: 'f', to: 'bob', kind: 'verify' },
+        { from: 'ada', to: 'bob', kind: 'verify' },
+        { from: 'bob', to: 'ada', kind: 'verify' },
+      ],
+    });
+    expect(laid.nodes).toHaveLength(3);
+  });
+
   it('still places both nodes of a leftover cycle with no root', () => {
     const a = { id: 'a', name: 'A', role: 'verified' as const };
     const b = { id: 'b', name: 'B', role: 'verified' as const };

@@ -115,7 +115,11 @@ export function layoutTrustChain(chain: TrustChain): {
     positioned.set(id, { ...node, x, y });
   }
 
-  function subtreeBottom(id: string): number {
+  function subtreeBottom(id: string, seen: Set<string> = new Set()): number {
+    if (seen.has(id)) {
+      return PAD;
+    }
+    seen.add(id);
     const node = positioned.get(id);
     /* v8 ignore next 3 -- called after place */
     if (node === undefined) {
@@ -124,7 +128,7 @@ export function layoutTrustChain(chain: TrustChain): {
     let bottom = node.y + TRUST_NODE_HEIGHT;
     for (const kid of children.get(id) ?? []) {
       if (positioned.has(kid)) {
-        bottom = Math.max(bottom, subtreeBottom(kid));
+        bottom = Math.max(bottom, subtreeBottom(kid, seen));
       }
     }
     return bottom;
