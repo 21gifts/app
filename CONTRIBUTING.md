@@ -136,9 +136,9 @@ app/
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
-│   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
+│   │   ├── ViewProfileLoader.tsx # Public view fetch states + given/received activity
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + About me + name/location/address, copy-link)
-│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + filtered spendOverTime
+│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + given/received activity
 │   │   ├── MemberProfileScreen.tsx # Member identity card + About me + location + activity feeds
 │   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
