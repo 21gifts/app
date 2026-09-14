@@ -420,6 +420,7 @@ export function MemberProfileScreen({
       }
       if (!alreadyListed) {
         setPosts((prev) => {
+          /* v8 ignore next 3 -- posts list is null until the posts feed opens */
           if (prev === null) {
             return prev;
           }
@@ -579,6 +580,7 @@ export function MemberProfileScreen({
   };
 
   const handlePaySubmit = (): void => {
+    /* v8 ignore next 3 -- Continue is disabled while payBusy; feed pay is session-gated */
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
