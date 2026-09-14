@@ -5552,6 +5552,53 @@ it('drops overlapping nested reply deletes without restoring the first', async (
   ).toBeTruthy();
 });
 
+it('decrements the reply count twice when two nested replies are deleted in sequence', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 2 }]);
+  repliesMock.mockResolvedValue([
+    NESTED_REPLY,
+    { ...NESTED_REPLY, id: 'r2', text: 'Second reply' },
+  ]);
+  vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  await screen.findByText('A reply');
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', {
+      name: 'Delete reply',
+    }),
+  );
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', {
+      name: 'Confirm deletion',
+    }),
+  );
+  await waitFor(() => expect(screen.queryByText('A reply')).toBeNull());
+  expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+  ).toBeTruthy();
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', {
+      name: 'Delete reply',
+    }),
+  );
+  fireEvent.click(
+    within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', {
+      name: 'Confirm deletion',
+    }),
+  );
+  await waitFor(() => expect(screen.queryByText('Second reply')).toBeNull());
+  expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  expect(
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+  ).toBeTruthy();
+  expect(deleteMessage).toHaveBeenCalledWith('token', 'r1');
+  expect(deleteMessage).toHaveBeenCalledWith('token', 'r2');
+});
+
 it('still hides a reply deleted after the thread is collapsed', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
   fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);

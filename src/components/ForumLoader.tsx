@@ -191,8 +191,8 @@ function applySessionReplyCount(
 function mergeMessages(
   prev: ForumMessage[] | null,
   next: ForumMessage[],
-  hiddenReplyCounts: Map<string, number> = new Map(),
-  lastServerReplyCount: Map<string, number> = new Map(),
+  hiddenReplyCounts: Map<string, number>,
+  lastServerReplyCount: Map<string, number>,
 ): ForumMessage[] {
   const withHiddenCount = (message: ForumMessage): ForumMessage => ({
     ...message,
@@ -1475,7 +1475,7 @@ export function ForumLoader(): ReactElement | null {
                   if (parentId === undefined) {
                     return;
                   }
-                  /* v8 ignore next -- first delete has no map entry yet */
+                  /* v8 ignore next -- applySessionReplyCount seeds the parent id with 0 before any delete */
                   const prevHidden = hiddenReplyCounts.current.get(parentId) ?? 0;
                   hiddenReplyCounts.current.set(parentId, prevHidden + 1);
                   setMessages((prev) =>
