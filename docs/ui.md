@@ -492,7 +492,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
 
-Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet CTAs: **Continue** (`Button` primary) then labeled **Pay** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link.
+Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) then auto-assigns `walletofsatoshi:`; desktop, Android phone, and iPad stay **Continue** (`forum.payContinue`). Invoice-step labeled **Pay** (`ButtonLink` `variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + deep link.
 
 **Fiat.** Stats KPI shows ₿ on the first line and the selected fiat (CHF/EUR/USD/PHP) on the second via `FiatPicker` plus `formatFiatDisplay` (USD selected uses `formatUsdDisplay`). Profile activity uses FiatPicker (`tone="gift"` `shell="app"`) always; populated chart is ₿ | selected FiatCode, not ₿|USD only.
 
@@ -772,7 +772,10 @@ Inbox thread rows share only this chrome (rounded-2xl card, name, time, body). T
 
 ### Pay sheet
 
-**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Alerts. `Button` primary **Continue** (`forum.payContinue`).
+**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Alerts. `Button` primary:
+
+- iPhone / iPod (`isSmartphoneUserAgent` and not `isAndroidUserAgent`): **Pay** (`forum.payNow`; DE **Bezahlen**). One tap mints the invoice and `window.location.assign`s `walletOfSatoshiHref(pr)` (`walletofsatoshi:`). Invoice step stays as fallback (wallet `ButtonLink`, no QR).
+- Desktop, Android phone, iPad: **Continue** (`forum.payContinue`). Click only requests the invoice, then the invoice step.
 
 **Invoice step.** Centered column, back, confirm sentence with one `formatBitcoin`, then:
 

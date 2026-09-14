@@ -15,6 +15,7 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type Account, type MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -129,6 +130,8 @@ const account: Account = {
   missing: [],
 };
 
+const originalUserAgent = navigator.userAgent;
+
 async function expandNote(): Promise<void> {
   fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
   await waitFor(() => {
@@ -195,6 +198,10 @@ afterEach(async () => {
     await Promise.resolve();
   });
   cleanup();
+  Object.defineProperty(navigator, 'userAgent', {
+    configurable: true,
+    value: originalUserAgent,
+  });
 });
 
 describe('MemberProfileScreen', () => {
@@ -493,6 +500,114 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
     });
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+  });
+
+  it('requests the invoice and opens Wallet of Satoshi on iPhone Pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+    });
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledWith(walletOfSatoshiHref('lnbc1'));
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it('does not assign Wallet of Satoshi after cancelling an in-flight iPhone pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(assign).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not show a pay error after cancelling an in-flight iPhone pay that fails', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    let rejectInvoice!: (reason: Error) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((_, reject) => {
+        rejectInvoice = reject;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      rejectInvoice(new Error('fail'));
+    });
+    expect(assign).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not assign Wallet of Satoshi after unmounting during an in-flight iPhone pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    const { unmount } = renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    unmount();
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(assign).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('loads replies when the profile note is expanded', async () => {

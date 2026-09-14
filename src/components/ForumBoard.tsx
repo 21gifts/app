@@ -133,7 +133,7 @@ export interface ForumBoardProps {
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
   /** Submits the pay amount for an invoice. */
-  onPaySubmit: () => void;
+  onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
   /** Selected feed mode. Default in the loader is Active. */
@@ -338,6 +338,7 @@ export function ForumBoard({
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
+  const payMounted = useRef(false);
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
   const loadingRef = useRef(loading);
@@ -449,6 +450,13 @@ export function ForumBoard({
     };
   }, []);
 
+  useEffect(() => {
+    payMounted.current = true;
+    return () => {
+      payMounted.current = false;
+    };
+  }, []);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     onPost();
@@ -456,7 +464,23 @@ export function ForumBoard({
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    onPaySubmit();
+    void (async () => {
+      const invoice = await Promise.resolve(onPaySubmit());
+      if (invoice === null || invoice === undefined) {
+        return;
+      }
+      if (!payMounted.current) {
+        return;
+      }
+      /* v8 ignore next 3 -- SSR has no navigator */
+      if (typeof navigator === 'undefined') {
+        return;
+      }
+      const ua = navigator.userAgent;
+      if (isSmartphoneUserAgent(ua) && !isAndroidUserAgent(ua)) {
+        window.location.assign(walletOfSatoshiHref(invoice.pr));
+      }
+    })();
   };
 
   const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -556,6 +580,12 @@ export function ForumBoard({
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
+          /* v8 ignore next 5 -- SSR has no navigator */
+          const isIosPhone =
+            typeof navigator !== 'undefined'
+              ? isSmartphoneUserAgent(navigator.userAgent) &&
+                !isAndroidUserAgent(navigator.userAgent)
+              : false;
           /* v8 ignore start -- Android vs iOS wallet href */
           const android =
             typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
@@ -790,7 +820,7 @@ export function ForumBoard({
                       ) : undefined
                     }
                   >
-                    {t('forum.payContinue')}
+                    {isIosPhone ? t('forum.payNow') : t('forum.payContinue')}
                   </Button>
                 </form>
               ) : null}
