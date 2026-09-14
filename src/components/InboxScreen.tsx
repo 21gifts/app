@@ -1,9 +1,9 @@
 'use client';
 
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
-import { type FormEvent, type ReactElement } from 'react';
+import { type FormEvent, type ReactElement, useState } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
   type Conversation,
@@ -16,6 +16,21 @@ const CONVERSATION_ORIGIN_KEY = {
   member_member: 'inbox.origin.direct',
   member_platform: 'inbox.origin.contact',
   member_damus: 'inbox.origin.damus',
+} as const;
+
+/** Origin filter on the conversation list. Default Direct. */
+type InboxFilter = 'direct' | 'contact' | 'damus';
+
+const FILTER_KIND: Record<InboxFilter, Conversation['kind']> = {
+  direct: 'member_member',
+  contact: 'member_platform',
+  damus: 'member_damus',
+};
+
+const FILTER_EMPTY_KEY = {
+  direct: 'inbox.empty',
+  contact: 'inbox.empty.contact',
+  damus: 'inbox.empty.damus',
 } as const;
 
 /** Client-side composer validation or request failure. */
@@ -59,7 +74,12 @@ export interface InboxScreenProps {
 
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
- * a 500-character composer. Origin labels come from {@link Conversation} `kind`.
+ * a 500-character composer. The list is filtered by the origin control
+ * (Direct / Contact / Damus); default Direct. Origin labels come from
+ * {@link Conversation} `kind`. Outbound last-text previews use
+ * `inbox.sentPreview` as a filled chip. Incoming thread messages are full-width
+ * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the
+ * right labelled `inbox.you`.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.
@@ -83,11 +103,15 @@ export function InboxScreen({
   formError,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
+  const [filter, setFilter] = useState<InboxFilter>('direct');
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     onPost();
   };
+
+  const filtered =
+    conversations === null ? [] : conversations.filter((row) => row.kind === FILTER_KIND[filter]);
 
   const open =
     openId === null || conversations === null
@@ -138,15 +162,41 @@ export function InboxScreen({
               <li
                 key={message.id}
                 data-message-id={message.id}
-                className="rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
+                data-from-me={message.fromMe ? 'true' : 'false'}
+                className={
+                  message.fromMe
+                    ? 'self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg'
+                    : 'rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
+                }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-app-fg">{message.name}</span>
-                  <time dateTime={message.createdAt} className="text-xs text-app-subtle">
+                  <span
+                    className={
+                      message.fromMe
+                        ? 'text-sm font-medium text-app-btn-fg'
+                        : 'text-sm font-medium text-app-fg'
+                    }
+                  >
+                    {message.fromMe ? t('inbox.you') : message.name}
+                  </span>
+                  <time
+                    dateTime={message.createdAt}
+                    className={
+                      message.fromMe ? 'text-xs text-app-btn-fg/70' : 'text-xs text-app-subtle'
+                    }
+                  >
                     {formatForumTime(message.createdAt, locale)}
                   </time>
                 </div>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
+                <p
+                  className={
+                    message.fromMe
+                      ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
+                      : 'mt-2 whitespace-pre-wrap text-sm text-app-fg'
+                  }
+                >
+                  {message.text}
+                </p>
               </li>
             ))}
           </ul>
@@ -216,48 +266,63 @@ export function InboxScreen({
         </Button>
       </>
     );
-  } else if (conversations !== null && conversations.length === 0) {
-    body = (
-      <>
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('inbox.heading')}
-        </h1>
-        <p className="text-center text-sm text-app-muted">{t('inbox.empty')}</p>
-      </>
-    );
   } else {
     body = (
       <>
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('inbox.heading')}
         </h1>
-        <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
-          {/* v8 ignore next -- list view only renders when conversations is non-null */}
-          {(conversations ?? []).map((row) => (
-            <li key={row.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  onOpen(row.id);
-                }}
-                className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
-              >
-                <span className="flex w-full items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-app-fg">{row.name}</span>
-                  <time dateTime={row.lastAt} className="text-xs text-app-subtle">
-                    {formatForumTime(row.lastAt, locale)}
-                  </time>
-                </span>
-                <span className="text-xs text-app-subtle">
-                  {t(CONVERSATION_ORIGIN_KEY[row.kind])}
-                </span>
-                {row.lastText !== '' ? (
-                  <span className="line-clamp-2 text-sm text-app-muted">{row.lastText}</span>
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <SegmentedControl
+          value={filter}
+          options={[
+            { value: 'direct', label: t('inbox.origin.direct') },
+            { value: 'contact', label: t('inbox.origin.contact') },
+            { value: 'damus', label: t('inbox.origin.damus') },
+          ]}
+          onChange={setFilter}
+          ariaLabel={t('inbox.filterLabel')}
+          tone="neutral"
+        />
+        {filtered.length === 0 ? (
+          <p className="text-center text-sm text-app-muted">{t(FILTER_EMPTY_KEY[filter])}</p>
+        ) : (
+          <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
+            {filtered.map((row) => (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpen(row.id);
+                  }}
+                  className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
+                >
+                  <span className="flex w-full items-baseline justify-between gap-2">
+                    <span className="text-sm font-medium text-app-fg">{row.name}</span>
+                    <time dateTime={row.lastAt} className="text-xs text-app-subtle">
+                      {formatForumTime(row.lastAt, locale)}
+                    </time>
+                  </span>
+                  <span className="text-xs text-app-subtle">
+                    {t(CONVERSATION_ORIGIN_KEY[row.kind])}
+                  </span>
+                  {row.lastText !== '' ? (
+                    <span
+                      className={
+                        row.lastFromMe
+                          ? 'self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg'
+                          : 'line-clamp-2 text-sm text-app-muted'
+                      }
+                    >
+                      {row.lastFromMe
+                        ? t('inbox.sentPreview', { text: row.lastText })
+                        : row.lastText}
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </>
     );
   }

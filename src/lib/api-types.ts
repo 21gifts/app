@@ -199,6 +199,47 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * FX on account activity. `quotes` is optional so payloads from an api that
+ * has not yet shipped gift-stats fiat currencies still parse.
+ */
+export const activityFxSchema = giftStatsFxSchema.extend({
+  quotes: giftStatsFxSchema.shape.quotes.optional(),
+});
+
+/**
+ * One UTC day on an activity series. Fiat columns are optional for the same
+ * reason as {@link activityFxSchema}.
+ */
+export const activitySpendDaySchema = spendDaySchema.partial({
+  chf: true,
+  eur: true,
+  php: true,
+  cumulativeChf: true,
+  cumulativeEur: true,
+  cumulativePhp: true,
+});
+
+/**
+ * Runtime schema for signed-in, member, and public-view activity
+ * (`GET /me/activity`, `GET /members/:id/activity`, `GET /view/:viewKey/activity`).
+ *
+ * Series share the gift-stats day shape, with optional fiat fields. Totals
+ * include house gifts and forum zaps.
+ */
+export const accountActivitySchema = z.object({
+  donatedSats: z.number().int().nonnegative(),
+  receivedSats: z.number().int().nonnegative(),
+  donatedOverTime: z.array(activitySpendDaySchema),
+  receivedOverTime: z.array(activitySpendDaySchema),
+  fx: activityFxSchema,
+});
+
+/**
+ * Given and received sat totals plus cumulative series for one account.
+ */
+export type AccountActivity = z.infer<typeof accountActivitySchema>;
+
+/**
  * One outbound gift in `GET /gifts?day=`.
  */
 export const giftDayGiftSchema = z.object({
@@ -366,7 +407,9 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * `kind` is `member_member` (in-app member conversation), `member_platform`
  * (contact / official 21.gifts thread), or `member_damus` (Nostr-only
  * counterpart). `lastText` may be empty when the thread was opened from a
- * forum note and has no messages yet.
+ * forum note and has no messages yet. `lastFromMe` is true when the last
+ * message was sent by the session (including staff sending as the platform
+ * account).
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
@@ -374,6 +417,7 @@ export const conversationSchema = z.object({
   name: z.string().min(1),
   lastText: z.string(),
   lastAt: z.string().datetime({ offset: true }),
+  lastFromMe: z.boolean(),
 });
 
 /**
@@ -390,12 +434,16 @@ export type Conversation = z.infer<typeof conversationSchema>;
 
 /**
  * Runtime schema for one message in `GET /conversations/:id`.
+ *
+ * `fromMe` is true when this message was sent by the session (including staff
+ * sending as the platform account).
  */
 export const conversationMessageSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   text: z.string().min(1),
   createdAt: z.string().datetime({ offset: true }),
+  fromMe: z.boolean(),
 });
 
 /**

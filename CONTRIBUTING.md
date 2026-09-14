@@ -66,7 +66,8 @@ app/
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
-│   │   │   └── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
 │   │   ├── contact/
@@ -98,7 +99,9 @@ app/
 │   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy
 │   │   │   │   └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
 │   │   │   └── members/
-│   │   │       └── [accountId]/route.ts  # GET /forum/members/:id → api GET /members/:id
+│   │   │       └── [accountId]/
+│   │   │           ├── route.ts  # GET /forum/members/:id → api GET /members/:id
+│   │   │           └── activity/route.ts  # GET /forum/members/:id/activity → api GET /members/:id/activity
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -112,7 +115,9 @@ app/
 
 │   │   │   └── [viewKey]/page.tsx  # GET /view/:viewKey — public read-only profile
 │   │   ├── view-key/
-│   │   │   └── [viewKey]/route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
+│   │   │   └── [viewKey]/
+│   │   │       ├── route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
+│   │   │       └── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -124,14 +129,15 @@ app/
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
+│   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/location/address + push bell + theme + number format)
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
-│   │   ├── ViewProfileLoader.tsx # Public view fetch states + filtered spendOverTime
+│   │   ├── ViewProfileLoader.tsx # Public view fetch states + GET /view-key/:viewKey/activity
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + name/location/address, no actions)
-│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + filtered spendOverTime
+│   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + GET /forum/members/:id/activity
 │   │   ├── MemberProfileScreen.tsx # Member identity card + optional profile note
 │   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
@@ -174,8 +180,10 @@ app/
 │   │   ├── translate-upstream.ts # Optional server-side translation upstream proxy
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
+│   │   ├── account-activity.ts  # Align given/received series for the profile chart
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
-│   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
+│   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
+│   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
 │   │   ├── handbook-topics.ts   # handbook image topic catalog + combo URLs
@@ -201,7 +209,7 @@ app/
 │       └── images/              # Markdown still references images/<file>.png; PNGs are not committed
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
-│   ├── screen-variants.mjs      # Every distinct UI state of every screen (handbook + e2e needles + visual args)
+│   ├── screen-variants.mjs      # Distinct UI states of screenshot-gated screens (e2e needles + visual args)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
 │   └── check-screenshots.mjs    # CI gate: missing or unexpected PNG, or variant with no visual.spec.ts shot → exit 1
@@ -381,9 +389,11 @@ exported function/class in `src/`, and every HTTP endpoint **must** have a
 complete section:
 
 - Screens: `## Screen: /path` (one per `src/app/**/page.tsx`, plus `/404` from `not-found.tsx`)
-- Screen variants: `### Variant: id` (one per **distinct UI state** of that
-  screen; the list in `scripts/screen-variants.mjs` is the source of truth.
-  Omitting a state from the list is an undeclared deviation)
+- Screen variants: `### Variant: id` (one per **distinct UI state** of every
+  screenshot-gated screen; the list in `scripts/screen-variants.mjs` is the
+  source of truth. Omitting a gated state from the list is an undeclared
+  deviation. `HANDBOOK_DOC_ROUTES` keep `## Screen:` prose and e2e `page.goto`
+  only — no `### Variant:`, no goldens, not in `SCREEN_VARIANTS`)
 - Functions: `## Function: name` (one per `export function`,
   `export default function`, exported callable const, or `export class`)
 - Endpoints: `## Endpoint: METHOD /path` (one per `src/app/**/route.ts` HTTP export)
@@ -430,18 +440,25 @@ There is **one** source for screen images: Playwright Linux Chromium baselines
 under `e2e/visual.spec.ts-snapshots/`.
 
 Every public UI screen (`src/app/**/page.tsx`, plus `/404`) **must** have a
-`toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`.
+`toHaveScreenshot('screen-…png')` (via `shotScreen`) in `e2e/visual.spec.ts`,
+**except** the handbook doc routes in `HANDBOOK_DOC_ROUTES`
+(`/handbook`, `/handbook/screens`, `/handbook/functions`, `/handbook/endpoints`).
+Those are documentation pages, not product screens, and are not screenshot-gated.
+`/handbook/screens` _shows_ product-screen goldens and is not itself a golden.
+They still need `## Screen:` prose and e2e `page.goto`. They are **not** listed
+in `SCREEN_VARIANTS`.
 Visual specs run in four projects (`desktop-light`, `desktop-dark`,
 `mobile-light`, `mobile-dark`) so each shot is stored as
 `${arg}-${combo}-linux.png`. Handbook Markdown keeps `images/<name>.png`
-references; those bytes are filled into `public/handbook-images/` by
-`npm run handbook:images` / `prebuild` / `predev` from the desktop-light
-baseline. Do not commit PNGs under
+references for product screens; those bytes are filled into
+`public/handbook-images/` by `npm run handbook:images` / `prebuild` / `predev`
+from the desktop-light baseline. Do not commit PNGs under
 `docs/handbook/images/` or `public/handbook-images/`.
 
-Every **distinct UI state** of every screen **must** be listed in
-`scripts/screen-variants.mjs`. Omitting a state from that list is an undeclared
-deviation and is rejected. `/setup/rules` is one screen with **one state per
+Every **distinct UI state** of every screenshot-gated screen (not
+`HANDBOOK_DOC_ROUTES`) **must** be listed in `scripts/screen-variants.mjs`.
+Omitting a gated state from that list is an undeclared deviation and is
+rejected. `/setup/rules` is one screen with **one state per
 living-room rules chapter** (`RULES_CHAPTER_IDS` in `src/lib/rules-chapters.ts`);
 each chapter is a variant. Viewport and theme are combo shots of those
 variants, not a substitute for a missing chapter.
@@ -467,6 +484,11 @@ screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
 combo projects as parallel jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.
+
+A PR's snapshot diff must contain only screens whose intended appearance
+changed. Do not commit a baseline whose pixels moved only as an incidental
+side-effect of a shared-component tweak that was not meant to restyle that
+screen.
 
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
 `npm run e2e` still runs the behavioral specs. FullPage shots unstick

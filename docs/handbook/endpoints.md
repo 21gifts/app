@@ -60,7 +60,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats` and `/profile`.
+- **Used by:** `fetchGiftStats` on `/stats` only.
 - **Auth:** Public.
 
 ## Endpoint: GET /lightning-address
@@ -98,6 +98,13 @@
 - **Used by:** `fetchMember` via `MemberProfileLoader`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/members/[accountId]/activity
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /members/:accountId/activity` for a member's given and received series.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberActivity` via `MemberProfileLoader`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /forum/members/[accountId]/posts
 
 - **Purpose:** Same-origin proxy of api `GET /members/:accountId/posts` for a signed-in member's top-level forum posts.
@@ -133,11 +140,25 @@
 - **Used by:** `fetchMe`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /me/activity
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /me/activity` for given and received sat totals plus both cumulative day series (house gifts and forum zaps).
+- **Errors:** Upstream 401, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchAccountActivity` via `useAccountTotals` on `/profile` and the signed-in menu.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /view-key/[viewKey]
 
 - **Purpose:** Same-origin public proxy of api `GET /view/:viewKey`.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchViewProfile`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/activity
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/activity` for the public profile given and received series.
+- **Errors:** Upstream 404, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchViewActivity` via `ViewProfileLoader`.
 - **Auth:** Public.
 
 ## Endpoint: GET /forum/messages
@@ -166,6 +187,13 @@
 - **Purpose:** Same-origin public proxy of api GET `/messages/:id` (one note as JSON, no Bearer). The HTML public note is `/messages/[id]`.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchPublicMessage`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/replies
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/replies` (oldest-first live replies, no Bearer). The HTML public thread is `/messages/[id]`.
+- **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchPublicReplies`.
 - **Auth:** Public.
 
 ## Endpoint: POST /messages/[id]/invoice
@@ -226,21 +254,21 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (private threads the session may see). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`.
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe`.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author. Response is the same conversation list-row shape, including required `kind`.
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author. Response is the same conversation list-row shape, including required `kind` and `lastFromMe`.
 - **Errors:** Upstream 400 (self), 404 (unknown note), 401/503, or 502 if the api is unreachable.
 - **Used by:** `openConversation` from the forum PM control.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe`.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversation` on `/messages?c=`.
 - **Auth:** Bearer.

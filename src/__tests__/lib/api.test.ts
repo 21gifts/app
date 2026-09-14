@@ -7,18 +7,22 @@ import {
   fetchConversation,
   fetchConversations,
   fetchNotifications,
+  fetchAccountActivity,
   fetchGiftDay,
   fetchGiftStats,
   fetchMe,
   fetchMember,
+  fetchMemberActivity,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
+  fetchPublicReplies,
   fetchReplies,
   fetchVapidPublicKey,
+  fetchViewActivity,
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
@@ -836,6 +840,177 @@ describe('fetchGiftStats', () => {
   });
 });
 
+const EMPTY_FX = {
+  quote: 'BTC-USD' as const,
+  dayBasis: 'utc' as const,
+  source: 'coinbase-exchange-daily-close' as const,
+  quotes: [{ code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+};
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [],
+  receivedOverTime: [],
+  fx: EMPTY_FX,
+};
+
+describe('fetchAccountActivity', () => {
+  it('returns the validated payload and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: EMPTY_ACTIVITY });
+    await expect(fetchAccountActivity('tok')).resolves.toEqual(EMPTY_ACTIVITY);
+    expect(fetchMock).toHaveBeenCalledWith('/me/activity', {
+      headers: { Authorization: 'Bearer tok' },
+    });
+  });
+
+  it('accepts activity fx without gift-stats quotes', async () => {
+    const body = {
+      donatedSats: 0,
+      receivedSats: 21,
+      donatedOverTime: [],
+      receivedOverTime: [],
+      fx: {
+        quote: 'BTC-USD',
+        dayBasis: 'utc',
+        source: 'coinbase-exchange-daily-close',
+      },
+    };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(fetchAccountActivity('tok')).resolves.toEqual(body);
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchAccountActivity('tok')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchAccountActivity('tok')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchAccountActivity('tok')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { donatedSats: 0 } });
+    await expect(fetchAccountActivity('tok')).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberActivity', () => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+
+  it('returns the validated payload and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: EMPTY_ACTIVITY });
+    await expect(fetchMemberActivity('sess', memberId)).resolves.toEqual(EMPTY_ACTIVITY);
+    expect(fetchMock).toHaveBeenCalledWith(`/forum/members/${memberId}/activity`, {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { donatedSats: 0 } });
+    await expect(fetchMemberActivity('sess', memberId)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+});
+
+describe('fetchViewActivity', () => {
+  const viewKey = 'a'.repeat(64);
+
+  it('returns the validated payload and hits the same-origin proxy path', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: EMPTY_ACTIVITY });
+    await expect(fetchViewActivity(viewKey)).resolves.toEqual(EMPTY_ACTIVITY);
+    expect(fetchMock).toHaveBeenCalledWith(`/view-key/${encodeURIComponent(viewKey)}/activity`);
+  });
+
+  it('throws visitor copy on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { donatedSats: 0 } });
+    await expect(fetchViewActivity(viewKey)).rejects.toThrow(
+      'Could not load gift stats. Please try again.',
+    );
+  });
+});
+
 const forumMessage = {
   id: 'm1',
   name: 'Ada',
@@ -1501,6 +1676,90 @@ describe('fetchPublicMessagePhoto', () => {
   });
 });
 
+describe('fetchPublicReplies', () => {
+  it('GETs /public-messages/:id/replies without bearer and parses replies', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage] },
+    });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/replies');
+    expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('returns an empty list on HTTP 200 with messages: []', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([]);
+  });
+
+  it('keeps valid replies and skips an invalid empty name', async () => {
+    const invalidEmptyName = { ...forumMessage, id: 'm-invalid', name: '' };
+    const secondValid = { ...forumMessage, id: 'm2' };
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, invalidEmptyName, secondValid] },
+    });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([forumMessage, secondValid]);
+  });
+
+  it('returns an empty list when every reply is invalid', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [{ ...forumMessage, name: '' }] },
+    });
+    await expect(fetchPublicReplies('parent')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy on HTTP 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not { messages: array }', async () => {
+    stubFetch({ ok: true, status: 200, body: { notMessages: [] } });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      } as unknown as Response),
+    );
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPublicReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
 describe('fetchReplies', () => {
   it('GETs /forum/messages/:id/replies with bearer and parses replies', async () => {
     const fetchMock = stubFetch({
@@ -1622,6 +1881,7 @@ const conversation = {
   name: '21.gifts',
   lastText: 'Hello',
   lastAt: '2026-08-28T12:00:00.000Z',
+  lastFromMe: false,
 };
 
 const conversationMessage = {
@@ -1629,6 +1889,7 @@ const conversationMessage = {
   name: 'Ada',
   text: 'Hello',
   createdAt: '2026-08-28T12:00:00.000Z',
+  fromMe: false,
 };
 
 describe('fetchConversations', () => {

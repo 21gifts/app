@@ -20,7 +20,7 @@ const byPasskeyCredential = new Map();
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
-/** @type {Array<{ id: string, kind: 'member_member' | 'member_platform' | 'member_damus', name: string, lastText: string, lastAt: string, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string }> }>} */
+/** @type {Array<{ id: string, kind: 'member_member' | 'member_platform' | 'member_damus', name: string, lastText: string, lastAt: string, lastFromMe: boolean, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string, fromMe: boolean }> }>} */
 const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
@@ -432,7 +432,9 @@ const server = http.createServer(async (req, res) => {
       createdAt: new Date().toISOString(),
     };
     contactMessages.unshift(created);
-    let thread = conversations.find((row) => row.ownerId === account.id && row.name === '21.gifts');
+    let thread = conversations.find(
+      (row) => row.ownerId === account.id && row.kind === 'member_platform',
+    );
     if (thread === undefined) {
       thread = {
         id: `conv_${hex(randomBytes(8))}`,
@@ -440,21 +442,22 @@ const server = http.createServer(async (req, res) => {
         name: '21.gifts',
         lastText: text,
         lastAt: created.createdAt,
+        lastFromMe: true,
         ownerId: account.id,
         messages: [],
       };
       conversations.unshift(thread);
-    } else {
-      thread.kind = thread.kind ?? 'member_platform';
     }
     thread.messages.push({
       id: created.id,
       name,
       text,
       createdAt: created.createdAt,
+      fromMe: true,
     });
     thread.lastText = text;
     thread.lastAt = created.createdAt;
+    thread.lastFromMe = true;
     json(res, 200, created);
     return;
   }
@@ -500,12 +503,18 @@ const server = http.createServer(async (req, res) => {
     json(res, 200, {
       conversations: conversations
         .filter((row) => row.ownerId === account.id)
+        .filter(
+          (row) =>
+            row.messages.some((message) => message.fromMe !== true) ||
+            ((row.kind ?? 'member_member') === 'member_platform' && row.messages.length > 0),
+        )
         .map((row) => ({
           id: row.id,
           kind: row.kind ?? 'member_member',
           name: row.name,
           lastText: row.lastText,
           lastAt: row.lastAt,
+          lastFromMe: row.lastFromMe === true,
         })),
     });
     return;
@@ -549,6 +558,7 @@ const server = http.createServer(async (req, res) => {
         name: note.name,
         lastText: '',
         lastAt: now,
+        lastFromMe: false,
         ownerId: account.id,
         messages: [],
       };
@@ -560,6 +570,7 @@ const server = http.createServer(async (req, res) => {
       name: thread.name,
       lastText: thread.lastText,
       lastAt: thread.lastAt,
+      lastFromMe: thread.lastFromMe === true,
     });
     return;
   }
@@ -579,7 +590,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (method === 'GET') {
-      json(res, 200, { messages: thread.messages });
+      json(res, 200, {
+        messages: thread.messages.map((message) => ({
+          id: message.id,
+          name: message.name,
+          text: message.text,
+          createdAt: message.createdAt,
+          fromMe: message.fromMe === true,
+        })),
+      });
       return;
     }
     let parsed;
@@ -608,10 +627,12 @@ const server = http.createServer(async (req, res) => {
       name: senderName,
       text,
       createdAt: new Date().toISOString(),
+      fromMe: true,
     };
     thread.messages.push(created);
     thread.lastText = text;
     thread.lastAt = created.createdAt;
+    thread.lastFromMe = true;
     json(res, 200, created);
     return;
   }
@@ -659,6 +680,29 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 200, account);
+    return;
+  }
+
+  const EMPTY_ACTIVITY = {
+    donatedSats: 0,
+    receivedSats: 0,
+    donatedOverTime: [],
+    receivedOverTime: [],
+    fx: {
+      quote: 'BTC-USD',
+      dayBasis: 'utc',
+      source: 'coinbase-exchange-daily-close',
+      quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+    },
+  };
+
+  if (method === 'GET' && pathName === '/me/activity') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, EMPTY_ACTIVITY);
     return;
   }
 
@@ -749,6 +793,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const membersActivityMatch = pathName.match(/^\/members\/([^/]+)\/activity$/);
+  if (method === 'GET' && membersActivityMatch) {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, EMPTY_ACTIVITY);
+    return;
+  }
+
   const memberPostsMatch = pathName.match(/^\/members\/([^/]+)\/posts$/);
   if (method === 'GET' && memberPostsMatch) {
     const token = bearer(req);
@@ -831,6 +886,12 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  const viewActivityMatch = pathName.match(/^\/view\/([^/]+)\/activity$/);
+  if (method === 'GET' && viewActivityMatch) {
+    json(res, 200, EMPTY_ACTIVITY);
     return;
   }
 

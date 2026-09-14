@@ -64,6 +64,7 @@ import {
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
+import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 
 const fetchMock = vi.mocked(fetchMessages);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
@@ -140,6 +141,7 @@ const FOREIGN: ForumMessage = {
 };
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+const originalUserAgent = navigator.userAgent;
 
 async function revealAll(): Promise<void> {
   fireEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -167,6 +169,7 @@ beforeEach(() => {
   });
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+  window.localStorage.clear();
 });
 
 afterEach(() => {
@@ -174,6 +177,11 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  Object.defineProperty(navigator, 'userAgent', {
+    configurable: true,
+    value: originalUserAgent,
+  });
+  vi.unstubAllGlobals();
   Object.defineProperty(document, 'visibilityState', {
     configurable: true,
     get: () => 'visible',
@@ -188,6 +196,7 @@ afterEach(() => {
   repliesMock.mockReset();
   prepareMock.mockReset();
   vi.restoreAllMocks();
+  window.localStorage.clear();
 });
 
 describe('ForumLoader', () => {
@@ -357,6 +366,100 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
       expect(screen.getByText('₿0')).toBeTruthy();
+    });
+  });
+
+  it('shows No gifts yet without a chip when last visit is unset', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    });
+  });
+
+  it('shows, clears, and does not restore the unpaid new-count chip', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).not.toBe(
+        '2026-01-01T00:00:00.000Z',
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    });
+  });
+
+  it('does not show an unpaid new-count chip after a refresh while unpaid is selected', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    const listed: ForumMessage = { ...SAMPLE, payable: true };
+    fetchMock.mockResolvedValueOnce([listed]).mockImplementation(async () => [
+      {
+        id: 'm-new',
+        name: 'Carol',
+        text: 'Fresh from refresh',
+        createdAt: new Date().toISOString(),
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      listed,
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
     });
   });
 
@@ -1418,6 +1521,47 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    postMock.mockImplementation(async () => ({
+      id: 'm-unpaid',
+      name: 'Ada',
+      text: 'Unpaid note',
+      createdAt: new Date().toISOString(),
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    }));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    await waitFor(() => {
+      const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
+      expect(unpaid.getAttribute('aria-pressed')).toBe('true');
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Unpaid note' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('Unpaid note')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    });
+  });
+
   it('posts text together with a photo', async () => {
     fetchMock.mockResolvedValue([]);
     prepareMock.mockResolvedValue({
@@ -1967,6 +2111,34 @@ describe('ForumLoader', () => {
       }),
     );
     expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('requests the invoice and opens Wallet of Satoshi on iPhone Pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
+    });
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledWith(walletOfSatoshiHref('lnbc21n1example'));
+    });
   });
 
   it('keeps list order when a public pay fetch updates the first of two notes', async () => {
@@ -3593,6 +3765,7 @@ describe('ForumLoader', () => {
       name: 'Bob',
       lastText: '',
       lastAt: '2026-08-28T11:00:00.000Z',
+      lastFromMe: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -3695,6 +3868,7 @@ describe('ForumLoader', () => {
       name: 'Bob',
       lastText: '',
       lastAt: '2026-08-28T11:00:00.000Z',
+      lastFromMe: false,
     });
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
@@ -3775,6 +3949,73 @@ describe('ForumLoader', () => {
     });
     expect(screen.queryByText('Fresh from refresh')).toBeNull();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  });
+
+  it('holds an unseen unpaid note behind New posts without counting it on the unpaid chip', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    });
+    const held: ForumMessage = {
+      id: 'm-held-unpaid',
+      name: 'Carol',
+      text: 'Held unpaid from refresh',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([held, SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Held unpaid from refresh')).toBeNull();
+    expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'New posts' }));
+    await waitFor(() => {
+      expect(screen.getByText('Held unpaid from refresh')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'New posts' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'No gifts yet, 2 new' })).toBeTruthy();
+    expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).toBe(
+      '2026-01-01T00:00:00.000Z',
+    );
+    scrollTo.mockRestore();
   });
 
   it('applies held notes and scrolls to top when New posts is clicked', async () => {

@@ -43,6 +43,68 @@ const FX_ALL = {
   ],
 };
 
+const EMPTY_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 0,
+  donatedOverTime: [] as const,
+  receivedOverTime: [] as const,
+  fx: FX_USD,
+};
+
+const VIEW_RECEIVED_ACTIVITY = {
+  donatedSats: 0,
+  receivedSats: 1500,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 500,
+      cumulativeSats: 500,
+      btc: '0.00000500',
+      cumulativeBtc: '0.00000500',
+      usd: '0.48',
+      cumulativeUsd: '0.48',
+      chf: '0.40',
+      eur: '0.44',
+      php: '27.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
+    },
+    {
+      day: '2026-06-02',
+      sats: 0,
+      cumulativeSats: 500,
+      btc: '0.00000000',
+      cumulativeBtc: '0.00000500',
+      usd: '0.00',
+      cumulativeUsd: '0.48',
+      chf: '0.00',
+      eur: '0.00',
+      php: '0.00',
+      cumulativeChf: '0.40',
+      cumulativeEur: '0.44',
+      cumulativePhp: '27.00',
+    },
+    {
+      day: '2026-07-01',
+      sats: 1000,
+      cumulativeSats: 1500,
+      btc: '0.00001000',
+      cumulativeBtc: '0.00001500',
+      usd: '0.95',
+      cumulativeUsd: '1.43',
+      chf: '0.80',
+      eur: '0.86',
+      php: '53.00',
+      cumulativeChf: '1.20',
+      cumulativeEur: '1.30',
+      cumulativePhp: '80.00',
+    },
+  ],
+  fx: FX_ALL,
+};
+
 const STATS_DEFAULT = {
   totalSats: 1500,
   totalBtc: '0.00001500',
@@ -286,9 +348,23 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   await unstickStickyChrome(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage,
-    // The handbook viewport embeds other screen PNGs; variant shots shift a few percent.
-    maxDiffPixelRatio: arg === 'screen-handbook' ? 0.05 : 0,
+    maxDiffPixelRatio: 0,
     ...SHOT,
+  });
+}
+
+/** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
+async function fulfillPublicThreadReplies(
+  page: Page,
+  id: string,
+  messages: unknown[] = [],
+): Promise<void> {
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages }),
+    });
   });
 }
 
@@ -539,53 +615,6 @@ test.describe('screen baselines', () => {
     await page.goto('/404');
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
     await shotScreen(page, 'screen-404');
-  });
-
-  test('screen /handbook', async ({ page }) => {
-    await page.goto('/handbook');
-    await expect(page.getByRole('heading', { name: 'Handbook' }).first()).toBeVisible();
-    // Viewport only: a full-page shot would nest the other screen PNGs inside this one.
-    await shotScreen(page, 'screen-handbook', false);
-  });
-
-  test('state /handbook copied', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/handbook');
-    const button = page.getByRole('button', { name: 'Copy link to Handbook' });
-    await button.click();
-    await expect(button).toHaveAttribute('data-copied', 'true');
-    await button.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-handbook-copied', false);
-  });
-
-  test('screen /handbook/screens', async ({ page }) => {
-    await page.goto('/handbook/screens');
-    await expect(page.getByRole('heading', { name: 'Screens' }).first()).toBeVisible();
-    await shotScreen(page, 'screen-handbook-screens', false);
-  });
-
-  test('state /handbook/screens mobile', async ({ page }) => {
-    await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Mobile', exact: true }).click();
-    await shotScreen(page, 'state-handbook-screens-mobile', false);
-  });
-
-  test('state /handbook/screens dark', async ({ page }) => {
-    await page.goto('/handbook/screens');
-    await page.getByRole('button', { name: 'Dark', exact: true }).click();
-    await shotScreen(page, 'state-handbook-screens-dark', false);
-  });
-
-  test('screen /handbook/functions', async ({ page }) => {
-    await page.goto('/handbook/functions');
-    await expect(page.getByRole('heading', { name: 'Functions' }).first()).toBeVisible();
-    await shotScreen(page, 'screen-handbook-functions', false);
-  });
-
-  test('screen /handbook/endpoints', async ({ page }) => {
-    await page.goto('/handbook/endpoints');
-    await expect(page.getByRole('heading', { name: 'Endpoints' }).first()).toBeVisible();
-    await shotScreen(page, 'screen-handbook-endpoints', false);
   });
 });
 
@@ -1189,6 +1218,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto('/profile');
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
@@ -1324,6 +1360,98 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await shotScreen(page, 'state-members-posts-open');
+  });
+
+  test('state /members posts-open-photo', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const postId = '44444444-4444-4444-8444-444444444444';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: postId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Second post from Carol.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: true,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/messages/${postId}/photo`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        // 1×1 JPEG — ForumBoard `w-full max-h-80` paints it as a large black square.
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await expect(page.getByText('Second post from Carol.')).toBeVisible();
+    const photo = page.getByAltText('Photo from Carol');
+    await expect(photo).toBeVisible();
+    await photo.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-photo');
   });
 
   test('state /members replies-open', async ({ page }) => {
@@ -2301,6 +2429,7 @@ test.describe('onboarding screens', () => {
 
   test('screen /messages/[id] default', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2331,6 +2460,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] loading', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async () => {
       /* hang */
     });
@@ -2341,6 +2471,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] error', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 500,
@@ -2355,6 +2486,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2380,6 +2512,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-loading', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2409,6 +2542,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-done', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2435,6 +2569,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-hidden', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2463,6 +2598,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] translate-error', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2487,6 +2623,95 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-translate-error');
   });
 
+  test('state /messages/[id] thread', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+      createdAt: '2026-08-28T12:01:00.000Z',
+    };
+    await fulfillPublicThreadReplies(page, parentId, [reply]);
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${parentId}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('Pater Severin')).toBeVisible();
+    await expect(page.getByText("\u20BF3'000")).toBeVisible();
+    await shotScreen(page, 'state-messages-id-thread');
+  });
+
+  test('state /messages/[id] reply', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+      createdAt: '2026-08-28T12:01:00.000Z',
+    };
+    await fulfillPublicThreadReplies(page, parentId, [reply]);
+    await page.route(`**/public-messages/${replyId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(reply),
+      });
+    });
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${replyId}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('Pater Severin')).toBeVisible();
+    await expect(page.getByText("\u20BF3'000")).toBeVisible();
+    await shotScreen(page, 'state-messages-id-reply');
+  });
+
   test('screen /view/[viewKey] default', async ({ page }) => {
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
       await route.fulfill({
@@ -2502,11 +2727,11 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/view-key/**/activity**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(STATS_DEFAULT),
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
@@ -2568,11 +2793,11 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/view-key/**/activity**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(STATS_DEFAULT),
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
@@ -2601,11 +2826,11 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/view-key/**/activity**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(STATS_DEFAULT),
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
@@ -2618,17 +2843,10 @@ test.describe('onboarding screens', () => {
 });
 
 const PROFILE_RECEIVE_STATS = {
-  totalSats: 1500,
-  totalBtc: '0.00001500',
-  totalUsd: '1.43',
-  totalChf: '1.20',
-  totalEur: '1.30',
-  totalPhp: '80.00',
-  giftCount: 2,
-  recipientCount: 1,
-  firstPaidAt: '2026-06-01T00:00:00.000Z',
-  lastPaidAt: '2026-06-03T00:00:00.000Z',
-  spendOverTime: [
+  donatedSats: 0,
+  receivedSats: 1500,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
     {
       day: '2026-06-01',
       sats: 500,
@@ -2675,34 +2893,14 @@ const PROFILE_RECEIVE_STATS = {
       cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1500,
-      btc: '0.00001500',
-      usd: '1.43',
-      chf: '1.20',
-      eur: '1.30',
-      php: '80.00',
-    },
-  ],
-  byMonth: [],
   fx: FX_ALL,
 };
 
 const PROFILE_SINGLE_DAY_STATS = {
-  totalSats: 21,
-  totalBtc: '0.00000021',
-  totalUsd: '0.02',
-  totalChf: '0.02',
-  totalEur: '0.02',
-  totalPhp: '1.00',
-  giftCount: 1,
-  recipientCount: 1,
-  firstPaidAt: '2026-06-01T00:00:00.000Z',
-  lastPaidAt: '2026-06-01T00:00:00.000Z',
-  spendOverTime: [
+  donatedSats: 0,
+  receivedSats: 21,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
     {
       day: '2026-06-01',
       sats: 21,
@@ -2719,34 +2917,14 @@ const PROFILE_SINGLE_DAY_STATS = {
       cumulativePhp: '1.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 1,
-      sats: 21,
-      btc: '0.00000021',
-      usd: '0.02',
-      chf: '0.02',
-      eur: '0.02',
-      php: '1.00',
-    },
-  ],
-  byMonth: [],
   fx: FX_ALL,
 };
 
 const PROFILE_LARGE_USD_STATS = {
-  totalSats: 1_500_000,
-  totalBtc: '0.01500000',
-  totalUsd: '1425.00',
-  totalChf: '1200.00',
-  totalEur: '1300.00',
-  totalPhp: '80000.00',
-  giftCount: 2,
-  recipientCount: 1,
-  firstPaidAt: '2026-06-01T00:00:00.000Z',
-  lastPaidAt: '2026-06-02T00:00:00.000Z',
-  spendOverTime: [
+  donatedSats: 0,
+  receivedSats: 1_500_000,
+  donatedOverTime: [] as const,
+  receivedOverTime: [
     {
       day: '2026-06-01',
       sats: 500_000,
@@ -2778,19 +2956,30 @@ const PROFILE_LARGE_USD_STATS = {
       cumulativePhp: '80000.00',
     },
   ],
-  byRecipient: [
+  fx: FX_ALL,
+};
+
+const GIVEN_RECEIVED_ACTIVITY = {
+  donatedSats: 2100,
+  receivedSats: 1500,
+  donatedOverTime: [
     {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1_500_000,
-      btc: '0.01500000',
-      usd: '1425.00',
-      chf: '1200.00',
-      eur: '1300.00',
-      php: '80000.00',
+      day: '2026-06-02',
+      sats: 2100,
+      cumulativeSats: 2100,
+      btc: '0.00002100',
+      cumulativeBtc: '0.00002100',
+      usd: '2.00',
+      cumulativeUsd: '2.00',
+      chf: '2.00',
+      eur: '2.00',
+      php: '2.00',
+      cumulativeChf: '2.00',
+      cumulativeEur: '2.00',
+      cumulativePhp: '2.00',
     },
   ],
-  byMonth: [],
+  receivedOverTime: PROFILE_RECEIVE_STATS.receivedOverTime,
   fx: FX_ALL,
 };
 
@@ -2818,7 +3007,7 @@ test.describe('profile activity chart variants', () => {
   }
 
   async function stubProfileStats(page: Page, body: unknown): Promise<void> {
-    await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -2866,6 +3055,15 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByLabel('Given and received in USD')).toBeVisible();
     await expect(page.getByText("$1'425")).toBeVisible();
     await shotScreen(page, 'state-profile-large-usd');
+  });
+
+  test('profile given-received', async ({ page }) => {
+    // state-profile-given-received
+    await seedAdaProfile(page);
+    await stubProfileStats(page, GIVEN_RECEIVED_ACTIVITY);
+    await page.goto('/profile');
+    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await shotScreen(page, 'state-profile-given-received');
   });
 });
 
@@ -2927,13 +3125,36 @@ test.describe('welcome forum variants', () => {
     });
   }
 
+  const walletAssignByPage = new WeakMap<Page, string>();
+
+  async function stubWalletLocationAssign(page: Page): Promise<void> {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Page.enable');
+    cdp.on('Page.frameRequestedNavigation', (event: { url?: string }) => {
+      const href = event.url ?? '';
+      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+        walletAssignByPage.set(page, href);
+      }
+    });
+  }
+
+  async function submitPayAmount(page: Page): Promise<void> {
+    const payNow = page.getByRole('button', { name: 'Pay', exact: true });
+    if ((await payNow.count()) > 0) {
+      await payNow.click();
+      return;
+    }
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+
   async function openPaySheet(page: Page): Promise<void> {
+    await stubWalletLocationAssign(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await submitPayAmount(page);
     await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
 
@@ -3005,6 +3226,21 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('Thank you both — that helps.')).not.toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).not.toBeVisible();
     await shotScreen(page, 'state-welcome-unpaid');
+  });
+
+  test('welcome unpaid-new-count', async ({ page }) => {
+    await seedAda(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-welcome-unpaid-new-count');
   });
 
   test('welcome empty-unpaid', async ({ page }) => {
@@ -3573,6 +3809,29 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-language');
   });
 
+  test('welcome pay-amount', async ({ page }, testInfo) => {
+    await seedAda(page);
+    await stubPayInvoice(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('button', { name: 'All' }).click();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('21');
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Pay', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
+    }
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-pay-amount');
+  });
+
   test('welcome pay-qr', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);
@@ -3599,6 +3858,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome pay-author-wallet', async ({ page }) => {
+    await stubWalletLocationAssign(page);
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {
       if (route.request().method() !== 'GET') {
@@ -3638,7 +3898,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'All' }).click();
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('21');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await submitPayAmount(page);
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toBeVisible();
@@ -3838,6 +4098,7 @@ test.describe('contact screens', () => {
               name: '21.gifts',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
             },
           ],
         }),
@@ -3854,6 +4115,7 @@ test.describe('contact screens', () => {
               name: 'Ada',
               text: 'Hello team',
               createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
             },
           ],
         }),
@@ -3890,7 +4152,83 @@ test.describe('inbox screens', () => {
     });
   }
 
+  async function mockThreeConversations(page: Page): Promise<void> {
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Can you help?',
+              lastAt: '2026-08-28T14:00:00.000Z',
+              lastFromMe: false,
+            },
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+            },
+            {
+              id: 'conv-damus',
+              kind: 'member_damus',
+              name: 'npub1abc…xyz',
+              lastText: 'Hi from Damus',
+              lastAt: '2026-08-28T11:00:00.000Z',
+              lastFromMe: false,
+            },
+          ],
+        }),
+      });
+    });
+  }
+
   test('screen /messages', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole('button', { name: 'Direct' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('Bob')).toBeVisible();
+    await expect(list.getByText('21.gifts')).toHaveCount(0);
+    await shotScreen(page, 'screen-messages');
+  });
+
+  test('messages contact', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await group.getByRole('button', { name: 'Contact' }).click();
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('21.gifts')).toBeVisible();
+    await shotScreen(page, 'state-messages-contact');
+  });
+
+  test('messages damus', async ({ page }) => {
+    await seedAda(page);
+    await mockThreeConversations(page);
+    await page.goto('/messages');
+    const group = page.getByRole('group', { name: 'Conversation type' });
+    await group.getByRole('button', { name: 'Damus' }).click();
+    const list = page.getByRole('list', { name: 'Conversations' });
+    await expect(list.getByText('npub1abc…xyz')).toBeVisible();
+    await shotScreen(page, 'state-messages-damus');
+  });
+
+  test('messages sent-preview', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
       await route.fulfill({
@@ -3899,19 +4237,20 @@ test.describe('inbox screens', () => {
         body: JSON.stringify({
           conversations: [
             {
-              id: 'conv-21',
-              kind: 'member_platform',
-              name: '21.gifts',
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: true,
             },
           ],
         }),
       });
     });
     await page.goto('/messages');
-    await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
-    await shotScreen(page, 'screen-messages');
+    await expect(page.getByText('You: Hello team')).toBeVisible();
+    await shotScreen(page, 'state-messages-sent-preview');
   });
 
   test('messages empty', async ({ page }) => {
@@ -3925,6 +4264,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages');
     await expect(page.getByText('No private messages yet.')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Conversation type' })).toBeVisible();
     await shotScreen(page, 'state-messages-empty');
   });
 
@@ -3966,6 +4306,7 @@ test.describe('inbox screens', () => {
               name: '21.gifts',
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
             },
           ],
         }),
@@ -3979,9 +4320,17 @@ test.describe('inbox screens', () => {
           messages: [
             {
               id: 'm1',
-              name: 'Ada',
+              name: '21.gifts',
               text: 'Hello team',
               createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+            },
+            {
+              id: 'm2',
+              name: 'Ada',
+              text: 'Thanks',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              fromMe: true,
             },
           ],
         }),
@@ -3989,6 +4338,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
+    await expect(page.getByText('You')).toBeVisible();
     await shotScreen(page, 'state-messages-thread');
   });
 });

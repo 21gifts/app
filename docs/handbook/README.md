@@ -6,17 +6,20 @@ every HTTP endpoint in this repository must have a section here. CI
 is a stub.
 
 - Screens: `## Screen: /path`
-- Screen variants: `### Variant: id` under each screen (every distinct UI state)
+- Screen variants: `### Variant: id` under each screenshot-gated screen (every
+  distinct UI state). Handbook doc routes (`/handbook`, `/handbook/screens`,
+  `/handbook/functions`, `/handbook/endpoints`) have `## Screen:` only.
 - Functions: `## Function: name`
 - Endpoints: `## Endpoint: METHOD /path`
 
 Do not merge a PR that adds a screen, export, or endpoint without updating this
 handbook in the same PR. Undeclared gaps are rejected, not discussed.
 
-Every screen **variant** needs Playwright Linux Chromium baselines for each
-combo in `BASELINE_COMBOS` (desktop/mobile × light/dark), named
-`${visual}-${combo.id}-linux.png`. Exported **functions** need a `## Function:`
-section and an e2e `Function:` needle, not a screenshot of that markdown.
+Every screenshot-gated screen **variant** needs Playwright Linux Chromium
+baselines for each combo in `BASELINE_COMBOS` (desktop/mobile × light/dark),
+named `${visual}-${combo.id}-linux.png`. Handbook doc routes are not gated.
+Exported **functions** need a `## Function:` section and an e2e `Function:`
+needle, not a screenshot of that markdown.
 On `/handbook/screens`, variants sit in a three-level table of contents
 (chapter, screen, variant) as small preview cards (~220px) with a written
 description and a copyable deep link; clicking a preview opens the PNG at

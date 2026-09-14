@@ -1,43 +1,47 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchGiftStats } from '@/lib/api';
-import type { GiftStats } from '@/lib/api-types';
-import { accountTotals, recipientHandleFromAddress } from '@/lib/account-totals';
+import { fetchAccountActivity } from '@/lib/api';
+import type { AccountActivity } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Fetches gift stats for the signed-in Lightning Address and derives totals.
+ * Fetches given and received activity for the signed-in session.
  *
- * Given is always 0 in v1. When an address is set, requests filtered stats via
- * `fetchGiftStats(handle)` and exposes `spendOverTime` as `receiveOverTime`.
- * Blank address skips the fetch (zeros, empty series, `loading: false`). On
- * each fetch start (including address change) totals and series reset to
- * zeros/empty; the profile chart SVG remains mounted on empty series. Drops
- * stale responses when the store address changes mid-flight. Errors resolve to
- * zeros and an empty series without throwing into the UI.
+ * Calls `GET /me/activity` whenever a session exists, including when the
+ * Lightning Address is blank (forum zaps do not need a handle). Refetches when
+ * the session or Lightning Address changes so house gifts to a newly linked
+ * handle appear without a full reload. No session → zeros, empty series,
+ * `loading: false`. On each fetch start (including session or address change)
+ * totals and series reset to zeros/empty; `AccountActivityChart` then shows
+ * `profile.chartEmpty` (no SVG) when the series is empty. Drops stale
+ * responses when the session or address changes mid-flight. Errors resolve to
+ * zeros and empty series without throwing into the UI. Does not call
+ * `fetchGiftStats`.
  *
- * @returns Current totals, receive series, and an in-flight `loading` flag.
+ * @returns Current totals, both time series, and an in-flight `loading` flag.
  */
 export function useAccountTotals(): {
   donatedSats: number;
   receivedSats: number;
-  receiveOverTime: GiftStats['spendOverTime'];
+  donateOverTime: AccountActivity['donatedOverTime'];
+  receiveOverTime: AccountActivity['receivedOverTime'];
   loading: boolean;
 } {
+  const session = useAuthStore((state) => state.session);
   const lightningAddress = useAuthStore((state) => state.account?.lightningAddress ?? null);
-  const hasAddress = lightningAddress !== null && lightningAddress.trim() !== '';
   const [donatedSats, setDonatedSats] = useState(0);
   const [receivedSats, setReceivedSats] = useState(0);
-  const [receiveOverTime, setReceiveOverTime] = useState<GiftStats['spendOverTime']>([]);
-  const [loading, setLoading] = useState(hasAddress);
+  const [donateOverTime, setDonateOverTime] = useState<AccountActivity['donatedOverTime']>([]);
+  const [receiveOverTime, setReceiveOverTime] = useState<AccountActivity['receivedOverTime']>([]);
+  const [loading, setLoading] = useState(session !== null);
 
   useEffect(() => {
     let cancelled = false;
-    const addressAtStart = lightningAddress;
-    if (addressAtStart === null || addressAtStart.trim() === '') {
+    if (session === null) {
       setDonatedSats(0);
       setReceivedSats(0);
+      setDonateOverTime([]);
       setReceiveOverTime([]);
       setLoading(false);
       return () => {
@@ -47,26 +51,26 @@ export function useAccountTotals(): {
 
     setDonatedSats(0);
     setReceivedSats(0);
+    setDonateOverTime([]);
     setReceiveOverTime([]);
     setLoading(true);
-    const trimmed = addressAtStart.trim();
-    const handle = recipientHandleFromAddress(trimmed);
     void (async () => {
       try {
-        const stats = await fetchGiftStats(handle);
+        const activity = await fetchAccountActivity(session);
         if (cancelled) {
           return;
         }
-        const totals = accountTotals(stats, trimmed);
-        setDonatedSats(totals.donatedSats);
-        setReceivedSats(totals.receivedSats);
-        setReceiveOverTime(stats.spendOverTime);
+        setDonatedSats(activity.donatedSats);
+        setReceivedSats(activity.receivedSats);
+        setDonateOverTime(activity.donatedOverTime);
+        setReceiveOverTime(activity.receivedOverTime);
       } catch {
         if (cancelled) {
           return;
         }
         setDonatedSats(0);
         setReceivedSats(0);
+        setDonateOverTime([]);
         setReceiveOverTime([]);
       } finally {
         if (!cancelled) {
@@ -77,7 +81,7 @@ export function useAccountTotals(): {
     return () => {
       cancelled = true;
     };
-  }, [lightningAddress]);
+  }, [session, lightningAddress]);
 
-  return { donatedSats, receivedSats, receiveOverTime, loading };
+  return { donatedSats, receivedSats, donateOverTime, receiveOverTime, loading };
 }

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -25,10 +25,17 @@ vi.mock('next/navigation', () => ({
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
+const locationAssign = vi.fn();
+
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)';
+const ANDROID_MOBILE_UA =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 
 beforeEach(() => {
   push.mockClear();
   HTMLElement.prototype.scrollIntoView = vi.fn();
+  locationAssign.mockReset();
+  vi.stubGlobal('location', { assign: locationAssign });
 });
 
 afterEach(() => {
@@ -38,6 +45,7 @@ afterEach(() => {
     configurable: true,
     value: originalUserAgent,
   });
+  vi.unstubAllGlobals();
 });
 
 const SAMPLE: ForumMessage = {
@@ -672,6 +680,110 @@ describe('ForumBoard', () => {
     expect(onModeChange).toHaveBeenCalledWith('all');
   });
 
+  it('keeps No gifts yet unbadged by default', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+  });
+
+  it('keeps No gifts yet unbadged when unpaidNewCount is 0', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        unpaidNewCount={0}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+  });
+
+  it('omits the unpaid chip when No gifts yet is selected', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('unpaid')}
+        unpaidNewCount={3}
+      />,
+    );
+    const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
+    expect(unpaid).toBeTruthy();
+    expect(unpaid.textContent).not.toContain('3');
+  });
+
+  it('shows a No gifts yet chip when unpaidNewCount is 3 and Active is selected', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        unpaidNewCount={3}
+      />,
+    );
+    const unpaid = screen.getByRole('button', { name: 'No gifts yet, 3 new' });
+    expect(unpaid).toBeTruthy();
+    expect(screen.getByText('3')).toBeTruthy();
+  });
+
+  it('localizes the unpaid new-count chip in German', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        unpaidNewCount={3}
+      />,
+      'de',
+    );
+    expect(screen.getByRole('button', { name: 'Noch ohne Geschenk, 3 neu' })).toBeTruthy();
+  });
+
   it('shows ₿1 for a single sat total', () => {
     renderWithLocale(
       <ForumBoard
@@ -934,8 +1046,12 @@ describe('ForumBoard', () => {
     expect(onPickPhoto).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the amount sheet and submits pay', () => {
-    const onPaySubmit = vi.fn();
+  it('renders the amount sheet and submits pay', async () => {
+    const onPaySubmit = vi.fn().mockResolvedValue({
+      messageId: 'm1',
+      pr: 'lnbc21n1example',
+      amountSats: 21,
+    });
     const onPayDraftChange = vi.fn();
     const onPayCancel = vi.fn();
     renderWithLocale(
@@ -959,13 +1075,209 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '42' } });
     expect(onPayDraftChange).toHaveBeenCalledWith('42');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(locationAssign).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('labels the iPhone amount CTA Pay in English and Bezahlen in German', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: IPHONE_UA,
+    });
+    const { unmount } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pay' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    unmount();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByRole('button', { name: 'Bezahlen' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Weiter' })).toBeNull();
+  });
+
+  it('assigns the Wallet of Satoshi href on iPhone after Pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: IPHONE_UA,
+    });
+    const onPaySubmit = vi.fn().mockResolvedValue({
+      messageId: 'm1',
+      pr: 'lnbc21n1example',
+      amountSats: 21,
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        onPaySubmit={onPaySubmit}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    await waitFor(() => {
+      expect(locationAssign).toHaveBeenCalledWith('walletofsatoshi:lightning:LNBC21N1EXAMPLE');
+    });
+  });
+
+  it('does not assign the wallet href on iPhone after unmounting during an in-flight pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: IPHONE_UA,
+    });
+    let resolveInvoice!: (value: { messageId: string; pr: string; amountSats: number }) => void;
+    const onPaySubmit = vi.fn().mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    const { unmount } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        onPaySubmit={onPaySubmit}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    unmount();
+    await act(async () => {
+      resolveInvoice({ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 });
+    });
+    expect(locationAssign).not.toHaveBeenCalled();
+  });
+
+  it('does not assign the wallet href on iPhone when onPaySubmit resolves null', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: IPHONE_UA,
+    });
+    const onPaySubmit = vi.fn().mockResolvedValue(null);
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        onPaySubmit={onPaySubmit}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(onPaySubmit).toHaveBeenCalledTimes(1);
+    expect(locationAssign).not.toHaveBeenCalled();
+  });
+
+  it('keeps Continue on Android Mobile and does not auto-open the wallet', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: ANDROID_MOBILE_UA,
+    });
+    const onPaySubmit = vi.fn().mockResolvedValue({
+      messageId: 'm1',
+      pr: 'lnbc21n1example',
+      amountSats: 21,
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        onPaySubmit={onPaySubmit}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(onPaySubmit).toHaveBeenCalledTimes(1);
+    expect(locationAssign).not.toHaveBeenCalled();
   });
 
   it('shows pay amount error', () => {

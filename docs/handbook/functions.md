@@ -315,7 +315,7 @@
 ## Function: ProfileScreen
 
 - **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), and a number-format settings row (`NumberFormatSwitcher`). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for `receiveOverTime`; `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; `AccountActivityChart`; catalog via `useTranslations`.
+- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; `AccountActivityChart`; catalog via `useTranslations`.
 - **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
@@ -433,8 +433,8 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Always renders FiatPicker (`tone="gift"` via picker, `shell="app"`, aria `profile.fiatCurrency`). Empty/all-zero sats: picker + `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: picker + legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Own `useState<FiatCode>` from `defaultFiatForLocale(locale)` (mount-time). Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. v1 Given defaults to zeros on the received days.
-- **Inputs:** `received` (`GiftStats.spendOverTime`); optional `donated` (default `[]`).
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Always renders FiatPicker (`tone="gift"` via picker, `shell="app"`, aria `profile.fiatCurrency`). Empty/all-zero sats: picker + `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: picker + legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Own `useState<FiatCode>` from `defaultFiatForLocale(locale)` (mount-time). Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
+- **Inputs:** `received` (`AccountActivity.receivedOverTime`); optional `donated` (default `[]`) from `AccountActivity.donatedOverTime`.
 - **Returns / side effects:** Always FiatPicker. When the series is empty or all zeros: picker + `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise picker, one chrome row (legend left, ₿ | selected FiatCode right), and SVG. Client state for fiat and scale. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`, `MemberProfileScreen`.
 
@@ -455,7 +455,7 @@
 ## Function: SegmentedControl
 
 - **Purpose:** Mutually exclusive option group with `tone` `gift` (compact ₿|USD cells, optional `shell` `app`/`dark`) or `neutral` (full-width forum pills). Gift hit target is `min-h-11 min-w-11` on mobile and desktop. `shell` is ignored for `neutral`.
-- **Inputs:** `value`, `options` (`value` + `label`), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className`.
+- **Inputs:** `value`, `options` (`value` + `label`, optional `badge` / `badgeAriaLabel`; chip omitted when `badge` is missing or ≤ 0), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className`.
 - **Returns / side effects:** A `role="group"` track of `type="button"` options with `aria-pressed`. No network.
 - **Used by:** `ForumBoard` (`tone="neutral"`), `AccountActivityChart` (`tone="gift"`), `StatsDashboard` (`tone="gift" shell="dark"`).
 
@@ -576,9 +576,9 @@
 
 ## Function: PublicMessageLoader
 
-- **Purpose:** Client loader for the public note page: validates UUID, fetches via `fetchPublicMessage` / `fetchPublicMessagePhoto`, shows missing/error/retry/loading, a ready card with labeled **Translate** under the note body via `NoteTranslate` when the note language differs from the UI locale, and a Log in or Back to the forum link from `useHydrateSession`.
+- **Purpose:** Client loader for the public thread page: validates UUID, fetches `fetchPublicMessage(routeId)`; if `parentId` is set, fetches that parent (`null` → missing) then `fetchPublicReplies(parent.id)`; else `fetchPublicReplies(root.id)`. Ready only with root + replies (empty replies → parent only). Replies throw → error + **Try again** (whole chain). Vertical stack: parent `Card` then reply Cards with `pl-4`. Gift-only replies (empty text, sats > 0): sats line via `formatBitcoin`, no empty `<p>`. When the route id is a reply, that reply card (or wrapper) has `data-permalink-target="true"` and `ring-1 ring-app-fg`. Auth CTA once below the stack from `useHydrateSession`. Photo/video per card via `fetchPublicMessagePhoto`. Labeled **Translate** under note and reply bodies via `NoteTranslate` when the language differs from the UI locale. No pay, composer, or copy.
 - **Inputs:** `id` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready `Card`. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on the ready card (GET `/translate` on mount, POST on **Translate**). No pay or composer.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready stack. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on note and reply bodies (GET `/translate` on mount, POST on **Translate**). No pay, composer, or copy.
 - **Used by:** `PublicMessagePage`.
 
 ## Function: ViewProfilePage
@@ -590,15 +590,15 @@
 
 ## Function: ViewProfileLoader
 
-- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then (if address set) filtered gift stats for `spendOverTime`. Does not use `useAuthStore`.
+- **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then `fetchViewActivity` even if the Lightning Address is blank. Does not use `useAuthStore`.
 - **Inputs:** `viewKey` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey` and `hasPasskey` from the fetched profile). Malformed keys (not 64 lowercase hex) → missing without an api call. After profile: if address blank → `received=[]` and no `fetchGiftStats`; else `fetchGiftStats(recipientHandleFromAddress(address))` and `received = stats.spendOverTime`. Stats failure still shows the card with empty series. Chart never swapped for `forum.loading`.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey` and `hasPasskey` from the fetched profile). Malformed keys (not 64 lowercase hex) → missing without an api call. After `fetchViewProfile`, always calls `fetchViewActivity` (even when address is blank) and maps both series onto the card. Activity failure still shows the card with empty series. Chart never swapped for `forum.loading`.
 - **Used by:** `ViewProfilePage`.
 
 ## Function: ViewProfileScreen
 
 - **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without action buttons. Unset location shows `location.unset`.
-- **Inputs:** `{ profile, received }` (`GiftStats['spendOverTime']`).
+- **Inputs:** `{ profile, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`.
 - **Returns / side effects:** No menu, logout, back, or edit forms. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
 
@@ -623,17 +623,10 @@
 - **Returns / side effects:** Proxied upstream `Response` for `/view/${encodeURIComponent(viewKey)}`.
 - **Used by:** App Router `GET` on `/view-key/[viewKey]`.
 
-## Function: accountTotals
-
-- **Purpose:** Derives given/received sat totals for the signed-in account from public gift stats.
-- **Inputs:** `GiftStats` and the Lightning Address (or null).
-- **Returns / side effects:** `{ donatedSats, receivedSats }` — given is always `0` in v1; received matches the address handle against `byRecipient` case-insensitively.
-- **Used by:** `useAccountTotals`.
-
 ## Function: alignActivitySeries
 
-- **Purpose:** Align receive and donate cumulative `spendOverTime` series onto one sorted UTC-day axis for the profile chart.
-- **Inputs:** `received` and `donated` arrays from `GiftStats.spendOverTime`.
+- **Purpose:** Align receive and donate cumulative account-activity series onto one sorted UTC-day axis for the profile chart.
+- **Inputs:** `received` (`AccountActivity.receivedOverTime`) and `donated` (`AccountActivity.donatedOverTime`).
 - **Returns / side effects:** `ActivityPoint[]`. Empty+empty → `[]`. Empty donated → zero Given on each received day. Non-empty both → day union with step-hold carry-forward. Also aligns CHF/EUR/PHP cumulatives (`null` string → `0`); missing series side stays at the carried value (0 until first point).
 - **Used by:** `AccountActivityChart`.
 
@@ -651,18 +644,11 @@
 - **Returns / side effects:** Positive number for SVG scale.
 - **Used by:** `AccountActivityChart`.
 
-## Function: recipientHandleFromAddress
-
-- **Purpose:** Local-part of a Lightning Address (before the first `@`).
-- **Inputs:** Full address or bare handle string.
-- **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
-- **Used by:** `accountTotals`, `useAccountTotals`, `ViewProfileLoader`.
-
 ## Function: useAccountTotals
 
-- **Purpose:** Fetches gift stats filtered by the signed-in Lightning Address handle and derives given/received sats plus the receive time series.
-- **Inputs:** Reads `account.lightningAddress` from `useAuthStore`; calls `fetchGiftStats(handle)` and `accountTotals`. Skips the fetch when the address is null/blank.
-- **Returns / side effects:** `{ donatedSats, receivedSats, receiveOverTime, loading }`. On each fetch start (including address change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the address changes mid-flight; errors resolve to zeros and an empty series.
+- **Purpose:** Session-based GET `/me/activity` via `fetchAccountActivity`; returns given/received sats plus `donateOverTime` and `receiveOverTime`. Fetches even with a blank Lightning Address and does not call `fetchGiftStats`.
+- **Inputs:** Reads `session` and `account.lightningAddress` from `useAuthStore`; calls `fetchAccountActivity` whenever a session exists.
+- **Returns / side effects:** `{ donatedSats, receivedSats, donateOverTime, receiveOverTime, loading }`. On each fetch start (including session or Lightning Address change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the session or address changes mid-flight; errors resolve to zeros and an empty series.
 - **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
@@ -681,9 +667,9 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/No gifts yet/All/Most popular `SegmentedControl tone="neutral"`, list of posts (name, optional Founder / Moderator / Verified role pill on notes **and replies** when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), labeled **Translate** / Show original / Show translation under note and reply bodies via `NoteTranslate` (not in the footer icon row), ₿ amount with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), in-card reply composer (textarea plus **Amount** sats field `id="forum-reply-amount"`), and pay-on-note sheet: desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Gift-only replies show **send ₿…** (`forum.giftReply`); a reply with text and sats shows both. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` for paid-only modes or `forum.emptyUnpaid` for No gifts yet when the filter hides all loaded rows. Props `messages` are newest-first (API window); Active, No gifts yet, and All keep that order (newest at the top). Most popular stays sats-descending. The composer sits under the mode selector / filters, above the newest-first list; replies remain oldest-first. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged. When `newPostsAvailable` is true, a labeled primary `Button` (`forum.newPosts`, decorative lucide `ArrowUp`) is `fixed` under the chrome; the node is omitted when the flag is false.
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), optional `newPostsAvailable` / `onShowNewPosts` (pill omitted when the flag is falsy), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer with optional `replyAmountDraft` / `onReplyAmountDraftChange`, `replyFormError` including `amount` for a missing paid-reply sats field), and PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`). Gift-only replies (`text === ''` and `sats > 0`) render `forum.giftReply` with `formatBitcoin`; text plus a gift shows the formatted amount under the text. PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
-- **Returns / side effects:** React tree. Copy-link uses `parentId ?? messageId`: reply cards copy `/messages/{parentId}`; top-level notes copy `/messages/{messageId}`. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. ForumBoard itself does not fetch; nested `NoteTranslate` GETs `/translate` on mount and POSTs on **Translate**. No mode state of its own.
+- **Purpose:** Presentational public forum: each post card body is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` on the card, not an `IconButton`; copy-link and PM are separate `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/No gifts yet/All/Most popular `SegmentedControl tone="neutral"` (unpaid segment chip when `unpaidNewCount` > 0 and unpaid is not selected), list of posts (name, optional Founder / Moderator / Verified role pill on notes **and replies** when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), labeled **Translate** / Show original / Show translation under note and reply bodies via `NoteTranslate` (not in the footer icon row), ₿ amount with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), in-card reply composer (textarea plus **Amount** sats field `id="forum-reply-amount"`), and pay-on-note sheet: iOS-phone amount CTA **Pay** (`forum.payNow`) then auto-assigns `walletofsatoshi:` via `walletOfSatoshiHref`; desktop/Android/iPad amount CTA stays **Continue** (`forum.payContinue`) then the invoice step; desktop QR + Pay button with Wallet of Satoshi icon; smartphone Wallet of Satoshi deep link only (`isSmartphoneUserAgent`, no QR); top-left back control cancels. Gift-only replies show **send ₿…** (`forum.giftReply`); a reply with text and sats shows both. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty and `forum.emptyPaid` for paid-only modes or `forum.emptyUnpaid` for No gifts yet when the filter hides all loaded rows. Props `messages` are newest-first (API window); Active, No gifts yet, and All keep that order (newest at the top). Most popular stays sats-descending. The composer sits under the mode selector / filters, above the newest-first list; replies remain oldest-first. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged. When `newPostsAvailable` is true, a labeled primary `Button` (`forum.newPosts`, decorative lucide `ArrowUp`) is `fixed` under the chrome; the node is omitted when the flag is false.
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), optional `newPostsAvailable` / `onShowNewPosts` (pill omitted when the flag is falsy), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, optional `unpaidNewCount` (default 0), required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer with optional `replyAmountDraft` / `onReplyAmountDraftChange`, `replyFormError` including `amount` for a missing paid-reply sats field), and PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`). Gift-only replies (`text === ''` and `sats > 0`) render `forum.giftReply` with `formatBitcoin`; text plus a gift shows the formatted amount under the text. PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
+- **Returns / side effects:** React tree. Copy-link uses `parentId ?? messageId`: reply cards copy `/messages/{parentId}`; top-level notes copy `/messages/{messageId}`. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. ForumBoard itself does not fetch; nested `NoteTranslate` GETs `/translate` on mount and POSTs on **Translate**. No mode state of its own. After `onPaySubmit` resolves to an invoice, an iOS-phone user-agent (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) `window.location.assign`s `walletOfSatoshiHref(pr)`; desktop, Android, and iPad do not auto-assign.
 - **Used by:** `ForumLoader`.
 
 ## Function: ContactLoader
@@ -730,9 +716,9 @@
 
 ## Function: ForumLoader
 
-- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip); composer submit is ignored while a note POST is in flight (sync `notePostInFlightRef`, not only the `posting` prop); prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` (optional `text` when the reply composer pays) and waits on `fetchPublicMessage` with `sinceSats` while the pay sheet is open (no attempt cap; aborts in-flight wait on Back / clear); after the parent `sats` total increases, refetches replies when that thread is expanded. Owns Active/No gifts yet/All/Most popular feed mode (default Active). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /forum/messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Silently re-fetches on `visibilitychange` (hidden→visible), on `pageshow` when `persisted` is true, on a `FORUM_LIST_POLL_MS` visible-tab interval, on `FORUM_HOME_EVENT` (wordmark / Menu Home while already on `/welcome`), and when the board pull-to-refresh calls `onRefresh` — shared load path with mount/retry; silent refresh does not flip the board to the loading copy when a list already exists, keeps the list when a silent refresh fails, and does not auto-scroll the newest note when a newer note arrives from refresh. When the page is scrolled down (`scrollY >= 8`) and `hasUnseenForumPosts` is true, the fetch is held and `ForumBoard` shows **New posts**; at the top the list is applied. The payable poll updates sats/payable on already-listed ids only and does not insert unseen ids. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present). Owns expand/replies (`fetchReplies`, retry, reply composer: unpaid `postMessage` with `inReplyTo` only for the parent author / moderator / founder; everyone else invoices ≥ 1 sat; `verified` is not exempt; expand is ignored while a reply posts) and PM (`openConversation` then `/messages?c=`). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. After a successful top-level post or reply, sets `hasPosted: true` on the session account when the session token is unchanged and an account is still present (no persist-flag / Skip-forever POST).
+- **Purpose:** Client loader for the public forum on `/welcome`. Session and account from `useAuthStore`; returns null without a session. Fetches via `fetchMessages`, loads photos via `fetchMessagePhoto` into blob URLs (effect keyed on `photoIdsKey` so payable-poll list refreshes do not cancel in-flight photo fetches), posts via `postMessage` (text and/or photo) or `postMessageVideo` (multipart clip); composer submit is ignored while a note POST is in flight (sync `notePostInFlightRef`, not only the `posting` prop); prepares picks via `prepareForumPhoto` / `isForumVideoFile` / `prepareForumVideo`, and owns `videoDraft` / `videoUrls` alongside photo drafts; video-only posts are allowed. Pay invoices via `postMessageInvoice` (optional `text` when the reply composer pays) and waits on `fetchPublicMessage` with `sinceSats` while the pay sheet is open (no attempt cap; aborts in-flight wait on Back / clear); after the parent `sats` total increases, refetches replies when that thread is expanded. Owns Active/No gifts yet/All/Most popular feed mode (default Active) and the No gifts yet last-visit stamp (`21gifts.forum-unpaid-seen`): hydrates it on mount, stamps on entering unpaid and while unpaid as the list refreshes, and passes `unpaidNewCount` to `ForumBoard` (0 while unpaid is selected or messages are still null). After a successful post with `created.sats === 0`, switches mode to All so the author sees the note. Switching to a mode that hides the open pay note clears the pay sheet (same reset as Cancel). Also polls `GET /forum/messages` until the merged list is payable (8 attempts, 2s; local extras kept until GET echoes), cancelled-flag fetch like `StatsLoader`. Silently re-fetches on `visibilitychange` (hidden→visible), on `pageshow` when `persisted` is true, on a `FORUM_LIST_POLL_MS` visible-tab interval, on `FORUM_HOME_EVENT` (wordmark / Menu Home while already on `/welcome`), and when the board pull-to-refresh calls `onRefresh` — shared load path with mount/retry; silent refresh does not flip the board to the loading copy when a list already exists, keeps the list when a silent refresh fails, and does not auto-scroll the newest note when a newer note arrives from refresh. When the page is scrolled down (`scrollY >= 8`) and `hasUnseenForumPosts` is true, the fetch is held and `ForumBoard` shows **New posts**; at the top the list is applied. The payable poll updates sats/payable on already-listed ids only and does not insert unseen ids. Owns the living-room laws hint visibility from `account.forumLawsDismissed` and persists dismiss via `dismissForumLaws` (optimistic; applies the response or restores the previous flag only when the session token is unchanged and an account is still present). Owns expand/replies (`fetchReplies`, retry, reply composer: unpaid `postMessage` with `inReplyTo` only for the parent author / moderator / founder; everyone else invoices ≥ 1 sat; `verified` is not exempt; expand is ignored while a reply posts) and PM (`openConversation` then `/messages?c=`). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. After a successful top-level post or reply, sets `hasPosted: true` on the session account when the session token is unchanged and an account is still present (no persist-flag / Skip-forever POST).
 - **Inputs:** None (reads session and account from the auth store).
-- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/videoDraft/photoUrls/videoUrls/posting/formError/feedMode/pay/expand/replies/PM/`refreshing` state and retry attempts. Empty text without a photo and without a video sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage` / `postMessageVideo`. Photo-only and video-only posts are allowed. A non-exempt reply without a whole-sat amount ≥ 1 sets `amount` (`forum.errorReplyPayment`) and does not call `postMessage`. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A failed silent refresh with an existing list does not set the error flag. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. An empty or whitespace-only pay amount requests 21 sats and does not fill `payDraft`. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes photo and video blob URLs on unmount. May POST `/me/forum-laws-dismissed`. After a successful top-level post or reply, writes `hasPosted: true` on the session account only when the session token is unchanged and an account is still present (no persist-flag POST). Passes `lawsVisible` / `onDismissLaws`, `mode` / `onModeChange`, `refreshing` / `onRefresh`, and `newPostsAvailable` / `onShowNewPosts` to `ForumBoard`. Mode is not persisted. Does not pass `Error.message` to the board.
+- **Returns / side effects:** React element wrapping `ForumBoard`, or `null`. Owns draft/photoDraft/videoDraft/photoUrls/videoUrls/posting/formError/feedMode/pay/expand/replies/PM/`refreshing` state, the No gifts yet last-visit stamp, and retry attempts. Empty text without a photo and without a video sets `empty`; trimmed text longer than 500 characters sets `tooLong` and does not call `postMessage` / `postMessageVideo`. Photo-only and video-only posts are allowed. A non-exempt reply without a whole-sat amount ≥ 1 sets `amount` (`forum.errorReplyPayment`) and does not call `postMessage`. Fetch failure sets the error flag without clearing an already-posted list; the board still shows **Try again**. A failed silent refresh with an existing list does not set the error flag. A late GET merges locally posted rows that the response does not yet contain; a POST whose id is already in the list is not prepended again. An empty or whitespace-only pay amount requests 21 sats and does not fill `payDraft`. Invoice 400 author's-wallet copy maps to `authorWallet`; other invoice failures stay `request`; rate limit stays `rateLimit`. Revokes photo and video blob URLs on unmount. May POST `/me/forum-laws-dismissed`. After a successful top-level post or reply, writes `hasPosted: true` on the session account only when the session token is unchanged and an account is still present (no persist-flag POST). Passes `lawsVisible` / `onDismissLaws`, `mode` / `onModeChange`, `unpaidNewCount`, `refreshing` / `onRefresh`, and `newPostsAvailable` / `onShowNewPosts` to `ForumBoard`. Stamps last visit on unpaid; mode is not persisted. Does not pass `Error.message` to the board.
 - **Used by:** `WelcomeScreen`.
 
 ## Function: hasDisplayName
@@ -835,16 +821,16 @@
 
 ## Function: MemberProfileLoader
 
-- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, and optional gift stats for the chart. It does not prefetch activity feeds; `postCount` and `replyCount` arrive with the profile JSON.
+- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, then `fetchMemberActivity` even if the Lightning Address is blank. It does not prefetch post/reply feeds; `postCount` and `replyCount` arrive with the profile JSON.
 - **Inputs:** Route `accountId`; session from auth store.
-- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`.
+- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. `fetchMember` 409 `missing_requirements` → `/setup/rules`. `fetchMemberActivity` 409 or any other activity error keeps the card with empty given and received series.
 - **Used by:** `MemberProfilePage`.
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, or founder may `POST /messages` unpaid; everyone else (including `verified`) invoices ≥ 1 sat with optional text. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
-- **Inputs:** `MemberProfile` and receive series; session/account from the auth store.
-- **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
+- **Purpose:** Signed-in member identity card (chart from given and received activity, name, location, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, or founder may `POST /messages` unpaid; everyone else (including `verified`) invoices ≥ 1 sat with optional text. Loads visible inline photos for the pinned profile note, posts feed, and replies feed (the stacked activity list) via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Inputs:** `MemberProfile` plus received and donated series; session/account from the auth store.
+- **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: MemberProfilePage
@@ -915,7 +901,28 @@
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
 - **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`, `useAccountTotals`, `ViewProfileLoader`.
+- **Used by:** `StatsLoader` only.
+
+## Function: fetchAccountActivity
+
+- **Purpose:** GET `/me/activity` with Bearer and parse `accountActivitySchema` (given + received, house gifts + forum zaps).
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `AccountActivity`. Throws visitor copy `Could not load gift stats. Please try again.` on non-2xx, network, or schema failure.
+- **Used by:** `useAccountTotals`.
+
+## Function: fetchMemberActivity
+
+- **Purpose:** GET `/forum/members/:id/activity` with Bearer and parse activity for a member card.
+- **Inputs:** `sessionToken`, `accountId`.
+- **Returns / side effects:** `AccountActivity`. 409 `missing_requirements` → `MissingRequirementsError`. Other non-2xx / schema → visitor copy.
+- **Used by:** `MemberProfileLoader`.
+
+## Function: fetchViewActivity
+
+- **Purpose:** GET `/view-key/:viewKey/activity` with no auth and parse public activity.
+- **Inputs:** `viewKey` (64 hex).
+- **Returns / side effects:** `AccountActivity`. Throws visitor copy on failure; the loader catches and shows empty series.
+- **Used by:** `ViewProfileLoader`.
 
 ## Function: fetchMe
 
@@ -938,6 +945,13 @@
 - **Returns / side effects:** `ForumMessage`, or `null` on 404 or abort (`AbortError` / already-aborted signal). Throws visitor copy (`Could not load messages. Please try again.`) on other non-ok, network, or zod failures.
 - **Used by:** `PublicMessageLoader`, `ForumLoader`.
 
+## Function: fetchPublicReplies
+
+- **Purpose:** GET `/public-messages/:id/replies` without a session. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items, and return the survivors oldest-first.
+- **Inputs:** Parent forum message `id`.
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive or HTTP 200 `{ messages: [] }`). Throws visitor copy (`Could not load messages. Please try again.`) on HTTP 404 (not empty), other non-ok, network, non-JSON, or a body that is not `{ messages: array }`.
+- **Used by:** `PublicMessageLoader`.
+
 ## Function: fetchPublicMessagePhoto
 
 - **Purpose:** GET `/messages/:id/photo` without Authorization and return raw image bytes as a `Blob` for `URL.createObjectURL` on the public note page.
@@ -957,7 +971,7 @@
 - **Purpose:** GET `/messages/:id/photo` with the bearer session and return the raw image bytes as a `Blob` for `URL.createObjectURL` rendering.
 - **Inputs:** `sessionToken`, message `id`.
 - **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load messages. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
-- **Used by:** `ForumLoader`.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`.
 
 ## Function: postMessage
 
@@ -1036,6 +1050,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** True when a fetched forum list contains at least one message id that the currently loaded list does not. `null` current is not unseen so the first load applies instead of showing **New posts**. A loaded empty list (`[]`) with new ids is unseen.
 - **Inputs:** `current` (`ForumMessage[]` or `null`) and `fetched` (newest-first GET payload).
 - **Returns / side effects:** Boolean. Compares ids only; sat changes on existing ids are not unseen.
+- **Used by:** `ForumLoader`.
+
+## Function: unpaidNewCount
+
+- **Purpose:** Counts loaded zero-sat notes created after the visitor last opened No gifts yet. Pure: no I/O and does not mutate `messages`. A missing or invalid `seenAt` is a first visit and returns `0` even when unpaid notes exist.
+- **Inputs:** `messages` (newest-first list from the api / loader merge) and `seenAt` (ISO last-visit stamp, or `null` when never opened).
+- **Returns / side effects:** How many currently loaded unpaid notes are strictly newer than `seenAt`. No network.
 - **Used by:** `ForumLoader`.
 
 ## Function: formatFiatDisplay
@@ -1185,6 +1206,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Token string or `null`. SSR-safe.
 - **Used by:** `useHydrateSession` on mount.
 
+## Function: loadUnpaidSeenAt
+
+- **Purpose:** Reads the persisted No gifts yet last-visit timestamp from `localStorage` key `21gifts.forum-unpaid-seen`.
+- **Inputs:** None.
+- **Returns / side effects:** The stored ISO string, or `null` when none is stored, the value is empty/whitespace/`Date.parse` is not finite, storage access throws, or when running on the server (no `window`). SSR-safe.
+- **Used by:** `ForumLoader` on mount.
+
 ## Function: parseAcceptLanguage
 
 - **Purpose:** Negotiate a supported UI locale from an RFC 7231 `Accept-Language` header.
@@ -1219,6 +1247,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `token` string.
 - **Returns / side effects:** void. SSR no-op.
 - **Used by:** `useAuthStore.setAuth`.
+
+## Function: saveUnpaidSeenAt
+
+- **Purpose:** Persists the No gifts yet last-visit timestamp, overwriting any previous value.
+- **Inputs:** `iso` ISO timestamp to store (`new Date().toISOString()`).
+- **Returns / side effects:** void. SSR no-op. A throwing storage write is also a no-op.
+- **Used by:** `ForumLoader` when entering unpaid and while unpaid as the list refreshes.
 
 ## Function: setName
 
@@ -1381,6 +1416,27 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/gifts/stats`.
 
+## Function: proxyMeActivityGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /me/activity`.
+- **Inputs:** Incoming `Request` (Bearer).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/me/activity`.
+
+## Function: proxyMembersActivityGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /members/:accountId/activity`.
+- **Inputs:** Incoming `Request` (Bearer) and `accountId`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/forum/members/[accountId]/activity`.
+
+## Function: proxyViewActivityGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /view/:viewKey/activity` (public).
+- **Inputs:** Incoming `Request` and `viewKey`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/view-key/[viewKey]/activity`.
+
 ## Function: proxyLightningAddressGet
 
 - **Purpose:** Proxies GET `/lightning-address`.
@@ -1450,6 +1506,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/public-messages/[id]`.
+
+## Function: proxyPublicMessageRepliesGet
+
+- **Purpose:** Public proxy GET `/messages/:id/replies` to the 21.gifts api (oldest-first live replies, no auth). App path is `/public-messages/[id]/replies` so `/messages/[id]` can serve HTML.
+- **Inputs:** Incoming `Request`, plus parent message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/public-messages/[id]/replies`.
 
 ## Function: proxyContactPost
 
@@ -1614,21 +1677,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: conversation list or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus).
+- **Purpose:** Presentational inbox: incoming threads as a conversation list filtered by the origin control (Direct / Contact / Damus; default Direct), or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Inbound last text is raw muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`.
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`.
 
 ## Function: fetchConversations
 
-- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`.
+- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. The api returns incoming threads, plus the member's own 21.gifts contact thread when it has a message. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe` (true when the last message was sent by the session).
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation list, or throws visitor copy.
 - **Used by:** `InboxLoader`, `ContactLoader`.
 
 ## Function: fetchConversation
 
-- **Purpose:** GET `/conversations/:id` with Bearer and parse `{ messages }`.
+- **Purpose:** GET `/conversations/:id` with Bearer and parse `{ messages }`. Each message includes required `fromMe` (true when this message was sent by the session).
 - **Inputs:** Session token and conversation id.
 - **Returns / side effects:** Oldest-first messages, or throws visitor copy.
 - **Used by:** `InboxLoader`.

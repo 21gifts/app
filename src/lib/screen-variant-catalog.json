@@ -186,6 +186,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:unpaid-new-count",
+    "label": "/welcome unpaid-new-count",
+    "visual": "state-welcome-unpaid-new-count",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:empty-unpaid",
     "label": "/welcome empty-unpaid",
     "visual": "state-welcome-empty-unpaid",
@@ -339,6 +345,12 @@
     "id": "/welcome:menu-language-open",
     "label": "/welcome menu-language-open",
     "visual": "state-welcome-menu-language",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:pay-amount",
+    "label": "/welcome pay-amount",
+    "visual": "state-welcome-pay-amount",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -552,6 +564,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:given-received",
+    "label": "/profile given-received",
+    "visual": "state-profile-given-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",
@@ -642,51 +660,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/handbook:default",
-    "label": "/handbook default",
-    "visual": "screen-handbook",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook:copied",
-    "label": "/handbook copied",
-    "visual": "state-handbook-copied",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/screens:default",
-    "label": "/handbook/screens default",
-    "visual": "screen-handbook-screens",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/screens:mobile",
-    "label": "/handbook/screens mobile",
-    "visual": "state-handbook-screens-mobile",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/screens:dark",
-    "label": "/handbook/screens dark",
-    "visual": "state-handbook-screens-dark",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/functions:default",
-    "label": "/handbook/functions default",
-    "visual": "screen-handbook-functions",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/handbook/endpoints:default",
-    "label": "/handbook/endpoints default",
-    "visual": "screen-handbook-endpoints",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/messages:default",
     "label": "/messages default",
     "visual": "screen-messages",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:contact",
+    "label": "/messages contact",
+    "visual": "state-messages-contact",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:damus",
+    "label": "/messages damus",
+    "visual": "state-messages-damus",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:sent-preview",
+    "label": "/messages sent-preview",
+    "visual": "state-messages-sent-preview",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

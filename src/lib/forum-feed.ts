@@ -71,3 +71,38 @@ export function visibleForumMessages(
     return b.id.localeCompare(a.id);
   });
 }
+
+/**
+ * Counts loaded zero-sat notes created after the visitor last opened No gifts yet.
+ *
+ * Pure: no I/O and does not mutate `messages`. A missing or invalid `seenAt`
+ * is a first visit and returns `0` even when unpaid notes exist.
+ *
+ * @param messages - Newest-first list from the api / loader merge.
+ * @param seenAt - ISO last-visit stamp, or `null` when never opened.
+ * @returns How many currently loaded unpaid notes are strictly newer than `seenAt`.
+ */
+export function unpaidNewCount(messages: readonly ForumMessage[], seenAt: string | null): number {
+  if (seenAt === null) {
+    return 0;
+  }
+  const seenMs = Date.parse(seenAt);
+  if (!Number.isFinite(seenMs)) {
+    return 0;
+  }
+
+  let count = 0;
+  for (const message of messages) {
+    if (message.sats !== 0) {
+      continue;
+    }
+    const createdMs = Date.parse(message.createdAt);
+    if (!Number.isFinite(createdMs)) {
+      continue;
+    }
+    if (createdMs > seenMs) {
+      count += 1;
+    }
+  }
+  return count;
+}

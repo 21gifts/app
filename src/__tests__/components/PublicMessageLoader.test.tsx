@@ -21,13 +21,15 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
+  fetchPublicReplies: vi.fn(),
 }));
 
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import { fetchPublicMessage, fetchPublicMessagePhoto } from '@/lib/api';
+import { fetchPublicMessage, fetchPublicMessagePhoto, fetchPublicReplies } from '@/lib/api';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
+const fetchRepliesPublic = vi.mocked(fetchPublicReplies);
 const hydrate = vi.mocked(useHydrateSession);
 
 const sample: ForumMessage = {
@@ -47,6 +49,7 @@ const sample: ForumMessage = {
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
   hydrate.mockReturnValue({ ready: true });
+  fetchRepliesPublic.mockResolvedValue([]);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -65,6 +68,7 @@ afterEach(() => {
   cleanup();
   fetchMessage.mockReset();
   fetchPhoto.mockReset();
+  fetchRepliesPublic.mockReset();
   vi.restoreAllMocks();
 });
 
@@ -252,6 +256,47 @@ describe('PublicMessageLoader', () => {
     expect(fetchMessage).toHaveBeenCalled();
   });
 
+  it('ignores a stale parent resolve after unmount', async () => {
+    const parentId = '22222222-2222-4222-8222-222222222222';
+    const reply: ForumMessage = { ...sample, parentId };
+    const parent: ForumMessage = { ...sample, id: parentId, text: 'Parent note' };
+    fetchMessage.mockImplementationOnce(async () => reply);
+    let resolveParent: ((value: ForumMessage | null) => void) | undefined;
+    fetchMessage.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveParent = resolve;
+        }),
+    );
+    const view = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(fetchMessage).toHaveBeenCalledTimes(2);
+    });
+    view.unmount();
+    resolveParent?.(parent);
+    await Promise.resolve();
+    expect(fetchRepliesPublic).not.toHaveBeenCalled();
+  });
+
+  it('ignores a stale replies resolve after unmount', async () => {
+    fetchMessage.mockResolvedValue(sample);
+    let resolveReplies: ((value: ForumMessage[]) => void) | undefined;
+    fetchRepliesPublic.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveReplies = resolve;
+        }),
+    );
+    const view = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(fetchRepliesPublic).toHaveBeenCalled();
+    });
+    view.unmount();
+    resolveReplies?.([]);
+    await Promise.resolve();
+    expect(fetchRepliesPublic).toHaveBeenCalled();
+  });
+
   it('ignores a stale photo resolve after unmount', async () => {
     fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true });
     let resolvePhoto: ((value: Blob) => void) | undefined;
@@ -281,5 +326,111 @@ describe('PublicMessageLoader', () => {
       expect(fetchPhoto).toHaveBeenCalled();
     });
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('renders a parent and two replies without a permalink ring', async () => {
+    const first: ForumMessage = {
+      ...sample,
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Bob',
+      text: 'First reply',
+      sats: 0,
+    };
+    const second: ForumMessage = {
+      ...sample,
+      id: '33333333-3333-4333-8333-333333333333',
+      name: 'Carol',
+      text: 'Second reply',
+      sats: 0,
+    };
+    fetchMessage.mockResolvedValue(sample);
+    fetchRepliesPublic.mockResolvedValue([first, second]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('First reply')).toBeTruthy();
+    expect(screen.getByText('Second reply')).toBeTruthy();
+    expect(screen.getByText('Bob')).toBeTruthy();
+    expect(screen.getByText('Carol')).toBeTruthy();
+    expect(document.querySelector('[data-permalink-target="true"]')).toBeNull();
+    expect(fetchRepliesPublic).toHaveBeenCalledWith(MESSAGE_ID);
+  });
+
+  it('loads the parent thread from a reply id and rings the opened reply', async () => {
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const reply: ForumMessage = {
+      ...sample,
+      id: replyId,
+      parentId: MESSAGE_ID,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+    };
+    fetchMessage.mockImplementation(async (messageId: string) => {
+      if (messageId === replyId) {
+        return reply;
+      }
+      if (messageId === MESSAGE_ID) {
+        return sample;
+      }
+      return null;
+    });
+    fetchRepliesPublic.mockResolvedValue([reply]);
+    renderWithLocale(<PublicMessageLoader id={replyId} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('Pater Severin')).toBeTruthy();
+    expect(fetchMessage).toHaveBeenNthCalledWith(1, replyId);
+    expect(fetchMessage).toHaveBeenNthCalledWith(2, MESSAGE_ID);
+    expect(fetchRepliesPublic).toHaveBeenCalledWith(MESSAGE_ID);
+    const target = document.querySelector('[data-permalink-target="true"]');
+    expect(target).toBeTruthy();
+    const ringNode =
+      target instanceof HTMLElement && target.className.includes('ring-1')
+        ? target
+        : target?.querySelector('section');
+    expect(ringNode?.className).toContain('ring-1');
+    expect(ringNode?.className).toContain('ring-app-fg');
+  });
+
+  it('shows missing when the reply parent fetch returns null', async () => {
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    fetchMessage.mockImplementation(async (messageId: string) => {
+      if (messageId === replyId) {
+        return {
+          ...sample,
+          id: replyId,
+          parentId: MESSAGE_ID,
+          name: 'Pater Severin',
+          text: '',
+          sats: 3000,
+        };
+      }
+      return null;
+    });
+    renderWithLocale(<PublicMessageLoader id={replyId} />);
+    await waitFor(() => {
+      expect(screen.getByText('This profile could not be found.')).toBeTruthy();
+    });
+    expect(fetchRepliesPublic).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when replies fail and retries the whole chain', async () => {
+    fetchMessage.mockResolvedValue(sample);
+    fetchRepliesPublic.mockRejectedValueOnce(new Error('fail')).mockResolvedValueOnce([]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    });
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Could not load this profile. Please try again.');
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(fetchRepliesPublic).toHaveBeenCalledTimes(2);
+    expect(fetchMessage).toHaveBeenCalledTimes(2);
   });
 });

@@ -275,9 +275,9 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when `account.setup` is null (name and address may be saved or skipped; living-room rules agreement is required).
-- **What the user sees:** Flow `AppShell` with Wordmark top-left (`ForumHomeWordmark`) and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a four-way `SegmentedControl tone="neutral"` (**Active** / **No gifts yet** / **All** / **Most popular**). Default is **Active** (paid notes, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply** and an **Amount** sats field; non-exempt visitors must send at least 1 sat); reply authors show the same Founder / Moderator / Verified pills (`basis` has none). Pay control / Send Bitcoin only when the note is payable; composer under the filters (`SegmentedControl`) above the list with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
+- **What the user sees:** Flow `AppShell` with Wordmark top-left (`ForumHomeWordmark`) and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a four-way `SegmentedControl tone="neutral"` (**Active** / **No gifts yet** / **All** / **Most popular**). **No gifts yet** shows a count of loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list plus an in-card reply composer (**Write a reply** and an **Amount** sats field; non-exempt visitors must send at least 1 sat); reply authors show the same Founder / Moderator / Verified pills (`basis` has none). Pay control / Send Bitcoin only when the note is payable; composer under the filters (`SegmentedControl`) above the list with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
 - **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, copy a note link to `/messages/<uuid>`, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
-- **Calls:** `PageChrome`, `AppShell`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`.
+- **Calls:** `PageChrome`, `AppShell`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`.
 
 ### Variant: default
 
@@ -320,6 +320,12 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 Click **No gifts yet** (German: **Noch ohne Geschenk**) — only loaded notes with exactly zero sats appear. Bob is visible; paid Ada and Carol are hidden. This includes notes without a receiving wallet. The four filters use a two-column grid for readable labels on mobile. Active remains the default.
 
 ![21.gifts welcome without gifts](images/welcome-unpaid.png)
+
+### Variant: unpaid-new-count
+
+Active selected; last-visit stamp older than Bob's unpaid note; **No gifts yet** shows the count chip `1`.
+
+![21.gifts welcome unpaid new count](images/welcome-unpaid-new-count.png)
 
 ### Variant: empty-unpaid
 
@@ -537,6 +543,12 @@ After **Menu**, click **Language** → the four endonym rows (English / Deutsch 
 
 ![21.gifts welcome menu language](images/welcome-menu-language.png)
 
+### Variant: pay-amount
+
+Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. No error, no payment QR, no invoice-step wallet link.
+
+![21.gifts welcome pay amount](images/welcome-pay-amount.png)
+
 ### Variant: pay-qr
 
 Payable note, amount submitted. Captured at desktop and mobile. On desktop the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same sheet has no QR.
@@ -551,7 +563,7 @@ Same pay sheet captured at desktop and mobile. On a smartphone user-agent: **Pay
 
 ### Variant: pay-author-wallet
 
-Payable note, amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. No QR and no Pay button.
+Payable note, amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) otherwise. No payment QR and no invoice-step **Pay with Wallet of Satoshi** button.
 
 ![21.gifts welcome pay author wallet](images/welcome-pay-author-wallet.png)
 
@@ -621,9 +633,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and clickable post/reply counts from `postCount` / `replyCount`) with an optional pinned profile forum note and on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). The in-card reply composer includes an **Amount** sats field; non-exempt visitors invoice at least 1 sat. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; optional `GET /gifts/stats?recipient=`; on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**; icon-only back to the forum; expand role hint; open author profile links on the note when present; translate a foreign-language note or reply (**Translate** / Show original / Show translation); click the post or reply count to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. The posts feed hides the separately pinned profile note because that note is already in the feed; the replies feed keeps the pinned note above it. Posts retain the pinned note's pay, PM, expand, and reply actions. Reply cards are not payable, and expanding one with a `parentId` navigates to `/messages/{parentId}`. When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. No edit controls.
+- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and clickable post/reply counts from `postCount` / `replyCount`) with an optional pinned profile forum note and on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). The in-card reply composer includes an **Amount** sats field; non-exempt visitors invoice at least 1 sat. Visible inline photos on the pinned profile note, posts feed, and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
+- **Actions:** Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**; icon-only back to the forum; expand role hint; open author profile links on the note when present; translate a foreign-language note or reply (**Translate** / Show original / Show translation); click the post or reply count to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. The posts feed hides the separately pinned profile note because that note is already in the feed; the replies feed keeps the pinned note above it. Posts retain the pinned note's pay, PM, expand, and reply actions. Reply cards are not payable, and expanding one with a `parentId` navigates to `/messages/{parentId}`. When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -638,6 +650,12 @@ Member with a non-null `profileMessage` shown as a one-item forum card (`compose
 Identity card with counts; posts button pressed; profile note hidden; post card 'Second post from Carol.' in the feed.
 
 ![21.gifts member posts open](images/members-posts-open.png)
+
+### Variant: posts-open-photo
+
+Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and shows the inline photo (`Photo from Carol`) above the text, same ForumBoard paint as `/welcome` `photo`.
+
+![21.gifts member posts open with photo](images/members-posts-open-photo.png)
 
 ### Variant: replies-open
 
@@ -744,7 +762,7 @@ Same German note after POST /translate fails. Alert **Could not translate this n
 ## Screen: /profile
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, edit name, location (Ort), and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes skip an OS banner when any window client is focused; background-only clients still show it), choose appearance (System / Light / Dark) then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row, return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Inputs:** Session account (name + location + Lightning Address + `viewKey` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; filtered gift stats via `useAccountTotals` (`GET /gifts/stats?recipient=`).
+- **Inputs:** Session account (name + location + Lightning Address + `viewKey` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; given and received series via `useAccountTotals` (`GET /me/activity`).
 - **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out** (best-effort Web Push unsubscribe while the session is still valid); icon-only back (top-left) to the forum; save name; save or clear location; link or change address; toggle Web Push on the notifications row under the address form (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); pick CHF|EUR|USD|PHP on FiatPicker; when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
@@ -778,23 +796,47 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
 
+### Variant: given-received
+
+Both series non-zero: received ₿1,500 over three UTC days and given ₿2,100 on **2026-06-02**. Chart shows Given and Received together. Needle `state-profile-given-received`.
+
+![21.gifts profile given and received](images/profile-given-received.png)
+
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Messages**, a conversation list (counterpart name, origin label Contact / Direct / Damus, last text, time), empty copy **No private messages yet.**, **Loading…**, or **Try again**. Open a thread (`?c=`) for oldest-first messages and a 500-character composer. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Messages**, then a `SegmentedControl tone="neutral"` **Direct** | **Contact** | **Damus** (default **Direct**, one row). The list shows only rows of the selected origin (counterpart name, origin label, last text, time). Empty copy is per filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**); the control stays visible. **Loading…** and **Try again** hide the control. Inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`). Open a thread (`?c=`) for oldest-first messages and a 500-character composer (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Staff and members use the same origin labels. Founder/moderator also see official 21.gifts threads. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**. Forum PM and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
 
-Loaded list with at least one thread (counterpart **21.gifts**, origin **Contact**).
+Direct selected. List shows inbound Direct **Bob** only. Control Direct | Contact | Damus under the heading.
 
 ![21.gifts inbox](images/messages.png)
 
+### Variant: contact
+
+Contact selected. List shows official **21.gifts**.
+
+![21.gifts inbox contact](images/messages-contact.png)
+
+### Variant: damus
+
+Damus selected. List shows **npub1abc…xyz**.
+
+![21.gifts inbox damus](images/messages-damus.png)
+
+### Variant: sent-preview
+
+Direct selected. Loaded list whose last text is the viewer's own send (**Bob**, `Hello team`). Preview **You: Hello team** as a compact filled chip on the right of the muted row, not muted body text.
+
+![21.gifts inbox sent preview](images/messages-sent-preview.png)
+
 ### Variant: empty
 
-No threads. Copy **No private messages yet.**
+No threads. Direct selected. Copy **No private messages yet.** Control Direct | Contact | Damus stays visible.
 
 ![21.gifts inbox empty](images/messages-empty.png)
 
@@ -812,7 +854,7 @@ List fetch failed. Button **Try again**.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts**, origin **Contact** under the heading, message body **Hello team**, composer visible.
+Open official thread. Heading **21.gifts**, origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
@@ -850,14 +892,14 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ## Screen: /messages/[id]
 
-- **Purpose:** Public read-only HTML note by forum message UUID. Fill `AppShell` (`align="center"`) Wordmark top-left; light language switcher top-right. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
-- **Inputs:** Dynamic route `id` (UUID). Message from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch.
+- **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) Wordmark top-left; light language switcher top-right. No `OnboardingGate`, no pay sheet, no composer, no copy control on this page. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
+- **Inputs:** Dynamic route `id` (UUID). Note from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Replies from `GET /public-messages/:id/replies` (`fetchPublicReplies`) using the parent id. If the opened note has `parentId`, a second public GET loads that parent, then its replies. Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty.
 - **Actions:** Change language. On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`). Logged-in **Back to the forum** → `/welcome` (`profile.back`). States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
 
 ### Variant: default
 
-Valid known UUID. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo or clip-aspect `<video>`. Auth CTA below the card.
+Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 
@@ -909,10 +951,22 @@ After POST /translate 502: **Could not translate this note. Please try again.**
 
 ![21.gifts public message translate error](images/messages-id-translate-error.png)
 
+### Variant: thread
+
+Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 3000) showing `formatBitcoin` (`₿3'000`). Opened on the parent UUID.
+
+![21.gifts public message thread](images/messages-id-thread.png)
+
+### Variant: reply
+
+Same thread opened on the reply UUID. Parent + gift; permalink target ring (`data-permalink-target="true"`, `ring-1 ring-app-fg`) on the gift reply.
+
+![21.gifts public message reply](images/messages-id-reply.png)
+
 ## Screen: /view/[viewKey]
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated ₿ | selected fiat; name + location + Wallet of Satoshi address fields) without edit/copy/back/menu/logout. Capability URL `/view/<64-hex>`; key/URL not shown. No `OnboardingGate` on this route.
-- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); receive series from public `fetchGiftStats(handle)` via `recipientHandleFromAddress` (`GET /gifts/stats?recipient=`). Blank address → empty series, no stats fetch. Stats error → card with empty series.
+- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`) plus `fetchViewActivity` even if the Lightning Address is blank (`GET /view-key/:viewKey/activity`). Activity error → empty series, card stays.
 - **Actions:** Change language (Wordmark top-left; light language switcher top-right). On profile fetch error, **Try again**. Empty series shows FiatPicker + `profile.chartEmpty`; a filled series can switch scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
 
@@ -955,21 +1009,10 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook hub (no auth gate). Header **Handbook** stays here.
-- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files. After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
 - **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
 - **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`.
-
-### Variant: default
-
-Hub with heading **Handbook** and links to the three parts.
-
-![21.gifts handbook](images/handbook.png)
-
-### Variant: copied
-
-After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
-
-![21.gifts handbook copied](images/handbook-copied.png)
+- **Screenshots:** none. Documentation page, not a product screen.
 
 ## Screen: /handbook/screens
 
@@ -977,24 +1020,7 @@ After tapping the link icon on the Handbook heading, that button shows the check
 - **What the user sees:** Heading **Screens**, a three-level table of contents (chapter = first path segment, screen, variant), and nested compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). Topics that lack the selected combo are omitted. No topic picker.
 - **Actions:** Jump via the contents nav, switch viewport/theme when available (applies to every card), open a preview at full size, step through every visible variant with Left/Right arrows or lightbox chevrons, copy a chapter/screen/card deep link, follow a hash deep link, return to the hub.
 - **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookOutline`, `HandbookSectionHeading`, `HandbookFigure`, `HandbookLightbox`, `HandbookIntro`, `HandbookCopyLink`, `buildHandbookOutline`, `nextOutlineIndex`, `topicAnchor`, `parseScreenVariantDescriptions`, `loadHandbookDocuments`.
-
-### Variant: default
-
-Contents nav plus nested thumbnail cards for topics that have the selected combo, **Desktop** and **Light** selected when those combos exist in the catalog — not stacked full-width shots.
-
-![21.gifts handbook screens](images/handbook-screens.png)
-
-### Variant: mobile
-
-**Mobile** selected; every visible thumbnail card shows that mobile combo.
-
-![21.gifts handbook screens mobile](images/handbook-screens-mobile.png)
-
-### Variant: dark
-
-**Dark** selected; every visible thumbnail card shows that dark combo.
-
-![21.gifts handbook screens dark](images/handbook-screens-dark.png)
+- **Screenshots:** none. This page _shows_ product-screen goldens; it is not itself a golden.
 
 ## Screen: /handbook/functions
 
@@ -1002,12 +1028,7 @@ Contents nav plus nested thumbnail cards for topics that have the selected combo
 - **What the user sees:** Heading **Functions** and the functions markdown (`## Function: name`) only. No image switches.
 - **Actions:** Read the markdown, return to the hub.
 - **Calls:** `HandbookFunctionsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
-
-### Variant: default
-
-Markdown list of `## Function:` headings.
-
-![21.gifts handbook functions](images/handbook-functions.png)
+- **Screenshots:** none.
 
 ## Screen: /handbook/endpoints
 
@@ -1015,12 +1036,7 @@ Markdown list of `## Function:` headings.
 - **What the user sees:** Heading **Endpoints** and the endpoints markdown only. No image switches.
 - **Actions:** Read the markdown, return to the hub.
 - **Calls:** `HandbookEndpointsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
-
-### Variant: default
-
-Markdown list of `## Endpoint:` headings.
-
-![21.gifts handbook endpoints](images/handbook-endpoints.png)
+- **Screenshots:** none.
 
 ## Screen: /404
 

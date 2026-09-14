@@ -1,7 +1,11 @@
 /**
- * Every distinct UI state of every public screen. Handbook, e2e:check, and
- * screenshot:check all read this list — adding a state without a variant here
- * is how coverage silently drops.
+ * Every distinct UI state of every public screen that is screenshot-gated.
+ * Handbook, e2e:check, and screenshot:check all read this list — adding a
+ * state without a variant here is how coverage silently drops.
+ *
+ * Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are not listed: they are
+ * documentation pages, not product screens. `/handbook/screens` shows other
+ * screen PNGs and is not itself a golden.
  *
  * `needle` must appear in e2e/*.spec.ts (the behavioral assertion for that state).
  * `image` is the handbook filename (URL `/handbook-images/<file>`), filled from
@@ -12,6 +16,24 @@
  * `variantComboIds` still honours an explicit `combos` list when present (tests);
  * do not restrict production variants that way.
  */
+
+/** Public handbook pages. Not screenshot-gated; still have `## Screen:` prose and e2e `goto`. */
+export const HANDBOOK_DOC_ROUTES = new Set([
+  '/handbook',
+  '/handbook/screens',
+  '/handbook/functions',
+  '/handbook/endpoints',
+]);
+
+/**
+ * True when `route` is a handbook doc page rather than a product screen.
+ *
+ * @param {string} route - App Router public path.
+ * @returns {boolean}
+ */
+export function isHandbookDocRoute(route) {
+  return HANDBOOK_DOC_ROUTES.has(route);
+}
 
 /** One required visual baseline combo: viewport × theme. */
 export const BASELINE_COMBOS = [
@@ -268,6 +290,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'unpaid-new-count',
+    image: 'welcome-unpaid-new-count.png',
+    visual: 'state-welcome-unpaid-new-count',
+    needle: 'No gifts yet, 1 new',
+  },
+  {
+    route: '/welcome',
     id: 'empty-unpaid',
     image: 'welcome-empty-unpaid.png',
     visual: 'state-welcome-empty-unpaid',
@@ -450,6 +479,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-amount',
+    image: 'welcome-pay-amount.png',
+    visual: 'state-welcome-pay-amount',
+    needle: 'state-welcome-pay-amount',
+  },
+  {
+    route: '/welcome',
     id: 'pay-qr',
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
@@ -545,6 +581,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open.png',
     visual: 'state-members-posts-open',
     needle: 'Second post from Carol.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-photo',
+    image: 'members-posts-open-photo.png',
+    visual: 'state-members-posts-open-photo',
+    needle: 'Photo from Carol',
   },
   {
     route: '/members/[accountId]',
@@ -694,6 +737,13 @@ export const SCREEN_VARIANTS = [
     needle: "$1'425",
   },
   {
+    route: '/profile',
+    id: 'given-received',
+    image: 'profile-given-received.png',
+    visual: 'state-profile-given-received',
+    needle: 'state-profile-given-received',
+  },
+  {
     route: '/view/[viewKey]',
     id: 'default',
     image: 'view-viewKey.png',
@@ -799,60 +849,32 @@ export const SCREEN_VARIANTS = [
     needle: 'Try again',
   },
   {
-    route: '/handbook',
-    id: 'default',
-    image: 'handbook.png',
-    visual: 'screen-handbook',
-    needle: "getByRole('heading', { name: 'Handbook' })",
-  },
-  {
-    route: '/handbook',
-    id: 'copied',
-    image: 'handbook-copied.png',
-    visual: 'state-handbook-copied',
-    needle: "toHaveAttribute('data-copied', 'true')",
-  },
-  {
-    route: '/handbook/screens',
-    id: 'default',
-    image: 'handbook-screens.png',
-    visual: 'screen-handbook-screens',
-    needle: "getByRole('heading', { name: 'Screens' })",
-  },
-  {
-    route: '/handbook/screens',
-    id: 'mobile',
-    image: 'handbook-screens-mobile.png',
-    visual: 'state-handbook-screens-mobile',
-    needle: "getByRole('button', { name: 'Mobile', exact: true })",
-  },
-  {
-    route: '/handbook/screens',
-    id: 'dark',
-    image: 'handbook-screens-dark.png',
-    visual: 'state-handbook-screens-dark',
-    needle: "getByRole('button', { name: 'Dark', exact: true })",
-  },
-  {
-    route: '/handbook/functions',
-    id: 'default',
-    image: 'handbook-functions.png',
-    visual: 'screen-handbook-functions',
-    needle: "getByRole('heading', { name: 'Functions' })",
-  },
-  {
-    route: '/handbook/endpoints',
-    id: 'default',
-    image: 'handbook-endpoints.png',
-    visual: 'screen-handbook-endpoints',
-    needle: "getByRole('heading', { name: 'Endpoints' })",
-  },
-  {
     route: '/messages',
     id: 'default',
     image: 'messages.png',
     visual: 'screen-messages',
     needle: "getByRole('heading', { name: 'Messages' })",
+  },
+  {
+    route: '/messages',
+    id: 'contact',
+    image: 'messages-contact.png',
+    visual: 'state-messages-contact',
+    needle: 'Hello team',
+  },
+  {
+    route: '/messages',
+    id: 'damus',
+    image: 'messages-damus.png',
+    visual: 'state-messages-damus',
+    needle: 'Hi from Damus',
+  },
+  {
+    route: '/messages',
+    id: 'sent-preview',
+    image: 'messages-sent-preview.png',
+    visual: 'state-messages-sent-preview',
+    needle: 'You: Hello team',
   },
   {
     route: '/messages',
@@ -1049,5 +1071,19 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-translate-error.png',
     visual: 'state-messages-id-translate-error',
     needle: 'Could not translate this note. Please try again.',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'thread',
+    image: 'messages-id-thread.png',
+    visual: 'state-messages-id-thread',
+    needle: 'state-messages-id-thread',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'reply',
+    image: 'messages-id-reply.png',
+    visual: 'state-messages-id-reply',
+    needle: 'state-messages-id-reply',
   },
 ];

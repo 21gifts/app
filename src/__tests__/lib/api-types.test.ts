@@ -145,15 +145,43 @@ describe('conversationSchema', () => {
       name: 'Bob',
       lastText: '',
       lastAt: '2026-08-28T12:00:00.000Z',
+      lastFromMe: false,
     };
     expect(conversationSchema.parse(row)).toEqual(row);
     expect(conversationListSchema.parse({ conversations: [row] }).conversations).toHaveLength(1);
+  });
+
+  it('accepts lastFromMe true and false', () => {
+    const incoming = {
+      id: 'c1',
+      kind: 'member_member',
+      name: 'Bob',
+      lastText: 'Hi',
+      lastAt: '2026-08-28T12:00:00.000Z',
+      lastFromMe: false,
+    };
+    const outgoing = { ...incoming, lastFromMe: true };
+    expect(conversationSchema.parse(incoming)).toEqual(incoming);
+    expect(conversationSchema.parse(outgoing)).toEqual(outgoing);
   });
 
   it('rejects a missing kind', () => {
     expect(() =>
       conversationSchema.parse({
         id: 'c1',
+        name: 'Bob',
+        lastText: '',
+        lastAt: '2026-08-28T12:00:00.000Z',
+        lastFromMe: false,
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a missing lastFromMe', () => {
+    expect(() =>
+      conversationSchema.parse({
+        id: 'c1',
+        kind: 'member_member',
         name: 'Bob',
         lastText: '',
         lastAt: '2026-08-28T12:00:00.000Z',
@@ -169,6 +197,7 @@ describe('conversationSchema', () => {
         name: 'Bob',
         lastText: '',
         lastAt: '2026-08-28T12:00:00.000Z',
+        lastFromMe: false,
       }),
     ).toThrow();
   });
@@ -181,9 +210,34 @@ describe('conversationMessageSchema', () => {
       name: 'Ada',
       text: 'Hello',
       createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
     expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
+  });
+
+  it('accepts fromMe true and false', () => {
+    const incoming = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
+    };
+    const outgoing = { ...incoming, fromMe: true };
+    expect(conversationMessageSchema.parse(incoming)).toEqual(incoming);
+    expect(conversationMessageSchema.parse(outgoing)).toEqual(outgoing);
+  });
+
+  it('rejects a missing fromMe', () => {
+    expect(() =>
+      conversationMessageSchema.parse({
+        id: 'm1',
+        name: 'Ada',
+        text: 'Hello',
+        createdAt: '2026-08-28T12:00:00.000Z',
+      }),
+    ).toThrow();
   });
 });
 

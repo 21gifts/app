@@ -50,6 +50,7 @@ const THREAD: Conversation = {
   name: '21.gifts',
   lastText: 'Hello',
   lastAt: '2026-08-28T12:00:00.000Z',
+  lastFromMe: false,
 };
 
 const OLDER: Conversation = {
@@ -58,6 +59,7 @@ const OLDER: Conversation = {
   name: 'Bob',
   lastText: 'Older',
   lastAt: '2026-08-27T12:00:00.000Z',
+  lastFromMe: false,
 };
 
 const MESSAGE: ConversationMessage = {
@@ -65,6 +67,7 @@ const MESSAGE: ConversationMessage = {
   name: 'Ada',
   text: 'Hello',
   createdAt: '2026-08-28T12:00:00.000Z',
+  fromMe: false,
 };
 
 beforeEach(() => {
@@ -86,6 +89,7 @@ describe('InboxLoader', () => {
   it('loads the thread list', async () => {
     listMock.mockResolvedValue([THREAD]);
     renderWithLocale(<InboxLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Contact' }));
     expect(await screen.findByText('21.gifts')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /21\.gifts/ }));
     expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
@@ -102,6 +106,7 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Contact' }));
     expect(await screen.findByText('21.gifts')).toBeTruthy();
   });
 
@@ -125,6 +130,7 @@ describe('InboxLoader', () => {
       name: 'Ada',
       text: 'Follow up',
       createdAt: '2026-08-28T13:00:00.000Z',
+      fromMe: true,
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
@@ -135,6 +141,8 @@ describe('InboxLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
       expect(screen.getByText('Follow up')).toBeTruthy();
     });
+    expect(screen.getByText('You')).toBeTruthy();
+    expect(document.querySelector('[data-from-me="true"]')).toBeTruthy();
   });
 
   it('posts when the opened id is not in the conversation list', async () => {
@@ -152,6 +160,7 @@ describe('InboxLoader', () => {
       name: 'Ada',
       text: 'Follow up',
       createdAt: '2026-08-28T13:00:00.000Z',
+      fromMe: true,
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -261,6 +270,7 @@ describe('InboxLoader', () => {
         name: 'Ada',
         text: 'Follow up',
         createdAt: '2026-08-28T13:00:00.000Z',
+        fromMe: true,
       });
     });
     expect(screen.queryByText('Follow up')).toBeNull();

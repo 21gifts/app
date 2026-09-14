@@ -16,6 +16,7 @@ import { Button } from '@/components/ui';
 import {
   fetchMemberPosts,
   fetchMemberReplies,
+  fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
   openConversation,
@@ -25,7 +26,7 @@ import {
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type ForumMessage,
-  type GiftStats,
+  type AccountActivity,
   type MemberProfile,
 } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
@@ -172,15 +173,17 @@ const IDLE_BOARD = {
  * role pill, post/reply counts, optional pinned forum note, and stacked
  * activity feeds.
  *
- * @param props - Member profile and receive series for the chart.
+ * @param props - Member profile and both activity series for the chart.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
   profile,
   received,
+  donated = [],
 }: {
   profile: MemberProfile;
-  received: GiftStats['spendOverTime'];
+  received: AccountActivity['receivedOverTime'];
+  donated?: AccountActivity['donatedOverTime'];
 }): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
@@ -222,6 +225,99 @@ export function MemberProfileScreen({
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
   const address = profile.lightningAddress;
+
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const photoUrlsRef = useRef(photoUrls);
+  photoUrlsRef.current = photoUrls;
+
+  const photoSource: ForumMessage[] = [];
+  if (listedNote !== null && activity !== 'posts') {
+    photoSource.push(listedNote);
+  }
+  if (activity === 'posts' && posts !== null) {
+    photoSource.push(...posts);
+  }
+  if (activity === 'replies' && activityReplies !== null) {
+    photoSource.push(...activityReplies);
+  }
+  if (replies !== null) {
+    photoSource.push(...replies);
+  }
+  const photoSourceRef = useRef(photoSource);
+  photoSourceRef.current = photoSource;
+  const photoIdsKey = photoSource
+    .filter((message) => message.hasPhoto)
+    .map((message) => message.id)
+    .sort()
+    .join('\0');
+
+  useEffect(() => {
+    if (session === null || photoIdsKey === '') {
+      return;
+    }
+    const listed = photoSourceRef.current;
+    let cancelled = false;
+    const missing = listed.filter(
+      (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
+    );
+    if (missing.length === 0) {
+      return;
+    }
+    void (async () => {
+      for (const message of missing) {
+        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
+        if (photoUrlsRef.current[message.id] !== undefined) {
+          continue;
+        }
+        /* v8 ignore stop */
+        let blob: Blob;
+        try {
+          blob = await fetchMessagePhoto(session, message.id);
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          try {
+            blob = await fetchMessagePhoto(session, message.id);
+          } catch {
+            if (cancelled) {
+              return;
+            }
+            // Leave the row text-only when the photo cannot load.
+            continue;
+          }
+        }
+        if (cancelled) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        setPhotoUrls((prev) => {
+          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
+          if (prev[message.id] !== undefined) {
+            URL.revokeObjectURL(url);
+            return prev;
+          }
+          /* v8 ignore stop */
+          return { ...prev, [message.id]: url };
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [photoIdsKey, session]);
+
+  useEffect(() => {
+    return () => {
+      for (const url of Object.values(photoUrlsRef.current)) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, []);
 
   const loadActivityFeed = async (kind: 'posts' | 'replies'): Promise<void> => {
     const setLoading = kind === 'posts' ? setPostsLoading : setActivityRepliesLoading;
@@ -558,7 +654,7 @@ export function MemberProfileScreen({
     setPayBusy(false);
   };
 
-  const handlePaySubmit = (): void => {
+  const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
@@ -575,34 +671,36 @@ export function MemberProfileScreen({
         : posts?.find((message) => message.id === messageId);
     /* v8 ignore next -- pay sheet only opens on a listed note */
     const baselineSats = parent === undefined ? 0 : parent.sats;
-    const continuePay = (isRetry: boolean): Promise<void> => {
+    const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
       const generation = payPollGeneration.current;
       setPayBusy(true);
       setPayError(null);
       return (async () => {
+        let minted: ForumPayInvoice | null = null;
         try {
           const invoice = await postMessageInvoice(token, messageId, sats);
           if (generation !== payPollGeneration.current) {
-            return;
+            return null;
           }
-          setPayInvoice({
+          minted = {
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
-          });
+          };
+          setPayInvoice(minted);
           setPayBusy(false);
           startPayPoll(messageId, baselineSats);
         } catch (err) {
           if (generation !== payPollGeneration.current) {
-            return;
+            return null;
           }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
-              pendingPostRef.current = () => continuePay(true);
-              return;
+              pendingPostRef.current = () => continuePay(true).then(() => undefined);
+              return null;
             }
             setPayError('request');
-            return;
+            return null;
           }
           setPayError('request');
         } finally {
@@ -610,13 +708,14 @@ export function MemberProfileScreen({
             setPayBusy(false);
           }
         }
+        return minted;
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
-      pendingPostRef.current = () => continuePay(true);
+      pendingPostRef.current = () => continuePay(true).then(() => undefined);
       return;
     }
-    void continuePay(false);
+    return continuePay(false);
   };
 
   const handlePayCancel = (): void => {
@@ -757,6 +856,7 @@ export function MemberProfileScreen({
   };
 
   const sharedForumProps = {
+    photoUrls,
     payMessageId,
     payDraft,
     payBusy,
@@ -817,7 +917,7 @@ export function MemberProfileScreen({
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
-          <AccountActivityChart received={received} />
+          <AccountActivityChart received={received} donated={donated} />
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
               {t('name.heading')}
