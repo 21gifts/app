@@ -2095,6 +2095,33 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
+  it('does not mark hasPosted on a swapped session after a paid poll', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    let resolvePoll!: (value: typeof SAMPLE) => void;
+    publicFetchMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePoll = resolve;
+      }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalled();
+    });
+    useAuthStore.setState({ session: 'other', account: { ...account, id: 'other-acc' } });
+    await act(async () => {
+      resolvePoll({ ...SAMPLE, sats: 21 });
+    });
+    expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
+  });
+
   it('does not close via later sats after Back during a rejected public pay fetch', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);

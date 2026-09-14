@@ -610,6 +610,29 @@ describe('MemberProfileScreen', () => {
     expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).disabled).toBe(false);
   });
 
+  it('does not mark hasPosted on a swapped session after a paid poll', async () => {
+    let resolvePoll!: (value: typeof note) => void;
+    vi.mocked(fetchPublicMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePoll = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalled();
+    });
+    useAuthStore.setState({ session: 'other', account: { ...account, id: 'other-acc' } });
+    await act(async () => {
+      resolvePoll({ ...note, sats: 42 });
+    });
+    expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
+  });
+
   it('shows a replies error when refetch after pay fails', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
     vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('fail'));

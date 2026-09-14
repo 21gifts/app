@@ -802,9 +802,10 @@ export function ForumLoader(): ReactElement | null {
             setPayDraft('');
             setPayError(null);
             const current = useAuthStore.getState();
-            if (current.session !== null && current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
+            if (current.session !== session || current.account === null) {
+              return;
             }
+            setAccount({ ...current.account, hasPosted: true });
             if (expandedIdRef.current === messageId) {
               setRepliesAttempt((n) => n + 1);
             }

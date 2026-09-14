@@ -335,9 +335,10 @@ export function MemberProfileScreen({
             setPayDraft('');
             setPayError(null);
             const current = useAuthStore.getState();
-            if (current.session !== null && current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
+            if (current.session !== session || current.account === null) {
+              return;
             }
+            setAccount({ ...current.account, hasPosted: true });
             if (expandedIdRef.current === messageId && current.session !== null) {
               const gen = ++expandGen.current;
               setRepliesLoading(true);
