@@ -144,6 +144,11 @@ function isReplyPaymentError(err: unknown): boolean {
   return /reply needs a bitcoin payment/i.test(err.message);
 }
 
+/** Raise the count with the server, minus replies still hidden this session. */
+function combineReplyCount(prior: number, incoming: number, hidden: number): number {
+  return Math.max(prior, Math.max(0, incoming - hidden));
+}
+
 /**
  * Merges a fresh list into local state, keeping optimistic posts the server
  * has not echoed yet.
@@ -153,11 +158,6 @@ function isReplyPaymentError(err: unknown): boolean {
  * @param hiddenReplyCounts - Session-deleted reply counts keyed by parent id.
  * @returns Merged newest-first list.
  */
-/** Raise the count with the server, minus replies still hidden this session. */
-function combineReplyCount(prior: number, incoming: number, hidden: number): number {
-  return Math.max(prior, Math.max(0, incoming - hidden));
-}
-
 function mergeMessages(
   prev: ForumMessage[] | null,
   next: ForumMessage[],
@@ -1421,6 +1421,10 @@ export function ForumLoader(): ReactElement | null {
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
         onDeleted={(messageId) => {
+          /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
+          if (deletedIds.current.has(messageId)) {
+            return;
+          }
           deletedIds.current.add(messageId);
           const isListedPost = messagesRef.current?.some((row) => row.id === messageId) === true;
           if (!isListedPost) {

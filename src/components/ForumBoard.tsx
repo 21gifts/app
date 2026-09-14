@@ -1009,7 +1009,7 @@ export function ForumBoard({
                             {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
                             {showForumPm(ownAccountId, ownName, reply) ||
                             onDeleted !== undefined ? (
-                              <div className="mt-2 flex flex-wrap items-start gap-1">
+                              <div className="mt-2 flex flex-wrap items-start gap-5">
                                 {showForumPm(ownAccountId, ownName, reply) ? (
                                   <IconButton
                                     type="button"
