@@ -416,6 +416,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
 | optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
 | Language             | embedded `LanguageSwitcher`   |                                                                                     |
+| Number format        | embedded `NumberFormatSwitcher` | Menu-only; not marketing or unsigned                                              |
 | Log out              | `LogoutButton`                | labeled                                                                             |
 
 Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`. Panel: `min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
@@ -518,6 +519,8 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
 
 **Notifications** list rows are full-row links/buttons with visible text (not icon-only).
+
+Content translation under a note or reply body is a labeled underline text control (`forum.translate` / show original / show translation), not an `IconButton` in the footer icon row.
 
 **Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`).
 
@@ -711,7 +714,7 @@ ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase
 
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero.
+See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. **Production.** `NumberFormatSwitcher` is Menu-embedded only (`SignedInChrome`). Marketing never mounts it. Unsigned app routes never mount it. The standalone Hash-pill API remains on the component for tests.
 
 ### Banner (living-room laws)
 
