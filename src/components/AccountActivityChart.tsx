@@ -76,7 +76,7 @@ function selectedFiatUnsummable(
  *
  * @param props - Receive series and optional donate series.
  * @returns FiatPicker plus empty `profile.chartEmpty` status, or FiatPicker
- *   plus legend, ₿|{fiat} chrome, and reserved-height SVG (no title heading).
+ *   plus legend, selected-fiat chrome, and reserved-height SVG (no title heading).
  */
 export function AccountActivityChart({
   received,
@@ -94,12 +94,7 @@ export function AccountActivityChart({
     );
 
   const picker = (
-    <FiatPicker
-      value={fiat}
-      onChange={setFiat}
-      shell="app"
-      ariaLabel={t('profile.fiatCurrency')}
-    />
+    <FiatPicker value={fiat} onChange={setFiat} shell="app" ariaLabel={t('profile.fiatCurrency')} />
   );
 
   if (emptySats) {

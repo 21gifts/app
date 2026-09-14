@@ -495,12 +495,12 @@ Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Sheet
 
 **₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the FiatPicker code. Profile: ₿ and the FiatPicker code (same as stats charts, app shell).
 
-| Part       | Spec                                                                                                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Track      | Gift app: `inline-flex overflow-hidden rounded-md border border-app-border text-xs`. Gift dark: `border-paper/20`.                                                        |
-| Segment    | `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop                                                                                                                   |
-| Selected   | Gift app: `bg-app-accent text-app-accent-fg`. Gift dark: `bg-accent text-ink`                                                                                             |
-| Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                                                                                    |
+| Part       | Spec                                                                                                                                                                                                                       |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Track      | Gift app: `inline-flex overflow-hidden rounded-md border border-app-border text-xs`. Gift dark: `border-paper/20`.                                                                                                         |
+| Segment    | `min-h-11 min-w-11 px-2 py-1` on mobile **and** desktop                                                                                                                                                                    |
+| Selected   | Gift app: `bg-app-accent text-app-accent-fg`. Gift dark: `bg-accent text-ink`                                                                                                                                              |
+| Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                                                                                                                                     |
 | Labels     | Stats charts: `₿` and the selected FiatPicker code (CHF/EUR/USD/PHP). Profile: `₿` and the selected FiatCode (CHF/EUR/USD/PHP), group `profile.chartScale`. `aria-pressed` on each. Group `role="group"` with catalog name |
 
 Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
