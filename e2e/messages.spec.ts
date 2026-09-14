@@ -67,6 +67,8 @@ test('signed-in inbox heading is Messages', async ({ page }) => {
   });
   await page.goto('/messages');
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Conversation type' })).toHaveCount(0);
+  await expect(page.getByText('21.gifts')).toBeVisible();
 });
 
 test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
@@ -94,7 +96,7 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
       }),
     });
   });
-  // Default filter is Direct; lastFromMe on a member_member row is visible without a click.
+  // Members see the unfiltered inbound list; lastFromMe on a member_member row is visible.
   await page.route(/\/conversations$/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
@@ -119,6 +121,7 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
   });
   await page.goto('/messages');
   await expect(page.getByText('You: Hello team')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Conversation type' })).toHaveCount(0);
 });
 
 test('inbox empty shows No private messages yet.', async ({ page }) => {
@@ -155,6 +158,7 @@ test('inbox empty shows No private messages yet.', async ({ page }) => {
   });
   await page.goto('/messages');
   await expect(page.getByText('No private messages yet.')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Conversation type' })).toHaveCount(0);
 });
 
 test('inbox loading', async ({ page }) => {

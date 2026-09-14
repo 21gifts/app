@@ -4140,6 +4140,7 @@ test.describe('inbox screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           ...E2E_ACCOUNT,
+          role,
           name: 'Ada',
           location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
@@ -4194,20 +4195,16 @@ test.describe('inbox screens', () => {
     await mockThreeConversations(page);
     await page.goto('/messages');
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
-    const group = page.getByRole('group', { name: 'Conversation type' });
-    await expect(group).toBeVisible();
-    await expect(group.getByRole('button', { name: 'Direct' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('group', { name: 'Conversation type' })).toHaveCount(0);
     const list = page.getByRole('list', { name: 'Conversations' });
     await expect(list.getByText('Bob')).toBeVisible();
-    await expect(list.getByText('21.gifts')).toHaveCount(0);
+    await expect(list.getByText('21.gifts')).toBeVisible();
+    await expect(list.getByText('npub1abc…xyz')).toBeVisible();
     await shotScreen(page, 'screen-messages');
   });
 
   test('messages contact', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'moderator');
     await mockThreeConversations(page);
     await page.goto('/messages');
     const group = page.getByRole('group', { name: 'Conversation type' });
@@ -4218,7 +4215,7 @@ test.describe('inbox screens', () => {
   });
 
   test('messages damus', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'moderator');
     await mockThreeConversations(page);
     await page.goto('/messages');
     const group = page.getByRole('group', { name: 'Conversation type' });
@@ -4250,6 +4247,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages');
     await expect(page.getByText('You: Hello team')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Conversation type' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-sent-preview');
   });
 
@@ -4264,7 +4262,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages');
     await expect(page.getByText('No private messages yet.')).toBeVisible();
-    await expect(page.getByRole('group', { name: 'Conversation type' })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Conversation type' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-empty');
   });
 
