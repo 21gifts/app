@@ -202,7 +202,6 @@ afterEach(async () => {
     configurable: true,
     value: originalUserAgent,
   });
-  vi.unstubAllGlobals();
 });
 
 describe('MemberProfileScreen', () => {
@@ -525,6 +524,7 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(assign).toHaveBeenCalledWith(walletOfSatoshiHref('lnbc1'));
     });
+    vi.unstubAllGlobals();
   });
 
   it('does not assign Wallet of Satoshi after cancelling an in-flight iPhone pay', async () => {
@@ -552,6 +552,7 @@ describe('MemberProfileScreen', () => {
     });
     expect(assign).not.toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    vi.unstubAllGlobals();
   });
 
   it('does not show a pay error after cancelling an in-flight iPhone pay that fails', async () => {
@@ -579,6 +580,7 @@ describe('MemberProfileScreen', () => {
     });
     expect(assign).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
+    vi.unstubAllGlobals();
   });
 
   it('loads replies when the profile note is expanded', async () => {
