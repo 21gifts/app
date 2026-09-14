@@ -12,6 +12,7 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -20,6 +21,7 @@ import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PwaInstall } from '@/components/PwaInstall';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
+import { FORUM_HOME_EVENT } from '@/lib/forum-feed';
 import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -37,6 +39,7 @@ export function SignedInChrome(): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const account = useAuthStore((state) => state.account);
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [introduceDismissed, setIntroduceDismissed] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -108,8 +111,12 @@ export function SignedInChrome(): ReactElement {
       >
         <Link
           href="/welcome"
-          onClick={() => {
+          onClick={(event) => {
             setOpen(false);
+            if (pathname === '/welcome') {
+              event.preventDefault();
+              window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+            }
           }}
           className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
         >

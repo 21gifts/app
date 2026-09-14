@@ -995,6 +995,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not translate this note. Please try again.',
   },
   {
+    route: '/welcome',
+    id: 'new-posts',
+    image: 'welcome-new-posts.png',
+    visual: 'state-welcome-new-posts',
+    needle: 'New posts',
+  },
+  {
     route: '/messages/[id]',
     id: 'translate',
     image: 'messages-id-translate.png',
