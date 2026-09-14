@@ -113,7 +113,7 @@ const en = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Giving is a duty',
   'about.conv1Body':
-    'We believe giving is a duty of every Christian. Scripture does not say if you give — it says when: “When you give to the needy” (Matthew 6:2). Anyone who has this world’s goods, sees a brother in need, and closes his heart does not have the love of God in him (1 John 3:17). Faith without works is dead (James 2:17).',
+    'We believe giving is a duty of every Christian. Scripture does not say if you give — it says when: “When you give to the needy” (Matthew 6:2). Anyone who has this world’s goods, sees a brother in need, and closes his heart does not have the love of God in him (1 John 3:17). Faith without works is dead (James 2:17). How much remains free (2 Corinthians 9:7).',
   'about.conv1Body2':
     'Giving is not only money. A kind smile, time, a coat, a visit — Matthew 25 counts hunger, thirst, the stranger, clothing, sickness, and prison. 21.gifts is the path for a money gift: from one person to another.',
   'about.conv1Verse':
@@ -126,7 +126,7 @@ const en = {
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin is the most effective money',
   'about.conv3Body':
-    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless. It needs no bank, no ID, and no opening hours. It joins the whole world, around the clock. For an international gift it is the simplest way to send money — as simple as an email address. Small amounts arrive quickly and cheaply. The receiver owns it. Nobody can silently debase it, freeze it, or hold it at a border. That matters most for people who already have little.',
+    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless. It needs no bank, no ID, and no opening hours. It joins the whole world, around the clock. For an international gift it is the simplest way to send money — as simple as an email address. Small amounts arrive quickly and cheaply. The receiver owns it. Nobody can print more of it, freeze it, or hold it at a border. That matters most for people who already have little.',
   'about.ctaForum': 'Open the living room',
 
   'donate.pageTitle': 'Send help',
@@ -594,7 +594,7 @@ const de = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Geben ist Pflicht',
   'about.conv1Body':
-    'Wir glauben: Geben ist Pflicht eines jeden Christen. Die Schrift sagt nicht falls du gibst — sie sagt wenn: «Wenn du nun Almosen gibst» (Matthäus 6,2). Wer dieser Welt Güter hat und den Bruder darben sieht und das Herz verschliesst, in dem bleibt die Liebe Gottes nicht (1. Johannes 3,17). Glaube ohne Werke ist tot (Jakobus 2,17).',
+    'Wir glauben: Geben ist Pflicht eines jeden Christen. Die Schrift sagt nicht falls du gibst — sie sagt wenn: «Wenn du nun Almosen gibst» (Matthäus 6,2). Wer dieser Welt Güter hat und den Bruder darben sieht und das Herz verschliesst, in dem bleibt die Liebe Gottes nicht (1. Johannes 3,17). Glaube ohne Werke ist tot (Jakobus 2,17). Wie viel, bleibt frei (2. Korinther 9,7).',
   'about.conv1Body2':
     'Geben ist nicht nur Geld. Ein freundliches Lächeln, Zeit, ein Mantel, ein Besuch — Matthäus 25 zählt Hunger, Durst, den Fremden, Kleidung, Krankheit und Gefängnis. 21.gifts ist der Weg für das Geldgeschenk: von einer Person zur anderen.',
   'about.conv1Verse':
@@ -607,7 +607,7 @@ const de = {
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin ist das wirksamste Geld',
   'about.conv3Body':
-    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeit. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es die einfachste Form der Übermittlung — so einfach wie eine E-Mail-Adresse. Kleine Beträge kommen schnell und günstig an. Das Geld gehört der empfangenden Person. Niemand kann es still entwerten, einfrieren oder an der Grenze festhalten. Das gilt zuerst für Menschen, die wenig haben.',
+    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeit. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es die einfachste Form der Übermittlung — so einfach wie eine E-Mail-Adresse. Kleine Beträge kommen schnell und günstig an. Das Geld gehört der empfangenden Person. Niemand kann mehr davon machen, es einfrieren oder an der Grenze festhalten. Das gilt zuerst für Menschen, die wenig haben.',
   'about.ctaForum': 'Wohnzimmer öffnen',
   'donate.pageTitle': 'Hilfe senden',
   'donate.lead':
@@ -1074,7 +1074,7 @@ const es = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Dar es un deber',
   'about.conv1Body':
-    'Creemos que dar es un deber de todo cristiano. La Escritura no dice si das — dice cuando: «Cuando des limosna» (Mateo 6:2). Quien tiene bienes de este mundo y ve a su hermano tener necesidad, y cierra su corazón, ¿cómo mora el amor de Dios en él? (1 Juan 3:17). La fe sin obras está muerta (Santiago 2:17).',
+    'Creemos que dar es un deber de todo cristiano. La Escritura no dice si das — dice cuando: «Cuando des limosna» (Mateo 6:2). Quien tiene bienes de este mundo y ve a su hermano tener necesidad, y cierra su corazón, ¿cómo mora el amor de Dios en él? (1 Juan 3:17). La fe sin obras está muerta (Santiago 2:17). Cuánto, queda libre (2 Corintios 9:7).',
   'about.conv1Body2':
     'Dar no es solo dinero. Una sonrisa, tiempo, un abrigo, una visita — Mateo 25 cuenta el hambre, la sed, el extranjero, la ropa, la enfermedad y la cárcel. 21.gifts es el camino para el regalo de dinero: de una persona a otra.',
   'about.conv1Verse': 'Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad.',
@@ -1086,7 +1086,7 @@ const es = {
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin es el dinero más eficaz',
   'about.conv3Body':
-    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, documento ni horario. Une el mundo entero, a todas horas. Para un regalo internacional es la forma más simple de enviar dinero — tan simple como una dirección de correo. Las cantidades pequeñas llegan rápido y baratas. Quien recibe lo posee. Nadie puede devaluarlo en silencio, congelarlo ni retenerlo en una frontera. Eso importa primero a quien ya tiene poco.',
+    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, documento ni horario. Une el mundo entero, a todas horas. Para un regalo internacional es la forma más simple de enviar dinero — tan simple como una dirección de correo. Las cantidades pequeñas llegan rápido y baratas. Quien recibe lo posee. Nadie puede emitir más, congelarlo ni retenerlo en una frontera. Eso importa primero a quien ya tiene poco.',
   'about.ctaForum': 'Abrir el salón',
   'donate.pageTitle': 'Enviar ayuda',
   'donate.lead': 'Elige un mensaje en el foro y envía Bitcoin a la persona que lo escribió.',
@@ -1542,7 +1542,7 @@ const fil = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Tungkulin ang magbigay',
   'about.conv1Body':
-    'Naniniwala kami: tungkulin ng bawat Kristiyano ang magbigay. Hindi “kung” magbibigay ang Kasulatan — “kapag”: “Kapag maglilimos ka” (Mateo 6:2). Ang may ari-arian sa mundong ito na nakikita ang kapatid na nangangailangan at isinasara ang puso ay walang pananahanang pag-ibig ng Diyos (1 Juan 3:17). Patay ang pananampalataya kung walang gawa (Santiago 2:17).',
+    'Naniniwala kami: tungkulin ng bawat Kristiyano ang magbigay. Hindi “kung” magbibigay ang Kasulatan — “kapag”: “Kapag maglilimos ka” (Mateo 6:2). Ang may ari-arian sa mundong ito na nakikita ang kapatid na nangangailangan at isinasara ang puso ay walang pananahanang pag-ibig ng Diyos (1 Juan 3:17). Patay ang pananampalataya kung walang gawa (Santiago 2:17). Magkano, malaya (2 Corinto 9:7).',
   'about.conv1Body2':
     'Hindi pera lang ang pagbibigay. Isang ngiti, oras, isang damit, isang dalaw — binibilang ng Mateo 25 ang gutom, uhaw, ang dayuhan, damit, sakit, at bilangguan. Ang 21.gifts ang daan para sa regalong pera: mula sa isang tao patungo sa iba.',
   'about.conv1Verse':
@@ -1555,7 +1555,7 @@ const fil = {
   'about.conv3Num': '3',
   'about.conv3Title': 'Ang Bitcoin ang pinakamabisang pera',
   'about.conv3Body':
-    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi humihingi ng permiso. Walang bangko, walang ID, walang oras ng opisina. Iniuugnay nito ang buong mundo, magdamag. Para sa internasyonal na regalo ito ang pinakasimple paraan ng pagpapadala — kasing-simple ng email address. Mabilis at mura ang maliliit na halaga. Sa tumatanggap ang pera. Walang makakabawas nang tahimik, makakapagsara, o makakapigil sa hangganan. Una itong mahalaga sa mga kaunti ang hawak.',
+    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi humihingi ng permiso. Walang bangko, walang ID, walang oras ng opisina. Iniuugnay nito ang buong mundo, magdamag. Para sa internasyonal na regalo ito ang pinakasimple paraan ng pagpapadala — kasing-simple ng email address. Mabilis at mura ang maliliit na halaga. Sa tumatanggap ang pera. Walang makakalimbag pa nito, makakapagsara, o makakapigil sa hangganan. Una itong mahalaga sa mga kaunti ang hawak.',
   'about.ctaForum': 'Buksan ang living room',
   'donate.pageTitle': 'Magpadala ng tulong',
   'donate.lead': 'Pumili ng mensahe sa forum at magpadala ng Bitcoin sa taong sumulat nito.',
