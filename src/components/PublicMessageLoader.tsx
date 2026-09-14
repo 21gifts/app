@@ -114,8 +114,14 @@ function PublicThreadCard({
         <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
       ) : null}
       {note.text !== '' ? <NoteTranslate text={note.text} /> : null}
-      <p className="text-sm font-medium tabular-nums lining-nums text-app-fg">
-        <span>{formatBitcoin(note.sats, numberFormat)}</span>
+      <p
+        className={
+          rateDay === null
+            ? 'text-sm font-medium text-app-fg'
+            : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
+        }
+      >
+        {formatBitcoin(note.sats, numberFormat)}
         {rateDay !== null ? (
           <>
             <span aria-hidden="true"> · </span>
