@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 
 beforeEach(() => {
@@ -6,6 +6,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   window.localStorage.clear();
 });
 
@@ -32,5 +33,24 @@ describe('forum-unpaid-seen (browser)', () => {
     expect(loadUnpaidSeenAt()).toBeNull();
     window.localStorage.setItem('21gifts.forum-unpaid-seen', 'not-a-date');
     expect(loadUnpaidSeenAt()).toBeNull();
+  });
+
+  it('returns null when getItem throws', () => {
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    expect(loadUnpaidSeenAt()).toBeNull();
+  });
+
+  it('does not throw when setItem throws', () => {
+    const setItem = vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    expect(() => {
+      saveUnpaidSeenAt('2026-01-01T00:00:00.000Z');
+    }).not.toThrow();
+    setItem.mockRestore();
+    saveUnpaidSeenAt('2026-01-01T00:00:00.000Z');
+    expect(loadUnpaidSeenAt()).toBe('2026-01-01T00:00:00.000Z');
   });
 });

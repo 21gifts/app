@@ -14,26 +14,30 @@ const STORAGE_KEY = '21gifts.forum-unpaid-seen';
  * Reads the persisted No gifts yet last-visit timestamp.
  *
  * @returns The stored ISO string, or `null` when none is stored, the value is
- * empty/whitespace/`Date.parse` is not finite, or when running on the server
- * (no `window`).
+ * empty/whitespace/`Date.parse` is not finite, storage throws, or when running
+ * on the server (no `window`).
  */
 export function loadUnpaidSeenAt(): string | null {
   /* v8 ignore next 3 — SSR: no window */
   if (typeof window === 'undefined') {
     return null;
   }
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (raw === null) {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw === null) {
+      return null;
+    }
+    const value = raw.trim();
+    if (value === '') {
+      return null;
+    }
+    if (!Number.isFinite(Date.parse(value))) {
+      return null;
+    }
+    return value;
+  } catch {
     return null;
   }
-  const value = raw.trim();
-  if (value === '') {
-    return null;
-  }
-  if (!Number.isFinite(Date.parse(value))) {
-    return null;
-  }
-  return value;
 }
 
 /**
@@ -41,12 +45,16 @@ export function loadUnpaidSeenAt(): string | null {
  * value.
  *
  * @param iso - ISO timestamp to store (`new Date().toISOString()`). A no-op
- * on the server.
+ * on the server or when storage throws.
  */
 export function saveUnpaidSeenAt(iso: string): void {
   /* v8 ignore next 3 — SSR: no window */
   if (typeof window === 'undefined') {
     return;
   }
-  window.localStorage.setItem(STORAGE_KEY, iso);
+  try {
+    window.localStorage.setItem(STORAGE_KEY, iso);
+  } catch {
+    // no-op
+  }
 }
