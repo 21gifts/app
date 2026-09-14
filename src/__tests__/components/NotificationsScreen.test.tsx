@@ -65,7 +65,9 @@ describe('NotificationsScreen', () => {
         onOpen={() => undefined}
       />,
     );
-    expect(screen.getByText('Could not load notifications. Please try again.')).toBeTruthy();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Could not load notifications. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });

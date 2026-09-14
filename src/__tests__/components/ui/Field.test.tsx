@@ -15,6 +15,8 @@ describe('Field', () => {
     expect(input.className).toContain('bg-app-card');
     expect(input.className).toContain('placeholder:text-app-subtle');
     expect(input.className).toContain('focus-visible:border-app-fg');
+    expect(input.className).toContain('text-base');
+    expect(input.className).not.toContain('text-sm');
   });
 
   it('uses an explicit id when provided', () => {

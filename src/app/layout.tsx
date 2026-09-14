@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
@@ -69,6 +69,15 @@ export const metadata: Metadata = {
       },
     ],
   },
+};
+
+/**
+ * Root viewport: device-width at scale 1. Form controls use 16px type so
+ * iOS Safari does not auto-zoom on focus. Pinch-zoom stays available (WCAG 1.4.4).
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 /**

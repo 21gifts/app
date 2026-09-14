@@ -391,7 +391,9 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
-    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Could not load messages. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -2099,6 +2101,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
+    expect(screen.getByRole('alert').className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetryReplies).toHaveBeenCalledTimes(1);
   });

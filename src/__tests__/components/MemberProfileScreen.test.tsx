@@ -191,7 +191,7 @@ afterEach(async () => {
 describe('MemberProfileScreen', () => {
   it('shows name, address, chart empty state, and role pill', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
-    expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');
     expect(screen.getByText('Carol')).toBeTruthy();
     expect(screen.getByText('carol@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
@@ -219,12 +219,12 @@ describe('MemberProfileScreen', () => {
 
   it('shows clickable post and reply counts, including the empty 0/0 state', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
-    expect(screen.getByRole('button', { name: '0 posts' }).getAttribute('aria-pressed')).toBe(
-      'false',
-    );
-    expect(screen.getByRole('button', { name: '0 replies' }).getAttribute('aria-pressed')).toBe(
-      'false',
-    );
+    const posts = screen.getByRole('button', { name: '0 posts' });
+    const replies = screen.getByRole('button', { name: '0 replies' });
+    expect(posts.getAttribute('aria-pressed')).toBe('false');
+    expect(replies.getAttribute('aria-pressed')).toBe('false');
+    expect(posts.className).not.toContain('px-3 py-1');
+    expect(replies.className).not.toContain('px-3 py-1');
   });
 
   it('opens and collapses the posts feed while hiding and restoring the profile note', async () => {
@@ -335,7 +335,9 @@ describe('MemberProfileScreen', () => {
     useAuthStore.setState({ session: null, account });
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
     fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
-    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Could not load messages. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     expect(fetchMemberPosts).not.toHaveBeenCalled();
   });
 

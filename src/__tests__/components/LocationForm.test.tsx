@@ -77,6 +77,8 @@ describe('LocationForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
     const input = screen.getByPlaceholderText('City, country, or anywhere') as HTMLInputElement;
+    expect(input.className).toContain('text-base');
+    expect(input.className).not.toContain('text-sm');
     expect(input.value).toBe('');
     expect(input.autocomplete).toBe('address-level2');
     expect(input.getAttribute('spellcheck')).toBe('false');

@@ -90,7 +90,9 @@ describe('ViewProfileLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
-    expect(screen.getByText('Could not load this profile. Please try again.')).toBeTruthy();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Could not load this profile. Please try again.');
+    expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeTruthy();

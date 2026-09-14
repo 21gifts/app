@@ -116,7 +116,9 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   if (status === 'error') {
     return (
       <div className="flex flex-col items-center gap-4">
-        <p className="text-center text-sm text-app-muted">{t('view.error')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('view.error')}
+        </p>
         <Button
           type="button"
           onClick={() => {
@@ -147,7 +149,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             controls
             playsInline
             preload="metadata"
-            className="mx-auto block h-auto w-auto max-h-80 max-w-full rounded-2xl object-contain"
+            className="mx-auto block h-auto w-auto max-h-80 max-w-full rounded-xl object-contain"
             onError={() => {
               setVideoFailed(true);
             }}
@@ -157,7 +159,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
           <img
             src={photoUrl}
             alt={t('forum.photoAlt', { name: note.name })}
-            className="max-h-80 w-full rounded-2xl object-contain"
+            className="max-h-80 w-full rounded-xl object-contain"
           />
         ) : null}
         {note.text !== '' ? (
@@ -168,11 +170,17 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
       </Card>
       {ready ? (
         account === null ? (
-          <Link href="/login" className="text-sm font-medium text-app-fg underline">
+          <Link
+            href="/login"
+            className="text-sm font-medium text-app-fg underline underline-offset-2"
+          >
             {t('login.submit')}
           </Link>
         ) : (
-          <Link href="/welcome" className="text-sm font-medium text-app-fg underline">
+          <Link
+            href="/welcome"
+            className="text-sm font-medium text-app-fg underline underline-offset-2"
+          >
             {t('profile.back')}
           </Link>
         )

@@ -111,7 +111,9 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
   if (status === 'error') {
     return (
       <div className="flex flex-col items-center gap-4">
-        <p className="text-center text-sm text-app-muted">{t('view.error')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('view.error')}
+        </p>
         <Button
           type="button"
           onClick={() => {

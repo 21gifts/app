@@ -124,7 +124,9 @@ export function InboxScreen({
         ) : null}
         {messagesError && messages === null ? (
           <div className="flex flex-col items-center gap-3">
-            <p className="text-center text-sm text-app-fg">{t('inbox.error')}</p>
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('inbox.error')}
+            </p>
             <Button type="button" variant="secondary" onClick={onRetryMessages}>
               {t('inbox.retry')}
             </Button>
@@ -158,7 +160,7 @@ export function InboxScreen({
             maxLength={CONTACT_MESSAGE_MAX_LENGTH}
             rows={2}
             disabled={posting || messagesLoading}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm text-app-fg transition disabled:opacity-50"
+            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
           />
           <IconButton
             type="submit"
@@ -206,7 +208,9 @@ export function InboxScreen({
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('inbox.heading')}
         </h1>
-        <p className="text-center text-sm text-app-fg">{t('inbox.error')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('inbox.error')}
+        </p>
         <Button type="button" variant="secondary" onClick={onRetry}>
           {t('inbox.retry')}
         </Button>

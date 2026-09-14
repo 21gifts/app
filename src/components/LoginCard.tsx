@@ -109,7 +109,9 @@ function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />
-      <p className="text-center text-sm text-app-muted">{t('login.error')}</p>
+      <p role="alert" className="text-center text-sm text-app-danger">
+        {t('login.error')}
+      </p>
       <Button type="button" onClick={onRetry}>
         {t('login.retry')}
       </Button>

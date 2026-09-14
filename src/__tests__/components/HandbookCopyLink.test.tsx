@@ -28,6 +28,7 @@ function expectCopiedIcon(button: HTMLElement): void {
   const svg = button.querySelector('svg');
   expect(svg).not.toBeNull();
   expect(svg?.getAttribute('class') ?? '').toContain('lucide-check');
+  expect(svg?.getAttribute('class') ?? '').toContain('text-accent');
 }
 
 afterEach(() => {
@@ -51,6 +52,15 @@ describe('HandbookCopyLink', () => {
     renderWithLocale(<HandbookCopyLink targetId="screens" label="Screens" />);
 
     const button = screen.getByRole('button', { name: 'Copy link to Screens' });
+    expect(screen.queryByText('Copy link to Screens')).toBeNull();
+    expect(button.className).toContain('h-6');
+    expect(button.className).not.toContain('px-1.5');
+    expect(button.className).toContain('text-paper/40');
+    expect(button.className).toContain('hover:bg-paper/10');
+    expect(button.className).toContain('hover:text-paper');
+    expect(button.className).toContain('focus-visible:outline-paper');
+    expect(button.className).not.toContain('hover:bg-app-hover');
+    expect(button.className).not.toContain('hover:text-accent');
     expectIdleIcon(button);
     fireEvent.click(button);
     await act(async () => {
