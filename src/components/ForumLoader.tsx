@@ -917,6 +917,11 @@ export function ForumLoader(): ReactElement | null {
       return [created, ...prev];
     });
     if (created.sats === 0) {
+      if (feedMode === 'unpaid') {
+        const iso = new Date().toISOString();
+        saveUnpaidSeenAt(iso);
+        setUnpaidSeenAt(iso);
+      }
       setFeedMode('all');
     }
     if (created.hasPhoto && pendingPhoto !== null) {

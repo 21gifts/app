@@ -316,9 +316,15 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ### Variant: unpaid
 
-Click **No gifts yet** (German: **Noch ohne Geschenk**) — only loaded notes with exactly zero sats appear. Bob is visible; paid Ada and Carol are hidden. This includes notes without a receiving wallet. **No gifts yet** shows a count of loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. The four filters use a two-column grid for readable labels on mobile. Active remains the default.
+Click **No gifts yet** (German: **Noch ohne Geschenk**) — only loaded notes with exactly zero sats appear. Bob is visible; paid Ada and Carol are hidden. This includes notes without a receiving wallet. The four filters use a two-column grid for readable labels on mobile. Active remains the default.
 
 ![21.gifts welcome without gifts](images/welcome-unpaid.png)
+
+### Variant: unpaid-new-count
+
+Active selected; last-visit stamp older than Bob's unpaid note; **No gifts yet** shows the count chip `1`.
+
+![21.gifts welcome unpaid new count](images/welcome-unpaid-new-count.png)
 
 ### Variant: empty-unpaid
 

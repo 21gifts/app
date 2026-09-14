@@ -407,6 +407,62 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('does not show an unpaid new-count chip after a refresh while unpaid is selected', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    const listed: ForumMessage = { ...SAMPLE, payable: true };
+    fetchMock.mockResolvedValueOnce([listed]).mockImplementation(async () => [
+      {
+        id: 'm-new',
+        name: 'Carol',
+        text: 'Fresh from refresh',
+        createdAt: new Date().toISOString(),
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      listed,
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    });
+  });
+
   it('loads a photo blob URL for hasPhoto messages and revokes on unmount', async () => {
     fetchMock.mockResolvedValue([
       {
@@ -1462,6 +1518,48 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Unpaid note')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    });
+  });
+
+  it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    postMock.mockImplementation(async () => ({
+      id: 'm-unpaid',
+      name: 'Ada',
+      text: 'Unpaid note',
+      createdAt: new Date().toISOString(),
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    }));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Unpaid note' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('Unpaid note')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
     });
   });
 

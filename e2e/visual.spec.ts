@@ -3030,6 +3030,21 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-unpaid');
   });
 
+  test('welcome unpaid-new-count', async ({ page }) => {
+    await seedAda(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-welcome-unpaid-new-count');
+  });
+
   test('welcome empty-unpaid', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {

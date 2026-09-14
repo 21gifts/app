@@ -684,7 +684,7 @@ Two tones. Gift also takes `shell?: 'app' | 'dark'` (default `app`; ignored for 
 ```tsx
 export function SegmentedControl<T extends string>(props: {
   value: T;
-  options: readonly { value: T; label: string }[];
+  options: readonly { value: T; label: string; badge?: number; badgeAriaLabel?: string }[];
   onChange: (value: T) => void;
   ariaLabel: string;
   tone: 'gift' | 'neutral';
@@ -692,6 +692,8 @@ export function SegmentedControl<T extends string>(props: {
   className?: string;
 }): ReactElement;
 ```
+
+Chip: an `aria-hidden` span with `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`. Omitted when `badge` is missing or ≤ 0. The option button gets `aria-label` only when `badge` > 0 and `badgeAriaLabel` is non-empty.
 
 | Tone + shell    | Track                                                                     | Selected                                  | Unselected       | Use                                                                                                                                                                          |
 | --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -920,7 +922,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
-- `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip (omitted at 0).
+- `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip; omitted at 0 and when unpaid is selected.
 - Composer.
 - Note cards / empty / loading / error (`middle`): amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `ButtonLink` CTA) when setup is complete and the member has not posted.
