@@ -2122,6 +2122,42 @@ describe('ForumLoader', () => {
     expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
   });
 
+  it('refetches expanded replies after a paid poll when the account snapshot is missing', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    let resolvePoll!: (value: typeof SAMPLE) => void;
+    publicFetchMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePoll = resolve;
+      }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    const replyLoads = repliesMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getAllByLabelText('Amount')[0]!, { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalled();
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    await act(async () => {
+      resolvePoll({ ...SAMPLE, sats: 21 });
+    });
+    await waitFor(() => {
+      expect(repliesMock.mock.calls.length).toBeGreaterThan(replyLoads);
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('does not close via later sats after Back during a rejected public pay fetch', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);

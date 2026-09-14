@@ -633,6 +633,33 @@ describe('MemberProfileScreen', () => {
     expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
   });
 
+  it('refetches expanded replies after a paid poll when the account snapshot is missing', async () => {
+    let resolvePoll!: (value: typeof note) => void;
+    vi.mocked(fetchPublicMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePoll = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    const replyLoads = vi.mocked(fetchReplies).mock.calls.length;
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalled();
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    await act(async () => {
+      resolvePoll({ ...note, sats: 42, replyCount: 1 });
+    });
+    await waitFor(() => {
+      expect(vi.mocked(fetchReplies).mock.calls.length).toBeGreaterThan(replyLoads);
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('shows a replies error when refetch after pay fails', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
     vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('fail'));
