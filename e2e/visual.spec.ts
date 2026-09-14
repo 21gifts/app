@@ -4387,6 +4387,7 @@ test.describe('notifications screens', () => {
     });
     await page.goto('/notifications');
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
+    await expect(page.getByText('Bob replied')).toBeVisible();
     await shotScreen(page, 'screen-notifications');
   });
 

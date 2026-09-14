@@ -39,6 +39,50 @@ const PHOTO: Notification = {
   readAt: null,
 };
 
+const POST: Notification = {
+  id: 'n4',
+  type: 'forum_post',
+  parentId: 'parent-4',
+  replyId: 'parent-4',
+  name: 'Eve',
+  text: 'Hello living room',
+  createdAt: '2026-08-25T12:00:00.000Z',
+  readAt: null,
+};
+
+const POST_PHOTO: Notification = {
+  id: 'n5',
+  type: 'forum_post',
+  parentId: 'parent-5',
+  replyId: 'parent-5',
+  name: 'Ivy',
+  text: '',
+  createdAt: '2026-08-24T12:00:00.000Z',
+  readAt: null,
+};
+
+const ZAP: Notification = {
+  id: 'n6',
+  type: 'zap',
+  parentId: 'parent-6',
+  replyId: 'zap-6',
+  name: 'Frank',
+  text: '21',
+  createdAt: '2026-08-23T12:00:00.000Z',
+  readAt: null,
+};
+
+const ZAP_EMPTY: Notification = {
+  id: 'n7',
+  type: 'zap',
+  parentId: 'parent-7',
+  replyId: 'zap-7',
+  name: 'Gina',
+  text: '',
+  createdAt: '2026-08-22T12:00:00.000Z',
+  readAt: null,
+};
+
 describe('NotificationsScreen', () => {
   it('shows loading heading and copy', () => {
     renderWithLocale(
@@ -110,8 +154,8 @@ describe('NotificationsScreen', () => {
       />,
     );
     expect(screen.getByRole('list', { name: 'Notifications' })).toBeTruthy();
-    const unread = screen.getByRole('button', { name: /Bob replied to your post/ });
-    const read = screen.getByRole('button', { name: /Carol replied to your post/ });
+    const unread = screen.getByRole('button', { name: /Bob replied/ });
+    const read = screen.getByRole('button', { name: /Carol replied/ });
     expect(unread.textContent).toContain('Nice post');
     expect(read.textContent).toContain('Thanks');
     expect(unread.querySelector('.font-semibold')).toBeTruthy();
@@ -121,7 +165,7 @@ describe('NotificationsScreen', () => {
     expect(onOpen).toHaveBeenCalledWith('parent-1', 'n1');
   });
 
-  it('falls back to photo-only copy when text is empty', () => {
+  it('falls back to photo-only copy when a reply has empty text', () => {
     const onOpen = vi.fn();
     renderWithLocale(
       <NotificationsScreen
@@ -133,7 +177,72 @@ describe('NotificationsScreen', () => {
       />,
     );
     expect(screen.getByText('Photo reply')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Dan replied to your post/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Dan replied/ }));
     expect(onOpen).toHaveBeenCalledWith('parent-3', 'n3');
+  });
+
+  it('falls back to photo-only copy when a post has empty text', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[POST_PHOTO]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    expect(screen.getByText('Photo')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Ivy posted/ }));
+    expect(onOpen).toHaveBeenCalledWith('parent-5', 'n5');
+  });
+
+  it('lists a living-room post with its body and opens parentId', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[POST]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /Eve posted/ });
+    expect(row.textContent).toContain('Hello living room');
+    fireEvent.click(row);
+    expect(onOpen).toHaveBeenCalledWith('parent-4', 'n4');
+  });
+
+  it('lists a zap with the stored sat amount and opens parentId', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[ZAP]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /Frank sent bitcoin/ });
+    expect(row.textContent).toContain('21');
+    fireEvent.click(row);
+    expect(onOpen).toHaveBeenCalledWith('parent-6', 'n6');
+  });
+
+  it('omits extra body copy when a zap has empty text', () => {
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[ZAP_EMPTY]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Gina sent bitcoin/ })).toBeTruthy();
+    expect(screen.queryByText('Photo reply')).toBeNull();
+    expect(screen.queryByText('Photo')).toBeNull();
   });
 });
