@@ -1081,11 +1081,13 @@ export function ForumBoard({
                                 {t('forum.giftReply', {
                                   amount: formatBitcoin(reply.sats, numberFormat),
                                 })}
+                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
                                 {formatBitcoin(reply.sats, numberFormat)}
+                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
                             {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
