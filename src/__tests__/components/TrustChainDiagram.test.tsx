@@ -98,6 +98,26 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
   });
 
+  it('ignores a pointer move whose client coordinates are not finite', () => {
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
+    const node = screen.getByTestId('trust-node-f');
+    const startX = Number(node.querySelector('rect')?.getAttribute('x'));
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(node, { pointerId: 1, clientX: Number.NaN, clientY: 10 });
+    expect(Number(node.querySelector('rect')?.getAttribute('x'))).toBe(startX);
+  });
+
+  it('ignores pointer up from a different pointer than the drag', () => {
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
+    const node = screen.getByTestId('trust-node-f');
+    const release = vi.fn();
+    node.hasPointerCapture = (): boolean => true;
+    node.releasePointerCapture = release;
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(node, { pointerId: 2, clientX: 10, clientY: 10 });
+    expect(release).not.toHaveBeenCalled();
+  });
+
   it('releases pointer capture on pointer up after a drag start', () => {
     renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
     const node = screen.getByTestId('trust-node-f');
