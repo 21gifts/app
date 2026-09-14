@@ -23,6 +23,7 @@ vi.mock('@/lib/api', () => ({
   openConversation: vi.fn(),
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 
 beforeEach(() => {
