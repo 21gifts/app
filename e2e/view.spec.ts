@@ -54,7 +54,8 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+  await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
 });
@@ -239,7 +240,8 @@ test('signed-in profile does not show the copy control or the view-key URL', asy
     });
   });
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+  await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'View key' })).toHaveCount(0);
   await expect(page.getByText(new RegExp(`/view/${KEY}`))).toHaveCount(0);
   await expect(page.getByText(KEY)).toHaveCount(0);

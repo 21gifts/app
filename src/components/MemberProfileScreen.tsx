@@ -659,6 +659,10 @@ export function MemberProfileScreen({
     void (async () => {
       try {
         const thread = await openConversation(token, messageId);
+        if (useAuthStore.getState().session !== token) {
+          setPmBusy(false);
+          return;
+        }
         router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
       } catch {
         setPmBusy(false);

@@ -2548,6 +2548,43 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('does not navigate to the thread when the session changes mid-message', async () => {
+    let resolveThread!: (value: {
+      id: string;
+      kind: 'member_member' | 'member_platform' | 'member_damus';
+      name: string;
+      lastText: string;
+      lastAt: string;
+    }) => void;
+    vi.mocked(openConversation).mockReturnValue(
+      new Promise((resolve) => {
+        resolveThread = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Message' }));
+    act(() => {
+      useAuthStore.setState({ session: 'other' });
+    });
+    resolveThread({
+      id: 'conv-1',
+      kind: 'member_member',
+      name: 'Carol',
+      lastText: '',
+      lastAt: '2026-01-01T00:00:00.000Z',
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it('ignores a second pay submit while an invoice is in flight', async () => {
     let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
     vi.mocked(postMessageInvoice).mockReturnValue(

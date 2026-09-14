@@ -81,6 +81,8 @@ describe('ViewProfileScreen', () => {
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit Wallet of Satoshi address' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+    expect(screen.queryByText('Copy link to this profile')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove Wallet of Satoshi address' })).toBeNull();
   });
 

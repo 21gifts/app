@@ -4992,7 +4992,8 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   await expect(page.getByText('Ada')).toBeVisible();
   await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+  await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Remove Wallet of Satoshi address' })).toHaveCount(
     0,

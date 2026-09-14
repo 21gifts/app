@@ -206,9 +206,8 @@ describe('ProfileScreen', () => {
     expect(screen.queryByLabelText("Received ₿1'500")).toBeNull();
   });
 
-  it('does not show a copy view-only link control, View key heading, view URL, or raw key', () => {
+  it('does not show a View key heading, view URL, or raw key', () => {
     renderWithLocale(<ProfileScreen />);
-    expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'View key' })).toBeNull();
     expect(screen.queryByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeNull();
     expect(screen.queryByText(VIEW_KEY)).toBeNull();
@@ -302,6 +301,18 @@ describe('ProfileScreen', () => {
       rejectUpdated(new MissingRequirementsError(['name']));
     });
 
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('does not redirect when putAboutMe throws MissingRequirementsError for a missing name', async () => {
+    vi.mocked(putAboutMe).mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<ProfileScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(putAboutMe).toHaveBeenCalled();
+    });
     expect(replace).not.toHaveBeenCalled();
   });
 
