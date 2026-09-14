@@ -499,6 +499,7 @@ const en = {
   'notifications.reply': '{name} replied',
   'notifications.zap': '{name} sent bitcoin',
   'notifications.photoOnly': 'Photo reply',
+  'notifications.photoPost': 'Photo',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -1026,6 +1027,7 @@ const de = {
   'notifications.reply': '{name} hat geantwortet',
   'notifications.zap': '{name} hat Bitcoin gesendet',
   'notifications.photoOnly': 'Foto-Antwort',
+  'notifications.photoPost': 'Foto',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -1540,6 +1542,7 @@ const es = {
   'notifications.reply': '{name} respondió',
   'notifications.zap': '{name} envió bitcoin',
   'notifications.photoOnly': 'Respuesta con foto',
+  'notifications.photoPost': 'Foto',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2061,6 +2064,7 @@ const fil = {
   'notifications.reply': '{name} sumagot',
   'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Sagot na litrato',
+  'notifications.photoPost': 'Litrato',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
