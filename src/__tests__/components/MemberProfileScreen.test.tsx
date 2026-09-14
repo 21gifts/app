@@ -238,12 +238,16 @@ describe('MemberProfileScreen', () => {
   });
 
   it('shows a read-only location row without edit controls', () => {
-    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} />);
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Not set')).toBeTruthy();
     cleanup();
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, location: 'Zug' }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, location: 'Zug' }}
+        received={[]}
+        donated={[]}
+      />,
     );
     expect(screen.getByText('Zug')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
