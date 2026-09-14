@@ -3457,9 +3457,7 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe(
-      'Enter a message or add a photo or video',
-    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
     expect(postMock).not.toHaveBeenCalled();
     expect(invoiceMock).not.toHaveBeenCalled();
   });
