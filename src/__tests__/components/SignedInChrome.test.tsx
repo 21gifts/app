@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
-import { fetchAccountActivity } from '@/lib/api';
+import { fetchAccountActivity, fetchNotifications } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { isStandaloneDisplay } from '@/lib/push';
@@ -65,6 +65,8 @@ vi.mock('@/lib/pwa-install', () => ({
 vi.mock('@/lib/push', () => ({
   isIosSafari: vi.fn(() => false),
   isStandaloneDisplay: vi.fn(() => false),
+  resyncPushSubscription: vi.fn().mockResolvedValue(undefined),
+  enablePush: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
@@ -97,6 +99,7 @@ vi.mock('@/lib/api', () => ({
       quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
     },
   }),
+  fetchNotifications: vi.fn().mockResolvedValue({ notifications: [], unreadCount: 0 }),
 }));
 
 const useAccountTotalsActual = (
@@ -132,6 +135,7 @@ beforeEach(() => {
   vi.mocked(isInAppBrowser).mockReturnValue(false);
   vi.mocked(useAccountTotals).mockImplementation(useAccountTotalsActual);
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
+  vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 0 });
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status: 'idle',
     login: vi.fn(),
@@ -184,6 +188,7 @@ describe('SignedInChrome', () => {
     const notifications = screen.getByRole('link', { name: 'Notifications' });
     const messages = screen.getByRole('link', { name: 'Messages' });
     expect(notifications.getAttribute('href')).toBe('/notifications');
+    expect(notifications.getAttribute('aria-label')).toBe('Notifications');
     expect(messages.getAttribute('href')).toBe('/messages');
     expect(notifications.nextElementSibling).toBe(messages);
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
@@ -211,6 +216,18 @@ describe('SignedInChrome', () => {
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Notifications' }).querySelector('svg')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Contact' }).querySelector('svg')).toBeTruthy();
+  });
+
+  it('shows the unread count on Notifications when greater than zero', async () => {
+    vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 3 });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toBeTruthy();
+    });
+    expect(screen.getByRole('link', { name: 'Notifications, 3 unread' }).textContent).toContain(
+      '3',
+    );
   });
 
   it('ignores non-Escape keydown while the menu is open', () => {

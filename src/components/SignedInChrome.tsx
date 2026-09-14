@@ -21,15 +21,18 @@ import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PwaInstall } from '@/components/PwaInstall';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
+import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Profile with same-line given/received amounts only when that
- * side is non-zero, living-room rules, notifications, messages, contact,
+ * side is non-zero, living-room rules, notifications with an unread count
+ * when greater than zero, messages, contact,
  * optional PWA install, language, and log out). The Menu ends with a quiet
  * Version line (`app.version` / `getAppVersion()`). When onboarding
  * is complete and `hasPosted` is false, also mounts
@@ -43,6 +46,7 @@ export function SignedInChrome(): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const account = useAuthStore((state) => state.account);
+  const session = useAuthStore((state) => state.session);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
@@ -51,6 +55,7 @@ export function SignedInChrome(): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { donatedSats, receivedSats, loading } = useAccountTotals();
+  const { unreadCount } = useUnreadCount(open);
   const showIntroduce =
     account !== null &&
     account.setup === null &&
@@ -87,6 +92,13 @@ export function SignedInChrome(): ReactElement {
       document.removeEventListener('mousedown', onMouseDown);
     };
   }, [open]);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    void resyncPushSubscription(session).catch(() => undefined);
+  }, [session]);
 
   const givenAmount = formatBitcoin(donatedSats, numberFormat);
   const receivedAmount = formatBitcoin(receivedSats, numberFormat);
@@ -184,13 +196,29 @@ export function SignedInChrome(): ReactElement {
         </Link>
         <Link
           href="/notifications"
+          aria-label={
+            unreadCount > 0
+              ? t('nav.notificationsUnread', { count: String(unreadCount) })
+              : t('nav.notifications')
+          }
           onClick={() => {
             setOpen(false);
+            if (session === null) {
+              return;
+            }
+            if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+              void enablePush(session).catch(() => undefined);
+            } else {
+              void resyncPushSubscription(session).catch(() => undefined);
+            }
           }}
           className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
         >
           <Bell aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           {t('nav.notifications')}
+          {unreadCount > 0 ? (
+            <span className="ml-auto font-semibold tabular-nums lining-nums">{unreadCount}</span>
+          ) : null}
         </Link>
         <Link
           href="/messages"

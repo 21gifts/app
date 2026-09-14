@@ -6,6 +6,7 @@ import {
   isIosSafari,
   isStandaloneDisplay,
   registerPushWorker,
+  resyncPushSubscription,
   vapidPublicKeyToBytes,
 } from '@/lib/push';
 import { bytesToBase64Url } from '@/lib/webauthn-browser';
@@ -136,6 +137,40 @@ describe('enablePush', () => {
       endpoint: 'https://push.example/sub',
       keys: { p256dh: 'p256', auth: 'auth' },
     });
+  });
+
+  it('resyncs when permission is already granted', async () => {
+    const subscribe = vi.fn().mockResolvedValue({
+      toJSON: () => ({
+        endpoint: 'https://push.example/sub',
+        keys: { p256dh: 'p256', auth: 'auth' },
+      }),
+    });
+    const registration = { pushManager: { subscribe } };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('window', {
+      ...window,
+      PushManager: function PushManager() {},
+    });
+    vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([9, 8, 7])));
+    vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).toHaveBeenCalledWith('sess', {
+      endpoint: 'https://push.example/sub',
+      keys: { p256dh: 'p256', auth: 'auth' },
+    });
+  });
+
+  it('resync is a no-op when permission is not granted', async () => {
+    vi.stubGlobal('Notification', { permission: 'default' });
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
   });
 
   it('throws when notification permission is denied', async () => {

@@ -27,6 +27,7 @@ self.addEventListener('push', (event) => {
     body,
     data: { url },
     icon: '/apple-touch-icon.png',
+    badge: '/apple-touch-icon.png',
   };
   if (tag !== undefined) {
     options.tag = tag;

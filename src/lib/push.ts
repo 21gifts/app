@@ -63,11 +63,12 @@ export function isIosSafari(): boolean {
  * not granted, `Push is not configured` when the api reports 503, or
  * `Invalid subscription` when the browser omits endpoint or keys.
  */
-export async function enablePush(sessionToken: string): Promise<void> {
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') {
-    throw new Error('Notification permission denied');
-  }
+/**
+ * Subscribe with the VAPID key and POST the endpoint to the api.
+ *
+ * @param sessionToken - Bearer session token.
+ */
+async function subscribeAndPost(sessionToken: string): Promise<void> {
   const registration = await registerPushWorker();
   const publicKey = await fetchVapidPublicKey(sessionToken);
   const applicationServerKey = new Uint8Array(vapidPublicKeyToBytes(publicKey));
@@ -99,6 +100,31 @@ export async function enablePush(sessionToken: string): Promise<void> {
     await subscription.unsubscribe().catch(() => undefined);
     throw err;
   }
+}
+
+export async function enablePush(sessionToken: string): Promise<void> {
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    throw new Error('Notification permission denied');
+  }
+  await subscribeAndPost(sessionToken);
+}
+
+/**
+ * Re-POST the current Web Push subscription when OS permission is already
+ * granted. No-op when Push APIs are missing or permission is not `granted`.
+ * Does not call `requestPermission` (that needs a user gesture).
+ *
+ * @param sessionToken - Bearer session token.
+ */
+export async function resyncPushSubscription(sessionToken: string): Promise<void> {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+    return;
+  }
+  if (typeof navigator.serviceWorker === 'undefined' || typeof window.PushManager === 'undefined') {
+    return;
+  }
+  await subscribeAndPost(sessionToken);
 }
 
 /**
