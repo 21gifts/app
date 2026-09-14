@@ -1198,6 +1198,7 @@ export function ForumLoader(): ReactElement | null {
     parentId: string,
     parentBaseline: number,
   ): void => {
+    replyParentById.current.set(created.id, parentId);
     const stillParent = expandedIdRef.current === parentId;
     let alreadyListed = false;
     if (stillParent) {
@@ -1426,8 +1427,13 @@ export function ForumLoader(): ReactElement | null {
             const remaining = (repliesRef.current ?? []).filter(
               (row) => !deletedIds.current.has(row.id),
             );
-            const parentId = expandedIdRef.current ?? replyParentById.current.get(messageId);
-            if (repliesRef.current !== null) {
+            const mappedParent = replyParentById.current.get(messageId);
+            const parentId =
+              mappedParent ??
+              (repliesRef.current?.some((row) => row.id === messageId) === true
+                ? (expandedIdRef.current ?? undefined)
+                : undefined);
+            if (expandedIdRef.current === parentId && repliesRef.current !== null) {
               setReplies(remaining);
             }
             /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
