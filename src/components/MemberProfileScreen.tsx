@@ -73,8 +73,11 @@ function parseReplySats(raw: string): number | 'empty' | 'invalid' {
     return 'invalid';
   }
   const sats = Number.parseInt(trimmed, 10);
-  /* v8 ignore next 3 -- /^\d+$/ parseInt is non-negative; overflow is defensive */
-  if (sats <= 0 || !Number.isSafeInteger(sats)) {
+  if (sats <= 0) {
+    return 'invalid';
+  }
+  /* v8 ignore next 3 -- /^\d+$/ parseInt overflow is defensive */
+  if (!Number.isSafeInteger(sats)) {
     return 'invalid';
   }
   return sats;
