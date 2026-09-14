@@ -2317,7 +2317,9 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
-    useAuthStore.setState({ session: null, account });
+    await act(async () => {
+      useAuthStore.setState({ session: null, account });
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(fetchReplies).toHaveBeenCalledTimes(1);
   });
