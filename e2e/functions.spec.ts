@@ -5328,6 +5328,7 @@ test('Function: DeletePostControl — ordinary members have no reply delete acti
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Show replies' }).click();
+  await expect(page.getByText('A reply')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
 });
