@@ -78,6 +78,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Legal Notice',
   },
   {
+    route: '/about',
+    id: 'default',
+    image: 'about.png',
+    visual: 'screen-about',
+    needle: 'Three convictions',
+  },
+  {
     route: '/login',
     id: 'idle',
     image: 'login.png',
@@ -944,6 +951,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-expanded.png',
     visual: 'state-welcome-expanded',
     needle: 'Write a reply',
+  },
+  {
+    route: '/welcome',
+    id: 'expanded-gifts',
+    image: 'welcome-expanded-gifts.png',
+    visual: 'state-welcome-expanded-gifts',
+    needle: 'send ₿21',
   },
   {
     route: '/welcome',

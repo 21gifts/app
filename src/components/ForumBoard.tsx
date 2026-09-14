@@ -47,6 +47,9 @@ import {
 export type ForumFormError =
   'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | null;
 
+/** Reply composer validation; `amount` is the paid-reply sats field. */
+export type ForumReplyFormError = ForumFormError | 'amount';
+
 /** Pay-sheet validation or request failure. */
 export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | null;
 
@@ -169,12 +172,16 @@ export interface ForumBoardProps {
   replyDraft: string;
   /** Called when the reply draft changes. */
   onReplyDraftChange: (value: string) => void;
+  /** Optional sats draft for a paid reply. */
+  replyAmountDraft?: string;
+  /** Called when the reply amount draft changes. */
+  onReplyAmountDraftChange?: (value: string) => void;
   /** Called when the reply form is submitted. */
   onReplyPost: () => void;
   /** True while a reply post is in flight. */
   replyPosting: boolean;
   /** Reply composer validation or request failure. */
-  replyFormError: ForumFormError;
+  replyFormError: ForumReplyFormError;
   /** Signed-in display name, used to hide PM on own notes and replies. */
   ownName: string | null;
   /**
@@ -252,7 +259,9 @@ function showForumPm(
  * Active/No gifts yet/All/Most popular selector, composer under the mode
  * filters above the newest-first list (new notes only, photo or video
  * attach), newest-first list (social feed) or empty/loading/error, per-card
- * expand for oldest-first replies + reply composer, copy-link control,
+ * expand for oldest-first replies + reply composer (labeled Amount field;
+ * gift-only rows use `forum.giftReply` + `formatBitcoin(sats, numberFormat)`,
+ * text-plus-gift shows the amount under the body), copy-link control,
  * PM control on other people's notes, pay-on-note sheet, optional inline
  * photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
@@ -305,6 +314,8 @@ export function ForumBoard({
   onRetryReplies,
   replyDraft,
   onReplyDraftChange,
+  replyAmountDraft = '',
+  onReplyAmountDraftChange,
   onReplyPost,
   replyPosting,
   replyFormError,
@@ -914,6 +925,17 @@ export function ForumBoard({
                               <p className="mt-1 whitespace-pre-wrap text-sm text-app-fg">
                                 {reply.text}
                               </p>
+                            ) : reply.sats > 0 ? (
+                              <p className="mt-1 text-sm tabular-nums lining-nums text-app-fg">
+                                {t('forum.giftReply', {
+                                  amount: formatBitcoin(reply.sats, numberFormat),
+                                })}
+                              </p>
+                            ) : null}
+                            {reply.text !== '' && reply.sats > 0 ? (
+                              <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
+                                {formatBitcoin(reply.sats, numberFormat)}
+                              </p>
                             ) : null}
                             {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
                             {showForumPm(ownAccountId, ownName, reply) ? (
@@ -959,6 +981,22 @@ export function ForumBoard({
                         }
                         className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
                       />
+                      <Field
+                        id="forum-reply-amount"
+                        label={t('forum.replyAmountLabel')}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        placeholder={t('forum.payAmountPlaceholder')}
+                        value={replyAmountDraft}
+                        disabled={
+                          replyPosting || repliesLoading || repliesError || replies === null
+                        }
+                        onChange={(event) => onReplyAmountDraftChange?.(event.target.value)}
+                        className="w-24"
+                      />
                       <IconButton
                         type="submit"
                         size="lg"
@@ -981,6 +1019,11 @@ export function ForumBoard({
                     {replyFormError === 'empty' ? (
                       <p role="alert" className="text-center text-sm text-app-danger">
                         {t('forum.errorEmpty')}
+                      </p>
+                    ) : null}
+                    {replyFormError === 'amount' ? (
+                      <p role="alert" className="text-center text-sm text-app-danger">
+                        {t('forum.errorReplyPayment')}
                       </p>
                     ) : null}
                     {replyFormError === 'tooLong' ? (

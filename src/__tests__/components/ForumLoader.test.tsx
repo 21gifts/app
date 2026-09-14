@@ -96,6 +96,7 @@ const account: Account = {
 
 const SAMPLE: ForumMessage = {
   id: 'm1',
+  accountId: 'acc_1',
   name: 'Ada',
   text: 'Hello from Ada',
   createdAt: '2026-08-28T12:00:00.000Z',
@@ -110,10 +111,26 @@ const SAMPLE: ForumMessage = {
 
 const FRESH: ForumMessage = {
   id: 'm-new',
+  accountId: 'acc_carol',
   name: 'Carol',
   text: 'Fresh from refresh',
   createdAt: '2026-08-28T15:00:00.000Z',
   sats: 21,
+  payable: true,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'basis',
+  replyCount: 0,
+};
+
+const FOREIGN: ForumMessage = {
+  id: 'm-bob',
+  accountId: 'acc_bob',
+  name: 'Bob',
+  text: 'Hello from Bob',
+  createdAt: '2026-08-28T11:00:00.000Z',
+  sats: 0,
   payable: true,
   hasPhoto: false,
   hasVideo: false,
@@ -2078,6 +2095,69 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
+  it('does not mark hasPosted on a swapped session after a paid poll', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    let resolvePoll!: (value: typeof SAMPLE) => void;
+    publicFetchMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePoll = resolve;
+      }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalled();
+    });
+    useAuthStore.setState({ session: 'other', account: { ...account, id: 'other-acc' } });
+    await act(async () => {
+      resolvePoll({ ...SAMPLE, sats: 21 });
+    });
+    expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
+  });
+
+  it('refetches expanded replies after a paid poll when the account snapshot is missing', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    let resolvePoll!: (value: typeof SAMPLE) => void;
+    publicFetchMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePoll = resolve;
+      }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    const replyLoads = repliesMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getAllByLabelText('Amount')[0]!, { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalled();
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    await act(async () => {
+      resolvePoll({ ...SAMPLE, sats: 21 });
+    });
+    await waitFor(() => {
+      expect(repliesMock.mock.calls.length).toBeGreaterThan(replyLoads);
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('does not close via later sats after Back during a rejected public pay fetch', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([SAMPLE]);
@@ -2983,6 +3063,48 @@ describe('ForumLoader', () => {
     expect(useAuthStore.getState().account?.hasPosted).toBe(true);
   });
 
+  it('does not mark hasPosted on a swapped session after an unpaid reply', async () => {
+    let resolvePost!: (value: ForumMessage) => void;
+    postMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    useAuthStore.setState({ session: 'other', account: { ...account, id: 'other-acc' } });
+    await act(async () => {
+      resolvePost({
+        id: 'r-new',
+        name: 'Ada',
+        text: 'Fresh reply',
+        createdAt: '2026-08-28T12:45:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      });
+    });
+    expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
+  });
+
   it('posts a reply when the account snapshot is missing', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     repliesMock.mockResolvedValue([]);
@@ -3009,11 +3131,443 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
     useAuthStore.setState({ session: 'sess', account: null });
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1n1example', amountSats: 1 });
+    publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 1, replyCount: 1 });
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 1, 'Fresh reply');
     });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('requires a sat amount to reply on someone else’s note', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('invoices a reply with text on someone else’s note', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, 'Hi Bob');
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('invoices a gift-only reply from the composer', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('drops a late paid-reply invoice after Gift is opened', async () => {
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    invoiceMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(publicFetchMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
+  it('drops a late paid-reply invoice error after Gift is opened', async () => {
+    let rejectInvoice!: (reason: Error) => void;
+    invoiceMock.mockReturnValue(
+      new Promise((_, reject) => {
+        rejectInvoice = reject;
+      }),
+    );
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await act(async () => {
+      rejectInvoice(new Error('fail'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
+  async function expandForeignAndPayReply(text: string, sats: string): Promise<void> {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    if (text !== '') {
+      fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: text } });
+    }
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: sats } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+  }
+
+  it('opens the overlay when a paid reply invoice returns missing_requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: [] },
+    });
+    invoiceMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    invoiceMock.mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    await expandForeignAndPayReply('Hi Bob', '21');
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('maps a retried paid-reply missing_requirements onto the request error', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    invoiceMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    await expandForeignAndPayReply('Hi Bob', '21');
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
+  it('maps a too-long paid-reply invoice error', async () => {
+    invoiceMock.mockRejectedValue(new Error('text must be 1–500 characters'));
+    await expandForeignAndPayReply('Hi Bob', '21');
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    });
+  });
+
+  it('maps a rate-limited paid-reply invoice error', async () => {
+    invoiceMock.mockRejectedValue(new Error('too many payments'));
+    await expandForeignAndPayReply('Hi Bob', '21');
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Too many messages. Please wait a moment and try again.',
+      );
+    });
+  });
+
+  it('maps a generic paid-reply invoice error onto request', async () => {
+    invoiceMock.mockRejectedValue(new Error('boom'));
+    await expandForeignAndPayReply('Hi Bob', '21');
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+  });
+
+  it('lets a founder reply without paying', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-staff',
+      name: 'Ada',
+      text: 'Staff reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'founder',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Staff reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Staff reply',
+        inReplyTo: 'm-bob',
+      });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('lets a moderator reply without paying', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-mod',
+      name: 'Ada',
+      text: 'Mod reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'moderator',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Mod reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Mod reply', inReplyTo: 'm-bob' });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('does not exempt a verified member from the reply payment', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an empty reply without an amount', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-numeric reply amount', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'abc' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a zero reply amount', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an overflowing reply amount', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '9007199254740992' },
+    });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('maps an unpaid-reply 403 onto the amount error', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    });
+  });
+
+  it('refetches replies after a pay-sheet gift confirms on an expanded thread', async () => {
+    vi.useFakeTimers();
+    try {
+      fetchMock.mockResolvedValue([SAMPLE]);
+      repliesMock.mockResolvedValue([]);
+      invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+      publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 21, replyCount: 1 });
+      renderWithLocale(<ForumLoader />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      await revealAll();
+      fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(repliesMock).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+      fireEvent.change(screen.getAllByLabelText('Amount')[0]!, { target: { value: '21' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(repliesMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("opens a private thread from another person's note", async () => {
@@ -4099,6 +4653,96 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
   });
 
+  it('opens the overlay when a gift continue is missing a name', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(invoiceMock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
+    });
+  });
+
+  it('opens the overlay when a gift continue returns missing_requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: [] },
+    });
+    invoiceMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    invoiceMock.mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not reopen the overlay when a retried gift continue is still missing requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    invoiceMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+  });
+
   it('opens the overlay when a reply is missing a name', async () => {
     useAuthStore.setState({
       session: 'sess',
@@ -4252,6 +4896,40 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('maps a retried unpaid-reply missing_requirements onto the request error', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    postMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
   });
 });
 
