@@ -12,12 +12,7 @@ import {
   type ActivityScale,
 } from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
-import {
-  formatBitcoin,
-  formatFiatTick,
-  formatUsdTick,
-  type FiatCode,
-} from '@/lib/stats-money';
+import { formatBitcoin, formatFiatTick, formatUsdTick, type FiatCode } from '@/lib/stats-money';
 
 /** Props for {@link AccountActivityChart}. */
 export interface AccountActivityChartProps {
