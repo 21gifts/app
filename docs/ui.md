@@ -420,6 +420,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
 | Language             | embedded `LanguageSwitcher`   |                                                                                     |
 | Log out              | `LogoutButton`                | labeled                                                                             |
+| Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
 
 Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`. Panel: `min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 

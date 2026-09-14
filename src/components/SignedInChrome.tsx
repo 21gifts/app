@@ -21,6 +21,7 @@ import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PwaInstall } from '@/components/PwaInstall';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
+import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -29,7 +30,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Profile with same-line given/received amounts only when that
  * side is non-zero, living-room rules, notifications, messages, contact,
- * optional PWA install, language, and log out). When onboarding
+ * optional PWA install, language, and log out). The Menu ends with a quiet
+ * Version line (`app.version` / `getAppVersion()`). When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
  * introduce CTA skips the overlay once so a remount after navigating to
@@ -218,6 +220,9 @@ export function SignedInChrome(): ReactElement {
         />
         <LanguageSwitcher tone="light" embedded />
         <LogoutButton />
+        <p className="px-3 py-2 text-xs text-app-muted tabular-nums lining-nums">
+          {t('app.version', { sha: getAppVersion() })}
+        </p>
       </div>
       {showIntroduce ? (
         <IntroduceYourselfOverlay

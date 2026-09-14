@@ -2,9 +2,10 @@
  * Typed accessors for the app's public runtime configuration.
  *
  * Every `NEXT_PUBLIC_*` variable read anywhere in the app goes through this
- * module. Keep it in sync with `src/types/env.d.ts`, the Dockerfile build
- * placeholders, and `entrypoint.sh` (which substitutes the placeholders at
- * container start).
+ * module. Keep it in sync with `src/types/env.d.ts`. `NEXT_PUBLIC_API_URL` is
+ * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
+ * start. `NEXT_PUBLIC_GIT_SHA` is baked at `next build` (Docker ARG /
+ * `next.config.ts` env) and is not substituted by `entrypoint.sh`.
  */
 
 /**
@@ -27,4 +28,25 @@ export function getApiUrl(): string {
     );
   }
   return value;
+}
+
+/**
+ * Returns the short git SHA of this app build (7 chars), or `dev` when no SHA was baked.
+ *
+ * Read exclusively through this accessor. Next.js inlines `NEXT_PUBLIC_GIT_SHA`
+ * at build time from a literal `process.env.NEXT_PUBLIC_GIT_SHA` expression.
+ *
+ * @returns The display SHA (`dev` or 7-character git SHA).
+ * @throws Error when `NEXT_PUBLIC_GIT_SHA` is unset or empty.
+ */
+export function getAppVersion(): string {
+  // Dot access is load-bearing: Next.js inlines `NEXT_PUBLIC_*` variables at
+  // build time only for literal `process.env.NEXT_PUBLIC_GIT_SHA` expressions.
+  const value = process.env.NEXT_PUBLIC_GIT_SHA;
+  if (value === undefined || value === '') {
+    throw new Error(
+      'NEXT_PUBLIC_GIT_SHA is not set. Provide it at build time (Docker ARG GIT_SHA or next.config.ts env).',
+    );
+  }
+  return value.length <= 7 ? value : value.slice(0, 7);
 }

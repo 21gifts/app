@@ -456,6 +456,12 @@ test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {
   expect(body.challengeId.length).toBeGreaterThan(8);
 });
 
+test('Function: getAppVersion — signed-in Menu shows Version dev', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await openSignedInMenu(page);
+  await expect(page.getByText('Version dev')).toBeVisible();
+});
+
 test('Function: proxyApiRequest — POST passkey register begin is 200', async ({ request }) => {
   const res = await request.post('/auth/passkey/register/begin');
   expect(res.status()).toBe(200);
@@ -4165,6 +4171,7 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   await expect(page.getByLabel('Language')).toBeVisible();
   await expect(page.getByRole('option', { name: 'Deutsch' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+  await expect(page.getByText('Version dev')).toBeVisible();
   await page.getByLabel('Language').click();
   await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
 });
