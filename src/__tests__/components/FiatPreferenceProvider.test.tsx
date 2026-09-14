@@ -1,10 +1,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  FiatPreferenceProvider,
-  useFiatPreference,
-} from '@/components/FiatPreferenceProvider';
+import { FiatPreferenceProvider, useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { FIAT_COOKIE } from '@/lib/stats-money';
 
 afterEach(() => {
