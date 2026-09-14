@@ -760,11 +760,11 @@ Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome
 
 ### Inbox thread bubbles
 
-Inbox direction is a pair of content-sized bubbles, not a Sent folder and not orange. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, PM, expand).
+Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, PM, expand).
 
-**Incoming (`fromMe === false`).** Muted note card, left: `self-start w-fit max-w-[85%] rounded-2xl rounded-bl-md border border-app-border bg-app-card-muted px-4 py-3`. Inner: name `text-sm font-medium text-app-fg`, time `text-xs text-app-subtle`, body `mt-2 whitespace-pre-wrap text-sm text-app-fg`.
+**Incoming (`fromMe === false`).** Full-width muted note card (same chrome as the forum note card body): `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`. Inner: name `text-sm font-medium text-app-fg`, time `text-xs text-app-subtle`, body `mt-2 whitespace-pre-wrap text-sm text-app-fg`.
 
-**Sent (`fromMe === true`).** Filled form-primary, right: `self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg`. No border, no muted fill. Inner: name `text-sm font-medium text-app-btn-fg`, time `text-xs text-app-btn-fg/70`, body `mt-2 whitespace-pre-wrap text-sm text-app-btn-fg`. Label `inbox.you`.
+**Sent (`fromMe === true`).** Filled form-primary, right, content-sized: `self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg`. No border, no muted fill. Inner: name `text-sm font-medium text-app-btn-fg`, time `text-xs text-app-btn-fg/70`, body `mt-2 whitespace-pre-wrap text-sm text-app-btn-fg`. Label `inbox.you`.
 
 **List outbound last-text.** Compact sent chip on the right of the (still muted) conversation row, same fill: `self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg`. Copy stays `inbox.sentPreview`. Inbound last text stays `line-clamp-2 text-sm text-app-muted`. Empty `lastText` omits the preview.
 
@@ -949,7 +949,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + list of note-like rows (inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming muted left, sent filled `app-btn` right) + composer icon send. Empty / loading / error as catalog. In-card back is **All conversations**; page chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + list of note-like rows (inbound last text muted; last outbound text a filled sent chip), or thread with in-card back `IconButton` + counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send. Empty / loading / error as catalog. In-card back is **All conversations**; page chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 

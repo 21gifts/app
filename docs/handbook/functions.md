@@ -1614,7 +1614,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Inbound last text is raw muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip. Thread incoming messages are muted left note-card bubbles; `fromMe` messages render as filled `app-btn` bubbles labelled `inbox.you`.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Inbound last text is raw muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`.
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`.

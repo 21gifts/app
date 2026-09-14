@@ -338,9 +338,9 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Hello team')).toBeTruthy();
     const incoming = screen.getByRole('listitem');
     expect(incoming.getAttribute('data-from-me')).toBe('false');
-    expect(incoming.className).toContain('self-start');
     expect(incoming.className).toContain('bg-app-card-muted');
     expect(incoming.className).not.toContain('bg-app-btn');
+    expect(incoming.className).not.toContain('self-end');
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
     expect(onBack).toHaveBeenCalledTimes(1);

@@ -60,8 +60,9 @@ export interface InboxScreenProps {
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 500-character composer. Origin labels come from {@link Conversation} `kind`.
- * Outbound last-text previews use `inbox.sentPreview` as a filled chip; `fromMe`
- * messages render as filled `app-btn` bubbles labelled `inbox.you`.
+ * Outbound last-text previews use `inbox.sentPreview` as a filled chip. Incoming
+ * thread messages are full-width muted note cards; `fromMe` messages render as
+ * filled `app-btn` bubbles on the right labelled `inbox.you`.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.
@@ -144,7 +145,7 @@ export function InboxScreen({
                 className={
                   message.fromMe
                     ? 'self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg'
-                    : 'self-start w-fit max-w-[85%] rounded-2xl rounded-bl-md border border-app-border bg-app-card-muted px-4 py-3'
+                    : 'rounded-2xl border border-app-border bg-app-card-muted px-4 py-3'
                 }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
