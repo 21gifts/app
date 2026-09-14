@@ -928,7 +928,7 @@ export function ForumBoard({
                               </p>
                             ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (
-                              <p className="mt-1 text-sm tabular-nums text-app-muted">
+                              <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
                                 {formatBitcoin(reply.sats, locale)}
                               </p>
                             ) : null}

@@ -3232,27 +3232,31 @@ describe('ForumLoader', () => {
 
   it('refetches replies after a pay-sheet gift confirms on an expanded thread', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([SAMPLE]);
-    repliesMock.mockResolvedValue([]);
-    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
-    publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 21, replyCount: 1 });
-    renderWithLocale(<ForumLoader />);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(repliesMock).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getAllByLabelText('Amount')[0]!, { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(repliesMock).toHaveBeenCalledTimes(2);
+    try {
+      fetchMock.mockResolvedValue([SAMPLE]);
+      repliesMock.mockResolvedValue([]);
+      invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+      publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 21, replyCount: 1 });
+      renderWithLocale(<ForumLoader />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      await revealAll();
+      fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(repliesMock).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+      fireEvent.change(screen.getAllByLabelText('Amount')[0]!, { target: { value: '21' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(repliesMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("opens a private thread from another person's note", async () => {
@@ -4336,6 +4340,96 @@ describe('ForumLoader', () => {
     });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
+  it('opens the overlay when a gift continue is missing a name', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(invoiceMock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 21);
+    });
+  });
+
+  it('opens the overlay when a gift continue returns missing_requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: [] },
+    });
+    invoiceMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    invoiceMock.mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not reopen the overlay when a retried gift continue is still missing requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    invoiceMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
   });
 
   it('opens the overlay when a reply is missing a name', async () => {

@@ -702,7 +702,7 @@ const de = {
   'forum.replyCount': '{count} Antworten',
   'forum.replyComposerLabel': 'Ihre Antwort',
   'forum.replyPlaceholder': 'Antwort schreiben',
-  'forum.giftReply': 'sende {amount}',
+  'forum.giftReply': 'senden {amount}',
   'forum.replyAmountLabel': 'Betrag',
   'forum.errorReplyPayment': 'Senden Sie mindestens ₿1 mit Ihrer Antwort',
   'forum.repliesLoading': 'Antworten werden geladen…',

@@ -1038,39 +1038,54 @@ export function ForumLoader(): ReactElement | null {
     }
     const messageId = payMessageId;
     const baseline = listed.sats;
-    const generation = payPollGeneration.current;
-    setPayBusy(true);
-    setPayError(null);
-    void (async () => {
-      try {
-        const invoice = await postMessageInvoice(session, messageId, sats);
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setPayInvoice({
-          messageId,
-          pr: invoice.pr,
-          amountSats: invoice.amountSats,
-        });
-        setPayBusy(false);
-        startPayPoll(messageId, baseline);
-      } catch (err) {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setPayError(
-          isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
-        );
-      } finally {
-        if (generation === payPollGeneration.current) {
+    const continuePay = (isRetry: boolean): Promise<void> => {
+      const generation = payPollGeneration.current;
+      setPayBusy(true);
+      setPayError(null);
+      return (async () => {
+        try {
+          const invoice = await postMessageInvoice(session, messageId, sats);
+          if (generation !== payPollGeneration.current) {
+            return;
+          }
+          setPayInvoice({
+            messageId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+          });
           setPayBusy(false);
+          startPayPoll(messageId, baseline);
+        } catch (err) {
+          if (generation !== payPollGeneration.current) {
+            return;
+          }
+          if (err instanceof MissingRequirementsError) {
+            if (!isRetry && openOverlayForMissing(err.missing)) {
+              pendingPostRef.current = () => continuePay(true);
+              return;
+            }
+            setPayError('request');
+            return;
+          }
+          setPayError(
+            isRateLimitError(err)
+              ? 'rateLimit'
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
+          );
+        } finally {
+          if (generation === payPollGeneration.current) {
+            setPayBusy(false);
+          }
         }
-      }
-    })();
+      })();
+    };
+    if (account !== null && openOverlayForMissing(account.missing)) {
+      pendingPostRef.current = () => continuePay(true);
+      return;
+    }
+    void continuePay(false);
   };
 
   const onModeChange = (next: ForumFeedMode): void => {

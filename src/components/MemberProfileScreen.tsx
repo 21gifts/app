@@ -436,6 +436,11 @@ export function MemberProfileScreen({
       }
       setReplyAmountDraft('');
       pendingPostRef.current = null;
+      const current = useAuthStore.getState();
+      if (current.session !== token || current.account === null) {
+        return;
+      }
+      setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
@@ -467,11 +472,15 @@ export function MemberProfileScreen({
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
+    const generation = payPollGeneration.current;
     try {
       const invoice =
         trimmed === ''
           ? await postMessageInvoice(token, parentId, sats)
           : await postMessageInvoice(token, parentId, sats, trimmed);
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
       setPayMessageId(parentId);
       setPayError(null);
       setPayInvoice({
@@ -485,6 +494,9 @@ export function MemberProfileScreen({
       setReplyPosting(false);
       startPayPoll(parentId, baselineSats);
     } catch (err) {
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () =>
@@ -534,10 +546,12 @@ export function MemberProfileScreen({
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
 
   const handlePayOpen = (messageId: string): void => {
+    bumpPayPollGeneration();
     setPayMessageId(messageId);
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
+    setPayWaiting(false);
     setPayBusy(false);
   };
 
@@ -550,28 +564,57 @@ export function MemberProfileScreen({
       setPayError('amount');
       return;
     }
-    setPayBusy(true);
-    void (async () => {
-      try {
-        const invoice = await postMessageInvoice(session, payMessageId, sats);
-        setPayInvoice({
-          messageId: payMessageId,
-          pr: invoice.pr,
-          amountSats: invoice.amountSats,
-        });
-        setPayBusy(false);
-        const parent =
-          listedNote?.id === payMessageId
-            ? listedNote
-            : posts?.find((message) => message.id === payMessageId);
-        /* v8 ignore next 3 -- pay sheet only opens on a listed note */
-        const baselineSats = parent === undefined ? 0 : parent.sats;
-        startPayPoll(payMessageId, baselineSats);
-      } catch {
-        setPayError('request');
-        setPayBusy(false);
-      }
-    })();
+    const token = session;
+    const messageId = payMessageId;
+    const parent =
+      listedNote?.id === messageId
+        ? listedNote
+        : posts?.find((message) => message.id === messageId);
+    /* v8 ignore next 3 -- pay sheet only opens on a listed note */
+    const baselineSats = parent === undefined ? 0 : parent.sats;
+    const continuePay = (isRetry: boolean): Promise<void> => {
+      const generation = payPollGeneration.current;
+      setPayBusy(true);
+      setPayError(null);
+      return (async () => {
+        try {
+          const invoice = await postMessageInvoice(token, messageId, sats);
+          if (generation !== payPollGeneration.current) {
+            return;
+          }
+          setPayInvoice({
+            messageId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+          });
+          setPayBusy(false);
+          startPayPoll(messageId, baselineSats);
+        } catch (err) {
+          if (generation !== payPollGeneration.current) {
+            return;
+          }
+          if (err instanceof MissingRequirementsError) {
+            if (!isRetry && openOverlayForMissing(err.missing)) {
+              pendingPostRef.current = () => continuePay(true);
+              return;
+            }
+            /* v8 ignore next 3 -- isRetry after overlay; sheet may already be closed */
+            setPayError('request');
+            return;
+          }
+          setPayError('request');
+        } finally {
+          if (generation === payPollGeneration.current) {
+            setPayBusy(false);
+          }
+        }
+      })();
+    };
+    if (account !== null && openOverlayForMissing(account.missing)) {
+      pendingPostRef.current = () => continuePay(true);
+      return;
+    }
+    void continuePay(false);
   };
 
   const handlePayCancel = (): void => {

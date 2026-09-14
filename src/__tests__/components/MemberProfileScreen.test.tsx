@@ -676,6 +676,126 @@ describe('MemberProfileScreen', () => {
     });
     vi.useRealTimers();
     expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(fetchPublicMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops a late pay invoice after Back', async () => {
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(fetchPublicMessage).not.toHaveBeenCalled();
+  });
+
+  it('drops a late pay invoice error after Back', async () => {
+    let rejectInvoice!: (reason: Error) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((_, reject) => {
+        rejectInvoice = reject;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      rejectInvoice(new Error('gone'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('keeps a later gift sheet when an earlier pay poll confirms', async () => {
+    let resolveA!: (value: typeof secondPost) => void;
+    vi.mocked(fetchPublicMessage).mockImplementation((id) => {
+      if (id === secondPost.id) {
+        return new Promise((resolve) => {
+          resolveA = resolve;
+        });
+      }
+      return Promise.resolve({ ...note, sats: note.sats + 21 });
+    });
+    await renderTwoPostFeed();
+    const rowA = screen.getByText('Second post from Carol.').closest('li');
+    const payA = rowA?.querySelector<HTMLButtonElement>('[aria-label="Send Bitcoin"]');
+    expect(payA).toBeTruthy();
+    fireEvent.click(payA as HTMLButtonElement);
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    });
+    const rowB = screen.getByText('Hello from my profile note.').closest('li');
+    const payB = rowB?.querySelector<HTMLButtonElement>('[aria-label="Send Bitcoin"]');
+    expect(payB).toBeTruthy();
+    fireEvent.click(payB as HTMLButtonElement);
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
+    await act(async () => {
+      resolveA({ ...secondPost, sats: 21 });
+      await Promise.resolve();
+    });
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('7');
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+  });
+
+  it('drops a late paid-reply invoice after Gift is opened', async () => {
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(fetchPublicMessage).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
+  it('drops a late paid-reply invoice error after Gift is opened', async () => {
+    let rejectInvoice!: (reason: Error) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((_, reject) => {
+        rejectInvoice = reject;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await act(async () => {
+      rejectInvoice(new Error('fail'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
   it('does not bump the pinned note reply count when posting on a posts-feed card', async () => {
@@ -1220,6 +1340,71 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('sets hasPosted after an unpaid founder reply', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.hasPosted).toBe(true);
+    });
+  });
+
+  it('does not mark hasPosted when the session changes during an unpaid founder reply', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    let resolvePost!: (value: typeof note) => void;
+    vi.mocked(postMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    useAuthStore.setState({ session: 'other', account: { ...account, role: 'founder' } });
+    await act(async () => {
+      resolvePost({
+        ...note,
+        id: '44444444-4444-4444-8444-444444444444',
+        text: 'reply',
+        payable: false,
+      });
+    });
+    expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
+  });
+
+  it('does not mark hasPosted when the account vanishes during an unpaid founder reply', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    let resolvePost!: (value: typeof note) => void;
+    vi.mocked(postMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    useAuthStore.setState({ session: 'sess', account: null });
+    await act(async () => {
+      resolvePost({
+        ...note,
+        id: '44444444-4444-4444-8444-444444444444',
+        text: 'reply',
+        payable: false,
+      });
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('opens the requirements overlay when a reply is missing a name', async () => {
     useAuthStore.setState({
       session: 'sess',
@@ -1404,6 +1589,85 @@ describe('MemberProfileScreen', () => {
     });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
+  it('opens the overlay when a gift continue is missing a name', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+    });
+  });
+
+  it('opens the overlay when a gift continue returns missing_requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: [] },
+    });
+    vi.mocked(postMessageInvoice).mockRejectedValueOnce(new MissingRequirementsError(['name']));
+    vi.mocked(postMessageInvoice).mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('does not reopen the overlay when a retried gift continue is still missing requirements', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, name: null, missing: ['name'] },
+    });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows a replies error when expanding without a session', async () => {
