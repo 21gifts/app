@@ -211,6 +211,8 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 | **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, contact, inbox, notifications, setup. **Not login** (see **card-title**)                             |
 | **card-title** | 18      | 1.125        | 500    | 1.3                    | 0                           | 22em                                               | `text-lg font-medium text-center text-app-fg`                     | Login card heading (`LoginCard` `login.heading`). Keep this smaller step so the card is an action, not a billboard                                                       |
 | **h1-lg**      | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                    | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`   | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                                                  |
+| **display-sm** | 36 / 48 | 2.25 / 3     | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 22em                                               | `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight` | `/about` H1 (reading-width marketing page; not the home 60px display)                                                                                                    |
+| **h2-lg**      | 24      | 1.5          | 600    | 1.3                    | 0                           | 28em                                               | `text-2xl font-semibold`                                          | `/about` conviction titles                                                                                                                                               |
 | **h2**         | 20      | 1.25         | 600    | 1.3                    | 0                           | 28em                                               | `text-xl font-semibold`                                           | Marketing step titles, legal Imprint H2, handbook H2. `/legal` Privacy Policy is an h2 at `text-3xl` so the page keeps one outline h1 (Legal Notice)                     |
 | **h3**         | 18      | 1.125        | 600    | 1.35                   | 0                           | 28em                                               | `text-lg font-semibold`                                           | Marketing why-grid titles, legal H3. `/legal` Overview is an h3 at `text-xl font-semibold` as the first subsection under Privacy Policy                                  |
 | **kicker**     | 14      | 0.875        | 500    | 1.3                    | 0.1em (`tracking-widest`)   | —                                                  | `text-sm font-medium tracking-widest uppercase text-accent`       | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules`                                                                                    |
@@ -326,7 +328,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).
 
 - Canvas: `min-h-[var(--app-height)] bg-ink text-paper [color-scheme:dark]`.
-- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/legal`, `/stats`, `/handbook`, `/404`.
+- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
 **App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher is a Profile identity-card settings row, not chrome.
@@ -336,6 +338,7 @@ flowchart TB
   subgraph mkt [Marketing — always dark]
     R["/"]
     L["/legal"]
+    A["/about"]
     S["/stats"]
     SD["/stats/day"]
     H["/handbook/*"]
@@ -371,7 +374,7 @@ flowchart TB
 | Measure            | Value                                       | Use                                                            |
 | ------------------ | ------------------------------------------- | -------------------------------------------------------------- |
 | Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner               |
-| Legal max          | `max-w-3xl` (48rem)                         | `/legal` reading column                                        |
+| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                           |
 | App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address |
 | App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                      |
 | App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications                   |
@@ -427,7 +430,7 @@ flowchart LR
   subgraph marketingShell [Marketing shell — always ink]
     MH[MarketingHeader: Wordmark + nav + orange Log in + Language]
     MC[Page]
-    MF[MarketingFooter: Wordmark + links + GitHub]
+    MF[MarketingFooter: Wordmark + links + verse + GitHub]
   end
   subgraph appShell [App shell — themeable]
     PL[AppShell.topLeft: Wordmark]
@@ -802,11 +805,11 @@ Load and request failures next to labeled **Try again** use this grammar (`login
 
 ### Marketing header / footer / CTA pair
 
-**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark tone="dark"`. Right: `nav` (how, why, faq, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
+**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
 
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile.
 
-**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `max-w-[1100px]` flex wrap. Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4`. GitHub `text-sm text-paper/70`.
+**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between`; the nav wraps (`flex flex-wrap gap-4`). Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
 
 **Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`.
 
@@ -849,6 +852,10 @@ Composition is top-to-bottom. Source of visual composition: the `page.tsx` plus 
 `MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#why` (kicker, h2, 2×2 h3+body) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
 
 Handbook states: live marketing home.
+
+### `/about`
+
+`MarketingHeader` → `main` → first section `px-5 pt-28 pb-12 sm:pt-36` `max-w-3xl` (accent kicker, H1 `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight` — reading width, not the home display 60px, `body-lg` lead, `blockquote border-l-2 border-accent` italic verse + uppercase accent reference) → second section `max-w-3xl px-5 py-16` (three `article`s, each accent number + h2 + `text-paper/60` body; first article also a second paragraph and a verse blockquote; then `ButtonLink href="/welcome" variant="accent" tone="dark"` **Open the living room**) → `MarketingFooter`. Visitor copy is catalogized; English `title`/`description` metadata is the documented exception. No second typeface, no cross. No separate “origin” section — the convictions carry it.
 
 ### `/legal`
 

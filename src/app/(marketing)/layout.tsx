@@ -3,7 +3,7 @@ import { MarketingFooter } from '@/components/MarketingFooter';
 import { MarketingHeader } from '@/components/MarketingHeader';
 
 /**
- * Dark shell for marketing routes (`/`, `/legal`, `/handbook`, `/stats`): header, page, footer.
+ * Dark shell for marketing routes (`/`, `/about`, `/legal`, `/handbook`, `/stats`): header, page, footer.
  *
  * @param children - Nested page.
  * @returns The async marketing wrapper (does not replace the root html/body).

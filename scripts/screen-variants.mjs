@@ -78,6 +78,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Legal Notice',
   },
   {
+    route: '/about',
+    id: 'default',
+    image: 'about.png',
+    visual: 'screen-about',
+    needle: 'Three convictions',
+  },
+  {
     route: '/login',
     id: 'idle',
     image: 'login.png',
