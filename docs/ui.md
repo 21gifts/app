@@ -21,7 +21,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 3. **Orange is shell-split.** On the **marketing shell**, `#f7931a` is the primary filled CTA (header **Log in**, **Ask for help**, 404 **Back home**) plus kickers. On the **app shell**, it is gift-money fill only (charts, ₿ selected, donate **Open the forum**). _Implication:_ do not call marketing **Log in** a gift. App form primaries (`Button variant="primary"`) stay `bg-app-btn`. `Button variant="accent"` is the orange fill; marketing uses it as shell primary, the app uses it for gift-intent only.
 
-4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1,500`). No `npub`, no “zap”, no “LNURL” on any screen.
+4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1'500`; visitor may pick US `10,000.23` / German `23.000,33`). No `npub`, no “zap”, no “LNURL” on any screen.
 
 5. **People first.** Receiver names and notes are the hero; chrome is quiet. _Implication:_ forum note body is `text-sm text-app-fg`; chrome labels are `text-app-muted`. When photo/story lands, it occupies the reserved profile slot, not a new layout.
 
@@ -224,9 +224,9 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 
 **One title per page.** The document outline has one `h1` (or `card-title` used as the sole heading). Card must not repeat a page title. `LoginPage` has no outer “Log in to 21.gifts”; the only heading is `LoginCard` `login.heading` at **card-title**. Do not add the outer title back. Welcome has no Forum heading; the only `h1` is “Welcome, {name}”.
 
-**`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, locale-grouped integer, no space, no fraction. Example: `₿1,500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
+**`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, style-grouped via `NumberFormatStyle`, no space, no fraction. Default Swiss `₿1'500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
 
-Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1,425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: `formatFiatTick` on stats; `formatUsdTick` on the profile ₿|USD chart. Toggle anatomy in §10.
+Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash; Swiss grouping default). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: `formatFiatTick` on stats; `formatUsdTick` on the profile ₿|USD chart (`$0`, `$1.43`, `$1'425`). Visitor styles `us` / `de` change grouping, not the currency. Toggle anatomy in §10.
 
 **Link type.** Marketing inline links: `text-accent underline underline-offset-2`. App inline links (rules, contact): `text-app-fg underline underline-offset-2 font-medium`. Do not make app body links orange (fails on paper; also not a gift CTA).
 
@@ -949,7 +949,7 @@ Short, warm, direct. People helping people. English examples (catalogs translate
 | Something went wrong. Please try again. | “Request failed with 500”                             |
 | You are a guest in a living room…       | “Community guidelines / ToS summary”                  |
 | Open the forum                          | “Go to messenger surface”                             |
-| `₿1,500`                                | “1500 sats” as the visitor-facing string              |
+| `₿1'500`                                | “1500 sats” as the visitor-facing string              |
 
 Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook), invoice jargon. Push copy stays English `{ title, body }` as the API already sends.
 
