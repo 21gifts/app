@@ -4442,20 +4442,6 @@ test('Function: proxyViewActivityGet — GET /view-key/[viewKey]/activity is rea
   expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
 });
 
-test('Function: accountTotals — marketing stats page still loads public gift stats', async ({
-  page,
-}) => {
-  await page.goto('/stats');
-  await expect(page.getByRole('heading', { name: /Gifts/i })).toBeVisible();
-});
-
-test('Function: recipientHandleFromAddress — marketing stats page still loads public gift stats', async ({
-  page,
-}) => {
-  await page.goto('/stats');
-  await expect(page.getByRole('heading', { name: /Gifts/i })).toBeVisible();
-});
-
 test('Function: useAccountTotals — menu shows received sats from /me/activity', async ({
   page,
 }) => {

@@ -623,13 +623,6 @@
 - **Returns / side effects:** Proxied upstream `Response` for `/view/${encodeURIComponent(viewKey)}`.
 - **Used by:** App Router `GET` on `/view-key/[viewKey]`.
 
-## Function: accountTotals
-
-- **Purpose:** Test-only helper that derives given/received sat totals from public gift stats. Production profile, menu, member, and view loaders use account activity instead.
-- **Inputs:** `GiftStats` and the Lightning Address (or null).
-- **Returns / side effects:** `{ donatedSats, receivedSats }` — `donatedSats` is always `0` because public gift stats do not attribute outbound payments; received matches the address handle against `byRecipient` case-insensitively.
-- **Used by:** Unit tests (`account-totals.test.ts`) via `recipientHandleFromAddress`.
-
 ## Function: alignActivitySeries
 
 - **Purpose:** Align receive and donate cumulative `spendOverTime` series onto one sorted UTC-day axis for the profile chart.
@@ -650,13 +643,6 @@
 - **Inputs:** `points`, `scale` (`sat` | `fiat`), optional `fiat` (`FiatCode`) — same as `activityValue`.
 - **Returns / side effects:** Positive number for SVG scale.
 - **Used by:** `AccountActivityChart`.
-
-## Function: recipientHandleFromAddress
-
-- **Purpose:** Local-part of a Lightning Address (before the first `@`).
-- **Inputs:** Full address or bare handle string.
-- **Returns / side effects:** The handle before `@` when `indexOf('@') > 0`, otherwise the whole string.
-- **Used by:** `accountTotals`.
 
 ## Function: useAccountTotals
 
@@ -837,7 +823,7 @@
 
 - **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, then `fetchMemberActivity` even if the Lightning Address is blank. It does not prefetch post/reply feeds; `postCount` and `replyCount` arrive with the profile JSON.
 - **Inputs:** Route `accountId`; session from auth store.
-- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. 409 → `/setup/rules`. Activity failure keeps the card with empty given and received series.
+- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. `fetchMember` 409 `missing_requirements` → `/setup/rules`. `fetchMemberActivity` 409 or any other activity error keeps the card with empty given and received series.
 - **Used by:** `MemberProfilePage`.
 
 ## Function: MemberProfileScreen

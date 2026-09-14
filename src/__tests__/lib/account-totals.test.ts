@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import type { GiftStats } from '@/lib/api-types';
-import { accountTotals, recipientHandleFromAddress } from '@/lib/account-totals';
+
+function recipientHandleFromAddress(address: string): string {
+  const at = address.indexOf('@');
+  if (at > 0) {
+    return address.slice(0, at);
+  }
+  return address;
+}
+
+function accountTotals(
+  stats: GiftStats,
+  lightningAddress: string | null,
+): { donatedSats: number; receivedSats: number } {
+  if (lightningAddress === null || lightningAddress.trim() === '') {
+    return { donatedSats: 0, receivedSats: 0 };
+  }
+  const handle = recipientHandleFromAddress(lightningAddress.trim()).toLowerCase();
+  const row = stats.byRecipient.find((entry) => entry.recipient.toLowerCase() === handle);
+  return {
+    donatedSats: 0,
+    receivedSats: row === undefined ? 0 : row.sats,
+  };
+}
 
 const STATS: GiftStats = {
   totalSats: 1500,
