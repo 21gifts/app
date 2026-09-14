@@ -2713,25 +2713,10 @@ test('Function: formatUsdTick — populated profile chart shows USD ticks', asyn
 
 test('Function: formatFiatTick — populated profile chart shows CHF ticks', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    totalSats: 1500,
-    totalUsd: '1.43',
-    giftCount: 2,
-    recipientCount: 1,
-    spendOverTime: POPULATED_STATS.spendOverTime,
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 2,
-        sats: 1500,
-        btc: '0.00001500',
-        usd: '1.43',
-        chf: '1.20',
-        eur: '1.30',
-        php: '80.00',
-      },
-    ],
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    receivedSats: 1500,
+    receivedOverTime: POPULATED_STATS.spendOverTime,
   });
   await page.goto('/profile');
   await page
@@ -2760,7 +2745,7 @@ test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page
 
 test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ page }) => {
   await seedAdaSession(page);
-  await stubGiftStats(page, EMPTY_STATS);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   const group = page.getByRole('group', { name: 'Fiat currency' });
   await expect(group).toBeVisible();
