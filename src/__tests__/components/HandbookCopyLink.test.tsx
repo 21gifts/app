@@ -56,8 +56,10 @@ describe('HandbookCopyLink', () => {
     expect(button.className).not.toContain('px-1.5');
     expect(button.className).toContain('text-paper/40');
     expect(button.className).toContain('hover:bg-paper/10');
+    expect(button.className).toContain('hover:text-paper');
     expect(button.className).toContain('focus-visible:outline-paper');
     expect(button.className).not.toContain('hover:bg-app-hover');
+    expect(button.className).not.toContain('hover:text-accent');
     expectIdleIcon(button);
     fireEvent.click(button);
     await act(async () => {

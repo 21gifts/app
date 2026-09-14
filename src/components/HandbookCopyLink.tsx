@@ -113,7 +113,7 @@ export function HandbookCopyLink({
       aria-label={ariaName}
       title={ariaName}
       data-copied={copied ? 'true' : undefined}
-      className={copied ? 'text-accent hover:text-accent' : 'hover:text-accent'}
+      {...(copied ? { className: 'text-accent' } : {})}
     >
       {copied ? (
         <Check aria-hidden="true" className="h-4 w-4" />
