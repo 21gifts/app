@@ -9,7 +9,21 @@ afterEach(cleanup);
 
 type SpendPoint = GiftStats['spendOverTime'][number];
 
+function fiatFromUsd(usd: string): { chf: string; eur: string; php: string } {
+  switch (usd) {
+    case '0.00':
+      return { chf: '0.00', eur: '0.00', php: '0.00' };
+    case '0.48':
+      return { chf: '0.40', eur: '0.44', php: '27.00' };
+    case '1.43':
+      return { chf: '1.20', eur: '1.30', php: '80.00' };
+    default:
+      return { chf: usd, eur: usd, php: usd };
+  }
+}
+
 function day(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 0): SpendPoint {
+  const cumulative = fiatFromUsd(cumulativeUsd);
   return {
     day,
     sats,
@@ -18,6 +32,12 @@ function day(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 
     cumulativeBtc: '0.00000000',
     usd: '0.00',
     cumulativeUsd,
+    chf: '0.00',
+    eur: '0.00',
+    php: '0.00',
+    cumulativeChf: cumulative.chf,
+    cumulativeEur: cumulative.eur,
+    cumulativePhp: cumulative.php,
   };
 }
 

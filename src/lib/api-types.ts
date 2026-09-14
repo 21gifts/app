@@ -103,13 +103,24 @@ export const btcAmountStringSchema = z.string().regex(/^\d+\.\d{8}$/);
 /** USD amount string from the api: exactly 2 decimals. */
 export const usdAmountStringSchema = z.string().regex(/^\d+\.\d{2}$/);
 
+/** Fiat amount string from the api: two decimals, or `null` when that currency could not be summed. */
+export const fiatAmountSchema = usdAmountStringSchema.nullable();
+
 /**
- * FX metadata for historical BTC-USD conversion on `GET /gifts/stats`.
+ * FX provenance for gift-day BTC-USD closes plus CHF/EUR/PHP quotes on
+ * `GET /gifts/stats` and `GET /gifts?day=`.
  */
 export const giftStatsFxSchema = z.object({
   quote: z.literal('BTC-USD'),
   dayBasis: z.literal('utc'),
   source: z.literal('coinbase-exchange-daily-close'),
+  quotes: z.array(
+    z.object({
+      code: z.enum(['USD', 'CHF', 'EUR', 'PHP']),
+      pair: z.string().min(1),
+      source: z.string().min(1),
+    }),
+  ),
 });
 
 /**
@@ -123,6 +134,12 @@ export const spendDaySchema = z.object({
   cumulativeBtc: btcAmountStringSchema,
   usd: usdAmountStringSchema,
   cumulativeUsd: usdAmountStringSchema,
+  chf: fiatAmountSchema,
+  eur: fiatAmountSchema,
+  php: fiatAmountSchema,
+  cumulativeChf: fiatAmountSchema,
+  cumulativeEur: fiatAmountSchema,
+  cumulativePhp: fiatAmountSchema,
 });
 
 /**
@@ -134,6 +151,9 @@ export const recipientSpendSchema = z.object({
   sats: z.number().int().nonnegative(),
   btc: btcAmountStringSchema,
   usd: usdAmountStringSchema,
+  chf: fiatAmountSchema,
+  eur: fiatAmountSchema,
+  php: fiatAmountSchema,
 });
 
 /**
@@ -145,6 +165,9 @@ export const monthSpendSchema = z.object({
   sats: z.number().int().nonnegative(),
   btc: btcAmountStringSchema,
   usd: usdAmountStringSchema,
+  chf: fiatAmountSchema,
+  eur: fiatAmountSchema,
+  php: fiatAmountSchema,
 });
 
 /**
@@ -154,6 +177,9 @@ export const giftStatsSchema = z.object({
   totalSats: z.number().int().nonnegative(),
   totalBtc: btcAmountStringSchema,
   totalUsd: usdAmountStringSchema,
+  totalChf: fiatAmountSchema,
+  totalEur: fiatAmountSchema,
+  totalPhp: fiatAmountSchema,
   giftCount: z.number().int().nonnegative(),
   recipientCount: z.number().int().nonnegative(),
   firstPaidAt: z.string().nullable(),
@@ -177,6 +203,9 @@ export const giftDayGiftSchema = z.object({
   amountSats: z.number().int().nonnegative(),
   amountBtc: btcAmountStringSchema,
   amountUsd: usdAmountStringSchema,
+  amountChf: fiatAmountSchema,
+  amountEur: fiatAmountSchema,
+  amountPhp: fiatAmountSchema,
   recipient: z.string(),
 });
 
@@ -189,6 +218,9 @@ export const giftDaySchema = z.object({
   totalSats: z.number().int().nonnegative(),
   totalBtc: btcAmountStringSchema,
   totalUsd: usdAmountStringSchema,
+  totalChf: fiatAmountSchema,
+  totalEur: fiatAmountSchema,
+  totalPhp: fiatAmountSchema,
   gifts: z.array(giftDayGiftSchema),
   fx: giftStatsFxSchema,
 });
