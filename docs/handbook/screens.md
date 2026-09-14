@@ -754,7 +754,7 @@ One receive day (₿21 on **2026-06-01**). Chart draws a horizontal single-point
 
 ### Variant: large-usd
 
-Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1,425**.
+Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1'425**.
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
 

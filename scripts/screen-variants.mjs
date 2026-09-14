@@ -691,7 +691,7 @@ export const SCREEN_VARIANTS = [
     id: 'large-usd',
     image: 'profile-large-usd.png',
     visual: 'state-profile-large-usd',
-    needle: '$1,425',
+    needle: "$1'425",
   },
   {
     route: '/view/[viewKey]',
