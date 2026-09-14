@@ -29,9 +29,11 @@ import {
   FORUM_LIST_POLL_MS,
   hasUnseenForumPosts,
   type ForumFeedMode,
+  unpaidNewCount,
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
+import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import {
   MissingRequirementsError,
@@ -200,8 +202,11 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  *
  * Reads the session and account from the auth store, fetches messages with a
  * cancelled-flag pattern matching {@link StatsLoader}, loads photos via Bearer
- * + blob URLs, owns composer draft/photo/video/post state, the Active/All/Most
- * popular feed mode, pay-on-note invoice + sats-poll state, expand/replies
+ * + blob URLs, owns composer draft/photo/video/post state, the Active/No gifts
+ * yet/All/Most popular feed mode, and `21gifts.forum-unpaid-seen` (hydrates the
+ * last-visit stamp on mount, not in the state initializer; stamps on entering
+ * unpaid and while unpaid as the list refreshes; mode itself is still not
+ * persisted), pay-on-note invoice + sats-poll state, expand/replies
  * (`fetchReplies`, reply composer via invoice or unpaid `postMessage` when
  * exempt), PM
  * (`openConversation` → `/messages?c=`), and persists dismiss of the
@@ -251,6 +256,7 @@ export function ForumLoader(): ReactElement | null {
   const [preparing, setPreparing] = useState(false);
   const [formError, setFormError] = useState<ForumFormError>(null);
   const [feedMode, setFeedMode] = useState<ForumFeedMode>(DEFAULT_FORUM_FEED_MODE);
+  const [unpaidSeenAt, setUnpaidSeenAt] = useState<string | null>(null);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
@@ -713,6 +719,17 @@ export function ForumLoader(): ReactElement | null {
       cancelled = true;
     };
   }, [session, expandedId, repliesAttempt]);
+
+  useEffect(() => {
+    setUnpaidSeenAt(loadUnpaidSeenAt());
+  }, []);
+
+  useEffect(() => {
+    if (feedMode !== 'unpaid') return;
+    const iso = new Date().toISOString();
+    saveUnpaidSeenAt(iso);
+    setUnpaidSeenAt(iso);
+  }, [feedMode, messages]);
 
   const lawsVisible = account?.forumLawsDismissed !== true;
 
@@ -1414,6 +1431,11 @@ export function ForumLoader(): ReactElement | null {
         onPayCancel={clearPaySheet}
         mode={feedMode}
         onModeChange={onModeChange}
+        unpaidNewCount={
+          feedMode === 'unpaid' || messages === null
+            ? 0
+            : unpaidNewCount(messages, unpaidSeenAt)
+        }
         lawsVisible={lawsVisible}
         onDismissLaws={onDismissLaws}
         expandedId={expandedId}

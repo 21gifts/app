@@ -3821,6 +3821,99 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
   await expect(items.nth(1)).toContainText('₿5');
 });
 
+async function seedWelcomeWithUnpaidCount(page: Page): Promise<void> {
+  await seedAdaSession(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm3',
+            name: 'Ada',
+            text: 'Thank you both — that helps.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+          },
+          {
+            id: 'm2',
+            name: 'Carol',
+            text: 'I can send a small gift tomorrow.',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+          },
+          {
+            id: 'm1',
+            name: 'Bob',
+            text: 'Does anyone have spare sats this week?',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+}
+
+test('Function: unpaidNewCount — No gifts yet shows unpaid notes newer than last visit', async ({
+  page,
+}) => {
+  await seedWelcomeWithUnpaidCount(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
+});
+
+test('Function: loadUnpaidSeenAt — stored last visit restores the unpaid count', async ({
+  page,
+}) => {
+  await seedWelcomeWithUnpaidCount(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
+});
+
+test('Function: saveUnpaidSeenAt — opening No gifts yet clears the unpaid count', async ({
+  page,
+}) => {
+  await seedWelcomeWithUnpaidCount(page);
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'No gifts yet, 1 new' }).click();
+  const unpaid = page.getByRole('button', { name: 'No gifts yet', exact: true });
+  await expect(unpaid).toBeVisible();
+  await expect(unpaid).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toHaveCount(0);
+});
+
 test('Function: OnboardingGate — login sends a new account to the name screen', async ({
   page,
   request,

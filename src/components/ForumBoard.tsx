@@ -140,6 +140,11 @@ export interface ForumBoardProps {
   mode: ForumFeedMode;
   /** Called when the visitor picks another mode. */
   onModeChange: (mode: ForumFeedMode) => void;
+  /**
+   * Unseen zero-sat notes since the last No gifts yet visit. Chip is shown
+   * only when this is > 0 and unpaid is not selected. Default 0.
+   */
+  unpaidNewCount?: number;
   /** When true, render the living-room laws hint box. */
   lawsVisible: boolean;
   /** Called when the user clicks the hint dismiss control. */
@@ -256,7 +261,9 @@ function showForumPm(
 
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
- * Active/No gifts yet/All/Most popular selector, composer under the mode
+ * Active/No gifts yet/All/Most popular selector (unpaid may show a count
+ * chip of unseen zero-sat notes when `unpaidNewCount` is > 0 and that mode
+ * is not selected), composer under the mode
  * filters above the newest-first list (new notes only, photo or video
  * attach), newest-first list (social feed) or empty/loading/error, per-card
  * expand for oldest-first replies + reply composer (labeled Amount field;
@@ -298,6 +305,7 @@ export function ForumBoard({
   onPayCancel,
   mode,
   onModeChange,
+  unpaidNewCount = 0,
   lawsVisible,
   onDismissLaws,
   photoDraft,
@@ -1142,10 +1150,18 @@ export function ForumBoard({
       {!composerHidden ? (
         <SegmentedControl
           value={mode}
-          options={FORUM_FEED_MODES.map((next) => ({
-            value: next,
-            label: t(MODE_LABEL_KEY[next]),
-          }))}
+          options={FORUM_FEED_MODES.map((next) => {
+            const label = t(MODE_LABEL_KEY[next]);
+            if (next !== 'unpaid' || mode === 'unpaid' || (unpaidNewCount ?? 0) <= 0) {
+              return { value: next, label };
+            }
+            return {
+              value: next,
+              label,
+              badge: unpaidNewCount,
+              badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
+            };
+          })}
           onChange={onModeChange}
           ariaLabel={t('forum.modeLabel')}
           tone="neutral"

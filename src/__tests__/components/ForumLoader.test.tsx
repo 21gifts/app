@@ -169,6 +169,7 @@ beforeEach(() => {
   });
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+  window.localStorage.clear();
 });
 
 afterEach(() => {
@@ -195,6 +196,7 @@ afterEach(() => {
   repliesMock.mockReset();
   prepareMock.mockReset();
   vi.restoreAllMocks();
+  window.localStorage.clear();
 });
 
 describe('ForumLoader', () => {
@@ -364,6 +366,44 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
       expect(screen.getByText('₿0')).toBeTruthy();
+    });
+  });
+
+  it('shows No gifts yet without a chip when last visit is unset', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+    });
+  });
+
+  it('shows, clears, and does not restore the unpaid new-count chip', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).not.toBe(
+        '2026-01-01T00:00:00.000Z',
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
     });
   });
 

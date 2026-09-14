@@ -175,7 +175,8 @@ app/
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── forum-time.ts        # UTC display timestamps for forum rows
-│   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter
+│   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
+│   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
 │   │   ├── handbook-topics.ts   # handbook image topic catalog + combo URLs

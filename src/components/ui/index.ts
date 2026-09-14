@@ -23,6 +23,7 @@ export {
 export { PageChrome, type PageChromeProps } from '@/components/ui/PageChrome';
 export {
   SegmentedControl,
+  type SegmentedControlOption,
   type SegmentedControlProps,
   type SegmentedControlShell,
   type SegmentedControlTone,

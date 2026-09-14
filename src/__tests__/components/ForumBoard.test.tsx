@@ -680,6 +680,110 @@ describe('ForumBoard', () => {
     expect(onModeChange).toHaveBeenCalledWith('all');
   });
 
+  it('keeps No gifts yet unbadged by default', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+  });
+
+  it('keeps No gifts yet unbadged when unpaidNewCount is 0', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        unpaidNewCount={0}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'No gifts yet', exact: true })).toBeTruthy();
+  });
+
+  it('omits the unpaid chip when No gifts yet is selected', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('unpaid')}
+        unpaidNewCount={3}
+      />,
+    );
+    const unpaid = screen.getByRole('button', { name: 'No gifts yet', exact: true });
+    expect(unpaid).toBeTruthy();
+    expect(unpaid.textContent).not.toContain('3');
+  });
+
+  it('shows a No gifts yet chip when unpaidNewCount is 3 and Active is selected', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        unpaidNewCount={3}
+      />,
+    );
+    const unpaid = screen.getByRole('button', { name: 'No gifts yet, 3 new' });
+    expect(unpaid).toBeTruthy();
+    expect(screen.getByText('3')).toBeTruthy();
+  });
+
+  it('localizes the unpaid new-count chip in German', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        unpaidNewCount={3}
+      />,
+      'de',
+    );
+    expect(screen.getByRole('button', { name: 'Noch ohne Geschenk, 3 neu' })).toBeTruthy();
+  });
+
   it('shows ₿1 for a single sat total', () => {
     renderWithLocale(
       <ForumBoard
