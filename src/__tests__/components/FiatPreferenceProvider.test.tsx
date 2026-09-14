@@ -98,6 +98,73 @@ describe('FiatPreferenceProvider', () => {
     );
   });
 
+  it('writes when in-memory code matches but the cookie is absent', () => {
+    const cookieSet = vi.fn();
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => '',
+      set: cookieSet,
+    });
+    vi.stubGlobal('location', { protocol: 'http:' });
+    try {
+      render(
+        <FiatPreferenceProvider initial="USD">
+          <Probe />
+        </FiatPreferenceProvider>,
+      );
+      act(() => {
+        screen.getByRole('button', { name: 'set-usd' }).click();
+      });
+      expect(cookieSet).toHaveBeenCalledWith(
+        `${FIAT_COOKIE}=USD; Path=/; Max-Age=31536000; SameSite=Lax`,
+      );
+    } finally {
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
+
+  it('treats a cookie match without a capture as absent and writes', () => {
+    const cookieSet = vi.fn();
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    const originalMatch = String.prototype.match;
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => `${FIAT_COOKIE}=`,
+      set: cookieSet,
+    });
+    String.prototype.match = function matchWithoutCapture(
+      this: string,
+      regexp: string | RegExp,
+    ): RegExpMatchArray | null {
+      if (String(regexp).includes('fiat=')) {
+        return ['fiat='] as unknown as RegExpMatchArray;
+      }
+      return originalMatch.call(this, regexp);
+    };
+    vi.stubGlobal('location', { protocol: 'http:' });
+    try {
+      render(
+        <FiatPreferenceProvider initial="USD">
+          <Probe />
+        </FiatPreferenceProvider>,
+      );
+      act(() => {
+        screen.getByRole('button', { name: 'set-usd' }).click();
+      });
+      expect(cookieSet).toHaveBeenCalledWith(
+        `${FIAT_COOKIE}=USD; Path=/; Max-Age=31536000; SameSite=Lax`,
+      );
+    } finally {
+      String.prototype.match = originalMatch;
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
+
   it('does not rewrite when the cookie already matches the current code', () => {
     const cookieSet = vi.fn();
     const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
