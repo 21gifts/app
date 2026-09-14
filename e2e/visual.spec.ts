@@ -2245,6 +2245,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id: memberId,
           name: 'Ada',
+          location: null,
           role: 'basis',
           lightningAddress: 'alice@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
