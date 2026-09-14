@@ -1172,6 +1172,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
         linkingKey: `02${'a'.repeat(62)}`,
         role: 'basis',
         name: 'Ada',
+        location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
@@ -1191,6 +1192,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
       body: JSON.stringify({
         id: memberId,
         name: 'Carol',
+        location: null,
         role: 'verified',
         lightningAddress: 'carol@walletofsatoshi.com',
         createdAt: '2026-01-15T12:00:00.000Z',
