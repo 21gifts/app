@@ -1152,7 +1152,7 @@ export function ForumBoard({
           value={mode}
           options={FORUM_FEED_MODES.map((next) => {
             const label = t(MODE_LABEL_KEY[next]);
-            if (next !== 'unpaid' || mode === 'unpaid' || (unpaidNewCount ?? 0) <= 0) {
+            if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
               return { value: next, label };
             }
             return {

@@ -18,6 +18,7 @@ const STORAGE_KEY = '21gifts.forum-unpaid-seen';
  * (no `window`).
  */
 export function loadUnpaidSeenAt(): string | null {
+  /* v8 ignore next 3 — SSR: no window */
   if (typeof window === 'undefined') {
     return null;
   }
@@ -43,6 +44,7 @@ export function loadUnpaidSeenAt(): string | null {
  * on the server.
  */
 export function saveUnpaidSeenAt(iso: string): void {
+  /* v8 ignore next 3 — SSR: no window */
   if (typeof window === 'undefined') {
     return;
   }
