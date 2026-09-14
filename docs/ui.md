@@ -776,7 +776,7 @@ Inbox direction is unmistakable without a Sent folder and without orange. Incomi
 
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer only.
 - Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
-- Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`.
+- Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`. Empty or `0` invoices 1 sat for non-exempt visitors.
 - Send/Post: `IconButton` lg primary, lucide `Send`. Loading: `Loader2`.
 - Preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
 
