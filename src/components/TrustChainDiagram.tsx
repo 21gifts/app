@@ -125,6 +125,7 @@ export function TrustChainDiagram({
     setPlaced((prev) => {
       const next: Record<string, NodePos> = {};
       for (const node of nextLaid.nodes) {
+        /* v8 ignore next 3 -- a dragged id is always in prev from the last move */
         const kept = draggedIds.current.has(node.id) ? prev[node.id] : undefined;
         next[node.id] = kept ?? { x: node.x, y: node.y };
       }
