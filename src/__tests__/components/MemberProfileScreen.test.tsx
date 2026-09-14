@@ -1398,19 +1398,22 @@ describe('MemberProfileScreen', () => {
   });
 
   it('requires a sat amount to reply on someone else’s note', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
+    });
     expect(postMessage).not.toHaveBeenCalled();
-    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('still requires a sat when someone else’s note omits accountId', async () => {
     const noteWithoutAccount = { ...note, accountId: undefined };
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: noteWithoutAccount }}
@@ -1420,7 +1423,9 @@ describe('MemberProfileScreen', () => {
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
+    });
     expect(postMessage).not.toHaveBeenCalled();
   });
 
@@ -1462,15 +1467,17 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
-  it('rejects a zero reply amount', async () => {
+  it('sends 1 sat when the reply amount is 0', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
     fillPaidReply('reply', '0');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
-    expect(postMessageInvoice).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
+    });
   });
 
   it('rejects an overflowing reply amount', async () => {
@@ -1627,9 +1634,27 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('maps an unpaid-reply 403 onto the amount error', async () => {
+  it('starts a 1-sat invoice when an unpaid reply on a feed post is 403', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(fetchReplies).mockResolvedValue([]);
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    await renderTwoPostFeed();
+    expandCard('Second post from Carol.');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', secondPost.id, 1, 'reply');
+    });
+  });
+
+  it('starts a 1-sat invoice when an unpaid reply is 403', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
@@ -1637,7 +1662,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
     });
   });
 
@@ -1939,7 +1964,9 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalled();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
   });
 
   it('opens the overlay when a gift continue is missing a name', async () => {

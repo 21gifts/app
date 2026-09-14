@@ -675,13 +675,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
-    id: 'reply-payment-error',
-    image: 'members-reply-payment-error.png',
-    visual: 'state-members-reply-payment-error',
-    needle: 'Send at least ₿1 with your reply',
-  },
-  {
-    route: '/members/[accountId]',
     id: 'translate',
     image: 'members-translate.png',
     visual: 'state-members-translate',
@@ -987,13 +980,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-expanded-gifts.png',
     visual: 'state-welcome-expanded-gifts',
     needle: 'send ₿21',
-  },
-  {
-    route: '/welcome',
-    id: 'reply-payment-error',
-    image: 'welcome-reply-payment-error.png',
-    visual: 'state-welcome-reply-payment-error',
-    needle: 'Send at least ₿1 with your reply',
   },
   {
     route: '/welcome',

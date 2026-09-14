@@ -64,7 +64,7 @@ function isReplyPaymentExempt(
  * Parses the reply-composer sats draft.
  *
  * @param raw - Amount field value.
- * @returns Whole sats, `'empty'` when blank, or `'invalid'`.
+ * @returns Whole sats (`0` becomes `1`), `'empty'` when blank, or `'invalid'`.
  */
 function parseReplySats(raw: string): number | 'empty' | 'invalid' {
   const trimmed = raw.trim();
@@ -75,13 +75,10 @@ function parseReplySats(raw: string): number | 'empty' | 'invalid' {
     return 'invalid';
   }
   const sats = Number.parseInt(trimmed, 10);
-  if (sats <= 0) {
-    return 'invalid';
-  }
   if (!Number.isSafeInteger(sats)) {
     return 'invalid';
   }
-  return sats;
+  return sats < 1 ? 1 : sats;
 }
 
 /**
@@ -551,10 +548,16 @@ export function MemberProfileScreen({
         }
         return;
       }
+      if (isReplyPaymentError(err)) {
+        const feedRow = posts?.find((message) => message.id === parentId);
+        const parentRowNow = listedNote?.id === parentId ? listedNote : feedRow;
+        /* v8 ignore next -- expanded parent is the pinned note or a loaded post */
+        const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
+        await runPaidReply(token, trimmed, parentId, 1, isRetry, parentSatsNow);
+        return;
+      }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          isReplyPaymentError(err) ? 'amount' : isRateLimitError(err) ? 'rateLimit' : 'request',
-        );
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       setReplyPosting(false);
@@ -795,16 +798,17 @@ export function MemberProfileScreen({
       listedNote?.id === parentId ? listedNote : posts?.find((message) => message.id === parentId);
     const exempt = isReplyPaymentExempt(account, parentRow?.accountId ?? profile.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
-      if (parsed === 'invalid' || (!exempt && parsed === 'empty')) {
+      if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
       }
-      if (parsed === 'empty') {
+      if (parsed === 'empty' && exempt) {
         return runReplyPost(token, trimmed, parentId, isRetry);
       }
+      const sats = parsed === 'empty' ? 1 : parsed;
       /* v8 ignore next -- expanded parent is always in the loaded list */
       const baselineSats = parentRow === undefined ? 0 : parentRow.sats;
-      return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
+      return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {

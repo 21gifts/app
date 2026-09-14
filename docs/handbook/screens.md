@@ -371,7 +371,7 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: expanded
 
-On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply** plus an **Amount** sats field. Gift-only replies render as **send ₿…**; a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Non-exempt visitors must send at least 1 sat to post a reply.
+On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply** plus an **Amount** sats field. Gift-only replies render as **send ₿…**; a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Non-exempt visitors send at least 1 sat: an empty or 0 amount is billed as 1 sat and opens the pay sheet.
 
 ![21.gifts welcome expanded](images/welcome-expanded.png)
 
@@ -380,12 +380,6 @@ On **All**, click **Show replies** on a note — card expands (`aria-expanded`),
 On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21**) and a text reply with the gift amount under the body. The in-card composer still has **Write a reply** and **Amount**.
 
 ![21.gifts welcome expanded gifts](images/welcome-expanded-gifts.png)
-
-### Variant: reply-payment-error
-
-Expand a note as a non-exempt visitor, type a reply, leave **Amount** empty, and click **Post** → **Send at least ₿1 with your reply**. The reply is not sent.
-
-![21.gifts welcome reply payment error](images/welcome-reply-payment-error.png)
 
 ### Variant: copy
 
@@ -639,7 +633,7 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and clickable post/reply counts from `postCount` / `replyCount`) with an optional pinned profile forum note and on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). The in-card reply composer includes an **Amount** sats field; non-exempt visitors invoice at least 1 sat. Visible inline photos on the pinned profile note, posts feed, and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and clickable post/reply counts from `postCount` / `replyCount`) with an optional pinned profile forum note and on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). The in-card reply composer includes an **Amount** sats field; non-exempt visitors invoice at least 1 sat (empty or `0` is billed as 1 sat). Visible inline photos on the pinned profile note, posts feed, and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
 - **Actions:** Open **Menu** for **Home**, Profile, **Living room rules**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**; icon-only back to the forum; expand role hint; open author profile links on the note when present; translate a foreign-language note or reply (**Translate** / Show original / Show translation); click the post or reply count to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. The posts feed hides the separately pinned profile note because that note is already in the feed; the replies feed keeps the pinned note above it. Posts retain the pinned note's pay, PM, expand, and reply actions. Reply cards are not payable, and expanding one with a `parentId` navigates to `/messages/{parentId}`. When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
@@ -734,12 +728,6 @@ Signed-in visitor viewing their own `/members/:id` card.
 Named visitor with living-room rules agreed and no Wallet of Satoshi address. Member profile note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
 
 ![21.gifts member overlay address](images/members-overlay-address.png)
-
-### Variant: reply-payment-error
-
-Named visitor with a complete profile. Expand the member profile note, type a reply, leave **Amount** empty, and click **Post** → **Send at least ₿1 with your reply**. The reply is not sent.
-
-![21.gifts member reply payment error](images/members-reply-payment-error.png)
 
 ### Variant: translate
 
