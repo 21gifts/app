@@ -57,6 +57,7 @@ describe('AboutMeSection', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe="I like gifts." />);
     expect(screen.getByText('I like gifts.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Edit About me' })).toBeTruthy();
+    expect(screen.queryByText('Edit About me')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Write your About me' })).toBeNull();
   });
 
@@ -85,6 +86,7 @@ describe('AboutMeSection', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
     fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    expect(screen.queryByText('Save About me')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith('Hello');
@@ -104,6 +106,7 @@ describe('AboutMeSection', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe="Kept." />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
     fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Changed' } });
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByText('Kept.')).toBeTruthy();
     expect(screen.queryByLabelText('About me')).toBeNull();
@@ -146,6 +149,7 @@ describe('AboutMeSection', () => {
   it('shows the copy button with profile.copyLink and no visible URL string', () => {
     renderWithLocale(<AboutMeSection mode="public" aboutMe={null} profileUrl={PROFILE_URL} />);
     expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+    expect(screen.queryByText('Copy link to this profile')).toBeNull();
     expect(screen.queryByText(PROFILE_URL)).toBeNull();
     expect(screen.queryByText('About me')).toBeNull();
   });
