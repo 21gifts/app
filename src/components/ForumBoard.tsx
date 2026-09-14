@@ -376,7 +376,7 @@ export function ForumBoard({
   composerHidden = false,
   onDeleted,
 }: ForumBoardProps): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const router = useRouter();
