@@ -1427,13 +1427,7 @@ export function ForumLoader(): ReactElement | null {
             const remaining = (repliesRef.current ?? []).filter(
               (row) => !deletedIds.current.has(row.id),
             );
-            const mappedParent = replyParentById.current.get(messageId);
-            /* v8 ignore next 4 -- map miss falls back to the open thread only if the reply is still listed */
-            const parentId =
-              mappedParent ??
-              (repliesRef.current?.some((row) => row.id === messageId) === true
-                ? (expandedIdRef.current ?? undefined)
-                : undefined);
+            const parentId = replyParentById.current.get(messageId);
             if (expandedIdRef.current === parentId && repliesRef.current !== null) {
               setReplies(remaining);
             }
