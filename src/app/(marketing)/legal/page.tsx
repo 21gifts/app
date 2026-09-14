@@ -108,8 +108,8 @@ export default function LegalPage(): ReactElement {
           worldwide.
         </p>
         <p className="text-paper/70">
-          <strong>German:</strong> Die Bibel nach Martin Luthers Übersetzung, revidiert 2017, ©
-          2016 Deutsche Bibelgesellschaft, Stuttgart.
+          <strong>German:</strong> Die Bibel nach Martin Luthers Übersetzung, revidiert 2017, © 2016
+          Deutsche Bibelgesellschaft, Stuttgart.
         </p>
         <p className="text-paper/70">
           <strong>Spanish:</strong> Reina-Valera 1960® © Sociedades Bíblicas en América Latina,
