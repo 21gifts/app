@@ -9,17 +9,24 @@ import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-import { FORUM_HOME_EVENT } from '@/lib/forum-feed';
+import {
+  FORUM_HOME_EVENT,
+  consumePendingForumCompose,
+  consumeSkipIntroduceOverlay,
+  requestForumCompose,
+} from '@/lib/forum-feed';
 
 const replace = vi.fn();
 const refresh = vi.fn();
+const push = vi.fn();
 const cancel = vi.fn();
 const navigation = vi.hoisted(() => ({ pathname: '/profile' }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { replace: typeof replace; refresh: typeof refresh } => ({
+  useRouter: (): { replace: typeof replace; refresh: typeof refresh; push: typeof push } => ({
     replace,
     refresh,
+    push,
   }),
   usePathname: (): string => navigation.pathname,
 }));
@@ -115,7 +122,10 @@ beforeEach(() => {
   navigation.pathname = '/profile';
   replace.mockClear();
   refresh.mockClear();
+  push.mockClear();
   cancel.mockClear();
+  consumePendingForumCompose();
+  consumeSkipIntroduceOverlay();
   vi.mocked(shouldOfferIosInstall).mockReturnValue(false);
   vi.mocked(isStandaloneDisplay).mockReturnValue(false);
   vi.mocked(isInAppBrowser).mockReturnValue(false);
@@ -421,7 +431,7 @@ describe('SignedInChrome', () => {
     useAuthStore.setState({ account: { ...account, hasPosted: false } });
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('dialog', { name: 'Introduce yourself' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Write an introduction' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Write an introduction' })).toBeTruthy();
   });
 
   it('hides the introduce overlay when hasPosted is true', () => {
@@ -459,6 +469,30 @@ describe('SignedInChrome', () => {
     const close = screen.getByRole('button', { name: 'Close' });
     expect(screen.queryByText('Close')).toBeNull();
     fireEvent.click(close);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+  });
+
+  it('hides the introduce overlay after Write an introduction on /welcome', () => {
+    navigation.pathname = '/welcome';
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: false } });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write an introduction' }));
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('does not show the introduce overlay after requestForumCompose on a fresh mount', () => {
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: false } });
+    requestForumCompose();
+    renderWithLocale(<SignedInChrome />);
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
   });
 });

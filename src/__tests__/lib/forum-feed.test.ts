@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ForumMessage } from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
+  FORUM_COMPOSE_EVENT,
   FORUM_FEED_MODES,
+  consumePendingForumCompose,
+  consumeSkipIntroduceOverlay,
   hasUnseenForumPosts,
   unpaidNewCount,
+  requestForumCompose,
   visibleForumMessages,
 } from '@/lib/forum-feed';
 
@@ -91,6 +95,11 @@ const TIE_SAME_TIME_LOW_ID: ForumMessage = {
   role: 'basis',
   replyCount: 0,
 };
+
+afterEach(() => {
+  consumePendingForumCompose();
+  consumeSkipIntroduceOverlay();
+});
 
 describe('forum-feed', () => {
   it('defaults to active and lists modes Active → No gifts yet → All → Most popular', () => {
@@ -193,5 +202,33 @@ describe('forum-feed', () => {
     const input = Object.freeze([ADA, newerUnpaid, olderUnpaid, invalidUnpaid, BOB]);
     expect(unpaidNewCount(input, '2026-08-28T09:00:00.000Z')).toBe(2);
     expect(input).toEqual([ADA, newerUnpaid, olderUnpaid, invalidUnpaid, BOB]);
+  });
+
+  it('requestForumCompose dispatches FORUM_COMPOSE_EVENT and consume helpers return true then false', () => {
+    const listener = vi.fn();
+    window.addEventListener(FORUM_COMPOSE_EVENT, listener);
+    requestForumCompose();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(consumePendingForumCompose()).toBe(true);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(consumeSkipIntroduceOverlay()).toBe(true);
+    expect(consumeSkipIntroduceOverlay()).toBe(false);
+    window.removeEventListener(FORUM_COMPOSE_EVENT, listener);
+  });
+
+  it('a second consume is false', () => {
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(consumeSkipIntroduceOverlay()).toBe(false);
+    requestForumCompose();
+    expect(consumePendingForumCompose()).toBe(true);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(consumeSkipIntroduceOverlay()).toBe(true);
+    expect(consumeSkipIntroduceOverlay()).toBe(false);
+  });
+
+  it('keeps skip independent of pending-compose', () => {
+    requestForumCompose();
+    expect(consumePendingForumCompose()).toBe(true);
+    expect(consumeSkipIntroduceOverlay()).toBe(true);
   });
 });

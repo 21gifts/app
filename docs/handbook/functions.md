@@ -293,9 +293,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; LogOut log out). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; LogOut log out). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` from `useAuthStore` (introduce overlay gate). Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay`; does not write `forumLawsDismissed` or any account field.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), and log out. Escape closes Menu and restores focus to Menu unless a nested listbox (language) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`.
 
 ## Function: ProfilePage
@@ -814,9 +814,9 @@
 
 ## Function: IntroduceYourselfOverlay
 
-- **Purpose:** Modal that tells a signed-in member whose onboarding is complete (`setup === null`) and who has not posted (`hasPosted === false`) to introduce themselves in the forum. Close (X) dismisses this mount only. Primary CTA **Write an introduction** goes to `/welcome`. No Skip-forever. Hidden when `hasPosted` is true or omitted (older api) and while `setup` is not null.
+- **Purpose:** Modal that tells a signed-in member whose onboarding is complete (`setup === null`) and who has not posted (`hasPosted === false`) to introduce themselves in the forum. Close (X) dismisses this mount only. Primary CTA **Write an introduction** is a `Button` that dismisses, focuses the welcome composer (`requestForumCompose` / `FORUM_COMPOSE_EVENT`), and `router.push('/welcome')` only when the path is not already `/welcome`. No Skip-forever. Hidden when `hasPosted` is true or omitted (older api) and while `setup` is not null.
 - **Inputs:** `onDismiss`.
-- **Returns / side effects:** Dialog UI (`role="dialog"` `aria-modal="true"`, fixed inset card `z-50`). Title/`aria-label` from `introduce.title`; body `introduce.body`; CTA `introduce.cta` as `ButtonLink` to `/welcome`; close `introduce.close`. Does not write `forumLawsDismissed` or any account field.
+- **Returns / side effects:** Dialog UI (`role="dialog"` `aria-modal="true"`, fixed inset card `z-50`). Title/`aria-label` from `introduce.title`; body `introduce.body`; CTA `introduce.cta` as catalog `Button` `type="button"` `size="lg"`; close `introduce.close`. Does not write `forumLawsDismissed` or any account field.
 - **Used by:** `SignedInChrome`.
 
 ## Function: MemberProfileLoader
@@ -1058,6 +1058,27 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `messages` (newest-first list from the api / loader merge) and `seenAt` (ISO last-visit stamp, or `null` when never opened).
 - **Returns / side effects:** How many currently loaded unpaid notes are strictly newer than `seenAt`. No network.
 - **Used by:** `ForumLoader`.
+
+## Function: requestForumCompose
+
+- **Purpose:** Ask the welcome new-post composer to take focus and skip `IntroduceYourselfOverlay` on the next SignedInChrome mount. Used by **Write an introduction**.
+- **Inputs:** none.
+- **Returns / side effects:** Sets skip-introduce-once and pending-compose module flags that survive Next.js client navigations until consumed. When `window` exists, dispatches `FORUM_COMPOSE_EVENT` (`21gifts:forum-compose`).
+- **Used by:** `IntroduceYourselfOverlay`.
+
+## Function: consumePendingForumCompose
+
+- **Purpose:** One-shot read of the pending-compose flag from `requestForumCompose`.
+- **Inputs:** none.
+- **Returns / side effects:** `true` when compose focus is still pending, then clears the flag. `false` on a second call. `ForumBoard` consumes on `FORUM_COMPOSE_EVENT` and on mount so a later board does not steal focus.
+- **Used by:** `ForumBoard`.
+
+## Function: consumeSkipIntroduceOverlay
+
+- **Purpose:** One-shot read of the skip-introduce-once flag from `requestForumCompose` so a remount after `router.push('/welcome')` does not show the overlay again.
+- **Inputs:** none.
+- **Returns / side effects:** `true` when this mount should start with the overlay dismissed, then clears the flag. Close (X) does not set the flag.
+- **Used by:** `SignedInChrome`.
 
 ## Function: formatFiatDisplay
 
