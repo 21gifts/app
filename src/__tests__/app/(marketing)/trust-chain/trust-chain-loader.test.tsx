@@ -140,6 +140,24 @@ describe('TrustChainLoader', () => {
     expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
   });
 
+  it('disables Try again while a hop is already in flight', async () => {
+    fetchMock.mockResolvedValueOnce(POPULATED);
+    fetchMock.mockRejectedValueOnce(new Error('Could not load the Trust Chain. Please try again.'));
+    fetchMock.mockImplementationOnce(() => new Promise(() => undefined));
+    renderWithLocale(<TrustChainLoader />);
+    await waitFor(() => {
+      expect(screen.getByTestId('trust-node-f')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    await waitFor(() => {
+      expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByTestId('trust-node-f'));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeDisabled();
+    });
+  });
+
   it('clears the hop error after a later hop succeeds', async () => {
     fetchMock.mockResolvedValueOnce(POPULATED);
     fetchMock.mockRejectedValueOnce(new Error('Could not load the Trust Chain. Please try again.'));
