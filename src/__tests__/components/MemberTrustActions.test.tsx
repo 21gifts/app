@@ -45,6 +45,7 @@ const account: Account = {
   linkingKey: null,
   role: 'basis',
   name: 'Ada',
+  location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
   forumLawsDismissed: true,
@@ -58,6 +59,7 @@ const account: Account = {
 const profile: MemberProfile = {
   id: '22222222-2222-4222-8222-222222222222',
   name: 'Carol',
+  location: null,
   role: 'basis',
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
