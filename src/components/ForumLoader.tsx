@@ -310,7 +310,8 @@ export function ForumLoader(): ReactElement | null {
         return 'aborted';
       }
       const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
-      if (!forceApply && !atTop && hasUnseenForumPosts(messagesRef.current, next)) {
+      const visibleNext = next.filter((message) => !deletedIds.current.has(message.id));
+      if (!forceApply && !atTop && hasUnseenForumPosts(messagesRef.current, visibleNext)) {
         setNewPostsAvailable(true);
         return 'ok';
       }

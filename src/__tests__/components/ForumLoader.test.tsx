@@ -4281,3 +4281,45 @@ it('removes a moderated open post, closes its pay/reply state, and prevents stal
   await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
   expect(screen.queryByText('Hello from Ada')).toBeNull();
 });
+
+it('does not treat a session-deleted id as unseen on silent refresh', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue([SAMPLE, { ...SAMPLE, id: 'keep', text: 'Keep this post' }]);
+  repliesMock.mockResolvedValue([]);
+  vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+  await revealAll();
+  await screen.findByText('Hello from Ada');
+  fireEvent.click(screen.getByText('Hello from Ada'));
+  await screen.findByLabelText('Your reply');
+  const postCard = screen.getByText('Hello from Ada').closest('li')!;
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Send Bitcoin' }));
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Delete post' }));
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Confirm deletion' }));
+  await waitFor(() => expect(screen.queryByText('Hello from Ada')).toBeNull());
+  expect(screen.getByText('Keep this post')).toBeTruthy();
+
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+  fetchMock.mockResolvedValueOnce([SAMPLE, { ...SAMPLE, id: 'keep', text: 'Keep this post' }]);
+  const before = fetchMock.mock.calls.length;
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => 'hidden',
+  });
+  act(() => {
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => 'visible',
+  });
+  act(() => {
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+  expect(screen.queryByRole('button', { name: 'New posts' })).toBeNull();
+  expect(screen.queryByText('Hello from Ada')).toBeNull();
+  expect(screen.getByText('Keep this post')).toBeTruthy();
+});
