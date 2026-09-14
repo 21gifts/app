@@ -282,6 +282,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
+ * Gift-only replies may have empty `text` when `sats > 0`.
  */
 export const forumMessageSchema = z
   .object({
@@ -289,7 +290,7 @@ export const forumMessageSchema = z
     accountId: z.string().min(1).optional(),
     parentId: z.string().min(1).optional(),
     name: z.string().min(1),
-    text: z.string(), // may be '' when hasPhoto
+    text: z.string(), // may be '' when hasPhoto, hasVideo, or sats > 0
     createdAt: z.string().datetime({ offset: true }),
     sats: z.number().int().nonnegative(),
     payable: z.boolean(),
@@ -303,7 +304,9 @@ export const forumMessageSchema = z
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
   })
-  .refine((message) => message.text !== '' || message.hasPhoto || message.hasVideo);
+  .refine(
+    (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
+  );
 
 /**
  * Runtime schema for the payload of `GET /messages` (top-level notes).

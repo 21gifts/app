@@ -934,11 +934,75 @@ describe('fetchMessages', () => {
 
 describe('postMessageInvoice', () => {
   it('returns pr and amountSats', async () => {
-    stubFetch({ ok: true, status: 200, body: { pr: 'lnbc21n1test', amountSats: 21 } });
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21 },
+    });
     await expect(postMessageInvoice('sess', 'm1', 21)).resolves.toEqual({
       pr: 'lnbc21n1test',
       amountSats: 21,
     });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+    });
+  });
+
+  it('includes text when the gift reply has a comment', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21 },
+    });
+    await postMessageInvoice('sess', 'm1', 21, 'Thanks');
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+      text: 'Thanks',
+    });
+  });
+
+  it('omits empty text from the invoice body', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21 },
+    });
+    await postMessageInvoice('sess', 'm1', 21, '');
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+    });
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['name'] },
+    });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
   });
 
   it('throws on 429', async () => {
@@ -1066,6 +1130,20 @@ describe('postMessage', () => {
   it('throws the api error message on a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Message too long' } });
     await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Message too long');
+  });
+
+  it('throws the unpaid-reply copy on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'A reply needs a Bitcoin payment' } });
+    await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toThrow(
+      'A reply needs a Bitcoin payment',
+    );
+  });
+
+  it('falls back when a 403 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toThrow(
+      'A reply needs a Bitcoin payment',
+    );
   });
 
   it('falls back when a 400 body is not an error envelope', async () => {

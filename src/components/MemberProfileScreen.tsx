@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import {
   ForumBoard,
   type ForumFormError,
+  type ForumReplyFormError,
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui';
 import {
   fetchMemberPosts,
   fetchMemberReplies,
+  fetchPublicMessage,
   fetchReplies,
   openConversation,
   postMessage,
@@ -33,6 +35,81 @@ import {
   type MissingRequirement,
 } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Delay between pay polls (ms). */
+const PAY_POLL_MS = 2000;
+
+/**
+ * True when the signed-in account may reply without paying.
+ *
+ * @param account - Live account, or `null` when the snapshot is missing.
+ * @param parentAccountId - Profile note `accountId`, if the api sent one.
+ * @returns Whether `POST /messages` is allowed without a zap.
+ */
+function isReplyPaymentExempt(
+  account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
+  parentAccountId: string | undefined,
+): boolean {
+  if (account === null) {
+    return false;
+  }
+  if (account.role === 'founder' || account.role === 'moderator') {
+    return true;
+  }
+  return parentAccountId !== undefined && parentAccountId === account.id;
+}
+
+/**
+ * Parses the reply-composer sats draft.
+ *
+ * @param raw - Amount field value.
+ * @returns Whole sats, `'empty'` when blank, or `'invalid'`.
+ */
+function parseReplySats(raw: string): number | 'empty' | 'invalid' {
+  const trimmed = raw.trim();
+  if (trimmed === '') {
+    return 'empty';
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return 'invalid';
+  }
+  const sats = Number.parseInt(trimmed, 10);
+  if (sats <= 0) {
+    return 'invalid';
+  }
+  if (!Number.isSafeInteger(sats)) {
+    return 'invalid';
+  }
+  return sats;
+}
+
+/**
+ * True when the api rejected an unpaid reply.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message is the unpaid-reply copy.
+ */
+function isReplyPaymentError(err: unknown): boolean {
+  /* v8 ignore next 3 -- non-Error throw is defensive */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /reply needs a bitcoin payment/i.test(err.message);
+}
+
+/**
+ * True when a thrown value is the api rate-limit copy for posts or payments.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message looks like a rate-limit error.
+ */
+function isRateLimitError(err: unknown): boolean {
+  /* v8 ignore next 3 -- non-Error throw is defensive */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /too many (messages|payments)/i.test(err.message);
+}
 
 /** Roles that show a clickable tag beside the author name. */
 type MemberTaggedRole = 'founder' | 'moderator' | 'verified';
@@ -81,7 +158,7 @@ const IDLE_BOARD = {
   onReplyDraftChange: (): void => undefined,
   onReplyPost: (): void => undefined,
   replyPosting: false,
-  replyFormError: null as ForumFormError,
+  replyFormError: null as ForumReplyFormError,
   ownName: null as string | null,
   ownAccountId: null as string | null,
   onPm: (): void => undefined,
@@ -109,11 +186,15 @@ export function MemberProfileScreen({
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const setAccount = useAuthStore((state) => state.setAccount);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
+  const [payWaiting, setPayWaiting] = useState(false);
+  const payPollAbortRef = useRef<AbortController | null>(null);
+  const payPollGeneration = useRef(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
   expandedIdRef.current = expandedId;
@@ -123,8 +204,9 @@ export function MemberProfileScreen({
   const [repliesError, setRepliesError] = useState(false);
   const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState('');
+  const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
-  const [replyFormError, setReplyFormError] = useState<ForumFormError>(null);
+  const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
     'name' | 'rules' | 'lightning-address' | null
   >(null);
@@ -192,6 +274,112 @@ export function MemberProfileScreen({
     }
   };
 
+  const bumpPayPollGeneration = (): number => {
+    payPollAbortRef.current?.abort();
+    payPollAbortRef.current = new AbortController();
+    payPollGeneration.current += 1;
+    return payPollGeneration.current;
+  };
+
+  useEffect(() => {
+    return () => {
+      bumpPayPollGeneration();
+    };
+  }, []);
+
+  const startPayPoll = (messageId: string, baselineSats: number): void => {
+    const generation = bumpPayPollGeneration();
+    const controller = payPollAbortRef.current;
+    /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
+    if (controller === null) {
+      return;
+    }
+    const signal = controller.signal;
+    setPayWaiting(true);
+    void (async () => {
+      for (;;) {
+        try {
+          const next = await fetchPublicMessage(messageId, {
+            sinceSats: baselineSats,
+            signal,
+          });
+          if (generation !== payPollGeneration.current || signal.aborted) {
+            return;
+          }
+          if (next !== null && next.sats > baselineSats) {
+            setListedNote((prev) => {
+              if (prev === null || prev.id !== next.id) {
+                return prev;
+              }
+              return {
+                ...prev,
+                ...next,
+                replyCount: Math.max(prev.replyCount, next.replyCount),
+              };
+            });
+            setPosts((prev) => {
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) =>
+                row.id === next.id
+                  ? {
+                      ...row,
+                      ...next,
+                      replyCount: Math.max(row.replyCount, next.replyCount),
+                    }
+                  : row,
+              );
+            });
+            setPayWaiting(false);
+            setPayInvoice(null);
+            setPayMessageId(null);
+            setPayDraft('');
+            setPayError(null);
+            const current = useAuthStore.getState();
+            if (current.session !== session) {
+              return;
+            }
+            if (current.account !== null) {
+              setAccount({ ...current.account, hasPosted: true });
+            }
+            if (expandedIdRef.current === messageId && current.session !== null) {
+              const gen = ++expandGen.current;
+              setRepliesLoading(true);
+              setRepliesError(false);
+              try {
+                const repliesNext = await fetchReplies(current.session, messageId);
+                if (expandGen.current === gen) {
+                  setReplies(repliesNext);
+                }
+              } catch {
+                if (expandGen.current === gen) {
+                  setRepliesError(true);
+                }
+              } finally {
+                if (expandGen.current === gen) {
+                  setRepliesLoading(false);
+                }
+              }
+            }
+            return;
+          }
+        } catch {
+          // Keep waiting while the sheet is open.
+        }
+        if (generation !== payPollGeneration.current || signal.aborted) {
+          return;
+        }
+        await new Promise((resolve) => {
+          setTimeout(resolve, PAY_POLL_MS);
+        });
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+      }
+    })();
+  };
+
   const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
     const next = nextPostRequirement(missing);
     if (next === null) {
@@ -249,7 +437,13 @@ export function MemberProfileScreen({
           );
         });
       }
+      setReplyAmountDraft('');
       pendingPostRef.current = null;
+      const current = useAuthStore.getState();
+      if (current.session !== token || current.account === null) {
+        return;
+      }
+      setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
@@ -262,8 +456,66 @@ export function MemberProfileScreen({
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError('request');
+        setReplyFormError(
+          isReplyPaymentError(err) ? 'amount' : isRateLimitError(err) ? 'rateLimit' : 'request',
+        );
       }
+    } finally {
+      setReplyPosting(false);
+    }
+  };
+
+  const runPaidReply = async (
+    token: string,
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+    baselineSats: number,
+  ): Promise<void> => {
+    setReplyPosting(true);
+    setReplyFormError(null);
+    const generation = payPollGeneration.current;
+    try {
+      const invoice =
+        trimmed === ''
+          ? await postMessageInvoice(token, parentId, sats)
+          : await postMessageInvoice(token, parentId, sats, trimmed);
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      setPayMessageId(parentId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: parentId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+      setReplyPosting(false);
+      startPayPoll(parentId, baselineSats);
+    } catch (err) {
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () =>
+            runPaidReply(token, trimmed, parentId, sats, true, baselineSats);
+          return;
+        }
+        setReplyFormError('request');
+        return;
+      }
+      setReplyFormError(
+        err instanceof Error && /1[-–]500 characters/i.test(err.message)
+          ? 'tooLong'
+          : isRateLimitError(err)
+            ? 'rateLimit'
+            : 'request',
+      );
     } finally {
       setReplyPosting(false);
     }
@@ -297,10 +549,12 @@ export function MemberProfileScreen({
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
 
   const handlePayOpen = (messageId: string): void => {
+    bumpPayPollGeneration();
     setPayMessageId(messageId);
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
+    setPayWaiting(false);
     setPayBusy(false);
   };
 
@@ -313,29 +567,67 @@ export function MemberProfileScreen({
       setPayError('amount');
       return;
     }
-    setPayBusy(true);
-    void (async () => {
-      try {
-        const invoice = await postMessageInvoice(session, payMessageId, sats);
-        setPayInvoice({
-          messageId: payMessageId,
-          pr: invoice.pr,
-          amountSats: invoice.amountSats,
-        });
-      } catch {
-        setPayError('request');
-      } finally {
-        setPayBusy(false);
-      }
-    })();
+    const token = session;
+    const messageId = payMessageId;
+    const parent =
+      listedNote?.id === messageId
+        ? listedNote
+        : posts?.find((message) => message.id === messageId);
+    /* v8 ignore next -- pay sheet only opens on a listed note */
+    const baselineSats = parent === undefined ? 0 : parent.sats;
+    const continuePay = (isRetry: boolean): Promise<void> => {
+      const generation = payPollGeneration.current;
+      setPayBusy(true);
+      setPayError(null);
+      return (async () => {
+        try {
+          const invoice = await postMessageInvoice(token, messageId, sats);
+          if (generation !== payPollGeneration.current) {
+            return;
+          }
+          setPayInvoice({
+            messageId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+          });
+          setPayBusy(false);
+          startPayPoll(messageId, baselineSats);
+        } catch (err) {
+          if (generation !== payPollGeneration.current) {
+            return;
+          }
+          if (err instanceof MissingRequirementsError) {
+            if (!isRetry && openOverlayForMissing(err.missing)) {
+              pendingPostRef.current = () => continuePay(true);
+              return;
+            }
+            setPayError('request');
+            return;
+          }
+          setPayError('request');
+        } finally {
+          if (generation === payPollGeneration.current) {
+            setPayBusy(false);
+          }
+        }
+      })();
+    };
+    if (account !== null && openOverlayForMissing(account.missing)) {
+      pendingPostRef.current = () => continuePay(true);
+      return;
+    }
+    void continuePay(false);
   };
 
   const handlePayCancel = (): void => {
+    bumpPayPollGeneration();
     setPayMessageId(null);
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
+    setPayWaiting(false);
+    setReplyPosting(false);
   };
 
   const handleToggleExpand = (messageId: string): void => {
@@ -348,6 +640,9 @@ export function MemberProfileScreen({
       setReplies(null);
       setRepliesError(false);
       setRepliesLoading(false);
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      setReplyFormError(null);
       return;
     }
     const gen = ++expandGen.current;
@@ -355,6 +650,9 @@ export function MemberProfileScreen({
     setReplies(null);
     setRepliesLoading(true);
     setRepliesError(false);
+    setReplyDraft('');
+    setReplyAmountDraft('');
+    setReplyFormError(null);
     if (session === null) {
       setRepliesLoading(false);
       setRepliesError(true);
@@ -383,22 +681,38 @@ export function MemberProfileScreen({
       return;
     }
     const trimmed = replyDraft.trim();
-    if (trimmed === '') {
-      setReplyFormError('empty');
-      return;
-    }
     if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
     }
-    const token = session;
-    const parentId = expandedId;
-    const missing = account?.missing ?? [];
-    if (openOverlayForMissing(missing)) {
-      pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+    const parsed = parseReplySats(replyAmountDraft);
+    if (trimmed === '' && parsed === 'empty') {
+      setReplyFormError('empty');
       return;
     }
-    void runReplyPost(token, trimmed, parentId, false);
+    const token = session;
+    const parentId = expandedId;
+    const parentRow =
+      listedNote?.id === parentId ? listedNote : posts?.find((message) => message.id === parentId);
+    const exempt = isReplyPaymentExempt(account, parentRow?.accountId);
+    const continueReply = (isRetry: boolean): Promise<void> => {
+      if (parsed === 'invalid' || (!exempt && parsed === 'empty')) {
+        setReplyFormError('amount');
+        return Promise.resolve();
+      }
+      if (parsed === 'empty') {
+        return runReplyPost(token, trimmed, parentId, isRetry);
+      }
+      /* v8 ignore next -- expanded parent is always in the loaded list */
+      const baselineSats = parentRow === undefined ? 0 : parentRow.sats;
+      return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
+    };
+    const missing = account?.missing ?? [];
+    if (openOverlayForMissing(missing)) {
+      pendingPostRef.current = () => continueReply(true);
+      return;
+    }
+    void continueReply(false);
   };
 
   const handleRetryReplies = (): void => {
@@ -448,6 +762,7 @@ export function MemberProfileScreen({
     payBusy,
     payError,
     payInvoice,
+    payWaiting,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);
@@ -463,6 +778,11 @@ export function MemberProfileScreen({
     replyDraft,
     onReplyDraftChange: (value: string): void => {
       setReplyDraft(value);
+      setReplyFormError(null);
+    },
+    replyAmountDraft,
+    onReplyAmountDraftChange: (value: string): void => {
+      setReplyAmountDraft(value);
       setReplyFormError(null);
     },
     replyPosting,

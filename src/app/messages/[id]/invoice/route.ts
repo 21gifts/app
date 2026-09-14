@@ -8,7 +8,7 @@ interface InvoiceRouteContext {
 /**
  * App Router POST for `/messages/:id/invoice`.
  *
- * @param request - Incoming request (Bearer session + `{ sats }` JSON).
+ * @param request - Incoming request (Bearer session + `{ sats }` or `{ sats, text }` JSON).
  * @param context - Dynamic route params (`id` = message UUID).
  * @returns The proxied upstream response.
  */

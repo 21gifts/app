@@ -829,6 +829,64 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded');
   });
 
+  test('state /welcome expanded-gifts', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-gift',
+              name: 'Bob',
+              text: '',
+              createdAt: '2026-08-28T12:01:00.000Z',
+              sats: 21,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+            {
+              id: 'r-text',
+              name: 'Carol',
+              text: 'Nice one',
+              createdAt: '2026-08-28T12:02:00.000Z',
+              sats: 21,
+              payable: false,
+              hasPhoto: false,
+              role: 'verified',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByText('send ₿21')).toBeVisible();
+    await expect(page.getByText('Nice one')).toBeVisible();
+    await shotScreen(page, 'state-welcome-expanded-gifts');
+  });
+
   test('state /welcome copy', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
