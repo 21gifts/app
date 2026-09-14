@@ -2324,7 +2324,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('send ₿21,000')).toBeTruthy();
+    expect(screen.getByText("send ₿21'000")).toBeTruthy();
   });
 
   it('renders reply text with the gift amount underneath', () => {

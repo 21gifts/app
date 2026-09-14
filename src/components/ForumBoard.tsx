@@ -923,13 +923,13 @@ export function ForumBoard({
                             ) : reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-fg">
                                 {t('forum.giftReply', {
-                                  amount: formatBitcoin(reply.sats, locale),
+                                  amount: formatBitcoin(reply.sats, numberFormat),
                                 })}
                               </p>
                             ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
-                                {formatBitcoin(reply.sats, locale)}
+                                {formatBitcoin(reply.sats, numberFormat)}
                               </p>
                             ) : null}
                             {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
