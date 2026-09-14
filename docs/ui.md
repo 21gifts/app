@@ -653,7 +653,7 @@ Glyph: `aria-hidden` on the lucide node.
 
 **Anatomy.** Full-viewport scrim `fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4`. Panel is catalog `Card maxWidth="sm"` (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`, `gap-6`). Close is `IconButton` ghost. `role="dialog"` `aria-modal="true"`.
 
-**Introduce yourself.** Title, body, labeled `ButtonLink` CTA **Write an introduction** to `/welcome`. Close dismisses this mount. No Skip.
+**Introduce yourself.** Title, body, labeled `Button` CTA **Write an introduction**. The CTA dismisses the overlay, focuses the welcome composer (`FORUM_COMPOSE_EVENT` / `requestForumCompose`), and `router.push('/welcome')` only when the path is not already `/welcome`. Close dismisses this mount. No Skip.
 
 **Requirements.** Name, Lightning Address, or living-room rules before a pending post retries. Close dismisses without posting. No Skip.
 
@@ -926,7 +926,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip; omitted at 0 and when unpaid is selected.
 - Composer.
 - Note cards / empty / loading / error (`middle`): amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
-- `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `ButtonLink` CTA) when setup is complete and the member has not posted.
+- `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
 
 Author names with `accountId` open `/members/[accountId]`.

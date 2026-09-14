@@ -1,9 +1,11 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { ButtonLink, Card, IconButton } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
+import { requestForumCompose } from '@/lib/forum-feed';
 
 /** Props for {@link IntroduceYourselfOverlay}. */
 export interface IntroduceYourselfOverlayProps {
@@ -13,8 +15,9 @@ export interface IntroduceYourselfOverlayProps {
 
 /**
  * Modal that asks a signed-in member who has not posted yet to introduce
- * themselves in the forum. Close dismisses this mount; the CTA goes to
- * `/welcome`.
+ * themselves in the forum. Close dismisses this mount. The CTA dismisses,
+ * focuses the welcome composer, and navigates to `/welcome` only when the
+ * path is not already `/welcome`.
  *
  * @param props - See {@link IntroduceYourselfOverlayProps}.
  * @returns The overlay dialog.
@@ -23,6 +26,8 @@ export function IntroduceYourselfOverlay({
   onDismiss,
 }: IntroduceYourselfOverlayProps): ReactElement {
   const { t } = useTranslations();
+  const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <div
@@ -47,9 +52,19 @@ export function IntroduceYourselfOverlay({
           </IconButton>
         </div>
         <p className="text-sm text-app-muted">{t('introduce.body')}</p>
-        <ButtonLink href="/welcome" size="lg">
+        <Button
+          type="button"
+          size="lg"
+          onClick={() => {
+            requestForumCompose();
+            onDismiss();
+            if (pathname !== '/welcome') {
+              router.push('/welcome');
+            }
+          }}
+        >
           {t('introduce.cta')}
-        </ButtonLink>
+        </Button>
       </Card>
     </div>
   );

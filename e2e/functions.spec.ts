@@ -1065,10 +1065,144 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
   });
   await page.goto('/welcome');
   await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Write an introduction' })).toHaveAttribute(
-    'href',
-    '/welcome',
-  );
+  await page.getByRole('button', { name: 'Write an introduction' }).click();
+  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toHaveCount(0);
+  await expect(page.getByLabel('Your message')).toBeFocused();
+});
+
+test('Function: requestForumCompose — Write an introduction focuses the welcome composer', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        hasPosted: false,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Write an introduction' }).click();
+  await expect(page.getByLabel('Your message')).toBeFocused();
+});
+
+test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcome without the dialog', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        hasPosted: false,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/profile');
+  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
+  await page.getByRole('button', { name: 'Write an introduction' }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toHaveCount(0);
+});
+
+test('Function: consumePendingForumCompose — CTA from profile focuses the welcome composer after navigation', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        hasPosted: false,
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Write an introduction' }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+  await expect(page.getByLabel('Your message')).toBeFocused();
 });
 
 test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay', async ({
