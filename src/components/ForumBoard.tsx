@@ -41,13 +41,11 @@ import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { FiatPicker } from '@/components/FiatPicker';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
-  defaultFiatForLocale,
   formatBitcoin,
   formatFiatDisplay,
   satsToFiatAmount,
-  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import {
@@ -378,9 +376,9 @@ export function ForumBoard({
   composerHidden = false,
   onDeleted,
 }: ForumBoardProps): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
+  const { fiat } = useFiatPreference();
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -875,12 +873,6 @@ export function ForumBoard({
                   >
                     <ArrowLeft aria-hidden="true" className="h-4 w-4" />
                   </IconButton>
-                  <FiatPicker
-                    value={fiat}
-                    onChange={setFiat}
-                    shell="app"
-                    ariaLabel={t('profile.fiatCurrency')}
-                  />
                   <Field
                     label={t('forum.payAmountLabel')}
                     type="text"

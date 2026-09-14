@@ -80,9 +80,9 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders `FiatPicker` then gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the selected fiat; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {selected FiatCode} via BarScale `'btc' | 'fiat'` (default ₿; not a five-way ₿|CHF|EUR|USD|PHP). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each gift's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. No FiatPicker. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each gift's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
-- **Returns / side effects:** React element. Shared `useState<FiatCode>` defaults to `defaultFiatForLocale(locale)`. No network.
+- **Returns / side effects:** React element. Reads `useFiatPreference`. No network.
 - **Used by:** `StatsLoader`.
 
 ## Function: StatsPage
@@ -101,9 +101,9 @@
 
 ## Function: DayLoader
 
-- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. Renders `FiatPicker`; the summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, fiat, numberFormat)`.
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. No FiatPicker. The summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`.
 - **Inputs:** `day` UTC `YYYY-MM-DD`.
-- **Returns / side effects:** React element. Calls `fetchGiftDay`. Selected fiat defaults with `defaultFiatForLocale`. Reads `useNumberFormat` and passes `numberFormat` into `GiftDayTable`.
+- **Returns / side effects:** React element. Calls `fetchGiftDay`. Reads `useFiatPreference` and `useNumberFormat` and passes both into `GiftDayTable`.
 - **Used by:** `GiftDayPage`.
 
 ## Function: GiftDayTable
@@ -115,10 +115,10 @@
 
 ## Function: FiatPicker
 
-- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'` (stats) and `ariaLabel` default `'Fiat currency'`. Profile passes `shell="app"` and catalog `profile.fiatCurrency`. Chart scale stays a separate ₿ | selected fiat control (`tone="gift"` via the picker).
+- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'` and `ariaLabel` default `'Fiat currency'`. Profile settings pass `shell="app"` and catalog `profile.fiatCurrency`. Chart scale stays a separate ₿ | selected fiat control. Not rendered outside Profile.
 - **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); optional `ariaLabel` (default `'Fiat currency'`).
 - **Returns / side effects:** React element. No network.
-- **Used by:** `StatsDashboard`, `DayLoader`, `AccountActivityChart`.
+- **Used by:** `FiatPreferenceSwitcher`.
 
 ## Function: fetchGiftDay
 
@@ -196,6 +196,41 @@
 - **Inputs:** `initial` (`NumberFormatStyle` from `getRequestNumberFormat`) and `children`.
 - **Returns / side effects:** React provider element. `setNumberFormat` writes `numberFormat=<id>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS. Same-id is a no-op when the cookie is already `ch`/`us`/`de`; selecting `ch` while the cookie is absent still writes so the choice persists.
 - **Used by:** `RootLayout` wraps every page; consumed via `useNumberFormat` (see that function).
+
+## Function: FiatPreferenceProvider
+
+- **Purpose:** Client context provider that exposes the preferred fiat and a setter that writes the `fiat` cookie. Nest is `LocaleProvider` → `NumberFormatProvider` → `FiatPreferenceProvider initial={fiat}` → `ThemeProvider`.
+- **Inputs:** `initial` (`FiatCode` from `getRequestFiat`) and `children`.
+- **Returns / side effects:** React provider element. `setFiat` writes `fiat=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS.
+- **Used by:** `RootLayout` wraps every page; consumed via `useFiatPreference`.
+
+## Function: useFiatPreference
+
+- **Purpose:** Reads preferred `FiatCode` and `setFiat` from {@link FiatPreferenceProvider}.
+- **Inputs:** None (context).
+- **Returns / side effects:** `{ fiat, setFiat }`. Throws outside the provider.
+- **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `ForumBoard`, `PublicMessageLoader`, `StatsDashboard`, `DayLoader`.
+
+## Function: FiatPreferenceSwitcher
+
+- **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"`. The only UI that changes preferred fiat.
+- **Inputs:** None. Uses `useFiatPreference` and `useTranslations`.
+- **Returns / side effects:** Settings section. `onChange` persists via the cookie.
+- **Used by:** `ProfileScreen`.
+
+## Function: parseFiatCode
+
+- **Purpose:** Accept a raw cookie/option string if it is exactly one of `CHF|EUR|USD|PHP`; otherwise return `fallback`.
+- **Inputs:** `value` (optional string) and `fallback` (`FiatCode`).
+- **Returns / side effects:** A `FiatCode`. No side effects.
+- **Used by:** `getRequestFiat`.
+
+## Function: getRequestFiat
+
+- **Purpose:** Cookie `fiat` if valid; otherwise `defaultFiatForLocale(locale)`. Never writes.
+- **Inputs:** Request `locale`.
+- **Returns / side effects:** `FiatCode` for this request.
+- **Used by:** `RootLayout`.
 
 ## Function: InAppBrowserView
 
@@ -314,9 +349,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
 - **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), About me, name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), About me, name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.>>>>>>> 5e225fef (Keep the fiat switcher on Profile only and reuse that preference everywhere.)
 - **Used by:** `ProfilePage`.
 
 ## Function: AboutMeSection
@@ -482,9 +517,9 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Always renders FiatPicker (`tone="gift"` via picker, `shell="app"`, aria `profile.fiatCurrency`). Empty/all-zero sats: picker + `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: picker + legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Own `useState<FiatCode>` from `defaultFiatForLocale(locale)` (mount-time). Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Fiat code from `useFiatPreference` (no picker). Empty/all-zero sats: `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
 - **Inputs:** `received` (`AccountActivity.receivedOverTime`); optional `donated` (default `[]`) from `AccountActivity.donatedOverTime`.
-- **Returns / side effects:** Always FiatPicker. When the series is empty or all zeros: picker + `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise picker, one chrome row (legend left, ₿ | selected FiatCode right), and SVG. Client state for fiat and scale. No network.
+- **Returns / side effects:** When the series is empty or all zeros: `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise one chrome row (legend left, ₿ | selected FiatCode right) and SVG. Client state for scale only. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`, `MemberProfileScreen`.
 
 ## Function: Button
@@ -961,8 +996,8 @@
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, and `ThemeProvider`. Nest is Locale → NumberFormat → Theme.
-- **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, and `getRequestNumberFormat()` for the number-format provider.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. Nest is Locale → NumberFormat → FiatPreference → Theme.
+- **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
 
@@ -1260,7 +1295,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Picks the default public-stats fiat for a UI locale: `de` → CHF, `fil` → PHP, `es` → EUR, `en` → USD.
 - **Inputs:** `locale` (`Locale`).
 - **Returns / side effects:** A `FiatCode`. No network.
-- **Used by:** `StatsDashboard`, `DayLoader`, `AccountActivityChart`.
+- **Used by:** `getRequestFiat`.
 
 ## Function: formatUsdDisplay
 

@@ -1211,6 +1211,37 @@ describe('ForumBoard', () => {
     expect(locationStub.href).toBe('http://localhost/');
   });
 
+  it('shows a live CHF equivalent on the German pay sheet without a picker', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.queryByRole('group', { name: 'Fiatwährung' })).toBeNull();
+    expect(screen.getAllByText('CHF 0.02').length).toBeGreaterThan(0);
+  });
+
+
   it('keeps Continue on Android Mobile and does not auto-open the wallet', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,

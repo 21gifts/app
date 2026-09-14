@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   defaultFiatForLocale,
+  parseFiatCode,
   formatBitcoin,
   formatFiatDisplay,
   formatFiatTick,
@@ -18,6 +19,15 @@ describe('defaultFiatForLocale', () => {
     expect(defaultFiatForLocale('fil')).toBe('PHP');
     expect(defaultFiatForLocale('es')).toBe('EUR');
     expect(defaultFiatForLocale('en')).toBe('USD');
+  });
+});
+
+describe('parseFiatCode', () => {
+  it('returns a supported code and otherwise the fallback', () => {
+    expect(parseFiatCode('CHF', 'USD')).toBe('CHF');
+    expect(parseFiatCode('EUR', 'USD')).toBe('EUR');
+    expect(parseFiatCode('xx', 'USD')).toBe('USD');
+    expect(parseFiatCode(undefined, 'CHF')).toBe('CHF');
   });
 });
 
