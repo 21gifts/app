@@ -1481,7 +1481,9 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
-    await expect(page.getByAltText('Photo from Carol')).toBeVisible();
+    const photo = page.getByAltText('Photo from Carol');
+    await expect(photo).toBeVisible();
+    await photo.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-photo');
   });
 
