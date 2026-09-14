@@ -731,6 +731,10 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox.
 
 ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`theme.label`), then `SegmentedControl tone="neutral"` with System / Light / Dark. Not a labeled chrome pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors follow the cookie if one exists, otherwise the OS.
 
+#### FiatPreferenceSwitcher profile settings section
+
+FiatPreferenceSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`profile.fiatCurrency`), then `FiatPicker` `shell="app"` with CHF | EUR | USD | PHP. The only control that writes the `fiat` cookie. Not a Menu disclosure. Marketing never mounts it. Other screens display the preferred code.
+
 #### NumberFormatSwitcher profile settings section
 
 NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`numberFormat.label`), then `SegmentedControl tone="neutral"` with sample labels `10'000.23` / `10,000.23` / `23.000,33`. Not a Hash pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors keep the Swiss default unless a cookie exists.
@@ -1040,7 +1044,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
 6. **Pay control is lucide Gift, not ₿.** Amount is a single `formatBitcoin` string. Accessible name stays **Send Bitcoin** (`forum.pay`).
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
-8. **Empty profile chart is picker + copy**, not an axis; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`.
+8. **Empty profile chart is copy only**, not an axis and not a picker; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`. FiatPicker lives in the Profile settings row.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.
 11. **Photo/story is a reserved 96×96 circle + story clamp**, not a shipped feature.

@@ -976,7 +976,7 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ### Variant: default
 
-Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `formatFiatDisplay` when a rate day exists, optional photo or clip-aspect `<video>`. Auth CTA below the card.
+Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null (otherwise ₿-only, no ` · —`), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 
