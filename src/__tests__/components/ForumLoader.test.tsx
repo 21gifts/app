@@ -3473,6 +3473,51 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
+  it('does not keep force-apply from a Home click during the initial load', async () => {
+    let release: ((value: ForumMessage[]) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    });
+    renderWithLocale(<ForumLoader />);
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+    });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    await act(async () => {
+      release?.([SAMPLE]);
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    fetchMock.mockResolvedValueOnce([FRESH, SAMPLE]);
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Fresh from refresh')).toBeNull();
+  });
+
   it('does not double-fetch on first mount before any visibility event', async () => {
     fetchMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);

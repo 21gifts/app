@@ -347,7 +347,10 @@ export function ForumLoader(): ReactElement | null {
     if (session === null) {
       return false;
     }
-    if (loadingRef.current || refreshingRef.current) {
+    if (loadingRef.current) {
+      return false;
+    }
+    if (refreshingRef.current) {
       pendingRefreshRef.current = true;
       return false;
     }
@@ -418,7 +421,6 @@ export function ForumLoader(): ReactElement | null {
     window.scrollTo(0, 0);
     forceApplyRef.current = true;
     const started = refreshMessagesRef.current();
-    /* v8 ignore next 3 -- session already gone */
     if (!started && !pendingRefreshRef.current) {
       forceApplyRef.current = false;
     }
