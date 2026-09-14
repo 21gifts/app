@@ -14,7 +14,12 @@ import {
   setLightningAddress,
   setName,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type Account, type MemberProfile } from '@/lib/api-types';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type Account,
+  type ForumMessage,
+  type MemberProfile,
+} from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -160,13 +165,13 @@ const account: Account = {
 
 const originalUserAgent = navigator.userAgent;
 
-async function openPostsShowingNote(): Promise<void> {
-  vi.mocked(fetchMemberPosts).mockResolvedValue([note]);
+async function openPostsShowingNote(feedNote: ForumMessage = note): Promise<void> {
+  vi.mocked(fetchMemberPosts).mockResolvedValue([feedNote]);
   const postsButton = screen.getByRole('button', { name: /posts/ });
   if (postsButton.getAttribute('aria-pressed') !== 'true') {
     fireEvent.click(postsButton);
   }
-  await screen.findByText('Hello from my profile note.');
+  await screen.findByText(feedNote.text);
 }
 
 async function openPostsShowingPhotoNote(): Promise<void> {
@@ -178,8 +183,8 @@ async function openPostsShowingPhotoNote(): Promise<void> {
   await screen.findByText('Hello from my profile note.');
 }
 
-async function expandNote(): Promise<void> {
-  await openPostsShowingNote();
+async function expandNote(feedNote: ForumMessage = note): Promise<void> {
+  await openPostsShowingNote(feedNote);
   fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
   await waitFor(() => {
     expect(screen.getByLabelText('Your reply')).toBeTruthy();
@@ -1588,12 +1593,9 @@ describe('MemberProfileScreen', () => {
     const noteWithoutAccount = { ...note, accountId: undefined };
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: noteWithoutAccount }}
-        received={[]}
-      />,
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
     );
-    await expandNote();
+    await expandNote(noteWithoutAccount);
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
@@ -1613,11 +1615,12 @@ describe('MemberProfileScreen', () => {
     });
     renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, id: account.id, profileMessage: noteWithoutAccount }}
+        profile={{ ...profile, id: account.id, postCount: 1 }}
         received={[]}
+        donated={[]}
       />,
     );
-    await expandNote();
+    await expandNote(noteWithoutAccount);
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
