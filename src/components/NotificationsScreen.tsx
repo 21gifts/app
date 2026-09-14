@@ -52,7 +52,9 @@ export function NotificationsScreen({
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('notifications.heading')}
         </h1>
-        <p className="text-center text-sm text-app-fg">{t('notifications.error')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('notifications.error')}
+        </p>
         <Button type="button" variant="secondary" onClick={onRetry}>
           {t('notifications.retry')}
         </Button>

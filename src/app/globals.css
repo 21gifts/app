@@ -36,6 +36,7 @@
 html {
   color-scheme: light;
   --app-height: 100dvh;
+  touch-action: manipulation;
 }
 
 html.dark {

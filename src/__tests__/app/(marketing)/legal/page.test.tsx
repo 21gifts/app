@@ -14,7 +14,15 @@ afterEach(cleanup);
 describe('LegalPage', () => {
   it('shows the legal notice heading', () => {
     render(<LegalPage />);
-    expect(screen.getByRole('heading', { name: 'Legal Notice' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Legal Notice', level: 1 })).toBeTruthy();
+    const imprint = screen.getByRole('heading', { name: 'Imprint' });
+    expect(imprint.className).toContain('text-xl');
+    expect(imprint.className).toContain('font-semibold');
+    expect(imprint.className).not.toContain('text-paper/70');
+    expect(screen.getByRole('heading', { name: 'Privacy Policy', level: 2 })).toBeTruthy();
+    const overview = screen.getByRole('heading', { name: 'Overview', level: 3 });
+    expect(overview.className).toContain('text-xl font-semibold');
+    expect(overview.className).not.toContain('text-paper/70');
   });
 
   it('does not describe the app as a separate domain', () => {

@@ -205,22 +205,22 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 
 **Ramp.** 16px root. Use these classes (write the utilities on the JSX as CONTRIBUTING requires).
 
-| Token          | px      | rem          | Weight | Line-height            | Letter-spacing              | Max measure                                        | Tailwind recipe                                                   | Use                                                                                                                                          |
-| -------------- | ------- | ------------ | ------ | ---------------------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **display**    | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`). 404 “404” stays `text-5xl` = 48px / 600                                                |
-| **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, contact, inbox, notifications, setup. **Not login** (see **card-title**) |
-| **card-title** | 18      | 1.125        | 500    | 1.3                    | 0                           | 22em                                               | `text-lg font-medium text-center text-app-fg`                     | Login card heading (`LoginCard` `login.heading`). Keep this smaller step so the card is an action, not a billboard                           |
-| **h1-lg**      | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                    | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`   | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                      |
-| **h2**         | 20      | 1.25         | 600    | 1.3                    | 0                           | 28em                                               | `text-xl font-semibold`                                           | Marketing step titles, legal H2, handbook H2                                                                                                 |
-| **h3**         | 18      | 1.125        | 600    | 1.35                   | 0                           | 28em                                               | `text-lg font-semibold`                                           | Marketing why-grid titles, legal H3                                                                                                          |
-| **kicker**     | 14      | 0.875        | 500    | 1.3                    | 0.1em (`tracking-widest`)   | —                                                  | `text-sm font-medium tracking-widest uppercase text-accent`       | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules`                                                        |
-| **overline**   | 12      | 0.75         | 500    | 1.3                    | 0.1em                       | —                                                  | `text-xs font-medium tracking-widest uppercase text-app-subtle`   | `NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`, `RULE n` (app; **not** `text-accent`)                                                       |
-| **body**       | 16      | 1            | 400    | 1.5                    | 0                           | 36em (`max-w-2xl` ~42rem for marketing lead is OK) | `text-base leading-normal`                                        | App body. Marketing lead is **body-lg**                                                                                                      |
-| **body-lg**    | 18      | 1.125        | 400    | 1.5                    | 0                           | 36em                                               | `text-lg text-paper/60` (marketing) or `text-lg text-app-muted`   | Hero lead, stats subtitle                                                                                                                    |
-| **body-sm**    | 14      | 0.875        | 400    | 1.45                   | 0                           | 36em                                               | `text-sm`                                                         | Forum note body, card sentences, field labels, button labels, FAQ answers                                                                    |
-| **caption**    | 12      | 0.75         | 400    | 1.4                    | 0                           | —                                                  | `text-xs text-app-subtle`                                         | Forum timestamp, pay “Waiting for payment…”                                                                                                  |
-| **numeric**    | inherit | inherit      | 600    | 1.2                    | 0                           | —                                                  | `font-semibold tabular-nums lining-nums`                          | `formatBitcoin`, USD, KPI values, chart ticks                                                                                                |
-| **code**       | 14      | 0.875        | 400    | 1.4                    | 0                           | —                                                  | `font-mono text-sm`                                               | `you@walletofsatoshi.com` on marketing; Lightning Address _value_ on profile uses `font-mono text-sm`                                        |
+| Token          | px      | rem          | Weight | Line-height            | Letter-spacing              | Max measure                                        | Tailwind recipe                                                   | Use                                                                                                                                                                      |
+| -------------- | ------- | ------------ | ------ | ---------------------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **display**    | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`). 404 “404” stays `text-5xl` = 48px / 600                                                                            |
+| **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, contact, inbox, notifications, setup. **Not login** (see **card-title**)                             |
+| **card-title** | 18      | 1.125        | 500    | 1.3                    | 0                           | 22em                                               | `text-lg font-medium text-center text-app-fg`                     | Login card heading (`LoginCard` `login.heading`). Keep this smaller step so the card is an action, not a billboard                                                       |
+| **h1-lg**      | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                    | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`   | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                                                  |
+| **h2**         | 20      | 1.25         | 600    | 1.3                    | 0                           | 28em                                               | `text-xl font-semibold`                                           | Marketing step titles, legal Imprint H2, handbook H2. `/legal` Privacy Policy is an h2 at `text-3xl` so the page keeps one outline h1 (Legal Notice)                     |
+| **h3**         | 18      | 1.125        | 600    | 1.35                   | 0                           | 28em                                               | `text-lg font-semibold`                                           | Marketing why-grid titles, legal H3. `/legal` Overview is an h3 at `text-xl font-semibold` as the first subsection under Privacy Policy                                  |
+| **kicker**     | 14      | 0.875        | 500    | 1.3                    | 0.1em (`tracking-widest`)   | —                                                  | `text-sm font-medium tracking-widest uppercase text-accent`       | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules`                                                                                    |
+| **overline**   | 12      | 0.75         | 500    | 1.3                    | 0.1em                       | —                                                  | `text-xs font-medium tracking-widest uppercase text-app-subtle`   | `NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`, `RULE n` (app; **not** `text-accent`)                                                                                   |
+| **body**       | 16      | 1            | 400    | 1.5                    | 0                           | 36em (`max-w-2xl` ~42rem for marketing lead is OK) | `text-base leading-normal`                                        | App body. Marketing lead is **body-lg**. Form control text (inputs/textareas) uses body / `text-base` because iOS auto-zooms below 16px. **body-sm** keeps field labels. |
+| **body-lg**    | 18      | 1.125        | 400    | 1.5                    | 0                           | 36em                                               | `text-lg text-paper/60` (marketing) or `text-lg text-app-muted`   | Hero lead, stats subtitle                                                                                                                                                |
+| **body-sm**    | 14      | 0.875        | 400    | 1.45                   | 0                           | 36em                                               | `text-sm`                                                         | Forum note body, card sentences, field labels, button labels, FAQ answers                                                                                                |
+| **caption**    | 12      | 0.75         | 400    | 1.4                    | 0                           | —                                                  | `text-xs text-app-subtle`                                         | Forum timestamp, pay “Waiting for payment…”                                                                                                                              |
+| **numeric**    | inherit | inherit      | 600    | 1.2                    | 0                           | —                                                  | `font-semibold tabular-nums lining-nums`                          | `formatBitcoin`, USD, KPI values, chart ticks                                                                                                                            |
+| **code**       | 14      | 0.875        | 400    | 1.4                    | 0                           | —                                                  | `font-mono text-sm`                                               | `you@walletofsatoshi.com` on marketing; Lightning Address _value_ on profile uses `font-mono text-sm`                                                                    |
 
 **One title per page.** The document outline has one `h1` (or `card-title` used as the sole heading). Card must not repeat a page title. `LoginPage` has no outer “Log in to 21.gifts”; the only heading is `LoginCard` `login.heading` at **card-title**. Do not add the outer title back. Welcome has no Forum heading; the only `h1` is “Welcome, {name}”.
 
@@ -267,12 +267,12 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 
 **Elevation.**
 
-| Level   | Recipe                               | Use                                                  |
-| ------- | ------------------------------------ | ---------------------------------------------------- |
-| 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes |
-| 1       | `border border-app-border shadow-sm` | `Card`                                               |
-| 2       | `border border-app-border shadow-lg` | Menu, language listbox                               |
-| Overlay | `bg-app-overlay`                     | `HandbookLightbox` scrim                             |
+| Level   | Recipe                               | Use                                                                                       |
+| ------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes                                      |
+| 1       | `border border-app-border shadow-sm` | `Card`                                                                                    |
+| 2       | `border border-app-border shadow-lg` | Menu, language listbox                                                                    |
+| Overlay | `bg-app-overlay`                     | `HandbookLightbox`, `PwaInstall`, `IntroduceYourselfOverlay`, `RequirementsOverlay` scrim |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
@@ -386,7 +386,7 @@ flowchart TB
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden`. App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
-**Safe area / visualViewport.** `AppShell` plus `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`) is the height source. Do not add `env(safe-area-inset-*)` here.
+**Safe area / visualViewport.** `AppShell` plus `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`) is the height source. `--app-height` follows `visualViewport.height` only when scale is 1 (keyboard / browser chrome). Do not follow a pinch-zoom visual viewport. `html { touch-action: manipulation }` disables double-tap-zoom; pinch-zoom stays. Do not add `env(safe-area-inset-*)` here.
 
 **`AppShell` slots.** `AppShell` owns the app `<main>`: optional absolute `topLeft` / `topRight`, `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
 
@@ -638,11 +638,23 @@ Hero **Send help**: `ButtonLink href="/donate" variant="secondary" tone="dark"`.
 
 **Variants:** `primary` (`bg-app-btn text-app-btn-fg`), `secondary` (border), `ghost` (`text-app-muted hover:bg-app-hover hover:text-app-fg`). Default `secondary`.
 
+**Tone:** `app` (default) or `dark` (marketing ink). Ghost + `dark` is `text-paper/40 hover:bg-paper/10 hover:text-paper` with `focus-visible:outline-paper`. Handbook copy-link uses this; do not layer `hover:bg-app-hover` on ink.
+
 **Sizes:** `sm` `h-6` + 44px slop; `md` `h-11 w-11`; `lg` `h-12 w-12`. Default `md`.
 
 **States:** default, hover, focus-visible, active, disabled (`disabled:cursor-not-allowed disabled:opacity-50`), loading (spinner replaces glyph).
 
 Glyph: `aria-hidden` on the lucide node.
+
+### Overlay
+
+**Anatomy.** Full-viewport scrim `fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4`. Panel is catalog `Card maxWidth="sm"` (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`, `gap-6`). Close is `IconButton` ghost. `role="dialog"` `aria-modal="true"`.
+
+**Introduce yourself.** Title, body, labeled `ButtonLink` CTA **Write an introduction** to `/welcome`. Close dismisses this mount. No Skip.
+
+**Requirements.** Name, Lightning Address, or living-room rules before a pending post retries. Close dismisses without posting. No Skip.
+
+**States.** Open / dismissed (parent).
 
 ### `Field`
 
@@ -652,11 +664,11 @@ Glyph: `aria-hidden` on the lucide node.
 
 ```
 w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card
-px-4 py-2 text-sm text-app-fg placeholder:text-app-subtle
+px-4 py-2 text-base text-app-fg placeholder:text-app-subtle
 transition focus-visible:border-app-fg disabled:opacity-50
 ```
 
-No `outline-none`. The global `:focus-visible` ring is the keyboard encoding. No `error` prop; screens keep external `role="alert"` siblings.
+16px (`text-base`) so iOS Safari does not auto-zoom on focus. No `outline-none`. The global `:focus-visible` ring is the keyboard encoding. No `error` prop; screens keep external `role="alert"` siblings.
 
 Textarea: add `min-h-11 resize-none`. Composer textareas that sit beside an IconButton may omit the visible label and use `aria-label` only — that is a **composer**, not `Field`. Prefer `Field` when a label is visible (pay amount).
 
@@ -748,7 +760,7 @@ Inbox thread rows share only this chrome (rounded-2xl card, name, time, body). T
 **Anatomy.** `flex items-center gap-2` (forum) or `items-end` (contact/inbox).
 
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum only.
-- Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-sm`. `aria-label` from catalog. `maxLength` from API constants.
+- Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
 - Send/Post: `IconButton` lg primary, lucide `Send`. Loading: `Loader2`.
 - Preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
 
@@ -785,7 +797,7 @@ Do not restyle QR for dark mode.
 <p role="alert" className="text-center text-sm text-app-danger">
 ```
 
-Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above the sentence, then `Button` **Try again**. Do not use color alone — the sentence is required.
+Load and request failures next to labeled **Try again** use this grammar (`login.error`, `forum.error`, `forum.repliesError`, `inbox.error`, `notifications.error`, `view.error`). Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above the sentence, then `Button` **Try again**. Validation alerts already use the same `role="alert"` + `text-app-danger`. Missing (`view.missing`) stays muted, not danger. Do not use color alone — the sentence is required.
 
 ### Marketing header / footer / CTA pair
 
@@ -821,11 +833,11 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Notifications list
 
-**Anatomy.** `Card maxWidth="xl"` + **h1** `notifications.heading` at the **h1** ramp. List of actor / reply / time rows as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`). Unread: semibold `text-app-fg`. Read: actor `font-medium`, reply `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only body: `notifications.photoOnly`. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: copy + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
+**Anatomy.** `Card maxWidth="xl"` + **h1** `notifications.heading` at the **h1** ramp. List of actor / reply / time rows as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`). Unread: semibold `text-app-fg`. Read: actor `font-medium`, reply `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only body: `notifications.photoOnly`. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title`, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Activity **Posts** / **Replies** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Optional one-item `ForumBoard` (`composerHidden`) when `profileMessage` is set. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -839,17 +851,17 @@ Handbook states: live marketing home.
 
 ### `/legal`
 
-`MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 Legal Notice, H2 Imprint, body, accent **Open the app** → Privacy Policy… → footer. English legal body is a catalog exception. Inline links `text-accent underline underline-offset-2`.
+`MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 Legal Notice, H2 Imprint (`text-xl font-semibold`), body, accent **Open the app** → H2 Privacy Policy (`text-3xl font-semibold`), H3 Overview (`text-xl font-semibold`)… → footer. English legal body is a catalog exception. Inline links `text-accent underline underline-offset-2`.
 
 ### `/stats`
 
-Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Gifts” → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
+Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Gifts” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
 Handbook states: loading, empty, error + **Try again**, populated charts.
 
 ### `/stats/[day]`
 
-Back link `text-accent underline` “All stats” → display “Gifts on YYYY-MM-DD” → subtitle → `DayLoader` / `GiftDayTable`. Invalid day: `notFound()` (404 shell).
+Back link `text-accent underline underline-offset-2` “All stats” → display “Gifts on YYYY-MM-DD” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → subtitle → `DayLoader` / `GiftDayTable`. Invalid day: `notFound()` (404 shell).
 
 ### `/handbook` (+ screens / functions / endpoints)
 
@@ -887,7 +899,9 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Laws `Banner`.
 - `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular.
 - Composer.
-- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` + Gift pay (`forum.pay` = “Send Bitcoin”). Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
+- `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `ButtonLink` CTA) when setup is complete and the member has not posted.
+- `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
 
 Author names with `accountId` open `/members/[accountId]`.
 
@@ -897,7 +911,7 @@ Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<
 
 ### `/members/[accountId]`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill, activity **Posts** / **Replies** as labeled `Button sm` toggles) + optional one-item forum note (`composerHidden`). Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
 
 Handbook states: default (note present), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (`RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip).
 
@@ -921,7 +935,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/messages/[id]` — public note
 
-Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `PublicMessageLoader`: public note card (`Card md`), amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg` underline. Loading / missing / error + **Try again**.
+Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 

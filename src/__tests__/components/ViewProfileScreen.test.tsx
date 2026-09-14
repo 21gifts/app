@@ -18,7 +18,7 @@ afterEach(cleanup);
 describe('ViewProfileScreen', () => {
   it('shows the heading, name, address, chart, and Given legend', () => {
     renderWithLocale(<ViewProfileScreen profile={named} received={[]} />);
-    expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Location')).toBeTruthy();

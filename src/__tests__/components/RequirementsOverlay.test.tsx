@@ -42,7 +42,9 @@ describe('RequirementsOverlay', () => {
     renderWithLocale(
       <RequirementsOverlay requirement="name" onDismiss={vi.fn()} onSatisfied={vi.fn()} />,
     );
-    expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    const dialog = screen.getByRole('dialog', { name: 'Add your name' });
+    expect(dialog.className).toContain('bg-app-overlay');
+    expect(dialog.className).not.toContain('bg-black/40');
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 

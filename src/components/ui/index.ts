@@ -17,6 +17,7 @@ export { Field, type FieldProps } from '@/components/ui/Field';
 export {
   IconButton,
   type IconButtonProps,
+  type IconButtonTone,
   type IconButtonVariant,
 } from '@/components/ui/IconButton';
 export { PageChrome, type PageChromeProps } from '@/components/ui/PageChrome';

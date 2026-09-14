@@ -8,7 +8,10 @@ afterEach(cleanup);
 describe('IntroduceYourselfOverlay', () => {
   it('renders the title and CTA', () => {
     renderWithLocale(<IntroduceYourselfOverlay onDismiss={vi.fn()} />);
-    expect(screen.getByRole('dialog', { name: 'Introduce yourself' })).toBeTruthy();
+    const dialog = screen.getByRole('dialog', { name: 'Introduce yourself' });
+    expect(dialog).toBeTruthy();
+    expect(dialog.className).toContain('bg-app-overlay');
+    expect(dialog.className).not.toContain('bg-black/40');
     expect(screen.getByRole('heading', { name: 'Introduce yourself' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Write an introduction' }).getAttribute('href')).toBe(
       '/welcome',

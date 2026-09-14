@@ -9,5 +9,7 @@ describe('APP_HEIGHT_BOOTSTRAP_SCRIPT', () => {
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('--app-height');
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('innerHeight');
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('setProperty');
+    const skipWhenPinched = 'Math.abs(vv.scale-1)>0.01){return;}';
+    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain(skipWhenPinched);
   });
 });

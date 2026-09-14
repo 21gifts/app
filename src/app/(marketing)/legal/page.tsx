@@ -22,7 +22,7 @@ export default function LegalPage(): ReactElement {
     <main className="mx-auto max-w-3xl px-5 py-24">
       <section className="space-y-4">
         <h1 className="text-3xl font-semibold">Legal Notice</h1>
-        <h2 className="text-xl text-paper/70">Imprint</h2>
+        <h2 className="text-xl font-semibold">Imprint</h2>
         <p>
           <strong>21.gifts</strong>
           <br />
@@ -39,8 +39,8 @@ export default function LegalPage(): ReactElement {
       </section>
 
       <section className="mt-16 space-y-4">
-        <h1 className="text-3xl font-semibold">Privacy Policy</h1>
-        <h2 className="text-xl text-paper/70">Overview</h2>
+        <h2 className="text-3xl font-semibold">Privacy Policy</h2>
+        <h3 className="text-xl font-semibold">Overview</h3>
         <p>
           21.gifts (&quot;we&quot;, &quot;us&quot;) operates the website at 21.gifts. We do not run
           advertising, sell data, or track visitors. This page explains what data is involved.

@@ -96,7 +96,7 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
           type="date"
           value={day}
           aria-label="UTC day"
-          className="mt-2 block rounded-md border border-paper/20 bg-transparent px-3 py-2 text-paper"
+          className="mt-2 block rounded-md border border-paper/20 bg-transparent px-3 py-2 text-base text-paper"
           onChange={(event) => {
             const next = event.target.value;
             if (isUtcDay(next) && next !== day) {

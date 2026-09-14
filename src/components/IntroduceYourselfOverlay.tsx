@@ -3,7 +3,7 @@
 import { X } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { ButtonLink, IconButton } from '@/components/ui';
+import { ButtonLink, Card, IconButton } from '@/components/ui';
 
 /** Props for {@link IntroduceYourselfOverlay}. */
 export interface IntroduceYourselfOverlayProps {
@@ -29,10 +29,10 @@ export function IntroduceYourselfOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={t('introduce.title')}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
     >
-      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-3xl border border-app-border bg-app-card p-6 shadow-lg">
-        <div className="flex items-start justify-between gap-3">
+      <Card maxWidth="sm">
+        <div className="flex w-full items-start justify-between gap-3">
           <h2 className="text-lg font-semibold tracking-tight text-app-fg">
             {t('introduce.title')}
           </h2>
@@ -50,7 +50,7 @@ export function IntroduceYourselfOverlay({
         <ButtonLink href="/welcome" size="lg">
           {t('introduce.cta')}
         </ButtonLink>
-      </div>
+      </Card>
     </div>
   );
 }
