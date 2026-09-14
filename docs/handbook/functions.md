@@ -1195,7 +1195,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Reads the persisted No gifts yet last-visit timestamp from `localStorage` key `21gifts.forum-unpaid-seen`.
 - **Inputs:** None.
-- **Returns / side effects:** The stored ISO string, or `null` when none is stored, the value is empty/whitespace/`Date.parse` is not finite, or when running on the server (no `window`). SSR-safe.
+- **Returns / side effects:** The stored ISO string, or `null` when none is stored, the value is empty/whitespace/`Date.parse` is not finite, storage access throws, or when running on the server (no `window`). SSR-safe.
 - **Used by:** `ForumLoader` on mount.
 
 ## Function: parseAcceptLanguage
@@ -1237,7 +1237,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Persists the No gifts yet last-visit timestamp, overwriting any previous value.
 - **Inputs:** `iso` ISO timestamp to store (`new Date().toISOString()`).
-- **Returns / side effects:** void. SSR no-op.
+- **Returns / side effects:** void. SSR no-op. A throwing storage write is also a no-op.
 - **Used by:** `ForumLoader` when entering unpaid and while unpaid as the list refreshes.
 
 ## Function: setName
