@@ -9,6 +9,7 @@ vi.mock('next/font/google', () => ({
 import RootLayout, { metadata, viewport } from '@/app/layout';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
@@ -20,6 +21,10 @@ vi.mock('@/lib/request-locale', () => ({
 
 vi.mock('@/lib/request-number-format', () => ({
   getRequestNumberFormat: vi.fn(async () => 'ch' as const),
+}));
+
+vi.mock('@/lib/request-fiat', () => ({
+  getRequestFiat: vi.fn(async () => 'USD' as const),
 }));
 
 beforeEach(() => {
@@ -134,7 +139,7 @@ describe('RootLayout', () => {
     expect(scripts[1]?.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
   });
 
-  it('wraps children LocaleProvider → NumberFormatProvider → ThemeProvider with AppHeightSync first on body', async () => {
+  it('wraps children LocaleProvider → NumberFormatProvider → FiatPreferenceProvider → ThemeProvider with AppHeightSync first on body', async () => {
     const tree = await RootLayout({ children: 'content' });
     const htmlProps = tree.props as {
       children: ReactElement[];
@@ -163,7 +168,13 @@ describe('RootLayout', () => {
     }>;
     expect(numberFormatProvider.type).toBe(NumberFormatProvider);
     expect(numberFormatProvider.props.initial).toBe('ch');
-    const themeProvider = numberFormatProvider.props.children;
+    const fiatProvider = numberFormatProvider.props.children as ReactElement<{
+      initial: string;
+      children: ReactElement<{ children: ReactNode }>;
+    }>;
+    expect(fiatProvider.type).toBe(FiatPreferenceProvider);
+    expect(fiatProvider.props.initial).toBe('USD');
+    const themeProvider = fiatProvider.props.children;
     expect(themeProvider.type).toBe(ThemeProvider);
     expect(themeProvider.props.children).toBe('content');
   });
