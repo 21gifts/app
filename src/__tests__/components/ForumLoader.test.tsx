@@ -130,6 +130,7 @@ async function revealAll(): Promise<void> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  fetchMock.mockResolvedValue([]);
   isVideoMock.mockReturnValue(false);
   push.mockReset();
   replace.mockReset();
@@ -3294,6 +3295,55 @@ describe('ForumLoader', () => {
     const pill = screen.getByRole('button', { name: 'New posts' });
     fireEvent.click(pill);
     fireEvent.click(pill);
+    await waitFor(() => {
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+  });
+
+  it('applies an explicit New posts click even if the visitor scrolls during the fetch', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    });
+    let release: ((value: ForumMessage[]) => void) | undefined;
+    fetchMock
+      .mockResolvedValueOnce([SAMPLE])
+      .mockResolvedValueOnce([FRESH, SAMPLE])
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            release = resolve;
+          }),
+      );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'New posts' }));
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    await act(async () => {
+      release?.([FRESH, SAMPLE]);
+    });
     await waitFor(() => {
       expect(screen.getByText('Fresh from refresh')).toBeTruthy();
     });

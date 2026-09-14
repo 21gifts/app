@@ -226,6 +226,8 @@ export function ForumLoader(): ReactElement | null {
   const refreshGeneration = useRef(0);
   const wasHiddenRef = useRef(false);
   const pendingRefreshRef = useRef(false);
+  const forceApplyRef = useRef(false);
+  const mountedRef = useRef(true);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const loadingRef = useRef(loading);
@@ -294,11 +296,13 @@ export function ForumLoader(): ReactElement | null {
    *
    * @param activeSession - Session token for the fetch.
    * @param shouldContinue - False when the caller was cancelled or superseded.
+   * @param forceApply - True when the visitor asked to apply (pill / home); skips the hold.
    * @returns `ok` when the list was applied, `error` on failure, `aborted` when skipped.
    */
   const loadMessagesOnce = async (
     activeSession: string,
     shouldContinue: () => boolean,
+    forceApply = false,
   ): Promise<'ok' | 'error' | 'aborted' | 'requirements'> => {
     try {
       const next = await fetchMessages(activeSession);
@@ -306,7 +310,7 @@ export function ForumLoader(): ReactElement | null {
         return 'aborted';
       }
       const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
-      if (!atTop && hasUnseenForumPosts(messagesRef.current, next)) {
+      if (!forceApply && !atTop && hasUnseenForumPosts(messagesRef.current, next)) {
         setNewPostsAvailable(true);
         return 'ok';
       }
@@ -344,6 +348,7 @@ export function ForumLoader(): ReactElement | null {
       return false;
     }
     if (loadingRef.current || refreshingRef.current) {
+      pendingRefreshRef.current = true;
       return false;
     }
     if (
@@ -358,6 +363,8 @@ export function ForumLoader(): ReactElement | null {
       return false;
     }
     pendingRefreshRef.current = false;
+    const forceApply = forceApplyRef.current;
+    forceApplyRef.current = false;
     const activeSession = session;
     const generation = ++refreshGeneration.current;
     refreshingRef.current = true;
@@ -366,6 +373,7 @@ export function ForumLoader(): ReactElement | null {
       const result = await loadMessagesOnce(
         activeSession,
         () => generation === refreshGeneration.current,
+        forceApply,
       );
       if (generation !== refreshGeneration.current) {
         return;
@@ -385,6 +393,9 @@ export function ForumLoader(): ReactElement | null {
       });
       refreshingRef.current = false;
       setRefreshing(false);
+      if (pendingRefreshRef.current && mountedRef.current) {
+        refreshMessagesRef.current();
+      }
     })();
     return true;
   };
@@ -392,13 +403,25 @@ export function ForumLoader(): ReactElement | null {
   const refreshMessagesRef = useRef(refreshMessages);
   refreshMessagesRef.current = refreshMessages;
 
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
   }, []);
 
   const showNewPosts = useCallback((): void => {
     window.scrollTo(0, 0);
-    refreshMessagesRef.current();
+    forceApplyRef.current = true;
+    const started = refreshMessagesRef.current();
+    /* v8 ignore next 3 -- session already gone */
+    if (!started && !pendingRefreshRef.current) {
+      forceApplyRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
