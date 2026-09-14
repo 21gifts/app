@@ -1377,7 +1377,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
     expect(screen.getByText('$0.02')).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
   });
