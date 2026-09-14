@@ -225,7 +225,7 @@ describe('NotificationsScreen', () => {
         onOpen={onOpen}
       />,
     );
-    const row = screen.getByRole('button', { name: /Frank sent sats/ });
+    const row = screen.getByRole('button', { name: /Frank sent bitcoin/ });
     expect(row.textContent).toContain('21');
     fireEvent.click(row);
     expect(onOpen).toHaveBeenCalledWith('parent-6', 'n6');
@@ -241,7 +241,7 @@ describe('NotificationsScreen', () => {
         onOpen={() => undefined}
       />,
     );
-    expect(screen.getByRole('button', { name: /Gina sent sats/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Gina sent bitcoin/ })).toBeTruthy();
     expect(screen.queryByText('Photo reply')).toBeNull();
   });
 });

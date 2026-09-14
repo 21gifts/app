@@ -490,7 +490,7 @@ const en = {
   'notifications.retry': 'Try again',
   'notifications.post': '{name} posted',
   'notifications.reply': '{name} replied',
-  'notifications.zap': '{name} sent sats',
+  'notifications.zap': '{name} sent bitcoin',
   'notifications.photoOnly': 'Photo reply',
 } as const;
 
@@ -986,7 +986,7 @@ const de = {
   'notifications.retry': 'Erneut versuchen',
   'notifications.post': '{name} hat gepostet',
   'notifications.reply': '{name} hat geantwortet',
-  'notifications.zap': '{name} hat Sats gesendet',
+  'notifications.zap': '{name} hat Bitcoin gesendet',
   'notifications.photoOnly': 'Foto-Antwort',
 } satisfies Messages;
 
@@ -1466,7 +1466,7 @@ const es = {
   'notifications.retry': 'Intentar de nuevo',
   'notifications.post': '{name} publicó',
   'notifications.reply': '{name} respondió',
-  'notifications.zap': '{name} envió sats',
+  'notifications.zap': '{name} envió bitcoin',
   'notifications.photoOnly': 'Respuesta con foto',
 } satisfies Messages;
 
@@ -1955,7 +1955,7 @@ const fil = {
   'notifications.retry': 'Subukan ulit',
   'notifications.post': '{name} nag-post',
   'notifications.reply': '{name} sumagot',
-  'notifications.zap': '{name} nagpadala ng sats',
+  'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Sagot na litrato',
 } satisfies Messages;
 
