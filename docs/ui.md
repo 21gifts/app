@@ -1042,7 +1042,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 3. **Orange is shell-split.** Marketing: primary filled CTA + kickers + stats paint. App: gift-money **fill** only. Never orange text on paper. THE TEST bar is the only decorative orange on `/rules`.
 4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. Signed-in links to `/welcome` except `/setup/*` (span).
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
-6. **Pay control is lucide Gift, not ₿.** Amount is a single `formatBitcoin` string. Accessible name stays **Send Bitcoin** (`forum.pay`).
+6. **Pay control is lucide Gift, not ₿.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null, otherwise ₿-only (no ` · —`). Accessible name stays **Send Bitcoin** (`forum.pay`).
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
 8. **Empty profile chart is copy only**, not an axis and not a picker; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`. FiatPicker lives in the Profile settings row.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
