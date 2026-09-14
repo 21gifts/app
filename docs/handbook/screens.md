@@ -639,6 +639,12 @@ Identity card with counts; posts button pressed; profile note hidden; post card 
 
 ![21.gifts member posts open](images/members-posts-open.png)
 
+### Variant: posts-open-photo
+
+Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and shows the inline photo (`Photo from Carol`) above the text, same ForumBoard paint as `/welcome` `photo`.
+
+![21.gifts member posts open with photo](images/members-posts-open-photo.png)
+
 ### Variant: replies-open
 
 Identity card; replies pressed; profile note still visible; reply card 'A reply from Carol.'
