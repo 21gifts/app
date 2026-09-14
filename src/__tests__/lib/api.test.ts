@@ -843,12 +843,13 @@ const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
   source: 'coinbase-exchange-daily-close' as const,
+  quotes: [{ code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
 };
 const EMPTY_ACTIVITY = {
   donatedSats: 0,
   receivedSats: 0,
-  donatedOverTime: [] as const,
-  receivedOverTime: [] as const,
+  donatedOverTime: [],
+  receivedOverTime: [],
   fx: EMPTY_FX,
 };
 

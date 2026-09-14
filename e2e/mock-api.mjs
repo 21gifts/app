@@ -667,7 +667,12 @@ const server = http.createServer(async (req, res) => {
     receivedSats: 0,
     donatedOverTime: [],
     receivedOverTime: [],
-    fx: { quote: 'BTC-USD', dayBasis: 'utc', source: 'coinbase-exchange-daily-close' },
+    fx: {
+      quote: 'BTC-USD',
+      dayBasis: 'utc',
+      source: 'coinbase-exchange-daily-close',
+      quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+    },
   };
 
   if (method === 'GET' && pathName === '/me/activity') {
