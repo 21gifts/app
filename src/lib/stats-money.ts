@@ -12,6 +12,29 @@ export const FIAT_CODES = ['CHF', 'EUR', 'USD', 'PHP'] as const;
 /** One of {@link FIAT_CODES}. */
 export type FiatCode = (typeof FIAT_CODES)[number];
 
+/** Cookie written only when the visitor picks a fiat on Profile. */
+export const FIAT_COOKIE = 'fiat';
+
+/**
+ * Returns `value` if it is exactly one of {@link FIAT_CODES}; otherwise
+ * `fallback`. Case-sensitive.
+ *
+ * @param value - Raw cookie or option value, or undefined when absent.
+ * @param fallback - Code used when `value` is missing or invalid.
+ * @returns A supported fiat code.
+ */
+export function parseFiatCode(value: string | undefined, fallback: FiatCode): FiatCode {
+  if (value === undefined) {
+    return fallback;
+  }
+  for (const code of FIAT_CODES) {
+    if (code === value) {
+      return code;
+    }
+  }
+  return fallback;
+}
+
 /**
  * Default stats fiat for a UI locale.
  *

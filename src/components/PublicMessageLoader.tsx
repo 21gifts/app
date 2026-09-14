@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -17,7 +18,6 @@ import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import {
-  defaultFiatForLocale,
   formatBitcoin,
   formatFiatDisplay,
   latestRateDay,
@@ -158,10 +158,10 @@ function PublicThreadCard({
  * @returns Loading, missing, error, or the read-only thread cards.
  */
 export function PublicMessageLoader({ id }: { id: string }): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
+  const { fiat } = useFiatPreference();
   const { ready } = useHydrateSession();
   const account = useAuthStore((state) => state.account);
-  const fiat = defaultFiatForLocale(locale);
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
   );

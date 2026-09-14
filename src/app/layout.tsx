@@ -3,9 +3,11 @@ import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
+import { getRequestFiat } from '@/lib/request-fiat';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getRequestNumberFormat } from '@/lib/request-number-format';
 import { getCatalog } from '@/lib/messages';
@@ -82,7 +84,7 @@ export const viewport: Viewport = {
 
 /**
  * Root layout: the `<html>`/`<body>` shell shared by every page (locale, number
- * format, theme bootstrap, providers).
+ * format, fiat preference, theme bootstrap, providers).
  *
  * @param props - Layout children.
  * @returns The document wrapper with negotiated `lang`, theme bootstrap, and locale messages.
@@ -94,6 +96,7 @@ export default async function RootLayout({
 }): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const numberFormat = await getRequestNumberFormat();
+  const fiat = await getRequestFiat(locale);
   return (
     <html lang={locale} suppressHydrationWarning className={outfit.variable}>
       <head>
@@ -104,7 +107,9 @@ export default async function RootLayout({
         <AppHeightSync />
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
           <NumberFormatProvider initial={numberFormat}>
-            <ThemeProvider>{children}</ThemeProvider>
+            <FiatPreferenceProvider initial={fiat}>
+              <ThemeProvider>{children}</ThemeProvider>
+            </FiatPreferenceProvider>
           </NumberFormatProvider>
         </LocaleProvider>
       </body>

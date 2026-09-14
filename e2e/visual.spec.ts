@@ -4117,6 +4117,49 @@ test.describe('welcome forum variants', () => {
   test('welcome pay-amount', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalSats: 100_000_000,
+          totalBtc: '1.00000000',
+          totalUsd: '100000.00',
+          totalChf: '80000.00',
+          totalEur: '90000.00',
+          totalPhp: '5600000.00',
+          giftCount: 1,
+          recipientCount: 1,
+          firstPaidAt: '2026-07-01T00:00:00.000Z',
+          lastPaidAt: '2026-07-01T00:00:00.000Z',
+          spendOverTime: [
+            {
+              day: '2026-07-01',
+              sats: 100_000_000,
+              cumulativeSats: 100_000_000,
+              btc: '1.00000000',
+              cumulativeBtc: '1.00000000',
+              usd: '100000.00',
+              cumulativeUsd: '100000.00',
+              chf: '80000.00',
+              eur: '90000.00',
+              php: '5600000.00',
+              cumulativeChf: '80000.00',
+              cumulativeEur: '90000.00',
+              cumulativePhp: '5600000.00',
+            },
+          ],
+          byRecipient: [],
+          byMonth: [],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+            quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+          },
+        }),
+      });
+    });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
@@ -4134,6 +4177,8 @@ test.describe('welcome forum variants', () => {
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+    await expect(page.getByText('$0.02').first()).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-amount');
   });
 

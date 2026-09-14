@@ -2958,16 +2958,10 @@ test('Function: formatFiatTick — populated profile chart shows CHF ticks', asy
   await expect(page.getByLabel('Given and received in CHF').getByText('CHF 1.2')).toBeVisible();
 });
 
-test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page }) => {
+test('Function: FiatPicker — stats page has no fiat switcher', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  const group = page.getByRole('group', { name: 'Fiat currency' });
-  await expect(group).toBeVisible();
-  await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
-  await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
-  await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
-  await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
-  await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
 });
 
 test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ page }) => {
@@ -3095,7 +3089,7 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(page.getByLabel('Amount')).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Fiat currency' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
   await expect(page.getByText('$0.02').first()).toBeVisible();
 });
 
@@ -3113,9 +3107,8 @@ test('Function: formatFiatTick — populated stats draw the USD chart', async ({
 test('Function: defaultFiatForLocale — English stats default to USD', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(
-    page.getByRole('group', { name: 'Fiat currency' }).getByRole('button', { name: 'USD' }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+  await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
 test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a challenge', async ({
@@ -3294,6 +3287,77 @@ test('Function: useNumberFormat — Number format on /profile reads provider', a
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'Number format' })).toBeVisible();
+});
+
+test('Function: parseFiatCode — English stats without a cookie show USD', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
+});
+
+test('Function: getRequestFiat — English stats without a cookie show USD', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
+});
+
+test('Function: FiatPreferenceProvider — profile fiat choice is the only switcher', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toBeVisible();
+  await page.goto('/welcome');
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+});
+
+test('Function: useFiatPreference — forum pay sheet has no fiat switcher', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+});
+
+test('Function: FiatPreferenceSwitcher — /profile offers CHF EUR USD PHP', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Fiat currency' });
+  await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
 });
 
 test('Function: NumberFormatSwitcher — /profile lists the three samples', async ({ page }) => {

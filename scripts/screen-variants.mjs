@@ -517,7 +517,7 @@ export const SCREEN_VARIANTS = [
     id: 'pay-amount',
     image: 'welcome-pay-amount.png',
     visual: 'state-welcome-pay-amount',
-    needle: 'state-welcome-pay-amount',
+    needle: 'Amount',
   },
   {
     route: '/welcome',

@@ -497,7 +497,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 Pay sheet amount step shows a live fiat line in the preferred fiat (no picker). Pay sheet confirm sentence (`forum.payConfirm`) keeps one `formatBitcoin`. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) mints the invoice and keeps the amount form (no `location.assign`); Android phone (`isSmartphoneUserAgent`) stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the wallet `Button` (Intent href; no QR, no invoice card); desktop and iPad stay **Continue** (`forum.payContinue`) and after mint show the invoice card with QR. Wallet CTA is a **Pay** `Button` (`variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent) that sets `window.location.href` to the WoS href (not a custom-scheme `<a>` / `ButtonLink`). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + that Button.
 
-**Fiat.** Stats KPI shows ₿ on the first line and the selected fiat (CHF/EUR/USD/PHP) on the second via `FiatPicker` plus `formatFiatDisplay` (USD selected uses `formatUsdDisplay`). Profile activity uses FiatPicker (`tone="gift"` `shell="app"`) always; populated chart is ₿ | selected FiatCode, not ₿|USD only.
+**Fiat.** Preferred code is chosen once on Profile (`FiatPreferenceSwitcher`). Stats KPI shows ₿ on the first line and that fiat on the second via `formatFiatDisplay` (USD uses `formatUsdDisplay`) — no picker on stats. Profile activity chart has no picker; populated chart is ₿ | preferred FiatCode.
 
 **₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the FiatPicker code. Profile: ₿ and the FiatPicker code (same as stats charts, app shell).
 
@@ -511,7 +511,7 @@ Pay sheet amount step shows a live fiat line in the preferred fiat (no picker). 
 
 Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
-**Empty profile chart.** Always render FiatPicker above the copy. If both series empty/all-zero sats: `profile.chartEmpty` `role="status"`; **no SVG / no ₿|fiat scale**. Picker stays. Legend without data is noise.
+**Empty profile chart.** If both series empty/all-zero sats: `profile.chartEmpty` `role="status"`; **no SVG / no ₿|fiat scale**. FiatPicker lives in the Profile settings row, not on the chart. Legend without data is noise.
 
 ## Control grammar
 
@@ -787,7 +787,7 @@ Inbox direction is unmistakable without a Sent folder and without orange. Incomi
 
 ### Pay sheet
 
-**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Alerts. `Button` primary:
+**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Live fiat line for the draft or default 21 sats when `rateDay` is present (preferred fiat from Profile; no picker). Alerts. `Button` primary:
 
 - iPhone / iPod (`isSmartphoneUserAgent` and not `isAndroidUserAgent`): **Pay** (`forum.payNow`; DE **Bezahlen**). One tap mints the invoice and keeps this form. It does not `window.location.assign`. After mint the amount field is disabled and the CTA becomes the wallet `Button` that sets `window.location.href` to `walletofsatoshi:` (no QR, no second invoice card).
 - Android phone (`isSmartphoneUserAgent` and `isAndroidUserAgent`): **Continue** (`forum.payContinue`). After mint, same amount form and wallet `Button`; `location.href` is the Android Intent URL.
@@ -812,7 +812,7 @@ Do not restyle QR for dark mode.
 
 **Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No gifts recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
 
-**Profile activity.** FiatPicker always. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty: picker + `profile.chartEmpty` `role="status"`, no SVG.
+**Profile activity.** No FiatPicker on the chart (preference is a settings row). Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty: `profile.chartEmpty` `role="status"`, no SVG.
 
 ### Alert / error
 
@@ -943,7 +943,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` always includes FiatPicker; empty = picker + `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG; populated ₿ | preferred fiat `tone="gift"`) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
 
 ### `/members/[accountId]`
 
