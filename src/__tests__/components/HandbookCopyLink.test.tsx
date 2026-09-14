@@ -28,6 +28,7 @@ function expectCopiedIcon(button: HTMLElement): void {
   const svg = button.querySelector('svg');
   expect(svg).not.toBeNull();
   expect(svg?.getAttribute('class') ?? '').toContain('lucide-check');
+  expect(svg?.getAttribute('class') ?? '').toContain('text-accent');
 }
 
 afterEach(() => {
