@@ -408,17 +408,8 @@ export function MemberProfileScreen({
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            setListedNote((prev) => {
-              if (prev === null || prev.id !== next.id) {
-                return prev;
-              }
-              return {
-                ...prev,
-                ...next,
-                replyCount: Math.max(prev.replyCount, next.replyCount),
-              };
-            });
             setPosts((prev) => {
+              /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
               if (prev === null) {
                 return prev;
               }
@@ -697,10 +688,7 @@ export function MemberProfileScreen({
     }
     const token = session;
     const messageId = payMessageId;
-    const parent =
-      listedNote?.id === messageId
-        ? listedNote
-        : posts?.find((message) => message.id === messageId);
+    const parent = posts?.find((message) => message.id === messageId);
     /* v8 ignore next -- pay sheet only opens on a listed note */
     const baselineSats = parent === undefined ? 0 : parent.sats;
     const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
@@ -819,8 +807,7 @@ export function MemberProfileScreen({
     const parsed = parseReplySats(replyAmountDraft);
     const token = session;
     const parentId = expandedId;
-    const parentRow =
-      listedNote?.id === parentId ? listedNote : posts?.find((message) => message.id === parentId);
+    const parentRow = posts?.find((message) => message.id === parentId);
     const exempt = isReplyPaymentExempt(account, parentRow?.accountId ?? profile.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {

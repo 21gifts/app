@@ -822,8 +822,8 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
       expect(fetchReplies).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
   });
 
   it('collapses an expanded profile note', async () => {
@@ -870,7 +870,11 @@ describe('MemberProfileScreen', () => {
   it('unlocks the composer and marks hasPosted after a paid reply poll', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '21');
@@ -896,8 +900,13 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -919,7 +928,11 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     const replyLoads = vi.mocked(fetchReplies).mock.calls.length;
@@ -942,7 +955,11 @@ describe('MemberProfileScreen', () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
     vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('fail'));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '21');
@@ -955,8 +972,13 @@ describe('MemberProfileScreen', () => {
   it('polls the parent after paying a profile note from the gift button', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42 });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -994,8 +1016,13 @@ describe('MemberProfileScreen', () => {
     );
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42 });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -1018,8 +1045,13 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -1039,8 +1071,13 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -1094,7 +1131,11 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '21');
@@ -1116,7 +1157,11 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '21');
@@ -1478,7 +1523,11 @@ describe('MemberProfileScreen', () => {
   it('shows a request error when a reply fails', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('fail'));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '1');
@@ -1491,7 +1540,11 @@ describe('MemberProfileScreen', () => {
   it('requires a sat amount to reply on someone else’s note', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1549,7 +1602,11 @@ describe('MemberProfileScreen', () => {
 
   it('rejects a non-numeric reply amount', async () => {
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', 'abc');
@@ -1561,7 +1618,11 @@ describe('MemberProfileScreen', () => {
   it('sends 1 sat when the reply amount is 0', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '0');
@@ -1573,7 +1634,11 @@ describe('MemberProfileScreen', () => {
 
   it('rejects an overflowing reply amount', async () => {
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '9007199254740992');
@@ -1584,7 +1649,11 @@ describe('MemberProfileScreen', () => {
 
   it('invoices a gift-only reply from the composer', async () => {
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
@@ -1638,7 +1707,11 @@ describe('MemberProfileScreen', () => {
       text: 'reply',
     });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1656,7 +1729,11 @@ describe('MemberProfileScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1678,7 +1755,11 @@ describe('MemberProfileScreen', () => {
     });
     vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1697,7 +1778,11 @@ describe('MemberProfileScreen', () => {
   it('maps a reply invoice rate-limit onto the reply error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '1');
@@ -1710,7 +1795,11 @@ describe('MemberProfileScreen', () => {
   it('maps an over-long invoice comment onto the reply length error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fillPaidReply('reply', '1');
@@ -1742,7 +1831,11 @@ describe('MemberProfileScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     vi.mocked(postMessage).mockRejectedValue(new Error('Too many messages'));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1774,7 +1867,11 @@ describe('MemberProfileScreen', () => {
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1787,7 +1884,11 @@ describe('MemberProfileScreen', () => {
   it('lets a founder reply without paying', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1801,7 +1902,11 @@ describe('MemberProfileScreen', () => {
   it('sets hasPosted after an unpaid founder reply', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1820,7 +1925,11 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -1846,7 +1955,11 @@ describe('MemberProfileScreen', () => {
       }),
     );
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
@@ -2099,8 +2212,13 @@ describe('MemberProfileScreen', () => {
       setup: null,
     });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -2127,8 +2245,13 @@ describe('MemberProfileScreen', () => {
       setup: null,
     });
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -2153,8 +2276,13 @@ describe('MemberProfileScreen', () => {
     });
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(
-      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
