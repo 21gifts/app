@@ -490,7 +490,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 [ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ] [ PM ]  [ N replies ]
 ```
 
-- Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of `satsToFiatAmount` when `rateDay` is present — **not a button**.
+- Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of `satsToFiatAmount` when the conversion is non-null — **not a button**. Otherwise ₿-only, no ` · —`.
 - Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
@@ -787,13 +787,13 @@ Inbox direction is unmistakable without a Sent folder and without orange. Incomi
 
 ### Pay sheet
 
-**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Live fiat line for the draft or default 21 sats when `rateDay` is present (preferred fiat from Profile; no picker). Alerts. `Button` primary:
+**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Live fiat line for the draft or default 21 sats when the conversion is non-null (preferred fiat from Profile; no picker). Alerts. `Button` primary:
 
 - iPhone / iPod (`isSmartphoneUserAgent` and not `isAndroidUserAgent`): **Pay** (`forum.payNow`; DE **Bezahlen**). One tap mints the invoice and keeps this form. It does not `window.location.assign`. After mint the amount field is disabled and the CTA becomes the wallet `Button` that sets `window.location.href` to `walletofsatoshi:` (no QR, no second invoice card).
 - Android phone (`isSmartphoneUserAgent` and `isAndroidUserAgent`): **Continue** (`forum.payContinue`). After mint, same amount form and wallet `Button`; `location.href` is the Android Intent URL.
 - Desktop / iPad (`!isSmartphoneUserAgent`): **Continue** (`forum.payContinue`). Click only requests the invoice, then the invoice card.
 
-**Invoice step (desktop / iPad only).** Centered column, back, confirm sentence with one `formatBitcoin` and optional `·` plus `formatFiatDisplay` when `rateDay` is present, then:
+**Invoice step (desktop / iPad only).** Centered column, back, confirm sentence with one `formatBitcoin` and optional `·` plus `formatFiatDisplay` when the conversion is non-null, then:
 
 - Desktop (`!isSmartphoneUserAgent`): `QrCode` 232px on white plate (`border-app-border`) + **Pay** `Button` `variant="primary"` `size="md"` `tone="app"` with `wos-icon.png` 20×20 (`rounded-md ring-1 ring-white/30`) as `icon` (visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”). Click sets `window.location.href` to the WoS href (not a custom-scheme `<a>`).
 - Smartphone: stays on the amount form. Wallet `Button` only (`walletofsatoshi:` / Android intent). **No QR.** Detection is UA, not viewport.
@@ -935,7 +935,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Laws `Banner`.
 - `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip; omitted at 0 and when unpaid is selected.
 - Composer.
-- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when `rateDay` is present + Gift pay (`forum.pay` = “Send Bitcoin”). Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null + Gift pay (`forum.pay` = “Send Bitcoin”). Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
 
@@ -971,7 +971,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/messages/[id]` — public note
 
-App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional locale-default `·` `formatFiatDisplay` when gift-day stats exist, no pay, no composer, no copy, no FiatPicker. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.>>>>>>> 4c92dc47 (Show ₿-only when a fiat rate is missing and follow locale default on refresh.)
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional locale-default `·` `formatFiatDisplay` when gift-day stats exist, no pay, no composer, no copy, no FiatPicker. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.>>>>>>> 4c92dc47 (Show ₿-only when a fiat rate is missing and follow locale default on refresh.)>>>>>>> a4f7346f (Require FiatPicker ariaLabel and align docs with conversion-null ₿-only.)
 
 ### `/view/[viewKey]`
 

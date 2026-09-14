@@ -192,7 +192,7 @@
 
 ## Function: NumberFormatProvider
 
-- **Purpose:** Client context provider that exposes the negotiated number-format style and a setter that writes the `numberFormat` cookie. Nest is `LocaleProvider` → `NumberFormatProvider initial={numberFormat}` → `ThemeProvider`.
+- **Purpose:** Client context provider that exposes the negotiated number-format style and a setter that writes the `numberFormat` cookie. Nest is `LocaleProvider` → `NumberFormatProvider initial={numberFormat}` → `FiatPreferenceProvider initial={fiat}` → `ThemeProvider`.
 - **Inputs:** `initial` (`NumberFormatStyle` from `getRequestNumberFormat`) and `children`.
 - **Returns / side effects:** React provider element. `setNumberFormat` writes `numberFormat=<id>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS. Same-id is a no-op when the cookie is already `ch`/`us`/`de`; selecting `ch` while the cookie is absent still writes so the choice persists.
 - **Used by:** `RootLayout` wraps every page; consumed via `useNumberFormat` (see that function).

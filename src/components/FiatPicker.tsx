@@ -12,8 +12,8 @@ export interface FiatPickerProps {
   onChange: (value: FiatCode) => void;
   /** Defaults to `'dark'`. Profile passes `'app'`. */
   shell?: 'app' | 'dark';
-  /** Defaults to `'Fiat currency'`. Profile passes `t('profile.fiatCurrency')`. */
-  ariaLabel?: string;
+  /** Required. Profile passes `t('profile.fiatCurrency')`. */
+  ariaLabel: string;
 }
 
 /**
@@ -22,14 +22,14 @@ export interface FiatPickerProps {
  * The only production mount is Profile `FiatPreferenceSwitcher`
  * (`shell="app"`, catalog `ariaLabel`).
  *
- * @param props - Selected code, change handler, optional shell and aria label.
+ * @param props - Selected code, change handler, optional shell and required aria label.
  * @returns Segmented control labelled from `ariaLabel`.
  */
 export function FiatPicker({
   value,
   onChange,
   shell = 'dark',
-  ariaLabel = 'Fiat currency',
+  ariaLabel,
 }: FiatPickerProps): ReactElement {
   return (
     <SegmentedControl

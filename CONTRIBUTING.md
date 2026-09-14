@@ -132,11 +132,14 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
+│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (Profile only)
+│   │   ├── FiatPreferenceSwitcher.tsx # Profile cookie fiat override (CHF|EUR|USD|PHP)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
+│   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/location/address + push bell + theme + number format)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/location/address + push bell + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Public /trust-chain body
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
@@ -179,6 +182,7 @@ app/
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── request-number-format.ts # Cookie numberFormat for the current request
+│   │   ├── request-fiat.ts      # Cookie fiat for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
