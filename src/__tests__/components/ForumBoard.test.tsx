@@ -1067,6 +1067,43 @@ describe('ForumBoard', () => {
     });
   });
 
+  it('does not assign the wallet href on iPhone after unmounting during an in-flight pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: IPHONE_UA,
+    });
+    let resolveInvoice!: (value: { messageId: string; pr: string; amountSats: number }) => void;
+    const onPaySubmit = vi.fn().mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    const { unmount } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        onPaySubmit={onPaySubmit}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    unmount();
+    await act(async () => {
+      resolveInvoice({ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 });
+    });
+    expect(locationAssign).not.toHaveBeenCalled();
+  });
+
   it('does not assign the wallet href on iPhone when onPaySubmit resolves null', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,

@@ -338,6 +338,7 @@ export function ForumBoard({
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
+  const payMounted = useRef(false);
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
   const loadingRef = useRef(loading);
@@ -449,6 +450,13 @@ export function ForumBoard({
     };
   }, []);
 
+  useEffect(() => {
+    payMounted.current = true;
+    return () => {
+      payMounted.current = false;
+    };
+  }, []);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     onPost();
@@ -459,6 +467,9 @@ export function ForumBoard({
     void (async () => {
       const invoice = await Promise.resolve(onPaySubmit());
       if (invoice === null || invoice === undefined) {
+        return;
+      }
+      if (!payMounted.current) {
         return;
       }
       /* v8 ignore next 3 -- SSR has no navigator */

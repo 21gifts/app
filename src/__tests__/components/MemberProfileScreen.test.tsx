@@ -583,6 +583,33 @@ describe('MemberProfileScreen', () => {
     vi.unstubAllGlobals();
   });
 
+  it('does not assign Wallet of Satoshi after unmounting during an in-flight iPhone pay', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    const { unmount } = renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    unmount();
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(assign).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('loads replies when the profile note is expanded', async () => {
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
