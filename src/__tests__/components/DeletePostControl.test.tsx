@@ -113,31 +113,21 @@ describe('DeletePostControl', () => {
     renderWithLocale(<DeletePostControl kind="reply" messageId="r1" onDeleted={vi.fn()} />);
     expect(screen.queryByRole('button')).toBeNull();
   });
-  it.each(['founder', 'moderator'] as const)(
-    'confirms and deletes a reply as %s',
-    async (role) => {
-      useAuthStore.setState({ session: 'token', account: { ...account, role } });
-      vi.mocked(deleteMessage).mockResolvedValue(undefined);
-      const onDeleted = vi.fn();
-      renderWithLocale(
-        <DeletePostControl kind="reply" messageId="r1" onDeleted={onDeleted} />,
-      );
-      expect(screen.queryByText('Delete reply')).toBeNull();
-      fireEvent.click(screen.getByRole('button', { name: 'Delete reply' }));
-      expect(
-        screen.getByRole('group', { name: 'Delete this reply from 21.gifts?' }),
-      ).toBeTruthy();
-      fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
-      await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('r1'));
-      expect(deleteMessage).toHaveBeenCalledWith('token', 'r1');
-    },
-  );
+  it.each(['founder', 'moderator'] as const)('confirms and deletes a reply as %s', async (role) => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role } });
+    vi.mocked(deleteMessage).mockResolvedValue(undefined);
+    const onDeleted = vi.fn();
+    renderWithLocale(<DeletePostControl kind="reply" messageId="r1" onDeleted={onDeleted} />);
+    expect(screen.queryByText('Delete reply')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete reply' }));
+    expect(screen.getByRole('group', { name: 'Delete this reply from 21.gifts?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('r1'));
+    expect(deleteMessage).toHaveBeenCalledWith('token', 'r1');
+  });
   it('uses the German reply idle name', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-    renderWithLocale(
-      <DeletePostControl kind="reply" messageId="r1" onDeleted={vi.fn()} />,
-      'de',
-    );
+    renderWithLocale(<DeletePostControl kind="reply" messageId="r1" onDeleted={vi.fn()} />, 'de');
     expect(screen.queryByText('Antwort löschen')).toBeNull();
     expect(screen.getByRole('button', { name: 'Antwort löschen' })).toBeTruthy();
   });

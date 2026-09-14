@@ -36,8 +36,7 @@ export function DeletePostControl({
   const [error, setError] = useState(false);
   const inFlight = useRef(false);
   const idleLabel = kind === 'reply' ? t('forum.deleteReply') : t('forum.delete');
-  const confirmLabel =
-    kind === 'reply' ? t('forum.deleteReplyConfirm') : t('forum.deleteConfirm');
+  const confirmLabel = kind === 'reply' ? t('forum.deleteReplyConfirm') : t('forum.deleteConfirm');
   const errorLabel = kind === 'reply' ? t('forum.deleteReplyError') : t('forum.deleteError');
 
   if (session === null || (account?.role !== 'founder' && account?.role !== 'moderator')) {
