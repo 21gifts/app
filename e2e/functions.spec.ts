@@ -3933,30 +3933,36 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
   await expect(page.getByLabel('Given and received in ₿').getByText('₿1,500')).toBeVisible();
 });
 
-test('Function: ThemeProvider — picking Dark sets html.dark on /login', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Theme').click();
-  await page.getByRole('option', { name: /Dark/ }).click();
+test('Function: ThemeProvider — picking Dark sets html.dark on /profile', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 });
 
-test('Function: ThemeSwitcher — System Light Dark options on /login', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Theme').click();
-  await expect(page.getByRole('option', { name: /System/ })).toBeVisible();
-  await expect(page.getByRole('option', { name: /Light/ })).toBeVisible();
-  await expect(page.getByRole('option', { name: /Dark/ })).toBeVisible();
+test('Function: ThemeSwitcher — System Light Dark options on /profile', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const theme = page.getByRole('group', { name: 'Theme' });
+  await expect(theme.getByRole('button', { name: 'System' })).toBeVisible();
+  await expect(theme.getByRole('button', { name: 'Light' })).toBeVisible();
+  await expect(theme.getByRole('button', { name: 'Dark' })).toBeVisible();
 });
 
-test('Function: useTheme — ThemeSwitcher on /login reads provider context', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByLabel('Theme')).toBeVisible();
+test('Function: useTheme — ThemeSwitcher on /profile reads provider context', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Theme' })).toBeVisible();
 });
 
 test('Function: THEME_COOKIE — Dark option persists theme=dark', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Theme').click();
-  await page.getByRole('option', { name: /Dark/ }).click();
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   expect(await page.context().cookies()).toEqual(
     expect.arrayContaining([expect.objectContaining({ name: 'theme', value: 'dark' })]),
   );
@@ -3984,7 +3990,6 @@ test('Function: THEME_BOOTSTRAP_SCRIPT — dark cookie paints html.dark before i
   await page.context().addCookies([{ name: 'theme', value: 'dark', url: 'http://localhost:3000' }]);
   await page.goto('/login');
   await expect(page.locator('html')).toHaveClass(/dark/);
-  await expect(page.getByLabel('Theme')).toBeVisible();
 });
 
 test('Function: APP_HEIGHT_BOOTSTRAP_SCRIPT — document has --app-height', async ({ page }) => {

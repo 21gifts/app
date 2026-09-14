@@ -121,7 +121,7 @@ This is not “Log in is a gift.” Ink pages have one filled accent, and it is 
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`) |
 | Charts: received series, ₿ selected in ₿\|USD                        | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
-|                                                                      | Menu, language/theme, app body links (`text-app-fg underline`)                                                                   |
+|                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                         |
 |                                                                      | **Rules kickers and ticks** — see (B′)                                                                                           |
 
 **(B′) Living-room house chrome (closed exception, not a third job).** `RulesDocument` paints:
@@ -271,7 +271,7 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 | ------- | ------------------------------------ | ---------------------------------------------------- |
 | 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes |
 | 1       | `border border-app-border shadow-sm` | `Card`                                               |
-| 2       | `border border-app-border shadow-lg` | Menu, language/theme listbox                         |
+| 2       | `border border-app-border shadow-lg` | Menu, language listbox                               |
 | Overlay | `bg-app-overlay`                     | `HandbookLightbox` scrim                             |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
@@ -329,7 +329,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 - No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/legal`, `/stats`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
-**App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark + ThemeSwitcher + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu.
+**App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher is a Profile identity-card settings row, not chrome.
 
 ```mermaid
 flowchart TB
@@ -391,7 +391,7 @@ flowchart TB
 **`AppShell` slots.** `AppShell` owns the app `<main>`: optional absolute `topLeft` / `topRight`, `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
 
 ```
-[ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Menu | Theme+Language ]
+[ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Menu | Language ]
 [                         children                                      ]
 ```
 
@@ -400,7 +400,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`) | Signed-in app                                                                                                                                                                                                                                                                                                                                     |
 | ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `topLeft`  | `Wordmark` → `/`                                                                          | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/contact`, `/messages`, and signed-in `/rules`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
-| `topRight` | `ThemeSwitcher` + `LanguageSwitcher tone="light"`                                         | `SignedInChrome` (Menu)                                                                                                                                                                                                                                                                                                                           |
+| `topRight` | `LanguageSwitcher tone="light"`                                                           | `SignedInChrome` (Menu; no ThemeSwitcher)                                                                                                                                                                                                                                                                                                         |
 
 **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` + `Wordmark href="/welcome"`.
 
@@ -416,7 +416,6 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
 | optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
 | Language             | embedded `LanguageSwitcher`   |                                                                                     |
-| Theme                | embedded `ThemeSwitcher`      | System / Light / Dark                                                               |
 | Log out              | `LogoutButton`                | labeled                                                                             |
 
 Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`. Panel: `min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
@@ -432,7 +431,7 @@ flowchart LR
   end
   subgraph appShell [App shell — themeable]
     PL[AppShell.topLeft: Wordmark]
-    PR[AppShell.topRight: Menu or Theme+Language]
+    PR[AppShell.topRight: Menu or Language]
     BODY[Card / onboarding column / document]
   end
   MH --> MC --> MF
@@ -687,7 +686,7 @@ Forum Active / No gifts yet / All / Most popular ships with `className="!grid gr
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
 
-### LanguageSwitcher / ThemeSwitcher
+### LanguageSwitcher
 
 **Standalone trigger (unsigned chrome, marketing language):**
 
@@ -706,7 +705,9 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox.
 
 **Embedded (Menu):** full-width row, `text-app-muted`. Keep `embedded?: boolean`.
 
-ThemeSwitcher is **app only**. Marketing never mounts it. Options: System / Light / Dark.
+#### ThemeSwitcher profile settings section
+
+ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`theme.label`), then `SegmentedControl tone="neutral"` with System / Light / Dark. Not a labeled chrome pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors follow the cookie if one exists, otherwise the OS.
 
 ### Signed-in Menu
 
@@ -850,7 +851,7 @@ Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, accent section li
 
 ### `/login`
 
-Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<ThemeSwitcher /> + <LanguageSwitcher tone="light" />}`. `OnboardingGate screen="login"` → `LoginCard` (`Fingerprint` 32px subtle, **one** heading `login.heading` at **card-title**, `Button` primary md with Fingerprint icon **Log in**).
+Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `OnboardingGate screen="login"` → `LoginCard` (`Fingerprint` 32px subtle, **one** heading `login.heading` at **card-title**, `Button` primary md with Fingerprint icon **Log in**).
 
 Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try again**. In-app: `InAppBrowserView`.
 
@@ -858,7 +859,7 @@ Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try 
 
 ### `/donate`
 
-Fill `AppShell` `align="center"`; Wordmark href `/` + ThemeSwitcher + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Send help**), muted lead, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent).
+Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Send help**), muted lead, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent).
 
 ### `/setup/name`
 
@@ -886,7 +887,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` (empty = `profile.chartEmpty`, no SVG) → Name overline + value + edit `IconButton` → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` last settings row (overline + `SegmentedControl tone="neutral"` System / Light / Dark). ₿\|USD `tone="gift"` when the chart has data. Given/Received labels stay.
 
 ### `/members/[accountId]`
 
@@ -906,7 +907,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/rules`
 
-App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + ThemeSwitcher + LanguageSwitcher. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. **h1-lg** Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, CTA pair **Contact 21.gifts** primary + **Back to the forum** secondary). B′ overlines and ticks as in Color.
+App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. **h1-lg** Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, CTA pair **Contact 21.gifts** primary + **Back to the forum** secondary). B′ overlines and ticks as in Color.
 
 ### `/messages`
 
@@ -914,11 +915,11 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/messages/[id]` — public note
 
-Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<ThemeSwitcher /> + <LanguageSwitcher tone="light" />}`. `PublicMessageLoader`: public note card (`Card md`), amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg` underline. Loading / missing / error + **Try again**.
+Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `PublicMessageLoader`: public note card (`Card md`), amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg` underline. Loading / missing / error + **Try again**.
 
 ### `/view/[viewKey]`
 
-Fill `AppShell` `align="center"`; Wordmark href `/` + ThemeSwitcher + LanguageSwitcher. `ViewProfileLoader` → identity card (chart + name + address, no actions). Below: `ViewProfileClaim`.
+Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart + name + address, no actions). Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.

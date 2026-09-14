@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
-import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Wordmark } from '@/components/ui';
 
 /**
@@ -25,12 +24,7 @@ export default async function PublicMessagePage({
       mode="fill"
       align="center"
       topLeft={<Wordmark href="/" />}
-      topRight={
-        <>
-          <ThemeSwitcher />
-          <LanguageSwitcher tone="light" />
-        </>
-      }
+      topRight={<LanguageSwitcher tone="light" />}
     >
       <PublicMessageLoader key={id} id={id} />
     </AppShell>

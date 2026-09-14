@@ -85,11 +85,17 @@ afterEach(() => {
 });
 
 describe('ProfileScreen', () => {
-  it('shows the heading, back link, name form, address form, and chart', async () => {
+  it('shows the heading, back link, name form, address form, chart, and theme group', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Theme' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Light' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dark' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();

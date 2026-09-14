@@ -113,13 +113,6 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Deutsch' })",
   },
   {
-    route: '/login',
-    id: 'theme-open',
-    image: 'login-theme.png',
-    visual: 'state-login-theme',
-    needle: "getByRole('option', { name: 'Dark' })",
-  },
-  {
     route: '/donate',
     id: 'default',
     image: 'donate.png',
@@ -447,13 +440,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-menu-language.png',
     visual: 'state-welcome-menu-language',
     needle: "getByRole('option', { name: 'Deutsch' })",
-  },
-  {
-    route: '/welcome',
-    id: 'menu-theme-open',
-    image: 'welcome-menu-theme.png',
-    visual: 'state-welcome-menu-theme',
-    needle: "getByRole('option', { name: 'Dark' })",
   },
   {
     route: '/welcome',

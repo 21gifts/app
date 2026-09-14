@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
 import { Wordmark } from '@/components/ui';
 
@@ -28,12 +27,7 @@ export default async function ViewProfilePage({
       mode="fill"
       align="center"
       topLeft={<Wordmark href="/" />}
-      topRight={
-        <>
-          <ThemeSwitcher />
-          <LanguageSwitcher tone="light" />
-        </>
-      }
+      topRight={<LanguageSwitcher tone="light" />}
     >
       <ViewProfileLoader viewKey={viewKey} />
     </AppShell>
