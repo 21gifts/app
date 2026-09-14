@@ -314,6 +314,8 @@ describe('ProfileScreen', () => {
       expect(putAboutMe).toHaveBeenCalled();
     });
     expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('About me')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('redirects to setup/rules when putAboutMe throws MissingRequirementsError', async () => {

@@ -4,6 +4,7 @@ import { Check, Link2, Pencil, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 
 /** Max length of an About me note, matching the API. */
 const ABOUT_ME_MAX_LENGTH = 500;
@@ -125,7 +126,11 @@ export function AboutMeSection({
     try {
       await onSave(draft);
       setEditing(false);
-    } catch {
+    } catch (err) {
+      /* name 409 stays on /profile with the editor open; NameForm is on this card */
+      if (err instanceof MissingRequirementsError && !err.missing.includes('rules')) {
+        return;
+      }
       setError(t('profile.about.error'));
     } finally {
       setSaving(false);

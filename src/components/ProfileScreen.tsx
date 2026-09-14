@@ -70,8 +70,9 @@ export function ProfileScreen(): ReactElement {
               if (err instanceof MissingRequirementsError) {
                 if (err.missing.includes('rules')) {
                   router.replace('/setup/rules');
+                  return;
                 }
-                return;
+                throw err;
               }
               throw err;
             }

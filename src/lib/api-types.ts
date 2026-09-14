@@ -562,7 +562,8 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
 /**
  * Runtime schema for a signed-in member profile from `GET /members/:id`.
  *
- * `profileMessage` is the member's pinned forum note when present.
+ * `profileMessage` is the member's profile forum note when present (card Message
+ * and posts-feed source, not a pinned ForumBoard card).
  * `postCount` / `replyCount` are uncapped totals; activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
  */
