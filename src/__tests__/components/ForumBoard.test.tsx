@@ -1111,7 +1111,7 @@ describe('ForumBoard', () => {
     });
     const { unmount } = renderWithLocale(
       <ForumBoard
-        messages={[MULTILINE]}
+        messages={[SAMPLE]}
         error={false}
         loading={false}
         posting={false}
