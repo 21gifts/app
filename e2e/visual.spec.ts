@@ -3448,7 +3448,7 @@ test.describe('profile activity chart variants', () => {
 
   test('profile about-filled', async ({ page }) => {
     await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin' });
-    await stubProfileActivity(page, EMPTY_ACTIVITY);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
     await page.goto('/profile');
     await expect(page.getByText('I build on Bitcoin')).toBeVisible();
     await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
@@ -3458,7 +3458,7 @@ test.describe('profile activity chart variants', () => {
 
   test('profile about-editing', async ({ page }) => {
     await seedAdaProfile(page);
-    await stubProfileActivity(page, EMPTY_ACTIVITY);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
     await page.goto('/profile');
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
@@ -3468,7 +3468,7 @@ test.describe('profile activity chart variants', () => {
 
   test('profile about-save-error', async ({ page }) => {
     await seedAdaProfile(page);
-    await stubProfileActivity(page, EMPTY_ACTIVITY);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
     await page.route('**/me/about', async (route) => {
       await route.fulfill({
         status: 500,

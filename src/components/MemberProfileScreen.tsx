@@ -236,9 +236,6 @@ export function MemberProfileScreen({
   photoUrlsRef.current = photoUrls;
 
   const photoSource: ForumMessage[] = [];
-  if (listedNote !== null && activity !== 'posts') {
-    photoSource.push(listedNote);
-  }
   if (activity === 'posts' && posts !== null) {
     photoSource.push(...posts);
   }
