@@ -243,5 +243,6 @@ describe('NotificationsScreen', () => {
     );
     expect(screen.getByRole('button', { name: /Gina sent bitcoin/ })).toBeTruthy();
     expect(screen.queryByText('Photo reply')).toBeNull();
+    expect(screen.queryByText('Photo')).toBeNull();
   });
 });
