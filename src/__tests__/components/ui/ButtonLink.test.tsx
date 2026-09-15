@@ -53,10 +53,19 @@ describe('ButtonLink', () => {
   });
 
   it('renders a native anchor for wallet protocol hrefs', () => {
-    renderWithLocale(<ButtonLink href="walletofsatoshi:lnurl1">Open Wallet of Satoshi</ButtonLink>);
-    const link = screen.getByRole('link', { name: 'Open Wallet of Satoshi' });
+    renderWithLocale(
+      <ButtonLink href="walletofsatoshi:lnurl1" aria-label="Pay with Wallet of Satoshi">
+        Pay
+      </ButtonLink>,
+    );
+    const link = screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' });
     expect(link.tagName).toBe('A');
     expect(link.getAttribute('href')).toBe('walletofsatoshi:lnurl1');
+  });
+
+  it('treats hash hrefs as internal links', () => {
+    renderWithLocale(<ButtonLink href="#rules">Rules</ButtonLink>);
+    expect(screen.getByRole('link', { name: 'Rules' }).getAttribute('href')).toBe('#rules');
   });
 
   it('renders a native anchor for https and protocol-relative hrefs', () => {
