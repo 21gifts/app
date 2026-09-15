@@ -581,13 +581,13 @@ Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow
 
 ### Variant: pay-qr
 
-Payable note, amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the amount form stays: disabled minted amount, the same **Pay** button, back control, no QR.
+Payable note, amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the amount form stays: disabled minted amount, the same **Pay** button, **Waiting for payment…** under it, back control, no QR.
 
 ![21.gifts welcome pay QR](images/welcome-pay-qr.png)
 
 ### Variant: pay-smartphone
 
-Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the amount form stays after mint (disabled minted amount, **Pay** button with the Wallet of Satoshi icon, back control, no QR). On desktop this scenario shows the QR invoice card.
+Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the amount form stays after mint (disabled minted amount, **Pay** button with the Wallet of Satoshi icon, **Waiting for payment…** under it, back control, no QR). On desktop this scenario shows the QR invoice card.
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
