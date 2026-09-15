@@ -265,10 +265,28 @@ describe('SignedInChrome', () => {
   it('asks for OS permission when Notifications is opened without grant', () => {
     vi.mocked(enablePush).mockClear();
     vi.stubGlobal('Notification', { permission: 'default' });
+    vi.stubGlobal('navigator', { serviceWorker: {} });
+    vi.stubGlobal('PushManager', function PushManager() {});
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
     expect(vi.mocked(enablePush)).toHaveBeenCalledWith('tok');
+  });
+
+  it('does not ask for OS permission when PushManager is missing', () => {
+    vi.mocked(enablePush).mockClear();
+    vi.mocked(resyncPushSubscription).mockClear();
+    vi.stubGlobal('Notification', { permission: 'default' });
+    vi.stubGlobal('navigator', { serviceWorker: {} });
+    const original = window.PushManager;
+    // @ts-expect-error coverage: missing PushManager
+    delete window.PushManager;
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    window.PushManager = original;
+    expect(vi.mocked(enablePush)).not.toHaveBeenCalled();
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledWith('tok');
   });
 
   it('resyncs the existing subscription when Notifications is opened with grant', () => {

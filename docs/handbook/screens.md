@@ -537,6 +537,12 @@ Open **Menu** top-right only (do not click Language) → Menu includes **Home** 
 
 ![21.gifts welcome menu](images/welcome-menu.png)
 
+### Variant: menu-unread
+
+Open **Menu** with `unreadCount` 3 stubbed on `GET /forum/notifications` → Notifications shows **3** on the right (`nav.notificationsUnread`, accessible name Notifications, 3 unread). Other Menu rows match `menu-open` (Ada’s totals still zero).
+
+![21.gifts welcome menu unread](images/welcome-menu-unread.png)
+
 ### Variant: menu-language-open
 
 After **Menu**, click **Language** → the four endonym rows (English / Deutsch / Español / Filipino) expand in flow under the Language trigger with a check on the current locale. The Menu grows; this is not an absolute popover. The quiet **Version {sha}** line (`app.version`) remains after Log out below the expanded language list.

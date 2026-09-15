@@ -472,6 +472,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-unread',
+    image: 'welcome-menu-unread.png',
+    visual: 'state-welcome-menu-unread',
+    needle: "getByRole('link', { name: 'Notifications, 3 unread' })",
+  },
+  {
+    route: '/welcome',
     id: 'menu-language-open',
     image: 'welcome-menu-language.png',
     visual: 'state-welcome-menu-language',

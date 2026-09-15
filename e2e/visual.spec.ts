@@ -3795,6 +3795,22 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu');
   });
 
+  test('welcome menu-unread', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-unread');
+  });
+
   test('welcome menu-language-open', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {

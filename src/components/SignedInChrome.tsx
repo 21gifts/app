@@ -206,7 +206,12 @@ export function SignedInChrome(): ReactElement {
             if (session === null) {
               return;
             }
-            if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+            if (
+              typeof Notification !== 'undefined' &&
+              Notification.permission !== 'granted' &&
+              typeof navigator.serviceWorker !== 'undefined' &&
+              typeof window.PushManager !== 'undefined'
+            ) {
               void enablePush(session).catch(() => undefined);
             } else {
               void resyncPushSubscription(session).catch(() => undefined);
