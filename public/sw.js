@@ -35,7 +35,13 @@ self.addEventListener('push', (event) => {
   }
   const shown = self.registration.showNotification(title, options);
   const tasks = [shown];
-  if (typeof self.registration.setAppBadge === 'function') {
+  const setBadge =
+    typeof self.navigator.setAppBadge === 'function'
+      ? self.navigator.setAppBadge.bind(self.navigator)
+      : typeof self.registration.setAppBadge === 'function'
+        ? self.registration.setAppBadge.bind(self.registration)
+        : null;
+  if (setBadge !== null) {
     let n = 1;
     if (typeof payload.unreadCount === 'number' && Number.isFinite(payload.unreadCount)) {
       const floored = Math.floor(payload.unreadCount);
@@ -43,7 +49,7 @@ self.addEventListener('push', (event) => {
         n = floored;
       }
     }
-    tasks.push(self.registration.setAppBadge(n).catch(() => undefined));
+    tasks.push(setBadge(n).catch(() => undefined));
   }
   event.waitUntil(Promise.all(tasks));
 });

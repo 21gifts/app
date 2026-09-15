@@ -5094,7 +5094,7 @@ test('Function: push service worker — GET /sw.js is the push worker', async ({
   const res = await request.get('/sw.js');
   expect(res.status()).toBe(200);
   const body = await res.text();
-  expect(body).toContain('setAppBadge');
+  expect(body).toContain('navigator.setAppBadge');
   expect(body).toContain('showNotification');
 });
 

@@ -19,6 +19,8 @@ export function bumpUnreadAppBadgeEpoch(): number {
 /**
  * Current badge epoch. Capture before an async fetch; skip the write if it
  * changed.
+ *
+ * @returns The current home-screen badge epoch.
  */
 export function unreadAppBadgeEpoch(): number {
   return badgeEpoch;

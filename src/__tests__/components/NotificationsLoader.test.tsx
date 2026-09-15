@@ -87,6 +87,52 @@ describe('NotificationsLoader', () => {
     expect(vi.mocked(bumpUnreadAppBadgeEpoch)).toHaveBeenCalled();
   });
 
+  it('clears the badge again after mark-all-read resolves', async () => {
+    let resolveAll!: () => void;
+    markAllMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAll = () => {
+            resolve(undefined);
+          };
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(setBadgeMock).toHaveBeenCalledWith(0);
+    });
+    const bumps = vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length;
+    await act(async () => {
+      resolveAll();
+    });
+    await waitFor(() => {
+      expect(vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length).toBeGreaterThan(bumps);
+    });
+  });
+
+  it('does not apply the second badge clear after unmount', async () => {
+    let resolveAll!: () => void;
+    markAllMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAll = () => {
+            resolve(undefined);
+          };
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    const { unmount } = renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    const calls = setBadgeMock.mock.calls.length;
+    unmount();
+    await act(async () => {
+      resolveAll();
+    });
+    expect(setBadgeMock.mock.calls.length).toBe(calls);
+  });
+
   it('shows empty copy', async () => {
     listMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
     renderWithLocale(<NotificationsLoader />);

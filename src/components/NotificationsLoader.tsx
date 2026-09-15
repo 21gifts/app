@@ -41,9 +41,17 @@ export function NotificationsLoader(): ReactElement | null {
           return;
         }
         setNotifications(next.notifications);
-        void markAllNotificationsRead(session).catch(() => undefined);
         bumpUnreadAppBadgeEpoch();
         setUnreadAppBadge(0);
+        void markAllNotificationsRead(session)
+          .then(() => {
+            if (cancelled) {
+              return;
+            }
+            bumpUnreadAppBadgeEpoch();
+            setUnreadAppBadge(0);
+          })
+          .catch(() => undefined);
       } catch {
         if (cancelled) {
           return;

@@ -370,7 +370,7 @@
 
 ## Function: push service worker
 
-- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `registration.setAppBadge` exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
+- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
 - **Inputs:** Push `event` with optional JSON payload (`title`, `body`, `url`, `tag`, `unreadCount`).
 - **Returns / side effects:** `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients; notification click focuses or opens the payload URL.
 - **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
@@ -1838,7 +1838,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, fire-and-forget `markAllNotificationsRead` after a successful list, and calls `setUnreadAppBadge(0)` so the home-screen badge clears once the list is shown. Opens a row to `/messages/{parentId}` after `markNotificationRead`.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, then `bumpUnreadAppBadgeEpoch` + `setUnreadAppBadge(0)`, and again after `markAllNotificationsRead` resolves so a parallel Menu unread fetch cannot restore a stale count. Opens a row to `/messages/{parentId}` after `markNotificationRead`.
 - **Inputs:** None (session from the auth store).
 - **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget and clears the home-screen badge. Does not clear the badge on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
