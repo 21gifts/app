@@ -3349,6 +3349,7 @@ describe('ForumBoard', () => {
         viewKey: 'a'.repeat(64),
         setup: null,
         missing: [],
+        aboutMe: null,
       },
     });
     renderWithLocale(
@@ -3410,6 +3411,7 @@ describe('ForumBoard', () => {
         viewKey: 'a'.repeat(64),
         setup: null,
         missing: [],
+        aboutMe: null,
       },
     });
     renderWithLocale(
@@ -3463,6 +3465,7 @@ describe('ForumBoard', () => {
         viewKey: 'a'.repeat(64),
         setup: null,
         missing: [],
+        aboutMe: null,
       },
     });
     renderWithLocale(
