@@ -232,6 +232,16 @@ describe('SignedInChrome', () => {
     );
   });
 
+  it('swallows resync rejection on mount', async () => {
+    cleanup();
+    vi.mocked(resyncPushSubscription).mockRejectedValue(new Error('boom'));
+    renderWithLocale(<SignedInChrome />);
+    await waitFor(() => {
+      expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledWith('tok');
+    });
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+  });
+
   it('does not resync push when there is no session', () => {
     cleanup();
     vi.mocked(resyncPushSubscription).mockClear();

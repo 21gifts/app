@@ -117,6 +117,8 @@ export async function enablePush(sessionToken: string): Promise<void> {
  * or `subscribe()`. POST failure leaves the local subscription in place.
  *
  * @param sessionToken - Bearer session token.
+ * @throws When persisting the existing subscription fails (`Push is not
+ * configured` on 503, or the api error on other non-2xx).
  */
 export async function resyncPushSubscription(sessionToken: string): Promise<void> {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
