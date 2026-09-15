@@ -109,7 +109,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByRole('button', { name: '10,000.23' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '23.000,33' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(2);
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -123,7 +123,7 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(2);
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();

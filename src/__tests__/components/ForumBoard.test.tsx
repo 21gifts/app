@@ -569,7 +569,8 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
-    expect(screen.getByText('₿21').className).toContain('font-medium');
+    expect(screen.getByText('₿21').closest('p')?.className).toContain('font-medium');
+    expect(screen.queryByText('$0.02')).toBeNull();
     expect(screen.getByText(formatForumTime(SAMPLE.createdAt, 'en'))).toBeTruthy();
     const preWrap = screen.getByText(
       (content) => content.includes('Line one') && content.includes('Line two'),
@@ -1142,6 +1143,7 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payDraft="21"
+
         {...modeProps('all')}
       />,
       'de',
@@ -1188,6 +1190,36 @@ describe('ForumBoard', () => {
     expect(locationStub.href).toBe('http://localhost/');
   });
 
+  it('shows a live CHF equivalent on the German pay sheet without a picker', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.queryByRole('group', { name: 'Fiatwährung' })).toBeNull();
+    expect(screen.getAllByText('CHF 0.02').length).toBeGreaterThan(0);
+  });
+
   it('keeps Continue on Android Mobile and does not auto-open the wallet', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
@@ -1226,6 +1258,35 @@ describe('ForumBoard', () => {
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
     expect(locationAssign).not.toHaveBeenCalled();
     expect(locationStub.href).toBe('http://localhost/');
+  });
+
+  it('keeps ₿-only when the preferred fiat has no rate on that gift day', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[FIVE_SATS]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: null,
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByText('₿5')).toBeTruthy();
+    expect(screen.queryByText('—')).toBeNull();
+    expect(screen.queryByText(/CHF/)).toBeNull();
   });
 
   it('shows pay amount error', () => {
@@ -1349,6 +1410,37 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
   });
 
+  it('shows a fiat equivalent on the pay confirm line', async () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        payWaiting={true}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
+    expect(screen.getByText('$0.02')).toBeTruthy();
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+  });
+
   it('hides the invoice QR on iPhone and keeps the wallet button', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
@@ -1401,10 +1493,19 @@ describe('ForumBoard', () => {
         payMessageId="m1"
         payDraft=""
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 42 }}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
         {...modeProps('all')}
       />,
     );
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('42');
+    expect(screen.getByText('$0.04')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('shows waiting copy on iPhone after the invoice is minted', () => {
@@ -2673,6 +2774,94 @@ describe('ForumBoard', () => {
     expect(screen.getByText("send ₿21'000")).toBeTruthy();
   });
 
+  it('appends preferred fiat on a gift-only reply when conversion exists', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        replies={[
+          {
+            id: 'r-gift',
+            name: 'Bob',
+            text: '',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText("send ₿21'000")).toBeTruthy();
+    expect(screen.getByText('$21.00')).toBeTruthy();
+  });
+
+  it('keeps a gift-only reply ₿-only when conversion is null', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: null,
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        replies={[
+          {
+            id: 'r-gift',
+            name: 'Bob',
+            text: '',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByText("₿21'000 senden")).toBeTruthy();
+    expect(screen.queryByText('—')).toBeNull();
+    expect(screen.queryByText(/CHF/)).toBeNull();
+  });
+
   it('renders reply text with the gift amount underneath', () => {
     renderWithLocale(
       <ForumBoard
@@ -2707,6 +2896,50 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText('Thanks')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
+  it('appends preferred fiat under a text reply gift when conversion exists', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        replies={[
+          {
+            id: 'r-both',
+            name: 'Bob',
+            text: 'Thanks',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Thanks')).toBeTruthy();
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.getByText('$0.02')).toBeTruthy();
   });
 
   it('forwards reply amount draft changes', () => {

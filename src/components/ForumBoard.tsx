@@ -41,7 +41,15 @@ import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { formatBitcoin } from '@/lib/stats-money';
+import type { NumberFormatStyle } from '@/lib/number-format';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
   isSmartphoneUserAgent,
@@ -83,6 +91,61 @@ function forumTaggedRole(role: string | undefined): ForumTaggedRole | null {
 }
 
 const COPY_RESET_MS = 1200;
+
+/** Empty pay-sheet draft submits this many sats (same as the placeholder). */
+const DEFAULT_PAY_PREVIEW_SATS = 21;
+
+/**
+ * Whole sats implied by the pay-sheet draft.
+ *
+ * @param draft - Raw field value.
+ * @returns Preview sats, or `null` when the draft is not a valid amount.
+ */
+function previewPaySats(draft: string): number | null {
+  const raw = draft.trim();
+  if (raw === '') {
+    return DEFAULT_PAY_PREVIEW_SATS;
+  }
+  if (!/^\d+$/.test(raw)) {
+    return null;
+  }
+  const sats = Number.parseInt(raw, 10);
+  if (sats <= 0 || !Number.isSafeInteger(sats)) {
+    return null;
+  }
+  return sats;
+}
+
+/**
+ * Preferred-fiat suffix next to a ₿ amount, or `null` when the rate or
+ * conversion is missing (₿-only).
+ *
+ * @param sats - Whole sats.
+ * @param rateDay - Latest gift-day totals, or `null`.
+ * @param fiat - Visitor preference.
+ * @param numberFormat - Grouping style.
+ * @returns ` · ` plus formatted fiat, or `null`.
+ */
+function preferredFiatSuffix(
+  sats: number,
+  rateDay: FiatRateDay | null,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): ReactElement | null {
+  if (rateDay === null) {
+    return null;
+  }
+  const amount = satsToFiatAmount(sats, rateDay, fiat);
+  if (amount === null) {
+    return null;
+  }
+  return (
+    <>
+      <span aria-hidden="true"> · </span>
+      <span>{formatFiatDisplay(amount, fiat, numberFormat)}</span>
+    </>
+  );
+}
 
 /** Active pay invoice shown under a forum card. */
 export interface ForumPayInvoice {
@@ -142,6 +205,11 @@ export interface ForumBoardProps {
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
+  /**
+   * Latest gift-day totals used to scale sats into CHF/EUR/USD/PHP.
+   * Omit or `null` when stats have not loaded — amounts stay ₿-only.
+   */
+  rateDay?: FiatRateDay | null;
   /** Selected feed mode. Default in the loader is Active. */
   mode: ForumFeedMode;
   /** Called when the visitor picks another mode. */
@@ -309,6 +377,7 @@ export function ForumBoard({
   onPayDraftChange,
   onPaySubmit,
   onPayCancel,
+  rateDay = null,
   mode,
   onModeChange,
   unpaidNewCount = 0,
@@ -342,6 +411,7 @@ export function ForumBoard({
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -599,6 +669,13 @@ export function ForumBoard({
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
+          const payPreviewSats = sheetOpen
+            ? (invoiceForCard?.amountSats ?? previewPaySats(payDraft))
+            : null;
+          const payPreviewFiat =
+            payPreviewSats !== null && rateDay !== null
+              ? satsToFiatAmount(payPreviewSats, rateDay, fiat)
+              : null;
           /* v8 ignore next 8 -- SSR has no navigator */
           const isSmartphone =
             typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
@@ -742,7 +819,8 @@ export function ForumBoard({
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-5">
                 <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
-                  {formatBitcoin(message.sats, numberFormat)}
+                  <span>{formatBitcoin(message.sats, numberFormat)}</span>
+                  {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
                 </p>
                 {message.payable ? (
                   <IconButton
@@ -835,6 +913,11 @@ export function ForumBoard({
                     disabled={payBusy || invoiceForCard !== null}
                     onChange={(event) => onPayDraftChange(event.target.value)}
                   />
+                  {payPreviewFiat !== null ? (
+                    <p className="text-sm tabular-nums lining-nums text-app-muted">
+                      {formatFiatDisplay(payPreviewFiat, fiat, numberFormat)}
+                    </p>
+                  ) : null}
                   {payError === 'amount' ? (
                     <p role="alert" className="text-sm text-app-danger">
                       {t('forum.payErrorAmount')}
@@ -899,6 +982,7 @@ export function ForumBoard({
                     {t('forum.payConfirm', {
                       amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
                     })}
+                    {preferredFiatSuffix(invoiceForCard.amountSats, rateDay, fiat, numberFormat)}
                   </p>
                   {showPaymentQr ? (
                     <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
@@ -996,11 +1080,13 @@ export function ForumBoard({
                                 {t('forum.giftReply', {
                                   amount: formatBitcoin(reply.sats, numberFormat),
                                 })}
+                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
                                 {formatBitcoin(reply.sats, numberFormat)}
+                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
                             {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}

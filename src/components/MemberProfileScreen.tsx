@@ -15,6 +15,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { Button } from '@/components/ui';
 import {
+  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -36,6 +37,7 @@ import {
   nextPostRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
+import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -61,7 +63,7 @@ function isReplyPaymentExempt(
   return parentAccountId !== undefined && parentAccountId === account.id;
 }
 
-/** Default invoice amount when the reply amount field is empty or whitespace-only for a gift-only reply. */
+/** Default invoice amount when the pay or gift-only reply amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;
 
 /**
@@ -229,6 +231,7 @@ export function MemberProfileScreen({
   const repliesLoadGen = useRef(0);
   const address = listedProfile.lightningAddress;
 
+  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -253,6 +256,24 @@ export function MemberProfileScreen({
     .map((message) => message.id)
     .sort()
     .join('\0');
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchGiftStats()
+      .then((stats) => {
+        if (!cancelled) {
+          setRateDay(latestRateDay(stats.spendOverTime));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRateDay(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {
@@ -669,10 +690,19 @@ export function MemberProfileScreen({
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
-    const sats = Number.parseInt(payDraft.trim(), 10);
-    if (!Number.isSafeInteger(sats) || sats <= 0) {
+    const rawAmount = payDraft.trim();
+    let sats: number;
+    if (rawAmount === '') {
+      sats = DEFAULT_FORUM_PAY_SATS;
+    } else if (!/^\d+$/.test(rawAmount)) {
       setPayError('amount');
       return;
+    } else {
+      sats = Number.parseInt(rawAmount, 10);
+      if (sats <= 0 || !Number.isSafeInteger(sats)) {
+        setPayError('amount');
+        return;
+      }
     }
     const token = session;
     const messageId = payMessageId;
@@ -875,6 +905,7 @@ export function MemberProfileScreen({
 
   const sharedForumProps = {
     photoUrls,
+    rateDay,
     payMessageId,
     payDraft,
     payBusy,

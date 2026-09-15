@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
   agreeToRules,
+  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -50,6 +51,7 @@ vi.mock('@/lib/api', () => ({
   postTrustPropose: vi.fn(),
   postTrustConfirm: vi.fn(),
   postTrustAppoint: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 
 const photoMock = vi.mocked(fetchMessagePhoto);
@@ -233,6 +235,21 @@ afterEach(async () => {
 });
 
 describe('MemberProfileScreen', () => {
+  it('keeps member notes ₿-only when gift stats fail', async () => {
+    vi.mocked(fetchGiftStats).mockRejectedValueOnce(new Error('stats down'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+    });
+    expect(screen.queryByText('—')).toBeNull();
+  });
+
   it('shows name, address, chart empty state, and role pill', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');
@@ -546,6 +563,21 @@ describe('MemberProfileScreen', () => {
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+  });
+
+  it('invoices 21 sats when the member pay amount is left empty', async () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
     });
   });
 
@@ -2069,11 +2101,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalled();
-    });
-    expect(screen.queryByRole('dialog')).toBeNull();
-    await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
     });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows a replies error when expanding without a session', async () => {

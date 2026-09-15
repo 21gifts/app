@@ -730,14 +730,26 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
   });
 
-  it('follows the CHF picker for KPI, footnote, and scale labels', () => {
+  it('offers a fiat switcher and follows EUR', () => {
     renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'CHF',
+        name: 'EUR',
       }),
+    );
+    const spent = screen.getByText('Total spent').parentElement;
+    expect(spent).not.toBeNull();
+    expect(within(spent as HTMLElement).getByText("EUR 1'300.00")).toBeTruthy();
+  });
+
+  it('follows the CHF picker for KPI, footnote, and scale labels', () => {
+    renderWithLocale(
+      <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
+      'en',
+      'ch',
+      'CHF',
     );
     const spent = screen.getByText('Total spent').parentElement;
     expect(spent).not.toBeNull();
@@ -774,11 +786,9 @@ describe('StatsDashboard', () => {
     const nullChf: GiftStats = { ...SAMPLE, totalChf: null };
     renderWithLocale(
       <StatsDashboard stats={nullChf} error={null} loading={false} onRetry={() => undefined} />,
-    );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'CHF',
-      }),
+      'en',
+      'ch',
+      'CHF',
     );
     const spent = screen.getByText('Total spent').parentElement;
     expect(spent).not.toBeNull();
@@ -798,11 +808,9 @@ describe('StatsDashboard', () => {
     };
     renderWithLocale(
       <StatsDashboard stats={nullSeries} error={null} loading={false} onRetry={() => undefined} />,
-    );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'CHF',
-      }),
+      'en',
+      'ch',
+      'CHF',
     );
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
@@ -815,13 +823,11 @@ describe('StatsDashboard', () => {
   });
 
   it('switches over-time and person bars to EUR and PHP', () => {
-    renderWithLocale(
+    const { unmount } = renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
-    );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'EUR',
-      }),
+      'en',
+      'ch',
+      'EUR',
     );
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
@@ -835,10 +841,12 @@ describe('StatsDashboard', () => {
       }),
     );
     expect(screen.getByLabelText('Spend by person in EUR')).toBeTruthy();
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'PHP',
-      }),
+    unmount();
+    renderWithLocale(
+      <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
+      'en',
+      'ch',
+      'PHP',
     );
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
@@ -861,11 +869,9 @@ describe('StatsDashboard', () => {
     };
     renderWithLocale(
       <StatsDashboard stats={nullPerson} error={null} loading={false} onRetry={() => undefined} />,
-    );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'CHF',
-      }),
+      'en',
+      'ch',
+      'CHF',
     );
     fireEvent.click(
       within(screen.getByRole('group', { name: 'By person bar scale' })).getByRole('button', {

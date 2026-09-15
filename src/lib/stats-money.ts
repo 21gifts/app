@@ -6,14 +6,37 @@ import {
   type NumberFormatStyle,
 } from '@/lib/number-format';
 
-/** Fiat codes offered on public stats (one selected at a time). */
+/** Supported preferred-fiat codes (switchers on Profile, the activity chart, `/stats`, and `/stats/[day]`; forum and the pay sheet display the code). */
 export const FIAT_CODES = ['CHF', 'EUR', 'USD', 'PHP'] as const;
 
 /** One of {@link FIAT_CODES}. */
 export type FiatCode = (typeof FIAT_CODES)[number];
 
+/** Cookie written when the visitor picks a fiat on Profile, the activity chart, `/stats`, or `/stats/[day]`. */
+export const FIAT_COOKIE = 'fiat';
+
 /**
- * Default stats fiat for a UI locale.
+ * Returns `value` if it is exactly one of {@link FIAT_CODES}; otherwise
+ * `fallback`. Case-sensitive.
+ *
+ * @param value - Raw cookie or option value, or undefined when absent.
+ * @param fallback - Code used when `value` is missing or invalid.
+ * @returns A supported fiat code.
+ */
+export function parseFiatCode(value: string | undefined, fallback: FiatCode): FiatCode {
+  if (value === undefined) {
+    return fallback;
+  }
+  for (const code of FIAT_CODES) {
+    if (code === value) {
+      return code;
+    }
+  }
+  return fallback;
+}
+
+/**
+ * Default preferred fiat for a UI locale when the `fiat` cookie is absent.
  *
  * @param locale - Active UI locale.
  * @returns CHF for `de`, PHP for `fil`, EUR for `es`, USD for `en`.
@@ -121,4 +144,75 @@ export function formatUsdTick(
   style: NumberFormatStyle = DEFAULT_NUMBER_FORMAT,
 ): string {
   return formatFiatTick(usd, 'USD', style);
+}
+
+/** One gift-day row used to scale sats into CHF/EUR/USD/PHP. */
+export interface FiatRateDay {
+  /** Gift sats on that UTC day (must be greater than 0). */
+  sats: number;
+  /** USD total for that day. */
+  usd: string;
+  /** CHF total, or `null` when unsummed. */
+  chf: string | null;
+  /** EUR total, or `null` when unsummed. */
+  eur: string | null;
+  /** PHP total, or `null` when unsummed. */
+  php: string | null;
+}
+
+function fiatFieldOnDay(day: FiatRateDay, code: FiatCode): string | null {
+  switch (code) {
+    case 'USD':
+      return day.usd;
+    case 'CHF':
+      return day.chf;
+    case 'EUR':
+      return day.eur;
+    case 'PHP':
+      return day.php;
+  }
+}
+
+/**
+ * Latest spend-over-time day that has gifts, for sats→fiat scaling.
+ *
+ * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
+ * @returns Last day with `sats > 0`, or `null`.
+ */
+export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | null {
+  for (let i = series.length - 1; i >= 0; i -= 1) {
+    const day = series[i];
+    if (day !== undefined && day.sats > 0) {
+      return day;
+    }
+  }
+  return null;
+}
+
+/**
+ * Scales whole sats into a two-decimal fiat amount using one gift day's totals.
+ *
+ * @param sats - Whole sats to convert (may be 0).
+ * @param day - Gift day with `sats > 0`, or `null`.
+ * @param code - Selected fiat.
+ * @returns Two-decimal string, or `null` when the day or that fiat is missing.
+ */
+export function satsToFiatAmount(
+  sats: number,
+  day: FiatRateDay | null,
+  code: FiatCode,
+): string | null {
+  if (day === null || day.sats <= 0 || sats < 0 || !Number.isFinite(sats)) {
+    return null;
+  }
+  const raw = fiatFieldOnDay(day, code);
+  if (raw === null) {
+    return null;
+  }
+  const cents = Math.round((Number(raw) * 100 * sats) / day.sats);
+  const whole = Math.trunc(cents / 100);
+  const frac = Math.abs(cents % 100)
+    .toString()
+    .padStart(2, '0');
+  return `${whole}.${frac}`;
 }

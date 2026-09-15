@@ -1297,6 +1297,42 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-profile');
   });
 
+  test('profile fiat', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto('/profile');
+    const group = page.getByRole('group', { name: 'Fiat currency' }).last();
+    await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+    await group.scrollIntoViewIfNeeded();
+    // Viewport: the identity card scrolls inside a 720px shell, so fullPage
+    // still crops above this row.
+    await shotScreen(page, 'state-profile-fiat', false);
+  });
+
   test('screen /members/[accountId]', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
@@ -4117,6 +4153,49 @@ test.describe('welcome forum variants', () => {
   test('welcome pay-amount', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalSats: 100_000_000,
+          totalBtc: '1.00000000',
+          totalUsd: '100000.00',
+          totalChf: '80000.00',
+          totalEur: '90000.00',
+          totalPhp: '5600000.00',
+          giftCount: 1,
+          recipientCount: 1,
+          firstPaidAt: '2026-07-01T00:00:00.000Z',
+          lastPaidAt: '2026-07-01T00:00:00.000Z',
+          spendOverTime: [
+            {
+              day: '2026-07-01',
+              sats: 100_000_000,
+              cumulativeSats: 100_000_000,
+              btc: '1.00000000',
+              cumulativeBtc: '1.00000000',
+              usd: '100000.00',
+              cumulativeUsd: '100000.00',
+              chf: '80000.00',
+              eur: '90000.00',
+              php: '5600000.00',
+              cumulativeChf: '80000.00',
+              cumulativeEur: '90000.00',
+              cumulativePhp: '5600000.00',
+            },
+          ],
+          byRecipient: [],
+          byMonth: [],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+            quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+          },
+        }),
+      });
+    });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
@@ -4134,6 +4213,8 @@ test.describe('welcome forum variants', () => {
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+    await expect(page.getByText('$0.02').first()).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-amount');
   });
 

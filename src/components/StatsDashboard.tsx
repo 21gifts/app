@@ -2,13 +2,12 @@
 
 import { useState, type ReactElement } from 'react';
 import { FiatPicker } from '@/components/FiatPicker';
-import { useTranslations } from '@/components/LocaleProvider';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import type { GiftStats } from '@/lib/api-types';
 import { formatGroupedNumber, type NumberFormatStyle } from '@/lib/number-format';
 import {
-  defaultFiatForLocale,
   formatBitcoin,
   formatFiatDisplay,
   formatFiatTick,
@@ -580,9 +579,8 @@ export function StatsDashboard({
   loading,
   onRetry,
 }: StatsDashboardProps): ReactElement {
-  const { locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
+  const { fiat, setFiat } = useFiatPreference();
 
   if (loading && stats === null && error === null) {
     return <p className="text-paper/60">Loading…</p>;
@@ -608,7 +606,7 @@ export function StatsDashboard({
 
   return (
     <div className="space-y-12">
-      <FiatPicker value={fiat} onChange={setFiat} />
+      <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Total spent</dt>

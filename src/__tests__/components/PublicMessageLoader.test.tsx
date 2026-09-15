@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
-import type { ForumMessage } from '@/lib/api-types';
+import type { ForumMessage, GiftStats } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -22,15 +22,44 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchPublicReplies: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import { fetchPublicMessage, fetchPublicMessagePhoto, fetchPublicReplies } from '@/lib/api';
+import {
+  fetchGiftStats,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchPublicReplies,
+} from '@/lib/api';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
 const fetchRepliesPublic = vi.mocked(fetchPublicReplies);
+const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const hydrate = vi.mocked(useHydrateSession);
+
+const EMPTY_STATS: GiftStats = {
+  totalSats: 0,
+  totalBtc: '0.00000000',
+  totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
+  giftCount: 0,
+  recipientCount: 0,
+  firstPaidAt: null,
+  lastPaidAt: null,
+  spendOverTime: [],
+  byRecipient: [],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};
 
 const sample: ForumMessage = {
   id: MESSAGE_ID,
@@ -50,6 +79,7 @@ beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
   hydrate.mockReturnValue({ ready: true });
   fetchRepliesPublic.mockResolvedValue([]);
+  fetchGiftStatsMock.mockResolvedValue(EMPTY_STATS);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -77,6 +107,7 @@ describe('PublicMessageLoader', () => {
     renderWithLocale(<PublicMessageLoader id="not-a-uuid" />);
     expect(screen.getByText('This profile could not be found.')).toBeTruthy();
     expect(fetchMessage).not.toHaveBeenCalled();
+    expect(fetchGiftStatsMock).not.toHaveBeenCalled();
   });
 
   it('shows missing when fetchPublicMessage returns null', async () => {
@@ -313,6 +344,47 @@ describe('PublicMessageLoader', () => {
     view.unmount();
     resolvePhoto?.(new Blob([new Uint8Array([1])]));
     await Promise.resolve();
+  });
+
+  it('keeps ₿-only when gift stats fail', async () => {
+    fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
+    fetchMessage.mockResolvedValue(sample);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
+  it('shows a locale-default fiat equivalent next to ₿', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-07-01',
+          sats: 100_000_000,
+          cumulativeSats: 100_000_000,
+          btc: '1.00000000',
+          cumulativeBtc: '1.00000000',
+          usd: '100000.00',
+          cumulativeUsd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+          cumulativeChf: '80000.00',
+          cumulativeEur: '90000.00',
+          cumulativePhp: '5600000.00',
+        },
+      ],
+    });
+    fetchMessage.mockResolvedValue(sample);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('$0.02')).toBeTruthy();
+    });
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 
   it('clears the photo when the photo fetch fails', async () => {
