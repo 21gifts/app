@@ -975,7 +975,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/messages/[id]` — public note
 
-App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional locale-default `·` `formatFiatDisplay` when gift-day stats exist, no pay, no composer, no copy, no FiatPicker. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.>>>>>>> 4c92dc47 (Show ₿-only when a fiat rate is missing and follow locale default on refresh.)>>>>>>> a4f7346f (Require FiatPicker ariaLabel and align docs with conversion-null ₿-only.)
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional locale-default `·` `formatFiatDisplay` when gift-day stats exist, no pay, no composer, no copy, no FiatPicker. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 
