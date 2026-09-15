@@ -152,11 +152,12 @@ function combineReplyCount(
   incoming: number,
   hidden: number,
   lastIncoming: number,
+  prior: number,
 ): { replyCount: number; hidden: number; lastIncoming: number } {
   const drop = Math.max(0, lastIncoming - incoming);
   const nextHidden = Math.max(0, hidden - drop);
   return {
-    replyCount: Math.max(0, incoming - nextHidden),
+    replyCount: Math.max(prior, Math.max(0, incoming - nextHidden)),
     hidden: nextHidden,
     lastIncoming: incoming,
   };
@@ -167,11 +168,13 @@ function applySessionReplyCount(
   incoming: number,
   hiddenReplyCounts: Map<string, number>,
   lastServerReplyCount: Map<string, number>,
+  prior: number,
 ): number {
   const combined = combineReplyCount(
     incoming,
     hiddenReplyCounts.get(id) ?? 0,
     lastServerReplyCount.get(id) ?? incoming,
+    prior,
   );
   hiddenReplyCounts.set(id, combined.hidden);
   lastServerReplyCount.set(id, combined.lastIncoming);
@@ -194,6 +197,7 @@ function mergeMessages(
   hiddenReplyCounts: Map<string, number>,
   lastServerReplyCount: Map<string, number>,
 ): ForumMessage[] {
+  const prevById = new Map((prev ?? []).map((message) => [message.id, message]));
   const withHiddenCount = (message: ForumMessage): ForumMessage => ({
     ...message,
     replyCount: applySessionReplyCount(
@@ -201,6 +205,7 @@ function mergeMessages(
       message.replyCount,
       hiddenReplyCounts,
       lastServerReplyCount,
+      prevById.get(message.id)?.replyCount ?? 0,
     ),
   });
   if (prev === null) {
@@ -877,6 +882,7 @@ export function ForumLoader(): ReactElement | null {
                           next.replyCount,
                           hiddenReplyCounts.current,
                           lastServerReplyCount.current,
+                          row.replyCount,
                         ),
                       }
                     : row,

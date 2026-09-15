@@ -3666,6 +3666,56 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('keeps an optimistic reply count when a stale list refresh returns the old count', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-mod',
+      name: 'Ada',
+      text: 'Mod reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'moderator',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Mod reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Mod reply', inReplyTo: 'm-bob' });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+      ).toBeTruthy();
+    });
+
+    fetchMock.mockResolvedValueOnce([{ ...FOREIGN }]);
+    const before = fetchMock.mock.calls.length;
+    const event = new Event('pageshow');
+    Object.defineProperty(event, 'persisted', { value: true });
+    fireEvent(window, event);
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+    expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    expect(
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+    ).toBeTruthy();
+  });
+
   it('does not exempt a verified member from the reply payment', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     fetchMock.mockResolvedValue([FOREIGN]);
