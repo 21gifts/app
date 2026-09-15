@@ -27,9 +27,9 @@ const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  * Forwards an App Router request to the 21.gifts api.
  *
  * Used so the browser talks to the public apex (`21.gifts`) while the api
- * process still listens at `api.21.gifts`. Request bodies stream through
- * (multipart video uploads) with `duplex: 'half'`; `Range` is forwarded for
- * partial GETs.
+ * process still listens at `api.21.gifts`. Multipart video uploads stream
+ * with `duplex: 'half'`; JSON and other bodies are buffered so Node fetch
+ * does not throw. `Range` is forwarded for partial GETs.
  *
  * @param request - Incoming request (query string and body are forwarded).
  * @param apiPath - Path on the api beginning with `/` (e.g. `/me`).
@@ -59,8 +59,13 @@ export async function proxyApiRequest(request: Request, apiPath: string): Promis
       request.body !== null &&
       request.headers.get('content-length') !== '0'
     ) {
-      init.body = request.body;
-      (init as RequestInit & { duplex?: string }).duplex = 'half';
+      const contentType = request.headers.get('content-type') ?? '';
+      if (contentType.includes('multipart/')) {
+        init.body = request.body;
+        (init as RequestInit & { duplex?: string }).duplex = 'half';
+      } else {
+        init.body = await request.arrayBuffer();
+      }
     }
 
     const upstream = await fetch(destination, init);

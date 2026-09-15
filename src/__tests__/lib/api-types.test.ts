@@ -15,6 +15,8 @@ import {
   lnAddressResolvedSchema,
   giftStatsSchema,
   memberProfileSchema,
+  trustActionResultSchema,
+  trustChainSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
   pushSubscriptionResponseSchema,
@@ -51,7 +53,10 @@ describe('memberProfileSchema', () => {
       postCount: 0,
       replyCount: 0,
     };
-    expect(memberProfileSchema.parse(profile)).toEqual(profile);
+    expect(memberProfileSchema.parse(profile)).toEqual({
+      ...profile,
+      trust: { verifiedBy: null, proposedBy: null, confirmedBy: null, appointedBy: null },
+    });
   });
 
   it('requires post and reply counts', () => {
@@ -99,6 +104,19 @@ describe('memberProfileSchema', () => {
         replyCount: 0,
       }),
     ).toThrow();
+  });
+});
+
+describe('trustChainSchema', () => {
+  it('accepts an empty graph', () => {
+    expect(trustChainSchema.parse({ nodes: [], edges: [] })).toEqual({ nodes: [], edges: [] });
+  });
+});
+
+describe('trustActionResultSchema', () => {
+  it('accepts a staff action snapshot', () => {
+    const body = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
+    expect(trustActionResultSchema.parse(body)).toEqual(body);
   });
 });
 

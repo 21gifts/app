@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { MemberTrustActions } from '@/components/MemberTrustActions';
 import {
   ForumBoard,
   type ForumFormError,
@@ -170,8 +171,9 @@ const IDLE_BOARD = {
 
 /**
  * Signed-in member identity card: chart, name, location, Lightning Address,
- * role pill, post/reply counts, optional pinned forum note, and stacked
- * activity feeds.
+ * role pill, post/reply counts, optional pinned forum note, stacked
+ * activity feeds, and staff Trust Chain actions when the viewer is
+ * founder/moderator and the subject is someone else.
  *
  * @param props - Member profile and both activity series for the chart.
  * @returns The presentational member profile.
@@ -214,6 +216,7 @@ export function MemberProfileScreen({
     'name' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const [listedProfile, setListedProfile] = useState(profile);
   const [listedNote, setListedNote] = useState(profile.profileMessage);
   const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
@@ -224,7 +227,7 @@ export function MemberProfileScreen({
   const [activityRepliesError, setActivityRepliesError] = useState(false);
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
-  const address = profile.lightningAddress;
+  const address = listedProfile.lightningAddress;
 
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
@@ -645,8 +648,10 @@ export function MemberProfileScreen({
   };
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const tagged =
-    profile.role === 'founder' || profile.role === 'moderator' || profile.role === 'verified'
-      ? profile.role
+    listedProfile.role === 'founder' ||
+    listedProfile.role === 'moderator' ||
+    listedProfile.role === 'verified'
+      ? listedProfile.role
       : null;
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
 
@@ -937,7 +942,7 @@ export function MemberProfileScreen({
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <p className="min-w-0 truncate text-sm text-app-fg">
-                {profile.name ?? t('view.unnamed')}
+                {listedProfile.name ?? t('view.unnamed')}
               </p>
               {roleKeys !== null ? (
                 <button
@@ -998,6 +1003,11 @@ export function MemberProfileScreen({
               {t('profile.replyCount', { count: String(profile.replyCount) })}
             </Button>
           </div>
+          {account !== null &&
+          (account.role === 'founder' || account.role === 'moderator') &&
+          listedProfile.id !== account.id ? (
+            <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />
+          ) : null}
         </section>
         {listedNote !== null && activity !== 'posts' ? (
           <ForumBoard {...IDLE_BOARD} messages={[listedNote]} {...sharedForumProps} />

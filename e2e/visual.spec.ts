@@ -105,6 +105,33 @@ const VIEW_RECEIVED_ACTIVITY = {
   fx: FX_ALL,
 };
 
+const TRUST_CHAIN_SEED = {
+  nodes: [{ id: 'f1', name: 'Cyrill', role: 'founder' }],
+  edges: [] as { from: string; to: string; kind: 'verify' | 'moderator_appoint' }[],
+};
+
+const TRUST_CHAIN_AROUND_FOUNDER = {
+  nodes: [
+    { id: 'f1', name: 'Cyrill', role: 'founder' },
+    { id: 'm1', name: 'Severin', role: 'moderator' },
+  ],
+  edges: [{ from: 'f1', to: 'm1', kind: 'moderator_appoint' as const }],
+};
+
+const TRUST_CHAIN_AROUND_MODERATOR = {
+  nodes: [
+    { id: 'f1', name: 'Cyrill', role: 'founder' },
+    { id: 'm1', name: 'Severin', role: 'moderator' },
+    { id: 'v1', name: 'Ada', role: 'verified' },
+    { id: 'v2', name: 'Bob', role: 'verified' },
+  ],
+  edges: [
+    { from: 'f1', to: 'm1', kind: 'moderator_appoint' as const },
+    { from: 'm1', to: 'v1', kind: 'verify' as const },
+    { from: 'm1', to: 'v2', kind: 'verify' as const },
+  ],
+};
+
 const STATS_DEFAULT = {
   totalSats: 1500,
   totalBtc: '0.00001500',
@@ -560,6 +587,44 @@ test.describe('screen baselines', () => {
     await page.goto('/donate');
     await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
     await shotScreen(page, 'screen-donate');
+  });
+
+  test('screen /trust-chain', async ({ page }) => {
+    await page.route('**/trust/graph**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(TRUST_CHAIN_SEED),
+      });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
+    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+    await shotScreen(page, 'screen-trust-chain');
+  });
+
+  test('state /trust-chain expanded', async ({ page }) => {
+    await page.route('**/trust/graph**', async (route) => {
+      const url = new URL(route.request().url());
+      const around = url.searchParams.get('around');
+      const body =
+        around === 'm1'
+          ? TRUST_CHAIN_AROUND_MODERATOR
+          : around === 'f1'
+            ? TRUST_CHAIN_AROUND_FOUNDER
+            : TRUST_CHAIN_SEED;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    await page.goto('/trust-chain');
+    await page.getByTestId('trust-node-f1').click();
+    await expect(page.getByTestId('trust-node-m1')).toBeVisible();
+    await page.getByTestId('trust-node-m1').click();
+    await expect(page.getByTestId('trust-node-v1')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-expanded');
   });
 
   test('screen /stats', async ({ page }) => {
@@ -2148,6 +2213,57 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await shotScreen(page, 'state-members-overlay-address');
+  });
+
+  test('state /members staff-verify', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+    await shotScreen(page, 'state-members-staff-verify');
   });
 
   test('state /members translate', async ({ page }) => {
@@ -4601,6 +4717,55 @@ test.describe('stats variant baselines', () => {
     await expect(page.getByLabel('Spend by person in USD')).toBeVisible();
     await expect(page.getByLabel('Spend by month in USD')).toBeVisible();
     await shotScreen(page, 'state-stats-usd-scale');
+  });
+
+  test('trust-chain empty', async ({ page }) => {
+    await page.route('**/trust/graph', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ nodes: [], edges: [] }),
+      });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-empty');
+  });
+
+  test('trust-chain loading', async ({ page }) => {
+    await page.route('**/trust/graph', () => new Promise(() => undefined));
+    await page.goto('/trust-chain');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-loading');
+  });
+
+  test('trust-chain error', async ({ page }) => {
+    await page.route('**/trust/graph', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-error');
+  });
+
+  test('trust-chain hop-error', async ({ page }) => {
+    await page.route('**/trust/graph**', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get('around')) {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(TRUST_CHAIN_SEED),
+      });
+    });
+    await page.goto('/trust-chain');
+    await page.getByTestId('trust-node-f1').click();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-hop-error');
   });
 
   test('stats empty', async ({ page }) => {

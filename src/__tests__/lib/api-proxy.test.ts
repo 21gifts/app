@@ -49,7 +49,7 @@ describe('proxyApiRequest', () => {
     expect(headers.get('x-ignored')).toBeNull();
   });
 
-  it('forwards a POST body as a stream with duplex half', async () => {
+  it('forwards a JSON POST body as a buffer without duplex', async () => {
     const fetchMock = stubFetch(new Response('{}', { status: 200 }));
     const body = JSON.stringify({ address: 'a@b.com' });
     const request = new Request('http://localhost/me/lightning-address', {
@@ -61,17 +61,53 @@ describe('proxyApiRequest', () => {
       },
       body,
     });
-    const originalBody = request.body;
 
     await proxyApiRequest(request, '/me/lightning-address');
 
     const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit & { duplex?: string }];
     expect(init.method).toBe('POST');
-    expect(init.body).toBe(originalBody);
-    expect(init.duplex).toBe('half');
+    expect(init.body).toBeInstanceOf(ArrayBuffer);
+    expect(init.duplex).toBeUndefined();
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
     const headers = init.headers as Headers;
     expect(headers.get('content-length')).toBe(String(body.length));
     expect(headers.get('transfer-encoding')).toBeNull();
+  });
+
+  it('forwards a multipart POST body as a stream with duplex half', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const body = 'frame-bytes';
+    const request = new Request('http://localhost/forum/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'multipart/form-data; boundary=x',
+        'content-length': String(body.length),
+      },
+      body,
+    });
+    const originalBody = request.body;
+
+    await proxyApiRequest(request, '/messages');
+
+    const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit & { duplex?: string }];
+    expect(init.body).toBe(originalBody);
+    expect(init.duplex).toBe('half');
+  });
+
+  it('buffers a POST body when content-type is missing', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const bytes = new TextEncoder().encode('{"x":1}');
+    const request = new Request('http://localhost/trust/verify', {
+      method: 'POST',
+      headers: { 'content-length': String(bytes.byteLength) },
+      body: bytes,
+    });
+
+    await proxyApiRequest(request, '/trust/verify');
+
+    const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit & { duplex?: string }];
+    expect(init.duplex).toBeUndefined();
+    expect(init.body).toBeInstanceOf(ArrayBuffer);
   });
 
   it('forwards an empty POST without a duplex body', async () => {

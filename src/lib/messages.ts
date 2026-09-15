@@ -8,6 +8,7 @@ const en = {
   'nav.faq': 'FAQ',
   'nav.about': 'About',
   'nav.stats': 'Stats',
+  'nav.trustChain': 'Trust Chain',
   'nav.handbook': 'Handbook',
   'nav.login': 'Log in',
   'nav.home': 'Home',
@@ -36,6 +37,7 @@ const en = {
   'aria.handbookSections': 'Handbook sections',
   'aria.theme': 'Theme',
   'aria.numberFormat': 'Number format',
+  'aria.trustChain': 'Trust Chain diagram',
 
   'theme.label': 'Theme',
   'numberFormat.label': 'Number format',
@@ -498,6 +500,30 @@ const en = {
   'notifications.zap': '{name} sent bitcoin',
   'notifications.photoOnly': 'Photo reply',
   'notifications.photoPost': 'Photo',
+
+  'trustChain.title': 'Trust Chain',
+  'trustChain.lead':
+    'Who met whom in real life, and who appointed the moderators. Click a person to load everyone linked to them. Drag a person to move them.',
+  'trustChain.empty': 'No one is on the Trust Chain yet.',
+  'trustChain.loading': 'Loading…',
+  'trustChain.error': 'Could not load the Trust Chain. Please try again.',
+  'trustChain.retry': 'Try again',
+  'trustChain.unnamed': 'Unnamed',
+  'trustChain.edge.verify': 'verified',
+  'trustChain.edge.confirm': 'confirmed',
+  'trustChain.edge.appoint': 'appointed',
+  'trustChain.explainVerified':
+    'Verified means a moderator or founder met the person in real life and confirmed they are real. It is not a wallet proof.',
+  'trustChain.explainModerator':
+    'To become a moderator, an existing moderator or founder proposes the person and a different moderator or founder confirms — or a founder appoints them directly.',
+  'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
+  'trustChain.action.verify': 'Verify',
+  'trustChain.action.propose': 'Propose as moderator',
+  'trustChain.action.confirm': 'Confirm as moderator',
+  'trustChain.action.appoint': 'Appoint as moderator',
+  'trustChain.actionFailed': 'Could not update this member. Please try again.',
+  'trustChain.waitingConfirm': 'Waiting for another moderator to confirm.',
+  'trustChain.alreadyOnChain': 'Already on the Trust Chain.',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -513,6 +539,7 @@ const de = {
   'nav.faq': 'FAQ',
   'nav.about': 'Über uns',
   'nav.stats': 'Statistik',
+  'nav.trustChain': 'Trust-Kette',
   'nav.handbook': 'Handbuch',
   'nav.login': 'Anmelden',
   'nav.home': 'Start',
@@ -539,6 +566,7 @@ const de = {
   'aria.handbookSections': 'Handbuchabschnitte',
   'aria.theme': 'Darstellung',
   'aria.numberFormat': 'Zahlenformat',
+  'aria.trustChain': 'Diagramm der Trust-Kette',
   'theme.label': 'Darstellung',
   'numberFormat.label': 'Zahlenformat',
   'theme.system': 'System',
@@ -1000,6 +1028,33 @@ const de = {
   'notifications.zap': '{name} hat Bitcoin gesendet',
   'notifications.photoOnly': 'Foto-Antwort',
   'notifications.photoPost': 'Foto',
+
+  'trustChain.title': 'Trust-Kette',
+  'trustChain.lead':
+    'Wer wen persönlich getroffen hat, und wer die Moderatoren ernannt hat. Klicken Sie auf eine Person, um alle mit ihr verbundenen zu laden. Ziehen Sie eine Person, um sie zu verschieben.',
+  'trustChain.empty': 'Noch niemand ist auf der Trust-Kette.',
+  'trustChain.loading': 'Laden…',
+  'trustChain.error': 'Die Trust-Kette konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'trustChain.retry': 'Erneut versuchen',
+  'trustChain.unnamed': 'Unbenannt',
+  'trustChain.edge.verify': 'verifiziert',
+  'trustChain.edge.confirm': 'bestätigt',
+  'trustChain.edge.appoint': 'ernannt',
+  'trustChain.explainVerified':
+    'Verifiziert bedeutet, dass eine Moderatorin, ein Moderator oder eine Gründerperson die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
+  'trustChain.explainModerator':
+    'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin, ein Moderator oder eine Gründerperson die Person vor, und eine andere Moderatorin, ein Moderator oder eine Gründerperson bestätigt — oder eine Gründerperson ernennt sie direkt.',
+  'trustChain.explainFounder':
+    'Eine Gründerperson hat 21.gifts gestartet und ist das erste Glied der Kette.',
+  'trustChain.action.verify': 'Verifizieren',
+  'trustChain.action.propose': 'Als Moderator vorschlagen',
+  'trustChain.action.confirm': 'Als Moderator bestätigen',
+  'trustChain.action.appoint': 'Als Moderator ernennen',
+  'trustChain.actionFailed':
+    'Dieses Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.',
+  'trustChain.waitingConfirm':
+    'Warten auf die Bestätigung durch eine andere Moderatorin oder einen anderen Moderator.',
+  'trustChain.alreadyOnChain': 'Bereits auf der Trust-Kette.',
 } satisfies Messages;
 
 const es = {
@@ -1009,6 +1064,7 @@ const es = {
   'nav.faq': 'FAQ',
   'nav.about': 'Sobre nosotros',
   'nav.stats': 'Estadísticas',
+  'nav.trustChain': 'Cadena de confianza',
   'nav.handbook': 'Manual',
   'nav.login': 'Iniciar sesión',
   'nav.home': 'Inicio',
@@ -1035,6 +1091,7 @@ const es = {
   'aria.handbookSections': 'Secciones del manual',
   'aria.theme': 'Tema',
   'aria.numberFormat': 'Formato numérico',
+  'aria.trustChain': 'Diagrama de la cadena de confianza',
   'theme.label': 'Tema',
   'numberFormat.label': 'Formato numérico',
   'theme.system': 'Sistema',
@@ -1486,6 +1543,31 @@ const es = {
   'notifications.zap': '{name} envió bitcoin',
   'notifications.photoOnly': 'Respuesta con foto',
   'notifications.photoPost': 'Foto',
+
+  'trustChain.title': 'Cadena de confianza',
+  'trustChain.lead':
+    'Quién conoció a quién en persona, y quién nombró a las personas moderadoras. Haz clic en una persona para cargar a todas las vinculadas a ella. Arrastra a una persona para moverla.',
+  'trustChain.empty': 'Todavía no hay nadie en la cadena de confianza.',
+  'trustChain.loading': 'Cargando…',
+  'trustChain.error': 'No se pudo cargar la cadena de confianza. Inténtalo de nuevo.',
+  'trustChain.retry': 'Intentar de nuevo',
+  'trustChain.unnamed': 'Sin nombre',
+  'trustChain.edge.verify': 'verificado',
+  'trustChain.edge.confirm': 'confirmado',
+  'trustChain.edge.appoint': 'nombrado',
+  'trustChain.explainVerified':
+    'Verificado significa que una persona moderadora o fundadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
+  'trustChain.explainModerator':
+    'Para ser moderadora o moderador, una persona moderadora o fundadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
+  'trustChain.explainFounder':
+    'Una persona fundadora empezó 21.gifts y es el primer eslabón de la cadena.',
+  'trustChain.action.verify': 'Verificar',
+  'trustChain.action.propose': 'Proponer como moderador',
+  'trustChain.action.confirm': 'Confirmar como moderador',
+  'trustChain.action.appoint': 'Nombrar como moderador',
+  'trustChain.actionFailed': 'No se pudo actualizar a este miembro. Inténtalo de nuevo.',
+  'trustChain.waitingConfirm': 'Esperando a que otra persona moderadora confirme.',
+  'trustChain.alreadyOnChain': 'Ya está en la cadena de confianza.',
 } satisfies Messages;
 
 const fil = {
@@ -1495,6 +1577,7 @@ const fil = {
   'nav.faq': 'FAQ',
   'nav.about': 'Tungkol sa amin',
   'nav.stats': 'Stats',
+  'nav.trustChain': 'Trust Chain',
   'nav.handbook': 'Handbook',
   'nav.login': 'Mag-log in',
   'nav.home': 'Home',
@@ -1521,6 +1604,7 @@ const fil = {
   'aria.handbookSections': 'Mga seksyon ng handbook',
   'aria.theme': 'Tema',
   'aria.numberFormat': 'Format ng numero',
+  'aria.trustChain': 'Diagram ng Trust Chain',
   'theme.label': 'Tema',
   'numberFormat.label': 'Format ng numero',
   'theme.system': 'Sistema',
@@ -1981,6 +2065,31 @@ const fil = {
   'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Sagot na litrato',
   'notifications.photoPost': 'Litrato',
+
+  'trustChain.title': 'Trust Chain',
+  'trustChain.lead':
+    'Sino ang nagkita sa totoo, at sino ang nagtalaga sa mga moderator. I-click ang isang tao para i-load ang lahat ng nakaugnay sa kanya. I-drag ang isang tao para ilipat siya.',
+  'trustChain.empty': 'Wala pang nasa Trust Chain.',
+  'trustChain.loading': 'Naglo-load…',
+  'trustChain.error': 'Hindi ma-load ang Trust Chain. Subukan ulit.',
+  'trustChain.retry': 'Subukan ulit',
+  'trustChain.unnamed': 'Walang pangalan',
+  'trustChain.edge.verify': 'na-verify',
+  'trustChain.edge.confirm': 'nakumpirma',
+  'trustChain.edge.appoint': 'itinalaga',
+  'trustChain.explainVerified':
+    'Ang Verified ay nangangahulugang isang moderator o founder ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
+  'trustChain.explainModerator':
+    'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator o founder at ibang moderator o founder ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
+  'trustChain.explainFounder':
+    'Isang founder ang nagsimula ng 21.gifts at siya ang unang kawing ng kadena.',
+  'trustChain.action.verify': 'I-verify',
+  'trustChain.action.propose': 'Ipanukala bilang moderator',
+  'trustChain.action.confirm': 'Kumpirmahin bilang moderator',
+  'trustChain.action.appoint': 'Italaga bilang moderator',
+  'trustChain.actionFailed': 'Hindi ma-update ang miyembrong ito. Subukan ulit.',
+  'trustChain.waitingConfirm': 'Naghihintay ng kumpirmasyon mula sa ibang moderator.',
+  'trustChain.alreadyOnChain': 'Nasa Trust Chain na.',
 } satisfies Messages;
 
 /**
