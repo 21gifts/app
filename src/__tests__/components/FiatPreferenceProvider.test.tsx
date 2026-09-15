@@ -50,6 +50,22 @@ describe('FiatPreferenceProvider', () => {
     expect(screen.getByTestId('code').textContent).toBe('CHF');
   });
 
+  it('keeps a valid cookie when a later initial is stale', () => {
+    document.cookie = `${FIAT_COOKIE}=CHF; Path=/`;
+    const { rerender } = render(
+      <FiatPreferenceProvider initial="USD">
+        <Probe />
+      </FiatPreferenceProvider>,
+    );
+    expect(screen.getByTestId('code').textContent).toBe('CHF');
+    rerender(
+      <FiatPreferenceProvider initial="EUR">
+        <Probe />
+      </FiatPreferenceProvider>,
+    );
+    expect(screen.getByTestId('code').textContent).toBe('CHF');
+  });
+
   it('writes a CHF cookie with Path Max-Age SameSite Lax', () => {
     const cookieSet = vi.fn();
     const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
@@ -170,9 +186,10 @@ describe('FiatPreferenceProvider', () => {
   it('does not rewrite when the cookie already matches even if in-memory state is stale', () => {
     const cookieSet = vi.fn();
     const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    let cookieValue = '';
     Object.defineProperty(document, 'cookie', {
       configurable: true,
-      get: () => `${FIAT_COOKIE}=CHF`,
+      get: () => cookieValue,
       set: cookieSet,
     });
     try {
@@ -181,6 +198,8 @@ describe('FiatPreferenceProvider', () => {
           <Probe />
         </FiatPreferenceProvider>,
       );
+      expect(screen.getByTestId('code').textContent).toBe('USD');
+      cookieValue = `${FIAT_COOKIE}=CHF`;
       act(() => {
         screen.getByRole('button', { name: 'set-chf' }).click();
       });

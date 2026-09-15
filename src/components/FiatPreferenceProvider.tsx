@@ -10,7 +10,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { FIAT_COOKIE, type FiatCode } from '@/lib/stats-money';
+import { FIAT_COOKIE, parseFiatCode, type FiatCode } from '@/lib/stats-money';
 
 /** Value exposed by {@link FiatPreferenceProvider} / {@link useFiatPreference}. */
 export interface FiatPreferenceContextValue {
@@ -18,8 +18,8 @@ export interface FiatPreferenceContextValue {
   fiat: FiatCode;
   /**
    * Persist a new code. Writes `fiat=<code>` with Path=/, Max-Age=1y,
-   * SameSite=Lax (`Secure` on https). Same-code is a no-op when the cookie is
-   * already set to `next`.
+   * SameSite=Lax (`Secure` on https). Does not rewrite the cookie when it
+   * already equals `next`; in-memory state still syncs to `next` if stale.
    *
    * @param next - Code the visitor chose.
    */
@@ -57,8 +57,9 @@ function writeFiatCookie(next: FiatCode): void {
 
 /**
  * Provides the visitor fiat preference and a setter that writes the cookie.
- * In-memory code follows `initial` when that prop changes (locale default
- * after a refresh with no cookie).
+ * In-memory code follows `initial` when that prop changes and no valid
+ * cookie is set (locale default after a refresh with no cookie). A valid
+ * `fiat` cookie wins over a stale `initial`.
  *
  * @param props - Server-negotiated `initial` code and children.
  * @returns Provider element wrapping `children`.
@@ -71,7 +72,7 @@ export function FiatPreferenceProvider(props: {
   const [fiat, setFiatState] = useState<FiatCode>(initial);
 
   useEffect(() => {
-    setFiatState(initial);
+    setFiatState(parseFiatCode(readFiatCookie(), initial));
   }, [initial]);
 
   const setFiat = useCallback(

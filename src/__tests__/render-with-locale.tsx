@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Locale } from '@/lib/locale';
 import { getCatalog } from '@/lib/messages';
 import { DEFAULT_NUMBER_FORMAT, type NumberFormatStyle } from '@/lib/number-format';
-import { defaultFiatForLocale, type FiatCode } from '@/lib/stats-money';
+import { defaultFiatForLocale, FIAT_COOKIE, type FiatCode } from '@/lib/stats-money';
 
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   Object.defineProperty(window, 'matchMedia', {
@@ -43,6 +43,7 @@ export function renderWithLocale(
   fiat?: FiatCode,
 ): RenderResult {
   const initialFiat = fiat ?? defaultFiatForLocale(locale);
+  document.cookie = `${FIAT_COOKIE}=; Path=/; Max-Age=0`;
   function Wrapper({ children }: { children: ReactNode }): ReactElement {
     return (
       <LocaleProvider locale={locale} messages={getCatalog(locale)}>
