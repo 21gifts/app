@@ -102,6 +102,12 @@ app/
 │   │   │       └── [accountId]/
 │   │   │           ├── route.ts  # GET /forum/members/:id → api GET /members/:id
 │   │   │           └── activity/route.ts  # GET /forum/members/:id/activity → api GET /members/:id/activity
+│   │   ├── trust/
+│   │   │   ├── graph/route.ts              # GET /trust/graph → api GET /trust-chain
+│   │   │   ├── verify/route.ts             # POST /trust/verify
+│   │   │   ├── propose-moderator/route.ts  # POST /trust/propose-moderator
+│   │   │   ├── confirm-moderator/route.ts  # POST /trust/confirm-moderator
+│   │   │   └── appoint-moderator/route.ts  # POST /trust/appoint-moderator
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -131,6 +137,9 @@ app/
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + name/location/address + push bell + theme + number format)
+│   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
+│   │   ├── TrustChainScreen.tsx  # Public /trust-chain body
+│   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
@@ -188,6 +197,7 @@ app/
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
 │   │   ├── handbook-topics.ts   # handbook image topic catalog + combo URLs
 │   │   ├── screen-variant-catalog.json # screen-variant ids/labels/visual stems
+│   │   ├── trust-chain.ts       # mergeTrustChain + layoutTrustChain (stack, no invented edges)
 │   │   ├── app-height.ts        # --app-height bootstrap IIFE (server-safe; no hooks)
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
