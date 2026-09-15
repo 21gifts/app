@@ -3221,6 +3221,47 @@ test.describe('welcome forum variants', () => {
     test(replyDeleteTitles[state], async ({ page }) => {
       await seedAda(page, 'moderator');
       await fulfillMixedSatsMessages(page);
+      await page.route(/\/messages$/, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            messages: [
+              {
+                id: 'm3',
+                name: 'Ada',
+                text: 'Thank you both — that helps.',
+                createdAt: '2026-08-28T12:00:00.000Z',
+                sats: 5,
+                payable: true,
+                hasPhoto: false,
+                role: 'moderator',
+              },
+              {
+                id: 'm2',
+                name: 'Carol',
+                text: 'I can send a small gift tomorrow.',
+                createdAt: '2026-08-28T11:00:00.000Z',
+                sats: 21,
+                payable: true,
+                hasPhoto: false,
+                role: 'verified',
+              },
+              {
+                id: 'm1',
+                name: 'Bob',
+                text: 'Does anyone have spare sats this week?',
+                createdAt: '2026-08-28T10:00:00.000Z',
+                sats: 0,
+                payable: true,
+                hasPhoto: false,
+                role: 'basis',
+                replyCount: 1,
+              },
+            ],
+          }),
+        });
+      });
       await page.route('**/forum/messages/m1/replies', async (route) => {
         await route.fulfill({
           status: 200,
