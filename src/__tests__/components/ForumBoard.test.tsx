@@ -1493,10 +1493,19 @@ describe('ForumBoard', () => {
         payMessageId="m1"
         payDraft=""
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 42 }}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
         {...modeProps('all')}
       />,
     );
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('42');
+    expect(screen.getByText('$0.04')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('shows waiting copy on iPhone after the invoice is minted', () => {

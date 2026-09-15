@@ -667,13 +667,15 @@ export function ForumBoard({
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
               : undefined;
           const sheetOpen = payMessageId === message.id;
-          const payPreviewSats = sheetOpen ? previewPaySats(payDraft) : null;
+          const invoiceForCard =
+            payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
+          const payPreviewSats = sheetOpen
+            ? (invoiceForCard?.amountSats ?? previewPaySats(payDraft))
+            : null;
           const payPreviewFiat =
             payPreviewSats !== null && rateDay !== null
               ? satsToFiatAmount(payPreviewSats, rateDay, fiat)
               : null;
-          const invoiceForCard =
-            payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
           /* v8 ignore next 8 -- SSR has no navigator */
           const isSmartphone =
             typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
