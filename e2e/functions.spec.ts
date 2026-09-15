@@ -5051,7 +5051,7 @@ test('Function: bumpUnreadAppBadgeEpoch — signed-in notifications screen loads
     });
   });
   await page.goto('/notifications');
-  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(page.getByText('No notifications yet.')).toBeVisible();
 });
 
 test('Function: unreadAppBadgeEpoch — menu shows unread notification count', async ({ page }) => {
