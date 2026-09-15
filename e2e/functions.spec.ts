@@ -4147,6 +4147,30 @@ test('Function: LogoutButton — log out returns to login', async ({ page, reque
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
+test('Function: useUnreadCount — menu shows unread notification count', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+});
+
+test('Function: resyncPushSubscription — signed-in chrome still shows Menu', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+});
+
 test('Function: SignedInChrome — Menu reveals Profile, language, and log out', async ({
   page,
   request,

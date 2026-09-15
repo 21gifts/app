@@ -293,10 +293,10 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
-- **Inputs:** Session `account` from `useAuthStore` (introduce overlay gate). Composes `useAccountTotals`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape closes Menu and restores focus to Menu unless a nested listbox (language) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape closes Menu and restores focus to Menu unless a nested listbox (language) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`.
 
 ## Function: ProfilePage
 
@@ -326,6 +326,13 @@
 - **Returns / side effects:** Heading, On/Off value, and icon-only `IconButton` named from `profile.push.enable` or `profile.push.disable` (`aria-pressed` when subscribed). User gesture calls enable/disable; may show `profile.push.unavailable` on failure.
 - **Used by:** `ProfileScreen`.
 
+## Function: useUnreadCount
+
+- **Purpose:** Load the signed-in unread in-app notification count from `GET /forum/notifications`. `refreshKey` retriggers the fetch (Menu open). Errors and no session resolve to `0`. Does not mark notifications read.
+- **Inputs:** `refreshKey` boolean.
+- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists.
+- **Used by:** `SignedInChrome`.
+
 ## Function: vapidPublicKeyToBytes
 
 - **Purpose:** Decode a VAPID application server public key (url-safe base64) to bytes for `pushManager.subscribe`.
@@ -338,7 +345,7 @@
 - **Purpose:** Register the push-only service worker at `/sw.js` (scope `/`) and wait until ready.
 - **Inputs:** None (uses `navigator.serviceWorker`).
 - **Returns / side effects:** `ServiceWorkerRegistration`.
-- **Used by:** `enablePush`, `disablePush`.
+- **Used by:** `enablePush`, `disablePush`, `resyncPushSubscription`.
 
 ## Function: isStandaloneDisplay
 
@@ -370,14 +377,21 @@
 
 ## Function: enablePush
 
-- **Purpose:** Register the worker, fetch the VAPID key, request notification permission, subscribe, and POST the subscription to the api.
+- **Purpose:** Register the worker, fetch the VAPID key, request notification permission, subscribe, and POST the subscription to the api. Shares a serial queue with `resyncPushSubscription` and `disablePush`; a later disable no-ops a queued enable.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `void`. Throws `Notification permission denied` or `Push is not configured` (and other api errors).
-- **Used by:** `PushToggle`.
+- **Used by:** `PushToggle`, `SignedInChrome`.
+
+## Function: resyncPushSubscription
+
+- **Purpose:** When `Notification.permission` is already `granted` and a local `pushManager` subscription exists, POST that endpoint to the api. Does not call `requestPermission` or `subscribe()`. Opt-out (no local subscription) is a no-op. POST failure leaves the local subscription in place. Shares a serial queue with `enablePush` and `disablePush`; a later disable no-ops a queued resync so it cannot POST after DELETE.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `void`. No-op when permission is not `granted`, Push APIs are missing, or `getSubscription()` is null. Throws api errors from `postPushSubscription` without unsubscribing.
+- **Used by:** `SignedInChrome` (mount and Notifications click when permission is already granted).
 
 ## Function: disablePush
 
-- **Purpose:** When a local push subscription exists, DELETE its endpoint on the api then `unsubscribe()` locally.
+- **Purpose:** When a local push subscription exists, DELETE its endpoint on the api then `unsubscribe()` locally. Bumps a generation so in-flight enable/resync cannot POST after this opt-out, and waits for the shared serial queue so DELETE is the last server mutation.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `void`. No-op when there is no subscription. Local `unsubscribe()` still runs if the api DELETE fails.
 - **Used by:** `PushToggle` and `LogoutButton`.
@@ -394,7 +408,7 @@
 - **Purpose:** POST `/me/push-subscriptions` with bearer + `{ endpoint, keys }` and validate the response.
 - **Inputs:** `sessionToken`, subscription endpoint + p256dh/auth keys.
 - **Returns / side effects:** `void`. Throws `Push is not configured` on 503; 400 uses api error when present.
-- **Used by:** `enablePush`.
+- **Used by:** `enablePush`, `resyncPushSubscription`.
 
 ## Function: deletePushSubscription
 
@@ -1792,7 +1806,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/forum/notifications` with Bearer and parse `{ notifications, unreadCount }`.
 - **Inputs:** Session token.
 - **Returns / side effects:** `{ notifications, unreadCount }`, or throws visitor copy `Could not load notifications. Please try again.`
-- **Used by:** `NotificationsLoader`.
+- **Used by:** `NotificationsLoader`, `useUnreadCount`.
 
 ## Function: markNotificationRead
 

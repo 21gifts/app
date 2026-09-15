@@ -6,6 +6,7 @@ import {
   isIosSafari,
   isStandaloneDisplay,
   registerPushWorker,
+  resyncPushSubscription,
   vapidPublicKeyToBytes,
 } from '@/lib/push';
 import { bytesToBase64Url } from '@/lib/webauthn-browser';
@@ -221,6 +222,190 @@ describe('enablePush', () => {
 
     await expect(enablePush('sess')).rejects.toThrow('Push is not configured');
   });
+
+  it('skips a queued enable when disable starts first', async () => {
+    const requestPermission = vi.fn().mockResolvedValue('granted');
+    const subscribe = vi.fn();
+    const registration = {
+      pushManager: { subscribe, getSubscription: vi.fn().mockResolvedValue(null) },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { requestPermission });
+    vi.mocked(deletePushSubscription).mockResolvedValue(undefined);
+    const enableP = enablePush('sess');
+    const disableP = disablePush('sess');
+    await enableP;
+    await disableP;
+    expect(requestPermission).not.toHaveBeenCalled();
+    expect(subscribe).not.toHaveBeenCalled();
+  });
+
+  it('skips subscribe when disable starts during requestPermission', async () => {
+    let releasePerm!: (value: string) => void;
+    const permHold = new Promise<string>((resolve) => {
+      releasePerm = resolve;
+    });
+    let startedPerm!: () => void;
+    const permStarted = new Promise<void>((resolve) => {
+      startedPerm = resolve;
+    });
+    const subscribe = vi.fn();
+    const registration = {
+      pushManager: { subscribe, getSubscription: vi.fn().mockResolvedValue(null) },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', {
+      requestPermission: vi.fn().mockImplementation(async () => {
+        startedPerm();
+        return permHold;
+      }),
+    });
+    vi.mocked(deletePushSubscription).mockResolvedValue(undefined);
+    const enableP = enablePush('sess');
+    await permStarted;
+    const disableP = disablePush('sess');
+    releasePerm('granted');
+    await enableP;
+    await disableP;
+    expect(subscribe).not.toHaveBeenCalled();
+  });
+});
+
+describe('resyncPushSubscription', () => {
+  it('resyncs an existing subscription when permission is already granted', async () => {
+    const unsubscribe = vi.fn();
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({
+          toJSON: () => ({
+            endpoint: 'https://push.example/sub',
+            keys: { p256dh: 'p256', auth: 'auth' },
+          }),
+          unsubscribe,
+        }),
+        subscribe: vi.fn(),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    await resyncPushSubscription('sess');
+    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+    expect(postPushSubscription).toHaveBeenCalledWith('sess', {
+      endpoint: 'https://push.example/sub',
+      keys: { p256dh: 'p256', auth: 'auth' },
+    });
+    expect(unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it('resync is a no-op when permission is not granted', async () => {
+    vi.stubGlobal('Notification', { permission: 'default' });
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it('resync is a no-op when serviceWorker is missing', async () => {
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('navigator', {});
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it('resync is a no-op when Notification is undefined', async () => {
+    vi.stubGlobal('Notification', undefined);
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it('resync is a no-op when PushManager is missing', async () => {
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('navigator', { serviceWorker: {} });
+    const original = window.PushManager;
+    // @ts-expect-error coverage: missing PushManager
+    delete window.PushManager;
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+    window.PushManager = original;
+  });
+
+  it('resync is a no-op when there is no local subscription', async () => {
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null), subscribe: vi.fn() },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+  });
+
+  it('resync is a no-op when the local subscription omits keys', async () => {
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({
+          toJSON: () => ({ endpoint: 'https://push.example/sub', keys: {} }),
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it('resync leaves the local subscription when POST fails', async () => {
+    const unsubscribe = vi.fn();
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({
+          toJSON: () => ({
+            endpoint: 'https://push.example/sub',
+            keys: { p256dh: 'p256', auth: 'auth' },
+          }),
+          unsubscribe,
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockRejectedValue(new Error('Push is not configured'));
+    await expect(resyncPushSubscription('sess')).rejects.toThrow('Push is not configured');
+    expect(unsubscribe).not.toHaveBeenCalled();
+  });
 });
 
 describe('disablePush', () => {
@@ -275,5 +460,130 @@ describe('disablePush', () => {
 
     await expect(disablePush('sess')).rejects.toThrow('offline');
     expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it('waits for an in-flight resync POST before DELETE', async () => {
+    let releasePost!: () => void;
+    const postHold = new Promise<void>((resolve) => {
+      releasePost = resolve;
+    });
+    let startedPost!: () => void;
+    const postStarted = new Promise<void>((resolve) => {
+      startedPost = resolve;
+    });
+    const order: string[] = [];
+    const unsubscribe = vi.fn().mockResolvedValue(true);
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({
+          endpoint: 'https://push.example/sub',
+          toJSON: () => ({
+            endpoint: 'https://push.example/sub',
+            keys: { p256dh: 'p256', auth: 'auth' },
+          }),
+          unsubscribe,
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockImplementation(async () => {
+      order.push('post');
+      startedPost();
+      await postHold;
+    });
+    vi.mocked(deletePushSubscription).mockImplementation(async () => {
+      order.push('delete');
+    });
+    const resyncP = resyncPushSubscription('sess');
+    await postStarted;
+    const disableP = disablePush('sess');
+    releasePost();
+    await resyncP;
+    await disableP;
+    expect(order).toEqual(['post', 'delete']);
+  });
+
+  it('skips a queued resync when disable starts first', async () => {
+    const unsubscribe = vi.fn().mockResolvedValue(true);
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({
+          endpoint: 'https://push.example/sub',
+          toJSON: () => ({
+            endpoint: 'https://push.example/sub',
+            keys: { p256dh: 'p256', auth: 'auth' },
+          }),
+          unsubscribe,
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    vi.mocked(deletePushSubscription).mockResolvedValue(undefined);
+    const resyncP = resyncPushSubscription('sess');
+    const disableP = disablePush('sess');
+    await resyncP;
+    await disableP;
+    expect(postPushSubscription).not.toHaveBeenCalled();
+    expect(deletePushSubscription).toHaveBeenCalled();
+  });
+
+  it('skips POST when disable starts during getSubscription', async () => {
+    let releaseGet!: () => void;
+    const getHold = new Promise<void>((resolve) => {
+      releaseGet = resolve;
+    });
+    let startedGet!: () => void;
+    const getStarted = new Promise<void>((resolve) => {
+      startedGet = resolve;
+    });
+    const unsubscribe = vi.fn().mockResolvedValue(true);
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockImplementation(async () => {
+          startedGet();
+          await getHold;
+          return {
+            endpoint: 'https://push.example/sub',
+            toJSON: () => ({
+              endpoint: 'https://push.example/sub',
+              keys: { p256dh: 'p256', auth: 'auth' },
+            }),
+            unsubscribe,
+          };
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    vi.mocked(deletePushSubscription).mockResolvedValue(undefined);
+    const resyncP = resyncPushSubscription('sess');
+    await getStarted;
+    const disableP = disablePush('sess');
+    releaseGet();
+    await resyncP;
+    await disableP;
+    expect(postPushSubscription).not.toHaveBeenCalled();
   });
 });
