@@ -1241,7 +1241,6 @@ describe('ForumBoard', () => {
     expect(screen.getAllByText('CHF 0.02').length).toBeGreaterThan(0);
   });
 
-
   it('keeps Continue on Android Mobile and does not auto-open the wallet', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
