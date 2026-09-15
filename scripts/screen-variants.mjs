@@ -1032,6 +1032,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'signed-in',
+    image: 'messages-id-signed-in.png',
+    visual: 'state-messages-id-signed-in',
+    needle: "getByRole('button', { name: 'Menu' })",
+  },
+  {
+    route: '/messages/[id]',
     id: 'missing',
     image: 'messages-id-missing.png',
     visual: 'state-messages-id-missing',
