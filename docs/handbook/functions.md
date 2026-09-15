@@ -996,7 +996,7 @@
 
 ## Function: TrustChainLoader
 
-- **Purpose:** Client loader for `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain; retry with nodes only clears the banner (does not re-fetch seeds). A later successful hop also clears the banner.
+- **Purpose:** Client loader for `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain. Retry with nodes already on screen re-fetches that `?around=` hop (does not re-fetch seeds); the banner stays gone only if the hop succeeds.
 - **Inputs:** none (fetches on mount).
 - **Returns / side effects:** Loading, error+retry, empty, diagram, or diagram-plus-hop-error states.
 - **Used by:** `TrustChainPage`.

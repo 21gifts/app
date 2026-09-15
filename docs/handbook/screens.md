@@ -162,7 +162,7 @@ Fetch failed. Copy **Could not load the Trust Chain. Please try again.** and **T
 
 ### Variant: hop-error
 
-Founder seed is on screen. Clicking that person fails the hop fetch. The diagram stays; the same error copy and **Try again** sit above it. Retry clears the banner without re-fetching founder seeds.
+Founder seed is on screen. Clicking that person fails the hop fetch. The diagram stays; the same error copy and **Try again** sit above it. Retry re-fetches that hop without re-fetching founder seeds; the banner stays gone only if the hop succeeds.
 
 ![21.gifts Trust Chain hop error](images/trust-chain-hop-error.png)
 
