@@ -4481,6 +4481,79 @@ test('Function: PublicMessagePage — public note shows Hello from Ada', async (
   await expect(page.getByText('Hello from Ada')).toBeVisible();
 });
 
+test('Function: PublicMessageChrome — unsigned public note keeps public chrome', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByRole('link', { name: '21.gifts', exact: true })).toHaveAttribute(
+    'href',
+    '/',
+  );
+  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+});
+
+test('Function: PublicMessageChrome — signed-in public note shows back and Menu', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await seedAdaSession(page);
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByRole('link', { name: 'Back to the forum' }).first()).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+});
+
 test('Function: generateMetadata — public note HTML includes og:title', async ({ request }) => {
   const res = await request.get('/messages/11111111-1111-4111-8111-111111111111');
   expect(await res.text()).toContain('property="og:title"');

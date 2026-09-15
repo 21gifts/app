@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
-import { AppShell } from '@/components/AppShell';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { PublicMessageChrome } from '@/components/PublicMessageChrome';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
-import { Wordmark } from '@/components/ui';
 import { loadPublicMessageForOg, publicMessageOgMetadata } from '@/lib/public-message-og';
 
 /**
@@ -29,7 +27,7 @@ export async function generateMetadata({
  * `/messages/[id]` — public read-only HTML note by forum message UUID.
  *
  * JSON for the same note is `/public-messages/[id]`. No OnboardingGate, pay,
- * or composer.
+ * or composer. Body chrome is {@link PublicMessageChrome}.
  *
  * @param props - Dynamic route params (`id`).
  * @returns The public message screen.
@@ -41,13 +39,8 @@ export default async function PublicMessagePage({
 }): Promise<ReactElement> {
   const { id } = await params;
   return (
-    <AppShell
-      mode="fill"
-      align="center"
-      topLeft={<Wordmark href="/" />}
-      topRight={<LanguageSwitcher tone="light" />}
-    >
+    <PublicMessageChrome>
       <PublicMessageLoader key={id} id={id} />
-    </AppShell>
+    </PublicMessageChrome>
   );
 }
