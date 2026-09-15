@@ -2137,7 +2137,7 @@ describe('ForumLoader', () => {
     });
     expect(assign).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
   });
 

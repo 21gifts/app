@@ -342,7 +342,7 @@ The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 
 | Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                              | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, sentence-length links (**Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”), **Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 Content translation under a note or reply body is a labeled underline text control (`forum.translate` / show original / show translation), not an `IconButton` in the footer.
 
@@ -357,8 +357,8 @@ icon-only when the table says labeled) is an undeclared deviation.
 
 The signed-in **Menu** trigger stays labeled (icon plus visible Menu word).
 **Log out**, **Continue**, **I agree to these rules**,
-**Activate**, **Try again**, and sentence-length links stay
-labeled.
+**Activate**, **Try again**, pay-sheet **Pay**, and sentence-length
+links stay labeled.
 
 Reviewers follow `Review.md` and `docs/ui.md`.
 

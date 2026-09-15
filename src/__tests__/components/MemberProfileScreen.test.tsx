@@ -533,7 +533,7 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
     });
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
   });
 
@@ -555,7 +555,7 @@ describe('MemberProfileScreen', () => {
     });
     expect(assign).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     vi.unstubAllGlobals();
   });
@@ -584,7 +584,7 @@ describe('MemberProfileScreen', () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
     expect(assign).not.toHaveBeenCalled();
-    expect(screen.queryByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
     vi.unstubAllGlobals();
   });
 

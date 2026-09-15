@@ -27,7 +27,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
+import { Button, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import {
@@ -498,6 +498,10 @@ export function ForumBoard({
     void Promise.resolve(onPaySubmit());
   };
 
+  const openWalletOfSatoshi = (href: string): void => {
+    window.location.href = href;
+  };
+
   const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     if (replyPosting || repliesLoading || repliesError || replies === null) {
@@ -595,11 +599,14 @@ export function ForumBoard({
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
-          /* v8 ignore next 5 -- SSR has no navigator */
+          /* v8 ignore next 8 -- SSR has no navigator */
+          const isSmartphone =
+            typeof navigator !== 'undefined'
+              ? isSmartphoneUserAgent(navigator.userAgent)
+              : false;
           const isIosPhone =
             typeof navigator !== 'undefined'
-              ? isSmartphoneUserAgent(navigator.userAgent) &&
-                !isAndroidUserAgent(navigator.userAgent)
+              ? isSmartphone && !isAndroidUserAgent(navigator.userAgent)
               : false;
           /* v8 ignore start -- Android vs iOS wallet href */
           const android =
@@ -611,6 +618,30 @@ export function ForumBoard({
                 ? walletOfSatoshiIntentHref(invoiceForCard.pr)
                 : walletOfSatoshiHref(invoiceForCard.pr);
           /* v8 ignore stop */
+
+          const walletButton =
+            wosHref === null ? null : (
+              <Button
+                type="button"
+                aria-label={t('forum.payOpenWalletAria')}
+                disabled={payBusy}
+                icon={
+                  <img
+                    src="/wos-icon.png"
+                    alt=""
+                    width={20}
+                    height={20}
+                    aria-hidden="true"
+                    className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                  />
+                }
+                onClick={() => {
+                  openWalletOfSatoshi(wosHref);
+                }}
+              >
+                {t('forum.payOpenWallet')}
+              </Button>
+            );
 
           const taggedRole = forumTaggedRole(message.role);
           const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
@@ -778,7 +809,7 @@ export function ForumBoard({
                 ) : null}
               </div>
 
-              {sheetOpen && invoiceForCard === null ? (
+              {sheetOpen && (isSmartphone || invoiceForCard === null) ? (
                 <form
                   onSubmit={handlePaySubmit}
                   onClick={stopCardToggle}
@@ -803,7 +834,7 @@ export function ForumBoard({
                     spellCheck={false}
                     placeholder={t('forum.payAmountPlaceholder')}
                     value={payDraft}
-                    disabled={payBusy}
+                    disabled={payBusy || invoiceForCard !== null}
                     onChange={(event) => onPayDraftChange(event.target.value)}
                   />
                   {payError === 'amount' ? (
@@ -826,21 +857,25 @@ export function ForumBoard({
                       {t('forum.payErrorAuthorWallet')}
                     </p>
                   ) : null}
-                  <Button
-                    type="submit"
-                    disabled={payBusy}
-                    icon={
-                      payBusy ? (
-                        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                      ) : undefined
-                    }
-                  >
-                    {isIosPhone ? t('forum.payNow') : t('forum.payContinue')}
-                  </Button>
+                  {invoiceForCard === null ? (
+                    <Button
+                      type="submit"
+                      disabled={payBusy}
+                      icon={
+                        payBusy ? (
+                          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                        ) : undefined
+                      }
+                    >
+                      {isIosPhone ? t('forum.payNow') : t('forum.payContinue')}
+                    </Button>
+                  ) : (
+                    walletButton
+                  )}
                 </form>
               ) : null}
 
-              {invoiceForCard !== null ? (
+              {invoiceForCard !== null && !isSmartphone ? (
                 <div
                   onClick={stopCardToggle}
                   className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
@@ -863,26 +898,7 @@ export function ForumBoard({
                   {showPaymentQr ? (
                     <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
                   ) : null}
-                  {/* v8 ignore start -- wosHref is set whenever an invoice is shown */}
-                  {wosHref !== null ? (
-                    <ButtonLink
-                      href={wosHref}
-                      aria-label={t('forum.payOpenWalletAria')}
-                      icon={
-                        <img
-                          src="/wos-icon.png"
-                          alt=""
-                          width={20}
-                          height={20}
-                          aria-hidden="true"
-                          className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                        />
-                      }
-                    >
-                      {t('forum.payOpenWallet')}
-                    </ButtonLink>
-                  ) : null}
-                  {/* v8 ignore stop */}
+                  {walletButton}
                   {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
                   {payWaiting ? (
                     <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>

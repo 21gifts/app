@@ -183,18 +183,70 @@ async function stubPayableNote(page: Page): Promise<void> {
 const walletAssignByPage = new WeakMap<Page, string>();
 
 async function stubWalletLocationAssign(page: Page): Promise<void> {
+  const record = (href: string): void => {
+    if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+      walletAssignByPage.set(page, href);
+    }
+  };
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Page.enable');
   cdp.on('Page.frameRequestedNavigation', (event: { url?: string }) => {
-    const href = event.url ?? '';
-    if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
-      walletAssignByPage.set(page, href);
+    record(event.url ?? '');
+  });
+  await page.exposeFunction('__recordWalletAssign', record);
+  await page.addInitScript(() => {
+    const recordHref = (
+      window as unknown as { __recordWalletAssign?: (href: string) => void }
+    ).__recordWalletAssign;
+    const capture = (href: string): boolean => {
+      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+        (window as unknown as { __recordedWalletHref?: string }).__recordedWalletHref = href;
+        recordHref?.(href);
+        return true;
+      }
+      return false;
+    };
+    const loc = window.location;
+    const assign = loc.assign.bind(loc);
+    loc.assign = (url: string | URL) => {
+      const href = String(url);
+      if (capture(href)) {
+        return;
+      }
+      assign(url);
+    };
+    const desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(loc), 'href');
+    if (desc?.set !== undefined && desc.get !== undefined) {
+      Object.defineProperty(loc, 'href', {
+        configurable: true,
+        enumerable: true,
+        get() {
+          return desc.get!.call(loc);
+        },
+        set(value: string) {
+          const href = String(value);
+          if (capture(href)) {
+            return;
+          }
+          desc.set!.call(loc, value);
+        },
+      });
     }
   });
 }
 
-function recordedWalletAssign(page: Page): string | undefined {
-  return walletAssignByPage.get(page);
+async function recordedWalletAssign(page: Page): Promise<string | undefined> {
+  const fromMap = walletAssignByPage.get(page);
+  if (fromMap !== undefined) {
+    return fromMap;
+  }
+  try {
+    return await page.evaluate(
+      () => (window as unknown as { __recordedWalletHref?: string }).__recordedWalletHref,
+    );
+  } catch {
+    return undefined;
+  }
 }
 
 async function submitPayAmount(page: Page): Promise<void> {
@@ -234,7 +286,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByLabel('Amount').fill('21');
   await submitPayAmount(page);
-  await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 }
 
 async function stubGiftStats(page: Page, body: unknown): Promise<void> {
@@ -2571,10 +2623,10 @@ test('Function: openInSystemBrowser — Open in browser is shown in Telegram Web
 test('Function: QrCode — pay sheet shows the invoice QR', async ({ page, request }) => {
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-  expect(recordedWalletAssign(page)).toBeUndefined();
+  expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
-test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet link', async ({
+test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet button', async ({
   page,
   request,
 }) => {
@@ -2586,8 +2638,8 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
   });
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  expect(recordedWalletAssign(page)).toBeUndefined();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
 test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({
@@ -2595,9 +2647,8 @@ test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', 
   request,
 }) => {
   await openPayInvoice(page, request);
-  const href = await page
-    .getByRole('link', { name: 'Pay with Wallet of Satoshi' })
-    .getAttribute('href');
+  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
+  const href = await recordedWalletAssign(page);
   expect(href?.startsWith('walletofsatoshi:lightning:LNBC')).toBe(true);
 });
 
@@ -2606,7 +2657,7 @@ test('Function: walletOfSatoshiHref — pay sheet opens Wallet of Satoshi', asyn
   request,
 }) => {
   await openPayInvoice(page, request);
-  await expect(page.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 });
 
 test('Function: isAndroidUserAgent — Android pay sheet uses an Intent href', async ({
@@ -2620,9 +2671,8 @@ test('Function: isAndroidUserAgent — Android pay sheet uses an Intent href', a
     });
   });
   await openPayInvoice(page, request);
-  const href = await page
-    .getByRole('link', { name: 'Pay with Wallet of Satoshi' })
-    .getAttribute('href');
+  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
+  const href = await recordedWalletAssign(page);
   expect(href?.startsWith('intent:lightning:')).toBe(true);
 });
 
@@ -2637,9 +2687,8 @@ test('Function: walletOfSatoshiIntentHref — Android pay sheet pins the WoS pac
     });
   });
   await openPayInvoice(page, request);
-  const href = await page
-    .getByRole('link', { name: 'Pay with Wallet of Satoshi' })
-    .getAttribute('href');
+  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
+  const href = await recordedWalletAssign(page);
   expect(href?.includes('com.livingroomofsatoshi.wallet')).toBe(true);
 });
 
