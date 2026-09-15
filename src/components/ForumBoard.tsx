@@ -927,7 +927,7 @@ export function ForumBoard({
                   ) : null}
                   {replies !== null && !repliesLoading && !repliesError ? (
                     <ul className="flex flex-col gap-3">
-                      {replies.map((reply) => {
+                      {(Array.isArray(replies) ? replies : []).map((reply) => {
                         const replyTaggedRole = forumTaggedRole(reply.role);
                         const replyRoleKeys =
                           replyTaggedRole === null ? null : ROLE_TAG_KEYS[replyTaggedRole];
