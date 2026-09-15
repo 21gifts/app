@@ -7,23 +7,26 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { deleteMessage } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Props for the inline post moderation control. */
+/** Props for the inline post or reply moderation control. */
 export interface DeletePostControlProps {
-  /** Post to delete. */
+  /** Post or reply to delete. */
   messageId: string;
-  /** Remove the successfully deleted post from the board. */
+  /** Remove the successfully deleted post or reply from the board. */
   onDeleted: (messageId: string) => void;
+  /** Defaults to `'post'`. */
+  kind?: 'post' | 'reply';
 }
 
 /**
  * Founder/moderator-only delete action with confirmation, pending and retry states.
  *
- * @param props - Post id and successful removal callback.
+ * @param props - Message id, successful removal callback, and optional kind.
  * @returns Inline moderation controls, or null for other roles.
  */
 export function DeletePostControl({
   messageId,
   onDeleted,
+  kind = 'post',
 }: DeletePostControlProps): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
@@ -32,6 +35,9 @@ export function DeletePostControl({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const inFlight = useRef(false);
+  const idleLabel = kind === 'reply' ? t('forum.deleteReply') : t('forum.delete');
+  const confirmLabel = kind === 'reply' ? t('forum.deleteReplyConfirm') : t('forum.deleteConfirm');
+  const errorLabel = kind === 'reply' ? t('forum.deleteReplyError') : t('forum.deleteError');
 
   if (session === null || (account?.role !== 'founder' && account?.role !== 'moderator')) {
     return null;
@@ -64,13 +70,13 @@ export function DeletePostControl({
       {confirming ? (
         <div
           role="group"
-          aria-label={t('forum.deleteConfirm')}
+          aria-label={confirmLabel}
           className="flex flex-col gap-2 rounded-xl border border-app-border p-3"
         >
-          <p className="text-sm text-app-fg">{t('forum.deleteConfirm')}</p>
+          <p className="text-sm text-app-fg">{confirmLabel}</p>
           {error ? (
             <p role="alert" className="text-sm text-app-danger">
-              {t('forum.deleteError')}
+              {errorLabel}
             </p>
           ) : null}
           <div className="flex gap-3">
@@ -103,8 +109,8 @@ export function DeletePostControl({
         <IconButton
           size="sm"
           variant="ghost"
-          aria-label={t('forum.delete')}
-          title={t('forum.delete')}
+          aria-label={idleLabel}
+          title={idleLabel}
           onClick={() => setConfirming(true)}
         >
           <Trash2 aria-hidden="true" className="h-4 w-4" />

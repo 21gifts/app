@@ -54,20 +54,24 @@ export function isIosSafari(): boolean {
   return true;
 }
 
+let pushOps: Promise<void> = Promise.resolve();
+let pushEpoch = 0;
+
+function runPushOp(op: () => Promise<void>): Promise<void> {
+  const run = pushOps.then(op, op);
+  pushOps = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 /**
- * Enable Web Push for the signed-in member: register the worker, subscribe, and
- * POST the subscription to the api.
+ * Subscribe with the VAPID key and POST the endpoint to the api.
  *
  * @param sessionToken - Bearer session token.
- * @throws Error with message `Notification permission denied` when permission is
- * not granted, `Push is not configured` when the api reports 503, or
- * `Invalid subscription` when the browser omits endpoint or keys.
  */
-export async function enablePush(sessionToken: string): Promise<void> {
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') {
-    throw new Error('Notification permission denied');
-  }
+async function subscribeAndPost(sessionToken: string): Promise<void> {
   const registration = await registerPushWorker();
   const publicKey = await fetchVapidPublicKey(sessionToken);
   const applicationServerKey = new Uint8Array(vapidPublicKeyToBytes(publicKey));
@@ -102,20 +106,103 @@ export async function enablePush(sessionToken: string): Promise<void> {
 }
 
 /**
+ * Enable Web Push for the signed-in member: register the worker, subscribe, and
+ * POST the subscription to the api.
+ *
+ * @param sessionToken - Bearer session token.
+ * @throws Error with message `Notification permission denied` when permission is
+ * not granted, `Push is not configured` when the api reports 503, or
+ * `Invalid subscription` when the browser omits endpoint or keys.
+ */
+export async function enablePush(sessionToken: string): Promise<void> {
+  const epoch = pushEpoch;
+  await runPushOp(async () => {
+    if (epoch !== pushEpoch) {
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      throw new Error('Notification permission denied');
+    }
+    if (epoch !== pushEpoch) {
+      return;
+    }
+    await subscribeAndPost(sessionToken);
+  });
+}
+
+/**
+ * Re-POST an existing Web Push subscription when OS permission is already
+ * granted. No-op when Push APIs are missing, permission is not `granted`, or
+ * there is no local subscription (opt-out). Does not call `requestPermission`
+ * or `subscribe()`. POST failure leaves the local subscription in place.
+ *
+ * @param sessionToken - Bearer session token.
+ * @throws When persisting the existing subscription fails (503
+ * `Push is not configured`, or the api error on other non-2xx).
+ */
+export async function resyncPushSubscription(sessionToken: string): Promise<void> {
+  const epoch = pushEpoch;
+  await runPushOp(async () => {
+    if (epoch !== pushEpoch) {
+      return;
+    }
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+      return;
+    }
+    if (
+      typeof navigator.serviceWorker === 'undefined' ||
+      typeof window.PushManager === 'undefined'
+    ) {
+      return;
+    }
+    const registration = await registerPushWorker();
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription === null) {
+      return;
+    }
+    if (epoch !== pushEpoch) {
+      return;
+    }
+    const json = subscription.toJSON();
+    const endpoint = json.endpoint;
+    const p256dh = json.keys?.['p256dh'];
+    const auth = json.keys?.['auth'];
+    if (
+      typeof endpoint !== 'string' ||
+      endpoint === '' ||
+      typeof p256dh !== 'string' ||
+      p256dh === '' ||
+      typeof auth !== 'string' ||
+      auth === ''
+    ) {
+      return;
+    }
+    await postPushSubscription(sessionToken, {
+      endpoint,
+      keys: { p256dh, auth },
+    });
+  });
+}
+
+/**
  * Disable Web Push for the signed-in member: DELETE the endpoint on the api
  * (when a subscription exists) and unsubscribe locally.
  *
  * @param sessionToken - Bearer session token.
  */
 export async function disablePush(sessionToken: string): Promise<void> {
-  const registration = await registerPushWorker();
-  const subscription = await registration.pushManager.getSubscription();
-  if (subscription === null) {
-    return;
-  }
-  try {
-    await deletePushSubscription(sessionToken, subscription.endpoint);
-  } finally {
-    await subscription.unsubscribe().catch(() => undefined);
-  }
+  pushEpoch += 1;
+  await runPushOp(async () => {
+    const registration = await registerPushWorker();
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription === null) {
+      return;
+    }
+    try {
+      await deletePushSubscription(sessionToken, subscription.endpoint);
+    } finally {
+      await subscription.unsubscribe().catch(() => undefined);
+    }
+  });
 }

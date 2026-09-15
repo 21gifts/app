@@ -414,7 +414,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Home                 | `Home`                        | `/welcome`                                                                          |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
-| Notifications        | `Bell`                        | `/notifications`                                                                    |
+| Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero               |
 | Messages             | `Inbox`                       | `/messages`                                                                         |
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
 | optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
@@ -529,7 +529,7 @@ Content translation under a note or reply body is a labeled underline text contr
 
 **Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Skip**, **Activate**, **Try again**.
 
-Founder/moderator **Trash2** on notes is icon-only with inline confirm (`DeletePostControl`).
+Founder/moderator **Trash2** on notes and nested replies is icon-only with inline confirm (`DeletePostControl`).
 
 **Button size scale (one).**
 
@@ -735,7 +735,7 @@ NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: up
 
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Menu has no number format.
+See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Notifications unread count only when greater than zero. Menu has no number format.
 
 ### Banner (living-room laws)
 
@@ -759,7 +759,7 @@ Expand: the whole card is `role="button"` (click to expand replies). Inner contr
 
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
-**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Not a labeled button.
+**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies use the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Nested reply action row is `mt-2 flex flex-wrap items-start gap-5` only when PM and trash are both visible; a single control stays `mt-2`. Not a labeled button.
 
 ### Inbox thread bubbles
 

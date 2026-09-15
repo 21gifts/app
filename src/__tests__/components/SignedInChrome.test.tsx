@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
-import { fetchAccountActivity } from '@/lib/api';
+import { fetchAccountActivity, fetchNotifications } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
-import { isStandaloneDisplay } from '@/lib/push';
+import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
@@ -65,6 +65,8 @@ vi.mock('@/lib/pwa-install', () => ({
 vi.mock('@/lib/push', () => ({
   isIosSafari: vi.fn(() => false),
   isStandaloneDisplay: vi.fn(() => false),
+  resyncPushSubscription: vi.fn().mockResolvedValue(undefined),
+  enablePush: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
@@ -97,6 +99,7 @@ vi.mock('@/lib/api', () => ({
       quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
     },
   }),
+  fetchNotifications: vi.fn().mockResolvedValue({ notifications: [], unreadCount: 0 }),
 }));
 
 const useAccountTotalsActual = (
@@ -132,6 +135,9 @@ beforeEach(() => {
   vi.mocked(isInAppBrowser).mockReturnValue(false);
   vi.mocked(useAccountTotals).mockImplementation(useAccountTotalsActual);
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
+  vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 0 });
+  vi.mocked(resyncPushSubscription).mockResolvedValue(undefined);
+  vi.mocked(enablePush).mockResolvedValue(undefined);
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status: 'idle',
     login: vi.fn(),
@@ -184,6 +190,7 @@ describe('SignedInChrome', () => {
     const notifications = screen.getByRole('link', { name: 'Notifications' });
     const messages = screen.getByRole('link', { name: 'Messages' });
     expect(notifications.getAttribute('href')).toBe('/notifications');
+    expect(notifications.getAttribute('aria-label')).toBe('Notifications');
     expect(messages.getAttribute('href')).toBe('/messages');
     expect(notifications.nextElementSibling).toBe(messages);
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
@@ -211,6 +218,101 @@ describe('SignedInChrome', () => {
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Notifications' }).querySelector('svg')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Contact' }).querySelector('svg')).toBeTruthy();
+  });
+
+  it('shows the unread count on Notifications when greater than zero', async () => {
+    vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 3 });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Notifications, 3 unread' })).toBeTruthy();
+    });
+    expect(screen.getByRole('link', { name: 'Notifications, 3 unread' }).textContent).toContain(
+      '3',
+    );
+  });
+
+  it('swallows resync rejection on mount', async () => {
+    cleanup();
+    vi.mocked(resyncPushSubscription).mockRejectedValue(new Error('boom'));
+    renderWithLocale(<SignedInChrome />);
+    await waitFor(() => {
+      expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledWith('tok');
+    });
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+  });
+
+  it('does not resync push when there is no session', () => {
+    cleanup();
+    vi.mocked(resyncPushSubscription).mockClear();
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(<SignedInChrome />);
+    expect(vi.mocked(resyncPushSubscription)).not.toHaveBeenCalled();
+  });
+
+  it('does not enable or resync push when Notifications is opened without a session', () => {
+    cleanup();
+    vi.mocked(enablePush).mockClear();
+    vi.mocked(resyncPushSubscription).mockClear();
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    expect(vi.mocked(enablePush)).not.toHaveBeenCalled();
+    expect(vi.mocked(resyncPushSubscription)).not.toHaveBeenCalled();
+  });
+
+  it('asks for OS permission when Notifications is opened without grant', () => {
+    vi.mocked(enablePush).mockClear();
+    vi.stubGlobal('Notification', { permission: 'default' });
+    vi.stubGlobal('navigator', { serviceWorker: {} });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    expect(vi.mocked(enablePush)).toHaveBeenCalledWith('tok');
+  });
+
+  it('does not ask for OS permission when PushManager is missing', () => {
+    vi.mocked(enablePush).mockClear();
+    vi.mocked(resyncPushSubscription).mockClear();
+    vi.stubGlobal('Notification', { permission: 'default' });
+    vi.stubGlobal('navigator', { serviceWorker: {} });
+    const original = window.PushManager;
+    // @ts-expect-error coverage: missing PushManager
+    delete window.PushManager;
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    window.PushManager = original;
+    expect(vi.mocked(enablePush)).not.toHaveBeenCalled();
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledWith('tok');
+  });
+
+  it('resyncs the existing subscription when Notifications is opened with grant', () => {
+    vi.mocked(enablePush).mockClear();
+    vi.mocked(resyncPushSubscription).mockClear();
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    expect(vi.mocked(enablePush)).not.toHaveBeenCalled();
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledWith('tok');
+  });
+
+  it('swallows enablePush and resync rejection on Notifications click', async () => {
+    vi.mocked(enablePush).mockRejectedValue(new Error('denied'));
+    vi.stubGlobal('Notification', { permission: 'denied' });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    vi.mocked(resyncPushSubscription).mockRejectedValue(new Error('boom'));
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
+    await waitFor(() => {
+      expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalled();
+    });
   });
 
   it('ignores non-Escape keydown while the menu is open', () => {

@@ -4147,6 +4147,30 @@ test('Function: LogoutButton — log out returns to login', async ({ page, reque
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
+test('Function: useUnreadCount — menu shows unread notification count', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+});
+
+test('Function: resyncPushSubscription — signed-in chrome still shows Menu', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+});
+
 test('Function: SignedInChrome — Menu reveals Profile, language, and log out', async ({
   page,
   request,
@@ -5272,6 +5296,135 @@ test('Function: DeletePostControl — ordinary members have no delete action', a
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
+});
+
+test('Function: DeletePostControl — ordinary members have no reply delete action', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  const id = 'm-expand';
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id,
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Show replies' }).click();
+  await expect(page.getByText('A reply')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
+});
+
+test('Function: DeletePostControl — moderator deletes a reply', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  const parentId = '11111111-1111-4111-8111-111111111111';
+  const replyId = '22222222-2222-4222-8222-222222222222';
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      json: {
+        messages: [
+          {
+            id: parentId,
+            accountId: 'other',
+            name: 'Bob',
+            text: 'Post to moderate',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      },
+    });
+  });
+  await page.route(`**/forum/messages/${parentId}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: replyId,
+            name: 'Pat',
+            text: 'Reply to moderate',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  let deletes = 0;
+  await page.route(`**/forum/messages/${replyId}`, async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.fallback();
+      return;
+    }
+    deletes += 1;
+    await route.fulfill({ status: 204 });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+  await page.getByRole('button', { name: 'Cancel deletion' }).click();
+  expect(deletes).toBe(0);
+  await expect(page.getByText('Reply to moderate')).toBeVisible();
+  await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm deletion' }).click();
+  await expect(page.getByText('Reply to moderate')).not.toBeVisible();
+  await expect(page.getByText('Post to moderate')).toBeVisible();
+  expect(deletes).toBe(1);
 });
 
 test('Function: detectNoteLanguage — German note offers Translate', async ({ page }) => {

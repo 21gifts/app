@@ -206,7 +206,7 @@ export interface ForumBoardProps {
   pmBusyId: string | null;
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
-  /** Remove a moderated post after a successful server deletion. */
+  /** Remove a moderated post or nested reply after a successful server deletion. */
   onDeleted?: (messageId: string) => void;
 }
 
@@ -1007,28 +1007,45 @@ export function ForumBoard({
                               </p>
                             ) : null}
                             {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
-                            {showForumPm(ownAccountId, ownName, reply) ? (
-                              <div className="mt-2">
-                                <IconButton
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  aria-label={t('forum.pm')}
-                                  title={t('forum.pm')}
-                                  disabled={pmBusyId !== null}
-                                  onClick={() => {
-                                    onPm(reply.id);
-                                  }}
-                                >
-                                  {pmBusyId === reply.id ? (
-                                    <Loader2
-                                      aria-hidden="true"
-                                      className="h-3.5 w-3.5 animate-spin"
-                                    />
-                                  ) : (
-                                    <Mail aria-hidden="true" className="h-3.5 w-3.5" />
-                                  )}
-                                </IconButton>
+                            {showForumPm(ownAccountId, ownName, reply) ||
+                            onDeleted !== undefined ? (
+                              <div
+                                className={
+                                  showForumPm(ownAccountId, ownName, reply) &&
+                                  onDeleted !== undefined
+                                    ? 'mt-2 flex flex-wrap items-start gap-5'
+                                    : 'mt-2'
+                                }
+                              >
+                                {showForumPm(ownAccountId, ownName, reply) ? (
+                                  <IconButton
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    aria-label={t('forum.pm')}
+                                    title={t('forum.pm')}
+                                    disabled={pmBusyId !== null}
+                                    onClick={() => {
+                                      onPm(reply.id);
+                                    }}
+                                  >
+                                    {pmBusyId === reply.id ? (
+                                      <Loader2
+                                        aria-hidden="true"
+                                        className="h-3.5 w-3.5 animate-spin"
+                                      />
+                                    ) : (
+                                      <Mail aria-hidden="true" className="h-3.5 w-3.5" />
+                                    )}
+                                  </IconButton>
+                                ) : null}
+                                {onDeleted !== undefined ? (
+                                  <DeletePostControl
+                                    kind="reply"
+                                    messageId={reply.id}
+                                    onDeleted={onDeleted}
+                                  />
+                                ) : null}
                               </div>
                             ) : null}
                           </li>

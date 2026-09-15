@@ -3206,6 +3206,133 @@ test.describe('welcome forum variants', () => {
     });
   }
 
+  const replyDeleteTitles = {
+    'reply-moderation': 'welcome reply-moderation',
+    'reply-delete-confirm': 'welcome reply-delete-confirm',
+    'reply-deleting': 'welcome reply-deleting',
+    'reply-delete-error': 'welcome reply-delete-error',
+  } as const;
+  for (const state of [
+    'reply-moderation',
+    'reply-delete-confirm',
+    'reply-deleting',
+    'reply-delete-error',
+  ] as const) {
+    test(replyDeleteTitles[state], async ({ page }) => {
+      await seedAda(page, 'moderator');
+      await fulfillMixedSatsMessages(page);
+      await page.route(/\/messages$/, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            messages: [
+              {
+                id: 'm3',
+                name: 'Ada',
+                text: 'Thank you both — that helps.',
+                createdAt: '2026-08-28T12:00:00.000Z',
+                sats: 5,
+                payable: true,
+                hasPhoto: false,
+                role: 'moderator',
+              },
+              {
+                id: 'm2',
+                name: 'Carol',
+                text: 'I can send a small gift tomorrow.',
+                createdAt: '2026-08-28T11:00:00.000Z',
+                sats: 21,
+                payable: true,
+                hasPhoto: false,
+                role: 'verified',
+              },
+              {
+                id: 'm1',
+                name: 'Bob',
+                text: 'Does anyone have spare sats this week?',
+                createdAt: '2026-08-28T10:00:00.000Z',
+                sats: 0,
+                payable: true,
+                hasPhoto: false,
+                role: 'basis',
+                replyCount: 1,
+              },
+            ],
+          }),
+        });
+      });
+      await page.route('**/forum/messages/m1/replies', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            messages: [
+              {
+                id: 'r1',
+                name: 'Pat',
+                text: 'A reply',
+                createdAt: '2026-08-28T10:30:00.000Z',
+                sats: 0,
+                payable: false,
+                hasPhoto: false,
+                role: 'basis',
+              },
+            ],
+          }),
+        });
+      });
+      let release: () => void = () => undefined;
+      await page.route('**/forum/messages/r1', async (route) => {
+        if (route.request().method() !== 'DELETE') {
+          await route.fallback();
+          return;
+        }
+        if (state === 'reply-deleting') {
+          await new Promise<void>((resolve) => {
+            release = resolve;
+          });
+        }
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: '{"error":"Unavailable"}',
+        });
+      });
+      await page.goto('/welcome');
+      await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+      await page.getByRole('button', { name: 'Show replies', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toBeVisible();
+      if (state !== 'reply-moderation') {
+        await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+        await expect(
+          page.getByRole('group', { name: 'Delete this reply from 21.gifts?' }),
+        ).toBeVisible();
+      }
+      if (state === 'reply-deleting' || state === 'reply-delete-error') {
+        await page.getByRole('button', { name: 'Confirm deletion' }).click();
+        if (state === 'reply-deleting') {
+          await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeDisabled();
+        } else {
+          await expect(
+            page
+              .getByRole('group', { name: 'Delete this reply from 21.gifts?' })
+              .getByRole('alert'),
+          ).toHaveText('Could not delete the reply. Please try again.');
+        }
+      }
+      if (state === 'reply-moderation') await shotScreen(page, 'state-welcome-reply-moderation');
+      if (state === 'reply-delete-confirm') {
+        await shotScreen(page, 'state-welcome-reply-delete-confirm');
+      }
+      if (state === 'reply-deleting') await shotScreen(page, 'state-welcome-reply-deleting');
+      if (state === 'reply-delete-error') {
+        await shotScreen(page, 'state-welcome-reply-delete-error');
+      }
+      release();
+    });
+  }
+
   test('welcome all', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
@@ -3793,6 +3920,22 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu');
+  });
+
+  test('welcome menu-unread', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-unread');
   });
 
   test('welcome menu-language-open', async ({ page }) => {

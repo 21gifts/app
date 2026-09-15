@@ -1,5 +1,13 @@
 /* Push-only service worker for 21.gifts. No cache/offline strategy in v1. */
 
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', (event) => {
   let payload = {};
   try {
@@ -19,6 +27,7 @@ self.addEventListener('push', (event) => {
     body,
     data: { url },
     icon: '/apple-touch-icon.png',
+    badge: '/apple-touch-icon.png',
   };
   if (tag !== undefined) {
     options.tag = tag;

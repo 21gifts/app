@@ -276,6 +276,34 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'reply-moderation',
+    image: 'welcome-reply-moderation.png',
+    visual: 'state-welcome-reply-moderation',
+    needle: 'Delete reply',
+  },
+  {
+    route: '/welcome',
+    id: 'reply-delete-confirm',
+    image: 'welcome-reply-delete-confirm.png',
+    visual: 'state-welcome-reply-delete-confirm',
+    needle: 'Delete this reply from 21.gifts?',
+  },
+  {
+    route: '/welcome',
+    id: 'reply-deleting',
+    image: 'welcome-reply-deleting.png',
+    visual: 'state-welcome-reply-deleting',
+    needle: 'welcome reply-deleting',
+  },
+  {
+    route: '/welcome',
+    id: 'reply-delete-error',
+    image: 'welcome-reply-delete-error.png',
+    visual: 'state-welcome-reply-delete-error',
+    needle: 'Could not delete the reply. Please try again.',
+  },
+  {
+    route: '/welcome',
     id: 'all',
     image: 'welcome-all.png',
     visual: 'state-welcome-all',
@@ -469,6 +497,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-menu.png',
     visual: 'state-welcome-menu',
     needle: "getByRole('link', { name: /Profile/",
+  },
+  {
+    route: '/welcome',
+    id: 'menu-unread',
+    image: 'welcome-menu-unread.png',
+    visual: 'state-welcome-menu-unread',
+    needle: "getByRole('link', { name: 'Notifications, 3 unread' })",
   },
   {
     route: '/welcome',

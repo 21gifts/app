@@ -242,14 +242,14 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/push/vapid-public` (VAPID application server public key for Web Push subscribe).
 - **Errors:** Upstream 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/profile`.
+- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/profile` and via `enablePush` from the SignedInChrome Notifications click.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/push-subscriptions
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/push-subscriptions` (register a browser push subscription: `{ endpoint, keys: { p256dh, auth } }`).
 - **Errors:** Upstream 400 `{ error: "Invalid subscription" }`, 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `postPushSubscription` via `enablePush` on `/profile`.
+- **Used by:** `postPushSubscription` via `enablePush` on `/profile`, via `enablePush` from the SignedInChrome Notifications click, and via `resyncPushSubscription` in `SignedInChrome`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /conversations
@@ -284,7 +284,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, and payments for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
-- **Used by:** `fetchNotifications` on `/notifications`.
+- **Used by:** `fetchNotifications` via `NotificationsLoader` on `/notifications` and via `useUnreadCount` in `SignedInChrome`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /forum/notifications/read-all
