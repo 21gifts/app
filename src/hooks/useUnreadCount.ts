@@ -12,9 +12,11 @@ import { useAuthStore } from '@/stores/auth-store';
  * Calls `GET /forum/notifications` when a session exists. `refreshKey` retriggers
  * the fetch (Menu open). No session → `0`. Errors resolve to `0` without
  * throwing into the UI. Does not mark notifications read. Also updates the
- * home-screen app badge via `setUnreadAppBadge` with the same number (or `0`
- * when there is no session or the fetch fails). A cancelled fetch does not
- * update state or the badge.
+ * home-screen app badge via `setUnreadAppBadge` with the loaded count. A
+ * hydrating store (`session` null while `loadSession()` still has a token)
+ * does not clear the badge. Logout (`loadSession()` null) and fetch errors
+ * clear it to `0`. A cancelled fetch does not update state or the badge.
+ * An epoch change after the fetch started skips the badge write.
  *
  * @param refreshKey - Changing this value starts another fetch while signed in.
  * @returns Current unread count.

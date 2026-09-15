@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Account } from '@/lib/api-types';
+import { setUnreadAppBadge } from '@/lib/app-badge';
 import { clearSession, saveSession } from '@/lib/session-storage';
 
 /**
@@ -27,7 +28,7 @@ interface AuthState {
    * @param account - The updated account.
    */
   setAccount(account: Account): void;
-  /** Clears the session from state and from storage. */
+  /** Clears the session from state and from storage, and the home-screen badge. */
   clearAuth(): void;
 }
 
@@ -51,6 +52,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   clearAuth: () => {
     clearSession();
+    setUnreadAppBadge(0);
     set({ session: null, account: null });
   },
 }));
