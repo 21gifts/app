@@ -820,9 +820,6 @@ export function ForumBoard({
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
                   {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
                 </p>
->>>>>>> 45da614a (Show ₿-only when a fiat rate is missing and follow locale default on refresh.)
-                  ) : null}
-                </p>
                 {message.payable ? (
                   <IconButton
                     type="button"
