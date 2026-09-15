@@ -564,11 +564,11 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 ```tsx
 export interface AppShellProps {
   children: ReactNode;
-  mode: "fill" | "flow";
+  mode: 'fill' | 'flow';
   topLeft?: ReactNode;
   topRight?: ReactNode;
   className?: string;
-  align?: "start" | "center"; // fill only
+  align?: 'start' | 'center'; // fill only
 }
 
 export interface PageChromeProps {
@@ -592,8 +592,8 @@ Slot registrars: `AppShellHeader`, `AppShellFooter`, `AppShellTopLeft` (child re
 ```tsx
 export function Wordmark(props: {
   href?: string; // omit → <span>, not a link
-  tone?: "app" | "dark"; // app = app-fg; dark = paper on ink
-  size?: "header" | "footer"; // header 17px (default); footer 15px
+  tone?: 'app' | 'dark'; // app = app-fg; dark = paper on ink
+  size?: 'header' | 'footer'; // header 17px (default); footer 15px
 }): ReactElement;
 ```
 
@@ -695,8 +695,8 @@ export function SegmentedControl<T extends string>(props: {
   }[];
   onChange: (value: T) => void;
   ariaLabel: string;
-  tone: "gift" | "neutral";
-  shell?: "app" | "dark";
+  tone: 'gift' | 'neutral';
+  shell?: 'app' | 'dark';
   className?: string;
 }): ReactElement;
 ```
