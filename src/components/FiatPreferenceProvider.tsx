@@ -76,7 +76,10 @@ export function FiatPreferenceProvider(props: {
 
   const setFiat = useCallback(
     (next: FiatCode): void => {
-      if (next === fiat && readFiatCookie() === next) {
+      if (readFiatCookie() === next) {
+        if (next !== fiat) {
+          setFiatState(next);
+        }
         return;
       }
       setFiatState(next);

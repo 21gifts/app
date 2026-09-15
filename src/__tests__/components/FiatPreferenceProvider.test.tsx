@@ -167,6 +167,32 @@ describe('FiatPreferenceProvider', () => {
     }
   });
 
+  it('does not rewrite when the cookie already matches even if in-memory state is stale', () => {
+    const cookieSet = vi.fn();
+    const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => `${FIAT_COOKIE}=CHF`,
+      set: cookieSet,
+    });
+    try {
+      render(
+        <FiatPreferenceProvider initial="USD">
+          <Probe />
+        </FiatPreferenceProvider>,
+      );
+      act(() => {
+        screen.getByRole('button', { name: 'set-chf' }).click();
+      });
+      expect(cookieSet).not.toHaveBeenCalled();
+      expect(screen.getByTestId('code').textContent).toBe('CHF');
+    } finally {
+      if (cookieDesc !== undefined) {
+        Object.defineProperty(document, 'cookie', cookieDesc);
+      }
+    }
+  });
+
   it('treats a malformed cookie as absent and still writes', () => {
     const cookieSet = vi.fn();
     const cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
