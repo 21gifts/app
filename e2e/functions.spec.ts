@@ -5035,6 +5035,18 @@ test('Function: proxyPushVapidPublicGet — GET /push/vapid-public without beare
   expect((await request.get('/push/vapid-public')).status()).toBe(401);
 });
 
+test('Function: setUnreadAppBadge — GET /push/vapid-public without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/push/vapid-public')).status()).toBe(401);
+});
+
+test('Function: push service worker — GET /push/vapid-public without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/push/vapid-public')).status()).toBe(401);
+});
+
 test('Function: fetchVapidPublicKey — GET /push/vapid-public with bearer is 200', async ({
   request,
 }) => {

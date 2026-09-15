@@ -8,10 +8,15 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn(),
 }));
+vi.mock('@/lib/app-badge', () => ({
+  setUnreadAppBadge: vi.fn(),
+}));
 
 import { fetchNotifications } from '@/lib/api';
+import { setUnreadAppBadge } from '@/lib/app-badge';
 
 const fetchMock = vi.mocked(fetchNotifications);
+const setBadgeMock = vi.mocked(setUnreadAppBadge);
 
 function Probe({ refreshKey }: { refreshKey: boolean }): ReactElement {
   const { unreadCount } = useUnreadCount(refreshKey);
@@ -21,6 +26,7 @@ function Probe({ refreshKey }: { refreshKey: boolean }): ReactElement {
 describe('useUnreadCount', () => {
   beforeEach(() => {
     fetchMock.mockReset();
+    setBadgeMock.mockClear();
     useAuthStore.setState({ session: 'tok', account: null });
   });
 
@@ -33,6 +39,7 @@ describe('useUnreadCount', () => {
     renderWithLocale(<Probe refreshKey={false} />);
     expect(screen.getByText('count:0')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(setBadgeMock).toHaveBeenCalledWith(0);
   });
 
   it('loads unreadCount from GET /forum/notifications', async () => {
@@ -42,6 +49,7 @@ describe('useUnreadCount', () => {
       expect(screen.getByText('count:4')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledWith('tok');
+    expect(setBadgeMock).toHaveBeenCalledWith(4);
   });
 
   it('resolves errors to 0', async () => {
@@ -50,6 +58,7 @@ describe('useUnreadCount', () => {
     await waitFor(() => {
       expect(screen.getByText('count:0')).toBeTruthy();
     });
+    expect(setBadgeMock).toHaveBeenCalledWith(0);
   });
 
   it('drops a stale result when the session changes mid-flight', async () => {
@@ -71,6 +80,8 @@ describe('useUnreadCount', () => {
     await waitFor(() => {
       expect(screen.getByText('count:2')).toBeTruthy();
     });
+    expect(setBadgeMock).toHaveBeenCalledWith(2);
+    expect(setBadgeMock).not.toHaveBeenCalledWith(9);
   });
 
   it('drops a stale rejection when the session changes mid-flight', async () => {

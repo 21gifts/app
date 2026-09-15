@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchNotifications } from '@/lib/api';
+import { setUnreadAppBadge } from '@/lib/app-badge';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -9,7 +10,10 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * Calls `GET /forum/notifications` when a session exists. `refreshKey` retriggers
  * the fetch (Menu open). No session → `0`. Errors resolve to `0` without
- * throwing into the UI. Does not mark notifications read.
+ * throwing into the UI. Does not mark notifications read. Also updates the
+ * home-screen app badge via `setUnreadAppBadge` with the same number (or `0`
+ * when there is no session or the fetch fails). A cancelled fetch does not
+ * update state or the badge.
  *
  * @param refreshKey - Changing this value starts another fetch while signed in.
  * @returns Current unread count.
@@ -22,6 +26,7 @@ export function useUnreadCount(refreshKey: boolean): { unreadCount: number } {
     let cancelled = false;
     if (session === null) {
       setUnreadCount(0);
+      setUnreadAppBadge(0);
       return () => {
         cancelled = true;
       };
@@ -33,9 +38,11 @@ export function useUnreadCount(refreshKey: boolean): { unreadCount: number } {
           return;
         }
         setUnreadCount(list.unreadCount);
+        setUnreadAppBadge(list.unreadCount);
       } catch {
         if (!cancelled) {
           setUnreadCount(0);
+          setUnreadAppBadge(0);
         }
       }
     })();

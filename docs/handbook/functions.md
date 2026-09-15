@@ -330,8 +330,15 @@
 
 - **Purpose:** Load the signed-in unread in-app notification count from `GET /forum/notifications`. `refreshKey` retriggers the fetch (Menu open). Errors and no session resolve to `0`. Does not mark notifications read.
 - **Inputs:** `refreshKey` boolean.
-- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists.
+- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists. Also calls `setUnreadAppBadge` with the loaded count, or `0` when the session is null or the fetch errors. Does not update the badge after a cancelled fetch.
 - **Used by:** `SignedInChrome`.
+
+## Function: setUnreadAppBadge
+
+- **Purpose:** Set or clear the installed PWA home-screen unread badge via the Badging API (`navigator.setAppBadge` / `navigator.clearAppBadge`). When `count > 0` and `setAppBadge` exists, sets that number; otherwise clears when `clearAppBadge` exists. Missing APIs are a no-op. Rejections are swallowed so unsupported or denied badge writes never throw into the UI.
+- **Inputs:** `count` (number). Positive values request a badge; `0` (and any non-positive) request a clear.
+- **Returns / side effects:** `void`. Fire-and-forget promises; does not await. No network.
+- **Used by:** `useUnreadCount`, `NotificationsLoader`.
 
 ## Function: vapidPublicKeyToBytes
 
@@ -346,6 +353,13 @@
 - **Inputs:** None (uses `navigator.serviceWorker`).
 - **Returns / side effects:** `ServiceWorkerRegistration`.
 - **Used by:** `enablePush`, `disablePush`, `resyncPushSubscription`.
+
+## Function: push service worker
+
+- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `registration.setAppBadge` exists, sets the home-screen badge from `payload.unreadCount` (finite number greater than 0, floored) or `1` when that field is missing or not a positive finite number. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
+- **Inputs:** Push `event` with optional JSON payload (`title`, `body`, `url`, `tag`, `unreadCount`).
+- **Returns / side effects:** `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients; notification click focuses or opens the payload URL.
+- **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
 
 ## Function: isStandaloneDisplay
 
@@ -1810,9 +1824,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, fire-and-forget `markAllNotificationsRead` after a successful list, opens a row to `/messages/{parentId}` after `markNotificationRead`.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, fire-and-forget `markAllNotificationsRead` after a successful list, and calls `setUnreadAppBadge(0)` so the home-screen badge clears once the list is shown. Opens a row to `/messages/{parentId}` after `markNotificationRead`.
 - **Inputs:** None (session from the auth store).
-- **Returns / side effects:** React element or `null` without a session. No composer.
+- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget and clears the home-screen badge. Does not clear the badge on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
 
 ## Function: NotificationsScreen

@@ -5,13 +5,15 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { NotificationsScreen } from '@/components/NotificationsScreen';
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api';
 import type { Notification } from '@/lib/api-types';
+import { setUnreadAppBadge } from '@/lib/app-badge';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Client loader for the signed-in notifications list on `/notifications`.
  *
  * Reads the session from the auth store and fetches notifications (posts, replies, and payments).
- * After a successful list fetch, marks all as read fire-and-forget. Renders
+ * After a successful list fetch, marks all as read fire-and-forget and clears the
+ * home-screen badge (`setUnreadAppBadge(0)`). Renders
  * nothing when there is no session. There is no composer; opening a row goes
  * to the public forum note.
  *
@@ -40,6 +42,7 @@ export function NotificationsLoader(): ReactElement | null {
         }
         setNotifications(next.notifications);
         void markAllNotificationsRead(session).catch(() => undefined);
+        setUnreadAppBadge(0);
       } catch {
         if (cancelled) {
           return;

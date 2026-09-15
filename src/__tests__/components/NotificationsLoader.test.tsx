@@ -16,12 +16,17 @@ vi.mock('@/lib/api', () => ({
   markNotificationRead: vi.fn(),
   markAllNotificationsRead: vi.fn(),
 }));
+vi.mock('@/lib/app-badge', () => ({
+  setUnreadAppBadge: vi.fn(),
+}));
 
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api';
+import { setUnreadAppBadge } from '@/lib/app-badge';
 
 const listMock = vi.mocked(fetchNotifications);
 const markReadMock = vi.mocked(markNotificationRead);
 const markAllMock = vi.mocked(markAllNotificationsRead);
+const setBadgeMock = vi.mocked(setUnreadAppBadge);
 
 const account: Account = {
   id: 'acc_1',
@@ -67,6 +72,7 @@ describe('NotificationsLoader', () => {
     useAuthStore.setState({ session: null, account });
     const { container } = renderWithLocale(<NotificationsLoader />);
     expect(container.firstChild).toBeNull();
+    expect(setBadgeMock).not.toHaveBeenCalled();
   });
 
   it('loads the notification list', async () => {
@@ -76,6 +82,7 @@ describe('NotificationsLoader', () => {
     await waitFor(() => {
       expect(markAllMock).toHaveBeenCalledWith('sess');
     });
+    expect(setBadgeMock).toHaveBeenCalledWith(0);
   });
 
   it('shows empty copy', async () => {
@@ -91,6 +98,7 @@ describe('NotificationsLoader', () => {
     listMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(LIST);
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(setBadgeMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Bob replied')).toBeTruthy();
   });
@@ -111,6 +119,7 @@ describe('NotificationsLoader', () => {
     });
     expect(listMock).toHaveBeenCalled();
     expect(markAllMock).not.toHaveBeenCalled();
+    expect(setBadgeMock).not.toHaveBeenCalled();
   });
 
   it('ignores a stale list rejection after unmount', async () => {

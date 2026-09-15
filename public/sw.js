@@ -33,7 +33,20 @@ self.addEventListener('push', (event) => {
     options.tag = tag;
     options.renotify = true;
   }
-  event.waitUntil(self.registration.showNotification(title, options));
+  const shown = self.registration.showNotification(title, options);
+  const tasks = [shown];
+  if (typeof self.registration.setAppBadge === 'function') {
+    if (
+      typeof payload.unreadCount === 'number' &&
+      Number.isFinite(payload.unreadCount) &&
+      payload.unreadCount > 0
+    ) {
+      tasks.push(self.registration.setAppBadge(Math.floor(payload.unreadCount)));
+    } else {
+      tasks.push(self.registration.setAppBadge(1));
+    }
+  }
+  event.waitUntil(Promise.all(tasks));
 });
 
 self.addEventListener('notificationclick', (event) => {
