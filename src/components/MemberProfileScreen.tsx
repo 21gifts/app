@@ -65,7 +65,7 @@ function isReplyPaymentExempt(
   return parentAccountId !== undefined && parentAccountId === account.id;
 }
 
-/** Default invoice amount when the reply amount field is empty or whitespace-only for a gift-only reply. */
+/** Default invoice amount when the pay or gift-only reply amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;
 
 /**

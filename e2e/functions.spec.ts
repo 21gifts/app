@@ -3483,7 +3483,7 @@ test('Function: FiatPreferenceProvider — forum has no fiat switcher', async ({
   await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
 });
 
-test('Function: useFiatPreference — forum pay sheet has no fiat switcher', async ({ page }) => {
+test('Function: useFiatPreference — welcome feed has no fiat switcher', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
