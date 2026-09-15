@@ -1806,7 +1806,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/forum/notifications` with Bearer and parse `{ notifications, unreadCount }`.
 - **Inputs:** Session token.
 - **Returns / side effects:** `{ notifications, unreadCount }`, or throws visitor copy `Could not load notifications. Please try again.`
-- **Used by:** `NotificationsLoader`.
+- **Used by:** `NotificationsLoader`, `useUnreadCount`.
 
 ## Function: markNotificationRead
 
