@@ -831,7 +831,7 @@ export function ForumBoard({
                     autoCorrect="off"
                     spellCheck={false}
                     placeholder={t('forum.payAmountPlaceholder')}
-                    value={payDraft}
+                    value={invoiceForCard === null ? payDraft : String(invoiceForCard.amountSats)}
                     disabled={payBusy || invoiceForCard !== null}
                     onChange={(event) => onPayDraftChange(event.target.value)}
                   />

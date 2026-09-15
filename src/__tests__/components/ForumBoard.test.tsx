@@ -1381,6 +1381,32 @@ describe('ForumBoard', () => {
     expect(locationStub.href).toBe(walletOfSatoshiHref('lnbc21n1example'));
   });
 
+  it('shows the invoice amount on iPhone when payDraft is empty', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: IPHONE_UA,
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft=""
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 42 }}
+        {...modeProps('all')}
+      />,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('42');
+  });
+
   it('hides the invoice QR on Android Mobile and uses an Intent href', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
