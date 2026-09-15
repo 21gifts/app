@@ -102,6 +102,8 @@ describe('layoutTrustChain', () => {
       ],
     });
     expect(laid.nodes).toHaveLength(3);
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'bob')).toMatchObject({ x: 280, y: 112 });
   });
 
   it('still places both nodes of a leftover cycle with no root', () => {

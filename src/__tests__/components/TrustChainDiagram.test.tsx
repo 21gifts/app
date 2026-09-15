@@ -77,6 +77,17 @@ describe('TrustChainDiagram', () => {
     expect(onExpand).not.toHaveBeenCalled();
   });
 
+  it('clears a cancelled drag so a later click can still expand', () => {
+    const onExpand = vi.fn();
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} onExpand={onExpand} />);
+    const node = screen.getByTestId('trust-node-f');
+    fireEvent.pointerDown(node, { pointerId: 1, clientX: 40, clientY: 20 });
+    fireEvent.pointerMove(node, { pointerId: 1, clientX: 80, clientY: 50 });
+    fireEvent.pointerCancel(node, { pointerId: 1, clientX: 80, clientY: 50 });
+    fireEvent.click(node);
+    expect(onExpand).toHaveBeenCalledWith('f');
+  });
+
   it('still expands on a click that did not move past the drag threshold', () => {
     const onExpand = vi.fn();
     renderWithLocale(<TrustChainDiagram chain={CHAIN} onExpand={onExpand} />);

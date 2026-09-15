@@ -134,27 +134,33 @@ export function layoutTrustChain(chain: TrustChain): {
     return bottom;
   }
 
-  function layoutChildren(id: string): void {
+  function layoutChildren(id: string, reserved: Set<string> = new Set()): void {
     const parent = positioned.get(id);
     /* v8 ignore next 3 -- layoutChildren runs after place */
     if (parent === undefined) {
       return;
     }
-    const kids = (children.get(id) ?? []).filter((child) => !positioned.has(child));
+    const kids = (children.get(id) ?? []).filter(
+      (child) => !positioned.has(child) && !reserved.has(child),
+    );
     if (kids.length === 0) {
       return;
     }
     const childX = parent.x + TRUST_NODE_WIDTH + TRUST_NODE_GAP;
+    const nextReserved = new Set(reserved);
+    for (const kid of kids) {
+      nextReserved.add(kid);
+    }
     const only = kids[0];
     if (kids.length === 1 && only !== undefined) {
       place(only, childX, parent.y);
-      layoutChildren(only);
+      layoutChildren(only, nextReserved);
       return;
     }
     let childY = parent.y;
     for (const kid of kids) {
       place(kid, childX, childY);
-      layoutChildren(kid);
+      layoutChildren(kid, nextReserved);
       childY = subtreeBottom(kid) + TRUST_NODE_VGAP;
     }
   }

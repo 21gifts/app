@@ -301,7 +301,10 @@ export function TrustChainDiagram({
               }}
               onPointerMove={onNodePointerMove}
               onPointerUp={onNodePointerUp}
-              onPointerCancel={onNodePointerUp}
+              onPointerCancel={(event) => {
+                onNodePointerUp(event);
+                drag.current = null;
+              }}
               onClick={(event) => {
                 if (drag.current?.id === node.id && drag.current.moved) {
                   event.preventDefault();
