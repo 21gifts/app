@@ -4433,6 +4433,25 @@ test('Function: PublicMessagePage — public note shows Hello from Ada', async (
   await expect(page.getByText('Hello from Ada')).toBeVisible();
 });
 
+test('Function: generateMetadata — public note HTML includes og:title', async ({ request }) => {
+  const res = await request.get('/messages/11111111-1111-4111-8111-111111111111');
+  expect(await res.text()).toContain('property="og:title"');
+});
+
+test('Function: loadPublicMessageForOg — public note HTML includes og:title', async ({
+  request,
+}) => {
+  const res = await request.get('/messages/11111111-1111-4111-8111-111111111111');
+  expect(await res.text()).toContain('property="og:title"');
+});
+
+test('Function: publicMessageOgMetadata — public note HTML includes og:title', async ({
+  request,
+}) => {
+  const res = await request.get('/messages/11111111-1111-4111-8111-111111111111');
+  expect(await res.text()).toContain('property="og:title"');
+});
+
 test('Function: PublicMessageLoader — invalid id shows not-found copy', async ({ page }) => {
   await page.goto('/messages/not-a-uuid');
   await expect(page.getByText('This profile could not be found.')).toBeVisible();
