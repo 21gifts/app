@@ -403,7 +403,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 
 | Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`) | Signed-in app                                                                                                                                                                                                                                                                                                                                     |
 | ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topLeft`  | `Wordmark` → `/`                                                                          | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/contact`, `/messages`, and signed-in `/rules`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
+| `topLeft`  | `Wordmark` → `/`                                                                          | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
 | `topRight` | `LanguageSwitcher tone="light"`                                                           | `SignedInChrome` (Menu; no ThemeSwitcher)                                                                                                                                                                                                                                                                                                         |
 
 **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` + `Wordmark href="/welcome"`.
@@ -971,7 +971,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/messages/[id]` — public note
 
-Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text, no pay, no composer, no copy. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 
