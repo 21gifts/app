@@ -27,7 +27,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, ButtonLink, Field, IconButton, SegmentedControl } from '@/components/ui';
+import { Button, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import {
@@ -353,7 +353,6 @@ export function ForumBoard({
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
-  const payMounted = useRef(false);
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
   const loadingRef = useRef(loading);
@@ -466,13 +465,6 @@ export function ForumBoard({
   }, []);
 
   useEffect(() => {
-    payMounted.current = true;
-    return () => {
-      payMounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
     const tryFocusComposer = (): boolean => {
       const el = composerRef.current;
       if (el === null) {
@@ -503,23 +495,11 @@ export function ForumBoard({
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    void (async () => {
-      const invoice = await Promise.resolve(onPaySubmit());
-      if (invoice === null || invoice === undefined) {
-        return;
-      }
-      if (!payMounted.current) {
-        return;
-      }
-      /* v8 ignore next 3 -- SSR has no navigator */
-      if (typeof navigator === 'undefined') {
-        return;
-      }
-      const ua = navigator.userAgent;
-      if (isSmartphoneUserAgent(ua) && !isAndroidUserAgent(ua)) {
-        window.location.assign(walletOfSatoshiHref(invoice.pr));
-      }
-    })();
+    void Promise.resolve(onPaySubmit());
+  };
+
+  const openWalletOfSatoshi = (href: string): void => {
+    window.location.href = href;
   };
 
   const handleReplySubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -619,11 +599,12 @@ export function ForumBoard({
           const sheetOpen = payMessageId === message.id;
           const invoiceForCard =
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
-          /* v8 ignore next 5 -- SSR has no navigator */
+          /* v8 ignore next 8 -- SSR has no navigator */
+          const isSmartphone =
+            typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
           const isIosPhone =
             typeof navigator !== 'undefined'
-              ? isSmartphoneUserAgent(navigator.userAgent) &&
-                !isAndroidUserAgent(navigator.userAgent)
+              ? isSmartphone && !isAndroidUserAgent(navigator.userAgent)
               : false;
           /* v8 ignore start -- Android vs iOS wallet href */
           const android =
@@ -635,6 +616,30 @@ export function ForumBoard({
                 ? walletOfSatoshiIntentHref(invoiceForCard.pr)
                 : walletOfSatoshiHref(invoiceForCard.pr);
           /* v8 ignore stop */
+
+          const walletButton =
+            wosHref === null ? null : (
+              <Button
+                type="button"
+                aria-label={t('forum.payOpenWalletAria')}
+                disabled={payBusy}
+                icon={
+                  <img
+                    src="/wos-icon.png"
+                    alt=""
+                    width={20}
+                    height={20}
+                    aria-hidden="true"
+                    className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                  />
+                }
+                onClick={() => {
+                  openWalletOfSatoshi(wosHref);
+                }}
+              >
+                {t('forum.payOpenWallet')}
+              </Button>
+            );
 
           const taggedRole = forumTaggedRole(message.role);
           const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
@@ -734,75 +739,75 @@ export function ForumBoard({
                   <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
                 ) : null}
                 {message.text !== '' ? <NoteTranslate text={message.text} /> : null}
-                <div className="mt-3 flex flex-wrap items-center gap-5">
-                  <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
-                    {formatBitcoin(message.sats, numberFormat)}
-                  </p>
-                  {message.payable ? (
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.pay')}
-                      disabled={payBusy}
-                      onClick={(event) => {
-                        stopCardToggle(event);
-                        onPayOpen(message.id);
-                      }}
-                    >
-                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                    </IconButton>
-                  ) : null}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-5">
+                <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
+                  {formatBitcoin(message.sats, numberFormat)}
+                </p>
+                {message.payable ? (
                   <IconButton
                     type="button"
                     size="sm"
                     variant="ghost"
-                    aria-label={t('forum.copyLink')}
-                    title={t('forum.copyLink')}
-                    data-copied={copied ? 'true' : undefined}
+                    aria-label={t('forum.pay')}
+                    disabled={payBusy}
                     onClick={(event) => {
                       stopCardToggle(event);
-                      void copyMessageLink(message.id);
+                      onPayOpen(message.id);
                     }}
                   >
-                    {copied ? (
-                      <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                  </IconButton>
+                ) : null}
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t('forum.copyLink')}
+                  title={t('forum.copyLink')}
+                  data-copied={copied ? 'true' : undefined}
+                  onClick={(event) => {
+                    stopCardToggle(event);
+                    void copyMessageLink(message.id);
+                  }}
+                >
+                  {copied ? (
+                    <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                  ) : (
+                    <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                  )}
+                </IconButton>
+                {showForumPm(ownAccountId, ownName, message) ? (
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t('forum.pm')}
+                    title={t('forum.pm')}
+                    disabled={pmBusyId !== null}
+                    onClick={(event) => {
+                      stopCardToggle(event);
+                      onPm(message.id);
+                    }}
+                  >
+                    {pmBusyId === message.id ? (
+                      <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                      <Mail aria-hidden="true" className="h-3.5 w-3.5" />
                     )}
                   </IconButton>
-                  {showForumPm(ownAccountId, ownName, message) ? (
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.pm')}
-                      title={t('forum.pm')}
-                      disabled={pmBusyId !== null}
-                      onClick={(event) => {
-                        stopCardToggle(event);
-                        onPm(message.id);
-                      }}
-                    >
-                      {pmBusyId === message.id ? (
-                        <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Mail aria-hidden="true" className="h-3.5 w-3.5" />
-                      )}
-                    </IconButton>
-                  ) : null}
-                  {onDeleted !== undefined ? (
-                    <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
-                  ) : null}
-                  {message.parentId === undefined ? (
-                    <span className="ml-auto text-xs text-app-subtle">
-                      {t('forum.replyCount', { count: String(message.replyCount) })}
-                    </span>
-                  ) : null}
-                </div>
+                ) : null}
+                {onDeleted !== undefined ? (
+                  <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
+                ) : null}
+                {message.parentId === undefined ? (
+                  <span className="ml-auto text-xs text-app-subtle">
+                    {t('forum.replyCount', { count: String(message.replyCount) })}
+                  </span>
+                ) : null}
               </div>
 
-              {sheetOpen && invoiceForCard === null ? (
+              {sheetOpen && (isSmartphone || invoiceForCard === null) ? (
                 <form
                   onSubmit={handlePaySubmit}
                   onClick={stopCardToggle}
@@ -826,8 +831,8 @@ export function ForumBoard({
                     autoCorrect="off"
                     spellCheck={false}
                     placeholder={t('forum.payAmountPlaceholder')}
-                    value={payDraft}
-                    disabled={payBusy}
+                    value={invoiceForCard === null ? payDraft : String(invoiceForCard.amountSats)}
+                    disabled={payBusy || invoiceForCard !== null}
                     onChange={(event) => onPayDraftChange(event.target.value)}
                   />
                   {payError === 'amount' ? (
@@ -850,21 +855,32 @@ export function ForumBoard({
                       {t('forum.payErrorAuthorWallet')}
                     </p>
                   ) : null}
-                  <Button
-                    type="submit"
-                    disabled={payBusy}
-                    icon={
-                      payBusy ? (
-                        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                      ) : undefined
-                    }
-                  >
-                    {isIosPhone ? t('forum.payNow') : t('forum.payContinue')}
-                  </Button>
+                  {invoiceForCard === null ? (
+                    <Button
+                      type="submit"
+                      disabled={payBusy}
+                      icon={
+                        payBusy ? (
+                          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                        ) : undefined
+                      }
+                    >
+                      {isIosPhone ? t('forum.payNow') : t('forum.payContinue')}
+                    </Button>
+                  ) : (
+                    <>
+                      {walletButton}
+                      {payWaiting ? (
+                        <p className="text-center text-xs text-app-muted">
+                          {t('forum.payWaiting')}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
                 </form>
               ) : null}
 
-              {invoiceForCard !== null ? (
+              {invoiceForCard !== null && !isSmartphone ? (
                 <div
                   onClick={stopCardToggle}
                   className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
@@ -887,26 +903,7 @@ export function ForumBoard({
                   {showPaymentQr ? (
                     <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
                   ) : null}
-                  {/* v8 ignore start -- wosHref is set whenever an invoice is shown */}
-                  {wosHref !== null ? (
-                    <ButtonLink
-                      href={wosHref}
-                      aria-label={t('forum.payOpenWalletAria')}
-                      icon={
-                        <img
-                          src="/wos-icon.png"
-                          alt=""
-                          width={20}
-                          height={20}
-                          aria-hidden="true"
-                          className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                        />
-                      }
-                    >
-                      {t('forum.payOpenWallet')}
-                    </ButtonLink>
-                  ) : null}
-                  {/* v8 ignore stop */}
+                  {walletButton}
                   {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
                   {payWaiting ? (
                     <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>

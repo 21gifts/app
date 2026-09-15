@@ -16,7 +16,6 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type Account, type MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -534,11 +533,11 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
     });
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
   });
 
-  it('requests the invoice and opens Wallet of Satoshi on iPhone Pay', async () => {
+  it('requests the invoice on iPhone Pay without assigning the wallet href', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
@@ -554,8 +553,9 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
     });
+    expect(assign).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(assign).toHaveBeenCalledWith(walletOfSatoshiHref('lnbc1'));
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     vi.unstubAllGlobals();
   });
@@ -584,7 +584,7 @@ describe('MemberProfileScreen', () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
     expect(assign).not.toHaveBeenCalled();
-    expect(screen.queryByRole('link', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
     vi.unstubAllGlobals();
   });
 
