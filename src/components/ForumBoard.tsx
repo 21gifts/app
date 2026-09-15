@@ -868,7 +868,14 @@ export function ForumBoard({
                       {isIosPhone ? t('forum.payNow') : t('forum.payContinue')}
                     </Button>
                   ) : (
-                    walletButton
+                    <>
+                      {walletButton}
+                      {payWaiting ? (
+                        <p className="text-center text-xs text-app-muted">
+                          {t('forum.payWaiting')}
+                        </p>
+                      ) : null}
+                    </>
                   )}
                 </form>
               ) : null}

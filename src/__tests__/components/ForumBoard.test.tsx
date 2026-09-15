@@ -1407,6 +1407,33 @@ describe('ForumBoard', () => {
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('42');
   });
 
+  it('shows waiting copy on iPhone after the invoice is minted', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: IPHONE_UA,
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        payWaiting={true}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+  });
+
   it('hides the invoice QR on Android Mobile and uses an Intent href', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
