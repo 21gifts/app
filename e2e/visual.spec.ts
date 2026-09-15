@@ -1297,6 +1297,42 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-profile');
   });
 
+  test('profile fiat', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto('/profile');
+    const group = page.getByRole('group', { name: 'Fiat currency' });
+    await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+    await group.scrollIntoViewIfNeeded();
+    // Viewport: the identity card scrolls inside a 720px shell, so fullPage
+    // still crops above this row.
+    await shotScreen(page, 'state-profile-fiat', false);
+  });
+
   test('screen /members/[accountId]', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
