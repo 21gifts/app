@@ -1390,9 +1390,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: LegalPage
 
-- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`.
+- **Purpose:** Next.js page for `/legal` (imprint, privacy, and Scripture credits for the four Bible editions the site quotes). No published email — contact is in-app via `/contact`.
 - **Inputs:** None.
-- **Returns / side effects:** The legal screen with links to `/contact`.
+- **Returns / side effects:** The legal screen with links to `/contact` and the Scripture quotations section.
 - **Used by:** Route `/legal`.
 
 ## Function: MarketingFooter

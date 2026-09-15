@@ -7,11 +7,11 @@ import type { ReactElement } from 'react';
  */
 export const metadata: Metadata = {
   title: 'Legal Notice & Privacy — 21.gifts',
-  description: 'Legal notice and privacy policy of 21.gifts.',
+  description: 'Legal notice, privacy policy, and Scripture credits of 21.gifts.',
 };
 
 /**
- * Legal notice and privacy policy at `/legal`.
+ * Legal notice, privacy policy, and Scripture credits at `/legal`.
  *
  * Contact is in-app only — no published email.
  *
@@ -93,6 +93,33 @@ export default function LegalPage(): ReactElement {
             Open the app
           </Link>
           .
+        </p>
+      </section>
+
+      <section className="mt-16 space-y-4">
+        <h2 className="text-3xl font-semibold">Scripture quotations</h2>
+        <p className="text-paper/70">
+          The Bible verses on this website are quoted from the following editions, used by
+          permission of their publishers.
+        </p>
+        <p className="text-paper/70">
+          <strong>English:</strong> THE HOLY BIBLE, NEW INTERNATIONAL VERSION®, NIV® Copyright ©
+          1973, 1978, 1984, 2011 by Biblica, Inc.® Used by permission. All rights reserved
+          worldwide.
+        </p>
+        <p className="text-paper/70">
+          <strong>German:</strong> Die Bibel nach Martin Luthers Übersetzung, revidiert 2017, © 2016
+          Deutsche Bibelgesellschaft, Stuttgart.
+        </p>
+        <p className="text-paper/70">
+          <strong>Spanish:</strong> Texto bíblico: Reina-Valera 1960® © Sociedades Bíblicas en
+          América Latina, 1960. Renovado © Sociedades Bíblicas Unidas, 1988. Utilizado con permiso.
+          Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas, y se puede usar
+          solamente bajo licencia.
+        </p>
+        <p className="text-paper/70">
+          <strong>Filipino:</strong> Magandang Balita Biblia (Revised) © Philippine Bible Society
+          2005.
         </p>
       </section>
     </main>
