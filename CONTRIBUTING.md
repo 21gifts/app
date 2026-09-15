@@ -132,7 +132,7 @@ app/
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
-│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (Profile only)
+│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (Profile, chart, stats, day)
 │   │   ├── FiatPreferenceSwitcher.tsx # Profile cookie fiat override (CHF|EUR|USD|PHP)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write

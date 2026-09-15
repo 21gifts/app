@@ -2948,6 +2948,7 @@ test('Function: formatFiatTick — populated profile chart shows CHF ticks', asy
   await page.goto('/profile');
   await page
     .getByRole('group', { name: 'Fiat currency' })
+    .first()
     .getByRole('button', { name: 'CHF' })
     .click();
   await page
@@ -2958,18 +2959,23 @@ test('Function: formatFiatTick — populated profile chart shows CHF ticks', asy
   await expect(page.getByLabel('Given and received in CHF').getByText('CHF 1.2')).toBeVisible();
 });
 
-test('Function: FiatPicker — stats page has no fiat switcher', async ({ page }) => {
+test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+  const group = page.getByRole('group', { name: 'Fiat currency' });
+  await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
 });
 
 test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ page }) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
-  const group = page.getByRole('group', { name: 'Fiat currency' });
-  await expect(group).toBeVisible();
+  const groups = page.getByRole('group', { name: 'Fiat currency' });
+  await expect(groups).toHaveCount(2);
+  const group = groups.first();
   await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
@@ -3107,7 +3113,9 @@ test('Function: formatFiatTick — populated stats draw the USD chart', async ({
 test('Function: defaultFiatForLocale — English stats default to USD', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+  await expect(
+    page.getByRole('group', { name: 'Fiat currency' }).getByRole('button', { name: 'USD' }),
+  ).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
@@ -3301,13 +3309,9 @@ test('Function: getRequestFiat — English stats without a cookie show USD', asy
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: FiatPreferenceProvider — profile fiat choice is the only switcher', async ({
-  page,
-}) => {
+test('Function: FiatPreferenceProvider — forum has no fiat switcher', async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
-  await expect(page.getByRole('group', { name: 'Fiat currency' })).toBeVisible();
   await page.goto('/welcome');
   await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
 });
@@ -3353,7 +3357,7 @@ test('Function: FiatPreferenceSwitcher — /profile offers CHF EUR USD PHP', asy
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/profile');
-  const group = page.getByRole('group', { name: 'Fiat currency' });
+  const group = page.getByRole('group', { name: 'Fiat currency' }).last();
   await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();

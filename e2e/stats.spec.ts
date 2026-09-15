@@ -161,7 +161,7 @@ test('stats page shows total spend over time', async ({ page }) => {
   });
   await page.goto('/stats');
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toBeVisible();
   await expect(page.locator('dl').getByText("₿1'500")).toBeVisible();
   await expect(page.locator('dl').getByText('$1.43')).toBeVisible();
   const chart = page.getByLabel('Spend over time in ₿');

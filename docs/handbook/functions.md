@@ -80,7 +80,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. No FiatPicker. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each gift's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. FiatPicker (CHF | EUR | USD | PHP) above the KPI cards. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each gift's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. Reads `useFiatPreference`. No network.
 - **Used by:** `StatsLoader`.
@@ -101,7 +101,7 @@
 
 ## Function: DayLoader
 
-- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. No FiatPicker. The summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`.
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. FiatPicker on the loaded table. The summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, selected fiat, numberFormat)`.
 - **Inputs:** `day` UTC `YYYY-MM-DD`.
 - **Returns / side effects:** React element. Calls `fetchGiftDay`. Reads `useFiatPreference` and `useNumberFormat` and passes both into `GiftDayTable`.
 - **Used by:** `GiftDayPage`.
@@ -115,10 +115,10 @@
 
 ## Function: FiatPicker
 
-- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'`. Required `ariaLabel` (Profile passes catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Not rendered outside Profile.
-- **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); required `ariaLabel` (catalog `profile.fiatCurrency`).
+- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'`. Required `ariaLabel` (Profile and the activity chart pass catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Forum and the pay sheet do not mount it.
+- **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); required `ariaLabel`.
 - **Returns / side effects:** React element. No network.
-- **Used by:** `FiatPreferenceSwitcher`.
+- **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `StatsDashboard`, `DayLoader`.
 
 ## Function: fetchGiftDay
 
@@ -213,7 +213,7 @@
 
 ## Function: FiatPreferenceSwitcher
 
-- **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"`. The only UI that changes preferred fiat.
+- **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"`. Writes the same `fiat` cookie as the activity chart, `/stats`, and `/stats/[day]`.
 - **Inputs:** None. Uses `useFiatPreference` and `useTranslations`.
 - **Returns / side effects:** Settings section. `onChange` persists via the cookie.
 - **Used by:** `ProfileScreen`.
@@ -351,7 +351,7 @@
 
 - **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
 - **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings rows — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`. The fiat row is the only switcher for preferred fiat.
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings rows — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`. The fiat settings row writes the same cookie as the chart FiatPicker, `/stats`, and `/stats/[day]`.
 - **Used by:** `ProfilePage`.
 
 ## Function: PushToggle
@@ -510,9 +510,9 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received. Fiat code from `useFiatPreference` (no picker). Empty/all-zero sats: `profile.chartEmpty` `role="status"` only (no SVG, no ₿|{fiat} scale). Populated: legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received. FiatPicker always (empty included); code from `useFiatPreference`. Empty/all-zero sats: picker plus `profile.chartEmpty` `role="status"` (no SVG, no ₿|{fiat} scale). Populated: picker, then legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG. Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
 - **Inputs:** `received` (`AccountActivity.receivedOverTime`); optional `donated` (default `[]`) from `AccountActivity.donatedOverTime`.
-- **Returns / side effects:** When the series is empty or all zeros: `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise one chrome row (legend left, ₿ | selected FiatCode right) and SVG. Client state for scale only. No network.
+- **Returns / side effects:** FiatPicker, then when the series is empty or all zeros: `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Otherwise one chrome row (legend left, ₿ | selected FiatCode right) and SVG. Client state for scale; picker writes the `fiat` cookie. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`, `MemberProfileScreen`.
 
 ## Function: Button

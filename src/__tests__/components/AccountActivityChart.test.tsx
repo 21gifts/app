@@ -57,7 +57,7 @@ describe('AccountActivityChart', () => {
   it('renders empty copy instead of an axis when there is no data', () => {
     renderWithLocale(<AccountActivityChart received={[]} />);
     expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
-    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Given and received' })).toBeNull();
@@ -126,11 +126,22 @@ describe('AccountActivityChart', () => {
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('defaults the empty German chart to empty copy without a picker', () => {
+  it('defaults the empty German chart to empty copy with a picker', () => {
     renderWithLocale(<AccountActivityChart received={[]} />, 'de');
-    expect(screen.queryByRole('group', { name: 'Fiatwährung' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Fiatwährung' })).toBeTruthy();
     expect(screen.getByRole('status').textContent).toBe('Noch keine Gaben.');
     expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('writes preferred fiat when the chart picker is pressed', () => {
+    renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
+        name: 'EUR',
+      }),
+    );
+    clickChartScale('EUR');
+    expect(screen.getByRole('img', { name: 'Given and received in EUR' })).toBeTruthy();
   });
 
   it('shows CHF ticks when preferred fiat is CHF then Chart scale CHF', () => {

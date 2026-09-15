@@ -8,9 +8,9 @@ import { useTranslations } from '@/components/LocaleProvider';
 /**
  * Profile identity-card section: preferred fiat via {@link FiatPicker}.
  *
- * Always visible on the signed-in Profile card. Not page chrome. The only
- * place the visitor can change CHF | EUR | USD | PHP; other screens read
- * {@link useFiatPreference}.
+ * Always visible on the signed-in Profile card. Not page chrome. Writes the
+ * same `fiat` cookie as Stats, the day view, and {@link AccountActivityChart}.
+ * Forum and the pay sheet only display that code.
  *
  * @returns The fiat settings section.
  */

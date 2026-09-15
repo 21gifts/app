@@ -1325,7 +1325,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/profile');
-    const group = page.getByRole('group', { name: 'Fiat currency' });
+    const group = page.getByRole('group', { name: 'Fiat currency' }).last();
     await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
     await group.scrollIntoViewIfNeeded();
     // Viewport: the identity card scrolls inside a 720px shell, so fullPage

@@ -497,7 +497,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 Pay sheet amount step shows a live fiat line in the preferred fiat (no picker). Pay sheet confirm sentence (`forum.payConfirm`) is one `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) mints the invoice and keeps the amount form (no `location.assign`); Android phone (`isSmartphoneUserAgent`) stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the wallet `Button` (Intent href; no QR, no invoice card); desktop and iPad stay **Continue** (`forum.payContinue`) and after mint show the invoice card with QR. Wallet CTA is a **Pay** `Button` (`variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent) that sets `window.location.href` to the WoS href (not a custom-scheme `<a>` / `ButtonLink`). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + that Button.
 
-**Fiat.** Preferred code is chosen once on Profile (`FiatPreferenceSwitcher`). Stats KPI shows ₿ on the first line and that fiat on the second via `formatFiatDisplay` (USD uses `formatUsdDisplay`) — no picker on stats. Profile activity chart has no picker; populated chart is ₿ | preferred FiatCode.
+**Fiat.** Cookie `fiat` (otherwise locale default). Switchers: Profile settings (`FiatPreferenceSwitcher`), Profile activity chart, `/stats`, and `/stats/[day]`. Forum notes, nested replies, and the pay sheet **display** that code only (no picker). Stats KPI shows ₿ on the first line and the selected fiat on the second via `formatFiatDisplay` (USD uses `formatUsdDisplay`). Populated profile chart is ₿ | selected FiatCode.
 
 **₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the preferred FiatCode. Profile: ₿ and the preferred FiatCode (same as stats charts, app shell).
 
@@ -511,7 +511,7 @@ Pay sheet amount step shows a live fiat line in the preferred fiat (no picker). 
 
 Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
-**Empty profile chart.** If both series empty/all-zero sats: `profile.chartEmpty` `role="status"`; **no SVG / no ₿|fiat scale**. FiatPicker lives in the Profile settings row, not on the chart. Legend without data is noise.
+**Empty profile chart.** If both series empty/all-zero sats: FiatPicker plus `profile.chartEmpty` `role="status"`; **no SVG / no ₿|fiat scale**. Legend without data is noise.
 
 ## Control grammar
 
@@ -733,7 +733,7 @@ ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase
 
 #### FiatPreferenceSwitcher profile settings section
 
-FiatPreferenceSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`profile.fiatCurrency`), then `FiatPicker` `shell="app"` with CHF | EUR | USD | PHP. The only control that writes the `fiat` cookie. Not a Menu disclosure. Marketing never mounts it. Other screens display the preferred code.
+FiatPreferenceSwitcher is **app + Profile settings**. Anatomy = PushToggle section: uppercase kicker (`profile.fiatCurrency`), then `FiatPicker` `shell="app"` with CHF | EUR | USD | PHP. Writes the `fiat` cookie. Stats, the day view, and the activity chart also mount `FiatPicker` against the same cookie. Not a Menu disclosure. Forum and the pay sheet display the code only.
 
 #### NumberFormatSwitcher profile settings section
 
@@ -816,7 +816,7 @@ Do not restyle QR for dark mode.
 
 **Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No gifts recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
 
-**Profile activity.** No FiatPicker on the chart (preference is a settings row). Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty: `profile.chartEmpty` `role="status"`, no SVG.
+**Profile activity.** FiatPicker always (empty included). Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty: FiatPicker plus `profile.chartEmpty` `role="status"`, no SVG.
 
 ### Alert / error
 
@@ -1044,7 +1044,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
 6. **Pay control is lucide Gift, not ₿.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null, otherwise ₿-only (no ` · —`). Accessible name stays **Send Bitcoin** (`forum.pay`).
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
-8. **Empty profile chart is copy only**, not an axis and not a picker; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`. FiatPicker lives in the Profile settings row.
+8. **Empty profile chart is copy plus FiatPicker**, not an axis; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.
 11. **Photo/story is a reserved 96×96 circle + story clamp**, not a shipped feature.
