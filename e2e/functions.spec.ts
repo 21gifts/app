@@ -5851,6 +5851,13 @@ test('Function: MemberTrustActions — ordinary members have no verify action', 
         profileMessage: null,
         postCount: 0,
         replyCount: 0,
+        aboutMe: null,
+        trust: {
+          verifiedBy: null,
+          proposedBy: null,
+          confirmedBy: null,
+          appointedBy: null,
+        },
       }),
     });
   });

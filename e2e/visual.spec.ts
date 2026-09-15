@@ -2309,6 +2309,7 @@ test.describe('onboarding screens', () => {
           profileMessage: null,
           postCount: 0,
           replyCount: 0,
+          aboutMe: null,
           trust: {
             verifiedBy: null,
             proposedBy: null,
