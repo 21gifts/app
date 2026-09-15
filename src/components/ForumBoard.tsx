@@ -601,9 +601,7 @@ export function ForumBoard({
             payInvoice !== null && payInvoice.messageId === message.id ? payInvoice : null;
           /* v8 ignore next 8 -- SSR has no navigator */
           const isSmartphone =
-            typeof navigator !== 'undefined'
-              ? isSmartphoneUserAgent(navigator.userAgent)
-              : false;
+            typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
           const isIosPhone =
             typeof navigator !== 'undefined'
               ? isSmartphone && !isAndroidUserAgent(navigator.userAgent)

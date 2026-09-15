@@ -195,9 +195,8 @@ async function stubWalletLocationAssign(page: Page): Promise<void> {
   });
   await page.exposeFunction('__recordWalletAssign', record);
   await page.addInitScript(() => {
-    const recordHref = (
-      window as unknown as { __recordWalletAssign?: (href: string) => void }
-    ).__recordWalletAssign;
+    const recordHref = (window as unknown as { __recordWalletAssign?: (href: string) => void })
+      .__recordWalletAssign;
     const capture = (href: string): boolean => {
       if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
         (window as unknown as { __recordedWalletHref?: string }).__recordedWalletHref = href;
