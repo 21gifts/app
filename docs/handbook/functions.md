@@ -115,7 +115,7 @@
 
 ## Function: FiatPicker
 
-- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'`. Required `ariaLabel` (Profile and the activity chart pass catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Forum and the pay sheet do not mount it.
+- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'`. Required `ariaLabel` (Profile and the activity chart pass catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Forum, the public thread (`PublicMessageLoader`), and the pay sheet do not mount it.
 - **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); required `ariaLabel`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `StatsDashboard`, `DayLoader`.
@@ -223,7 +223,7 @@
 - **Purpose:** Accept a raw cookie/option string if it is exactly one of `CHF|EUR|USD|PHP`; otherwise return `fallback`.
 - **Inputs:** `value` (optional string) and `fallback` (`FiatCode`).
 - **Returns / side effects:** A `FiatCode`. No side effects.
-- **Used by:** `getRequestFiat`.
+- **Used by:** `getRequestFiat`, `FiatPreferenceProvider`.
 
 ## Function: getRequestFiat
 
@@ -690,7 +690,7 @@
 
 - **Purpose:** Client loader for the public thread page: validates UUID, fetches `fetchPublicMessage(routeId)`; if `parentId` is set, fetches that parent (`null` → missing) then `fetchPublicReplies(parent.id)`; else `fetchPublicReplies(root.id)`. Ready only with root + replies (empty replies → parent only). Replies throw → error + **Try again** (whole chain). Vertical stack: parent `Card` then reply Cards with `pl-4`. Gift-only replies (empty text, sats > 0): sats line via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null, no empty `<p>`. When the route id is a reply, that reply card (or wrapper) has `data-permalink-target="true"` and `ring-1 ring-app-fg`. Auth CTA once below the stack from `useHydrateSession`. Photo/video per card via `fetchPublicMessagePhoto`. Labeled **Translate** under note and reply bodies via `NoteTranslate` when the language differs from the UI locale. Each card is ₿ plus optional preferred-fiat `·` `formatFiatDisplay` when `satsToFiatAmount` is non-null (`useFiatPreference`; cookie, otherwise locale default; `fetchGiftStats` / `latestRateDay`); otherwise ₿-only, no ` · —`. No pay, composer, or copy.
 - **Inputs:** `id` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready stack. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on note and reply bodies (GET `/translate` on mount, POST on **Translate**). No pay, composer, or copy.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready stack. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on note and reply bodies (GET `/translate` on mount, POST on **Translate**). No pay, composer, copy, or FiatPicker.
 - **Used by:** `PublicMessagePage`.
 
 ## Function: ViewProfilePage
