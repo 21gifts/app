@@ -517,8 +517,8 @@ Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `ton
 
 The labeled vs icon-only table is the **binding** rule. Reviewers follow this table and `CONTRIBUTING.md` **Icon controls**, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                 |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile/rules-setup/inbox back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
@@ -564,11 +564,11 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 ```tsx
 export interface AppShellProps {
   children: ReactNode;
-  mode: 'fill' | 'flow';
+  mode: "fill" | "flow";
   topLeft?: ReactNode;
   topRight?: ReactNode;
   className?: string;
-  align?: 'start' | 'center'; // fill only
+  align?: "start" | "center"; // fill only
 }
 
 export interface PageChromeProps {
@@ -592,8 +592,8 @@ Slot registrars: `AppShellHeader`, `AppShellFooter`, `AppShellTopLeft` (child re
 ```tsx
 export function Wordmark(props: {
   href?: string; // omit → <span>, not a link
-  tone?: 'app' | 'dark'; // app = app-fg; dark = paper on ink
-  size?: 'header' | 'footer'; // header 17px (default); footer 15px
+  tone?: "app" | "dark"; // app = app-fg; dark = paper on ink
+  size?: "header" | "footer"; // header 17px (default); footer 15px
 }): ReactElement;
 ```
 
@@ -687,11 +687,16 @@ Two tones. Gift also takes `shell?: 'app' | 'dark'` (default `app`; ignored for 
 ```tsx
 export function SegmentedControl<T extends string>(props: {
   value: T;
-  options: readonly { value: T; label: string; badge?: number; badgeAriaLabel?: string }[];
+  options: readonly {
+    value: T;
+    label: string;
+    badge?: number;
+    badgeAriaLabel?: string;
+  }[];
   onChange: (value: T) => void;
   ariaLabel: string;
-  tone: 'gift' | 'neutral';
-  shell?: 'app' | 'dark';
+  tone: "gift" | "neutral";
+  shell?: "app" | "dark";
   className?: string;
 }): ReactElement;
 ```
