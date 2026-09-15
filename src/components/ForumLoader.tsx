@@ -1262,6 +1262,9 @@ export function ForumLoader(): ReactElement | null {
       }
     }
     if (!alreadyListed) {
+      /* v8 ignore next -- mergeMessages seeds the parent id before any created reply */
+      const prevLast = lastServerReplyCount.current.get(parentId) ?? 0;
+      lastServerReplyCount.current.set(parentId, Math.max(prevLast, parentBaseline + 1));
       setMessages((prev) => {
         /* v8 ignore next 3 -- parent list not loaded */
         if (prev === null) {

@@ -3716,6 +3716,73 @@ describe('ForumLoader', () => {
     ).toBeTruthy();
   });
 
+  it('lets a later server reply raise the count after posting then deleting a reply', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-mod',
+      name: 'Ada',
+      text: 'Mod reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'moderator',
+      replyCount: 0,
+    });
+    vi.mocked(deleteMessage).mockResolvedValue(undefined);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Mod reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Mod reply', inReplyTo: 'm-bob' });
+    });
+    await waitFor(() => {
+      expect(
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+      ).toBeTruthy();
+    });
+
+    const replyCard = document.querySelector('[data-reply-id="r-mod"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => {
+      expect(screen.queryByText('Mod reply')).toBeNull();
+      expect(
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 replies'),
+      ).toBeTruthy();
+    });
+
+    fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 0 }]);
+    const before = fetchMock.mock.calls.length;
+    const event = new Event('pageshow');
+    Object.defineProperty(event, 'persisted', { value: true });
+    fireEvent(window, event);
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+    expect(
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 replies'),
+    ).toBeTruthy();
+
+    fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 1 }]);
+    const beforeLater = fetchMock.mock.calls.length;
+    fireEvent(window, event);
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeLater));
+    expect(
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+    ).toBeTruthy();
+  });
+
   it('does not exempt a verified member from the reply payment', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     fetchMock.mockResolvedValue([FOREIGN]);
