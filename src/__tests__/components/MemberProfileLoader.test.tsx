@@ -35,6 +35,7 @@ const profile: MemberProfile = {
   profileMessage: null,
   postCount: 0,
   replyCount: 0,
+  trust: { verifiedBy: null, proposedBy: null, confirmedBy: null, appointedBy: null },
 };
 
 const EMPTY_FX = {

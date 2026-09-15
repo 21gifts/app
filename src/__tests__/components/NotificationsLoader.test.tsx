@@ -16,12 +16,18 @@ vi.mock('@/lib/api', () => ({
   markNotificationRead: vi.fn(),
   markAllNotificationsRead: vi.fn(),
 }));
+vi.mock('@/lib/app-badge', () => ({
+  setUnreadAppBadge: vi.fn(),
+  bumpUnreadAppBadgeEpoch: vi.fn(),
+}));
 
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
 
 const listMock = vi.mocked(fetchNotifications);
 const markReadMock = vi.mocked(markNotificationRead);
 const markAllMock = vi.mocked(markAllNotificationsRead);
+const setBadgeMock = vi.mocked(setUnreadAppBadge);
 
 const account: Account = {
   id: 'acc_1',
@@ -67,6 +73,7 @@ describe('NotificationsLoader', () => {
     useAuthStore.setState({ session: null, account });
     const { container } = renderWithLocale(<NotificationsLoader />);
     expect(container.firstChild).toBeNull();
+    expect(setBadgeMock).not.toHaveBeenCalled();
   });
 
   it('loads the notification list', async () => {
@@ -76,6 +83,76 @@ describe('NotificationsLoader', () => {
     await waitFor(() => {
       expect(markAllMock).toHaveBeenCalledWith('sess');
     });
+    expect(setBadgeMock).toHaveBeenCalledWith(0);
+    expect(vi.mocked(bumpUnreadAppBadgeEpoch)).toHaveBeenCalled();
+  });
+
+  it('clears the badge again after mark-all-read resolves', async () => {
+    let resolveAll!: () => void;
+    markAllMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAll = () => {
+            resolve(undefined);
+          };
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(setBadgeMock).toHaveBeenCalledWith(0);
+    });
+    const bumps = vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length;
+    await act(async () => {
+      resolveAll();
+    });
+    await waitFor(() => {
+      expect(vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length).toBeGreaterThan(bumps);
+    });
+  });
+
+  it('still clears the badge after unmount when the session is unchanged', async () => {
+    let resolveAll!: () => void;
+    markAllMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAll = () => {
+            resolve(undefined);
+          };
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    const { unmount } = renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    const bumps = vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length;
+    unmount();
+    await act(async () => {
+      resolveAll();
+    });
+    expect(vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length).toBeGreaterThan(bumps);
+    expect(setBadgeMock).toHaveBeenCalledWith(0);
+  });
+
+  it('does not apply the second badge clear after logout', async () => {
+    let resolveAll!: () => void;
+    markAllMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAll = () => {
+            resolve(undefined);
+          };
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    const bumps = vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length;
+    useAuthStore.setState({ session: null, account: null });
+    await act(async () => {
+      resolveAll();
+    });
+    expect(vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length).toBe(bumps);
   });
 
   it('shows empty copy', async () => {
@@ -91,6 +168,7 @@ describe('NotificationsLoader', () => {
     listMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(LIST);
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(setBadgeMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Bob replied')).toBeTruthy();
   });
@@ -111,6 +189,7 @@ describe('NotificationsLoader', () => {
     });
     expect(listMock).toHaveBeenCalled();
     expect(markAllMock).not.toHaveBeenCalled();
+    expect(setBadgeMock).not.toHaveBeenCalled();
   });
 
   it('ignores a stale list rejection after unmount', async () => {

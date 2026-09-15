@@ -41,6 +41,11 @@ import {
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
   proxyViewActivityGet,
+  proxyTrustAppointModeratorPost,
+  proxyTrustChainGet,
+  proxyTrustConfirmModeratorPost,
+  proxyTrustProposeModeratorPost,
+  proxyTrustVerifyPost,
   proxyViewGet,
 } from '@/lib/api-proxies';
 
@@ -418,5 +423,55 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/push-subscriptions');
+  });
+
+  it('proxyTrustChainGet hits /trust-chain', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustChainGet(new Request('http://localhost/trust-chain'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust-chain');
+  });
+
+  it('proxyTrustChainGet forwards around', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustChainGet(new Request('http://localhost/trust/graph?around=acc%2F1'));
+    const dest = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(dest.pathname).toBe('/trust-chain');
+    expect(dest.search).toBe('?around=acc%2F1');
+  });
+
+  it('proxyTrustVerifyPost hits POST /trust/verify', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustVerifyPost(
+      new Request('http://localhost/trust/verify', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/verify');
+  });
+
+  it('proxyTrustProposeModeratorPost hits POST /trust/propose-moderator', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustProposeModeratorPost(
+      new Request('http://localhost/trust/propose-moderator', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/propose-moderator');
+  });
+
+  it('proxyTrustConfirmModeratorPost hits POST /trust/confirm-moderator', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustConfirmModeratorPost(
+      new Request('http://localhost/trust/confirm-moderator', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/confirm-moderator');
+  });
+
+  it('proxyTrustAppointModeratorPost hits POST /trust/appoint-moderator', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustAppointModeratorPost(
+      new Request('http://localhost/trust/appoint-moderator', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/appoint-moderator');
   });
 });

@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, and `/push/vapid-public`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, and `/trust/graph`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. The marketing page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -293,9 +293,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; Globe Language; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), `LanguageSwitcher` (`tone="light"`, `embedded`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape closes Menu and restores focus to Menu unless a nested listbox (language) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, embedded Language disclosure (collapsed until clicked), and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape closes Menu and restores focus to Menu unless a nested listbox (language) is expanded. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`.
 
 ## Function: ProfilePage
@@ -330,8 +330,29 @@
 
 - **Purpose:** Load the signed-in unread in-app notification count from `GET /forum/notifications`. `refreshKey` retriggers the fetch (Menu open). Errors and no session resolve to `0`. Does not mark notifications read.
 - **Inputs:** `refreshKey` boolean.
-- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists.
+- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists. Also calls `setUnreadAppBadge` with the loaded count, or `0` when the session is null **and** `loadSession()` is null (real logout). A hydrating store (`session` null, token still in storage) does not clear the badge. Does not update the badge after a cancelled fetch, or when `unreadAppBadgeEpoch` changed after the fetch started (mark-all-read on `/notifications`).
 - **Used by:** `SignedInChrome`.
+
+## Function: setUnreadAppBadge
+
+- **Purpose:** Set or clear the installed PWA home-screen unread badge via the Badging API (`navigator.setAppBadge` / `navigator.clearAppBadge`). When `count > 0` and `setAppBadge` exists, sets that number; otherwise clears when `clearAppBadge` exists. Missing APIs are a no-op. Rejections are swallowed so unsupported or denied badge writes never throw into the UI.
+- **Inputs:** `count` (number). Positive values request a badge; `0` (and any non-positive) request a clear.
+- **Returns / side effects:** `void`. Fire-and-forget promises; does not await. No network.
+- **Used by:** `useUnreadCount`, `NotificationsLoader`, `useAuthStore.clearAuth`.
+
+## Function: bumpUnreadAppBadgeEpoch
+
+- **Purpose:** Increment the home-screen badge epoch so in-flight unread fetches do not overwrite a mark-all-read clear.
+- **Inputs:** None.
+- **Returns / side effects:** The new epoch number.
+- **Used by:** `NotificationsLoader`.
+
+## Function: unreadAppBadgeEpoch
+
+- **Purpose:** Read the current home-screen badge epoch. Capture before an async unread fetch; skip `setUnreadAppBadge` if it changed.
+- **Inputs:** None.
+- **Returns / side effects:** Current epoch number. No network.
+- **Used by:** `useUnreadCount`.
 
 ## Function: vapidPublicKeyToBytes
 
@@ -346,6 +367,13 @@
 - **Inputs:** None (uses `navigator.serviceWorker`).
 - **Returns / side effects:** `ServiceWorkerRegistration`.
 - **Used by:** `enablePush`, `disablePush`, `resyncPushSubscription`.
+
+## Function: push service worker
+
+- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
+- **Inputs:** Push `event` with optional JSON payload (`title`, `body`, `url`, `tag`, `unreadCount`).
+- **Returns / side effects:** `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients; notification click focuses or opens the payload URL.
+- **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
 
 ## Function: isStandaloneDisplay
 
@@ -863,7 +891,7 @@
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart from given and received activity, name, location, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, or founder may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else (including `verified`) invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for the pinned profile note, posts feed, and replies feed (the stacked activity list) via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Purpose:** Signed-in member identity card (chart from given and received activity, name, location, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Empty reply text and an empty amount invoices 21 sats even for the parent author, a moderator, or the founder; a reply with text and an empty amount is unpaid for those roles, otherwise 1 sat; an amount of 0 is billed as 1 sat. `verified` is not exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for the pinned profile note, posts feed, and replies feed (the stacked activity list) via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
 - **Inputs:** `MemberProfile` plus received and donated series; session/account from the auth store.
 - **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
@@ -930,6 +958,90 @@
 - **Inputs:** None.
 - **Returns / side effects:** void. No-op during SSR (`window` undefined).
 - **Used by:** `useAuthStore.clearAuth`.
+
+## Function: fetchTrustChain
+
+- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) and parse the public Trust Chain graph. Optional `around` loads one hop (`?around=`).
+- **Inputs:** optional `around` account id.
+- **Returns / side effects:** `TrustChain`. Throws visitor copy when the api is down or the body is invalid.
+- **Used by:** `TrustChainLoader`.
+
+## Function: postTrustVerify
+
+- **Purpose:** POST `/trust/verify` with `{ accountId }` so a founder or moderator verifies a basis member.
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: postTrustPropose
+
+- **Purpose:** POST `/trust/propose-moderator` with `{ accountId }`.
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: postTrustConfirm
+
+- **Purpose:** POST `/trust/confirm-moderator` with `{ accountId }` (caller must not be the proposer).
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: postTrustAppoint
+
+- **Purpose:** POST `/trust/appoint-moderator` with `{ accountId }` (founder only).
+- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
+- **Used by:** `MemberTrustActions`.
+
+## Function: mergeTrustChain
+
+- **Purpose:** Merge a newly loaded neighborhood into the already visible Trust Chain without duplicating nodes or edges.
+- **Inputs:** `current` graph, `incoming` hop from `GET /trust-chain?around=`.
+- **Returns / side effects:** Combined `{ nodes, edges }`. No I/O.
+- **Used by:** `TrustChainLoader`.
+
+## Function: layoutTrustChain
+
+- **Purpose:** Positions Trust Chain nodes without a graph library. Roots sit in one row. A person with a single next person sits to their right. Several people hanging off one person stack top to bottom (`TRUST_NODE_VGAP`), not side by side and not as a pyramid of levels.
+- **Inputs:** `TrustChain` `{ nodes, edges }`.
+- **Returns / side effects:** `{ nodes, edges, width, height }` with pixel positions. Empty input is zero size.
+- **Used by:** `TrustChainDiagram`.
+
+## Function: TrustChainDiagram
+
+- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, arrow, kind label). One next person sits to the right; several hanging off one person stack top to bottom. Drag a person to move them. A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link.
+- **Inputs:** `chain: TrustChain`, optional `expandingId`, optional `onExpand`.
+- **Returns / side effects:** SVG with `data-testid="trust-node-{id}"`. Empty chain is not rendered by the parent screen.
+- **Used by:** `TrustChainScreen`.
+
+## Function: TrustChainScreen
+
+- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy. A hop-load error with nodes already on screen keeps the diagram and shows the catalog error plus **Try again** above it.
+- **Inputs:** `chain`, `error`, `loading`, optional `expandingId`, `onExpand`, `onRetry`.
+- **Returns / side effects:** Marketing screen element.
+- **Used by:** `TrustChainLoader`.
+
+## Function: TrustChainLoader
+
+- **Purpose:** Client loader for `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain. Retry with nodes already on screen re-fetches that `?around=` hop (does not re-fetch seeds); the banner stays gone only if the hop succeeds.
+- **Inputs:** none (fetches on mount).
+- **Returns / side effects:** Loading, error+retry, empty, diagram, or diagram-plus-hop-error states.
+- **Used by:** `TrustChainPage`.
+
+## Function: TrustChainPage
+
+- **Purpose:** Marketing page at `/trust-chain`.
+- **Inputs:** none.
+- **Returns / side effects:** `TrustChainLoader` inside the dark marketing shell.
+- **Used by:** App Router `src/app/(marketing)/trust-chain/page.tsx`.
+
+## Function: MemberTrustActions
+
+- **Purpose:** Staff-only Verify / Propose / Confirm / Appoint controls on another member's identity card.
+- **Inputs:** `profile`, optional `onUpdated`. Hidden unless the signed-in account is founder/moderator and not the subject.
+- **Returns / side effects:** POST then re-fetch member; `data-testid="state-members-staff-verify"` when shown.
+- **Used by:** `MemberProfileScreen`.
 
 ## Function: fetchGiftStats
 
@@ -1267,7 +1379,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
-- **Used by:** `useHydrateSession` on mount.
+- **Used by:** `useHydrateSession` on mount, `useUnreadCount`.
 
 ## Function: loadUnpaidSeenAt
 
@@ -1378,7 +1490,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
-- **Returns / side effects:** Auth state object.
+- **Returns / side effects:** Auth state object. `clearAuth` also calls `setUnreadAppBadge(0)` after clearing storage.
 - **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
 
 ## Function: useTranslations
@@ -1439,14 +1551,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / About / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
+- **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / About / Stats / Trust Chain / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
 - **Inputs:** None. Internal open state. Reads copy via `useTranslations`.
 - **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound` (no extra props).
 
 ## Function: MarketingLayout
 
-- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, and `/stats`.
+- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, `/stats`, and `/trust-chain`.
 - **Inputs:** `children`. Awaits `MarketingFooter()` (does not render it as a JSX child).
 - **Returns / side effects:** Wrapper div with header, page, and awaited footer.
 - **Used by:** Marketing route group.
@@ -1460,17 +1572,52 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslatePost`. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslatePost`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText }` or 400/502/503 JSON (LibreTranslate-compatible, not the 21.gifts api).
-- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), and `translateNote` via `POST /translate`.
+- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, and staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/appoint-moderator`).
 
 ## Function: proxyApiRequest
 
-- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers, streams a POST/PUT/PATCH/DELETE body with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0` (empty POSTs omit body and duplex), and copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers. Multipart POST/PUT/PATCH/DELETE bodies stream with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0`; JSON and other bodies are buffered (`arrayBuffer`) so Node fetch does not throw. Empty POSTs omit body and duplex. Copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response` (status + selected headers + streamed body), or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.
+
+## Function: proxyTrustChainGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /trust-chain`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/trust/graph`.
+
+## Function: proxyTrustVerifyPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/verify`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/verify`.
+
+## Function: proxyTrustProposeModeratorPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/propose-moderator`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/propose-moderator`.
+
+## Function: proxyTrustConfirmModeratorPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/confirm-moderator`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/confirm-moderator`.
+
+## Function: proxyTrustAppointModeratorPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/appoint-moderator`.
+- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/trust/appoint-moderator`.
 
 ## Function: proxyGiftsStatsGet
 
@@ -1810,9 +1957,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, fire-and-forget `markAllNotificationsRead` after a successful list, opens a row to `/messages/{parentId}` after `markNotificationRead`.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, then `bumpUnreadAppBadgeEpoch` + `setUnreadAppBadge(0)`, and again after `markAllNotificationsRead` resolves so a parallel Menu unread fetch cannot restore a stale count. Opens a row to `/messages/{parentId}` after `markNotificationRead`.
 - **Inputs:** None (session from the auth store).
-- **Returns / side effects:** React element or `null` without a session. No composer.
+- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget and clears the home-screen badge. Does not clear the badge on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
 
 ## Function: NotificationsScreen

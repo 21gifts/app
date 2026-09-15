@@ -33,7 +33,25 @@ self.addEventListener('push', (event) => {
     options.tag = tag;
     options.renotify = true;
   }
-  event.waitUntil(self.registration.showNotification(title, options));
+  const shown = self.registration.showNotification(title, options);
+  const tasks = [shown];
+  const setBadge =
+    typeof self.navigator.setAppBadge === 'function'
+      ? self.navigator.setAppBadge.bind(self.navigator)
+      : typeof self.registration.setAppBadge === 'function'
+        ? self.registration.setAppBadge.bind(self.registration)
+        : null;
+  if (setBadge !== null) {
+    let n = 1;
+    if (typeof payload.unreadCount === 'number' && Number.isFinite(payload.unreadCount)) {
+      const floored = Math.floor(payload.unreadCount);
+      if (floored > 0) {
+        n = floored;
+      }
+    }
+    tasks.push(setBadge(n).catch(() => undefined));
+  }
+  event.waitUntil(Promise.all(tasks));
 });
 
 self.addEventListener('notificationclick', (event) => {
