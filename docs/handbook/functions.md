@@ -314,10 +314,17 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), and a number-format settings row (`NumberFormatSwitcher`). Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; `AccountActivityChart`; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a theme settings row (`ThemeSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
+- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `ThemeSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), About me, name form, location form, address form, push bell under the address form, Theme (System / Light / Dark), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
+
+## Function: AboutMeSection
+
+- **Purpose:** Profile-card About me block: heading plus filled text or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is non-empty and not equal to the display name case-insensitive. Owner mode can edit (write / pencil, save, cancel) via `onSave`. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text and no copy URL renders `null`.
+- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `profileUrl`, optional `onSave`.
+- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save.
+- **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`).
 
 ## Function: PushToggle
 
@@ -667,9 +674,9 @@
 
 ## Function: ViewProfileScreen
 
-- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without action buttons. Unset location shows `location.unset`.
-- **Inputs:** `{ profile, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`.
-- **Returns / side effects:** No menu, logout, back, or edit forms. Language switcher lives on the page, not in this card.
+- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, About me inside the card (not a forum post; public `AboutMeSection` with `name={profile.name}` shows filled text or omits the heading when unfilled), name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without edit or Message actions. Unset location shows `location.unset`. Copy-profile-link on the card (`profile.copyLink`).
+- **Inputs:** `{ profile, viewKey, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`. `viewKey` builds the copy URL `/view/<viewKey>`. `profile` includes `aboutMe` and `location`.
+- **Returns / side effects:** No menu, logout, back, edit forms, or Message. Copy-profile-link on the card; URL/key never shown as visible text. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
 
 ## Function: ViewProfileClaim
@@ -893,14 +900,14 @@
 
 - **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, then `fetchMemberActivity` even if the Lightning Address is blank. It does not prefetch post/reply feeds; `postCount` and `replyCount` arrive with the profile JSON.
 - **Inputs:** Route `accountId`; session from auth store.
-- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. `fetchMember` 409 `missing_requirements` → `/setup/rules`. `fetchMemberActivity` 409 or any other activity error keeps the card with empty given and received series.
+- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. `fetchMember` 409 `missing_requirements` → `/setup/rules`. `fetchMemberActivity` 409 `missing_requirements` → `/setup/rules`. Any other activity error keeps the card with empty given and received series.
 - **Used by:** `MemberProfilePage`.
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart from given and received activity, name, location, Lightning Address, role pill, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. Posts open hides the separately pinned profile note because the note is already in that feed, while replies open keeps the pinned note. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use the pinned note's pay, PM, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Empty reply text and an empty amount invoices 21 sats even for the parent author, a moderator, or the founder; a reply with text and an empty amount is unpaid for those roles, otherwise 1 sat; an amount of 0 is billed as 1 sat. `verified` is not exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for the pinned profile note, posts feed, and replies feed (the stacked activity list) via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
-- **Inputs:** `MemberProfile` plus received and donated series; session/account from the auth store.
-- **Returns / side effects:** React tree; lazily fetches the selected member posts or replies; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
+- **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, Lightning Address, role pill, copy-profile-link, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text or omits the heading when unfilled. Message `IconButton` (`profile.message`) sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use pay, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, or founder may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else (including `verified`) invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Inputs:** `MemberProfile` (includes `aboutMe` and `location`) plus received and donated series; session/account from the auth store.
+- **Returns / side effects:** React tree with About me, copy-profile-link, optional Message, staff Trust Chain actions, and a read-only location row on the card; lazily fetches the selected member posts or replies; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: MemberProfilePage
@@ -1451,6 +1458,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Updated `Account`. Throws the api error string on 400 when present, otherwise `'Could not save your location'`.
 - **Used by:** `LocationForm`.
 
+## Function: putAboutMe
+
+- **Purpose:** PUT `/me/about` with bearer + `{ text }` and return the updated account.
+- **Inputs:** `sessionToken`, `text`.
+- **Returns / side effects:** Updated `Account`. Throws `MissingRequirementsError` on 409 `missing_requirements`; `'Could not save. Please try again.'` on other non-2xx. A 2xx body that fails `accountSchema` throws the schema error.
+- **Used by:** `ProfileScreen`.
+
 ## Function: dismissForumLaws
 
 - **Purpose:** POST `/me/forum-laws-dismissed` to permanently dismiss the welcome-forum living-room laws hint.
@@ -1584,6 +1598,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText }` or 400/502/503 JSON (LibreTranslate-compatible, not the 21.gifts api).
 - **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, and staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/appoint-moderator`).
 
+## Function: PUT
+
+- **Purpose:** Shared App Router PUT export name. `/me/about` re-exports `proxyMeAboutPut`.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }`.
+- **Returns / side effects:** Upstream api `Response`.
+- **Used by:** Same-origin About me save (`PUT /me/about` / `putAboutMe`).
+
 ## Function: proxyApiRequest
 
 - **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers. Multipart POST/PUT/PATCH/DELETE bodies stream with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0`; JSON and other bodies are buffered (`arrayBuffer`) so Node fetch does not throw. Empty POSTs omit body and duplex. Copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
@@ -1674,6 +1695,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `Request` with JSON `{ location }` and Bearer session.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/location`.
+
+## Function: proxyMeAboutPut
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /me/about`.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** App Router `PUT` on `/me/about`.
 
 ## Function: proxyMeForumLawsDismissedPost
 

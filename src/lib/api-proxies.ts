@@ -81,6 +81,16 @@ export async function proxyMeLocationPost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies PUT /me/about to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ text }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeAboutPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/about');
+}
+
+/**
  * Proxies POST /me/setup/skip to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ step }`).

@@ -54,6 +54,7 @@ const account: Account = {
   viewKey: 'a'.repeat(64),
   setup: null,
   missing: [],
+  aboutMe: null,
 };
 
 const profile: MemberProfile = {
@@ -67,6 +68,7 @@ const profile: MemberProfile = {
   postCount: 0,
   replyCount: 0,
   trust: NULL_TRUST,
+  aboutMe: null,
 };
 
 beforeEach(() => {

@@ -114,7 +114,12 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <ViewProfileScreen profile={readyProfile} received={received} donated={donated} />
+      <ViewProfileScreen
+        profile={readyProfile}
+        viewKey={viewKey}
+        received={received}
+        donated={donated}
+      />
       <ViewProfileClaim viewKey={viewKey} hasPasskey={readyProfile.hasPasskey} />
     </div>
   );

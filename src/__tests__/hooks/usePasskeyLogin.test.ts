@@ -39,6 +39,7 @@ const account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: 'name' as const,
   missing: ['name', 'lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
 };

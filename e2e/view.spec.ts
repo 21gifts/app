@@ -10,6 +10,7 @@ const VIEW_PROFILE = {
   lightningAddressVerified: false,
   createdAt: 1,
   hasPasskey: false,
+  aboutMe: null,
 };
 
 const EMPTY_ACTIVITY = {
@@ -53,7 +54,8 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+  await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
 });
@@ -100,6 +102,7 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'c'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -203,7 +206,9 @@ test('public view profile error shows Try again and retries', async ({ page }) =
   await expect(page.getByText('Ada')).toBeVisible();
 });
 
-test('signed-in profile does not show the copy control or the view-key URL', async ({ page }) => {
+test('signed-in profile shows the unlabeled profile copy control without exposing the view-key URL', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -223,6 +228,7 @@ test('signed-in profile does not show the copy control or the view-key URL', asy
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: KEY,
+        aboutMe: null,
         setup: null,
         missing: [],
       }),
@@ -236,7 +242,8 @@ test('signed-in profile does not show the copy control or the view-key URL', asy
     });
   });
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Copy view-only link' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+  await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'View key' })).toHaveCount(0);
   await expect(page.getByText(new RegExp(`/view/${KEY}`))).toHaveCount(0);
   await expect(page.getByText(KEY)).toHaveCount(0);
