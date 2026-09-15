@@ -330,7 +330,7 @@
 
 - **Purpose:** Load the signed-in unread in-app notification count from `GET /forum/notifications`. `refreshKey` retriggers the fetch (Menu open). Errors and no session resolve to `0`. Does not mark notifications read.
 - **Inputs:** `refreshKey` boolean.
-- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists. Also calls `setUnreadAppBadge` with the loaded count, or `0` when the session is null or the fetch errors. Does not update the badge after a cancelled fetch.
+- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists. Also calls `setUnreadAppBadge` with the loaded count, or `0` when the session is null or the fetch errors. Does not update the badge after a cancelled fetch, or when `unreadAppBadgeEpoch` changed after the fetch started (mark-all-read on `/notifications`).
 - **Used by:** `SignedInChrome`.
 
 ## Function: setUnreadAppBadge
@@ -339,6 +339,20 @@
 - **Inputs:** `count` (number). Positive values request a badge; `0` (and any non-positive) request a clear.
 - **Returns / side effects:** `void`. Fire-and-forget promises; does not await. No network.
 - **Used by:** `useUnreadCount`, `NotificationsLoader`.
+
+## Function: bumpUnreadAppBadgeEpoch
+
+- **Purpose:** Increment the home-screen badge epoch so in-flight unread fetches do not overwrite a mark-all-read clear.
+- **Inputs:** None.
+- **Returns / side effects:** The new epoch number.
+- **Used by:** `NotificationsLoader`.
+
+## Function: unreadAppBadgeEpoch
+
+- **Purpose:** Read the current home-screen badge epoch. Capture before an async unread fetch; skip `setUnreadAppBadge` if it changed.
+- **Inputs:** None.
+- **Returns / side effects:** Current epoch number. No network.
+- **Used by:** `useUnreadCount`.
 
 ## Function: vapidPublicKeyToBytes
 
@@ -356,7 +370,7 @@
 
 ## Function: push service worker
 
-- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `registration.setAppBadge` exists, sets the home-screen badge from `payload.unreadCount` (finite number greater than 0, floored) or `1` when that field is missing or not a positive finite number. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
+- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `registration.setAppBadge` exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
 - **Inputs:** Push `event` with optional JSON payload (`title`, `body`, `url`, `tag`, `unreadCount`).
 - **Returns / side effects:** `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients; notification click focuses or opens the payload URL.
 - **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).

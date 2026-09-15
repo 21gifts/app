@@ -10,10 +10,11 @@ vi.mock('@/lib/api', () => ({
 }));
 vi.mock('@/lib/app-badge', () => ({
   setUnreadAppBadge: vi.fn(),
+  unreadAppBadgeEpoch: vi.fn(() => 0),
 }));
 
 import { fetchNotifications } from '@/lib/api';
-import { setUnreadAppBadge } from '@/lib/app-badge';
+import { setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
 
 const fetchMock = vi.mocked(fetchNotifications);
 const setBadgeMock = vi.mocked(setUnreadAppBadge);
@@ -103,5 +104,27 @@ describe('useUnreadCount', () => {
     await waitFor(() => {
       expect(screen.getByText('count:2')).toBeTruthy();
     });
+  });
+
+  it('does not apply a stale badge after the epoch bumps', async () => {
+    const epochMock = vi.mocked(unreadAppBadgeEpoch);
+    let epoch = 0;
+    epochMock.mockImplementation(() => epoch);
+    let resolveList!: (value: { notifications: []; unreadCount: number }) => void;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+    renderWithLocale(<Probe refreshKey={true} />);
+    epoch = 1;
+    await act(async () => {
+      resolveList({ notifications: [], unreadCount: 7 });
+    });
+    await waitFor(() => {
+      expect(screen.getByText('count:7')).toBeTruthy();
+    });
+    expect(setBadgeMock).not.toHaveBeenCalledWith(7);
   });
 });

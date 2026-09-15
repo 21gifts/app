@@ -18,10 +18,11 @@ vi.mock('@/lib/api', () => ({
 }));
 vi.mock('@/lib/app-badge', () => ({
   setUnreadAppBadge: vi.fn(),
+  bumpUnreadAppBadgeEpoch: vi.fn(),
 }));
 
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api';
-import { setUnreadAppBadge } from '@/lib/app-badge';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
 
 const listMock = vi.mocked(fetchNotifications);
 const markReadMock = vi.mocked(markNotificationRead);
@@ -83,6 +84,7 @@ describe('NotificationsLoader', () => {
       expect(markAllMock).toHaveBeenCalledWith('sess');
     });
     expect(setBadgeMock).toHaveBeenCalledWith(0);
+    expect(vi.mocked(bumpUnreadAppBadgeEpoch)).toHaveBeenCalled();
   });
 
   it('shows empty copy', async () => {

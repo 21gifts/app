@@ -3,6 +3,27 @@ type AppBadgeNavigator = Navigator & {
   clearAppBadge?: () => Promise<void>;
 };
 
+let badgeEpoch = 0;
+
+/**
+ * Invalidate in-flight unread badge writes (e.g. after mark-all-read).
+ *
+ * @returns The new epoch. Callers that started a fetch before this bump must
+ * not apply `setUnreadAppBadge` with a stale count.
+ */
+export function bumpUnreadAppBadgeEpoch(): number {
+  badgeEpoch += 1;
+  return badgeEpoch;
+}
+
+/**
+ * Current badge epoch. Capture before an async fetch; skip the write if it
+ * changed.
+ */
+export function unreadAppBadgeEpoch(): number {
+  return badgeEpoch;
+}
+
 /**
  * Set or clear the installed PWA home-screen unread badge via the Badging API.
  *

@@ -36,15 +36,14 @@ self.addEventListener('push', (event) => {
   const shown = self.registration.showNotification(title, options);
   const tasks = [shown];
   if (typeof self.registration.setAppBadge === 'function') {
-    if (
-      typeof payload.unreadCount === 'number' &&
-      Number.isFinite(payload.unreadCount) &&
-      payload.unreadCount > 0
-    ) {
-      tasks.push(self.registration.setAppBadge(Math.floor(payload.unreadCount)));
-    } else {
-      tasks.push(self.registration.setAppBadge(1));
+    let n = 1;
+    if (typeof payload.unreadCount === 'number' && Number.isFinite(payload.unreadCount)) {
+      const floored = Math.floor(payload.unreadCount);
+      if (floored > 0) {
+        n = floored;
+      }
     }
+    tasks.push(self.registration.setAppBadge(n).catch(() => undefined));
   }
   event.waitUntil(Promise.all(tasks));
 });

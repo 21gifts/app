@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { setUnreadAppBadge } from '@/lib/app-badge';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -89,6 +89,12 @@ describe('setUnreadAppBadge', () => {
     expect(() => {
       setUnreadAppBadge(1);
     }).not.toThrow();
+  });
+
+  it('bumpUnreadAppBadgeEpoch increments unreadAppBadgeEpoch', () => {
+    const before = unreadAppBadgeEpoch();
+    expect(bumpUnreadAppBadgeEpoch()).toBe(before + 1);
+    expect(unreadAppBadgeEpoch()).toBe(before + 1);
   });
 
   it('is a no-op when count is 0 and clearAppBadge is missing', () => {

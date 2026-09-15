@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchNotifications } from '@/lib/api';
-import { setUnreadAppBadge } from '@/lib/app-badge';
+import { setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -32,17 +32,22 @@ export function useUnreadCount(refreshKey: boolean): { unreadCount: number } {
       };
     }
     void (async () => {
+      const epoch = unreadAppBadgeEpoch();
       try {
         const list = await fetchNotifications(session);
         if (cancelled) {
           return;
         }
         setUnreadCount(list.unreadCount);
-        setUnreadAppBadge(list.unreadCount);
+        if (epoch === unreadAppBadgeEpoch()) {
+          setUnreadAppBadge(list.unreadCount);
+        }
       } catch {
         if (!cancelled) {
           setUnreadCount(0);
-          setUnreadAppBadge(0);
+          if (epoch === unreadAppBadgeEpoch()) {
+            setUnreadAppBadge(0);
+          }
         }
       }
     })();

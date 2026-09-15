@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { NotificationsScreen } from '@/components/NotificationsScreen';
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
 import type { Notification } from '@/lib/api-types';
-import { setUnreadAppBadge } from '@/lib/app-badge';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -42,6 +42,7 @@ export function NotificationsLoader(): ReactElement | null {
         }
         setNotifications(next.notifications);
         void markAllNotificationsRead(session).catch(() => undefined);
+        bumpUnreadAppBadgeEpoch();
         setUnreadAppBadge(0);
       } catch {
         if (cancelled) {

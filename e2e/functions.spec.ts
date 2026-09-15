@@ -5035,16 +5035,67 @@ test('Function: proxyPushVapidPublicGet — GET /push/vapid-public without beare
   expect((await request.get('/push/vapid-public')).status()).toBe(401);
 });
 
-test('Function: setUnreadAppBadge — GET /push/vapid-public without bearer is 401', async ({
-  request,
+test('Function: bumpUnreadAppBadgeEpoch — signed-in notifications screen loads', async ({
+  page,
 }) => {
-  expect((await request.get('/push/vapid-public')).status()).toBe(401);
+  await seedAdaSession(page);
+  await page.route(/\/forum\/notifications/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
 });
 
-test('Function: push service worker — GET /push/vapid-public without bearer is 401', async ({
-  request,
-}) => {
-  expect((await request.get('/push/vapid-public')).status()).toBe(401);
+test('Function: unreadAppBadgeEpoch — menu shows unread notification count', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+});
+
+test('Function: setUnreadAppBadge — menu shows unread notification count', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+});
+
+test('Function: push service worker — GET /sw.js is the push worker', async ({ request }) => {
+  const res = await request.get('/sw.js');
+  expect(res.status()).toBe(200);
+  const body = await res.text();
+  expect(body).toContain('setAppBadge');
+  expect(body).toContain('showNotification');
 });
 
 test('Function: fetchVapidPublicKey — GET /push/vapid-public with bearer is 200', async ({
