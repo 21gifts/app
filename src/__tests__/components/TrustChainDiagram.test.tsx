@@ -165,14 +165,14 @@ describe('TrustChainDiagram', () => {
       <TrustChainDiagram
         chain={{
           nodes: [
-            { id: 'f', name: 'F', role: 'founder' },
-            { id: 'm', name: 'M', role: 'moderator' },
-            { id: 'v', name: 'V', role: 'verified' },
+            { id: 'a', name: 'Ada', role: 'verified' },
+            { id: 'mid', name: 'Mid', role: 'verified' },
+            { id: 'c', name: 'Carol', role: 'verified' },
           ],
           edges: [
-            { from: 'f', to: 'm', kind: 'moderator_appoint' },
-            { from: 'm', to: 'v', kind: 'verify' },
-            { from: 'f', to: 'v', kind: 'verify' },
+            { from: 'a', to: 'c', kind: 'verify' }, // hops = 2, skips mid
+            { from: 'mid', to: 'a', kind: 'verify' }, // incoming on a
+            { from: 'c', to: 'mid', kind: 'verify' }, // incoming on mid; a→c already incoming on c
           ],
         }}
       />,
