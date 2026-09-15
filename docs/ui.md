@@ -529,7 +529,7 @@ Content translation under a note or reply body is a labeled underline text contr
 
 **Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Skip**, **Activate**, **Try again**.
 
-Founder/moderator **Trash2** on notes is icon-only with inline confirm (`DeletePostControl`).
+Founder/moderator **Trash2** on notes and nested replies is icon-only with inline confirm (`DeletePostControl`).
 
 **Button size scale (one).**
 
@@ -759,7 +759,7 @@ Expand: the whole card is `role="button"` (click to expand replies). Inner contr
 
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
-**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Not a labeled button.
+**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies use the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Nested reply action row is `mt-2 flex flex-wrap items-start gap-5` only when PM and trash are both visible; a single control stays `mt-2`. Not a labeled button.
 
 ### Inbox thread bubbles
 
