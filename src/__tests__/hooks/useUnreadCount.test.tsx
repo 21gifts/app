@@ -127,4 +127,26 @@ describe('useUnreadCount', () => {
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(7);
   });
+
+  it('does not apply a stale error badge after the epoch bumps', async () => {
+    const epochMock = vi.mocked(unreadAppBadgeEpoch);
+    let epoch = 0;
+    epochMock.mockImplementation(() => epoch);
+    let rejectList!: (reason?: unknown) => void;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectList = reject;
+        }),
+    );
+    renderWithLocale(<Probe refreshKey={true} />);
+    epoch = 1;
+    await act(async () => {
+      rejectList(new Error('fail'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('count:0')).toBeTruthy();
+    });
+    expect(setBadgeMock).not.toHaveBeenCalledWith(0);
+  });
 });

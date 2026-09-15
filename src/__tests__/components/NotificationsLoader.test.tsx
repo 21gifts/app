@@ -112,7 +112,7 @@ describe('NotificationsLoader', () => {
     });
   });
 
-  it('does not apply the second badge clear after unmount', async () => {
+  it('still clears the badge after unmount when the session is unchanged', async () => {
     let resolveAll!: () => void;
     markAllMock.mockImplementation(
       () =>
@@ -125,12 +125,34 @@ describe('NotificationsLoader', () => {
     listMock.mockResolvedValue(LIST);
     const { unmount } = renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByText('Bob replied')).toBeTruthy();
-    const calls = setBadgeMock.mock.calls.length;
+    const bumps = vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length;
     unmount();
     await act(async () => {
       resolveAll();
     });
-    expect(setBadgeMock.mock.calls.length).toBe(calls);
+    expect(vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length).toBeGreaterThan(bumps);
+    expect(setBadgeMock).toHaveBeenCalledWith(0);
+  });
+
+  it('does not apply the second badge clear after logout', async () => {
+    let resolveAll!: () => void;
+    markAllMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAll = () => {
+            resolve(undefined);
+          };
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    const bumps = vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length;
+    useAuthStore.setState({ session: null, account: null });
+    await act(async () => {
+      resolveAll();
+    });
+    expect(vi.mocked(bumpUnreadAppBadgeEpoch).mock.calls.length).toBe(bumps);
   });
 
   it('shows empty copy', async () => {

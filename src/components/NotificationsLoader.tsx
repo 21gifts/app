@@ -45,7 +45,7 @@ export function NotificationsLoader(): ReactElement | null {
         setUnreadAppBadge(0);
         void markAllNotificationsRead(session)
           .then(() => {
-            if (cancelled) {
+            if (useAuthStore.getState().session !== session) {
               return;
             }
             bumpUnreadAppBadgeEpoch();
