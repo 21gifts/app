@@ -575,19 +575,19 @@ After **Menu**, click **Language** → the four endonym rows (English / Deutsch 
 
 ### Variant: pay-amount
 
-Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. No error, no payment QR, no invoice-step wallet link.
+Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. No error, no payment QR, no wallet **Pay** button yet.
 
 ![21.gifts welcome pay amount](images/welcome-pay-amount.png)
 
 ### Variant: pay-qr
 
-Payable note, amount submitted. Captured at desktop and mobile. On desktop the pay sheet shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same sheet has no QR.
+Payable note, amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the amount form stays: disabled minted amount, the same **Pay** button, back control, no QR.
 
 ![21.gifts welcome pay QR](images/welcome-pay-qr.png)
 
 ### Variant: pay-smartphone
 
-Same pay sheet captured at desktop and mobile. On a smartphone user-agent: **Pay** button with the Wallet of Satoshi icon only, no QR, plus the top-left back control. On desktop this scenario shows the QR.
+Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the amount form stays after mint (disabled minted amount, **Pay** button with the Wallet of Satoshi icon, back control, no QR). On desktop this scenario shows the QR invoice card.
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
