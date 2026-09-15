@@ -384,6 +384,7 @@ describe('PublicMessageLoader', () => {
       expect(screen.getByText('$0.02')).toBeTruthy();
     });
     expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 
   it('clears the photo when the photo fetch fails', async () => {

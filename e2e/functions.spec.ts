@@ -4754,6 +4754,37 @@ test('Function: PublicMessageLoader — invalid id shows not-found copy', async 
   await expect(page.getByText('This profile could not be found.')).toBeVisible();
 });
 
+test('Function: PublicMessageLoader — public note has no fiat switcher', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByText('Ada', { exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+});
+
 test('Function: fetchPublicMessage — public note loads via the client fetch', async ({ page }) => {
   const id = '11111111-1111-4111-8111-111111111111';
   await page.route(`**/public-messages/${id}/replies`, async (route) => {
