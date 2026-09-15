@@ -64,9 +64,34 @@ describe('LegalPage', () => {
   it('credits the four Bible editions', () => {
     render(<LegalPage />);
     expect(screen.getByRole('heading', { name: 'Scripture quotations', level: 2 })).toBeTruthy();
-    expect(screen.getByText(/by Biblica, Inc\./)).toBeTruthy();
-    expect(screen.getByText(/Deutsche Bibelgesellschaft, Stuttgart/)).toBeTruthy();
-    expect(screen.getByText(/Sociedades Bíblicas Unidas, 1988/)).toBeTruthy();
-    expect(screen.getByText(/Philippine Bible Society/)).toBeTruthy();
+    const notice = (text: string): HTMLElement =>
+      screen.getByText((_, node) => {
+        if (!node || node.tagName !== 'P') return false;
+        const own = Array.from(node.childNodes)
+          .filter((child) => child.nodeType === Node.TEXT_NODE)
+          .map((child) => child.textContent ?? '')
+          .join('')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return own === text;
+      });
+    expect(
+      notice(
+        'THE HOLY BIBLE, NEW INTERNATIONAL VERSION®, NIV® Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.® Used by permission. All rights reserved worldwide.',
+      ),
+    ).toBeTruthy();
+    expect(
+      notice(
+        'Die Bibel nach Martin Luthers Übersetzung, revidiert 2017, © 2016 Deutsche Bibelgesellschaft, Stuttgart.',
+      ),
+    ).toBeTruthy();
+    expect(
+      notice(
+        'Texto bíblico: Reina-Valera 1960® © Sociedades Bíblicas en América Latina, 1960. Renovado © Sociedades Bíblicas Unidas, 1988. Utilizado con permiso. Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas, y se puede usar solamente bajo licencia.',
+      ),
+    ).toBeTruthy();
+    expect(
+      notice('Magandang Balita Biblia (Revised) © Philippine Bible Society 2005.'),
+    ).toBeTruthy();
   });
 });
