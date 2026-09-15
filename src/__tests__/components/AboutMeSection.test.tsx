@@ -93,6 +93,30 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('disables save and shows a spinner while onSave is in flight', async () => {
+    let resolveSave!: (value: void) => void;
+    const onSave = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    const button = screen.getByRole('button', { name: 'Save About me' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.querySelector('.animate-spin')).toBeTruthy();
+    expect((screen.getByLabelText('About me') as HTMLTextAreaElement).disabled).toBe(true);
+    await act(async () => {
+      resolveSave();
+    });
+    await waitFor(() => {
+      expect(screen.queryByLabelText('About me')).toBeNull();
+    });
+  });
+
   it('stays in edit mode when onSave is omitted', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));

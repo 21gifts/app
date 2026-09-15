@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Link2, Pencil, X } from 'lucide-react';
+import { Check, Link2, Loader2, Pencil, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
@@ -177,7 +177,11 @@ export function AboutMeSection({
                 void saveEdit();
               }}
             >
-              <Check aria-hidden="true" className="h-4 w-4" />
+              {saving ? (
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check aria-hidden="true" className="h-4 w-4" />
+              )}
             </IconButton>
             <IconButton
               type="button"

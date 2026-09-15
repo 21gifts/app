@@ -1,6 +1,6 @@
 'use client';
 
-import { Mail } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
@@ -963,7 +963,11 @@ export function MemberProfileScreen({
                 title={t('profile.message')}
                 onClick={onMessage}
               >
-                <Mail aria-hidden="true" className="h-4 w-4" />
+                {pmBusy ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail aria-hidden="true" className="h-4 w-4" />
+                )}
               </IconButton>
             </div>
           ) : null}

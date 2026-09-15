@@ -628,6 +628,39 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('spins the Message control while openConversation is in flight', async () => {
+    let resolveConversation!: (value: Awaited<ReturnType<typeof openConversation>>) => void;
+    vi.mocked(openConversation).mockReturnValue(
+      new Promise((resolve) => {
+        resolveConversation = resolve;
+      }),
+    );
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Message' }));
+    const button = screen.getByRole('button', { name: 'Message' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.querySelector('.animate-spin')).toBeTruthy();
+    await act(async () => {
+      resolveConversation({
+        id: 'conv-1',
+        kind: 'member_member',
+        name: 'Carol',
+        lastText: '',
+        lastAt: '2026-01-01T00:00:00.000Z',
+        lastFromMe: false,
+      });
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
+    });
+  });
+
   it('requests a pay invoice from the profile note', async () => {
     renderWithLocale(
       <MemberProfileScreen
