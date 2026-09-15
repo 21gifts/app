@@ -21,7 +21,7 @@ export interface FiatPreferenceContextValue {
    * SameSite=Lax (`Secure` on https). Same-code is a no-op when the cookie is
    * already set to `next`.
    *
-   * @param next - Code the visitor chose on Profile.
+   * @param next - Code the visitor chose.
    */
   setFiat: (next: FiatCode) => void;
 }
