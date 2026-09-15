@@ -330,8 +330,29 @@
 
 - **Purpose:** Load the signed-in unread in-app notification count from `GET /forum/notifications`. `refreshKey` retriggers the fetch (Menu open). Errors and no session resolve to `0`. Does not mark notifications read.
 - **Inputs:** `refreshKey` boolean.
-- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists.
+- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists. Also calls `setUnreadAppBadge` with the loaded count, or `0` when the session is null **and** `loadSession()` is null (real logout). A hydrating store (`session` null, token still in storage) does not clear the badge. Does not update the badge after a cancelled fetch, or when `unreadAppBadgeEpoch` changed after the fetch started (mark-all-read on `/notifications`).
 - **Used by:** `SignedInChrome`.
+
+## Function: setUnreadAppBadge
+
+- **Purpose:** Set or clear the installed PWA home-screen unread badge via the Badging API (`navigator.setAppBadge` / `navigator.clearAppBadge`). When `count > 0` and `setAppBadge` exists, sets that number; otherwise clears when `clearAppBadge` exists. Missing APIs are a no-op. Rejections are swallowed so unsupported or denied badge writes never throw into the UI.
+- **Inputs:** `count` (number). Positive values request a badge; `0` (and any non-positive) request a clear.
+- **Returns / side effects:** `void`. Fire-and-forget promises; does not await. No network.
+- **Used by:** `useUnreadCount`, `NotificationsLoader`, `useAuthStore.clearAuth`.
+
+## Function: bumpUnreadAppBadgeEpoch
+
+- **Purpose:** Increment the home-screen badge epoch so in-flight unread fetches do not overwrite a mark-all-read clear.
+- **Inputs:** None.
+- **Returns / side effects:** The new epoch number.
+- **Used by:** `NotificationsLoader`.
+
+## Function: unreadAppBadgeEpoch
+
+- **Purpose:** Read the current home-screen badge epoch. Capture before an async unread fetch; skip `setUnreadAppBadge` if it changed.
+- **Inputs:** None.
+- **Returns / side effects:** Current epoch number. No network.
+- **Used by:** `useUnreadCount`.
 
 ## Function: vapidPublicKeyToBytes
 
@@ -346,6 +367,13 @@
 - **Inputs:** None (uses `navigator.serviceWorker`).
 - **Returns / side effects:** `ServiceWorkerRegistration`.
 - **Used by:** `enablePush`, `disablePush`, `resyncPushSubscription`.
+
+## Function: push service worker
+
+- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
+- **Inputs:** Push `event` with optional JSON payload (`title`, `body`, `url`, `tag`, `unreadCount`).
+- **Returns / side effects:** `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients; notification click focuses or opens the payload URL.
+- **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
 
 ## Function: isStandaloneDisplay
 
@@ -1351,7 +1379,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
-- **Used by:** `useHydrateSession` on mount.
+- **Used by:** `useHydrateSession` on mount, `useUnreadCount`.
 
 ## Function: loadUnpaidSeenAt
 
@@ -1462,7 +1490,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
-- **Returns / side effects:** Auth state object.
+- **Returns / side effects:** Auth state object. `clearAuth` also calls `setUnreadAppBadge(0)` after clearing storage.
 - **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
 
 ## Function: useTranslations
@@ -1929,9 +1957,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, fire-and-forget `markAllNotificationsRead` after a successful list, opens a row to `/messages/{parentId}` after `markNotificationRead`.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications`, then `bumpUnreadAppBadgeEpoch` + `setUnreadAppBadge(0)`, and again after `markAllNotificationsRead` resolves so a parallel Menu unread fetch cannot restore a stale count. Opens a row to `/messages/{parentId}` after `markNotificationRead`.
 - **Inputs:** None (session from the auth store).
-- **Returns / side effects:** React element or `null` without a session. No composer.
+- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget and clears the home-screen badge. Does not clear the badge on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
 
 ## Function: NotificationsScreen
