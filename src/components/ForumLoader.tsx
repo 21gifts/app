@@ -154,12 +154,13 @@ function combineReplyCount(
   lastIncoming: number,
   prior: number,
 ): { replyCount: number; hidden: number; lastIncoming: number } {
-  const drop = Math.max(0, lastIncoming - incoming);
+  const drop = hidden > 0 ? Math.max(0, lastIncoming - incoming) : 0;
   const nextHidden = Math.max(0, hidden - drop);
+  const stale = hidden === 0 && prior > incoming;
   return {
     replyCount: Math.max(prior, Math.max(0, incoming - nextHidden)),
     hidden: nextHidden,
-    lastIncoming: incoming,
+    lastIncoming: stale ? lastIncoming : incoming,
   };
 }
 
