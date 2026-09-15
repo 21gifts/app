@@ -164,7 +164,7 @@ export function AboutMeSection({
               maxLength={ABOUT_ME_MAX_LENGTH}
               disabled={saving}
               onChange={(event) => setDraft(event.target.value)}
-              className="min-h-24 min-w-0 flex-1 resize-y rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
+              className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
             />
             <IconButton
               type="button"
