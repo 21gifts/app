@@ -58,8 +58,8 @@ The only state: three convictions, verse, and forum CTA, marketing chrome.
 
 - **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
 - **What the user sees:** Dark 21.gifts header, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, selected fiat code) with a FiatPicker, empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
-- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). The fourth column and summary follow the Profile (or locale-default) preference; preferred fiat is changed only on Profile. Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
-- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`).
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
+- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `FiatPicker`, `fetchGiftDay` (`GET /gifts?day=`).
 - **Auth:** None.
 
 ### Variant: default
@@ -90,8 +90,8 @@ Fetch failed. Button **Try again**.
 
 - **URL:** `/stats` — public gift totals (no auth gate).
 - **What the user sees:** Dark 21.gifts header with a language switcher, heading **Gifts**. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, gifts, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Switch **Total spend over time** / **By person** / **By month** between ₿ and the preferred fiat. Header **Stats** stays on this page; **Log in** goes to `/login`. Preferred fiat is changed only on Profile.
-- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`.
+- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -845,7 +845,7 @@ Signed-in **moderator** viewing another member who is **basis**. Staff card with
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | preferred fiat right; no chart title heading), name, location (**Location** / **Ort**, unset shows **Not set**), and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), a notifications row under the address form with visible On/Off and an icon-only bell (same `IconButton` circle as pencil/trash; off outlined BellOff secondary, on filled Bell primary), then a Theme settings row, a Fiat currency settings row (CHF|EUR|USD|PHP — the only fiat switcher), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (**Home** first; language then log out, then a quiet **Version {sha}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | preferred fiat right; no chart title heading), name, location (**Location** / **Ort**, unset shows **Not set**), and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), a notifications row under the address form with visible On/Off and an icon-only bell (same `IconButton` circle as pencil/trash; off outlined BellOff secondary, on filled Bell primary), then a Theme settings row, a Fiat currency settings row (CHF|EUR|USD|PHP; the chart FiatPicker is a second switcher on the same card), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (**Home** first; language then log out, then a quiet **Version {sha}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
 
