@@ -12,9 +12,13 @@ vi.mock('@/lib/app-badge', () => ({
   setUnreadAppBadge: vi.fn(),
   unreadAppBadgeEpoch: vi.fn(() => 0),
 }));
+vi.mock('@/lib/session-storage', () => ({
+  loadSession: vi.fn(() => null),
+}));
 
 import { fetchNotifications } from '@/lib/api';
 import { setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
+import { loadSession } from '@/lib/session-storage';
 
 const fetchMock = vi.mocked(fetchNotifications);
 const setBadgeMock = vi.mocked(setUnreadAppBadge);
@@ -28,6 +32,7 @@ describe('useUnreadCount', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     setBadgeMock.mockClear();
+    vi.mocked(loadSession).mockReturnValue(null);
     useAuthStore.setState({ session: 'tok', account: null });
   });
 
@@ -41,6 +46,14 @@ describe('useUnreadCount', () => {
     expect(screen.getByText('count:0')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
     expect(setBadgeMock).toHaveBeenCalledWith(0);
+  });
+
+  it('does not clear the home-screen badge while a stored session is hydrating', () => {
+    vi.mocked(loadSession).mockReturnValue('stored-tok');
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(<Probe refreshKey={false} />);
+    expect(screen.getByText('count:0')).toBeTruthy();
+    expect(setBadgeMock).not.toHaveBeenCalled();
   });
 
   it('loads unreadCount from GET /forum/notifications', async () => {

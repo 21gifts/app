@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { fetchNotifications } from '@/lib/api';
 import { setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
+import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -26,7 +27,9 @@ export function useUnreadCount(refreshKey: boolean): { unreadCount: number } {
     let cancelled = false;
     if (session === null) {
       setUnreadCount(0);
-      setUnreadAppBadge(0);
+      if (loadSession() === null) {
+        setUnreadAppBadge(0);
+      }
       return () => {
         cancelled = true;
       };

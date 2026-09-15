@@ -330,7 +330,7 @@
 
 - **Purpose:** Load the signed-in unread in-app notification count from `GET /forum/notifications`. `refreshKey` retriggers the fetch (Menu open). Errors and no session resolve to `0`. Does not mark notifications read.
 - **Inputs:** `refreshKey` boolean.
-- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists. Also calls `setUnreadAppBadge` with the loaded count, or `0` when the session is null or the fetch errors. Does not update the badge after a cancelled fetch, or when `unreadAppBadgeEpoch` changed after the fetch started (mark-all-read on `/notifications`).
+- **Returns / side effects:** `{ unreadCount }`. Calls `fetchNotifications` when a session exists. Also calls `setUnreadAppBadge` with the loaded count, or `0` when the session is null **and** `loadSession()` is null (real logout). A hydrating store (`session` null, token still in storage) does not clear the badge. Does not update the badge after a cancelled fetch, or when `unreadAppBadgeEpoch` changed after the fetch started (mark-all-read on `/notifications`).
 - **Used by:** `SignedInChrome`.
 
 ## Function: setUnreadAppBadge
