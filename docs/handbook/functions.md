@@ -585,8 +585,29 @@
 
 - **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer.
 - **Inputs:** Dynamic route params (`id`).
-- **Returns / side effects:** Fill `AppShell` (`align="center"`) with Wordmark top-left and light `LanguageSwitcher` top-right; body is `PublicMessageLoader`.
+- **Returns / side effects:** Fill `AppShell` (`align="center"`) with Wordmark top-left and light `LanguageSwitcher` top-right; body is `PublicMessageLoader`. Also exports `generateMetadata` for per-note Open Graph / Twitter tags.
 - **Used by:** Route `/messages/[id]`.
+
+## Function: generateMetadata
+
+- **Purpose:** Next.js App Router metadata for `/messages/[id]`. Loads the public note via `loadPublicMessageForOg` and maps it through `publicMessageOgMetadata` so crawlers see the author, text, and photo without running JS. Missing or failed fetches inherit the root layout preview.
+- **Inputs:** `{ params: Promise<{ id: string }> }` from the dynamic route.
+- **Returns / side effects:** `Promise<Metadata>` — per-note Open Graph / Twitter tags when the note is found, or `{}` so the site-wide layout preview is inherited. Does not render the visible page.
+- **Used by:** Route `/messages/[id]` (`PublicMessagePage`).
+
+## Function: loadPublicMessageForOg
+
+- **Purpose:** Server fetch of api `GET /messages/:id` for Open Graph. Invalid UUIDs skip the network. Timeouts, non-OK responses, JSON/schema failures, and thrown errors (`getApiUrl`, network, abort) all return `null` and never throw.
+- **Inputs:** `id` string from the route (forum message UUID).
+- **Returns / side effects:** `ForumMessage` or `null`. Uses `cache: 'no-store'`, `Accept: application/json`, and `AbortSignal.timeout(2500)`.
+- **Used by:** `generateMetadata` on `/messages/[id]`.
+
+## Function: publicMessageOgMetadata
+
+- **Purpose:** Maps a loaded public note (or `null`) to Next.js `Metadata`. Found notes use the author name as title and never the marketing layout description, even when `text` is empty. Photo notes set `og:image` to `/messages/{id}/photo`; others keep `/og.png`.
+- **Inputs:** Route `id` and `note` (`ForumMessage | null`).
+- **Returns / side effects:** `{}` when `note` is `null`. Otherwise title, description (trimmed text or `` `${name} on 21.gifts` ``, truncated above 300 code units with `…`), Open Graph (`type: website`, `url` `https://21.gifts/messages/{id}`, `siteName` 21.gifts), and Twitter `summary_large_image`.
+- **Used by:** `generateMetadata` on `/messages/[id]`.
 
 ## Function: PublicMessageLoader
 
