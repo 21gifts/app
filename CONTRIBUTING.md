@@ -84,7 +84,7 @@ app/
 │   │   ├── messages/
 │   │   │   ├── page.tsx         # GET /messages — signed-in PN inbox
 │   │   │   └── [id]/
-│   │   │       ├── page.tsx     # GET /messages/[id] — public forum note
+│   │   │       ├── page.tsx     # GET /messages/[id] — public forum note; per-note Open Graph
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
 │   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
 │   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy

@@ -1,8 +1,29 @@
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
 import { Wordmark } from '@/components/ui';
+import { loadPublicMessageForOg, publicMessageOgMetadata } from '@/lib/public-message-og';
+
+/**
+ * Per-note Open Graph / Twitter metadata for `/messages/[id]`.
+ *
+ * Loads the public note from the api and describes that note in `<head>`.
+ * Missing or failed fetches inherit the root layout preview.
+ *
+ * @param props - Dynamic route params (`id`).
+ * @returns Next.js `Metadata` for this note, or `{}` to inherit the layout.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const note = await loadPublicMessageForOg(id);
+  return publicMessageOgMetadata(id, note);
+}
 
 /**
  * `/messages/[id]` — public read-only HTML note by forum message UUID.
