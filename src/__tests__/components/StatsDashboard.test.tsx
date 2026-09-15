@@ -730,6 +730,20 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
   });
 
+  it('offers a fiat switcher and follows EUR', () => {
+    renderWithLocale(
+      <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
+        name: 'EUR',
+      }),
+    );
+    const spent = screen.getByText('Total spent').parentElement;
+    expect(spent).not.toBeNull();
+    expect(within(spent as HTMLElement).getByText("EUR 1'300.00")).toBeTruthy();
+  });
+
   it('follows the CHF picker for KPI, footnote, and scale labels', () => {
     renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,

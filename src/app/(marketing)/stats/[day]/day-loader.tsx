@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
+import { FiatPicker } from '@/components/FiatPicker';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { GiftDayTable } from '@/components/GiftDayTable';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -47,7 +48,7 @@ function dayTotal(payload: GiftDay, fiat: FiatCode): string | null {
 export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
   const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
+  const { fiat, setFiat } = useFiatPreference();
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,6 +118,7 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       ) : null}
       {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8 space-y-4">
+          <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
           <p className="text-paper/60">
             {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
             {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}

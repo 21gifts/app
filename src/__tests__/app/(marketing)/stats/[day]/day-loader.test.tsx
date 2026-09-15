@@ -132,6 +132,14 @@ describe('DayLoader', () => {
     });
   });
 
+  it('offers a fiat switcher on the day table', async () => {
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />);
+    await waitFor(() => {
+      expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    });
+  });
+
   it('follows preferred CHF in the day summary', async () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');

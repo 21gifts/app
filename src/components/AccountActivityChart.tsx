@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { FiatPicker } from '@/components/FiatPicker';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -68,13 +69,13 @@ function selectedFiatUnsummable(
 }
 
 /**
- * Compact dual-line cumulative chart of Given and Received. Fiat code comes
- * from {@link useFiatPreference} (Profile settings only). A ₿ | selected-fiat
- * scale appears when the series has sats.
+ * Compact dual-line cumulative chart of Given and Received with FiatPicker
+ * (always) and a ₿ | selected-fiat scale when the series has sats. Fiat code
+ * comes from {@link useFiatPreference}.
  *
  * @param props - Receive series and optional donate series.
- * @returns Empty `profile.chartEmpty` status, or legend, selected-fiat chrome,
- *   and reserved-height SVG (no title heading).
+ * @returns FiatPicker plus empty `profile.chartEmpty` status, or FiatPicker
+ *   plus legend, selected-fiat chrome, and reserved-height SVG (no title heading).
  */
 export function AccountActivityChart({
   received,
@@ -82,7 +83,7 @@ export function AccountActivityChart({
 }: AccountActivityChartProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
+  const { fiat, setFiat } = useFiatPreference();
   const [scale, setScale] = useState<ActivityScale>('sat');
   const points = alignActivitySeries(received, donated);
   const emptySats =
@@ -91,11 +92,18 @@ export function AccountActivityChart({
       (point) => point.cumulativeDonatedSats === 0 && point.cumulativeReceivedSats === 0,
     );
 
+  const picker = (
+    <FiatPicker value={fiat} onChange={setFiat} shell="app" ariaLabel={t('profile.fiatCurrency')} />
+  );
+
   if (emptySats) {
     return (
-      <p className="text-center text-sm text-app-muted" role="status">
-        {t('profile.chartEmpty')}
-      </p>
+      <div className="flex w-full flex-col gap-2">
+        {picker}
+        <p className="text-center text-sm text-app-muted" role="status">
+          {t('profile.chartEmpty')}
+        </p>
+      </div>
     );
   }
 
@@ -163,6 +171,7 @@ export function AccountActivityChart({
 
   return (
     <div className="flex w-full flex-col gap-2">
+      {picker}
       <div role="group" aria-label={t('profile.chartTitle')} className="flex w-full flex-col gap-2">
         <div className="flex items-center justify-between gap-3 text-xs text-app-muted">
           <div className="flex flex-wrap items-center gap-3">

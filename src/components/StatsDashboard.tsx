@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { FiatPicker } from '@/components/FiatPicker';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
@@ -579,7 +580,7 @@ export function StatsDashboard({
   onRetry,
 }: StatsDashboardProps): ReactElement {
   const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
+  const { fiat, setFiat } = useFiatPreference();
 
   if (loading && stats === null && error === null) {
     return <p className="text-paper/60">Loading…</p>;
@@ -605,6 +606,7 @@ export function StatsDashboard({
 
   return (
     <div className="space-y-12">
+      <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Total spent</dt>
