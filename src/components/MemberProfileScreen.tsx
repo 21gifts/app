@@ -219,7 +219,6 @@ export function MemberProfileScreen({
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
-  const [listedNote, setListedNote] = useState(profile.profileMessage);
   const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
