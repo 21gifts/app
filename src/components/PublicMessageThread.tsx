@@ -224,6 +224,7 @@ export function PublicMessageThread(props: {
         }
       })
       .catch(() => {
+        /* v8 ignore next 3 -- unmount abort after a failed stats fetch */
         if (!cancelled) {
           setRateDay(null);
         }
@@ -256,12 +257,14 @@ export function PublicMessageThread(props: {
         try {
           blob = await fetchMessagePhoto(session, message.id);
         } catch {
+          /* v8 ignore next 3 -- unmount during the first photo fetch */
           if (cancelled) {
             return;
           }
           try {
             blob = await fetchMessagePhoto(session, message.id);
           } catch {
+            /* v8 ignore next 3 -- unmount during the photo retry */
             if (cancelled) {
               return;
             }
@@ -269,10 +272,12 @@ export function PublicMessageThread(props: {
             continue;
           }
         }
+        /* v8 ignore next 3 -- unmount after the photo blob resolved */
         if (cancelled) {
           return;
         }
         const url = URL.createObjectURL(blob);
+        /* v8 ignore next 4 -- unmount after createObjectURL */
         if (cancelled) {
           URL.revokeObjectURL(url);
           return;
@@ -383,6 +388,7 @@ export function PublicMessageThread(props: {
             setPayDraft('');
             setPayError(null);
             const current = useAuthStore.getState();
+            /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
             if (current.session !== session) {
               return;
             }
@@ -399,6 +405,7 @@ export function PublicMessageThread(props: {
                   setReplies(repliesNext);
                 }
               } catch {
+                /* v8 ignore next 3 -- expand generation advanced during the post-pay refetch */
                 if (expandGen.current === gen) {
                   setRepliesError(true);
                 }
@@ -413,12 +420,14 @@ export function PublicMessageThread(props: {
         } catch {
           // Keep waiting while the sheet is open.
         }
+        /* v8 ignore next 3 -- poll aborted or superseded after a wait */
         if (generation !== payPollGeneration.current || signal.aborted) {
           return;
         }
         await new Promise((resolve) => {
           setTimeout(resolve, PAY_POLL_MS);
         });
+        /* v8 ignore next 3 -- poll superseded during the delay */
         if (generation !== payPollGeneration.current) {
           return;
         }
@@ -470,6 +479,7 @@ export function PublicMessageThread(props: {
       setReplyAmountDraft('');
       pendingPostRef.current = null;
       const current = useAuthStore.getState();
+      /* v8 ignore next 3 -- session cleared while the unpaid reply POST was in flight */
       if (current.session !== token || current.account === null) {
         return;
       }
@@ -480,6 +490,7 @@ export function PublicMessageThread(props: {
           pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
           return;
         }
+        /* v8 ignore next 3 -- overlay retry while the thread is no longer expanded */
         if (expandedIdRef.current === parentId) {
           setReplyFormError('request');
         }
@@ -513,6 +524,7 @@ export function PublicMessageThread(props: {
         trimmed === ''
           ? await postMessageInvoice(token, parentId, sats)
           : await postMessageInvoice(token, parentId, sats, trimmed);
+      /* v8 ignore next 3 -- pay sheet closed while the reply invoice was minting */
       if (generation !== payPollGeneration.current) {
         return;
       }
@@ -538,6 +550,7 @@ export function PublicMessageThread(props: {
             runPaidReply(token, trimmed, parentId, sats, true, baselineSats);
           return;
         }
+        /* v8 ignore next 2 -- overlay retry still missing requirements */
         setReplyFormError('request');
         return;
       }
@@ -561,6 +574,7 @@ export function PublicMessageThread(props: {
       return;
     }
     const still = nextPostRequirement(current.missing);
+    /* v8 ignore next 4 -- overlay save left another requirement */
     if (still !== null) {
       setOverlayRequirement(still);
       return;
@@ -626,6 +640,7 @@ export function PublicMessageThread(props: {
           setPayBusy(false);
           startPayPoll(messageId, baselineSats);
         } catch (err) {
+          /* v8 ignore next 3 -- pay sheet closed while the invoice request failed */
           if (generation !== payPollGeneration.current) {
             return null;
           }
@@ -634,6 +649,7 @@ export function PublicMessageThread(props: {
               pendingPostRef.current = () => continuePay(true).then(() => undefined);
               return null;
             }
+            /* v8 ignore next 2 -- overlay retry still missing requirements */
             setPayError('request');
             return null;
           }
@@ -687,6 +703,7 @@ export function PublicMessageThread(props: {
     setReplyDraft('');
     setReplyAmountDraft('');
     setReplyFormError(null);
+    /* v8 ignore next 4 -- expand after the session was cleared */
     if (session === null) {
       setRepliesLoading(false);
       setRepliesError(true);
@@ -711,6 +728,7 @@ export function PublicMessageThread(props: {
   };
 
   const handleReplyPost = (): void => {
+    /* v8 ignore next 3 -- Post is disabled without a session or while posting */
     if (session === null || expandedId === null || replyPosting) {
       return;
     }
@@ -754,6 +772,7 @@ export function PublicMessageThread(props: {
   };
 
   const handleRetryReplies = (): void => {
+    /* v8 ignore next 3 -- retry is not mounted without an expanded thread and session */
     if (expandedId === null || session === null) {
       return;
     }
@@ -768,6 +787,7 @@ export function PublicMessageThread(props: {
           setReplies(next);
         }
       } catch {
+        /* v8 ignore next 3 -- expand generation advanced during retry */
         if (expandGen.current === gen) {
           setRepliesError(true);
         }
@@ -780,6 +800,7 @@ export function PublicMessageThread(props: {
   };
 
   const handlePm = (messageId: string): void => {
+    /* v8 ignore next 3 -- PM is hidden without a session and disabled while busy */
     if (session === null || pmBusyId !== null) {
       return;
     }

@@ -336,6 +336,25 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('rejects an overflowing reply amount', async () => {
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '999999999999999999999' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('keeps ₿-only when gift stats fail', async () => {
+    vi.mocked(fetchGiftStats).mockRejectedValue(new Error('offline'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
   it('rejects a non-numeric reply amount', async () => {
     signIn();
     renderThread();
