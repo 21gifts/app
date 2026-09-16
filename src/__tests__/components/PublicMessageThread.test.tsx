@@ -108,7 +108,11 @@ function replyAmountInput(): HTMLElement {
 }
 
 function renderThread(
-  props: Partial<{ root: ForumMessage; highlightId: string | null; onRootDeleted: () => void }> = {},
+  props: Partial<{
+    root: ForumMessage;
+    highlightId: string | null;
+    onRootDeleted: () => void;
+  }> = {},
 ): ReturnType<typeof renderWithLocale> {
   return renderWithLocale(
     <PublicMessageThread
