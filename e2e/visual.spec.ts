@@ -931,7 +931,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
-    await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
     await shotScreen(page, 'state-welcome-expanded');
   });
 
@@ -1646,7 +1646,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 replies' }).click();
+    await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
@@ -1777,7 +1777,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 replies' }).click();
+    await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('Loading…')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Loading…').scrollIntoViewIfNeeded();
@@ -1899,7 +1899,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 replies' }).click();
+    await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -2063,7 +2063,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '3 replies' }).click();
+    await page.getByRole('button', { name: '3 reactions' }).click();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Showing the latest 1 of 3.').scrollIntoViewIfNeeded();
@@ -2297,9 +2297,9 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
-    await page.getByRole('button', { name: 'Show replies' }).click();
-    await expect(page.getByLabel('Your reply')).toBeVisible();
-    await page.getByLabel('Your reply').fill('Hello');
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByLabel('Your reaction')).toBeVisible();
+    await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(
@@ -3682,7 +3682,7 @@ test.describe('welcome forum variants', () => {
       if (state !== 'moderation') {
         await page.getByRole('button', { name: 'Delete post', exact: true }).click();
         await expect(
-          page.getByRole('group', { name: 'Delete this post and its replies from 21.gifts?' }),
+          page.getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' }),
         ).toBeVisible();
       }
       if (state === 'deleting' || state === 'delete-error') {
@@ -3692,7 +3692,7 @@ test.describe('welcome forum variants', () => {
         } else {
           await expect(
             page
-              .getByRole('group', { name: 'Delete this post and its replies from 21.gifts?' })
+              .getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' })
               .getByRole('alert'),
           ).toHaveText('Could not delete the post. Please try again.');
         }
@@ -3800,12 +3800,12 @@ test.describe('welcome forum variants', () => {
       });
       await page.goto('/welcome');
       await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
-      await page.getByRole('button', { name: 'Show replies', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Show reactions', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Delete reaction', exact: true })).toBeVisible();
       if (state !== 'reply-moderation') {
-        await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+        await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
         await expect(
-          page.getByRole('group', { name: 'Delete this reply from 21.gifts?' }),
+          page.getByRole('group', { name: 'Delete this reaction from 21.gifts?' }),
         ).toBeVisible();
       }
       if (state === 'reply-deleting' || state === 'reply-delete-error') {
@@ -3815,9 +3815,9 @@ test.describe('welcome forum variants', () => {
         } else {
           await expect(
             page
-              .getByRole('group', { name: 'Delete this reply from 21.gifts?' })
+              .getByRole('group', { name: 'Delete this reaction from 21.gifts?' })
               .getByRole('alert'),
-          ).toHaveText('Could not delete the reply. Please try again.');
+          ).toHaveText('Could not delete the reaction. Please try again.');
         }
       }
       if (state === 'reply-moderation') await shotScreen(page, 'state-welcome-reply-moderation');

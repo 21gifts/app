@@ -1037,7 +1037,7 @@ test('Function: fetchMemberReplies — member replies open from the count', asyn
 }) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
-  await page.getByRole('button', { name: '1 replies' }).click();
+  await page.getByRole('button', { name: '1 reactions' }).click();
   await expect(page.getByText('A reply from Carol.')).toBeVisible();
 });
 
@@ -1376,8 +1376,8 @@ test('Function: MemberProfileScreen — public card shows About me, copy-profile
   await expect(page.getByText('Hello from Carol.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Show replies' })).toHaveCount(0);
-  await expect(page.getByLabel('Your reply')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Show reactions' })).toHaveCount(0);
+  await expect(page.getByLabel('Your reaction')).toHaveCount(0);
 });
 
 test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay from the posts feed', async ({
@@ -1479,9 +1479,9 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await page.getByRole('button', { name: '1 posts' }).click();
   await expect(page.getByText('Hello from my profile note.')).toBeVisible();
-  await page.getByRole('button', { name: 'Show replies' }).click();
-  await expect(page.getByLabel('Your reply')).toBeVisible();
-  await page.getByLabel('Your reply').fill('Hello');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await expect(page.getByLabel('Your reaction')).toBeVisible();
+  await page.getByLabel('Your reaction').fill('Hello');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -5180,8 +5180,8 @@ test('Function: fetchReplies — expanding a welcome note loads replies', async 
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
-  await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
 });
 
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
@@ -6209,9 +6209,9 @@ test('Function: DeletePostControl — ordinary members have no reply delete acti
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByText('A reply')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete reaction', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
 });
 
@@ -6273,12 +6273,12 @@ test('Function: DeletePostControl — moderator deletes a reply', async ({ page 
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
-  await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
   await page.getByRole('button', { name: 'Cancel deletion' }).click();
   expect(deletes).toBe(0);
   await expect(page.getByText('Reply to moderate')).toBeVisible();
-  await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm deletion' }).click();
   await expect(page.getByText('Reply to moderate')).not.toBeVisible();
   await expect(page.getByText('Post to moderate')).toBeVisible();

@@ -176,7 +176,7 @@ describe('NotificationsScreen', () => {
         onOpen={onOpen}
       />,
     );
-    expect(screen.getByText('Photo reply')).toBeTruthy();
+    expect(screen.getByText('Photo reaction')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Dan replied/ }));
     expect(onOpen).toHaveBeenCalledWith('parent-3', 'n3');
   });
@@ -242,7 +242,7 @@ describe('NotificationsScreen', () => {
       />,
     );
     expect(screen.getByRole('button', { name: /Gina sent bitcoin/ })).toBeTruthy();
-    expect(screen.queryByText('Photo reply')).toBeNull();
+    expect(screen.queryByText('Photo reaction')).toBeNull();
     expect(screen.queryByText('Photo')).toBeNull();
   });
 });

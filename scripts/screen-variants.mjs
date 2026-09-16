@@ -258,7 +258,7 @@ export const SCREEN_VARIANTS = [
     id: 'delete-confirm',
     image: 'welcome-delete-confirm.png',
     visual: 'state-welcome-delete-confirm',
-    needle: 'Delete this post and its replies from 21.gifts?',
+    needle: 'Delete this post and its reactions from 21.gifts?',
   },
   {
     route: '/welcome',
@@ -279,14 +279,14 @@ export const SCREEN_VARIANTS = [
     id: 'reply-moderation',
     image: 'welcome-reply-moderation.png',
     visual: 'state-welcome-reply-moderation',
-    needle: 'Delete reply',
+    needle: 'Delete reaction',
   },
   {
     route: '/welcome',
     id: 'reply-delete-confirm',
     image: 'welcome-reply-delete-confirm.png',
     visual: 'state-welcome-reply-delete-confirm',
-    needle: 'Delete this reply from 21.gifts?',
+    needle: 'Delete this reaction from 21.gifts?',
   },
   {
     route: '/welcome',
@@ -300,7 +300,7 @@ export const SCREEN_VARIANTS = [
     id: 'reply-delete-error',
     image: 'welcome-reply-delete-error.png',
     visual: 'state-welcome-reply-delete-error',
-    needle: 'Could not delete the reply. Please try again.',
+    needle: 'Could not delete the reaction. Please try again.',
   },
   {
     route: '/welcome',
@@ -1126,7 +1126,7 @@ export const SCREEN_VARIANTS = [
     id: 'expanded',
     image: 'welcome-expanded.png',
     visual: 'state-welcome-expanded',
-    needle: 'Write a reply',
+    needle: 'Write a reaction',
   },
   {
     route: '/welcome',
