@@ -56,12 +56,21 @@ function isUserCancel(error: unknown): boolean {
 }
 
 /**
- * True on iOS/iPadOS WebKit. Missing `navigator` is false.
+ * True on iOS/iPadOS WebKit, including iPadOS desktop-site mode
+ * (`Macintosh` UA + `MacIntel` + more than one touch point). Missing
+ * `navigator` is false. Bare `Macintosh` without touch points stays
+ * desktop Safari so cancel/unmount still pass AbortSignal.
  *
  * @returns Whether WebAuthn should omit AbortSignal.
  */
 function isIosWebAuthnHost(): boolean {
-  return typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    return true;
+  }
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 }
 
 /**

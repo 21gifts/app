@@ -228,6 +228,7 @@ describe('requestOptionsFromJSON', () => {
     expect(new Uint8Array(options.allowCredentials?.[0]?.id as ArrayBuffer)).toEqual(
       new Uint8Array([7, 8]),
     );
+    expect(options).not.toHaveProperty('hints');
   });
 
   it('throws when allowCredentials is present but not an array', () => {

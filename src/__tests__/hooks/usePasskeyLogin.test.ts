@@ -840,11 +840,33 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('omits signal on iPadOS desktop-site authenticate get', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const get = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+      platform: 'MacIntel',
+      maxTouchPoints: 5,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls[0]?.[0]).not.toHaveProperty('signal');
+    vi.unstubAllGlobals();
+  });
+
   it('passes signal to get on non-iOS', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     const get = vi.fn().mockResolvedValue(cred);
     vi.stubGlobal('navigator', {
       ...navigator,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0',
+      platform: 'MacIntel',
+      maxTouchPoints: 0,
       credentials: { create: vi.fn(), get },
     });
     const { result } = renderHook(() => usePasskeyLogin());
