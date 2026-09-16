@@ -1066,6 +1066,27 @@ export const SCREEN_VARIANTS = [
     needle: 'This page is for founders and moderators.',
   },
   {
+    route: '/moderate',
+    id: 'empty',
+    image: 'moderate-empty.png',
+    visual: 'state-moderate-empty',
+    needle: 'No hidden notes.',
+  },
+  {
+    route: '/moderate',
+    id: 'loading',
+    image: 'moderate-loading.png',
+    visual: 'state-moderate-loading',
+    needle: 'Loading…',
+  },
+  {
+    route: '/moderate',
+    id: 'error',
+    image: 'moderate-error.png',
+    visual: 'state-moderate-error',
+    needle: 'Try again',
+  },
+  {
     route: '/404',
     id: 'default',
     image: 'not-found.png',

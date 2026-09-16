@@ -5186,6 +5186,44 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
   });
+
+  test('moderate empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByText('No hidden notes.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-empty');
+  });
+
+  test('moderate loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-loading');
+  });
+
+  test('moderate error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByText('Try again')).toBeVisible();
+    await shotScreen(page, 'state-moderate-error');
+  });
 });
 
 test.describe('stats variant baselines', () => {

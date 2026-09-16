@@ -1011,6 +1011,24 @@ Signed-in basis account. Copy **This page is for founders and moderators.** No l
 
 ![21.gifts moderation forbidden](images/moderate-forbidden.png)
 
+### Variant: empty
+
+Staff (founder) loaded list with zero hidden notes. Copy **No hidden notes.**
+
+![21.gifts moderation empty](images/moderate-empty.png)
+
+### Variant: loading
+
+Staff (founder) waiting on `GET /forum/messages/hidden`. Copy **Loading…**
+
+![21.gifts moderation loading](images/moderate-loading.png)
+
+### Variant: error
+
+Staff (founder) list fetch failed. Button **Try again**.
+
+![21.gifts moderation error](images/moderate-error.png)
+
 ## Screen: /messages/[id]
 
 - **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). No `OnboardingGate`, no pay sheet, no composer, no copy control, no FiatPicker on this page. Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
