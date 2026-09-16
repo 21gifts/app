@@ -70,6 +70,8 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     locale: 'en-US',
     extraHTTPHeaders: { 'Accept-Language': 'en' },
+    // Visual goldens must not depend on the host zone now that formatForumTime is local.
+    timezoneId: 'UTC',
   },
   projects: [
     {
