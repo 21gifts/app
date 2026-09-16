@@ -3181,8 +3181,10 @@ test('Function: satsToFiatAmount — forum note shows a USD equivalent next to �
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
+        hasPosted: true,
       }),
     });
   });
@@ -3234,8 +3236,10 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
+        hasPosted: true,
       }),
     });
   });
@@ -3504,8 +3508,10 @@ test('Function: useFiatPreference — welcome feed has no fiat switcher', async 
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
+        hasPosted: true,
       }),
     });
   });
