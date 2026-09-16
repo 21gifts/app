@@ -801,7 +801,9 @@ describe('usePasskeyLogin', () => {
       result.current.authenticate();
     });
     expect(get).toHaveBeenCalledTimes(1);
-    expect(get.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ publicKey: expect.anything() }));
+    expect(get.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ publicKey: expect.anything() }),
+    );
     expect(get.mock.calls[0]?.[0]).not.toHaveProperty('signal');
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
