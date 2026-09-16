@@ -147,6 +147,13 @@
 - **Used by:** `dismissForumLaws`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/notification-level
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/notification-level`. JSON body `{ level: "all"|"active"|"mentions" }` returns the owner Account.
+- **Errors:** Upstream 401, 400 invalid level, or 502 if the api is unreachable.
+- **Used by:** `postNotificationLevel`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/rules-agreement
 
 - **Purpose:** Same-origin proxy to record living-room rules agreement on the signed-in account (`rulesAgreedAt`).

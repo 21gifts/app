@@ -69,6 +69,7 @@ app/
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   ├── notification-level/route.ts  # POST /me/notification-level
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
@@ -162,7 +163,7 @@ app/
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
-│   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
+│   │   ├── PushToggle.tsx       # Three-stage All/Active/Mentions control plus icon-only Bell
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + GET /view-key/:viewKey/activity

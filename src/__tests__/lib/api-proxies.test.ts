@@ -11,6 +11,7 @@ import {
   proxyMeActivityGet,
   proxyMeGet,
   proxyMeForumLawsDismissedPost,
+  proxyMeNotificationLevelPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeLocationPost,
@@ -158,6 +159,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/forum-laws-dismissed');
+  });
+
+  it('proxyMeNotificationLevelPost hits POST /me/notification-level', async () => {
+    const fetchMock = stubApi();
+    await proxyMeNotificationLevelPost(
+      new Request('http://localhost/me/notification-level', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/notification-level');
   });
 
   it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {

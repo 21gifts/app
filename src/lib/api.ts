@@ -27,6 +27,7 @@ import {
   vapidPublicSchema,
   viewProfileSchema,
   type Account,
+  type NotificationLevel,
   type ContactMessage,
   type Conversation,
   type ConversationInvoice,
@@ -528,6 +529,33 @@ export async function dismissForumLaws(sessionToken: string): Promise<Account> {
   });
   if (!response.ok) {
     throw new Error('Could not dismiss the living-room hint');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets the signed-in account notification level.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param level - `all`, `active`, or `mentions`.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function postNotificationLevel(
+  session: string,
+  level: NotificationLevel,
+): Promise<Account> {
+  const response = await fetch('/me/notification-level', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ level }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save notification level.');
   }
   return accountSchema.parse(await response.json());
 }

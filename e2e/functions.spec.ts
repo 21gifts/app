@@ -1669,6 +1669,12 @@ test('Function: proxyMeForumLawsDismissedPost — POST /me/forum-laws-dismissed 
   expect(((await again.json()) as { forumLawsDismissed: boolean }).forumLawsDismissed).toBe(true);
 });
 
+test('Function: proxyMeNotificationLevelPost — POST /me/notification-level without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/notification-level')).status()).toBe(401);
+});
+
 test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agreement', async ({
   request,
 }) => {
@@ -5974,6 +5980,23 @@ test('Function: deletePushSubscription — DELETE /me/push-subscriptions with be
   });
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { ok: boolean }).ok).toBe(true);
+});
+
+test('Function: postNotificationLevel — profile shows All Active Mentions', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('group', { name: 'Notification level' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'All' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Active' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mentions' })).toBeVisible();
+});
+
+test('Function: accountNotificationLevel — profile selects All when the field is omitted', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Function: PushToggle — profile shows the enable notifications control', async ({ page }) => {
