@@ -116,7 +116,12 @@ function stripMatches(text: string, toStrip: readonly QuoteMatch[]): string {
 }
 
 /**
- * UUIDs found in `/messages/<uuid>` HTTP(S) URLs, first-seen order, lowercased, unique.
+ * Parse HTTP(S) `/messages/<uuid>` URLs from a forum body.
+ *
+ * @param text - Raw note or reply body.
+ * @param resolvedIds - When set, only those UUIDs (case-insensitive) are stripped
+ *   from `displayText`. When omitted, every matched URL is stripped.
+ * @returns Lowercased unique first-seen ids and the remaining display text.
  */
 export function splitForumMessageQuotes(
   text: string,

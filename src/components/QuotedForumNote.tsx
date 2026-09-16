@@ -136,6 +136,11 @@ function QuotedForumNote({
 
 /**
  * Remaining body text plus nested posts for resolved `/messages/<uuid>` URLs.
+ *
+ * @param props - Body text, already-loaded notes, the containing message id,
+ *   fiat conversion, and an optional click handler for the nested card.
+ * @returns The stripped paragraph, nested post cards, and translation control;
+ *   `null` when `text` is empty and no quotes resolved.
  */
 export function ForumQuotedBody({
   text,
