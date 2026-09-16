@@ -1,16 +1,6 @@
 'use client';
 
-import {
-  ArrowLeft,
-  ArrowUp,
-  Check,
-  Gift,
-  ImagePlus,
-  Link2,
-  Loader2,
-  Send,
-  X,
-} from 'lucide-react';
+import { ArrowLeft, ArrowUp, Check, Gift, ImagePlus, Link2, Loader2, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
