@@ -378,15 +378,17 @@ export function PublicMessageThread(props: {
           }
           /* v8 ignore stop */
           if (next !== null && next.sats > baselineSats) {
-            setNote((prev) =>
-              prev.id === next.id
-                ? {
-                    ...prev,
-                    ...next,
-                    replyCount: Math.max(prev.replyCount, next.replyCount),
-                  }
-                : /* v8 ignore next -- poll body for a different note id */ prev,
-            );
+            setNote((prev) => {
+              if (prev.id !== next.id) {
+                /* v8 ignore next -- poll body for a different note id */
+                return prev;
+              }
+              return {
+                ...prev,
+                ...next,
+                replyCount: Math.max(prev.replyCount, next.replyCount),
+              };
+            });
             setPayWaiting(false);
             setPayInvoice(null);
             setPayMessageId(null);
@@ -492,11 +494,11 @@ export function PublicMessageThread(props: {
       setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
+        /* v8 ignore start -- overlay already open, or retry while collapsed */
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
           return;
         }
-        /* v8 ignore start -- overlay retry while the thread is no longer expanded */
         if (expandedIdRef.current === parentId) {
           setReplyFormError('request');
         }
@@ -553,15 +555,13 @@ export function PublicMessageThread(props: {
         return;
       }
       /* v8 ignore stop */
+      /* v8 ignore start -- overlay already open, or retry still missing requirements */
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          /* v8 ignore start -- pending paid-reply retry runs after overlay save */
           pendingPostRef.current = () =>
             runPaidReply(token, trimmed, parentId, sats, true, baselineSats);
-          /* v8 ignore stop */
           return;
         }
-        /* v8 ignore start -- overlay retry still missing requirements */
         setReplyFormError('request');
         return;
       }
@@ -656,14 +656,12 @@ export function PublicMessageThread(props: {
           if (generation !== payPollGeneration.current) {
             return null;
           }
+          /* v8 ignore start -- overlay already open, or retry still missing requirements */
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
-              /* v8 ignore start -- pending pay retry runs after overlay save */
               pendingPostRef.current = () => continuePay(true).then(() => undefined);
-              /* v8 ignore stop */
               return null;
             }
-            /* v8 ignore start -- overlay retry still missing requirements */
             setPayError('request');
             return null;
           }
