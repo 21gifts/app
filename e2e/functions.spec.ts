@@ -6154,6 +6154,7 @@ test('Function: layoutTrustChain — appointed moderator sits to the right of th
 test('Function: layoutTrustChain — stacked moderator sits above a verified sibling even when the verified edge is listed first', async ({
   page,
 }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
