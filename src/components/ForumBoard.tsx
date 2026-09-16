@@ -818,10 +818,17 @@ export function ForumBoard({
                 {message.text !== '' ? <NoteTranslate text={message.text} /> : null}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-5">
-                <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  onClick={() => {
+                    onToggleExpand(message.id);
+                  }}
+                  className="text-xs font-medium tabular-nums lining-nums text-app-muted"
+                >
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
                   {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
-                </p>
+                </button>
                 {message.payable ? (
                   <IconButton
                     type="button"
@@ -879,9 +886,16 @@ export function ForumBoard({
                   <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
                 ) : null}
                 {message.parentId === undefined ? (
-                  <span className="ml-auto text-xs text-app-subtle">
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    onClick={() => {
+                      onToggleExpand(message.id);
+                    }}
+                    className="ml-auto text-xs text-app-subtle"
+                  >
                     {t('forum.replyCount', { count: String(message.replyCount) })}
-                  </span>
+                  </button>
                 ) : null}
               </div>
 
