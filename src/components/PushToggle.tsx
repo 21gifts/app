@@ -20,7 +20,9 @@ type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
  * — On/Off is the visible state, not a labeled button. The level control stays
  * visible when Push APIs are missing (in-app list still uses the level).
  * Renders nothing without a session. On iPhone Safari outside standalone, also
- * shows an install hint.
+ * shows an install hint above the bell row. A successful level POST merges
+ * `notificationLevel` into the current store account and ignores the response
+ * if the session no longer matches.
  *
  * @returns The notifications section, or `null` without a session.
  */
@@ -111,7 +113,17 @@ export function PushToggle(): ReactElement | null {
       setLevelError(false);
       try {
         const updated = await postNotificationLevel(session, next);
-        setAccount(updated);
+        if (useAuthStore.getState().session !== session) {
+          return;
+        }
+        const current = useAuthStore.getState().account;
+        if (current === null) {
+          return;
+        }
+        setAccount({
+          ...current,
+          notificationLevel: updated.notificationLevel ?? next,
+        });
       } catch {
         setLevelError(true);
       } finally {
@@ -151,6 +163,12 @@ export function PushToggle(): ReactElement | null {
       {levelError ? (
         <p className="text-sm text-app-muted">{t('profile.push.level.error')}</p>
       ) : null}
+      {showBell && showInstallHint ? (
+        <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
+      ) : null}
+      {showBell && errorKey !== null ? (
+        <p className="text-sm text-app-muted">{t(errorKey)}</p>
+      ) : null}
       {showBell ? (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm text-app-fg">
@@ -173,12 +191,6 @@ export function PushToggle(): ReactElement | null {
             )}
           </IconButton>
         </div>
-      ) : null}
-      {showBell && showInstallHint ? (
-        <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
-      ) : null}
-      {showBell && errorKey !== null ? (
-        <p className="text-sm text-app-muted">{t(errorKey)}</p>
       ) : null}
     </div>
   );

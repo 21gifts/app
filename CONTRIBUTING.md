@@ -119,7 +119,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + push bell
+│   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional push bell
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── moderate/
@@ -155,7 +155,7 @@ app/
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + language + theme + fiat + number format)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals)

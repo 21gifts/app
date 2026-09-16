@@ -288,6 +288,50 @@ describe('PushToggle', () => {
     });
   });
 
+  it('merges notificationLevel without replacing a concurrent name edit', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postNotificationLevel).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    renderWithLocale(<PushToggle />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledTimes(1);
+    });
+    const current = useAuthStore.getState().account;
+    expect(current).not.toBeNull();
+    useAuthStore.getState().setAccount({ ...current!, name: 'Grace' });
+    resolvePost?.({ ...accountWithLevel('active'), name: 'Ada' });
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.notificationLevel).toBe('active');
+    });
+    expect(useAuthStore.getState().account?.name).toBe('Grace');
+  });
+
+  it('does not restore an account after logout during the level POST', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postNotificationLevel).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    renderWithLocale(<PushToggle />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledTimes(1);
+    });
+    useAuthStore.getState().clearAuth();
+    resolvePost?.(accountWithLevel('active'));
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBeNull();
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('selects All when the account is missing', async () => {
     useAuthStore.setState({ account: null, session: 'tok' });
     renderWithLocale(<PushToggle />);
