@@ -258,42 +258,6 @@ describe('LanguageSwitcher', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('embedded collapsed shows a Language button without locale options', () => {
-    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
-    const trigger = screen.getByLabelText('Language');
-    expect(trigger.tagName).toBe('BUTTON');
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(trigger.className).toContain('min-h-11');
-    expect(trigger.className).not.toContain('rounded-full');
-    expect(trigger.className).not.toContain('border-neutral-300');
-    expect(trigger.getAttribute('tabindex')).not.toBe('-1');
-    expect(screen.queryByRole('option')).toBeNull();
-  });
-
-  it('embedded Language click expands four endonym options', () => {
-    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
-    const trigger = screen.getByLabelText('Language');
-    fireEvent.click(trigger);
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(trigger.getAttribute('role')).toBe('combobox');
-    expect(screen.getAllByRole('option').map((option) => option.getAttribute('id'))).toEqual([
-      'language-option-en',
-      'language-option-de',
-      'language-option-es',
-      'language-option-fil',
-    ]);
-    expect(screen.getByRole('option', { name: 'English' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'Deutsch' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'Español' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'Filipino' })).toBeTruthy();
-  });
-
-  it('embedded opened options use tabindex -1 for activedescendant', () => {
-    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
-    fireEvent.click(screen.getByLabelText('Language'));
-    expect(screen.getByRole('option', { name: 'Deutsch' }).getAttribute('tabindex')).toBe('-1');
-  });
-
   it('standalone combobox exposes aria-activedescendant while open', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     const trigger = screen.getByLabelText('Language');
@@ -302,24 +266,6 @@ describe('LanguageSwitcher', () => {
     expect(trigger.getAttribute('aria-activedescendant')).toBe('language-option-en');
     fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowDown' });
     expect(trigger.getAttribute('aria-activedescendant')).toBe('language-option-de');
-  });
-
-  it('embedded selecting Español writes the cookie and refreshes', () => {
-    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
-    fireEvent.click(screen.getByLabelText('Language'));
-    fireEvent.click(screen.getByRole('option', { name: 'Español' }));
-    expect(document.cookie).toContain(`${LOCALE_COOKIE}=es`);
-    expect(refresh).toHaveBeenCalledTimes(1);
-  });
-
-  it('embedded Language click again collapses the listbox', () => {
-    renderWithLocale(<LanguageSwitcher tone="light" embedded />);
-    const trigger = screen.getByLabelText('Language');
-    fireEvent.click(trigger);
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    fireEvent.click(trigger);
-    expect(screen.queryByRole('listbox')).toBeNull();
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('dark standalone uses white trigger chrome and dark panel', () => {

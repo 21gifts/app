@@ -17,7 +17,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -36,7 +35,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * side is non-zero, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `account.role` is founder or moderator,
  * notifications with an unread count when greater than zero, messages, contact,
- * optional PWA install, language, and log out). The Menu ends with a quiet
+ * optional PWA install, and log out). The Menu ends with a quiet
  * Version line (`app.version` / `getAppVersion()`). When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
@@ -71,12 +70,6 @@ export function SignedInChrome(): ReactElement {
     }
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') {
-        return;
-      }
-      const expandedLanguage = rootRef.current?.querySelector(
-        '[aria-expanded="true"][aria-haspopup="listbox"]',
-      );
-      if (expandedLanguage) {
         return;
       }
       setOpen(false);
@@ -276,7 +269,6 @@ export function SignedInChrome(): ReactElement {
             setOpen(false);
           }}
         />
-        <LanguageSwitcher tone="light" embedded />
         <LogoutButton />
         <p className="px-3 py-2 text-xs text-app-muted tabular-nums lining-nums">
           {t('app.version', { sha: getAppVersion() })}
