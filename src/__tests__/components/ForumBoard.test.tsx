@@ -4050,7 +4050,7 @@ describe('ForumBoard', () => {
     expect(document.querySelector('[data-reply-id="r2"]')?.hasAttribute('data-permalink-target')).toBe(
       false,
     );
-    const parent = screen.getByText('Hello from Ada').closest('li');
+    const parent = document.querySelector('[data-message-id="m1"]');
     expect(parent?.hasAttribute('data-permalink-target')).toBe(false);
     expect(parent?.className).not.toContain('ring-app-fg');
   });
