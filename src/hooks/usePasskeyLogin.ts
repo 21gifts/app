@@ -64,6 +64,7 @@ function isUserCancel(error: unknown): boolean {
  * @returns Whether WebAuthn should omit AbortSignal.
  */
 function isIosWebAuthnHost(): boolean {
+  /* v8 ignore next 3 -- client hook: navigator exists whenever this runs */
   if (typeof navigator === 'undefined') {
     return false;
   }
