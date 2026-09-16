@@ -35,7 +35,12 @@ export function TrustChainScreen({
     body = (
       <div className="mt-12 space-y-4">
         <p className="text-app-fg">{t('trustChain.error')}</p>
-        <Button type="button" variant="accent" disabled={expandingId !== null} onClick={onRetry}>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={expandingId !== null}
+          onClick={onRetry}
+        >
           {t('trustChain.retry')}
         </Button>
       </div>
@@ -52,7 +57,7 @@ export function TrustChainScreen({
             <p className="text-app-fg">{t('trustChain.error')}</p>
             <Button
               type="button"
-              variant="accent"
+              variant="secondary"
               disabled={expandingId !== null}
               onClick={onRetry}
             >
