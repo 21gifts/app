@@ -12,12 +12,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  */
 export default function ProfilePage(): ReactElement {
   return (
-    <AppShell
-      mode="fill"
-      align="center"
-      topLeft={<ProfileChromeLeft />}
-      topRight={<SignedInChrome />}
-    >
+    <AppShell mode="flow" topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="profile">
         <ProfileScreen />
       </OnboardingGate>

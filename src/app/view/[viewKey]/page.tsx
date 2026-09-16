@@ -24,8 +24,7 @@ export default async function ViewProfilePage({
   const { viewKey } = await params;
   return (
     <AppShell
-      mode="fill"
-      align="center"
+      mode="flow"
       topLeft={<HomeWordmark />}
       topRight={<LanguageSwitcher tone="light" />}
     >

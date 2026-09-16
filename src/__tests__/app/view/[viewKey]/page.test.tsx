@@ -43,9 +43,14 @@ describe('ViewProfilePage', () => {
 
   it('renders the language switcher and passes viewKey to the loader', async () => {
     const viewKey = 'a'.repeat(64);
-    renderWithLocale(await ViewProfilePage({ params: Promise.resolve({ viewKey }) }));
+    const { container } = renderWithLocale(
+      await ViewProfilePage({ params: Promise.resolve({ viewKey }) }),
+    );
     expect(screen.getByTestId('language-switcher').textContent).toBe('light');
     expect(screen.getByTestId('view-profile-loader').textContent).toBe(viewKey);
+    const main = container.querySelector('main');
+    expect(main?.className).toContain('min-h-[var(--app-height)]');
+    expect(main?.className).not.toContain('overflow-hidden');
   });
 
   it('links the unsigned wordmark home', async () => {

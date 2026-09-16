@@ -26,9 +26,12 @@ describe('MemberProfilePage', () => {
     const page = await MemberProfilePage({
       params: Promise.resolve({ accountId: '22222222-2222-4222-8222-222222222222' }),
     });
-    renderWithLocale(page);
+    const { container } = renderWithLocale(page);
     expect(screen.getByTestId('member-22222222-2222-4222-8222-222222222222')).toBeTruthy();
     expect(screen.getByTestId('profile-chrome-left')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
+    const main = container.querySelector('main');
+    expect(main?.className).toContain('min-h-[var(--app-height)]');
+    expect(main?.className).not.toContain('overflow-hidden');
   });
 });
