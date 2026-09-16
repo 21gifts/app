@@ -4314,6 +4314,26 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
       body: JSON.stringify({
         messages: [
           {
+            id: 'm-founder',
+            name: 'Eve',
+            text: 'Founder unpaid note for Active.',
+            createdAt: '2026-08-28T13:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'founder',
+          },
+          {
+            id: 'm-mod',
+            name: 'Dan',
+            text: 'Moderator unpaid note for Active.',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+          {
             id: 'm3',
             name: 'Ada',
             text: 'Thank you both — that helps.',
@@ -4348,6 +4368,8 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
   await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
   await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
   await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
+  await expect(page.getByText('Founder unpaid note for Active.')).toBeVisible();
+  await expect(page.getByText('Moderator unpaid note for Active.')).toBeVisible();
 
   await page.getByRole('button', { name: 'All' }).click();
   await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
@@ -4363,6 +4385,8 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
   await expect(items.nth(0)).toContainText('₿21');
   await expect(items.nth(1)).toContainText('Thank you both — that helps.');
   await expect(items.nth(1)).toContainText('₿5');
+  await expect(page.getByText('Founder unpaid note for Active.')).not.toBeVisible();
+  await expect(page.getByText('Moderator unpaid note for Active.')).not.toBeVisible();
 });
 
 async function seedWelcomeWithUnpaidCount(page: Page): Promise<void> {
