@@ -988,14 +988,14 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes. JSON for the list lives under `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.** and one category row **Hidden notes** linking to `/moderate/hidden` (the hide-tool lead sits on that row). Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
 - **Actions:** Open **Hidden notes** to `/moderate/hidden`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
-Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, and category link **Hidden notes** → `/moderate/hidden`.
+Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, and labeled **Hidden notes** control → `/moderate/hidden`.
 
 ![21.gifts moderation](images/moderate.png)
 

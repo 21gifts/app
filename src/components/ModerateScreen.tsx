@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Card } from '@/components/ui';
+import { ButtonLink, Card } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -19,7 +18,7 @@ function isStaffRole(role: string | undefined): boolean {
 /**
  * Signed-in moderation hub of staff tools.
  *
- * Founders and moderators see hub copy and a category link to hidden notes.
+ * Founders and moderators see hub copy and a labeled Hidden notes control.
  * Other signed-in visitors see a short forbidden message and no tools list.
  * Does not fetch hidden notes. Renders nothing without a session.
  *
@@ -53,14 +52,11 @@ export function ModerateScreen(): ReactElement | null {
       </h1>
       <p className="text-center text-sm text-app-muted">{t('moderate.hubLead')}</p>
       <ul aria-label={t('moderate.toolsLabel')} className="flex w-full flex-col gap-3">
-        <li>
-          <Link
-            href="/moderate/hidden"
-            className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 no-underline"
-          >
-            <span className="text-sm font-medium text-app-fg">{t('moderate.listLabel')}</span>
-            <span className="text-sm text-app-muted">{t('moderate.lead')}</span>
-          </Link>
+        <li className="flex w-full flex-col items-center gap-3">
+          <p className="text-center text-sm text-app-muted">{t('moderate.lead')}</p>
+          <ButtonLink href="/moderate/hidden" variant="secondary" size="lg">
+            {t('moderate.listLabel')}
+          </ButtonLink>
         </li>
       </ul>
     </Card>

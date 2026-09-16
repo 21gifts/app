@@ -2125,7 +2125,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy and one category link **Hidden notes** → `/moderate/hidden`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. No network. Staff see the hub; others see forbidden copy.
 - **Used by:** `ModeratePage`.

@@ -972,7 +972,7 @@ Handbook states: default list, empty, loading, error.
 
 ### `/moderate`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for founders and moderators.**). Staff (founder or moderator) see one category row **Hidden notes** → `/moderate/hidden` (hide-tool lead on the row). Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Does not fetch the hidden list. No un-hide control.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for founders and moderators.**). Staff (founder or moderator) see the hide-tool lead and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Does not fetch the hidden list. No un-hide control.
 
 Handbook states: default hub, forbidden.
 

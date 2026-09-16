@@ -66,7 +66,7 @@ describe('ModerateScreen', () => {
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
     expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /Hidden notes/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Moderation tools' })).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
   });
@@ -75,7 +75,7 @@ describe('ModerateScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /Hidden notes/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
   });
 
@@ -91,8 +91,13 @@ describe('ModerateScreen', () => {
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
     expect(screen.getByText('Tools for founders and moderators.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Hidden notes/ }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
       '/moderate/hidden',
     );
     expect(listMock).not.toHaveBeenCalled();
@@ -103,7 +108,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
     expect(screen.getByText('Tools for founders and moderators.')).toBeTruthy();
     expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Hidden notes/ }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
       '/moderate/hidden',
     );
     expect(listMock).not.toHaveBeenCalled();
