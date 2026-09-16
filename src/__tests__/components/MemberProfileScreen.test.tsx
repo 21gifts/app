@@ -287,9 +287,7 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await waitFor(() => {
-      expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
-    });
+    await openPostsShowingNote();
     expect(screen.queryByText('—')).toBeNull();
   });
 
@@ -706,6 +704,7 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
+    await openPostsShowingNote();
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
