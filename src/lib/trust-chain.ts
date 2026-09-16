@@ -153,9 +153,13 @@ export function layoutTrustChain(chain: TrustChain): {
     );
     const encounter = [...kids];
     kids.sort((left, right) => {
-      const leftRank = TRUST_STACK_ROLE_RANK[(byId.get(left) as TrustChainNode).role];
-      const rightRank = TRUST_STACK_ROLE_RANK[(byId.get(right) as TrustChainNode).role];
-      const byRole = leftRank - rightRank;
+      const leftNode = byId.get(left);
+      const rightNode = byId.get(right);
+      /* v8 ignore next 3 -- kids only come from known chain.nodes ids */
+      if (leftNode === undefined || rightNode === undefined) {
+        return 0;
+      }
+      const byRole = TRUST_STACK_ROLE_RANK[leftNode.role] - TRUST_STACK_ROLE_RANK[rightNode.role];
       if (byRole !== 0) {
         return byRole;
       }
