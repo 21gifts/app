@@ -1,7 +1,9 @@
 'use client';
 
+import { Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
 import {
@@ -13,7 +15,7 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import { Button } from '@/components/ui';
+import { Button, IconButton } from '@/components/ui';
 import {
   fetchMemberPosts,
   fetchMemberReplies,
@@ -122,7 +124,7 @@ const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: Message
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
 
-/* v8 ignore start -- ForumBoard defaults unused on the single profile note card */
+/* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
 const IDLE_BOARD = {
   error: false,
   loading: false,
@@ -170,10 +172,10 @@ const IDLE_BOARD = {
 /* v8 ignore stop */
 
 /**
- * Signed-in member identity card: chart, name, location, Lightning Address,
- * role pill, post/reply counts, optional pinned forum note, stacked
- * activity feeds, and staff Trust Chain actions when the viewer is
- * founder/moderator and the subject is someone else.
+ * Signed-in member identity card: chart, About me, name, location, Lightning
+ * Address, role pill, copy-profile-link, optional Message, post/reply counts,
+ * stacked activity feeds, and staff Trust Chain actions when the viewer is
+ * founder/moderator and the subject is someone else. About me is not a forum post.
  *
  * @param props - Member profile and both activity series for the chart.
  * @returns The presentational member profile.
@@ -217,7 +219,6 @@ export function MemberProfileScreen({
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
-  const [listedNote, setListedNote] = useState(profile.profileMessage);
   const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -234,9 +235,6 @@ export function MemberProfileScreen({
   photoUrlsRef.current = photoUrls;
 
   const photoSource: ForumMessage[] = [];
-  if (listedNote !== null && activity !== 'posts') {
-    photoSource.push(listedNote);
-  }
   if (activity === 'posts' && posts !== null) {
     photoSource.push(...posts);
   }
@@ -406,17 +404,8 @@ export function MemberProfileScreen({
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            setListedNote((prev) => {
-              if (prev === null || prev.id !== next.id) {
-                return prev;
-              }
-              return {
-                ...prev,
-                ...next,
-                replyCount: Math.max(prev.replyCount, next.replyCount),
-              };
-            });
             setPosts((prev) => {
+              /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
               if (prev === null) {
                 return prev;
               }
@@ -515,17 +504,8 @@ export function MemberProfileScreen({
         setReplyDraft('');
       }
       if (!alreadyListed) {
-        setListedNote((prev) => {
-          /* v8 ignore next 3 -- reply composer only mounts with a profile note */
-          if (prev === null) {
-            return prev;
-          }
-          if (prev.id !== parentId) {
-            return prev;
-          }
-          return { ...prev, replyCount: Math.max(prev.replyCount, prev.replyCount + 1) };
-        });
         setPosts((prev) => {
+          /* v8 ignore next 3 -- posts list is null until the posts feed opens */
           if (prev === null) {
             return prev;
           }
@@ -555,9 +535,8 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
-        const feedRow = posts?.find((message) => message.id === parentId);
-        const parentRowNow = listedNote?.id === parentId ? listedNote : feedRow;
-        /* v8 ignore next -- expanded parent is the pinned note or a loaded post */
+        const parentRowNow = posts?.find((message) => message.id === parentId);
+        /* v8 ignore next -- expanded parent is a loaded post */
         const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
         await runPaidReply(token, trimmed, parentId, 1, isRetry, parentSatsNow);
         return;
@@ -646,6 +625,9 @@ export function MemberProfileScreen({
     }
     void pending();
   };
+  /* v8 ignore next -- SSR: no window */
+  const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
+  const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const tagged =
     listedProfile.role === 'founder' ||
@@ -654,6 +636,36 @@ export function MemberProfileScreen({
       ? listedProfile.role
       : null;
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
+  const showMessage =
+    session !== null && account?.id !== profile.id && profile.profileMessage !== null;
+  /* v8 ignore next -- SSR first paint: origin empty until client */
+  const profileUrl = origin !== '' ? `${origin}/members/${profile.id}` : '';
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const onMessage = (): void => {
+    /* v8 ignore next 4 -- button disabled while pmBusy; session and profileMessage already gated by showMessage */
+    if (session === null || profile.profileMessage === null || pmBusy) {
+      return;
+    }
+    const token = session;
+    const messageId = profile.profileMessage.id;
+    setPmBusy(true);
+    void (async () => {
+      try {
+        const thread = await openConversation(token, messageId);
+        if (useAuthStore.getState().session !== token) {
+          setPmBusy(false);
+          return;
+        }
+        router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
+      } catch {
+        setPmBusy(false);
+      }
+    })();
+  };
 
   const handlePayOpen = (messageId: string): void => {
     bumpPayPollGeneration();
@@ -666,6 +678,7 @@ export function MemberProfileScreen({
   };
 
   const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
+    /* v8 ignore next 3 -- Continue is disabled while payBusy; feed pay is session-gated */
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
@@ -676,10 +689,7 @@ export function MemberProfileScreen({
     }
     const token = session;
     const messageId = payMessageId;
-    const parent =
-      listedNote?.id === messageId
-        ? listedNote
-        : posts?.find((message) => message.id === messageId);
+    const parent = posts?.find((message) => message.id === messageId);
     /* v8 ignore next -- pay sheet only opens on a listed note */
     const baselineSats = parent === undefined ? 0 : parent.sats;
     const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
@@ -798,8 +808,7 @@ export function MemberProfileScreen({
     const parsed = parseReplySats(replyAmountDraft);
     const token = session;
     const parentId = expandedId;
-    const parentRow =
-      listedNote?.id === parentId ? listedNote : posts?.find((message) => message.id === parentId);
+    const parentRow = posts?.find((message) => message.id === parentId);
     const exempt = isReplyPaymentExempt(account, parentRow?.accountId ?? profile.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
@@ -936,6 +945,32 @@ export function MemberProfileScreen({
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} donated={donated} />
+          <AboutMeSection
+            mode="public"
+            aboutMe={profile.aboutMe}
+            name={profile.name}
+            /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
+            {...(profileUrl !== '' ? { profileUrl } : {})}
+          />
+          {showMessage ? (
+            <div className="flex items-center justify-center">
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={pmBusy}
+                aria-label={t('profile.message')}
+                title={t('profile.message')}
+                onClick={onMessage}
+              >
+                {pmBusy ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail aria-hidden="true" className="h-4 w-4" />
+                )}
+              </IconButton>
+            </div>
+          ) : null}
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
               {t('name.heading')}
@@ -1009,9 +1044,6 @@ export function MemberProfileScreen({
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />
           ) : null}
         </section>
-        {listedNote !== null && activity !== 'posts' ? (
-          <ForumBoard {...IDLE_BOARD} messages={[listedNote]} {...sharedForumProps} />
-        ) : null}
         {activity === 'posts' || activity === 'replies' ? (
           activityLoading ? (
             <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>

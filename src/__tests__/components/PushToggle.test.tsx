@@ -47,6 +47,7 @@ beforeEach(() => {
       createdAt: 1,
       rulesAgreedAt: 1_700_000_001,
       viewKey: VIEW_KEY,
+      aboutMe: null,
       setup: null,
       missing: [],
     },

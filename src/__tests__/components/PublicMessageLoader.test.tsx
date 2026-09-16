@@ -132,6 +132,7 @@ describe('PublicMessageLoader', () => {
         createdAt: 1,
         rulesAgreedAt: 1,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       },
