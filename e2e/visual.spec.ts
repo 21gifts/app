@@ -5221,7 +5221,7 @@ test.describe('moderate screens', () => {
       });
     });
     await page.goto('/moderate');
-    await expect(page.getByText('Try again')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-moderate-error');
   });
 });
