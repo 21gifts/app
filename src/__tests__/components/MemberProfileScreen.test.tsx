@@ -322,7 +322,7 @@ describe('MemberProfileScreen', () => {
   it('shows clickable post and reply counts, including the empty 0/0 state', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     const posts = screen.getByRole('button', { name: '0 posts' });
-    const replies = screen.getByRole('button', { name: '0 reactions' });
+    const replies = screen.getByRole('button', { name: '0 reactions', pressed: false });
     expect(posts.getAttribute('aria-pressed')).toBe('false');
     expect(replies.getAttribute('aria-pressed')).toBe('false');
     expect(posts.className).not.toContain('px-3 py-1');
@@ -377,13 +377,13 @@ describe('MemberProfileScreen', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     expect(screen.queryByText('Hello from my profile note.')).toBeNull();
     expect(fetchMemberReplies).toHaveBeenCalledWith('sess', profile.id);
 
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: true }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
   });
@@ -403,12 +403,12 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     await waitFor(() => {
       expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
     });
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: true }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
     await act(async () => {
       resolveReplies([activityReply]);
@@ -438,7 +438,7 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     const replyText = await screen.findByText('A reply from Carol.');
     const replyRow = replyText.closest('li');
     const expand = replyRow?.querySelector<HTMLButtonElement>('[aria-label="Show reactions"]');
@@ -1304,7 +1304,7 @@ describe('MemberProfileScreen', () => {
     expect(await screen.findByText('Hello from my profile note.')).toBeTruthy();
     const pinRow = screen.getByText('Hello from my profile note.').closest('li');
     expect(pinRow?.textContent).toMatch(/0 reactions/);
-    expect(screen.getByRole('button', { name: '0 reactions' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '0 reactions', pressed: false })).toBeTruthy();
   });
 
   it('does not apply a stale expand onto a newer thread', async () => {
@@ -2824,7 +2824,7 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', activityReply.id);
     });
