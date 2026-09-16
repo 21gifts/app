@@ -96,8 +96,32 @@ export function creationOptionsFromJSON(
   return created;
 }
 
+type RequestOptionsWithHints = PublicKeyCredentialRequestOptions & {
+  hints?: ReadonlyArray<'security-key' | 'client-device' | 'hybrid'>;
+};
+
+/**
+ * Omit empty `allowCredentials` and set platform hints when discoverable.
+ *
+ * @param requested - Options from native parse or the manual fallback.
+ * @returns The same object, with empty allowCredentials removed and hints set when discoverable.
+ */
+function finalizeDiscoverableRequestOptions(
+  requested: PublicKeyCredentialRequestOptions,
+): RequestOptionsWithHints {
+  const result = requested as RequestOptionsWithHints;
+  if (!Array.isArray(result.allowCredentials) || result.allowCredentials.length === 0) {
+    delete result.allowCredentials;
+    result.hints = ['client-device'];
+  }
+  return result;
+}
+
 /**
  * Build `PublicKeyCredentialRequestOptions` from api JSON.
+ *
+ * Omits empty `allowCredentials` (discoverable credentials) and sets
+ * `hints: ['client-device']` when discoverable.
  *
  * @param options - `PublicKeyCredentialRequestOptionsJSON` from the api.
  * @returns Options for `navigator.credentials.get`.
@@ -115,21 +139,28 @@ export function requestOptionsFromJSON(
         }
       | undefined
   )?.parseRequestOptionsFromJSON;
-  if ('allowCredentials' in options) {
-    credentialDescriptorsFromJSON(options['allowCredentials']);
+  const json: Record<string, unknown> = { ...options };
+  const allowCredentialsJson = json['allowCredentials'];
+  if (Array.isArray(allowCredentialsJson) && allowCredentialsJson.length === 0) {
+    delete json['allowCredentials'];
+  }
+  if ('allowCredentials' in json) {
+    credentialDescriptorsFromJSON(json['allowCredentials']);
   }
   if (typeof parse === 'function') {
-    return parse(options);
+    return finalizeDiscoverableRequestOptions(parse(json));
   }
-  const challenge = options['challenge'];
-  const rpId = options['rpId'];
-  const timeout = options['timeout'];
-  const userVerification = options['userVerification'];
-  const allowCredentials = credentialDescriptorsFromJSON(options['allowCredentials']);
-  const requested: PublicKeyCredentialRequestOptions = {
+  const challenge = json['challenge'];
+  const rpId = json['rpId'];
+  const timeout = json['timeout'];
+  const userVerification = json['userVerification'];
+  const allowCredentials = credentialDescriptorsFromJSON(json['allowCredentials']);
+  const requested: RequestOptionsWithHints = {
     challenge: Uint8Array.from(base64UrlToBytes(typeof challenge === 'string' ? challenge : '')),
-    allowCredentials: allowCredentials ?? [],
   };
+  if (allowCredentials !== undefined && allowCredentials.length > 0) {
+    requested.allowCredentials = allowCredentials;
+  }
   if (typeof rpId === 'string') {
     requested.rpId = rpId;
   }
@@ -139,7 +170,7 @@ export function requestOptionsFromJSON(
   if (typeof userVerification === 'string') {
     requested.userVerification = userVerification as UserVerificationRequirement;
   }
-  return requested;
+  return finalizeDiscoverableRequestOptions(requested);
 }
 
 /**
