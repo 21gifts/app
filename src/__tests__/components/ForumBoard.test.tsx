@@ -528,6 +528,48 @@ describe('ForumBoard', () => {
     ).toBeTruthy();
   });
 
+  it('shows unpaid founder and moderator notes on Active and hides unpaid verified', () => {
+    const unpaidFounder: ForumMessage = {
+      ...SAMPLE,
+      id: 'm-founder-unpaid',
+      name: 'Eve',
+      text: 'Unpaid founder welcome note',
+      role: 'founder',
+    };
+    const unpaidModerator: ForumMessage = {
+      ...SAMPLE,
+      id: 'm-mod-unpaid',
+      name: 'Dan',
+      text: 'Unpaid moderator welcome note',
+      role: 'moderator',
+    };
+    const unpaidVerified: ForumMessage = {
+      ...SAMPLE,
+      id: 'm-ver-unpaid',
+      name: 'Fay',
+      text: 'Unpaid verified welcome note',
+      role: 'verified',
+    };
+    renderWithLocale(
+      <ForumBoard
+        messages={[unpaidFounder, unpaidModerator, unpaidVerified]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('Unpaid founder welcome note')).toBeTruthy();
+    expect(screen.getByText('Unpaid moderator welcome note')).toBeTruthy();
+    expect(screen.queryByText('Unpaid verified welcome note')).toBeNull();
+  });
+
   it('shows emptyPaid when Active hides every loaded row', () => {
     renderWithLocale(
       <ForumBoard
