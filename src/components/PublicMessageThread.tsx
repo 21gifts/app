@@ -44,6 +44,7 @@ function isReplyPaymentExempt(
   account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
   parentAccountId: string | undefined,
 ): boolean {
+  /* v8 ignore next 3 -- reply composer is not mounted without an account */
   if (account === null) {
     return false;
   }

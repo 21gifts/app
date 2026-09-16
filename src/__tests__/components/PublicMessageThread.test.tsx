@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import {
+  agreeToRules,
   deleteMessage,
   fetchGiftStats,
   fetchMessagePhoto,
@@ -410,6 +411,38 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'reply');
+    });
+  });
+
+  it('retries an unpaid staff reply after a missing_requirements overlay is satisfied', async () => {
+    signIn({ role: 'founder' });
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      role: 'founder',
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+    });
+    vi.mocked(postMessage).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    vi.mocked(postMessage).mockResolvedValueOnce({
+      ...root,
+      id: '44444444-4444-4444-8444-444444444444',
+      name: 'Ada',
+      text: 'reply',
+      parentId: MESSAGE_ID,
+      sats: 0,
+      payable: false,
+    });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledTimes(2);
     });
   });
 
