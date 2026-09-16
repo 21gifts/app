@@ -3547,6 +3547,23 @@ test('Function: NumberFormatSwitcher — /profile lists the three samples', asyn
   await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
 });
 
+test('Function: LanguagePreferenceSwitcher — /profile lists English Deutsch Español Filipino', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Language' });
+  await expect(group.getByRole('button', { name: 'English' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Deutsch' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Español' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Filipino' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'English' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
@@ -4609,10 +4626,7 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
 });
 
-test('Function: SignedInChrome — Menu reveals Profile, language, and log out', async ({
-  page,
-  request,
-}) => {
+test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
@@ -4630,12 +4644,10 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   );
   await expect(page.getByRole('link', { name: 'Messages' })).toHaveAttribute('href', '/messages');
   await expect(page.getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');
-  await expect(page.getByLabel('Language')).toBeVisible();
+  await expect(page.getByLabel('Language')).toHaveCount(0);
   await expect(page.getByRole('option', { name: 'Deutsch' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   await expect(page.getByText('Version dev')).toBeVisible();
-  await page.getByLabel('Language').click();
-  await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
 });
 
 test('Function: ProfilePage — profile heading is visible', async ({ page }) => {
@@ -6025,6 +6037,38 @@ test('Function: layoutTrustChain — appointed moderator sits to the right of th
   expect(moderatorBox).not.toBeNull();
   expect((moderatorBox?.x ?? 0) > (founderBox?.x ?? 0)).toBe(true);
   expect(Math.abs((moderatorBox?.y ?? 0) - (founderBox?.y ?? 0)) < 8).toBe(true);
+});
+
+test('Function: layoutTrustChain — stacked moderator sits above a verified sibling even when the verified edge is listed first', async ({
+  page,
+}) => {
+  await page.route('**/trust/graph**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        nodes: [
+          { id: 'f1', name: 'Cyrill', role: 'founder' },
+          { id: 'm1', name: 'Severin', role: 'moderator' },
+          { id: 'v1', name: 'Ada', role: 'verified' },
+        ],
+        edges: [
+          { from: 'f1', to: 'v1', kind: 'verify' },
+          { from: 'f1', to: 'm1', kind: 'verify' },
+        ],
+      }),
+    });
+  });
+  await page.goto('/trust-chain');
+  const moderator = page.getByTestId('trust-node-m1');
+  const verified = page.getByTestId('trust-node-v1');
+  await expect(moderator).toBeVisible();
+  await expect(verified).toBeVisible();
+  const moderatorBox = await moderator.boundingBox();
+  const verifiedBox = await verified.boundingBox();
+  expect(moderatorBox).not.toBeNull();
+  expect(verifiedBox).not.toBeNull();
+  expect((moderatorBox?.y ?? 0) < (verifiedBox?.y ?? 0)).toBe(true);
 });
 
 test('Function: proxyTrustVerifyPost — unauthenticated verify is 401', async ({ request }) => {

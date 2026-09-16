@@ -73,6 +73,20 @@ describe('layoutTrustChain', () => {
     expect(laid.height).toBe(200);
   });
 
+  it('stacks a later moderator above an earlier verified sibling of the founder', () => {
+    const edges: TrustChain['edges'] = [
+      { from: 'f', to: 'ada', kind: 'verify' },
+      { from: 'f', to: 'm', kind: 'verify' },
+    ];
+    const laid = layoutTrustChain({
+      nodes: [FOUNDER, MODERATOR, ADA],
+      edges,
+    });
+    expect(laid.edges).toBe(edges);
+    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 112 });
+  });
+
   it('places a nested stack below the first child subtree, not in the same cell', () => {
     const carol = { id: 'carol', name: 'Carol', role: 'verified' as const };
     const dave = { id: 'dave', name: 'Dave', role: 'verified' as const };

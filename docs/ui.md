@@ -331,7 +331,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 - No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/trust-chain`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
-**App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher is a Profile identity-card settings row, not chrome.
+**App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher and LanguagePreferenceSwitcher are Profile identity-card settings rows, not chrome.
 
 ```mermaid
 flowchart TB
@@ -405,7 +405,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`) | Signed-in app                                                                                                                                                                                                                                                                                                                                                                              |
 | ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `topLeft`  | `Wordmark` → `/`                                                                          | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/moderate`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
-| `topRight` | `LanguageSwitcher tone="light"`                                                           | `SignedInChrome` (Menu; no ThemeSwitcher)                                                                                                                                                                                                                                                                                                                                                  |
+| `topRight` | `LanguageSwitcher tone="light"`                                                           | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                             |
 
 **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` + `Wordmark href="/welcome"`.
 
@@ -422,7 +422,6 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Messages             | `Inbox`                       | `/messages`                                                                         |
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
 | optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
-| Language             | embedded `LanguageSwitcher`   |                                                                                     |
 | Log out              | `LogoutButton`                | labeled                                                                             |
 | Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
 
@@ -732,11 +731,13 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox.
 
 **Option row:** `flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm min-h-11`. Selected: `font-medium` + `Check` 16px. Dark selected check: `text-accent`. App selected check: `text-app-fg` (not orange — choosing Deutsch is not a gift).
 
-**Embedded (Menu):** full-width row, `text-app-muted`. Keep `embedded?: boolean`.
-
 #### ThemeSwitcher profile settings section
 
 ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`theme.label`), then `SegmentedControl tone="neutral"` with System / Light / Dark. Not a labeled chrome pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors follow the cookie if one exists, otherwise the OS.
+
+#### LanguagePreferenceSwitcher profile settings section
+
+LanguagePreferenceSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`language.label`), then `SegmentedControl tone="neutral"` with `className="!grid grid-cols-2 !rounded-2xl"` and endonyms English / Deutsch / Español / Filipino. Two-column track (same grammar as forum Active / All). Not chrome. Not a Menu disclosure. Marketing never mounts it. Public / unsigned pages keep `LanguageSwitcher` (Globe pill + popover).
 
 #### FiatPreferenceSwitcher profile settings section
 
@@ -748,7 +749,7 @@ NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: up
 
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Notifications unread count only when greater than zero. Menu has no number format.
+See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Notifications unread count only when greater than zero. Menu has no language, theme, or number format.
 
 ### Banner (living-room laws)
 
@@ -954,7 +955,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` always includes FiatPicker; empty = picker + `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` always includes FiatPicker; empty = picker + `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (overline + On/Off value + `IconButton`; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
 
 ### `/members/[accountId]`
 

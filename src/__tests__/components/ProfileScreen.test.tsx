@@ -110,6 +110,13 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Language' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Deutsch' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Español' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Filipino' })).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Theme' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
       'true',

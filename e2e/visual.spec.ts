@@ -4437,22 +4437,6 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-unread');
   });
 
-  test('welcome menu-language-open', async ({ page }) => {
-    await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ messages: [] }),
-      });
-    });
-    await page.goto('/welcome');
-    await page.getByRole('button', { name: 'Menu' }).click();
-    await page.getByLabel('Language').click();
-    await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
-    await shotScreen(page, 'state-welcome-menu-language');
-  });
-
   test('welcome pay-amount', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);

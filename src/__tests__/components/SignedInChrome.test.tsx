@@ -173,13 +173,13 @@ afterEach(() => {
 });
 
 describe('SignedInChrome', () => {
-  it('shows Menu while Language and Log out stay hidden', () => {
+  it('shows Menu while Log out stays hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
     expectMenuClosed();
   });
 
-  it('opens the menu with Profile, Language, and Log out, and omits zero totals', async () => {
+  it('opens the menu with Profile and Log out, and omits zero totals', async () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
@@ -198,7 +198,8 @@ describe('SignedInChrome', () => {
     expect(messages.getAttribute('href')).toBe('/messages');
     expect(notifications.nextElementSibling).toBe(messages);
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/contact');
-    expect(screen.getByLabelText('Language')).toBeTruthy();
+    expect(screen.queryByLabelText('Language')).toBeNull();
+    expect(screen.queryByRole('option', { name: 'Deutsch' })).toBeNull();
     expect(screen.queryByLabelText('Theme')).toBeNull();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     expect(screen.getByText('Version abc1234')).toBeTruthy();
@@ -325,7 +326,7 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.keyDown(document, { key: 'Tab' });
     expectMenuOpen();
-    expect(screen.getByLabelText('Language')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
   });
 
   it('closes the menu on Escape and restores focus to Menu', () => {
@@ -333,25 +334,7 @@ describe('SignedInChrome', () => {
     const menuButton = screen.getByRole('button', { name: 'Menu' });
     fireEvent.click(menuButton);
     expectMenuOpen();
-    screen.getByLabelText('Language').focus();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expectMenuClosed();
-    expect(document.activeElement).toBe(menuButton);
-  });
-
-  it('first Escape collapses Language; second Escape closes Menu', () => {
-    renderWithLocale(<SignedInChrome />);
-    const menuButton = screen.getByRole('button', { name: 'Menu' });
-    fireEvent.click(menuButton);
-    expectMenuOpen();
-    const languageButton = screen.getByLabelText('Language');
-    fireEvent.click(languageButton);
-    expect(screen.getByRole('option', { name: 'Deutsch' })).toBeTruthy();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.getByRole('link', { name: /Profile/ })).toBeTruthy();
-    expect(screen.getByLabelText('Language')).toBeTruthy();
-    expect(screen.queryByRole('option')).toBeNull();
-    expect(document.activeElement).toBe(languageButton);
+    screen.getByRole('button', { name: /log out/i }).focus();
     fireEvent.keyDown(document, { key: 'Escape' });
     expectMenuClosed();
     expect(document.activeElement).toBe(menuButton);
@@ -361,7 +344,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
-    expect(screen.getByLabelText('Language')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     fireEvent.mouseDown(document.body);
     expectMenuClosed();
   });
@@ -486,7 +469,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
-    expect(screen.getByLabelText('Language')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
     expectMenuClosed();
   });
