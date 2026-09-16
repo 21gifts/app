@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { SegmentedControl } from '@/components/ui';
+import { SegmentedControl, type SegmentedControlTone } from '@/components/ui';
 import { FIAT_CODES, type FiatCode } from '@/lib/stats-money';
 
 const OPTIONS = FIAT_CODES.map((code) => ({ value: code, label: code }));
@@ -12,6 +12,8 @@ export interface FiatPickerProps {
   onChange: (value: FiatCode) => void;
   /** Defaults to `'dark'`. Profile passes `'app'`. */
   shell?: 'app' | 'dark';
+  /** SegmentedControl tone. Default `'gift'` (chart, stats, day). Profile settings pass `'neutral'`. */
+  tone?: SegmentedControlTone;
   /** Required. Profile and the activity chart pass `t('profile.fiatCurrency')`. */
   ariaLabel: string;
 }
@@ -19,18 +21,20 @@ export interface FiatPickerProps {
 /**
  * Four-way CHF | EUR | USD | PHP control (no ₿).
  *
- * Production mounts: Profile `FiatPreferenceSwitcher` and
- * {@link AccountActivityChart} (`shell="app"`), plus StatsDashboard and
- * DayLoader (marketing `dark`). Forum, the public thread
- * (`PublicMessageLoader`), and the pay sheet do not mount it.
+ * Production mounts: Profile `FiatPreferenceSwitcher` (`tone="neutral"`) and
+ * {@link AccountActivityChart} (`shell="app"`, default `tone="gift"`), plus
+ * StatsDashboard and DayLoader (marketing `dark`, default `tone="gift"`).
+ * Forum, the public thread (`PublicMessageLoader`), and the pay sheet do not
+ * mount it.
  *
- * @param props - Selected code, change handler, optional shell and required aria label.
+ * @param props - Selected code, change handler, optional shell/tone and required aria label.
  * @returns Segmented control labelled from `ariaLabel`.
  */
 export function FiatPicker({
   value,
   onChange,
   shell = 'dark',
+  tone = 'gift',
   ariaLabel,
 }: FiatPickerProps): ReactElement {
   return (
@@ -39,7 +43,7 @@ export function FiatPicker({
       options={OPTIONS}
       onChange={onChange}
       ariaLabel={ariaLabel}
-      tone="gift"
+      tone={tone}
       shell={shell}
     />
   );

@@ -115,8 +115,8 @@
 
 ## Function: FiatPicker
 
-- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'`. Required `ariaLabel` (Profile and the activity chart pass catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Forum, the public thread (`PublicMessageLoader`), and the pay sheet do not mount it.
-- **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); required `ariaLabel`.
+- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'` AND optional `tone` default `'gift'` (chart, stats, day). Profile settings (`FiatPreferenceSwitcher`) pass `tone="neutral"`. Required `ariaLabel` (Profile and the activity chart pass catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Forum, the public thread (`PublicMessageLoader`), and the pay sheet do not mount it.
+- **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); optional `tone` (`'gift' | 'neutral'`, default `'gift'`); required `ariaLabel`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `StatsDashboard`, `DayLoader`.
 
@@ -157,7 +157,7 @@
 
 ## Function: LanguagePreferenceSwitcher
 
-- **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` for English / Deutsch / Español / Filipino (two-column track so the four endonyms fit the identity card). Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
+- **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` (default one-row `rounded-full` track, same as ThemeSwitcher) for English / Deutsch / Español / Filipino. Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
 - **Inputs:** None. Reads current locale via `useTranslations`. Catalog keys `language.label`, `aria.language`. Option labels are native endonyms (not catalogized).
 - **Returns / side effects:** Settings row matching `PushToggle` chrome. On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh).
 - **Used by:** `ProfileScreen`.
@@ -220,7 +220,7 @@
 
 ## Function: FiatPreferenceSwitcher
 
-- **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"`. Writes the same `fiat` cookie as the activity chart, `/stats`, and `/stats/[day]`.
+- **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"` `tone="neutral"` (same chrome as ThemeSwitcher / NumberFormatSwitcher / LanguagePreferenceSwitcher; selected is `bg-app-btn`, not orange). Writes the same `fiat` cookie as the activity chart, `/stats`, and `/stats/[day]`. Chart / stats / day FiatPicker keep default `tone="gift"`.
 - **Inputs:** None. Uses `useFiatPreference` and `useTranslations`.
 - **Returns / side effects:** Settings section. `onChange` persists via the cookie.
 - **Used by:** `ProfileScreen`.
