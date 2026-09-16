@@ -2070,7 +2070,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsPage
 
-- **Purpose:** Next.js page for `/notifications` (signed-in notifications for living-room posts, replies, and payments).
+- **Purpose:** Next.js page for `/notifications` (signed-in notifications for living-room posts, replies, payments, and moderator appointment).
 - **Inputs:** None.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `NotificationsLoader`. Notification HTTP is under `/forum/notifications` (no `route.ts` beside this page).
 - **Used by:** Route `/notifications`.
@@ -2094,14 +2094,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/forum/notifications` with Bearer and parse `{ notifications, unreadCount }`.
 - **Inputs:** Session token.
 - **Returns / side effects:** `{ notifications, unreadCount }`, or throws visitor copy `Could not load notifications. Please try again.`
-- **Used by:** `NotificationsLoader`, `useUnreadCount`.
+- **Used by:** `NotificationsLoader`, `useUnreadCount`, `ForumLoader` (welcome appointment banner).
 
 ## Function: markNotificationRead
 
 - **Purpose:** POST `/forum/notifications/:id/read` with Bearer and parse one notification.
 - **Inputs:** Session token and notification id (encoded in the path).
 - **Returns / side effects:** Updated notification, or throws visitor copy.
-- **Used by:** `NotificationsLoader` on row click.
+- **Used by:** `NotificationsLoader` on row click; `ForumLoader` when the welcome appointment pill is clicked.
 
 ## Function: markAllNotificationsRead
 
