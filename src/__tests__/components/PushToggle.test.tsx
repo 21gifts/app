@@ -332,6 +332,45 @@ describe('PushToggle', () => {
     expect(useAuthStore.getState().account).toBeNull();
   });
 
+  it('does not restore a null account while the session remains during the level POST', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postNotificationLevel).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    const setAccountSpy = vi.spyOn(useAuthStore.getState(), 'setAccount');
+    renderWithLocale(<PushToggle />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByRole('group', { name: 'Notification level' }).className).toContain(
+      'pointer-events-none',
+    );
+    useAuthStore.setState({ account: null });
+    resolvePost?.(accountWithLevel('active'));
+    await waitFor(() => {
+      expect(screen.getByRole('group', { name: 'Notification level' }).className).not.toContain(
+        'pointer-events-none',
+      );
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().session).toBe('tok');
+    expect(setAccountSpy).not.toHaveBeenCalled();
+    setAccountSpy.mockRestore();
+  });
+
+  it('uses the posted level when the response omits notificationLevel', async () => {
+    vi.mocked(postNotificationLevel).mockResolvedValueOnce(ACCOUNT);
+    renderWithLocale(<PushToggle />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.notificationLevel).toBe('active');
+    });
+  });
+
   it('selects All when the account is missing', async () => {
     useAuthStore.setState({ account: null, session: 'tok' });
     renderWithLocale(<PushToggle />);

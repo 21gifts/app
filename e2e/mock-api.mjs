@@ -1192,6 +1192,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/notification-level') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a level of all, active, or mentions' });
+      return;
+    }
+    if (parsed?.level !== 'all' && parsed?.level !== 'active' && parsed?.level !== 'mentions') {
+      json(res, 400, { error: 'Expected a JSON body with a level of all, active, or mentions' });
+      return;
+    }
+    account.notificationLevel = parsed.level;
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/lightning-address') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
