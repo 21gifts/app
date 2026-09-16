@@ -577,7 +577,10 @@ describe('PublicMessageThread', () => {
     await waitFor(() => {
       expect(openConversation).toHaveBeenCalled();
     });
-    expect(screen.getByRole('button', { name: 'Send a private message' })).not.toBeDisabled();
+    expect(
+      (screen.getByRole('button', { name: 'Send a private message' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
   });
 
   it('dismisses the requirements overlay', async () => {
