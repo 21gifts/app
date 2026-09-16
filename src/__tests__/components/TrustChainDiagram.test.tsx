@@ -28,7 +28,7 @@ const CHAIN: TrustChain = {
   edges: [
     { from: 'f', to: 'm', kind: 'moderator_appoint' },
     { from: 'm', to: 'ada', kind: 'verify' },
-    { from: 'm', to: 'bob', kind: 'moderator_confirm' },
+    { from: 'm', to: 'bob', kind: 'moderator_propose' },
     { from: 'm', to: 'ghost', kind: 'verify' },
   ],
 };
@@ -47,7 +47,7 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByRole('link', { name: /Ada/ })).toBeTruthy();
     expect(screen.getAllByRole('link', { name: /Unnamed/ })).toHaveLength(2);
     expect(screen.getByText('verified')).toBeTruthy();
-    expect(screen.getByText('confirmed')).toBeTruthy();
+    expect(screen.getByText('proposed')).toBeTruthy();
     expect(screen.getByText('appointed')).toBeTruthy();
     expect(screen.queryByTestId('trust-node-ghost')).toBeNull();
     const stroke = document.querySelector('svg line, svg path');

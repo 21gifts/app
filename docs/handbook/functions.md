@@ -1074,7 +1074,7 @@
 
 ## Function: TrustChainDiagram
 
-- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, arrow, kind label). One next person sits to the right; several hanging off one person stack top to bottom. Drag a person to move them. A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link.
+- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, arrow, kind label: verified / proposed / appointed). One next person sits to the right; several hanging off one person stack top to bottom. Drag a person to move them. A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link.
 - **Inputs:** `chain: TrustChain`, optional `expandingId`, optional `onExpand`.
 - **Returns / side effects:** SVG with `data-testid="trust-node-{id}"`. Empty chain is not rendered by the parent screen.
 - **Used by:** `TrustChainScreen`.

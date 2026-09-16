@@ -537,6 +537,7 @@ const en = {
   'trustChain.unnamed': 'Unnamed',
   'trustChain.edge.verify': 'verified',
   'trustChain.edge.confirm': 'confirmed',
+  'trustChain.edge.propose': 'proposed',
   'trustChain.edge.appoint': 'appointed',
   'trustChain.explainVerified':
     'Verified means a moderator or founder met the person in real life and confirmed they are real. It is not a wallet proof.',
@@ -1092,6 +1093,7 @@ const de = {
   'trustChain.unnamed': 'Unbenannt',
   'trustChain.edge.verify': 'verifiziert',
   'trustChain.edge.confirm': 'bestätigt',
+  'trustChain.edge.propose': 'vorgeschlagen',
   'trustChain.edge.appoint': 'ernannt',
   'trustChain.explainVerified':
     'Verifiziert bedeutet, dass eine Moderatorin, ein Moderator oder eine Gründerperson die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
@@ -1633,6 +1635,7 @@ const es = {
   'trustChain.unnamed': 'Sin nombre',
   'trustChain.edge.verify': 'verificado',
   'trustChain.edge.confirm': 'confirmado',
+  'trustChain.edge.propose': 'propuesto',
   'trustChain.edge.appoint': 'nombrado',
   'trustChain.explainVerified':
     'Verificado significa que una persona moderadora o fundadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
@@ -2181,6 +2184,7 @@ const fil = {
   'trustChain.unnamed': 'Walang pangalan',
   'trustChain.edge.verify': 'na-verify',
   'trustChain.edge.confirm': 'nakumpirma',
+  'trustChain.edge.propose': 'iminungkahi',
   'trustChain.edge.appoint': 'itinalaga',
   'trustChain.explainVerified':
     'Ang Verified ay nangangahulugang isang moderator o founder ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
