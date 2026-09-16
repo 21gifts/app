@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
+import { HomeWordmark } from '@/components/HomeWordmark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { ButtonLink, Wordmark } from '@/components/ui';
+import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
@@ -18,7 +19,7 @@ export default async function DonatePage(): Promise<ReactElement> {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<Wordmark href="/" />}
+      topLeft={<HomeWordmark />}
       topRight={<LanguageSwitcher tone="light" />}
     >
       <div className="flex w-full max-w-md flex-col items-center gap-6">

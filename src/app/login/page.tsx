@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
+import { HomeWordmark } from '@/components/HomeWordmark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LoginCard } from '@/components/LoginCard';
 import { OnboardingGate } from '@/components/OnboardingGate';
-import { Wordmark } from '@/components/ui';
 
 /**
  * `/login` — the passkey sign-in page.
@@ -17,7 +17,7 @@ export default function LoginPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<Wordmark href="/" />}
+      topLeft={<HomeWordmark />}
       topRight={<LanguageSwitcher tone="light" />}
     >
       <OnboardingGate screen="login">

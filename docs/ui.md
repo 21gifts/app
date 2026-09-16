@@ -37,9 +37,9 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 | Context                | Size             | Weight | Color               | Element                                                                                                                       |
 | ---------------------- | ---------------- | ------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Marketing header       | 17px / 1.06rem   | 700    | `paper` (`#ffffff`) | `Wordmark tone="dark"` link `/`                                                                                               |
+| Marketing header       | 17px / 1.06rem   | 700    | `paper` (`#ffffff`) | `HomeWordmark tone="dark"` (`/` unsigned, `/welcome` when a session is hydrated)                                              |
 | Marketing footer       | 15px / 0.9375rem | 700    | `paper`             | `Wordmark tone="dark" size="footer"` as `<span>`                                                                              |
-| App chrome (unsigned)  | 17px / 1.06rem   | 700    | `app-fg`            | `Wordmark` link `/`                                                                                                           |
+| App chrome (unsigned)  | 17px / 1.06rem   | 700    | `app-fg`            | `HomeWordmark` on `/login`, `/donate`, `/view/*`; `Wordmark` link `/` on unsigned `/rules` and `/messages/[id]`               |
 | App chrome (signed-in) | 17px / 1.06rem   | 700    | `app-fg`            | `Wordmark` link `/welcome`, except `/setup/*` (`<span>` — `OnboardingGate` would bounce an incomplete account off `/welcome`) |
 
 **Clear space.** Minimum 8px (`spacing-2`) on all sides of the glyph bounds. Do not place controls closer than 12px (`spacing-3`) to the wordmark.
@@ -331,7 +331,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 - No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/trust-chain`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
-**App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher and LanguagePreferenceSwitcher are Profile identity-card settings rows, not chrome.
+**App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark or `HomeWordmark` + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher and LanguagePreferenceSwitcher are Profile identity-card settings rows, not chrome.
 
 ```mermaid
 flowchart TB
@@ -402,10 +402,10 @@ flowchart TB
 
 Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `align="center"` centers short cards inside the inner scroller (never `justify-center` on `<main>`). Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`) | Signed-in app                                                                                                                                                                                                                                                                                                                                                                              |
-| ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `topLeft`  | `Wordmark` → `/`                                                                          | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/moderate`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
-| `topRight` | `LanguageSwitcher tone="light"`                                                           | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                             |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                       | Signed-in app                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `topLeft`  | `HomeWordmark` on `/login`, `/donate`, `/view/*` (`/` unsigned, `/welcome` when hydrated). `Wordmark` → `/` on unsigned `/rules` and unsigned `/messages/[id]`. | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/moderate`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
+| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                 | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                             |
 
 **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` + `Wordmark href="/welcome"`.
 
@@ -432,7 +432,7 @@ Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`
 ```mermaid
 flowchart LR
   subgraph marketingShell [Marketing shell — always ink]
-    MH[MarketingHeader: Wordmark + nav incl. Trust Chain + orange Log in + Language]
+    MH[MarketingHeader: HomeWordmark + nav incl. Trust Chain + orange Log in + Language]
     MC[Page]
     MF[MarketingFooter: Wordmark + links + verse + GitHub]
   end
@@ -598,7 +598,7 @@ export function Wordmark(props: {
 }): ReactElement;
 ```
 
-Do not over-type `href` as `'/' | '/welcome'` — unsigned app also uses `/` from `/rules` and `/donate`, and the footer is not a link.
+`HomeWordmark` is the session-aware wrapper (`/` until hydrate, `/welcome` when `ready && session !== null`). Do not over-type primitive `href` as `'/' | '/welcome'` — unsigned `/rules` still uses `/`, and the footer is not a link.
 
 ### `Card`
 
@@ -836,7 +836,7 @@ Load and request failures next to labeled **Try again** use this grammar (`login
 
 ### Marketing header / footer / CTA pair
 
-**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `Wordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, Trust Chain, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
+**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `HomeWordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, Trust Chain, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
 
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile.
 
@@ -917,7 +917,7 @@ Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, accent section li
 
 ### `/login`
 
-Fill `AppShell` `align="center"`; `topLeft={<Wordmark href="/" />}` `topRight={<LanguageSwitcher tone="light" />}`. `OnboardingGate screen="login"` → `LoginCard` (`Fingerprint` 32px subtle, **one** heading `login.heading` at **card-title**, `Button` primary md with Fingerprint icon **Log in**).
+Fill `AppShell` `align="center"`; `topLeft={<HomeWordmark />}` `topRight={<LanguageSwitcher tone="light" />}`. `OnboardingGate screen="login"` → `LoginCard` (`Fingerprint` 32px subtle, **one** heading `login.heading` at **card-title**, `Button` primary md with Fingerprint icon **Log in**).
 
 Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try again**. In-app: `InAppBrowserView`.
 
@@ -925,7 +925,7 @@ Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try 
 
 ### `/donate`
 
-Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Send help**), muted lead, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent).
+Fill `AppShell` `align="center"`; `HomeWordmark` + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Send help**), muted lead, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent).
 
 ### `/setup/name`
 
@@ -993,7 +993,7 @@ App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitc
 
 ### `/view/[viewKey]`
 
-Fill `AppShell` `align="center"`; Wordmark href `/` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
+Fill `AppShell` `align="center"`; `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.
@@ -1054,7 +1054,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 1. **One family: Outfit** (SIL OFL) via `next/font/google`, `weight: 'variable'`, `className={outfit.variable}` on `<html>`. Figtree or Instrument Sans remain an implementer escape hatch only if goldens fail the family test — one grotesque family, not Inter, tabular lining figures still apply.
 2. **Two shells remain.** Marketing always-dark, no ThemeSwitcher. App keeps `ThemeProvider` / cookie / `html.dark`. Light theme stays.
 3. **Orange is shell-split.** Marketing: primary filled CTA + kickers + stats paint. App: gift-money **fill** only. Never orange text on paper. THE TEST bar is the only decorative orange on `/rules`.
-4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. Signed-in links to `/welcome` except `/setup/*` (span).
+4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. Signed-in links to `/welcome` except `/setup/*` (span); marketing, login, donate, and view follow it via `HomeWordmark`.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
 6. **Pay control is lucide Gift, not ₿.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null, otherwise ₿-only (no ` · —`). Accessible name stays **Send Bitcoin** (`forum.pay`).
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
