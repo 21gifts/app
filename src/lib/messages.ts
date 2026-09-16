@@ -513,6 +513,8 @@ const en = {
   'notifications.photoPost': 'Photo',
 
   'moderate.heading': 'Moderation',
+  'moderate.hubLead': 'Tools for founders and moderators.',
+  'moderate.toolsLabel': 'Moderation tools',
   'moderate.lead':
     'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
   'moderate.forbidden': 'This page is for founders and moderators.',
@@ -1064,6 +1066,8 @@ const de = {
   'notifications.photoPost': 'Foto',
 
   'moderate.heading': 'Moderation',
+  'moderate.hubLead': 'Werkzeuge für Gründerpersonen und Moderatorinnen oder Moderatoren.',
+  'moderate.toolsLabel': 'Moderationswerkzeuge',
   'moderate.lead':
     'Eine Notiz auszublenden ist ein weiches Ausblenden: Die Notiz und ihre nicht markierten direkten Antworten verlassen das Wohnzimmer. Es ist keine endgültige Löschung.',
   'moderate.forbidden': 'Diese Seite ist für Gründerpersonen und Moderatorinnen oder Moderatoren.',
@@ -1603,6 +1607,8 @@ const es = {
   'notifications.photoPost': 'Foto',
 
   'moderate.heading': 'Moderación',
+  'moderate.hubLead': 'Herramientas para personas fundadoras y moderadoras.',
+  'moderate.toolsLabel': 'Herramientas de moderación',
   'moderate.lead':
     'Ocultar una nota es una ocultación suave: la nota y sus respuestas directas sin etiqueta salen del salón. No es un borrado definitivo.',
   'moderate.forbidden': 'Esta página es para personas fundadoras y moderadoras.',
@@ -2148,6 +2154,8 @@ const fil = {
   'notifications.photoPost': 'Litrato',
 
   'moderate.heading': 'Moderasyon',
+  'moderate.hubLead': 'Mga tool para sa mga founder at moderator.',
+  'moderate.toolsLabel': 'Mga tool sa moderasyon',
   'moderate.lead':
     'Ang pagtatago ng nota ay malambot: ang nota at ang mga direktang sagot nito na walang tag ay umaalis sa living room. Hindi ito tuluyang pagbura.',
   'moderate.forbidden': 'Ang pahinang ito ay para sa mga founder at moderator.',

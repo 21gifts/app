@@ -834,21 +834,33 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/moderate:empty",
-    "label": "/moderate empty",
-    "visual": "state-moderate-empty",
+    "id": "/moderate/hidden:default",
+    "label": "/moderate/hidden default",
+    "visual": "screen-moderate-hidden",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/moderate:loading",
-    "label": "/moderate loading",
-    "visual": "state-moderate-loading",
+    "id": "/moderate/hidden:forbidden",
+    "label": "/moderate/hidden forbidden",
+    "visual": "state-moderate-hidden-forbidden",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/moderate:error",
-    "label": "/moderate error",
-    "visual": "state-moderate-error",
+    "id": "/moderate/hidden:empty",
+    "label": "/moderate/hidden empty",
+    "visual": "state-moderate-hidden-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/hidden:loading",
+    "label": "/moderate/hidden loading",
+    "visual": "state-moderate-hidden-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/hidden:error",
+    "label": "/moderate/hidden error",
+    "visual": "state-moderate-hidden-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

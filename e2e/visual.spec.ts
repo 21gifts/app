@@ -5153,16 +5153,10 @@ test.describe('moderate screens', () => {
 
   test('screen /moderate', async ({ page }) => {
     await seedAda(page, 'founder');
-    await page.route('**/forum/messages/hidden', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ messages: [HIDDEN] }),
-      });
-    });
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-    await expect(page.getByText('Hidden note')).toBeVisible();
+    await expect(page.getByText('Tools for founders and moderators.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await shotScreen(page, 'screen-moderate');
   });
 
@@ -5172,8 +5166,71 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
   });
+});
 
-  test('moderate empty', async ({ page }) => {
+test.describe('moderate hidden screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const HIDDEN = {
+    id: 'h1',
+    name: 'Bob',
+    text: 'Hidden note',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    parentId: null,
+    deletedAt: '2026-08-29T15:00:00.000Z',
+    deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+  };
+
+  test('screen /moderate/hidden', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [HIDDEN] }),
+      });
+    });
+    await page.goto('/moderate/hidden');
+    await expect(page.getByText('Hidden by Ada')).toBeVisible();
+    await shotScreen(page, 'screen-moderate-hidden');
+  });
+
+  test('moderate hidden forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/hidden');
+    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-hidden-forbidden');
+  });
+
+  test('moderate hidden empty', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/forum/messages/hidden', async (route) => {
       await route.fulfill({
@@ -5182,22 +5239,22 @@ test.describe('moderate screens', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
-    await page.goto('/moderate');
+    await page.goto('/moderate/hidden');
     await expect(page.getByText('No hidden notes.')).toBeVisible();
-    await shotScreen(page, 'state-moderate-empty');
+    await shotScreen(page, 'state-moderate-hidden-empty');
   });
 
-  test('moderate loading', async ({ page }) => {
+  test('moderate hidden loading', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/forum/messages/hidden', async () => {
       /* hang */
     });
-    await page.goto('/moderate');
+    await page.goto('/moderate/hidden');
     await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
-    await shotScreen(page, 'state-moderate-loading');
+    await shotScreen(page, 'state-moderate-hidden-loading');
   });
 
-  test('moderate error', async ({ page }) => {
+  test('moderate hidden error', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/forum/messages/hidden', async (route) => {
       await route.fulfill({
@@ -5206,9 +5263,9 @@ test.describe('moderate screens', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await page.goto('/moderate');
+    await page.goto('/moderate/hidden');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await shotScreen(page, 'state-moderate-error');
+    await shotScreen(page, 'state-moderate-hidden-error');
   });
 });
 
