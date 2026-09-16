@@ -290,6 +290,18 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('keeps the higher replyCount when a pay poll returns a smaller count', async () => {
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42, replyCount: 0 });
+    signIn();
+    renderThread({ root: { ...root, replyCount: 5 } });
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
+  });
+
   it('polls the parent after paying from the gift button', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });

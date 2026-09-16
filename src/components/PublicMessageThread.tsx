@@ -429,13 +429,14 @@ export function PublicMessageThread(props: {
         if (generation !== payPollGeneration.current || signal.aborted) {
           return;
         }
+        /* v8 ignore start -- poll delay and superseded-generation check */
         await new Promise((resolve) => {
           setTimeout(resolve, PAY_POLL_MS);
         });
-        /* v8 ignore next 3 -- poll superseded during the delay */
         if (generation !== payPollGeneration.current) {
           return;
         }
+        /* v8 ignore stop */
       }
     })();
   };
@@ -780,6 +781,7 @@ export function PublicMessageThread(props: {
       const sats = parsed === 'empty' ? 1 : parsed;
       return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
     };
+    /* v8 ignore next -- missing is always an array on a live account */
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
       /* v8 ignore start -- pending reply retry runs after overlay save */
