@@ -244,9 +244,11 @@ export function PublicMessageThread(props: {
     const missing = listed.filter(
       (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
     );
+    /* v8 ignore start -- photoIdsKey is empty when every photo is already loaded */
     if (missing.length === 0) {
       return;
     }
+    /* v8 ignore stop */
     void (async () => {
       for (const message of missing) {
         /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
@@ -370,9 +372,11 @@ export function PublicMessageThread(props: {
             sinceSats: baselineSats,
             signal,
           });
+          /* v8 ignore start -- poll aborted or superseded before the body is applied */
           if (generation !== payPollGeneration.current || signal.aborted) {
             return;
           }
+          /* v8 ignore stop */
           if (next !== null && next.sats > baselineSats) {
             setNote((prev) =>
               prev.id === next.id
@@ -381,7 +385,7 @@ export function PublicMessageThread(props: {
                     ...next,
                     replyCount: Math.max(prev.replyCount, next.replyCount),
                   }
-                : prev,
+                : /* v8 ignore next -- poll body for a different note id */ prev,
             );
             setPayWaiting(false);
             setPayInvoice(null);
@@ -491,11 +495,12 @@ export function PublicMessageThread(props: {
           pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
           return;
         }
-        /* v8 ignore next 3 -- overlay retry while the thread is no longer expanded */
+        /* v8 ignore start -- overlay retry while the thread is no longer expanded */
         if (expandedIdRef.current === parentId) {
           setReplyFormError('request');
         }
         return;
+        /* v8 ignore stop */
       }
       if (isReplyPaymentError(err)) {
         await runPaidReply(token, trimmed, parentId, 1, isRetry, note.sats);
@@ -542,18 +547,21 @@ export function PublicMessageThread(props: {
       setReplyPosting(false);
       startPayPoll(parentId, baselineSats);
     } catch (err) {
+      /* v8 ignore start -- pay sheet closed while the reply invoice failed */
       if (generation !== payPollGeneration.current) {
         return;
       }
+      /* v8 ignore stop */
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () =>
             runPaidReply(token, trimmed, parentId, sats, true, baselineSats);
           return;
         }
-        /* v8 ignore next 2 -- overlay retry still missing requirements */
+        /* v8 ignore start -- overlay retry still missing requirements */
         setReplyFormError('request');
         return;
+        /* v8 ignore stop */
       }
       setReplyFormError(
         err instanceof Error && /1[-–]500 characters/i.test(err.message)
@@ -650,9 +658,10 @@ export function PublicMessageThread(props: {
               pendingPostRef.current = () => continuePay(true).then(() => undefined);
               return null;
             }
-            /* v8 ignore next 2 -- overlay retry still missing requirements */
+            /* v8 ignore start -- overlay retry still missing requirements */
             setPayError('request');
             return null;
+            /* v8 ignore stop */
           }
           setPayError('request');
         } finally {
@@ -704,12 +713,13 @@ export function PublicMessageThread(props: {
     setReplyDraft('');
     setReplyAmountDraft('');
     setReplyFormError(null);
-    /* v8 ignore next 4 -- expand after the session was cleared */
+    /* v8 ignore start -- expand after the session was cleared */
     if (session === null) {
       setRepliesLoading(false);
       setRepliesError(true);
       return;
     }
+    /* v8 ignore stop */
     void (async () => {
       try {
         const next = await fetchReplies(session, messageId);

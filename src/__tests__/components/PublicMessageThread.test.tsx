@@ -674,6 +674,18 @@ describe('PublicMessageThread', () => {
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
 
+  it('shows a request error when a paid reply fails', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('offline'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
   it('maps a paid-reply rate-limit onto the reply error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
     signIn();
