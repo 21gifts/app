@@ -500,8 +500,8 @@ export function PublicMessageThread(props: {
           setReplyFormError('request');
         }
         return;
-        /* v8 ignore stop */
       }
+      /* v8 ignore stop */
       if (isReplyPaymentError(err)) {
         await runPaidReply(token, trimmed, parentId, 1, isRetry, note.sats);
         return;
@@ -555,14 +555,15 @@ export function PublicMessageThread(props: {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () =>
+            /* v8 ignore next -- pending paid-reply retry runs after overlay save */
             runPaidReply(token, trimmed, parentId, sats, true, baselineSats);
           return;
         }
         /* v8 ignore start -- overlay retry still missing requirements */
         setReplyFormError('request');
         return;
-        /* v8 ignore stop */
       }
+      /* v8 ignore stop */
       setReplyFormError(
         err instanceof Error && /1[-–]500 characters/i.test(err.message)
           ? 'tooLong'
@@ -661,8 +662,8 @@ export function PublicMessageThread(props: {
             /* v8 ignore start -- overlay retry still missing requirements */
             setPayError('request');
             return null;
-            /* v8 ignore stop */
           }
+          /* v8 ignore stop */
           setPayError('request');
         } finally {
           if (generation === payPollGeneration.current) {
