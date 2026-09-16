@@ -5052,6 +5052,13 @@ test('Function: PublicMessageChrome — signed-in public note shows back and Men
 }) => {
   const id = '11111111-1111-4111-8111-111111111111';
   await seedAdaSession(page);
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
   await page.route(`**/public-messages/${id}/replies`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -5082,6 +5089,46 @@ test('Function: PublicMessageChrome — signed-in public note shows back and Men
     '/welcome',
   );
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+});
+
+test('Function: PublicMessageThread — signed-in permalink shows Copy link to this note', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await seedAdaSession(page);
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
 });
 
 test('Function: generateMetadata — public note HTML includes og:title', async ({ request }) => {

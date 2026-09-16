@@ -2982,6 +2982,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -3001,6 +3008,8 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/messages/${id}`);
     await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
     await shotScreen(page, 'state-messages-id-signed-in');
   });
 

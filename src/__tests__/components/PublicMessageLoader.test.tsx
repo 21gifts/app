@@ -8,10 +8,19 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const MESSAGE_ID = '11111111-1111-4111-8111-111111111111';
 
+const push = vi.fn();
+
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push; replace: typeof push } => ({
+    push,
+    replace: push,
+  }),
 }));
 
 vi.mock('@/hooks/useHydrateSession', () => ({
@@ -23,20 +32,33 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
   fetchPublicReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchReplies: vi.fn(),
+  fetchMessagePhoto: vi.fn(),
+  postMessage: vi.fn(),
+  postMessageInvoice: vi.fn(),
+  openConversation: vi.fn(),
+  deleteMessage: vi.fn(),
+  agreeToRules: vi.fn(),
+  setName: vi.fn(),
+  setLightningAddress: vi.fn(),
 }));
 
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import {
+  deleteMessage,
   fetchGiftStats,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
+  fetchReplies,
 } from '@/lib/api';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
 const fetchRepliesPublic = vi.mocked(fetchPublicReplies);
+const fetchRepliesBearer = vi.mocked(fetchReplies);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
+const deleteMessageMock = vi.mocked(deleteMessage);
 const hydrate = vi.mocked(useHydrateSession);
 
 const EMPTY_STATS: GiftStats = {
@@ -79,7 +101,9 @@ beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
   hydrate.mockReturnValue({ ready: true });
   fetchRepliesPublic.mockResolvedValue([]);
+  fetchRepliesBearer.mockResolvedValue([]);
   fetchGiftStatsMock.mockResolvedValue(EMPTY_STATS);
+  deleteMessageMock.mockResolvedValue(undefined);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -99,6 +123,8 @@ afterEach(() => {
   fetchMessage.mockReset();
   fetchPhoto.mockReset();
   fetchRepliesPublic.mockReset();
+  fetchRepliesBearer.mockReset();
+  deleteMessageMock.mockReset();
   vi.restoreAllMocks();
 });
 
@@ -146,6 +172,9 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByText('₿21')).toBeTruthy();
     const login = screen.getByRole('link', { name: 'Log in' });
     expect(login.getAttribute('href')).toBe('/login');
+    expect(screen.queryByRole('button', { name: 'Copy link to this note' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
   it('renders Back to the forum when signed in', async () => {
@@ -175,6 +204,9 @@ describe('PublicMessageLoader', () => {
     });
     const back = screen.getByRole('link', { name: 'Back to the forum' });
     expect(back.getAttribute('href')).toBe('/welcome');
+    expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
   it('shows Loading… while session hydrate is not ready', async () => {
@@ -507,6 +539,154 @@ describe('PublicMessageLoader', () => {
     expect(fetchMessage).toHaveBeenCalledTimes(2);
   });
 
+  it('shows gift, copy, and PM on a signed-in payable note from another author', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      name: 'Carol',
+      accountId: 'acc_carol',
+      payable: true,
+    });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
+  });
+
+  it('auto-expands the signed-in thread so Write a reply is ready', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessage.mockResolvedValue(sample);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    });
+    expect(fetchRepliesBearer).toHaveBeenCalledWith('sess', MESSAGE_ID);
+  });
+
+  it('rings the opened reply on a signed-in parent thread', async () => {
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const reply: ForumMessage = {
+      ...sample,
+      id: replyId,
+      parentId: MESSAGE_ID,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+    };
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessage.mockImplementation(async (messageId: string) => {
+      if (messageId === replyId) {
+        return reply;
+      }
+      if (messageId === MESSAGE_ID) {
+        return sample;
+      }
+      return null;
+    });
+    fetchRepliesPublic.mockResolvedValue([reply]);
+    fetchRepliesBearer.mockResolvedValue([reply]);
+    renderWithLocale(<PublicMessageLoader id={replyId} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(document.querySelector('[data-permalink-target="true"]')).toBeTruthy();
+    });
+    const target = document.querySelector('[data-permalink-target="true"]');
+    expect(target?.getAttribute('data-reply-id')).toBe(replyId);
+    expect(target?.className).toContain('ring-1');
+    expect(target?.className).toContain('ring-app-fg');
+  });
+
+  it('shows missing after a staff delete of the signed-in root note', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'founder',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessage.mockResolvedValue(sample);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Delete post' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => {
+      expect(screen.getByText('This profile could not be found.')).toBeTruthy();
+    });
+    expect(deleteMessageMock).toHaveBeenCalledWith('sess', MESSAGE_ID);
+  });
+
   it('unfurls a quoted public note in a reply and hides the raw URL', async () => {
     const rianaId = '444d655b-73a4-475a-b5fc-f7e36210e82e';
     const replyId = '322f9dea-4a76-5168-91b8-430432e5f90b';
@@ -558,6 +738,9 @@ describe('PublicMessageLoader', () => {
       }
       if (id === quotedId) {
         return quoted;
+      }
+      if (id === replyId) {
+        return reply;
       }
       return null;
     });

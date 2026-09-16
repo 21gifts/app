@@ -6,6 +6,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import {
@@ -160,15 +161,20 @@ function PublicThreadCard({
  * Client loader for `/messages/[id]`: validates the UUID, fetches the public
  * parent and live replies (and optional photo blobs), and shows a Log in /
  * Back to the forum link from session hydrate state. Opening a reply UUID
- * still shows the parent thread. No pay sheet, no composer, no copy control.
+ * still shows the parent thread. Unsigned visitors keep the read-only cards.
+ * When hydrate is ready and both session and account are set, mounts
+ * {@link PublicMessageThread} (`ForumBoard` with `composerHidden`) so pay,
+ * copy, PM, reply, and staff delete work. No OnboardingGate and no top-level
+ * composer.
  *
  * @param props - Dynamic route `id`.
- * @returns Loading, missing, error, or the read-only thread cards.
+ * @returns Loading, missing, error, unsigned cards, or the signed-in thread.
  */
 export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
   const { ready } = useHydrateSession();
+  const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
@@ -283,27 +289,43 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     return <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
   }
 
+  const signedInThread = ready && session !== null && account !== null;
+
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <PublicThreadCard
-        note={root}
-        highlight={false}
-        indent={false}
-        rateDay={rateDay}
-        fiat={fiat}
-        knownNotes={[root, ...replies]}
-      />
-      {replies.map((reply) => (
-        <PublicThreadCard
-          key={reply.id}
-          note={reply}
-          highlight={highlightId === reply.id}
-          indent
-          rateDay={rateDay}
-          fiat={fiat}
-          knownNotes={[root, ...replies]}
+      {signedInThread ? (
+        <PublicMessageThread
+          root={root}
+          highlightId={highlightId}
+          onRootDeleted={() => {
+            setStatus('missing');
+            setRoot(null);
+            setReplies([]);
+          }}
         />
-      ))}
+      ) : (
+        <>
+          <PublicThreadCard
+            note={root}
+            highlight={false}
+            indent={false}
+            rateDay={rateDay}
+            fiat={fiat}
+            knownNotes={[root, ...replies]}
+          />
+          {replies.map((reply) => (
+            <PublicThreadCard
+              key={reply.id}
+              note={reply}
+              highlight={highlightId === reply.id}
+              indent
+              rateDay={rateDay}
+              fiat={fiat}
+              knownNotes={[root, ...replies]}
+            />
+          ))}
+        </>
+      )}
       {ready ? (
         account === null ? (
           <Link
