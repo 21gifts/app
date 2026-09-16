@@ -567,4 +567,148 @@ describe('PublicMessageThread', () => {
       });
     });
   });
+
+  it('clears PM busy when openConversation fails', async () => {
+    vi.mocked(openConversation).mockRejectedValue(new Error('offline'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
+    await waitFor(() => {
+      expect(openConversation).toHaveBeenCalled();
+    });
+    expect(screen.getByRole('button', { name: 'Send a private message' })).not.toBeDisabled();
+  });
+
+  it('dismisses the requirements overlay', async () => {
+    signIn({ lightningAddress: null, missing: ['lightning-address'] });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+  });
+
+  it('opens the overlay when pay invoice returns missing_requirements', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(
+      new MissingRequirementsError(['lightning-address']),
+    );
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+  });
+
+  it('opens the overlay when a paid reply returns missing_requirements', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+  });
+
+  it('maps a paid-reply rate-limit onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
+    });
+  });
+
+  it('ignores collapse while a reply is posting', async () => {
+    signIn({ role: 'founder' });
+    let resolvePost!: (value: ForumMessage) => void;
+    vi.mocked(postMessage).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    await act(async () => {
+      resolvePost({
+        ...root,
+        id: '99999999-9999-4999-8999-999999999999',
+        name: 'Ada',
+        text: 'reply',
+        parentId: MESSAGE_ID,
+        sats: 0,
+        payable: false,
+      });
+    });
+  });
+
+  it('shows a replies error when re-expand fetch fails', async () => {
+    vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('offline'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await waitFor(() => {
+      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+    });
+  });
+
+  it('loads a photo after the first fetch fails', async () => {
+    vi.mocked(fetchMessagePhoto)
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(new Blob(['x'], { type: 'image/jpeg' }));
+    signIn();
+    renderThread({ root: { ...root, hasPhoto: true } });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+  });
+
+  it('keeps a later gift sheet when an earlier pay poll confirms', async () => {
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
+  });
+
+  it('drops a late pay invoice after Back', async () => {
+    let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
+    vi.mocked(postMessageInvoice).mockReturnValue(
+      new Promise((resolve) => {
+        resolveInvoice = resolve;
+      }),
+    );
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => {
+      resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
+    });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
 });
