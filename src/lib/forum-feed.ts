@@ -3,7 +3,7 @@ import type { ForumMessage } from '@/lib/api-types';
 /** Client-side forum list filter / sort mode. */
 export type ForumFeedMode = 'active' | 'unpaid' | 'all' | 'popular';
 
-/** Default feed mode on the welcome forum (paid notes, newest-first). */
+/** Default feed mode on the welcome forum (paid notes plus unpaid founder/moderator notes, newest-first). */
 export const DEFAULT_FORUM_FEED_MODE: ForumFeedMode = 'active';
 
 /** Window event: already-on-home chrome asked to scroll to top and apply new posts. */
@@ -78,13 +78,17 @@ export function hasUnseenForumPosts(
   return fetched.some((message) => !currentIds.has(message.id));
 }
 
+function isActiveForumMessage(message: ForumMessage): boolean {
+  return message.sats > 0 || message.role === 'founder' || message.role === 'moderator';
+}
+
 /**
  * Filters and sorts a loaded forum thread for the selected feed mode.
  *
  * Ranking is among the already-loaded messages only. Does not mutate `messages`.
  *
  * @param messages - Newest-first list from the api / loader merge.
- * @param mode - Active (paid, newest-first), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
+ * @param mode - Active (paid or unpaid founder/moderator, newest-first), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
  * @returns A new array of visible messages for the mode.
  */
 export function visibleForumMessages(
@@ -99,12 +103,11 @@ export function visibleForumMessages(
     return messages.filter((message) => message.sats === 0);
   }
 
-  const paid = messages.filter((message) => message.sats > 0);
-
   if (mode === 'active') {
-    return paid;
+    return messages.filter(isActiveForumMessage);
   }
 
+  const paid = messages.filter((message) => message.sats > 0);
   return [...paid].sort((a, b) => {
     if (b.sats !== a.sats) {
       return b.sats - a.sats;

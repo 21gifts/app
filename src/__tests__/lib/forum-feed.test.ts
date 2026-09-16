@@ -54,6 +54,48 @@ const BOB: ForumMessage = {
   replyCount: 0,
 };
 
+const UNPAID_FOUNDER: ForumMessage = {
+  id: 'm-founder',
+  name: 'Eve',
+  text: 'Founder unpaid note.',
+  createdAt: '2026-08-28T13:00:00.000Z',
+  sats: 0,
+  payable: true,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'founder',
+  replyCount: 0,
+};
+
+const UNPAID_MODERATOR: ForumMessage = {
+  id: 'm-mod',
+  name: 'Dan',
+  text: 'Moderator unpaid note.',
+  createdAt: '2026-08-28T09:00:00.000Z',
+  sats: 0,
+  payable: true,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'moderator',
+  replyCount: 0,
+};
+
+const UNPAID_VERIFIED: ForumMessage = {
+  id: 'm-ver',
+  name: 'Fay',
+  text: 'Verified unpaid note.',
+  createdAt: '2026-08-28T12:30:00.000Z',
+  sats: 0,
+  payable: true,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'verified',
+  replyCount: 0,
+};
+
 const TIE_NEWER: ForumMessage = {
   id: 'tie-z',
   name: 'Ann',
@@ -130,6 +172,47 @@ describe('forum-feed', () => {
 
   it('active drops zero-sat rows and keeps relative order', () => {
     expect(visibleForumMessages([ADA, CAROL, BOB], 'active')).toEqual([ADA, CAROL]);
+  });
+
+  it('active keeps an unpaid founder note newest-first among kept rows', () => {
+    expect(visibleForumMessages([UNPAID_FOUNDER, ADA, BOB], 'active')).toEqual([
+      UNPAID_FOUNDER,
+      ADA,
+    ]);
+  });
+
+  it('active keeps an unpaid moderator note', () => {
+    expect(visibleForumMessages([ADA, UNPAID_MODERATOR, BOB], 'active')).toEqual([
+      ADA,
+      UNPAID_MODERATOR,
+    ]);
+  });
+
+  it('active drops an unpaid verified note', () => {
+    expect(visibleForumMessages([ADA, UNPAID_VERIFIED, BOB], 'active')).toEqual([ADA]);
+  });
+
+  it('popular drops unpaid founder and moderator notes', () => {
+    expect(
+      visibleForumMessages([ADA, UNPAID_FOUNDER, CAROL, UNPAID_MODERATOR, BOB], 'popular'),
+    ).toEqual([CAROL, ADA]);
+  });
+
+  it('unpaid keeps unpaid founder and moderator notes', () => {
+    expect(visibleForumMessages([ADA, UNPAID_FOUNDER, UNPAID_MODERATOR, BOB], 'unpaid')).toEqual([
+      UNPAID_FOUNDER,
+      UNPAID_MODERATOR,
+      BOB,
+    ]);
+  });
+
+  it('active does not mutate input when keeping unpaid staff notes', () => {
+    const input = Object.freeze([UNPAID_FOUNDER, ADA, UNPAID_VERIFIED, BOB, UNPAID_MODERATOR]);
+    const snapshot = [...input];
+    const active = visibleForumMessages(input, 'active');
+    expect(input).toEqual(snapshot);
+    expect(active).not.toBe(input);
+    expect(active).toEqual([UNPAID_FOUNDER, ADA, UNPAID_MODERATOR]);
   });
 
   it('unpaid keeps only zero-sat rows in order, including notes without a wallet', () => {

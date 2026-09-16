@@ -783,4 +783,138 @@ describe('usePasskeyLogin', () => {
     });
     expect(result.current.status).toBe('error');
   });
+
+  it('omits signal on iPhone authenticate get', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const get = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get },
+    });
+    const originalUserAgent = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ publicKey: expect.anything() }),
+    );
+    expect(get.mock.calls[0]?.[0]).not.toHaveProperty('signal');
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: originalUserAgent,
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it('omits signal on iPhone register create', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const create = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get: vi.fn() },
+    });
+    const originalUserAgent = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ publicKey: expect.anything() }),
+    );
+    expect(create.mock.calls[0]?.[0]).not.toHaveProperty('signal');
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: originalUserAgent,
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it('omits signal on iPadOS desktop-site authenticate get', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const get = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+      platform: 'MacIntel',
+      maxTouchPoints: 5,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls[0]?.[0]).not.toHaveProperty('signal');
+    vi.unstubAllGlobals();
+  });
+
+  it('passes signal to get on non-iOS', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const get = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0',
+      platform: 'MacIntel',
+      maxTouchPoints: 0,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        publicKey: expect.anything(),
+        signal: expect.any(AbortSignal),
+      }),
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it('waits 400ms on iPhone after login NotAllowedError before register', async () => {
+    vi.useFakeTimers();
+    const cred = { id: 'cred', type: 'public-key' };
+    const create = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create,
+      },
+    });
+    const originalUserAgent = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+    await act(async () => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(1);
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: originalUserAgent,
+    });
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 });
