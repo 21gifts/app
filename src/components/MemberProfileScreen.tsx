@@ -15,8 +15,7 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import { Button, Card, IconButton } from '@/components/ui';
-import {
+import { Button, Card, IconButton } from '@/components/ui';import {
   fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
@@ -166,10 +165,6 @@ const IDLE_BOARD = {
   onReplyPost: (): void => undefined,
   replyPosting: false,
   replyFormError: null as ForumReplyFormError,
-  ownName: null as string | null,
-  ownAccountId: null as string | null,
-  onPm: (): void => undefined,
-  pmBusyId: null as string | null,
   composerHidden: true,
 };
 /* v8 ignore stop */
@@ -212,7 +207,6 @@ export function MemberProfileScreen({
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
-  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
@@ -898,21 +892,6 @@ export function MemberProfileScreen({
     })();
   };
 
-  const handlePm = (messageId: string): void => {
-    if (session === null || pmBusyId !== null) {
-      return;
-    }
-    setPmBusyId(messageId);
-    void (async () => {
-      try {
-        const thread = await openConversation(session, messageId);
-        router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
-      } catch {
-        setPmBusyId(null);
-      }
-    })();
-  };
-
   const sharedForumProps = {
     photoUrls,
     rateDay,
@@ -948,10 +927,6 @@ export function MemberProfileScreen({
     replyFormError,
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
-    ownName: account?.name ?? null,
-    ownAccountId: account?.id ?? null,
-    pmBusyId,
-    onPm: handlePm,
   };
 
   const activityMessages = activity === 'posts' ? (posts ?? []) : (activityReplies ?? []);
@@ -998,23 +973,22 @@ export function MemberProfileScreen({
             {...(profileUrl !== '' ? { profileUrl } : {})}
           />
           {showMessage ? (
-            <div className="flex items-center justify-center">
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={pmBusy}
-                aria-label={t('profile.message')}
-                title={t('profile.message')}
-                onClick={onMessage}
-              >
-                {pmBusy ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={pmBusy}
+              icon={
+                pmBusy ? (
                   <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : (
                   <Mail aria-hidden="true" className="h-4 w-4" />
-                )}
-              </IconButton>
-            </div>
+                )
+              }
+              onClick={onMessage}
+            >
+              {t('profile.message')}
+            </Button>
           ) : null}
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">

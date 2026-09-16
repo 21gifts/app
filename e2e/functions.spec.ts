@@ -2875,7 +2875,9 @@ test('Function: postConversationMessage — composer is visible on a thread', as
   await expect(page.getByLabel('Your message')).toBeVisible();
 });
 
-test('Function: openConversation — Send a private message is on other notes', async ({ page }) => {
+test('Function: openConversation — Message is on another member profile', async ({ page }) => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  const noteId = '33333333-3333-4333-8333-333333333333';
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -2885,7 +2887,7 @@ test('Function: openConversation — Send a private message is on other notes', 
       contentType: 'application/json',
       body: JSON.stringify({
         id: 'acc_e2e',
-        linkingKey: null,
+        linkingKey: `02${'a'.repeat(62)}`,
         role: 'basis',
         name: 'Ada',
         location: null,
@@ -2901,29 +2903,45 @@ test('Function: openConversation — Send a private message is on other notes', 
       }),
     });
   });
-  await page.route(/\/forum\/messages$/, async (route) => {
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        messages: [
-          {
-            id: 'm-bob',
-            name: 'Bob',
-            text: 'Hello from Bob',
-            createdAt: '2026-08-28T10:00:00.000Z',
-            sats: 21,
-            payable: true,
-            hasPhoto: false,
-            role: 'basis',
-            replyCount: 0,
-          },
-        ],
+        id: memberId,
+        name: 'Carol',
+        location: null,
+        role: 'verified',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: 'Hello from Carol.',
+        profileMessage: {
+          id: noteId,
+          accountId: memberId,
+          name: 'Carol',
+          text: 'Hello from my profile note.',
+          createdAt: '2026-08-01T10:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          role: 'verified',
+          replyCount: 0,
+        },
+        postCount: 1,
+        replyCount: 0,
       }),
     });
   });
-  await page.goto('/welcome');
-  await expect(page.getByRole('button', { name: 'Send a private message' })).toBeVisible();
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send a private message' })).toHaveCount(0);
 });
 
 test('Function: HandbookMarkdown — functions chapter headings render', async ({ page }) => {

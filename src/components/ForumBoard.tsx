@@ -8,7 +8,6 @@ import {
   ImagePlus,
   Link2,
   Loader2,
-  Mail,
   Send,
   X,
 } from 'lucide-react';
@@ -265,17 +264,6 @@ export interface ForumBoardProps {
   replyPosting: boolean;
   /** Reply composer validation or request failure. */
   replyFormError: ForumReplyFormError;
-  /** Signed-in display name, used to hide PM on own notes and replies. */
-  ownName: string | null;
-  /**
-   * Signed-in account id, used to hide PM on own notes/replies; name is
-   * fallback when a message has no accountId.
-   */
-  ownAccountId: string | null;
-  /** Opens a private thread with the note or reply author. */
-  onPm: (messageId: string) => void;
-  /** Forum message id whose PM request is in flight, or `null`. */
-  pmBusyId: string | null;
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
   /** Remove a moderated post or nested reply after a successful server deletion. */
@@ -328,27 +316,6 @@ function fallbackCopy(text: string): boolean {
 }
 
 /**
- * Whether to show the PM control for a note or reply author.
- * Prefers account id when both sides have one; otherwise falls back to name.
- *
- * @param ownAccountId - Signed-in account id, or `null`.
- * @param ownName - Signed-in display name, or `null`.
- * @param message - Note or reply with optional `accountId` and display `name`.
- * @returns `true` when the row is not the signed-in author.
- */
-function showForumPm(
-  ownAccountId: string | null,
-  ownName: string | null,
-  message: Pick<ForumMessage, 'name' | 'accountId'>,
-): boolean {
-  const messageAccountId = message.accountId;
-  if (ownAccountId !== null && typeof messageAccountId === 'string' && messageAccountId !== '') {
-    return messageAccountId !== ownAccountId;
-  }
-  return !(ownName !== null && message.name === ownName);
-}
-
-/**
  * Presentational public forum: optional dismissible living-room laws hint,
  * Active/No gifts yet/All/Most popular selector (unpaid may show a count
  * chip of unseen zero-sat notes when `unpaidNewCount` is \> 0 and that mode
@@ -358,7 +325,7 @@ function showForumPm(
  * expand for oldest-first replies + reply composer (labeled Amount field;
  * gift-only rows use `forum.giftReply` + `formatBitcoin(sats, numberFormat)`,
  * text-plus-gift shows the amount under the body), copy-link control,
- * PM control on other people's notes, pay-on-note sheet, optional inline
+ * pay-on-note sheet, optional inline
  * photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
@@ -423,10 +390,6 @@ export function ForumBoard({
   onReplyPost,
   replyPosting,
   replyFormError,
-  ownName,
-  ownAccountId,
-  onPm,
-  pmBusyId,
   composerHidden = false,
   onDeleted,
   permalinkTargetId = null,
@@ -896,26 +859,6 @@ export function ForumBoard({
                     <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
                 </IconButton>
-                {showForumPm(ownAccountId, ownName, message) ? (
-                  <IconButton
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    aria-label={t('forum.pm')}
-                    title={t('forum.pm')}
-                    disabled={pmBusyId !== null}
-                    onClick={(event) => {
-                      stopCardToggle(event);
-                      onPm(message.id);
-                    }}
-                  >
-                    {pmBusyId === message.id ? (
-                      <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Mail aria-hidden="true" className="h-3.5 w-3.5" />
-                    )}
-                  </IconButton>
-                ) : null}
                 {onDeleted !== undefined ? (
                   <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
                 ) : null}
@@ -1155,45 +1098,14 @@ export function ForumBoard({
                                 {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
-                            {showForumPm(ownAccountId, ownName, reply) ||
-                            onDeleted !== undefined ? (
-                              <div
-                                className={
-                                  showForumPm(ownAccountId, ownName, reply) &&
-                                  onDeleted !== undefined
-                                    ? 'mt-2 flex flex-wrap items-start gap-5'
-                                    : 'mt-2'
-                                }
-                              >
-                                {showForumPm(ownAccountId, ownName, reply) ? (
-                                  <IconButton
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    aria-label={t('forum.pm')}
-                                    title={t('forum.pm')}
-                                    disabled={pmBusyId !== null}
-                                    onClick={() => {
-                                      onPm(reply.id);
-                                    }}
-                                  >
-                                    {pmBusyId === reply.id ? (
-                                      <Loader2
-                                        aria-hidden="true"
-                                        className="h-3.5 w-3.5 animate-spin"
-                                      />
-                                    ) : (
-                                      <Mail aria-hidden="true" className="h-3.5 w-3.5" />
-                                    )}
-                                  </IconButton>
-                                ) : null}
-                                {onDeleted !== undefined ? (
-                                  <DeletePostControl
-                                    kind="reply"
-                                    messageId={reply.id}
-                                    onDeleted={onDeleted}
-                                  />
-                                ) : null}
+                            {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
+                            {onDeleted !== undefined ? (
+                              <div className="mt-2">
+                                <DeletePostControl
+                                  kind="reply"
+                                  messageId={reply.id}
+                                  onDeleted={onDeleted}
+                                />
                               </div>
                             ) : null}
                           </li>

@@ -162,10 +162,6 @@ const idleProps: Pick<
   | 'onReplyPost'
   | 'replyPosting'
   | 'replyFormError'
-  | 'ownName'
-  | 'ownAccountId'
-  | 'onPm'
-  | 'pmBusyId'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -195,10 +191,6 @@ const idleProps: Pick<
   onReplyPost: () => undefined,
   replyPosting: false,
   replyFormError: null,
-  ownName: 'Ada',
-  ownAccountId: null,
-  onPm: () => undefined,
-  pmBusyId: null,
 };
 
 function modeProps(
@@ -2735,12 +2727,10 @@ describe('ForumBoard', () => {
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
-  it("shows PM on other people's notes, not own, and does not expand", () => {
-    const onPm = vi.fn();
-    const onToggleExpand = vi.fn();
+  it("does not show Send a private message on other people's notes", () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE, MULTILINE]}
+        messages={[MULTILINE]}
         error={false}
         loading={false}
         posting={false}
@@ -2750,33 +2740,6 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        onPm={onPm}
-        onToggleExpand={onToggleExpand}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.queryByText('Send a private message')).toBeNull();
-    const pm = screen.getByRole('button', { name: 'Send a private message' });
-    expect(pm).toBeTruthy();
-    fireEvent.click(pm);
-    expect(onPm).toHaveBeenCalledWith('m2');
-    expect(onToggleExpand).not.toHaveBeenCalled();
-  });
-
-  it('hides PM when ownAccountId matches note accountId even if names differ', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...MULTILINE, accountId: 'acc_1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        ownAccountId="acc_1"
         {...modeProps('all')}
       />,
     );
@@ -2796,7 +2759,6 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        ownAccountId="acc_1"
         {...modeProps('all')}
       />,
     );
@@ -2819,7 +2781,6 @@ describe('ForumBoard', () => {
         {...idleProps}
         expandedId="m1"
         replies={[{ ...SAMPLE, id: 'r1', name: 'Carol', accountId: 'acc_reply', replyCount: 0 }]}
-        ownAccountId="acc_1"
         {...modeProps('all')}
       />,
     );
@@ -2845,48 +2806,6 @@ describe('ForumBoard', () => {
     );
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
     expect(screen.getByText('Ada')).toBeTruthy();
-  });
-
-  it('shows PM when ownAccountId differs from note accountId even if names match', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        ownAccountId="acc_1"
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
-  });
-
-  it('spins the PM control while a request is in flight', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[MULTILINE]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        pmBusyId="m2"
-        {...modeProps('all')}
-      />,
-    );
-    expect(
-      screen.getByRole('button', { name: 'Send a private message' }).querySelector('.animate-spin'),
-    ).toBeTruthy();
   });
 
   it('copies the public note URL and sets data-copied', async () => {
@@ -3121,7 +3040,6 @@ describe('ForumBoard', () => {
         expandedId="m1"
         replies={[{ ...SAMPLE, id: 'r-own', name: 'Ada', text: '', sats: 0, payable: false }]}
         replyPosting={true}
-        ownName="Ada"
         {...modeProps('all')}
       />,
     );
@@ -3129,8 +3047,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
-  it("shows PM on other people's replies", () => {
-    const onPm = vi.fn();
+  it("does not show Send a private message on other people's replies", () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -3159,50 +3076,10 @@ describe('ForumBoard', () => {
             replyCount: 0,
           },
         ]}
-        onPm={onPm}
         {...modeProps('all')}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    expect(onPm).toHaveBeenCalledWith('r1');
-  });
-
-  it('spins the reply PM control while a request is in flight', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[SAMPLE]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        expandedId="m1"
-        replies={[
-          {
-            id: 'r1',
-            name: 'Bob',
-            text: 'A reply',
-            createdAt: '2026-08-28T12:30:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            hasVideo: false,
-            videoContentType: null,
-            role: 'basis',
-            replyCount: 0,
-          },
-        ]}
-        pmBusyId="r1"
-        {...modeProps('all')}
-      />,
-    );
-    expect(
-      screen.getByRole('button', { name: 'Send a private message' }).querySelector('.animate-spin'),
-    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
   it('renders a gift-only reply as send plus the formatted amount', () => {
@@ -4162,7 +4039,6 @@ describe('ForumBoard', () => {
         formError={null}
         {...idleProps}
         expandedId="m1"
-        ownName="Ada"
         replies={[
           { ...SAMPLE, id: 'r-own', name: 'Ada', text: 'Own reply', sats: 0, payable: false },
         ]}

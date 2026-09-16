@@ -1291,13 +1291,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'pm',
-    image: 'welcome-pm.png',
-    visual: 'state-welcome-pm',
-    needle: 'Send a private message',
-  },
-  {
-    route: '/welcome',
     id: 'translate',
     image: 'welcome-translate.png',
     visual: 'state-welcome-translate',

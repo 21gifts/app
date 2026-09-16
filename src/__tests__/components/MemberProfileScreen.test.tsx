@@ -624,7 +624,7 @@ describe('MemberProfileScreen', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Message' })).toBeTruthy();
-    expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.queryByText('Message')).not.toBeNull();
     expect(screen.queryByText('Hello from my profile note.')).toBeNull();
   });
 
@@ -2496,88 +2496,6 @@ describe('MemberProfileScreen', () => {
     expect(openConversation).not.toHaveBeenCalled();
   });
 
-  it('opens a conversation from a posts-feed card', async () => {
-    renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: note, postCount: 1 }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversation).toHaveBeenCalledWith('sess', note.id);
-    });
-    await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
-    });
-  });
-
-  it('clears the posts-feed PM busy state when opening a conversation fails', async () => {
-    vi.mocked(openConversation).mockRejectedValue(new Error('fail'));
-    renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: note, postCount: 1 }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversation).toHaveBeenCalledTimes(1);
-    });
-    await act(async () => {
-      await Promise.resolve();
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversation).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  it('ignores a second posts-feed PM click while a request is in flight', async () => {
-    let resolveThread!: (value: {
-      id: string;
-      kind: 'member_member' | 'member_platform' | 'member_damus';
-      name: string;
-      lastText: string;
-      lastAt: string;
-      lastFromMe: boolean;
-      lastSats: number;
-      unread: boolean;
-    }) => void;
-    vi.mocked(openConversation).mockReturnValue(
-      new Promise((resolve) => {
-        resolveThread = resolve;
-      }),
-    );
-    renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: note, postCount: 1 }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    expect(openConversation).toHaveBeenCalledTimes(1);
-    resolveThread({
-      id: 'conv-1',
-      kind: 'member_member',
-      name: 'Carol',
-      lastText: '',
-      lastAt: '2026-01-01T00:00:00.000Z',
-      lastFromMe: false,
-      lastSats: 0,
-      unread: false,
-    });
-    await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
-    });
-  });
 
   it('does not retry replies after the session disappears', async () => {
     vi.mocked(fetchReplies).mockRejectedValueOnce(new Error('fail'));
@@ -2617,22 +2535,6 @@ describe('MemberProfileScreen', () => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
     expect(fetchReplies).not.toHaveBeenCalled();
-  });
-
-  it('does not open a feed conversation after the session disappears', async () => {
-    renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: note, postCount: 1 }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    await openPostsShowingNote();
-    await act(async () => {
-      useAuthStore.setState({ session: null, account });
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    expect(openConversation).not.toHaveBeenCalled();
   });
 
   it('clears the Message busy state when opening a conversation fails', async () => {

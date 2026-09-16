@@ -489,8 +489,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 **Pay control is not a second ₿.** Note footer:
 
 ```
-[ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ] [ PM ]  [ N reactions ]
-```
+[ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ]  [ N reactions ]```
 
 - Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of `satsToFiatAmount` when the conversion is non-null — button that toggles expand (`aria-expanded`; accessible name is the visible ₿ text, not `forum.expand` / `forum.collapse`). Otherwise ₿-only, no ` · —`.
 - Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
@@ -521,7 +520,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 
 | Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile/rules-setup/inbox back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), **Message** (member profile DM CTA), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”), push bell, profile/rules-setup/inbox back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 **Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
 
@@ -529,7 +528,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 
 Content translation under a note or reply body is a labeled underline text control (`forum.translate` / show original / show translation), not an `IconButton` in the footer icon row.
 
-**Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`).
+**Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`). Member profile **Message** is a labeled `Button` (`profile.message`), not icon-only.
 
 **Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Skip**, **Activate**, **Try again**.
 
@@ -768,17 +767,16 @@ Do not use orange. This is law, not a gift CTA.
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`).
 4. Body stays `text-sm text-app-fg whitespace-pre-wrap`; when longer than 280 characters, collapsed preview + `…` + inline **Show more** (`forum.showMore`, app inline link). Expand-in-place, no Show less. Permalink `/messages/[id]` is full text.
-5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (pay, copy, PM, delete when present) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
+5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (pay, copy, delete when present) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
-Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). Gift/copy/PM/delete stay sibling IconButtons that do not expand. The action row is a sibling after that control, still inside the `li`. Inner pay/copy/PM/delete controls `stopPropagation`. Focus ring on the expandable region.
-
+Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). Gift/copy/delete stay sibling IconButtons that do not expand. The action row is a sibling after that control, still inside the `li`. Inner pay/copy/delete controls `stopPropagation`. Focus ring on the expandable region.
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
-**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies use the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Nested reply action row is `mt-2 flex flex-wrap items-start gap-5` only when PM and trash are both visible; a single control stays `mt-2`. Not a labeled button.
+**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies use the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`) in `className="mt-2"`. Not a labeled button.
 
 ### Inbox thread bubbles
 
-Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, PM, expand).
+Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, expand).
 
 **Incoming (`fromMe === false`).** Full-width muted note card (same chrome as the forum note card body): `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`. Inner: name `text-sm font-medium text-app-fg`, time `text-xs text-app-subtle`, body `mt-2 whitespace-pre-wrap text-sm text-app-fg`.
 
@@ -960,7 +958,6 @@ Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />
 ### `/members/[accountId]`
 
 Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill, activity **Posts** / **Reactions** as labeled `Button sm` toggles, labeled staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
-
 Handbook states: default (About me when set), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (posts feed open, listed note expanded, Amount filled, Post → `RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip), `staff-verify`, `translate*` (German post in the posts feed). Overlay-address is reachable from a posts-feed reply; About me is not a replyable forum note.
 
 ### `/notifications`

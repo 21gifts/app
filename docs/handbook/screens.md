@@ -328,7 +328,7 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, with the dismissi
 
 ### Variant: moderation
 
-A founder or moderator sees an icon-only Delete post control in the note footer icon row with pay/copy/PM; confirming wraps to the next line. Other roles do not see it. The server independently checks the live role.
+A founder or moderator sees an icon-only Delete post control in the note footer icon row with pay/copy; confirming wraps to the next line. Other roles do not see it. The server independently checks the live role.
 
 ![21.gifts moderation](images/welcome-moderation.png)
 
@@ -352,8 +352,7 @@ A failed deletion keeps the post and confirmation visible with an error and retr
 
 ### Variant: reply-moderation
 
-A founder or moderator who expands a note sees an icon-only Delete reaction control on each nested reply (PM + trash action row). Ordinary members do not. Parent still has Delete post.
-
+A founder or moderator who expands a note sees an icon-only Delete reaction control on each nested reply. Ordinary members do not. Parent still has Delete post.
 ![21.gifts reply-moderation](images/welcome-reply-moderation.png)
 
 ### Variant: reply-delete-confirm
@@ -457,12 +456,6 @@ Signed-in founder Cyrill, living-room laws dismissed, Active. Only Riana Rosello
 Click **Copy link to this note** — control sets `data-copied` after writing `origin/messages/<uuid>` to the clipboard.
 
 ![21.gifts welcome copy](images/welcome-copy.png)
-
-### Variant: pm
-
-**Send a private message** control on another person's note (not on own notes). Does not expand the card.
-
-![21.gifts welcome pm](images/welcome-pm.png)
 
 ### Variant: translate
 
@@ -944,7 +937,7 @@ Notifications section with `role="alert"` after clicking Enable notifications wh
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
 - **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text (`inbox.threadUnread`); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for oldest-first messages and a 500-character composer plus sats amount field (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Forum PM and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 

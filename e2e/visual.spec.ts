@@ -1092,35 +1092,6 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-copy');
   });
 
-  test('state /welcome pm', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          location: null,
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          aboutMe: null,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await fulfillMixedSatsMessages(page);
-    await page.goto('/welcome');
-    await expect(
-      page.getByRole('button', { name: 'Send a private message' }).first(),
-    ).toBeVisible();
-    await shotScreen(page, 'state-welcome-pm');
-  });
-
   test('state /welcome translate', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
