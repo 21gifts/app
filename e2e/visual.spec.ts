@@ -1336,8 +1336,8 @@ test.describe('onboarding screens', () => {
     const group = page.getByRole('group', { name: 'Fiat currency' }).last();
     await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
     await group.scrollIntoViewIfNeeded();
-    // Viewport: the identity card scrolls inside a 720px shell, so fullPage
-    // still crops above this row.
+    // Viewport-only capture after document scroll keeps the Fiat currency row
+    // in frame.
     await shotScreen(page, 'state-profile-fiat', false);
   });
 
