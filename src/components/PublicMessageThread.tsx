@@ -379,10 +379,11 @@ export function PublicMessageThread(props: {
           /* v8 ignore stop */
           if (next !== null && next.sats > baselineSats) {
             setNote((prev) => {
+              /* v8 ignore start -- poll body for a different note id */
               if (prev.id !== next.id) {
-                /* v8 ignore next -- poll body for a different note id */
                 return prev;
               }
+              /* v8 ignore stop */
               return {
                 ...prev,
                 ...next,

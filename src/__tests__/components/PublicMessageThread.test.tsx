@@ -290,6 +290,25 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('keeps the current note when a pay poll returns a different id', async () => {
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...root,
+      id: 'other-id',
+      sats: 42,
+      text: 'someone else',
+    });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
+    expect(screen.getByText('Hello from Carol')).toBeTruthy();
+    expect(screen.queryByText('someone else')).toBeNull();
+  });
+
   it('keeps the higher replyCount when a pay poll returns a smaller count', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42, replyCount: 0 });
     signIn();
