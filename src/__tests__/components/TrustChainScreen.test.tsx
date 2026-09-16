@@ -50,7 +50,9 @@ describe('TrustChainScreen', () => {
         onExpand={() => undefined}
       />,
     );
-    expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Could not load the Trust Chain. Please try again.',
+    );
     const retry = screen.getByRole('button', { name: 'Try again' });
     expect(retry.className).not.toContain('bg-app-accent');
     expect(retry.className).not.toContain('text-ink');
@@ -69,7 +71,9 @@ describe('TrustChainScreen', () => {
         onExpand={() => undefined}
       />,
     );
-    expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Could not load the Trust Chain. Please try again.',
+    );
     expect(screen.getByTestId('trust-node-f')).toBeTruthy();
   });
 
