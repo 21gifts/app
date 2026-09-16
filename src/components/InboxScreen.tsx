@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactElement, useState } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
@@ -75,6 +76,47 @@ export interface InboxScreenProps {
 }
 
 /**
+ * Whether an inbox name should open a member profile.
+ *
+ * @param accountId - Optional 21.gifts counterpart or sender id.
+ * @returns True when `accountId` is a non-empty string.
+ */
+function hasInboxAccountId(accountId: string | undefined): accountId is string {
+  return typeof accountId === 'string' && accountId !== '';
+}
+
+/**
+ * Profile-link button for an inbox heading or incoming author name.
+ *
+ * @param name - Display name.
+ * @param accountId - Non-empty 21.gifts account id.
+ * @param className - Text classes plus underline for this context.
+ * @param label - `inbox.authorProfile` aria-label.
+ * @param push - `useRouter().push`.
+ * @returns The profile button.
+ */
+function inboxAuthorProfileButton(
+  name: string,
+  accountId: string,
+  className: string,
+  label: string,
+  push: (href: string) => void,
+): ReactElement {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className={className}
+      onClick={() => {
+        push(`/members/${accountId}`);
+      }}
+    >
+      {name}
+    </button>
+  );
+}
+
+/**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 500-character composer. Members (`showFilter` false) see the unfiltered
  * inbound list. Founder/moderator (`showFilter` true) see the origin control
@@ -82,7 +124,9 @@ export interface InboxScreenProps {
  * {@link Conversation} `kind`. Outbound last-text previews use
  * `inbox.sentPreview` as a filled chip. Incoming thread messages are full-width
  * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the
- * right labelled `inbox.you`.
+ * right labelled `inbox.you`. Heading and incoming author names with a
+ * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
+ * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.
@@ -107,6 +151,7 @@ export function InboxScreen({
   showFilter,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
+  const router = useRouter();
   const [filter, setFilter] = useState<InboxFilter>('direct');
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -141,9 +186,26 @@ export function InboxScreen({
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </IconButton>
           <div className="min-w-0 flex-1">
-            <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-              {open?.name ?? t('inbox.heading')}
-            </h1>
+            {open !== null && hasInboxAccountId(open.accountId) ? (
+              <h1
+                className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl"
+                aria-label={open.name}
+              >
+                {inboxAuthorProfileButton(
+                  open.name,
+                  open.accountId,
+                  'text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl underline underline-offset-2',
+                  t('inbox.authorProfile'),
+                  (href) => {
+                    router.push(href);
+                  },
+                )}
+              </h1>
+            ) : (
+              <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+                {open?.name ?? t('inbox.heading')}
+              </h1>
+            )}
             {open !== null ? (
               <p className="text-center text-xs text-app-subtle">
                 {t(CONVERSATION_ORIGIN_KEY[open.kind])}
@@ -178,15 +240,21 @@ export function InboxScreen({
                 }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span
-                    className={
-                      message.fromMe
-                        ? 'text-sm font-medium text-app-btn-fg'
-                        : 'text-sm font-medium text-app-fg'
-                    }
-                  >
-                    {message.fromMe ? t('inbox.you') : message.name}
-                  </span>
+                  {message.fromMe ? (
+                    <span className="text-sm font-medium text-app-btn-fg">{t('inbox.you')}</span>
+                  ) : hasInboxAccountId(message.accountId) ? (
+                    inboxAuthorProfileButton(
+                      message.name,
+                      message.accountId,
+                      'text-sm font-medium text-app-fg underline underline-offset-2',
+                      t('inbox.authorProfile'),
+                      (href) => {
+                        router.push(href);
+                      },
+                    )
+                  ) : (
+                    <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                  )}
                   <time
                     dateTime={message.createdAt}
                     className={
