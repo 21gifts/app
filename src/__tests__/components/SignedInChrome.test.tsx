@@ -507,6 +507,48 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
+  it('omits Moderation for a basis account', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
+  });
+
+  it('omits Moderation for a verified account', () => {
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...current, role: 'verified' } });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
+  });
+
+  it.each(['founder', 'moderator'] as const)(
+    'shows Moderation after Trust Chain for a %s account and closes on click',
+    (role) => {
+      const current = useAuthStore.getState().account;
+      if (current === null) {
+        throw new Error('expected account');
+      }
+      useAuthStore.setState({ account: { ...current, role } });
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expectMenuOpen();
+      const trustChain = screen.getByRole('link', { name: 'Trust Chain' });
+      const moderation = screen.getByRole('link', { name: 'Moderation' });
+      const notifications = screen.getByRole('link', { name: 'Notifications' });
+      expect(moderation.getAttribute('href')).toBe('/moderate');
+      expect(trustChain.nextElementSibling).toBe(moderation);
+      expect(moderation.nextElementSibling).toBe(notifications);
+      expect(moderation.querySelector('svg')).toBeTruthy();
+      fireEvent.click(moderation);
+      expectMenuClosed();
+    },
+  );
+
   it('closes the menu when Contact is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));

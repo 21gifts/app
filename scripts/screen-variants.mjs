@@ -1052,6 +1052,20 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not load notifications. Please try again.',
   },
   {
+    route: '/moderate',
+    id: 'default',
+    image: 'moderate.png',
+    visual: 'screen-moderate',
+    needle: 'Hidden note',
+  },
+  {
+    route: '/moderate',
+    id: 'forbidden',
+    image: 'moderate-forbidden.png',
+    visual: 'state-moderate-forbidden',
+    needle: 'This page is for founders and moderators.',
+  },
+  {
     route: '/404',
     id: 'default',
     image: 'not-found.png',

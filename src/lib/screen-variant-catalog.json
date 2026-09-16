@@ -828,6 +828,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate:default",
+    "label": "/moderate default",
+    "visual": "screen-moderate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate:forbidden",
+    "label": "/moderate forbidden",
+    "visual": "state-moderate-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/404:default",
     "label": "/404 default",
     "visual": "screen-404",

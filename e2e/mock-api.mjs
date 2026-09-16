@@ -275,10 +275,13 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const deletedAt = new Date().toISOString();
+    const deletedBy = { id: account.id, name: account.name ?? null, role: account.role };
     row.deletedAt = deletedAt;
+    row.deletedBy = deletedBy;
     for (const message of forumMessages) {
       if (message.inReplyTo === id || message.parent === id) {
         message.deletedAt = deletedAt;
+        message.deletedBy = deletedBy;
       }
     }
     res.writeHead(204, {
@@ -659,6 +662,37 @@ const server = http.createServer(async (req, res) => {
       'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     });
     res.end(bytes);
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/messages/hidden') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.role !== 'founder' && account.role !== 'moderator') {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, {
+      messages: forumMessages
+        .filter((message) => message.deletedAt !== undefined)
+        .map((message) => ({
+          id: message.id,
+          name: message.name,
+          text: message.text,
+          createdAt: message.createdAt,
+          sats: message.sats,
+          hasPhoto: message.hasPhoto,
+          hasVideo: message.hasVideo ?? false,
+          videoContentType: message.videoContentType ?? null,
+          parentId: message.parent ?? message.inReplyTo ?? null,
+          deletedAt: message.deletedAt,
+          deletedBy: message.deletedBy,
+        })),
+    });
     return;
   }
 

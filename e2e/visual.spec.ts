@@ -5124,6 +5124,70 @@ test.describe('notifications screens', () => {
   });
 });
 
+test.describe('moderate screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const HIDDEN = {
+    id: 'h1',
+    name: 'Bob',
+    text: 'Hidden note',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    parentId: null,
+    deletedAt: '2026-08-29T15:00:00.000Z',
+    deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+  };
+
+  test('screen /moderate', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [HIDDEN] }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
+    await expect(page.getByText('Hidden note')).toBeVisible();
+    await shotScreen(page, 'screen-moderate');
+  });
+
+  test('moderate forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate');
+    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-forbidden');
+  });
+});
+
 test.describe('stats variant baselines', () => {
   test('stats usd-scale', async ({ page }) => {
     await page.route('**/gifts/stats', async (route) => {

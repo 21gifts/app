@@ -28,6 +28,7 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  listHiddenMessages,
   markAllNotificationsRead,
   markNotificationRead,
   openConversation,
@@ -1168,6 +1169,68 @@ describe('fetchMessages', () => {
     stubFetch({ ok: true, status: 200, body: { messages: [{ id: 'm1' }] } });
     await expect(fetchMessages('sess')).rejects.toThrow(
       'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('listHiddenMessages', () => {
+  const hidden = {
+    id: 'h1',
+    name: 'Bob',
+    text: 'Hidden note',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    parentId: null,
+    deletedAt: '2026-08-29T15:00:00.000Z',
+    deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+  };
+
+  it('returns the validated hidden notes and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [hidden] } });
+    await expect(listHiddenMessages('sess')).resolves.toEqual([hidden]);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/hidden', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(listHiddenMessages('sess')).rejects.toThrow(
+      'Could not load hidden notes. Please try again.',
+    );
+  });
+
+  it('throws on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(listHiddenMessages('sess')).rejects.toThrow('Failed to list hidden notes: 401');
+  });
+
+  it('throws on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(listHiddenMessages('sess')).rejects.toThrow('Failed to list hidden notes: 403');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(listHiddenMessages('sess')).rejects.toThrow(
+      'Could not load hidden notes. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(listHiddenMessages('sess')).rejects.toThrow(
+      'Could not load hidden notes. Please try again.',
     );
   });
 });
