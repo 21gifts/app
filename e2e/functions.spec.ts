@@ -5982,13 +5982,32 @@ test('Function: deletePushSubscription — DELETE /me/push-subscriptions with be
   expect(((await res.json()) as { ok: boolean }).ok).toBe(true);
 });
 
-test('Function: postNotificationLevel — profile shows All Active Mentions', async ({ page }) => {
-  await seedAdaSession(page);
+test('Function: postNotificationLevel — profile shows All Active Mentions', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
   await page.goto('/profile');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  if (await intro.isVisible()) {
+    await page.getByRole('button', { name: 'Close' }).click();
+  }
   await expect(page.getByRole('group', { name: 'Notification level' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'All' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Active' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mentions' })).toBeVisible();
+  const posted = page.waitForResponse((response) => {
+    if (response.request().method() !== 'POST') {
+      return false;
+    }
+    return new URL(response.url()).pathname === '/me/notification-level';
+  });
+  await page.getByRole('button', { name: 'Active' }).click();
+  expect((await posted).status()).toBe(200);
+  await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });
 
 test('Function: accountNotificationLevel — profile selects All when the field is omitted', async ({
