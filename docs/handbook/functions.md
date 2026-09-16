@@ -1322,7 +1322,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Scales whole sats into a two-decimal fiat string using one gift day's totals (`Math.round` on cents).
 - **Inputs:** `sats`, `day` (`FiatRateDay | null`), `code` (`FiatCode`).
-- **Returns / side effects:** `"0.02"`-style string, or `null` when the day or that fiat is missing.
+- **Returns / side effects:** `"0.02"`-style string, or `null` when the day or that fiat is missing or the gift-day total is `"0.00"` (not a usable rate).
 - **Used by:** `ForumBoard`, `PublicMessageLoader`.
 
 ## Function: ThemeProvider

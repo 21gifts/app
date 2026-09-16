@@ -140,6 +140,11 @@ describe('satsToFiatAmount', () => {
     expect(satsToFiatAmount(-1, RATE_DAY, 'USD')).toBeNull();
   });
 
+  it('returns null when the gift-day fiat total is zero', () => {
+    expect(satsToFiatAmount(100_000, { ...RATE_DAY, sats: 1, usd: '0.00' }, 'USD')).toBeNull();
+    expect(satsToFiatAmount(21, { ...RATE_DAY, usd: 'nope' }, 'USD')).toBeNull();
+  });
+
   it('returns 0.00 for zero sats', () => {
     expect(satsToFiatAmount(0, RATE_DAY, 'USD')).toBe('0.00');
   });

@@ -195,7 +195,8 @@ export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | nul
  * @param sats - Whole sats to convert (may be 0).
  * @param day - Gift day with `sats > 0`, or `null`.
  * @param code - Selected fiat.
- * @returns Two-decimal string, or `null` when the day or that fiat is missing.
+ * @returns Two-decimal string, or `null` when the day or that fiat is missing
+ *   or zero (a `"0.00"` gift-day total is not a usable rate).
  */
 export function satsToFiatAmount(
   sats: number,
@@ -209,7 +210,11 @@ export function satsToFiatAmount(
   if (raw === null) {
     return null;
   }
-  const cents = Math.round((Number(raw) * 100 * sats) / day.sats);
+  const fiat = Number(raw);
+  if (!Number.isFinite(fiat) || fiat === 0) {
+    return null;
+  }
+  const cents = Math.round((fiat * 100 * sats) / day.sats);
   const whole = Math.trunc(cents / 100);
   const frac = Math.abs(cents % 100)
     .toString()
