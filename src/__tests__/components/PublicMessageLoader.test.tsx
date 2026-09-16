@@ -506,4 +506,67 @@ describe('PublicMessageLoader', () => {
     expect(fetchRepliesPublic).toHaveBeenCalledTimes(2);
     expect(fetchMessage).toHaveBeenCalledTimes(2);
   });
+
+  it('unfurls a quoted public note in a reply and hides the raw URL', async () => {
+    const rianaId = '444d655b-73a4-475a-b5fc-f7e36210e82e';
+    const replyId = '322f9dea-4a76-5168-91b8-430432e5f90b';
+    const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+    const quotedUrl = `https://21.gifts/messages/${quotedId}`;
+    const parent: ForumMessage = {
+      id: rianaId,
+      name: 'Riana Rosello',
+      text: 'Good morning everyone especially to our sponsor',
+      createdAt: '2026-09-16T20:12:43.660Z',
+      sats: 21,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'verified',
+      replyCount: 1,
+    };
+    const quoted: ForumMessage = {
+      id: quotedId,
+      name: 'Cyrill',
+      text: 'A Quick Technical Note\n\nThe system responsible for automatic payouts operates on the UTC 00:00 standard. This means a new day always begins at 00:00 UTC. For our friends in the Philippines, that is 08:00 PST.',
+      createdAt: '2026-09-16T09:50:23.750Z',
+      sats: 43,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'founder',
+      replyCount: 0,
+    };
+    const reply: ForumMessage = {
+      id: replyId,
+      parentId: rianaId,
+      name: 'Cyrill',
+      text: `just for information: ${quotedUrl}`,
+      createdAt: '2026-09-16T20:26:17.290Z',
+      sats: 21,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'founder',
+      replyCount: 0,
+    };
+    fetchMessage.mockImplementation(async (id: string) => {
+      if (id === rianaId) {
+        return parent;
+      }
+      if (id === quotedId) {
+        return quoted;
+      }
+      return null;
+    });
+    fetchRepliesPublic.mockResolvedValue([reply]);
+    renderWithLocale(<PublicMessageLoader id={rianaId} />);
+    await waitFor(() => {
+      expect(screen.getByText(/A Quick Technical Note/)).toBeTruthy();
+    });
+    expect(screen.getByText(/just for information:/)).toBeTruthy();
+    expect(screen.queryByText(quotedUrl)).toBeNull();
+  });
 });

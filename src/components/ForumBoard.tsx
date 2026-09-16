@@ -24,7 +24,7 @@ import {
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, Field, IconButton, SegmentedControl } from '@/components/ui';
@@ -813,9 +813,19 @@ export function ForumBoard({
                   />
                 ) : null}
                 {message.text !== '' ? (
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{message.text}</p>
+                  <div className="mt-2">
+                    <ForumQuotedBody
+                      text={message.text}
+                      knownNotes={[...messages, ...(Array.isArray(replies) ? replies : [])]}
+                      excludeId={message.id}
+                      rateDay={rateDay ?? null}
+                      fiat={fiat}
+                      onActivate={(event) => {
+                        event.stopPropagation();
+                      }}
+                    />
+                  </div>
                 ) : null}
-                {message.text !== '' ? <NoteTranslate text={message.text} /> : null}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-5">
                 <button
@@ -1085,11 +1095,7 @@ export function ForumBoard({
                                 {t(replyRoleKeys.hint)}
                               </p>
                             ) : null}
-                            {reply.text !== '' ? (
-                              <p className="mt-1 whitespace-pre-wrap text-sm text-app-fg">
-                                {reply.text}
-                              </p>
-                            ) : reply.sats > 0 ? (
+                            {reply.text === '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-fg">
                                 {t('forum.giftReply', {
                                   amount: formatBitcoin(reply.sats, numberFormat),
@@ -1097,13 +1103,26 @@ export function ForumBoard({
                                 {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
+                            {reply.text !== '' ? (
+                              <div className="mt-1">
+                                <ForumQuotedBody
+                                  text={reply.text}
+                                  knownNotes={[...messages, ...replies]}
+                                  excludeId={reply.id}
+                                  rateDay={rateDay ?? null}
+                                  fiat={fiat}
+                                  onActivate={(event) => {
+                                    event.stopPropagation();
+                                  }}
+                                />
+                              </div>
+                            ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
                                 {formatBitcoin(reply.sats, numberFormat)}
                                 {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
-                            {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
                             {showForumPm(ownAccountId, ownName, reply) ||
                             onDeleted !== undefined ? (
                               <div

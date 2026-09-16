@@ -23,13 +23,30 @@ import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 const push = vi.fn();
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: ReactNode;
+    onClick?: (event: { stopPropagation: () => void }) => void;
+  }) => (
+    <a href={href} onClick={onClick} {...rest}>
+      {children}
+    </a>
   ),
 }));
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
 }));
+vi.mock('@/lib/api', () => ({
+  fetchPublicMessage: vi.fn().mockResolvedValue(null),
+  fetchPublicMessagePhoto: vi.fn().mockRejectedValue(new Error('no photo')),
+}));
+
+import { fetchPublicMessage } from '@/lib/api';
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
@@ -1898,6 +1915,136 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toContain('founded 21.gifts');
     fireEvent.click(screen.getByRole('button', { name: 'Founder' }));
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('unfurls a quoted public note in a reply and hides the raw URL', async () => {
+    const rianaId = '444d655b-73a4-475a-b5fc-f7e36210e82e';
+    const replyId = '322f9dea-4a76-5168-91b8-430432e5f90b';
+    const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+    const quotedUrl = `https://21.gifts/messages/${quotedId}`;
+    const quoted: ForumMessage = {
+      id: quotedId,
+      name: 'Cyrill',
+      text: 'A Quick Technical Note\n\nThe system responsible for automatic payouts operates on the UTC 00:00 standard. This means a new day always begins at 00:00 UTC. For our friends in the Philippines, that is 08:00 PST.',
+      createdAt: '2026-09-16T09:50:23.750Z',
+      sats: 43,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'founder',
+      replyCount: 0,
+    };
+    vi.mocked(fetchPublicMessage).mockImplementation(async (id: string) => {
+      if (id.toLowerCase() === 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec') {
+        return quoted;
+      }
+      return null;
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            id: rianaId,
+            name: 'Riana Rosello',
+            text: 'Good morning everyone especially to our sponsor',
+            createdAt: '2026-09-16T20:12:43.660Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'verified',
+            replyCount: 1,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId={rianaId}
+        replies={[
+          {
+            id: replyId,
+            parentId: rianaId,
+            name: 'Cyrill',
+            text: `just for information: ${quotedUrl}`,
+            createdAt: '2026-09-16T20:26:17.290Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'founder',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/A Quick Technical Note/)).toBeTruthy();
+    });
+    expect(screen.getByText(/just for information:/)).toBeTruthy();
+    expect(screen.queryByText(quotedUrl)).toBeNull();
+    const quotedLink = document.querySelector(`a[href="/messages/${quotedId}"]`);
+    expect(quotedLink?.getAttribute('href')).toBe(`/messages/${quotedId}`);
+    fireEvent.click(quotedLink as HTMLAnchorElement);
+  });
+
+  it('stops card toggle when a quoted nested post on a top-level note is clicked', async () => {
+    const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+    const quotedUrl = `https://21.gifts/messages/${quotedId}`;
+    vi.mocked(fetchPublicMessage).mockImplementation(async (id: string) => {
+      if (id.toLowerCase() === quotedId) {
+        return {
+          id: quotedId,
+          name: 'Cyrill',
+          text: 'A Quick Technical Note',
+          createdAt: '2026-09-16T09:50:23.750Z',
+          sats: 43,
+          payable: true,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'founder',
+          replyCount: 0,
+        };
+      }
+      return null;
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            text: `just for information: ${quotedUrl}`,
+            sats: 21,
+            payable: true,
+            role: 'founder',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A Quick Technical Note')).toBeTruthy();
+    });
+    fireEvent.click(document.querySelector(`a[href="/messages/${quotedId}"]`) as HTMLAnchorElement);
   });
 
   it('opens a role hint on click and closes it when the same tag is clicked again', () => {

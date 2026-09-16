@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
@@ -396,6 +398,48 @@ async function fulfillPublicThreadReplies(
     });
   });
 }
+
+const RIANA_ID = '444d655b-73a4-475a-b5fc-f7e36210e82e';
+const REPLY_ID = '322f9dea-4a76-5168-91b8-430432e5f90b';
+const QUOTED_ID = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+const QUOTED_NOTE_URL = 'https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+
+const rianaNote = {
+  id: RIANA_ID,
+  name: 'Riana Rosello',
+  text: 'Good morning everyone especially to our sponsor. Another day has come, and I want to sincerely thank you for your continued kindness and generosity to our family. Your Bitcoin support means so much to us because it helps us buy food, rice, and provide school allowance for my  children. As a mother, I am deeply grateful for your help, especially during times when we are struggling. Thank you for being a blessing to our family and for always remembering us.God bless you and thank you.',
+  createdAt: '2026-09-16T20:12:43.660Z',
+  sats: 21,
+  payable: true,
+  hasPhoto: false,
+  role: 'verified',
+  replyCount: 1,
+};
+
+const cyrillReply = {
+  id: REPLY_ID,
+  parentId: RIANA_ID,
+  name: 'Cyrill',
+  text: 'just for information: https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec',
+  createdAt: '2026-09-16T20:26:17.290Z',
+  sats: 21,
+  payable: false,
+  hasPhoto: false,
+  role: 'founder',
+  replyCount: 0,
+};
+
+const quotedNote = {
+  id: QUOTED_ID,
+  name: 'Cyrill',
+  text: 'A Quick Technical Note\n\nThe system responsible for automatic payouts operates on the UTC 00:00 standard. This means a new day always begins at 00:00 UTC. For our friends in the Philippines, that is 08:00 PST.',
+  createdAt: '2026-09-16T09:50:23.750Z',
+  sats: 43,
+  payable: true,
+  hasPhoto: true,
+  role: 'founder',
+  replyCount: 0,
+};
 
 const RULES_SETUP_ACCOUNT = {
   ...E2E_ACCOUNT,
@@ -991,6 +1035,70 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('send ₿21')).toBeVisible();
     await expect(page.getByText('Nice one')).toBeVisible();
     await shotScreen(page, 'state-welcome-expanded-gifts');
+  });
+
+  test('state /welcome quoted-note', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'founder',
+          name: 'Cyrill',
+          forumLawsDismissed: true,
+          lightningAddress: 'cyrill@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [rianaNote] }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [cyrillReply] }),
+      });
+    });
+    await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(quotedNote),
+      });
+    });
+    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/technical-note.jpg')),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Cyrill' })).toBeVisible();
+    await page.getByText(/Good morning everyone especially to our sponsor/).click();
+    await expect(page.getByText('just for information:')).toBeVisible();
+    await expect(page.getByText('A Quick Technical Note')).toBeVisible();
+    await expect(page.getByAltText('Photo from Cyrill')).toBeVisible();
+    await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
+    await shotScreen(page, 'state-welcome-quoted-note');
   });
 
   test('state /welcome copy', async ({ page }) => {
@@ -3091,6 +3199,37 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Pater Severin')).toBeVisible();
     await expect(page.getByText("\u20BF3'000")).toBeVisible();
     await shotScreen(page, 'state-messages-id-thread');
+  });
+
+  test('state /messages/[id] quoted-note', async ({ page }) => {
+    await fulfillPublicThreadReplies(page, RIANA_ID, [cyrillReply]);
+    await page.route(`**/public-messages/${RIANA_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(rianaNote),
+      });
+    });
+    await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(quotedNote),
+      });
+    });
+    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/technical-note.jpg')),
+      });
+    });
+    await page.goto(`/messages/${RIANA_ID}`);
+    await expect(page.getByText('just for information:')).toBeVisible();
+    await expect(page.getByText('A Quick Technical Note')).toBeVisible();
+    await expect(page.getByAltText('Photo from Cyrill')).toBeVisible();
+    await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
+    await shotScreen(page, 'state-messages-id-quoted-note');
   });
 
   test('state /messages/[id] reply', async ({ page }) => {
