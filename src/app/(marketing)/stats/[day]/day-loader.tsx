@@ -3,19 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { FiatPicker } from '@/components/FiatPicker';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { GiftDayTable } from '@/components/GiftDayTable';
-import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
 import { fetchGiftDay } from '@/lib/api';
 import { formatGroupedNumber } from '@/lib/number-format';
 import type { GiftDay } from '@/lib/api-types';
-import {
-  defaultFiatForLocale,
-  formatBitcoin,
-  formatFiatDisplay,
-  type FiatCode,
-} from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-money';
 import { isUtcDay } from '@/lib/utc-day';
 
 /** Props for {@link DayLoader}. */
@@ -52,9 +47,8 @@ function dayTotal(payload: GiftDay, fiat: FiatCode): string | null {
  */
 export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
-  const { locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
+  const { fiat, setFiat } = useFiatPreference();
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,7 +118,7 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       ) : null}
       {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8 space-y-4">
-          <FiatPicker value={fiat} onChange={setFiat} />
+          <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
           <p className="text-paper/60">
             {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
             {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}

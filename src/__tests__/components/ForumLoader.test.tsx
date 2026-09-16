@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumLoader } from '@/components/ForumLoader';
-import type { Account, Conversation, ForumMessage } from '@/lib/api-types';
+import type { Account, Conversation, ForumMessage, GiftStats } from '@/lib/api-types';
 import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -31,6 +31,7 @@ vi.mock('@/lib/api', () => ({
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
@@ -50,6 +51,7 @@ vi.mock('@/lib/forum-video', () => ({
 import {
   agreeToRules,
   dismissForumLaws,
+  fetchGiftStats,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
@@ -66,6 +68,7 @@ import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
 const fetchMock = vi.mocked(fetchMessages);
+const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
@@ -140,6 +143,28 @@ const FOREIGN: ForumMessage = {
   replyCount: 0,
 };
 
+const EMPTY_STATS: GiftStats = {
+  totalSats: 0,
+  totalBtc: '0.00000000',
+  totalUsd: '0.00',
+  totalChf: '0.00',
+  totalEur: '0.00',
+  totalPhp: '0.00',
+  giftCount: 0,
+  recipientCount: 0,
+  firstPaidAt: null,
+  lastPaidAt: null,
+  spendOverTime: [],
+  byRecipient: [],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};
+
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
 
@@ -157,6 +182,7 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
   publicFetchMock.mockResolvedValue(SAMPLE);
+  fetchGiftStatsMock.mockResolvedValue(EMPTY_STATS);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -213,6 +239,17 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
+  });
+
+  it('keeps ₿-only amounts when gift stats fail', async () => {
+    fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
+    fetchMock.mockResolvedValue([FRESH]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('posts when the account snapshot is missing', async () => {

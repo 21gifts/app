@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 import { FiatPicker } from '@/components/FiatPicker';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { SegmentedControl } from '@/components/ui';
@@ -12,13 +13,7 @@ import {
   type ActivityScale,
 } from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
-import {
-  defaultFiatForLocale,
-  formatBitcoin,
-  formatFiatTick,
-  formatUsdTick,
-  type FiatCode,
-} from '@/lib/stats-money';
+import { formatBitcoin, formatFiatTick, formatUsdTick, type FiatCode } from '@/lib/stats-money';
 
 /** Props for {@link AccountActivityChart}. */
 export interface AccountActivityChartProps {
@@ -75,7 +70,8 @@ function selectedFiatUnsummable(
 
 /**
  * Compact dual-line cumulative chart of Given and Received with FiatPicker
- * (always) and a ₿ | selected-fiat scale when the series has sats.
+ * (always) and a ₿ | selected-fiat scale when the series has sats. Fiat code
+ * comes from {@link useFiatPreference}.
  *
  * @param props - Receive series and optional donate series.
  * @returns FiatPicker plus empty `profile.chartEmpty` status, or FiatPicker
@@ -85,9 +81,9 @@ export function AccountActivityChart({
   received,
   donated = [],
 }: AccountActivityChartProps): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [fiat, setFiat] = useState<FiatCode>(() => defaultFiatForLocale(locale));
+  const { fiat, setFiat } = useFiatPreference();
   const [scale, setScale] = useState<ActivityScale>('sat');
   const points = alignActivitySeries(received, donated);
   const emptySats =

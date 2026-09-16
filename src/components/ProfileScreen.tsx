@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { LocationForm } from '@/components/LocationForm';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -19,7 +20,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
- * and address forms, PushToggle, ThemeSwitcher, and NumberFormatSwitcher.
+ * and address forms, PushToggle, ThemeSwitcher, FiatPreferenceSwitcher, and
+ * NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Menu totals stay in `SignedInChrome`.
  *
@@ -84,6 +86,7 @@ export function ProfileScreen(): ReactElement {
       <LightningAddressForm variant="profile" />
       <PushToggle />
       <ThemeSwitcher />
+      <FiatPreferenceSwitcher />
       <NumberFormatSwitcher />
     </Card>
   );

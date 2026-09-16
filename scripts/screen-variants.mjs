@@ -604,6 +604,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Profile' })",
   },
   {
+    route: '/profile',
+    id: 'fiat',
+    image: 'profile-fiat.png',
+    visual: 'state-profile-fiat',
+    needle: "getByRole('group', { name: 'Fiat currency' })",
+  },
+  {
     route: '/members/[accountId]',
     id: 'default',
     image: 'members.png',
