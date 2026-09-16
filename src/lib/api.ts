@@ -10,6 +10,7 @@ import {
   notificationSchema,
   forumListSchema,
   forumMessageSchema,
+  hiddenListSchema,
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
@@ -30,6 +31,7 @@ import {
   type Notification,
   type NotificationList,
   type ForumMessage,
+  type HiddenMessage,
   type GiftDay,
   type GiftStats,
   type AccountActivity,
@@ -794,6 +796,39 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
       throw err;
     }
     throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+const HIDDEN_NOTES_ERROR = 'Could not load hidden notes. Please try again.';
+
+/**
+ * Fetches hidden forum notes for founders and moderators.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The hidden-note list.
+ * @throws Error on HTTP 401 or 403.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link hiddenListSchema}.
+ */
+export async function listHiddenMessages(sessionToken: string): Promise<HiddenMessage[]> {
+  let response: Response;
+  try {
+    response = await fetch('/forum/messages/hidden', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+  } catch {
+    throw new Error(HIDDEN_NOTES_ERROR);
+  }
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`Failed to list hidden notes: ${response.status}`);
+  }
+  if (!response.ok) {
+    throw new Error(HIDDEN_NOTES_ERROR);
+  }
+  try {
+    return hiddenListSchema.parse(await response.json()).messages;
+  } catch {
+    throw new Error(HIDDEN_NOTES_ERROR);
   }
 }
 

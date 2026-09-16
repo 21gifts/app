@@ -10,6 +10,7 @@ import {
   MessageCircle,
   ScrollText,
   Share2,
+  Shield,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -32,8 +33,9 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Profile with same-line given/received amounts only when that
- * side is non-zero, living-room rules, Trust Chain, notifications with an unread count
- * when greater than zero, messages, contact,
+ * side is non-zero, living-room rules, Trust Chain, staff-only Moderation
+ * (`/moderate`, lucide `Shield`) when `account.role` is founder or moderator,
+ * notifications with an unread count when greater than zero, messages, contact,
  * optional PWA install, language, and log out). The Menu ends with a quiet
  * Version line (`app.version` / `getAppVersion()`). When onboarding
  * is complete and `hasPosted` is false, also mounts
@@ -205,6 +207,18 @@ export function SignedInChrome(): ReactElement {
           <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           {t('nav.trustChain')}
         </Link>
+        {account?.role === 'founder' || account?.role === 'moderator' ? (
+          <Link
+            href="/moderate"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+          >
+            <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+            {t('nav.moderate')}
+          </Link>
+        ) : null}
         <Link
           href="/notifications"
           aria-label={

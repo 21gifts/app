@@ -363,6 +363,48 @@ export const forumListSchema = z.object({
 });
 
 /**
+ * Runtime schema for one hidden forum note from `GET /messages/hidden`.
+ *
+ * `text` and author `name` may be empty. `parentId` is null on a top-level
+ * note. `hasVideo` / `videoContentType` default when an older api omits them.
+ * `deletedBy.id`, `deletedBy.name`, and `deletedBy.role` may be null when the
+ * deleter row is missing.
+ */
+export const hiddenMessageSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  text: z.string(),
+  createdAt: z.string().datetime({ offset: true }),
+  sats: z.number().int().nonnegative(),
+  hasPhoto: z.boolean(),
+  hasVideo: z.boolean().optional().default(false),
+  videoContentType: z
+    .enum(['video/mp4', 'video/webm', 'video/quicktime'])
+    .nullable()
+    .optional()
+    .default(null),
+  parentId: z.string().min(1).nullable(),
+  deletedAt: z.string().datetime({ offset: true }),
+  deletedBy: z.object({
+    id: z.string().min(1).nullable(),
+    name: z.string().min(1).nullable(),
+    role: z.enum(['basis', 'verified', 'moderator', 'founder']).nullable(),
+  }),
+});
+
+/**
+ * Runtime schema for the payload of `GET /messages/hidden`.
+ */
+export const hiddenListSchema = z.object({
+  messages: z.array(hiddenMessageSchema),
+});
+
+/**
+ * One hidden forum note from the api.
+ */
+export type HiddenMessage = z.infer<typeof hiddenMessageSchema>;
+
+/**
  * Runtime schema for `GET /messages/:id/replies` (oldest-first).
  */
 export const forumRepliesSchema = z.object({

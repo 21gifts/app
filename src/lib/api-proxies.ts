@@ -281,6 +281,16 @@ export async function proxyMessagesGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /messages/hidden to the 21.gifts api (app path `/forum/messages/hidden`).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMessagesHiddenGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/messages/hidden');
+}
+
+/**
  * Proxies POST /messages to the 21.gifts api (app path `/forum/messages`).
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

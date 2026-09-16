@@ -991,6 +991,44 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ![21.gifts notifications error](images/notifications-error.png)
 
+## Screen: /moderate
+
+- **URL:** `/moderate` — signed-in hidden-notes list for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
+- **Actions:** Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `listHiddenMessages`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. List only for `role` founder|moderator; others see forbidden copy and do not fetch.
+
+### Variant: default
+
+Staff (founder) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
+
+![21.gifts moderation](images/moderate.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for founders and moderators.** No list.
+
+![21.gifts moderation forbidden](images/moderate-forbidden.png)
+
+### Variant: empty
+
+Staff (founder) loaded list with zero hidden notes. Copy **No hidden notes.**
+
+![21.gifts moderation empty](images/moderate-empty.png)
+
+### Variant: loading
+
+Staff (founder) waiting on `GET /forum/messages/hidden`. Copy **Loading…**
+
+![21.gifts moderation loading](images/moderate-loading.png)
+
+### Variant: error
+
+Staff (founder) list fetch failed. Button **Try again**.
+
+![21.gifts moderation error](images/moderate-error.png)
+
 ## Screen: /messages/[id]
 
 - **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). No `OnboardingGate`, no pay sheet, no composer, no copy control, no FiatPicker on this page. Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).

@@ -175,6 +175,13 @@
 - **Used by:** `fetchMessages`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/messages/hidden
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for founders and moderators). App path is `/forum/messages/hidden` so HTML `/moderate` can serve the page.
+- **Errors:** Upstream 401/403, or 502 if the api is unreachable.
+- **Used by:** `listHiddenMessages` via `ModerateScreen` on `/moderate`.
+- **Auth:** Bearer; staff role (founder|moderator) on the api.
+
 ## Endpoint: POST /forum/messages
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo).

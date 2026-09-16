@@ -33,6 +33,7 @@ import {
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
   proxyMessagesGet,
+  proxyMessagesHiddenGet,
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
@@ -208,6 +209,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMessagesGet(new Request('http://localhost/messages'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
+  });
+
+  it('proxyMessagesHiddenGet hits /messages/hidden', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesHiddenGet(new Request('http://localhost/forum/messages/hidden'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/hidden');
   });
 
   it('proxyMessagesPost hits POST /messages', async () => {
