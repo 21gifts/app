@@ -1995,6 +1995,24 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('lets a verified member reply without paying', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('sets hasPosted after an unpaid founder reply', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(
