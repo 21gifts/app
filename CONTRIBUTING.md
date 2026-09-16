@@ -141,7 +141,7 @@ app/
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + theme + number format)>>>>>>> aac00b35 (Require FiatPicker ariaLabel and align docs with conversion-null ₿-only.)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Public /trust-chain body
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
