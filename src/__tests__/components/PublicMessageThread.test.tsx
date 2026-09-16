@@ -372,6 +372,31 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('tries an unpaid reply when the public note omits accountId', async () => {
+    signIn();
+    renderThread({ root: { ...root, accountId: undefined } });
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'thanks', inReplyTo: MESSAGE_ID });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('invoices 1 sat when an unpaid reply on a note without accountId is 403', async () => {
+    signIn();
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderThread({ root: { ...root, accountId: undefined } });
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+    });
+  });
+
   it('invoices a gift-only reply when text and amount are empty', async () => {
     signIn({ role: 'founder' });
     renderThread();

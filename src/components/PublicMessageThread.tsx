@@ -38,6 +38,7 @@ const PAY_POLL_MS = 2000;
  *
  * @param account - Live account, or `null` when the snapshot is missing.
  * @param parentAccountId - Parent note `accountId` when the public JSON includes it.
+ *   Missing id is not treated as exempt; the caller may POST unpaid and map 403.
  * @returns Whether `POST /messages` is allowed without a zap.
  */
 function isReplyPaymentExempt(
@@ -758,6 +759,7 @@ export function PublicMessageThread(props: {
     const token = session;
     const parentId = expandedId;
     const exempt = isReplyPaymentExempt(account, note.accountId);
+    const authorUnknown = note.accountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -774,7 +776,7 @@ export function PublicMessageThread(props: {
           baselineSats,
         );
       }
-      if (parsed === 'empty' && exempt) {
+      if (parsed === 'empty' && (exempt || authorUnknown)) {
         return runReplyPost(token, trimmed, parentId, isRetry);
       }
       const sats = parsed === 'empty' ? 1 : parsed;
