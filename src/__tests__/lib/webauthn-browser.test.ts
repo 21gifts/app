@@ -201,7 +201,19 @@ describe('requestOptionsFromJSON', () => {
     expect(new Uint8Array(options.challenge as ArrayBuffer)).toEqual(new Uint8Array([4, 5]));
     expect(options.rpId).toBe('localhost');
     expect(options.userVerification).toBe('required');
-    expect(options.allowCredentials).toEqual([]);
+    expect(options).not.toHaveProperty('allowCredentials');
+    expect((options as { hints?: string[] }).hints).toEqual(['client-device']);
+  });
+
+  it('omits empty allowCredentials on the manual path', () => {
+    vi.stubGlobal('PublicKeyCredential', {});
+    const options = requestOptionsFromJSON({
+      challenge: bytesToBase64Url(new Uint8Array([4, 5])),
+      allowCredentials: [],
+    });
+    expect(options).not.toHaveProperty('allowCredentials');
+    expect((options as { hints?: string[] }).hints).toEqual(['client-device']);
+    vi.unstubAllGlobals();
   });
 
   it('maps allowCredentials from base64url ids', () => {
@@ -307,6 +319,24 @@ describe('requestOptionsFromJSON', () => {
     };
     expect(requestOptionsFromJSON(json)).toBe(parsed);
     expect(parse).toHaveBeenCalledWith(json);
+    vi.unstubAllGlobals();
+  });
+
+  it('strips empty allowCredentials before native parse and on the result', () => {
+    const parsed = {
+      challenge: new Uint8Array([1]).buffer,
+      allowCredentials: [],
+    } as PublicKeyCredentialRequestOptions;
+    const parse = vi.fn().mockReturnValue(parsed);
+    vi.stubGlobal('PublicKeyCredential', { parseRequestOptionsFromJSON: parse });
+    const json = {
+      challenge: 'AA',
+      allowCredentials: [] as unknown[],
+    };
+    const options = requestOptionsFromJSON(json);
+    expect(parse.mock.calls[0]?.[0]).not.toHaveProperty('allowCredentials');
+    expect(options).not.toHaveProperty('allowCredentials');
+    expect((options as { hints?: string[] }).hints).toEqual(['client-device']);
     vi.unstubAllGlobals();
   });
 });

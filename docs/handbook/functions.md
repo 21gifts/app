@@ -1922,7 +1922,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: requestOptionsFromJSON
 
-- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Maps `allowCredentials` when present; otherwise discoverable `[]`.
+- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`.
 - **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
 - **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
 - **Used by:** `usePasskeyLogin.authenticate`.
@@ -1943,9 +1943,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. `cancel` aborts an in-flight WebAuthn prompt. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. Login’s register fallback never sends a view key.
+- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. On iOS/iPadOS WebKit, `credentials.get` / `credentials.create` omit AbortSignal. After login `NotAllowedError`, registration waits 400ms on iOS so the system sheet can close. `cancel` aborts an in-flight WebAuthn prompt. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. Login’s register fallback never sends a view key.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
-- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount aborts an in-flight prompt.
+- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount still aborts the controller.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
 ## Function: postMessageInvoice

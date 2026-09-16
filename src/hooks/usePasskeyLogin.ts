@@ -56,6 +56,26 @@ function isUserCancel(error: unknown): boolean {
 }
 
 /**
+ * True on iOS/iPadOS WebKit. Missing `navigator` is false.
+ *
+ * @returns Whether WebAuthn should omit AbortSignal.
+ */
+function isIosWebAuthnHost(): boolean {
+  return typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+/**
+ * Pause so the iOS WebAuthn sheet can close before a second ceremony.
+ *
+ * @returns Resolves after 400ms.
+ */
+function waitForIosSheetToClose(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 400);
+  });
+}
+
+/**
  * Thrown when a newer click or unmount superseded this ceremony.
  */
 class SupersededError extends Error {
@@ -121,10 +141,13 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       guard(runId);
       const begin = await startPasskeyRegistration(viewKey);
       guard(runId);
-      const credential = await navigator.credentials.create({
+      const request: CredentialCreationOptions = {
         publicKey: creationOptionsFromJSON(begin.options),
-        signal: controller.signal,
-      });
+      };
+      if (!isIosWebAuthnHost()) {
+        request.signal = controller.signal;
+      }
+      const credential = await navigator.credentials.create(request);
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
         throw new Error('Passkey creation returned no credential');
@@ -146,10 +169,13 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       guard(runId);
       const begin = await startPasskeyAuthentication();
       guard(runId);
-      const credential = await navigator.credentials.get({
+      const request: CredentialRequestOptions = {
         publicKey: requestOptionsFromJSON(begin.options),
-        signal: controller.signal,
-      });
+      };
+      if (!isIosWebAuthnHost()) {
+        request.signal = controller.signal;
+      }
+      const credential = await navigator.credentials.get(request);
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
         throw new Error('Passkey assertion returned no credential');
@@ -235,13 +261,17 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         const createController = new AbortController();
         abortRef.current = createController;
         try {
+          if (isIosWebAuthnHost()) {
+            await waitForIosSheetToClose();
+            guard(runId);
+          }
           await completeRegistration(runId, createController);
         } catch (createError: unknown) {
           finishWithError(runId, createError);
         }
       }
     })();
-  }, [beginRun, completeAuthentication, completeRegistration, finishWithError]);
+  }, [beginRun, completeAuthentication, completeRegistration, finishWithError, guard]);
 
   const retry = useCallback((): void => {
     if (entryKindRef.current === 'login') {
