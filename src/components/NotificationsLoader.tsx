@@ -11,11 +11,12 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Client loader for the signed-in notifications list on `/notifications`.
  *
- * Reads the session from the auth store and fetches notifications (posts, replies, and payments).
- * After a successful list fetch, marks all as read fire-and-forget and clears the
- * home-screen badge (`setUnreadAppBadge(0)`). Renders
- * nothing when there is no session. There is no composer; opening a row goes
- * to the public forum note.
+ * Reads the session from the auth store and fetches notifications (posts, replies,
+ * payments, and moderator appointment). After a successful list fetch, marks all
+ * as read fire-and-forget and clears the home-screen badge (`setUnreadAppBadge(0)`).
+ * Renders nothing when there is no session. There is no composer; opening a
+ * `moderator_appointed` row goes to `/welcome`, and any other row goes to the
+ * public forum note.
  *
  * @returns The notifications screen, or `null` without a session.
  */
@@ -81,9 +82,9 @@ export function NotificationsLoader(): ReactElement | null {
       onRetry={() => {
         setAttempt((n) => n + 1);
       }}
-      onOpen={(parentId, id) => {
-        void markNotificationRead(session, id).catch(() => undefined);
-        router.push('/messages/' + parentId);
+      onOpen={(row) => {
+        void markNotificationRead(session, row.id).catch(() => undefined);
+        router.push(row.type === 'moderator_appointed' ? '/welcome' : '/messages/' + row.parentId);
       }}
     />
   );

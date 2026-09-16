@@ -57,6 +57,17 @@ const ROW: Notification = {
   readAt: null,
 };
 
+const APPOINTED: Notification = {
+  id: 'n-mod',
+  type: 'moderator_appointed',
+  parentId: 'acc-subject',
+  replyId: 'acc-subject',
+  name: 'Cyrill',
+  text: '',
+  createdAt: '2026-08-22T12:00:00.000Z',
+  readAt: null,
+};
+
 const LIST: NotificationList = { notifications: [ROW], unreadCount: 1 };
 
 beforeEach(() => {
@@ -228,5 +239,15 @@ describe('NotificationsLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: /Bob replied/ }));
     expect(markReadMock).toHaveBeenCalledWith('sess', 'n1');
     expect(push).toHaveBeenCalledWith('/messages/parent-1');
+  });
+
+  it('opens a moderator appointment row on /welcome', async () => {
+    listMock.mockResolvedValue({ notifications: [APPOINTED], unreadCount: 1 });
+    markReadMock.mockResolvedValue({ ...APPOINTED, readAt: '2026-08-28T13:00:00.000Z' });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByRole('button', { name: /You are a moderator/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /You are a moderator/ }));
+    expect(markReadMock).toHaveBeenCalledWith('sess', 'n-mod');
+    expect(push).toHaveBeenCalledWith('/welcome');
   });
 });
