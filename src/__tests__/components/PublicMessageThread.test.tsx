@@ -325,6 +325,18 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('invoices the typed reply amount', async () => {
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 5, 'thanks');
+    });
+  });
+
   it('sends 1 sat when the reply amount is 0', async () => {
     signIn();
     renderThread();
@@ -535,6 +547,20 @@ describe('PublicMessageThread', () => {
       expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
     });
     expect(fetchReplies).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the replies error when retry fails', async () => {
+    vi.mocked(fetchReplies).mockRejectedValue(new Error('offline'));
+    signIn();
+    renderThread();
+    await waitFor(() => {
+      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
   });
 
   it('shows a replies error and retries', async () => {

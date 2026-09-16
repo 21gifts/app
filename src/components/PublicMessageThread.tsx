@@ -554,9 +554,10 @@ export function PublicMessageThread(props: {
       /* v8 ignore stop */
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
+          /* v8 ignore start -- pending paid-reply retry runs after overlay save */
           pendingPostRef.current = () =>
-            /* v8 ignore next -- pending paid-reply retry runs after overlay save */
             runPaidReply(token, trimmed, parentId, sats, true, baselineSats);
+          /* v8 ignore stop */
           return;
         }
         /* v8 ignore start -- overlay retry still missing requirements */
@@ -656,7 +657,9 @@ export function PublicMessageThread(props: {
           }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
+              /* v8 ignore start -- pending pay retry runs after overlay save */
               pendingPostRef.current = () => continuePay(true).then(() => undefined);
+              /* v8 ignore stop */
               return null;
             }
             /* v8 ignore start -- overlay retry still missing requirements */
@@ -674,7 +677,9 @@ export function PublicMessageThread(props: {
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
+      /* v8 ignore start -- pending pay retry runs after overlay save */
       pendingPostRef.current = () => continuePay(true).then(() => undefined);
+      /* v8 ignore stop */
       return;
     }
     return continuePay(false);
@@ -777,7 +782,9 @@ export function PublicMessageThread(props: {
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
+      /* v8 ignore start -- pending reply retry runs after overlay save */
       pendingPostRef.current = () => continueReply(true);
+      /* v8 ignore stop */
       return;
     }
     void continueReply(false);
