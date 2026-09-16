@@ -110,6 +110,16 @@ describe('NoteTranslate', () => {
     expect(screen.getByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
   });
 
+  it('truncates a long translation behind Show more', async () => {
+    const translated = `${'a'.repeat(280)} TRANSTAIL`;
+    vi.mocked(translateNote).mockResolvedValue(translated);
+    renderWithLocale(<NoteTranslate text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByRole('button', { name: 'Show more' })).toBeTruthy();
+    expect(screen.queryByText(/TRANSTAIL/)).toBeNull();
+    expect(translateNote).toHaveBeenCalledWith(german, 'en');
+  });
+
   it('shows an error and retries successfully', async () => {
     vi.mocked(translateNote)
       .mockRejectedValueOnce(new Error('offline'))

@@ -121,6 +121,7 @@ function PublicThreadCard({
           excludeId={note.id}
           rateDay={rateDay}
           fiat={fiat}
+          truncate={false}
         />
       ) : null}
       <p

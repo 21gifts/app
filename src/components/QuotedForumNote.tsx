@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { ForumNoteText } from '@/components/ForumNoteText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -33,11 +34,13 @@ function QuotedForumNote({
   note,
   rateDay,
   fiat,
+  truncate,
   onActivate,
 }: {
   note: ForumMessage;
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
+  truncate: boolean;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
@@ -113,7 +116,14 @@ function QuotedForumNote({
         />
       ) : null}
       {note.text !== '' ? (
-        <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
+        truncate ? (
+          <ForumNoteText
+            text={note.text}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+          />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
+        )
       ) : null}
       <p
         className={
@@ -138,9 +148,11 @@ function QuotedForumNote({
  * Remaining body text plus nested posts for resolved `/messages/<uuid>` URLs.
  *
  * @param props - Body text, already-loaded notes, the containing message id,
- *   fiat conversion, and an optional click handler for the nested card.
+ *   fiat conversion, optional feed truncation, and an optional click handler
+ *   for the nested card.
  * @returns The stripped paragraph, nested post cards, and translation control;
  *   `null` when `text` is empty and no quotes resolved.
+ * @throws Does not throw.
  */
 export function ForumQuotedBody({
   text,
@@ -148,6 +160,7 @@ export function ForumQuotedBody({
   excludeId,
   rateDay,
   fiat,
+  truncate = true,
   onActivate,
 }: {
   text: string;
@@ -155,6 +168,7 @@ export function ForumQuotedBody({
   excludeId: string;
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
+  truncate?: boolean;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
   const candidateIds = useMemo(() => {
@@ -221,7 +235,14 @@ export function ForumQuotedBody({
   return (
     <>
       {displayText !== '' ? (
-        <p className="whitespace-pre-wrap text-sm text-app-fg">{displayText}</p>
+        truncate ? (
+          <ForumNoteText
+            text={displayText}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+          />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm text-app-fg">{displayText}</p>
+        )
       ) : null}
       {displayText !== '' ? <NoteTranslate text={displayText} /> : null}
       {resolvedNotes.map((note) => (
@@ -230,6 +251,7 @@ export function ForumQuotedBody({
           note={note}
           rateDay={rateDay}
           fiat={fiat}
+          truncate={truncate}
           {...(onActivate === undefined ? {} : { onActivate })}
         />
       ))}

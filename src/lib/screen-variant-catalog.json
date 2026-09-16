@@ -954,6 +954,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:note-truncated",
+    "label": "/welcome note-truncated",
+    "visual": "state-welcome-note-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:new-posts",
     "label": "/welcome new-posts",
     "visual": "state-welcome-new-posts",

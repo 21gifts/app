@@ -209,6 +209,63 @@ function modeProps(
 }
 
 describe('ForumBoard', () => {
+  it('collapses a long note behind Show more without toggling replies', () => {
+    const onToggleExpand = vi.fn();
+    const text = `${'a'.repeat(280)} TAILWORD`;
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const showMore = screen.getByRole('button', { name: 'Show more' });
+    expect(showMore).toBeTruthy();
+    expect(screen.queryByText(/TAILWORD/)).toBeNull();
+    fireEvent.click(showMore);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.getByText(/TAILWORD/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('collapses a long reply behind Show more without toggling the parent', () => {
+    const onToggleExpand = vi.fn();
+    const text = `${'a'.repeat(280)} TAILWORD`;
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        onToggleExpand={onToggleExpand}
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Bob', text, sats: 0, payable: false }]}
+        {...modeProps('all')}
+      />,
+    );
+    const showMore = screen.getByRole('button', { name: 'Show more' });
+    expect(screen.queryByText(/TAILWORD/)).toBeNull();
+    fireEvent.click(showMore);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.getByText(/TAILWORD/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
   it('mounts the New posts pill only while unseen posts are available', () => {
     const onShowNewPosts = vi.fn();
     const { rerender } = renderWithLocale(

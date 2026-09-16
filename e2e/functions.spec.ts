@@ -6683,3 +6683,64 @@ test('Function: ForumQuotedBody — welcome reply shows the nested post', async 
   await expect(page.getByText('A Quick Technical Note')).toBeVisible();
   await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
 });
+
+test('Function: forumTextPreview — long welcome note hides the tail behind Show more', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  const tail = 'TAILTOKEN';
+  const text = `${'a'.repeat(280)} ${tail}`;
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-long',
+            name: 'Ada',
+            text,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+  await expect(page.getByText(tail)).toHaveCount(0);
+});
+
+test('Function: ForumNoteText — Show more expands the long welcome note', async ({ page }) => {
+  await seedAdaSession(page);
+  const tail = 'TAILTOKEN';
+  const text = `${'a'.repeat(280)} ${tail}`;
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-long',
+            name: 'Ada',
+            text,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Show more' }).click();
+  await expect(page.getByText(tail)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+});
