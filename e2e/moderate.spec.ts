@@ -88,6 +88,7 @@ test('Function: HiddenNotesPage — staff see the hidden-note list', async ({ pa
   await seedAdaSession(page, 'founder');
   await stubHiddenList(page);
   await page.goto('/moderate/hidden');
+  await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
 });
@@ -103,6 +104,7 @@ test('Function: listHiddenMessages — staff list shows a hidden note', async ({
   await seedAdaSession(page, 'moderator');
   await stubHiddenList(page);
   await page.goto('/moderate/hidden');
+  await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
 });
 

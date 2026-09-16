@@ -5219,6 +5219,7 @@ test.describe('moderate hidden screens', () => {
       });
     });
     await page.goto('/moderate/hidden');
+    await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
     await expect(page.getByText('Hidden by Ada')).toBeVisible();
     await shotScreen(page, 'screen-moderate-hidden');
   });
