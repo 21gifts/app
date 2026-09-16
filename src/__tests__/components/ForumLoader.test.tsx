@@ -3897,10 +3897,23 @@ describe('ForumLoader', () => {
     ).toBeTruthy();
   });
 
-  it('does not exempt a verified member from the reply payment', async () => {
+  it('lets a verified member reply without paying', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     fetchMock.mockResolvedValue([FOREIGN]);
     repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      id: 'r-staff',
+      name: 'Ada',
+      text: 'Staff reply',
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'verified',
+      replyCount: 0,
+    });
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -3910,13 +3923,15 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Your reply')).toBeTruthy();
     });
-    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Staff reply' } });
     fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Staff reply',
+        inReplyTo: 'm-bob',
+      });
     });
-    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
   });
 
   it('lets the parent author reply unpaid when the note omits accountId', async () => {

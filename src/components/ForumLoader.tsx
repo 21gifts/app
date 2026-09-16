@@ -91,7 +91,7 @@ function isAuthorWalletError(err: unknown): boolean {
 /**
  * True when the signed-in account may reply without paying.
  *
- * Parent author, moderator, and founder are exempt. Verified is not.
+ * Parent author, moderator, founder, and verified are exempt.
  *
  * @param account - Live account, or `null` when the snapshot is missing.
  * @param parentAccountId - Parent note `accountId`, if the api sent one.
@@ -105,7 +105,7 @@ function isReplyPaymentExempt(
   if (account === null) {
     return false;
   }
-  if (account.role === 'founder' || account.role === 'moderator') {
+  if (account.role === 'founder' || account.role === 'moderator' || account.role === 'verified') {
     return true;
   }
   return parentAccountId !== undefined && parentAccountId === account.id;
