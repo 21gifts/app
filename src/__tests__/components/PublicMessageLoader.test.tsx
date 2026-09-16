@@ -598,7 +598,9 @@ describe('PublicMessageLoader', () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
     });
-    expect(fetchRepliesBearer).toHaveBeenCalledWith('sess', MESSAGE_ID);
+    await waitFor(() => {
+      expect(fetchRepliesBearer).toHaveBeenCalledWith('sess', MESSAGE_ID);
+    });
   });
 
   it('rings the opened reply on a signed-in parent thread', async () => {
