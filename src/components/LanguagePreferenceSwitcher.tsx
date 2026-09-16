@@ -72,7 +72,6 @@ export function LanguagePreferenceSwitcher(): ReactElement {
           });
         }}
         ariaLabel={t('aria.language')}
-        className="!grid grid-cols-2 !rounded-2xl"
       />
     </div>
   );

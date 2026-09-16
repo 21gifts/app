@@ -27,6 +27,7 @@ export function FiatPreferenceSwitcher(): ReactElement {
         value={fiat}
         onChange={setFiat}
         shell="app"
+        tone="neutral"
         ariaLabel={t('profile.fiatCurrency')}
       />
     </div>
