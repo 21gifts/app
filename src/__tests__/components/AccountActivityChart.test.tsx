@@ -126,21 +126,26 @@ describe('AccountActivityChart', () => {
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('defaults the empty German chart to CHF and keeps empty copy', () => {
+  it('defaults the empty German chart to empty copy with a picker', () => {
     renderWithLocale(<AccountActivityChart received={[]} />, 'de');
     expect(screen.getByRole('group', { name: 'Fiatwährung' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'CHF' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('status').textContent).toBe('Noch keine Gaben.');
     expect(screen.queryByRole('img')).toBeNull();
   });
 
-  it('shows CHF ticks after picking CHF then Chart scale CHF', () => {
+  it('writes preferred fiat when the chart picker is pressed', () => {
     renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'CHF',
+        name: 'EUR',
       }),
     );
+    clickChartScale('EUR');
+    expect(screen.getByRole('img', { name: 'Given and received in EUR' })).toBeTruthy();
+  });
+
+  it('shows CHF ticks when preferred fiat is CHF then Chart scale CHF', () => {
+    renderWithLocale(<AccountActivityChart received={MULTI_DAY} />, 'en', 'ch', 'CHF');
     clickChartScale('CHF');
     expect(screen.getByRole('img', { name: 'Given and received in CHF' })).toBeTruthy();
     expect(screen.getByText(formatFiatTick(1.2, 'CHF'))).toBeTruthy();
@@ -151,12 +156,7 @@ describe('AccountActivityChart', () => {
       { ...day('2026-06-01', 500, '0.48', 500), cumulativeChf: null, chf: null },
       { ...day('2026-06-03', 1500, '1.43', 1000), cumulativeChf: null, chf: null },
     ];
-    renderWithLocale(<AccountActivityChart received={unsummable} />);
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'CHF',
-      }),
-    );
+    renderWithLocale(<AccountActivityChart received={unsummable} />, 'en', 'ch', 'CHF');
     clickChartScale('CHF');
     expect(screen.getByRole('img', { name: 'Given and received in CHF' })).toBeTruthy();
     expect(screen.getAllByText('\u2014').length).toBeGreaterThan(0);

@@ -2,11 +2,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   defaultFiatForLocale,
+  parseFiatCode,
   formatBitcoin,
   formatFiatDisplay,
   formatFiatTick,
   formatUsdDisplay,
   formatUsdTick,
+  latestRateDay,
+  satsToFiatAmount,
+  type FiatRateDay,
 } from '@/lib/stats-money';
 
 describe('defaultFiatForLocale', () => {
@@ -15,6 +19,15 @@ describe('defaultFiatForLocale', () => {
     expect(defaultFiatForLocale('fil')).toBe('PHP');
     expect(defaultFiatForLocale('es')).toBe('EUR');
     expect(defaultFiatForLocale('en')).toBe('USD');
+  });
+});
+
+describe('parseFiatCode', () => {
+  it('returns a supported code and otherwise the fallback', () => {
+    expect(parseFiatCode('CHF', 'USD')).toBe('CHF');
+    expect(parseFiatCode('EUR', 'USD')).toBe('EUR');
+    expect(parseFiatCode('xx', 'USD')).toBe('USD');
+    expect(parseFiatCode(undefined, 'CHF')).toBe('CHF');
   });
 });
 
@@ -91,5 +104,48 @@ describe('formatFiatTick', () => {
     expect(formatFiatTick(1425, 'CHF')).toBe("CHF 1'425");
     expect(formatFiatTick(1.43, 'EUR')).toBe('EUR 1.43');
     expect(formatFiatTick(80000, 'PHP')).toBe("PHP 80'000");
+  });
+});
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
+describe('latestRateDay', () => {
+  it('returns the last day with gifts', () => {
+    expect(latestRateDay([{ ...RATE_DAY, sats: 0 }, RATE_DAY])).toEqual(RATE_DAY);
+  });
+
+  it('returns null when every day is empty', () => {
+    expect(latestRateDay([{ ...RATE_DAY, sats: 0 }])).toBeNull();
+    expect(latestRateDay([])).toBeNull();
+  });
+});
+
+describe('satsToFiatAmount', () => {
+  it('scales 21 sats off a 1 BTC day', () => {
+    expect(satsToFiatAmount(21, RATE_DAY, 'USD')).toBe('0.02');
+    expect(satsToFiatAmount(21, RATE_DAY, 'CHF')).toBe('0.02');
+    expect(satsToFiatAmount(21, RATE_DAY, 'EUR')).toBe('0.02');
+    expect(satsToFiatAmount(21, RATE_DAY, 'PHP')).toBe('1.18');
+  });
+
+  it('returns null without a rate day or when that fiat is missing', () => {
+    expect(satsToFiatAmount(21, null, 'CHF')).toBeNull();
+    expect(satsToFiatAmount(21, { ...RATE_DAY, chf: null }, 'CHF')).toBeNull();
+    expect(satsToFiatAmount(-1, RATE_DAY, 'USD')).toBeNull();
+  });
+
+  it('returns null when the gift-day fiat total is zero', () => {
+    expect(satsToFiatAmount(100_000, { ...RATE_DAY, sats: 1, usd: '0.00' }, 'USD')).toBeNull();
+    expect(satsToFiatAmount(21, { ...RATE_DAY, usd: 'nope' }, 'USD')).toBeNull();
+  });
+
+  it('returns 0.00 for zero sats', () => {
+    expect(satsToFiatAmount(0, RATE_DAY, 'USD')).toBe('0.00');
   });
 });

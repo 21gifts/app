@@ -60,7 +60,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats` only.
+- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, and `/members/[accountId]`.
 - **Auth:** Public.
 
 ## Endpoint: GET /lightning-address
@@ -82,6 +82,13 @@
 - **Purpose:** Same-origin proxy to set, replace, or clear the free-text profile location (`{ location }`; empty string clears).
 - **Errors:** Upstream 400 (`Location must be at most 80 characters`), 401, or 502 if the api is unreachable.
 - **Used by:** `setLocation` / `LocationForm`.
+- **Auth:** Bearer.
+
+## Endpoint: PUT /me/about
+
+- **Purpose:** Same-origin proxy of api `PUT /me/about` (set or replace the signed-in About me note).
+- **Errors:** Upstream 400/401/409, or 502 if the api is unreachable.
+- **Used by:** `putAboutMe`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/setup/skip
@@ -167,6 +174,13 @@
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
 - **Used by:** `fetchMessages`.
 - **Auth:** Bearer.
+
+## Endpoint: GET /forum/messages/hidden
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for founders and moderators). App path is `/forum/messages/hidden` so HTML `/moderate` can serve the page.
+- **Errors:** Upstream 401/403, or 502 if the api is unreachable.
+- **Used by:** `listHiddenMessages` via `ModerateScreen` on `/moderate`.
+- **Auth:** Bearer; staff role (founder|moderator) on the api.
 
 ## Endpoint: POST /forum/messages
 

@@ -28,6 +28,7 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  listHiddenMessages,
   markAllNotificationsRead,
   markNotificationRead,
   openConversation,
@@ -42,6 +43,7 @@ import {
   postMessageVideo,
   postPushSubscription,
   agreeToRules,
+  putAboutMe,
   setLightningAddress,
   setLocation,
   setName,
@@ -65,6 +67,7 @@ const account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: 'name' as const,
   missing: ['name', 'lightning-address', 'rules'] as const,
 };
@@ -126,6 +129,7 @@ describe('fetchViewProfile', () => {
     lightningAddressVerified: false,
     createdAt: 1,
     hasPasskey: false,
+    aboutMe: null,
   };
 
   it('returns the validated profile and hits the same-origin proxy path', async () => {
@@ -183,6 +187,7 @@ describe('fetchMember', () => {
     role: 'verified' as const,
     lightningAddress: 'carol@walletofsatoshi.com',
     createdAt: '2026-01-15T12:00:00.000Z',
+    aboutMe: null,
     profileMessage: null,
     postCount: 0,
     replyCount: 0,
@@ -353,6 +358,59 @@ describe('fetchMemberReplies', () => {
     await expect(fetchMemberReplies('sess', accountId)).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+});
+
+describe('putAboutMe', () => {
+  it('puts the About me text and returns the validated account', async () => {
+    const updated = { ...account, aboutMe: 'Hello from Ada.' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(putAboutMe('sess', 'Hello from Ada.')).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello from Ada.' }),
+    });
+  });
+
+  it('throws MissingRequirementsError on 409 missing_requirements', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['name'] },
+    });
+    await expect(putAboutMe('sess', 'Hello')).rejects.toBeInstanceOf(MissingRequirementsError);
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(putAboutMe('sess', 'Hello')).rejects.toThrow('Could not save. Please try again.');
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(putAboutMe('sess', 'Hello')).rejects.toThrow('Could not save. Please try again.');
+  });
+
+  it('throws on a non-409 non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(putAboutMe('sess', 'Hello')).rejects.toThrow('Could not save. Please try again.');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(putAboutMe('sess', 'Hello')).rejects.toThrow();
   });
 });
 
@@ -1112,6 +1170,78 @@ describe('fetchMessages', () => {
     await expect(fetchMessages('sess')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+});
+
+describe('listHiddenMessages', () => {
+  const hidden = {
+    id: 'h1',
+    name: 'Bob',
+    text: 'Hidden note',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    parentId: null,
+    deletedAt: '2026-08-29T15:00:00.000Z',
+    deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+  };
+
+  it('returns the validated hidden notes and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [hidden] } });
+    await expect(listHiddenMessages('sess')).resolves.toEqual([hidden]);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/hidden', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(listHiddenMessages('sess')).rejects.toThrow(
+      'Could not load hidden notes. Please try again.',
+    );
+  });
+
+  it('throws on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(listHiddenMessages('sess')).rejects.toThrow('Failed to list hidden notes: 401');
+  });
+
+  it('throws on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(listHiddenMessages('sess')).rejects.toThrow('Failed to list hidden notes: 403');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(listHiddenMessages('sess')).rejects.toThrow(
+      'Could not load hidden notes. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(listHiddenMessages('sess')).rejects.toThrow(
+      'Could not load hidden notes. Please try again.',
+    );
+  });
+
+  it('accepts an empty author name and a null deleter id', async () => {
+    const row = {
+      ...hidden,
+      name: '',
+      deletedBy: { id: null, name: null, role: null },
+    };
+    stubFetch({ ok: true, status: 200, body: { messages: [row] } });
+    await expect(listHiddenMessages('sess')).resolves.toEqual([row]);
   });
 });
 

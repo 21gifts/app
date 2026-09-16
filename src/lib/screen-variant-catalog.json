@@ -450,6 +450,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:fiat",
+    "label": "/profile fiat",
+    "visual": "state-profile-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:default",
     "label": "/members/[accountId] default",
     "visual": "screen-members-accountId",
@@ -600,9 +606,33 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:about-filled",
+    "label": "/profile about-filled",
+    "visual": "state-profile-about-filled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-editing",
+    "label": "/profile about-editing",
+    "visual": "state-profile-about-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-save-error",
+    "label": "/profile about-save-error",
+    "visual": "state-profile-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-filled",
+    "label": "/view/[viewKey] about-filled",
+    "visual": "state-view-about-filled",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -795,6 +825,36 @@
     "id": "/notifications:error",
     "label": "/notifications error",
     "visual": "state-notifications-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate:default",
+    "label": "/moderate default",
+    "visual": "screen-moderate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate:forbidden",
+    "label": "/moderate forbidden",
+    "visual": "state-moderate-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate:empty",
+    "label": "/moderate empty",
+    "visual": "state-moderate-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate:loading",
+    "label": "/moderate loading",
+    "visual": "state-moderate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate:error",
+    "label": "/moderate error",
+    "visual": "state-moderate-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

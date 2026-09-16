@@ -23,6 +23,7 @@ vi.mock('@/lib/api', () => ({
   openConversation: vi.fn(),
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 
 beforeEach(() => {
@@ -40,6 +41,7 @@ beforeEach(() => {
       createdAt: 1,
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
+      aboutMe: null,
       setup: null,
       missing: [],
     },
@@ -78,6 +80,7 @@ describe('WelcomeScreen', () => {
         createdAt: 1,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: null,
         missing: [],
       },

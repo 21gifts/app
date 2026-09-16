@@ -7,7 +7,7 @@ afterEach(cleanup);
 describe('FiatPicker', () => {
   it('renders four fiat options and reports the pressed code', () => {
     const onChange = vi.fn();
-    render(<FiatPicker value="USD" onChange={onChange} />);
+    render(<FiatPicker value="USD" onChange={onChange} ariaLabel="Fiat currency" />);
     const group = screen.getByRole('group', { name: 'Fiat currency' });
     expect(group).toBeTruthy();
     expect(group.className).toContain('border-paper/20');

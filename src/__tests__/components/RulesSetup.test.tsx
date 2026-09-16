@@ -24,6 +24,7 @@ const baseAccount: Account = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: 'rules',
   missing: ['rules'],
 };
@@ -97,6 +98,7 @@ describe('RulesSetup', () => {
       ...baseAccount,
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
+      aboutMe: null,
       setup: null,
       missing: [],
     });
@@ -218,6 +220,7 @@ describe('RulesSetup', () => {
       name: 'Stale',
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
+      aboutMe: null,
       setup: null,
       missing: [],
     });

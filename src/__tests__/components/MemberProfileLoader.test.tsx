@@ -21,6 +21,8 @@ vi.mock('@/lib/api', () => ({
   fetchMemberActivity: vi.fn(),
   fetchMemberPosts: vi.fn(),
   fetchMemberReplies: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchMessagePhoto: vi.fn(),
 }));
 
 const memberId = '22222222-2222-4222-8222-222222222222';
@@ -32,6 +34,7 @@ const profile: MemberProfile = {
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
+  aboutMe: null,
   profileMessage: null,
   postCount: 0,
   replyCount: 0,
@@ -70,6 +73,7 @@ beforeEach(() => {
       createdAt: 1,
       rulesAgreedAt: 1,
       viewKey: 'a'.repeat(64),
+      aboutMe: null,
       setup: null,
       missing: [],
     },
@@ -131,12 +135,13 @@ describe('MemberProfileLoader', () => {
     });
   });
 
-  it('still shows the card when activity is missing requirements', async () => {
+  it('redirects to rules when activity is missing requirements', async () => {
     vi.mocked(fetchMember).mockResolvedValue(profile);
     vi.mocked(fetchMemberActivity).mockRejectedValue(new MissingRequirementsError(['rules']));
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
-    expect(await screen.findByText('Carol')).toBeTruthy();
-    expect(replace).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
   });
 
   it('still shows the card when activity fails', async () => {

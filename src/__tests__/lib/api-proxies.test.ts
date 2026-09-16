@@ -14,6 +14,7 @@ import {
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeLocationPost,
+  proxyMeAboutPut,
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
   proxyMeSetupSkipPost,
@@ -32,6 +33,7 @@ import {
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
   proxyMessagesGet,
+  proxyMessagesHiddenGet,
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
@@ -89,6 +91,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/location');
+  });
+
+  it('proxyMeAboutPut hits PUT /me/about', async () => {
+    const fetchMock = stubApi();
+    await proxyMeAboutPut(
+      new Request('http://localhost/me/about', { method: 'PUT', body: '{"text":"Hi"}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('PUT');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/about');
   });
 
   it('proxyMeSetupSkipPost hits POST /me/setup/skip', async () => {
@@ -198,6 +209,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMessagesGet(new Request('http://localhost/messages'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages');
+  });
+
+  it('proxyMessagesHiddenGet hits /messages/hidden', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesHiddenGet(new Request('http://localhost/forum/messages/hidden'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/hidden');
   });
 
   it('proxyMessagesPost hits POST /messages', async () => {

@@ -12,6 +12,7 @@ const E2E_ACCOUNT = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: null,
   missing: [],
 };

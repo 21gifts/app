@@ -57,9 +57,9 @@ The only state: three convictions, verse, and forum CTA, marketing chrome.
 ## Screen: /stats/[day]
 
 - **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
-- **What the user sees:** Dark 21.gifts header, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, **FiatPicker** (CHF|EUR|USD|PHP) above the table, then either the gift table (Time, Recipient, ₿, {selected fiat code}), empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, fiat, numberFormat)` follows the selected fiat and visitor grouping. Stats body copy stays English.
-- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Pick a fiat; the fourth column and summary follow it. Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
-- **Calls:** `GiftDayPage`, `DayLoader`, `FiatPicker`, `GiftDayTable`, `fetchGiftDay` (`GET /gifts?day=`).
+- **What the user sees:** Dark 21.gifts header, **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, selected fiat code) with a FiatPicker, empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
+- **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `FiatPicker`, `fetchGiftDay` (`GET /gifts?day=`).
 - **Auth:** None.
 
 ### Variant: default
@@ -89,8 +89,8 @@ Fetch failed. Button **Try again**.
 ## Screen: /stats
 
 - **URL:** `/stats` — public gift totals (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Gifts**, **FiatPicker** (CHF|EUR|USD|PHP; English default USD). Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, gifts, people, period), then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
-- **Actions:** Pick one fiat via FiatPicker; KPI second line and charts follow it. Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with a language switcher, heading **Gifts**. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, gifts, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`.
 
 ### Variant: default
@@ -316,9 +316,9 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — fourth screen after login, when `account.setup` is null (name and address may be saved or skipped; living-room rules agreement is required).
-- **What the user sees:** Flow `AppShell` with Wordmark top-left (`ForumHomeWordmark`) and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**, then a quiet **Version {sha}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a four-way `SegmentedControl tone="neutral"` (**Active** / **No gifts yet** / **All** / **Most popular**). **No gifts yet** shows a count of loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list (founder/moderator trash is also on nested replies) plus an in-card reply composer (**Write a reply** and an **Amount** sats field; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for the parent author, a moderator, or the founder, otherwise 1 sat; an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Verified pills (`basis` has none). Pay control / Send Bitcoin only when the note is payable; composer under the filters (`SegmentedControl`) above the list with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
+- **What the user sees:** Flow `AppShell` with Wordmark top-left (`ForumHomeWordmark`) and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**, then a quiet **Version {sha}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a four-way `SegmentedControl tone="neutral"` (**Active** / **No gifts yet** / **All** / **Most popular**). **No gifts yet** shows a count of loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Verified pill when the api `role` is one of those three (`basis` has no pill), timestamp, optional inline photo then caption text below the photo, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait), ₿ amount always, plus optional preferred-fiat `·` only when the conversion is non-null, else ₿-only with no em dash (no FiatPicker), replyCount text, copy-link control (**Copy link to this note** → origin `/messages/<uuid>`), and expand/collapse on the card body (**Show replies** / **Hide replies**; pay / role / copy do not expand). Expanded cards show the replies list (founder/moderator trash is also on nested replies) plus an in-card reply composer (**Write a reply** and an **Amount** sats field; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for the parent author, a moderator, or the founder, otherwise 1 sat; an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Verified pills (`basis` has none). Pay control / Send Bitcoin only when the note is payable; composer under the filters (`SegmentedControl`) above the list with **Add a photo or video** (ImagePlus) left of the textarea, **Post** (Send icon) to the right, optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. A missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a note opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
 - **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo or video draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, copy a note link to `/messages/<uuid>`, click a role pill for its explanation, pay a payable note in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**, then a quiet **Version {sha}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
-- **Calls:** `PageChrome`, `AppShell`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`.
+- **Calls:** `PageChrome`, `AppShell`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `fetchGiftStats`, `latestRateDay`, `satsToFiatAmount`.
 
 ### Variant: default
 
@@ -435,7 +435,7 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: expanded
 
-On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply** plus an **Amount** sats field. Gift-only replies render as **send ₿…**; a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Empty reply text and an empty amount invoices 21 sats (pay-sheet default) and opens the pay sheet; a reply with text and an empty amount is unpaid for the parent author, a moderator, or the founder, otherwise 1 sat; an amount of 0 is billed as 1 sat.
+On **All**, click **Show replies** on a note — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reply** plus an **Amount** sats field. Gift-only replies render as **send ₿…** plus the same optional preferred-fiat `·` as notes (₿-only when conversion is null); a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Empty reply text and an empty amount invoices 21 sats (pay-sheet default) and opens the pay sheet; a reply with text and an empty amount is unpaid for the parent author, a moderator, or the founder, otherwise 1 sat; an amount of 0 is billed as 1 sat.
 
 ![21.gifts welcome expanded](images/welcome-expanded.png)
 
@@ -614,19 +614,19 @@ After **Menu**, click **Language** → the four endonym rows (English / Deutsch 
 
 ### Variant: pay-amount
 
-Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. No error, no payment QR, no wallet **Pay** button yet.
+Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. Live equivalent in the preferred fiat (no picker). No error, no payment QR, no wallet **Pay** button yet.
 
 ![21.gifts welcome pay amount](images/welcome-pay-amount.png)
 
 ### Variant: pay-qr
 
-Payable note, amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the amount form stays: disabled minted amount, the same **Pay** button, **Waiting for payment…** under it, back control, no QR.
+Payable note, amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the amount form stays: disabled minted amount, the same **Pay** button, **Waiting for payment…** under it, back control, no QR. The preferred-fiat line is on **pay-amount** (rate stub); these invoice-step shots use the empty stats mock and stay ₿-only.
 
 ![21.gifts welcome pay QR](images/welcome-pay-qr.png)
 
 ### Variant: pay-smartphone
 
-Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the amount form stays after mint (disabled minted amount, **Pay** button with the Wallet of Satoshi icon, **Waiting for payment…** under it, back control, no QR). On desktop this scenario shows the QR invoice card.
+Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the amount form stays after mint (disabled minted amount, **Pay** button with the Wallet of Satoshi icon, **Waiting for payment…** under it, back control, no QR). The preferred-fiat line is on **pay-amount** (rate stub); these invoice-step shots use the empty stats mock and stay ₿-only. On desktop this scenario shows the QR invoice card.
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
@@ -704,21 +704,21 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, name, location, Lightning Address, role pill, and clickable post/reply counts from `postCount` / `replyCount`) with an optional pinned profile forum note and on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is founder or moderator and the subject is someone else, staff Trust Chain actions appear on the card (Verify, Propose, Confirm, or Appoint; already-on-chain is a link). The profile note (when present) is a one-item `ForumBoard` card, so labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row). The in-card reply composer includes an **Amount** sats field; non-exempt visitors invoice at least 1 sat (empty or `0` is billed as 1 sat). Visible inline photos on the pinned profile note, posts feed, and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**; icon-only back to the forum; expand role hint; open author profile links on the note when present; translate a foreign-language note or reply (**Translate** / Show original / Show translation); click the post or reply count to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. The posts feed hides the separately pinned profile note because that note is already in the feed; the replies feed keeps the pinned note above it. Posts retain the pinned note's pay, PM, expand, and reply actions. Reply cards are not payable, and expanding one with a `parentId` navigates to `/messages/{parentId}`. When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Staff viewing another member can Verify, Propose, Confirm, or Appoint; already-on-chain is a link. No edit controls.
+- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, Lightning Address, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is founder or moderator and the subject is someone else, staff Trust Chain actions appear on the card (Verify, Propose, Confirm, or Appoint; already-on-chain is a link). About me is not a `ForumBoard` post; labeled **Translate** sits on feed note/reply bodies via `NoteTranslate` when the language differs from the UI locale (not on About me). The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for the parent author, a moderator, or the founder, otherwise 1 sat; an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for `latestRateDay` on feed notes (display-only preferred fiat, no FiatPicker on the feed); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
+- **Actions:** Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**, then a quiet **Version {sha}** line (`app.version`); icon-only back to the forum; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile**); Message on the card when another member has a `profileMessage`; translate a foreign-language feed note or reply (**Translate** / Show original / Show translation); click the post or reply count to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts retain pay, expand, and reply actions; gift pay after dropping the pinned bio opens the posts feed then Send Bitcoin. Replies from the parent author, moderator, or founder may post unpaid. Reply cards are not payable, and expanding one with a `parentId` navigates to `/messages/{parentId}`. When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint; already-on-chain is a link. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
 ### Variant: default
 
-Member with a non-null `profileMessage` shown as a one-item forum card (`composerHidden`).
+Member identity card with About me inside the card when `aboutMe` is set; read-only location; Message on the card when another member has a `profileMessage`. Not a forum post.
 
 ![21.gifts member profile](images/members.png)
 
 ### Variant: posts-open
 
-Identity card with counts; posts button pressed; profile note hidden; post card 'Second post from Carol.' in the feed.
+Identity card with counts; posts button pressed; post card 'Second post from Carol.' in the feed.
 
 ![21.gifts member posts open](images/members-posts-open.png)
 
@@ -730,49 +730,49 @@ Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto
 
 ### Variant: replies-open
 
-Identity card; replies pressed; profile note still visible; reply card 'A reply from Carol.'
+Identity card; replies pressed; no pinned profile-note card; reply card 'A reply from Carol.'
 
 ![21.gifts member replies open](images/members-replies-open.png)
 
 ### Variant: posts-loading
 
-Identity card; posts count pressed; feed shows Loading…; pinned profile note hidden.
+Identity card; posts count pressed; feed shows Loading…; no pinned profile-note card.
 
 ![21.gifts member posts loading](images/members-posts-loading.png)
 
 ### Variant: replies-loading
 
-Identity card; replies count pressed; feed shows Loading…; pinned profile note still visible.
+Identity card; replies count pressed; feed shows Loading…; no pinned profile-note card.
 
 ![21.gifts member replies loading](images/members-replies-loading.png)
 
 ### Variant: posts-error
 
-Identity card; posts count pressed; feed error `Could not load messages. Please try again.` and Try again; pinned profile note hidden.
+Identity card; posts count pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card.
 
 ![21.gifts member posts error](images/members-posts-error.png)
 
 ### Variant: replies-error
 
-Identity card; replies count pressed; feed error and Try again; pinned profile note still visible.
+Identity card; replies count pressed; feed error and Try again; no pinned profile-note card.
 
 ![21.gifts member replies error](images/members-replies-error.png)
 
 ### Variant: posts-truncated
 
-Identity card; posts count 3 pressed; one listed post; muted `Showing the latest 1 of 3.`; pinned profile note hidden.
+Identity card; posts count 3 pressed; one listed post; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
 
 ![21.gifts member posts truncated](images/members-posts-truncated.png)
 
 ### Variant: replies-truncated
 
-Identity card; replies count 3 pressed; one listed reply; muted `Showing the latest 1 of 3.`; pinned profile note still visible.
+Identity card; replies count 3 pressed; one listed reply; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
 
 ![21.gifts member replies truncated](images/members-replies-truncated.png)
 
 ### Variant: note-null
 
-Member identity card only (`profileMessage: null`); no forum card under the identity section.
+Member identity card only (`profileMessage: null`, `aboutMe` null); copy-profile-link still on the card; no About me heading; no forum card.
 
 ![21.gifts member profile without note](images/members-note-null.png)
 
@@ -796,25 +796,25 @@ Signed-in visitor viewing their own `/members/:id` card.
 
 ### Variant: overlay-address
 
-Named visitor with living-room rules agreed and no Wallet of Satoshi address. Member profile note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
+Named visitor with living-room rules agreed and no Wallet of Satoshi address. Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
 
 ![21.gifts member overlay address](images/members-overlay-address.png)
 
 ### Variant: translate
 
-Signed-in `/members/:id` with a German profile note. **Translate** is visible under the body (not in the footer icon row).
+Signed-in `/members/:id` with a German post in the posts feed. **Translate** is visible under the body (not in the footer icon row).
 
 ![21.gifts member translate](images/members-translate.png)
 
 ### Variant: translate-loading
 
-Same German note after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+Same German post after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
 
 ![21.gifts member translate loading](images/members-translate-loading.png)
 
 ### Variant: translate-done
 
-Same German note after a successful translation. Translated body plus **Show original**.
+Same German post after a successful translation. Translated body plus **Show original**.
 
 ![21.gifts member translate done](images/members-translate-done.png)
 
@@ -826,7 +826,7 @@ After **Show original**: translated body hidden, control reads **Show translatio
 
 ### Variant: translate-error
 
-Same German note after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
 
 ![21.gifts member translate error](images/members-translate-error.png)
 
@@ -838,16 +838,22 @@ Signed-in **moderator** viewing another member who is **basis**. Staff card with
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, edit name, location (Ort), and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose appearance (System / Light / Dark) then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row, return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Inputs:** Session account (name + location + Lightning Address + `viewKey` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; given and received series via `useAccountTotals` (`GET /me/activity`).
-- **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out** (best-effort Web Push unsubscribe while the session is still valid); icon-only back (top-left) to the forum; save name; save or clear location; link or change address; toggle Web Push on the notifications row under the address form (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); pick CHF|EUR|USD|PHP on FiatPicker; when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row, return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Inputs:** Session account (name + location + Lightning Address + `viewKey` + `aboutMe` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even with a blank Lightning Address. About me save is `PUT /me/about` (`putAboutMe`). Location save is `POST /me/location` (`setLocation`).
+- **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {sha}** line (`app.version`); icon-only back (top-left) to the forum; write or edit About me; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; toggle Web Push on the notifications row under the address form (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); pick CHF|EUR|USD|PHP on the chart FiatPicker; when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: FiatPicker always (CHF|EUR|USD|PHP, `shell="app"`). When the series is empty, FiatPicker + `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat right; no chart title heading), name, location (**Location** / **Ort**, unset shows **Not set**), and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), a notifications row under the address form with visible On/Off and an icon-only bell (same `IconButton` circle as pencil/trash; off outlined BellOff secondary, on filled Bell primary), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (**Home** first; language then log out, then a quiet **Version {sha}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: FiatPicker always (CHF|EUR|USD|PHP, `shell="app"`). When the series is empty, FiatPicker + `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), a notifications row under the address form with visible On/Off and an icon-only bell (same `IconButton` circle as pencil/trash; off outlined BellOff secondary, on filled Bell primary), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (**Home** first; language then log out, then a quiet **Version {sha}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
+
+### Variant: fiat
+
+Viewport after scrolling the identity-card **Fiat currency** row into view (CHF | EUR | USD | PHP). The default profile golden crops at Theme because the card scrolls inside the 720px shell.
+
+![21.gifts profile fiat](images/profile-fiat.png)
 
 ### Variant: receive
 
@@ -878,6 +884,24 @@ Two-day series with cumulative USD **1425.00**, scale switched to USD so the axi
 Both series non-zero: received ₿1,500 over three UTC days and given ₿2,100 on **2026-06-02**. Chart shows Given and Received together. Needle `state-profile-given-received`.
 
 ![21.gifts profile given and received](images/profile-given-received.png)
+
+### Variant: about-filled
+
+Owner card with a real bio not equal to the display name. Seed GET /me with `name: 'Ada'`, `aboutMe: 'I build on Bitcoin'`, setup complete. Shows filled About me text plus the icon-only pencil (`Edit About me`), not the empty CTA (`Tell others who you are.` / **Write your About me**).
+
+![21.gifts profile About me filled](images/profile-about-filled.png)
+
+### Variant: about-editing
+
+Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`.
+
+![21.gifts profile About me editing](images/profile-about-editing.png)
+
+### Variant: about-save-error
+
+Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500, opening the editor from empty, and clicking Save. Copy **Could not save. Please try again.**
+
+![21.gifts profile About me save error](images/profile-about-save-error.png)
 
 ## Screen: /messages
 
@@ -967,16 +991,54 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ![21.gifts notifications error](images/notifications-error.png)
 
+## Screen: /moderate
+
+- **URL:** `/moderate` — signed-in hidden-notes list for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
+- **Actions:** Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `listHiddenMessages`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. List only for `role` founder|moderator; others see forbidden copy and do not fetch.
+
+### Variant: default
+
+Staff (founder) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
+
+![21.gifts moderation](images/moderate.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for founders and moderators.** No list.
+
+![21.gifts moderation forbidden](images/moderate-forbidden.png)
+
+### Variant: empty
+
+Staff (founder) loaded list with zero hidden notes. Copy **No hidden notes.**
+
+![21.gifts moderation empty](images/moderate-empty.png)
+
+### Variant: loading
+
+Staff (founder) waiting on `GET /forum/messages/hidden`. Copy **Loading…**
+
+![21.gifts moderation loading](images/moderate-loading.png)
+
+### Variant: error
+
+Staff (founder) list fetch failed. Button **Try again**.
+
+![21.gifts moderation error](images/moderate-error.png)
+
 ## Screen: /messages/[id]
 
-- **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). No `OnboardingGate`, no pay sheet, no composer, no copy control on this page. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
+- **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). No `OnboardingGate`, no pay sheet, no composer, no copy control, no FiatPicker on this page. Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
 - **Inputs:** Dynamic route `id` (UUID). Note from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Replies from `GET /public-messages/:id/replies` (`fetchPublicReplies`) using the parent id. If the opened note has `parentId`, a second public GET loads that parent, then its replies. Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags.
 - **Actions:** Change language (unsigned), or open **Menu** / back to the forum (signed-in). On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`) below the thread. Logged-in **Back to the forum** → `/welcome` (`profile.back`) in chrome and below the thread. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
 
 ### Variant: default
 
-Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin`, optional photo or clip-aspect `<video>`. Auth CTA below the card.
+Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null (otherwise ₿-only, no ` · —`), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 
@@ -1048,16 +1110,22 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 
 ## Screen: /view/[viewKey]
 
-- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated ₿ | selected fiat; name + location + Wallet of Satoshi address fields) without edit/copy/back/menu/logout. Capability URL `/view/<64-hex>`; key/URL not shown. No `OnboardingGate` on this route.
-- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`) plus `fetchViewActivity` even if the Lightning Address is blank (`GET /view-key/:viewKey/activity`). Activity error → empty series, card stays.
-- **Actions:** Change language (Wordmark top-left; light language switcher top-right). On profile fetch error, **Try again**. Empty series shows FiatPicker + `profile.chartEmpty`; a filled series can switch scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/copy/back/menu/logout on the card.
+- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated ₿ | selected fiat; About me inside the identity card — not a forum post — name + location + Wallet of Satoshi address fields) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route.
+- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given + Received from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when address is blank; activity failure keeps the card with empty series. Identity still `GET /view-key/:viewKey`.
+- **Actions:** Change language (Wordmark top-left; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Empty series shows FiatPicker + `profile.chartEmpty`; a filled series can switch scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, FiatPicker always; empty series shows FiatPicker + `profile.chartEmpty` (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart), name, location, and Wallet of Satoshi address field labels, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no view-key copy, no back arrow.
+Valid known key. Heading **Profile**, FiatPicker always; empty series shows FiatPicker + `profile.chartEmpty` (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and Wallet of Satoshi address field labels, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text, no back arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
+
+### Variant: about-filled
+
+Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same read-only card as default plus the About me heading and body text. Copy-profile-link remains. No edit.
+
+![21.gifts public view about filled](images/view-about-filled.png)
 
 ### Variant: missing
 

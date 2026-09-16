@@ -19,6 +19,8 @@ export const accountSchema = z.object({
   /** Epoch ms of the first living-room rules agreement, or `null` if not yet agreed. */
   rulesAgreedAt: z.number().nullable(),
   viewKey: z.string().regex(/^[0-9a-f]{64}$/),
+  /** About me note, or `null` when unfilled (name-only auto notes). */
+  aboutMe: z.string().nullable(),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
   setup: z.enum(['name', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
@@ -50,6 +52,8 @@ export const accountSchema = z.object({
  * lowercase hex capability key for the public read-only profile URL
  * `/view/<viewKey>` (owner `/me` only; never shown on the public view payload;
  * never rendered as visible text in the signed-in profile UI).
+ * `aboutMe` is the profile card note, or `null` until the giver writes one
+ * (name-only auto notes from the api are `null`).
  * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
  * or `null` when onboarding is complete (including after skips). `missing` lists
  * fields still unset for posting; skipped steps stay listed until filled.
@@ -72,6 +76,8 @@ export const viewProfileSchema = z.object({
   lightningAddressVerified: z.boolean(),
   createdAt: z.number(),
   hasPasskey: z.boolean(),
+  /** About me note, or `null` when unfilled. */
+  aboutMe: z.string().nullable(),
 });
 
 /**
@@ -357,6 +363,48 @@ export const forumListSchema = z.object({
 });
 
 /**
+ * Runtime schema for one hidden forum note from `GET /messages/hidden`.
+ *
+ * `text` and author `name` may be empty. `parentId` is null on a top-level
+ * note. `hasVideo` / `videoContentType` default when an older api omits them.
+ * `deletedBy.id`, `deletedBy.name`, and `deletedBy.role` may be null when the
+ * deleter row is missing.
+ */
+export const hiddenMessageSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  text: z.string(),
+  createdAt: z.string().datetime({ offset: true }),
+  sats: z.number().int().nonnegative(),
+  hasPhoto: z.boolean(),
+  hasVideo: z.boolean().optional().default(false),
+  videoContentType: z
+    .enum(['video/mp4', 'video/webm', 'video/quicktime'])
+    .nullable()
+    .optional()
+    .default(null),
+  parentId: z.string().min(1).nullable(),
+  deletedAt: z.string().datetime({ offset: true }),
+  deletedBy: z.object({
+    id: z.string().min(1).nullable(),
+    name: z.string().min(1).nullable(),
+    role: z.enum(['basis', 'verified', 'moderator', 'founder']).nullable(),
+  }),
+});
+
+/**
+ * Runtime schema for the payload of `GET /messages/hidden`.
+ */
+export const hiddenListSchema = z.object({
+  messages: z.array(hiddenMessageSchema),
+});
+
+/**
+ * One hidden forum note from the api.
+ */
+export type HiddenMessage = z.infer<typeof hiddenMessageSchema>;
+
+/**
  * Runtime schema for `GET /messages/:id/replies` (oldest-first).
  */
 export const forumRepliesSchema = z.object({
@@ -556,7 +604,8 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
 /**
  * Runtime schema for a signed-in member profile from `GET /members/:id`.
  *
- * `profileMessage` is the member's pinned forum note when present.
+ * `profileMessage` is the member's profile forum note when present (card Message
+ * and posts-feed source, not a pinned ForumBoard card).
  * `postCount` / `replyCount` are uncapped totals; activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
  */
@@ -570,6 +619,8 @@ export const memberProfileSchema = z.object({
   profileMessage: forumMessageSchema.nullable(),
   postCount: z.number().int().nonnegative(),
   replyCount: z.number().int().nonnegative(),
+  /** About me note, or `null` when unfilled. */
+  aboutMe: z.string().nullable(),
   trust: accountTrustSchema.optional().default(accountTrustNull),
 });
 

@@ -18,6 +18,7 @@ const E2E_ACCOUNT = {
   createdAt: 1_700_000_000,
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null as string | null,
   setup: 'name' as 'name' | 'lightning-address' | 'rules' | null,
   missing: ['name', 'lightning-address', 'rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
@@ -402,6 +403,7 @@ const RULES_SETUP_ACCOUNT = {
   lightningAddress: 'alice@walletofsatoshi.com',
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
+  aboutMe: null,
   setup: 'rules' as const,
   missing: ['rules'] as Array<'name' | 'lightning-address' | 'rules'>,
 };
@@ -667,6 +669,7 @@ test.describe('screen baselines', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -877,6 +880,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -911,6 +915,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1003,6 +1008,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1031,6 +1037,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1280,6 +1287,7 @@ test.describe('onboarding screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -1295,6 +1303,42 @@ test.describe('onboarding screens', () => {
     await page.goto('/profile');
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
+  });
+
+  test('profile fiat', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto('/profile');
+    const group = page.getByRole('group', { name: 'Fiat currency' }).last();
+    await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
+    await group.scrollIntoViewIfNeeded();
+    // Viewport: the identity card scrolls inside a 720px shell, so fullPage
+    // still crops above this row.
+    await shotScreen(page, 'state-profile-fiat', false);
   });
 
   test('screen /members/[accountId]', async ({ page }) => {
@@ -1328,6 +1372,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: 'Hello from Carol.',
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1347,7 +1392,10 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('About me')).toBeVisible();
+    await expect(page.getByText('Hello from Carol.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
     await shotScreen(page, 'screen-members-accountId');
   });
 
@@ -1381,6 +1429,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1426,6 +1475,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Second post from Carol.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open');
   });
 
@@ -1460,6 +1510,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1551,6 +1602,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1596,7 +1648,8 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-open');
   });
 
@@ -1630,6 +1683,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1660,6 +1714,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Loading…')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Loading…').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-loading');
     release();
   });
@@ -1694,6 +1749,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1723,7 +1779,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('Loading…')).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Loading…').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-loading');
     release();
   });
@@ -1758,6 +1815,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1784,6 +1842,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Could not load messages. Please try again.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-error');
   });
 
@@ -1817,6 +1876,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1842,7 +1902,8 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 replies' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Could not load messages. Please try again.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-error');
   });
 
@@ -1876,6 +1937,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -1922,6 +1984,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '3 posts' }).click();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Showing the latest 1 of 3.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-truncated');
   });
 
@@ -1955,6 +2018,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: '33333333-3333-4333-8333-333333333333',
             accountId: memberId,
@@ -2001,7 +2065,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '3 replies' }).click();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
+    await page.getByText('Showing the latest 1 of 3.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-truncated');
   });
 
@@ -2036,6 +2101,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: null,
           postCount: 0,
           replyCount: 0,
@@ -2133,6 +2199,7 @@ test.describe('onboarding screens', () => {
           role: 'basis',
           lightningAddress: 'alice@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: null,
           postCount: 0,
           replyCount: 0,
@@ -2177,6 +2244,7 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
@@ -2194,6 +2262,30 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2203,10 +2295,12 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show replies' }).click();
     await expect(page.getByLabel('Your reply')).toBeVisible();
     await page.getByLabel('Your reply').fill('Hello');
+    await page.getByLabel('Amount').fill('1');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(
       page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -2251,6 +2345,7 @@ test.describe('onboarding screens', () => {
           profileMessage: null,
           postCount: 0,
           replyCount: 0,
+          aboutMe: null,
           trust: {
             verifiedBy: null,
             proposedBy: null,
@@ -2297,11 +2392,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2314,9 +2410,42 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate');
   });
 
@@ -2351,11 +2480,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2368,13 +2498,46 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'hang');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
       'aria-busy',
       'true',
     );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-loading');
   });
 
@@ -2409,11 +2572,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2426,10 +2590,43 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-done');
   });
 
@@ -2464,11 +2661,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2481,12 +2679,45 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).click();
     await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-hidden');
   });
 
@@ -2521,11 +2752,12 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
           profileMessage: {
             id: noteId,
             accountId: memberId,
             name: 'Carol',
-            text: GERMAN_NOTE_TEXT,
+            text: 'Hello from my profile note.',
             createdAt: '2026-08-01T10:00:00.000Z',
             sats: 21,
             payable: true,
@@ -2538,10 +2770,45 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
     await fulfillTranslatePost(page, 'fail');
     await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-translate-error');
   });
 
@@ -2886,6 +3153,7 @@ test.describe('onboarding screens', () => {
           lightningAddressVerified: false,
           createdAt: 1,
           hasPasskey: false,
+          aboutMe: null,
         }),
       });
     });
@@ -2902,6 +3170,36 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
     await shotScreen(page, 'screen-view-viewKey');
+  });
+
+  test('state /view about-filled', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: 'I build on Bitcoin',
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
+    await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
+    await shotScreen(page, 'state-view-about-filled');
   });
 
   test('screen /view/[viewKey] missing', async ({ page }) => {
@@ -2952,6 +3250,7 @@ test.describe('onboarding screens', () => {
           lightningAddressVerified: false,
           createdAt: 1,
           hasPasskey: true,
+          aboutMe: null,
         }),
       });
     });
@@ -2985,6 +3284,7 @@ test.describe('onboarding screens', () => {
           lightningAddressVerified: false,
           createdAt: 1,
           hasPasskey: false,
+          aboutMe: null,
         }),
       });
     });
@@ -3146,7 +3446,7 @@ const GIVEN_RECEIVED_ACTIVITY = {
 };
 
 test.describe('profile activity chart variants', () => {
-  async function seedAdaProfile(page: Page): Promise<void> {
+  async function seedAdaProfile(page: Page, extras?: { aboutMe?: string | null }): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -3161,6 +3461,7 @@ test.describe('profile activity chart variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: extras?.aboutMe ?? null,
           setup: null,
           missing: [],
         }),
@@ -3227,6 +3528,43 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('2026-06-01')).toBeVisible();
     await shotScreen(page, 'state-profile-given-received');
   });
+
+  test('profile about-filled', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin' });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.goto('/profile');
+    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
+    await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
+    await shotScreen(page, 'state-profile-about-filled');
+  });
+
+  test('profile about-editing', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
+    await shotScreen(page, 'state-profile-about-editing');
+  });
+
+  test('profile about-save-error', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route('**/me/about', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('button', { name: 'Save About me' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-profile-about-save-error');
+  });
 });
 
 test.describe('welcome forum variants', () => {
@@ -3246,6 +3584,7 @@ test.describe('welcome forum variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -4117,6 +4456,49 @@ test.describe('welcome forum variants', () => {
   test('welcome pay-amount', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalSats: 100_000_000,
+          totalBtc: '1.00000000',
+          totalUsd: '100000.00',
+          totalChf: '80000.00',
+          totalEur: '90000.00',
+          totalPhp: '5600000.00',
+          giftCount: 1,
+          recipientCount: 1,
+          firstPaidAt: '2026-07-01T00:00:00.000Z',
+          lastPaidAt: '2026-07-01T00:00:00.000Z',
+          spendOverTime: [
+            {
+              day: '2026-07-01',
+              sats: 100_000_000,
+              cumulativeSats: 100_000_000,
+              btc: '1.00000000',
+              cumulativeBtc: '1.00000000',
+              usd: '100000.00',
+              cumulativeUsd: '100000.00',
+              chf: '80000.00',
+              eur: '90000.00',
+              php: '5600000.00',
+              cumulativeChf: '80000.00',
+              cumulativeEur: '90000.00',
+              cumulativePhp: '5600000.00',
+            },
+          ],
+          byRecipient: [],
+          byMonth: [],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+            quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+          },
+        }),
+      });
+    });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
@@ -4134,6 +4516,8 @@ test.describe('welcome forum variants', () => {
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+    await expect(page.getByText('$0.02').first()).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-amount');
   });
 
@@ -4279,6 +4663,7 @@ test.describe('welcome forum variants', () => {
           lightningAddress: null,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: ['lightning-address'],
         }),
@@ -4310,6 +4695,7 @@ test.describe('welcome forum variants', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
           hasPosted: false,
@@ -4340,6 +4726,7 @@ test.describe('contact screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -4448,6 +4835,7 @@ test.describe('inbox screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -4660,6 +5048,7 @@ test.describe('notifications screens', () => {
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
+          aboutMe: null,
           setup: null,
           missing: [],
         }),
@@ -4732,6 +5121,108 @@ test.describe('notifications screens', () => {
     await page.goto('/notifications');
     await expect(page.getByText('Could not load notifications. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-notifications-error');
+  });
+});
+
+test.describe('moderate screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const HIDDEN = {
+    id: 'h1',
+    name: 'Bob',
+    text: 'Hidden note',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    parentId: null,
+    deletedAt: '2026-08-29T15:00:00.000Z',
+    deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+  };
+
+  test('screen /moderate', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [HIDDEN] }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
+    await expect(page.getByText('Hidden note')).toBeVisible();
+    await shotScreen(page, 'screen-moderate');
+  });
+
+  test('moderate forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate');
+    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-forbidden');
+  });
+
+  test('moderate empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByText('No hidden notes.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-empty');
+  });
+
+  test('moderate loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-loading');
+  });
+
+  test('moderate error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-error');
   });
 });
 

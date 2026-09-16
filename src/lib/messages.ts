@@ -17,6 +17,7 @@ const en = {
   'nav.inbox': 'Messages',
   'nav.notifications': 'Notifications',
   'nav.notificationsUnread': 'Notifications, {count} unread',
+  'nav.moderate': 'Moderation',
   'nav.contact': 'Contact',
 
   'pwa.install': 'Install app',
@@ -335,6 +336,15 @@ const en = {
   'profile.postCount': '{count} posts',
   'profile.replyCount': '{count} replies',
   'profile.activityLatest': 'Showing the latest {shown} of {total}.',
+  'profile.about.heading': 'About me',
+  'profile.about.empty': 'Tell others who you are.',
+  'profile.about.write': 'Write your About me',
+  'profile.about.edit': 'Edit About me',
+  'profile.about.save': 'Save About me',
+  'profile.about.cancel': 'Cancel',
+  'profile.about.error': 'Could not save. Please try again.',
+  'profile.copyLink': 'Copy link to this profile',
+  'profile.message': 'Message',
 
   'view.unnamed': 'Unnamed',
   'view.noAddress': 'No Wallet of Satoshi address',
@@ -501,6 +511,18 @@ const en = {
   'notifications.photoOnly': 'Photo reply',
   'notifications.photoPost': 'Photo',
 
+  'moderate.heading': 'Moderation',
+  'moderate.lead':
+    'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
+  'moderate.forbidden': 'This page is for founders and moderators.',
+  'moderate.empty': 'No hidden notes.',
+  'moderate.loading': 'Loading…',
+  'moderate.error': 'Could not load hidden notes. Please try again.',
+  'moderate.retry': 'Try again',
+  'moderate.listLabel': 'Hidden notes',
+  'moderate.hiddenBy': 'Hidden by {name}',
+  'moderate.unnamed': 'Unnamed',
+
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
     'Who met whom in real life, and who appointed the moderators. Click a person to load everyone linked to them. Drag a person to move them.',
@@ -548,6 +570,7 @@ const de = {
   'nav.inbox': 'Posteingang',
   'nav.notifications': 'Benachrichtigungen',
   'nav.notificationsUnread': 'Benachrichtigungen, {count} ungelesen',
+  'nav.moderate': 'Moderation',
   'nav.contact': 'Kontakt',
   'pwa.install': 'App installieren',
   'pwa.iosTitle': '21.gifts auf den Home-Bildschirm',
@@ -858,6 +881,15 @@ const de = {
   'profile.postCount': '{count} Beiträge',
   'profile.replyCount': '{count} Antworten',
   'profile.activityLatest': 'Die neuesten {shown} von {total}.',
+  'profile.about.heading': 'Über mich',
+  'profile.about.empty': 'Erzähl anderen, wer du bist.',
+  'profile.about.write': 'Schreib dein Über mich',
+  'profile.about.edit': 'Über mich bearbeiten',
+  'profile.about.save': 'Über mich speichern',
+  'profile.about.cancel': 'Abbrechen',
+  'profile.about.error': 'Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.',
+  'profile.copyLink': 'Link zu diesem Profil kopieren',
+  'profile.message': 'Nachricht',
 
   'view.unnamed': 'Unbenannt',
   'view.noAddress': 'Keine Wallet of Satoshi address',
@@ -1029,6 +1061,19 @@ const de = {
   'notifications.photoOnly': 'Foto-Antwort',
   'notifications.photoPost': 'Foto',
 
+  'moderate.heading': 'Moderation',
+  'moderate.lead':
+    'Eine Notiz auszublenden ist ein weiches Ausblenden: Die Notiz und ihre nicht markierten direkten Antworten verlassen das Wohnzimmer. Es ist keine endgültige Löschung.',
+  'moderate.forbidden': 'Diese Seite ist für Gründerpersonen und Moderatorinnen oder Moderatoren.',
+  'moderate.empty': 'Keine ausgeblendeten Notizen.',
+  'moderate.loading': 'Wird geladen…',
+  'moderate.error':
+    'Ausgeblendete Notizen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'moderate.retry': 'Erneut versuchen',
+  'moderate.listLabel': 'Ausgeblendete Notizen',
+  'moderate.hiddenBy': 'Ausgeblendet von {name}',
+  'moderate.unnamed': 'Unbenannt',
+
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
     'Wer wen persönlich getroffen hat, und wer die Moderatoren ernannt hat. Klicken Sie auf eine Person, um alle mit ihr verbundenen zu laden. Ziehen Sie eine Person, um sie zu verschieben.',
@@ -1073,6 +1118,7 @@ const es = {
   'nav.inbox': 'Bandeja',
   'nav.notifications': 'Notificaciones',
   'nav.notificationsUnread': 'Notificaciones, {count} sin leer',
+  'nav.moderate': 'Moderación',
   'nav.contact': 'Contacto',
   'pwa.install': 'Instalar app',
   'pwa.iosTitle': 'Añadir 21.gifts a la pantalla de inicio',
@@ -1378,6 +1424,15 @@ const es = {
   'profile.postCount': '{count} publicaciones',
   'profile.replyCount': '{count} respuestas',
   'profile.activityLatest': 'Mostrando los {shown} más recientes de {total}.',
+  'profile.about.heading': 'Sobre mí',
+  'profile.about.empty': 'Cuéntales a los demás quién eres.',
+  'profile.about.write': 'Escribe tu Sobre mí',
+  'profile.about.edit': 'Editar Sobre mí',
+  'profile.about.save': 'Guardar Sobre mí',
+  'profile.about.cancel': 'Cancelar',
+  'profile.about.error': 'No se pudo guardar. Inténtalo de nuevo.',
+  'profile.copyLink': 'Copiar enlace a este perfil',
+  'profile.message': 'Mensaje',
 
   'view.unnamed': 'Sin nombre',
   'view.noAddress': 'Sin Wallet of Satoshi address',
@@ -1544,6 +1599,18 @@ const es = {
   'notifications.photoOnly': 'Respuesta con foto',
   'notifications.photoPost': 'Foto',
 
+  'moderate.heading': 'Moderación',
+  'moderate.lead':
+    'Ocultar una nota es una ocultación suave: la nota y sus respuestas directas sin etiqueta salen del salón. No es un borrado definitivo.',
+  'moderate.forbidden': 'Esta página es para personas fundadoras y moderadoras.',
+  'moderate.empty': 'No hay notas ocultas.',
+  'moderate.loading': 'Cargando…',
+  'moderate.error': 'No se pudieron cargar las notas ocultas. Inténtalo de nuevo.',
+  'moderate.retry': 'Intentar de nuevo',
+  'moderate.listLabel': 'Notas ocultas',
+  'moderate.hiddenBy': 'Ocultada por {name}',
+  'moderate.unnamed': 'Sin nombre',
+
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
     'Quién conoció a quién en persona, y quién nombró a las personas moderadoras. Haz clic en una persona para cargar a todas las vinculadas a ella. Arrastra a una persona para moverla.',
@@ -1586,6 +1653,7 @@ const fil = {
   'nav.inbox': 'Mga mensahe',
   'nav.notifications': 'Mga abiso',
   'nav.notificationsUnread': 'Mga abiso, {count} hindi pa nababasa',
+  'nav.moderate': 'Moderasyon',
   'nav.contact': 'Contact',
   'pwa.install': 'I-install ang app',
   'pwa.iosTitle': 'Idagdag ang 21.gifts sa Home Screen',
@@ -1894,6 +1962,15 @@ const fil = {
   'profile.postCount': '{count} mga post',
   'profile.replyCount': '{count} mga sagot',
   'profile.activityLatest': 'Ipinapakita ang pinakabago {shown} sa {total}.',
+  'profile.about.heading': 'Tungkol sa akin',
+  'profile.about.empty': 'Sabihin sa iba kung sino ka.',
+  'profile.about.write': 'Isulat ang iyong Tungkol sa akin',
+  'profile.about.edit': 'I-edit ang Tungkol sa akin',
+  'profile.about.save': 'I-save ang Tungkol sa akin',
+  'profile.about.cancel': 'Kanselahin',
+  'profile.about.error': 'Hindi ma-save. Subukan ulit.',
+  'profile.copyLink': 'Kopyahin ang link sa profile na ito',
+  'profile.message': 'Mensahe',
 
   'view.unnamed': 'Walang pangalan',
   'view.noAddress': 'Walang Wallet of Satoshi address',
@@ -2065,6 +2142,18 @@ const fil = {
   'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Sagot na litrato',
   'notifications.photoPost': 'Litrato',
+
+  'moderate.heading': 'Moderasyon',
+  'moderate.lead':
+    'Ang pagtatago ng nota ay malambot: ang nota at ang mga direktang sagot nito na walang tag ay umaalis sa living room. Hindi ito tuluyang pagbura.',
+  'moderate.forbidden': 'Ang pahinang ito ay para sa mga founder at moderator.',
+  'moderate.empty': 'Walang nakatagong mga nota.',
+  'moderate.loading': 'Naglo-load…',
+  'moderate.error': 'Hindi ma-load ang mga nakatagong nota. Subukan ulit.',
+  'moderate.retry': 'Subukan ulit',
+  'moderate.listLabel': 'Mga nakatagong nota',
+  'moderate.hiddenBy': 'Itinago ni {name}',
+  'moderate.unnamed': 'Walang pangalan',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':

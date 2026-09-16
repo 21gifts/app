@@ -8,6 +8,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/me/push-subscriptions')).status()).toBe(401);
   expect((await request.delete('/me/push-subscriptions')).status()).toBe(401);
   expect((await request.get('/forum/messages')).status()).toBe(401);
+  expect((await request.get('/forum/messages/hidden')).status()).toBe(401);
   expect((await request.post('/forum/messages')).status()).toBe(401);
   expect((await request.get('/forum/messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/public-messages/[id]')).status()).toBeGreaterThanOrEqual(400);
@@ -29,6 +30,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/messages/m1/video.mp4')).status()).toBe(404);
   expect((await request.post('/me/name')).status()).toBe(401);
   expect((await request.post('/me/location')).status()).toBe(401);
+  expect((await request.put('/me/about')).status()).toBe(401);
   expect((await request.post('/me/rules-agreement')).status()).toBe(401);
   expect((await request.post('/me/lightning-address')).status()).toBe(401);
   expect((await request.delete('/me/lightning-address')).status()).toBe(401);

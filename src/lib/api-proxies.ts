@@ -81,6 +81,16 @@ export async function proxyMeLocationPost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies PUT /me/about to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ text }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeAboutPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/about');
+}
+
+/**
  * Proxies POST /me/setup/skip to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ step }`).
@@ -268,6 +278,16 @@ export async function proxyGiftsGet(request: Request): Promise<Response> {
  */
 export async function proxyMessagesGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/messages');
+}
+
+/**
+ * Proxies GET /messages/hidden to the 21.gifts api (app path `/forum/messages/hidden`).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMessagesHiddenGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/messages/hidden');
 }
 
 /**

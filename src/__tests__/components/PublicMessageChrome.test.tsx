@@ -79,6 +79,7 @@ describe('PublicMessageChrome', () => {
         viewKey: 'a'.repeat(64),
         setup: null,
         missing: [],
+        aboutMe: null,
       },
     });
     renderWithLocale(
@@ -111,6 +112,7 @@ describe('PublicMessageChrome', () => {
         viewKey: 'a'.repeat(64),
         setup: null,
         missing: [],
+        aboutMe: null,
       },
     });
     renderWithLocale(

@@ -10,6 +10,7 @@ import {
   notificationSchema,
   forumListSchema,
   forumMessageSchema,
+  hiddenListSchema,
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
@@ -30,6 +31,7 @@ import {
   type Notification,
   type NotificationList,
   type ForumMessage,
+  type HiddenMessage,
   type GiftDay,
   type GiftStats,
   type AccountActivity,
@@ -176,6 +178,45 @@ export async function setLocation(sessionToken: string, location: string): Promi
   }
   if (!response.ok) {
     throw new Error('Could not save your location');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets or replaces the account About me note.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param text - The About me text as typed.
+ * @returns The updated {@link Account}.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error `'Could not save. Please try again.'` on any other non-2xx
+ * status or a 409 body that is not `missing_requirements`.
+ * @throws when the 2xx body fails {@link accountSchema} validation.
+ */
+export async function putAboutMe(sessionToken: string, text: string): Promise<Account> {
+  const response = await fetch('/me/about', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not save. Please try again.');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not save. Please try again.');
+  }
+  if (!response.ok) {
+    throw new Error('Could not save. Please try again.');
   }
   return accountSchema.parse(await response.json());
 }
@@ -755,6 +796,39 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
       throw err;
     }
     throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+const HIDDEN_NOTES_ERROR = 'Could not load hidden notes. Please try again.';
+
+/**
+ * Fetches hidden forum notes for founders and moderators.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The hidden-note list.
+ * @throws Error on HTTP 401 or 403.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link hiddenListSchema}.
+ */
+export async function listHiddenMessages(sessionToken: string): Promise<HiddenMessage[]> {
+  let response: Response;
+  try {
+    response = await fetch('/forum/messages/hidden', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+  } catch {
+    throw new Error(HIDDEN_NOTES_ERROR);
+  }
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`Failed to list hidden notes: ${response.status}`);
+  }
+  if (!response.ok) {
+    throw new Error(HIDDEN_NOTES_ERROR);
+  }
+  try {
+    return hiddenListSchema.parse(await response.json()).messages;
+  } catch {
+    throw new Error(HIDDEN_NOTES_ERROR);
   }
 }
 
