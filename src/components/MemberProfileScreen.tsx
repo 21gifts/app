@@ -59,7 +59,7 @@ function isReplyPaymentExempt(
   if (account === null) {
     return false;
   }
-  if (account.role === 'founder' || account.role === 'moderator') {
+  if (account.role === 'founder' || account.role === 'moderator' || account.role === 'verified') {
     return true;
   }
   return parentAccountId !== undefined && parentAccountId === account.id;
