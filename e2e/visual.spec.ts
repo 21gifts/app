@@ -5317,7 +5317,7 @@ test.describe('trust-chain screens', () => {
     await seedAda(page);
     await page.route('**/trust/graph', () => new Promise(() => undefined));
     await page.goto('/trust-chain');
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.getByRole('paragraph').filter({ hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-trust-chain-loading');
   });
 
