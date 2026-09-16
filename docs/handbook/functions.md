@@ -324,7 +324,7 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`.
 
 ## Function: SignedInChrome
 
@@ -345,7 +345,7 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
 - **Inputs:** Catalog `profile.back` via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfileScreen
 
