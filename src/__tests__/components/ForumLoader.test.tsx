@@ -4217,7 +4217,9 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'A reply draft' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'A reply draft' },
+    });
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe(
       'A reply draft',
     );

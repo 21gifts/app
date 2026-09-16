@@ -3801,7 +3801,9 @@ test.describe('welcome forum variants', () => {
       await page.goto('/welcome');
       await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
       await page.getByRole('button', { name: 'Show reactions', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Delete reaction', exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Delete reaction', exact: true }),
+      ).toBeVisible();
       if (state !== 'reply-moderation') {
         await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
         await expect(

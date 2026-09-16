@@ -1496,7 +1496,9 @@ describe('MemberProfileScreen', () => {
     expect(secondRow).toBeTruthy();
     if (secondRow !== null && secondRow.querySelector('[aria-label="Hide reactions"]') !== null) {
       await waitFor(() => {
-        const composer = secondRow.querySelector<HTMLTextAreaElement>('[aria-label="Your reaction"]');
+        const composer = secondRow.querySelector<HTMLTextAreaElement>(
+          '[aria-label="Your reaction"]',
+        );
         expect(composer).toBeTruthy();
         expect(composer?.disabled).toBe(false);
       });
@@ -1544,7 +1546,9 @@ describe('MemberProfileScreen', () => {
       expandCard('Hello from my profile note.');
       await waitFor(() => {
         expect(screen.getByLabelText('Your reaction')).toBeTruthy();
-        expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
+        expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(
+          false,
+        );
       });
     }
     await act(async () => {
