@@ -561,10 +561,7 @@ const TRUST_ACTION_ERROR = 'Could not update this member. Please try again.';
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link trustChainSchema} (including 401/403).
  */
-export async function fetchTrustChain(
-  sessionToken: string,
-  around?: string,
-): Promise<TrustChain> {
+export async function fetchTrustChain(sessionToken: string, around?: string): Promise<TrustChain> {
   try {
     const path =
       around === undefined || around === ''
