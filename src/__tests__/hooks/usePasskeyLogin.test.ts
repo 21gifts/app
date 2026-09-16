@@ -917,4 +917,51 @@ describe('usePasskeyLogin', () => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
+
+  it('login times out get as TimeoutError and does not register', async () => {
+    vi.useFakeTimers();
+    const create = vi.fn();
+    const get = vi.fn().mockReturnValue(new Promise(() => undefined));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      vi.advanceTimersByTime(65_000);
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toMatch(/The operation timed out/);
+    expect(create).not.toHaveBeenCalled();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('reloads on iOS retry instead of starting a second ceremony', async () => {
+    const reload = vi.fn();
+    vi.stubGlobal('location', { reload });
+    const originalUserAgent = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(startPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: originalUserAgent,
+    });
+    vi.unstubAllGlobals();
+  });
 });

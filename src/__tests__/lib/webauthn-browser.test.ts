@@ -198,6 +198,7 @@ describe('requestOptionsFromJSON', () => {
       userVerification: 'required',
       timeout: 30_000,
     });
+    expect(options.challenge).toBeInstanceOf(ArrayBuffer);
     expect(new Uint8Array(options.challenge as ArrayBuffer)).toEqual(new Uint8Array([4, 5]));
     expect(options.rpId).toBe('localhost');
     expect(options.userVerification).toBe('required');
@@ -308,7 +309,13 @@ describe('requestOptionsFromJSON', () => {
   });
 
   it('uses native parseRequestOptionsFromJSON when present', () => {
-    const parsed = { challenge: new Uint8Array([1]).buffer } as PublicKeyCredentialRequestOptions;
+    const parsed = {
+      challenge: new Uint8Array([1]).buffer,
+      allowCredentials: [{ type: 'public-key' as const, id: new Uint8Array([7, 8]) }],
+      rpId: 'localhost',
+      timeout: 60_000,
+      userVerification: 'required' as const,
+    };
     const parse = vi.fn().mockReturnValue(parsed);
     vi.stubGlobal('PublicKeyCredential', { parseRequestOptionsFromJSON: parse });
     const json = {
@@ -318,7 +325,15 @@ describe('requestOptionsFromJSON', () => {
         { type: 'password', id: 'AQ' },
       ],
     };
-    expect(requestOptionsFromJSON(json)).toBe(parsed);
+    const options = requestOptionsFromJSON(json);
+    expect(options).not.toBe(parsed);
+    expect(options.challenge).toBe(parsed.challenge);
+    expect(options.allowCredentials).toBe(parsed.allowCredentials);
+    expect(options.rpId).toBe('localhost');
+    expect(options.timeout).toBe(60_000);
+    expect(options.userVerification).toBe('required');
+    expect(options).not.toHaveProperty('hints');
+    expect(parsed).not.toHaveProperty('hints');
     expect(parse).toHaveBeenCalledWith(json);
     vi.unstubAllGlobals();
   });
@@ -335,9 +350,12 @@ describe('requestOptionsFromJSON', () => {
       allowCredentials: [] as unknown[],
     };
     const options = requestOptionsFromJSON(json);
+    expect(options).not.toBe(parsed);
     expect(parse.mock.calls[0]?.[0]).not.toHaveProperty('allowCredentials');
     expect(options).not.toHaveProperty('allowCredentials');
     expect((options as { hints?: string[] }).hints).toEqual(['client-device']);
+    expect(parsed).not.toHaveProperty('hints');
+    expect(parsed.allowCredentials).toEqual([]);
     vi.unstubAllGlobals();
   });
 });

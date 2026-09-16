@@ -1922,9 +1922,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: requestOptionsFromJSON
 
-- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`.
+- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`. Always returns a newly allocated plain object so `get` never receives the native parse instance; `hints` stay on that copy. Manual `challenge` is an ArrayBuffer.
 - **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
-- **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
+- **Returns / side effects:** A new plain `PublicKeyCredentialRequestOptions` (never `===` the native parse result; the native object is not assigned `hints`). Uses native parse when present, then copies challenge, optional rpId, timeout, userVerification, and non-empty allowCredentials. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
 - **Used by:** `usePasskeyLogin.authenticate`.
 
 ## Function: startPasskeyAuthentication
@@ -1943,9 +1943,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. After login `NotAllowedError`, registration waits 400ms on that host so the system sheet can close. `cancel` aborts an in-flight WebAuthn prompt. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. Login’s register fallback never sends a view key.
+- **Purpose:** Client hook for passkey login. `login` uses an existing passkey; it creates one only when the browser reports no credential (`NotAllowedError`). When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. After login `NotAllowedError`, registration waits 400ms on that host so the system sheet can close. `get` and `create` race a 65s timer and reject `DOMException` named `TimeoutError` (not `NotAllowedError`, so login does not create). On that host, `retry` calls `location.reload()` and returns instead of starting a second ceremony. `cancel` aborts an in-flight WebAuthn prompt. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. Login’s register fallback never sends a view key.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
-- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. Calls WebAuthn and the api. Unmount still aborts the controller.
+- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button (desktop); on iOS/iPadOS WebKit it reloads. Calls WebAuthn and the api. Unmount still aborts the controller.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
 ## Function: postMessageInvoice

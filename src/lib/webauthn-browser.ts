@@ -101,17 +101,33 @@ type RequestOptionsWithHints = PublicKeyCredentialRequestOptions & {
 };
 
 /**
- * Omit empty `allowCredentials` and set platform hints when discoverable.
+ * Copy request options onto a newly allocated plain object.
+ *
+ * Never mutates `requested` (native parse instances stay untouched). Empty
+ * or missing `allowCredentials` is omitted and `hints` is set to
+ * `['client-device']`.
  *
  * @param requested - Options from native parse or the manual fallback.
- * @returns The same object, with empty allowCredentials removed and hints set when discoverable.
+ * @returns A new object for `navigator.credentials.get`, never `requested` itself.
  */
 function finalizeDiscoverableRequestOptions(
   requested: PublicKeyCredentialRequestOptions,
 ): RequestOptionsWithHints {
-  const result = requested as RequestOptionsWithHints;
-  if (!Array.isArray(result.allowCredentials) || result.allowCredentials.length === 0) {
-    delete result.allowCredentials;
+  const result: RequestOptionsWithHints = {
+    challenge: requested.challenge,
+  };
+  if (typeof requested.rpId === 'string') {
+    result.rpId = requested.rpId;
+  }
+  if (typeof requested.timeout === 'number') {
+    result.timeout = requested.timeout;
+  }
+  if (typeof requested.userVerification === 'string') {
+    result.userVerification = requested.userVerification;
+  }
+  if (Array.isArray(requested.allowCredentials) && requested.allowCredentials.length > 0) {
+    result.allowCredentials = requested.allowCredentials;
+  } else {
     result.hints = ['client-device'];
   }
   return result;
@@ -121,10 +137,12 @@ function finalizeDiscoverableRequestOptions(
  * Build `PublicKeyCredentialRequestOptions` from api JSON.
  *
  * Omits empty `allowCredentials` (discoverable credentials) and sets
- * `hints: ['client-device']` when discoverable.
+ * `hints: ['client-device']` when discoverable. Always returns a newly
+ * allocated plain object so `credentials.get` never receives a native
+ * parse instance. Manual `challenge` is an ArrayBuffer.
  *
  * @param options - `PublicKeyCredentialRequestOptionsJSON` from the api.
- * @returns Options for `navigator.credentials.get`.
+ * @returns A new plain object for `navigator.credentials.get`.
  * @throws TypeError when `allowCredentials` is present but not an array, or a non-empty list has no valid `public-key` entries.
  */
 export function requestOptionsFromJSON(
@@ -156,7 +174,8 @@ export function requestOptionsFromJSON(
   const userVerification = json['userVerification'];
   const allowCredentials = credentialDescriptorsFromJSON(json['allowCredentials']);
   const requested: RequestOptionsWithHints = {
-    challenge: Uint8Array.from(base64UrlToBytes(typeof challenge === 'string' ? challenge : '')),
+    challenge: Uint8Array.from(base64UrlToBytes(typeof challenge === 'string' ? challenge : ''))
+      .buffer as ArrayBuffer,
   };
   if (allowCredentials !== undefined && allowCredentials.length > 0) {
     requested.allowCredentials = allowCredentials;

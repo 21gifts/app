@@ -31,7 +31,10 @@ export interface UsePasskeyLogin {
   register: (viewKey?: string) => void;
   /** Sign in with an existing passkey. */
   authenticate: () => void;
-  /** Repeats the originating flow after an error. The single-button path restarts login. */
+  /**
+   * Repeats the originating flow after an error. The single-button path
+   * restarts login. On iOS/iPadOS WebKit, reloads instead of a second ceremony.
+   */
   retry: () => void;
   /** Aborts an in-flight WebAuthn prompt. */
   cancel: () => void;
@@ -83,6 +86,32 @@ function waitForIosSheetToClose(): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, 400);
   });
+}
+
+const WEBAUTHN_CEREMONY_TIMEOUT_MS = 65_000;
+
+/**
+ * Race a WebAuthn get/create against 65s. Timeout is `TimeoutError` so
+ * login does not treat it as a missing passkey (`NotAllowedError`).
+ *
+ * @param ceremony - Pending `credentials.get` or `credentials.create`.
+ * @returns The ceremony result.
+ * @throws DOMException named `TimeoutError` when the timer wins.
+ */
+async function raceWebAuthnCeremony<T>(ceremony: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      ceremony,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new DOMException('The operation timed out.', 'TimeoutError'));
+        }, WEBAUTHN_CEREMONY_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -157,7 +186,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       if (!isIosWebAuthnHost()) {
         request.signal = controller.signal;
       }
-      const credential = await navigator.credentials.create(request);
+      const credential = await raceWebAuthnCeremony(navigator.credentials.create(request));
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
         throw new Error('Passkey creation returned no credential');
@@ -185,7 +214,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       if (!isIosWebAuthnHost()) {
         request.signal = controller.signal;
       }
-      const credential = await navigator.credentials.get(request);
+      const credential = await raceWebAuthnCeremony(navigator.credentials.get(request));
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
         throw new Error('Passkey assertion returned no credential');
@@ -284,6 +313,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeAuthentication, completeRegistration, finishWithError, guard]);
 
   const retry = useCallback((): void => {
+    if (isIosWebAuthnHost()) {
+      globalThis.location.reload();
+      return;
+    }
     if (entryKindRef.current === 'login') {
       login();
       return;
