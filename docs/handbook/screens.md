@@ -845,7 +845,7 @@ Heading **Profile**, then inside the single `max-w-sm` identity card: FiatPicker
 
 ### Variant: fiat
 
-Viewport after scrolling the identity-card **Fiat currency** row into view (CHF | EUR | USD | PHP). The default profile golden crops at Theme.
+Viewport after scrolling the identity-card **Fiat currency** row into view (CHF | EUR | USD | PHP). Default capture is full-page on document scroll; this variant is viewport-only after `scrollIntoViewIfNeeded`.
 
 ![21.gifts profile fiat](images/profile-fiat.png)
 
