@@ -264,6 +264,32 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('keeps the board when the account snapshot is cleared', async () => {
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    useAuthStore.setState({ session: 'sess', account: null });
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Carol')).toBeTruthy();
+    });
+  });
+
+  it('marks replies as failed when the post-pay refetch throws', async () => {
+    vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('offline'));
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+    });
+  });
+
   it('polls the parent after paying from the gift button', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
