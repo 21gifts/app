@@ -1052,7 +1052,7 @@
 
 ## Function: layoutTrustChain
 
-- **Purpose:** Positions Trust Chain nodes without a graph library. Roots sit in one row. A person with a single next person sits to their right. Several people hanging off one person stack top to bottom (`TRUST_NODE_VGAP`), not side by side and not as a pyramid of levels.
+- **Purpose:** Positions Trust Chain nodes without a graph library. Roots sit in one row. A person with a single next person sits to their right. Several people hanging off one person stack top to bottom (`TRUST_NODE_VGAP`) by role (founder, then moderator, then verified; same-role siblings keep edge order), not side by side and not as a pyramid of levels.
 - **Inputs:** `TrustChain` `{ nodes, edges }`.
 - **Returns / side effects:** `{ nodes, edges, width, height }` with pixel positions. Empty input is zero size.
 - **Used by:** `TrustChainDiagram`.

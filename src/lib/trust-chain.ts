@@ -21,6 +21,13 @@ export const TRUST_CHAIN_ARC_LIFT = 56;
 /** Outer padding around the graph in CSS pixels. */
 const PAD = 16;
 
+/** Stacked-sibling order: founder, then moderator, then verified. */
+const TRUST_STACK_ROLE_RANK: Record<TrustChainNode['role'], number> = {
+  founder: 0,
+  moderator: 1,
+  verified: 2,
+};
+
 /**
  * A Trust Chain node with chain-layout coordinates.
  */
@@ -71,8 +78,9 @@ function edgeKey(edge: TrustChainEdge): string {
  * Positions Trust Chain nodes (no DOM).
  *
  * Roots sit in one row. A person with a single next person sits to their
- * right. Several people hanging off one person (typical: everyone Severin
- * verified) stack top to bottom, not side by side.
+ * right. Several people hanging off one person stack top to bottom by role
+ * (founder, then moderator, then verified); same-role siblings keep edge
+ * order, not side by side.
  *
  * @param chain - Nodes and directed edges from `GET /trust-chain`.
  * @returns Laid-out nodes, the input edges unchanged, and bounding width/height.
@@ -143,6 +151,16 @@ export function layoutTrustChain(chain: TrustChain): {
     const kids = (children.get(id) ?? []).filter(
       (child) => !positioned.has(child) && !reserved.has(child),
     );
+    const encounter = [...kids];
+    kids.sort((left, right) => {
+      const leftRank = TRUST_STACK_ROLE_RANK[(byId.get(left) as TrustChainNode).role];
+      const rightRank = TRUST_STACK_ROLE_RANK[(byId.get(right) as TrustChainNode).role];
+      const byRole = leftRank - rightRank;
+      if (byRole !== 0) {
+        return byRole;
+      }
+      return encounter.indexOf(left) - encounter.indexOf(right);
+    });
     if (kids.length === 0) {
       return;
     }
