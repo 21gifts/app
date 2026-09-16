@@ -365,13 +365,14 @@ export const forumListSchema = z.object({
 /**
  * Runtime schema for one hidden forum note from `GET /messages/hidden`.
  *
- * `text` may be empty. `parentId` is null on a top-level note. `hasVideo` /
- * `videoContentType` default when an older api omits them. `deletedBy.name`
- * and `deletedBy.role` may be null.
+ * `text` and author `name` may be empty. `parentId` is null on a top-level
+ * note. `hasVideo` / `videoContentType` default when an older api omits them.
+ * `deletedBy.id`, `deletedBy.name`, and `deletedBy.role` may be null when the
+ * deleter row is missing.
  */
 export const hiddenMessageSchema = z.object({
   id: z.string().min(1),
-  name: z.string().min(1),
+  name: z.string(),
   text: z.string(),
   createdAt: z.string().datetime({ offset: true }),
   sats: z.number().int().nonnegative(),
@@ -385,7 +386,7 @@ export const hiddenMessageSchema = z.object({
   parentId: z.string().min(1).nullable(),
   deletedAt: z.string().datetime({ offset: true }),
   deletedBy: z.object({
-    id: z.string().min(1),
+    id: z.string().min(1).nullable(),
     name: z.string().min(1).nullable(),
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).nullable(),
   }),

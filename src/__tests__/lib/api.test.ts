@@ -1233,6 +1233,16 @@ describe('listHiddenMessages', () => {
       'Could not load hidden notes. Please try again.',
     );
   });
+
+  it('accepts an empty author name and a null deleter id', async () => {
+    const row = {
+      ...hidden,
+      name: '',
+      deletedBy: { id: null, name: null, role: null },
+    };
+    stubFetch({ ok: true, status: 200, body: { messages: [row] } });
+    await expect(listHiddenMessages('sess')).resolves.toEqual([row]);
+  });
 });
 
 describe('postMessageInvoice', () => {

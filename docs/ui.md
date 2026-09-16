@@ -355,6 +355,7 @@ flowchart TB
     P["/profile"]
     MEM["/members/accountId"]
     N["/notifications"]
+    MO["/moderate"]
     C["/contact"]
     RU["/rules"]
     IN["/messages"]
@@ -378,7 +379,7 @@ flowchart TB
 | Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                           |
 | App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address |
 | App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                      |
-| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications                   |
+| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation       |
 | Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                       |
 | App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                 |
 | Marketing pad      | `px-5`                                      | Header, sections, footer                                       |
@@ -401,10 +402,10 @@ flowchart TB
 
 Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `align="center"` centers short cards inside the inner scroller (never `justify-center` on `<main>`). Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`) | Signed-in app                                                                                                                                                                                                                                                                                                                                                                 |
-| ---------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topLeft`  | `Wordmark` → `/`                                                                          | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
-| `topRight` | `LanguageSwitcher tone="light"`                                                           | `SignedInChrome` (Menu; no ThemeSwitcher)                                                                                                                                                                                                                                                                                                                                     |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`) | Signed-in app                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `topLeft`  | `Wordmark` → `/`                                                                          | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/moderate`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
+| `topRight` | `LanguageSwitcher tone="light"`                                                           | `SignedInChrome` (Menu; no ThemeSwitcher)                                                                                                                                                                                                                                                                                                                                                  |
 
 **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` + `Wordmark href="/welcome"`.
 
@@ -416,6 +417,7 @@ Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `al
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
+| Moderation           | `Shield`                      | `/moderate` — founder or moderator only                                             |
 | Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero               |
 | Messages             | `Inbox`                       | `/messages`                                                                         |
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
@@ -965,6 +967,12 @@ Handbook states: default (About me when set), `note-null`, missing (`view.missin
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `NotificationsLoader` → `NotificationsScreen`: **h1** **Notifications** (`h1` ramp), list of posts, replies, and payments (`{name} posted` / `{name} replied` / `{name} sent bitcoin`, post text or `notifications.photoPost` (**Photo**), reply text or `notifications.photoOnly` (**Photo reply**), zap amount as stored, time). Unread semibold / read muted. Empty `notifications.empty`. Loading. Error + labeled **Try again**. Click row → `/messages/{parentId}`. No composer.
 
 Handbook states: default list, empty, loading, error.
+
+### `/moderate`
+
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (founder or moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times). Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. No un-hide control. No hidden photo/video fetch.
+
+Handbook states: default list, forbidden, empty, loading, error.
 
 ### `/contact`
 

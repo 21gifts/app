@@ -182,6 +182,15 @@ describe('ModerateScreen', () => {
     expect(screen.queryByText('Hidden note')).toBeNull();
   });
 
+  it('falls back to Unnamed when the author name is empty', async () => {
+    listMock.mockResolvedValue([
+      { ...UNNAMED, name: '', deletedBy: { id: null, name: 'Ada', role: 'moderator' } },
+    ]);
+    renderWithLocale(<ModerateScreen />);
+    expect(await screen.findByText('Unnamed')).toBeTruthy();
+    expect(screen.getByText('Hidden by Ada')).toBeTruthy();
+  });
+
   it('fetches for a founder account', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     listMock.mockResolvedValue([HIDDEN]);

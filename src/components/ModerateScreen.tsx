@@ -113,7 +113,9 @@ export function ModerateScreen(): ReactElement | null {
           <li key={row.id}>
             <div className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
               <span className="flex w-full items-baseline justify-between gap-2">
-                <span className="text-sm font-medium text-app-fg">{row.name}</span>
+                <span className="text-sm font-medium text-app-fg">
+                  {row.name !== '' ? row.name : t('moderate.unnamed')}
+                </span>
                 <time dateTime={row.createdAt} className="text-xs text-app-subtle">
                   {formatForumTime(row.createdAt, locale)}
                 </time>
