@@ -507,13 +507,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'menu-language-open',
-    image: 'welcome-menu-language.png',
-    visual: 'state-welcome-menu-language',
-    needle: "getByRole('option', { name: 'Deutsch' })",
-  },
-  {
-    route: '/welcome',
     id: 'pay-amount',
     image: 'welcome-pay-amount.png',
     visual: 'state-welcome-pay-amount',

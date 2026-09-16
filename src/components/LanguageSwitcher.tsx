@@ -81,21 +81,17 @@ function persistLocale(next: Locale, current: Locale, refresh: () => void): void
  * Custom listbox that persists the visitor's language choice in a cookie and
  * refreshes the App Router tree so server components re-negotiate locale.
  *
- * Standalone (`embedded` false): Globe pill trigger + absolute popover listbox.
- * Embedded: Menu-row disclosure; locale options appear only after clicking Language.
+ * Public / unsigned chrome only: Globe pill trigger + absolute popover listbox.
+ * Signed-in language lives on Profile (`LanguagePreferenceSwitcher`).
  *
- * Marketing passes `tone="dark"` (hardcoded). App pages pass `tone="light"` so
- * chrome follows semantic theme tokens.
+ * Marketing passes `tone="dark"` (hardcoded). Unsigned app pages pass
+ * `tone="light"` so chrome follows semantic theme tokens.
  *
- * @param props - Visual tone for marketing (`dark`) or app chrome (`light`),
- *   and optional `embedded` when shown inside the signed-in Menu dropdown.
+ * @param props - Visual tone for marketing (`dark`) or unsigned app chrome (`light`).
  * @returns The language switcher element.
  */
-export function LanguageSwitcher(props: {
-  tone: 'dark' | 'light';
-  embedded?: boolean;
-}): ReactElement {
-  const { tone, embedded = false } = props;
+export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElement {
+  const { tone } = props;
   const { locale, t } = useTranslations();
   const router = useRouter();
   const label = t('language.label');
@@ -204,9 +200,6 @@ export function LanguageSwitcher(props: {
   const checkClass =
     tone === 'dark' ? 'h-4 w-4 shrink-0 text-accent' : 'h-4 w-4 shrink-0 text-app-fg';
 
-  const embeddedOptionRowClass =
-    'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
-
   const listboxOptions = (rowClass: string, check: string): ReactElement => (
     <>
       {LOCALES.map((code) => {
@@ -239,42 +232,6 @@ export function LanguageSwitcher(props: {
       })}
     </>
   );
-
-  if (embedded) {
-    return (
-      <div ref={rootRef} className="flex w-full flex-col">
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-controls="language-listbox"
-          aria-label={label}
-          {...(open
-            ? { role: 'combobox' as const, 'aria-activedescendant': optionId(highlight) }
-            : {})}
-          className="inline-flex min-h-11 w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted hover:bg-app-hover hover:text-app-fg"
-          onClick={onTriggerClick}
-          onKeyDown={onTriggerKeyDown}
-        >
-          <Globe aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {label}
-          <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-        </button>
-        {open ? (
-          <div
-            role="listbox"
-            id="language-listbox"
-            aria-label={label}
-            aria-activedescendant={optionId(highlight)}
-            className="flex flex-col"
-          >
-            {listboxOptions(embeddedOptionRowClass, 'h-4 w-4 shrink-0 text-app-fg')}
-          </div>
-        ) : null}
-      </div>
-    );
-  }
 
   const triggerClass =
     tone === 'dark'

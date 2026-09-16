@@ -132,6 +132,7 @@ app/
 │   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
+│   │   ├── LanguagePreferenceSwitcher.tsx # Profile locale SegmentedControl (endonyms)
 │   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
 │   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (Profile, chart, stats, day)
 │   │   ├── FiatPreferenceSwitcher.tsx # Profile cookie fiat override (CHF|EUR|USD|PHP)
@@ -141,7 +142,7 @@ app/
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + theme + fiat + number format)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Public /trust-chain body
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card

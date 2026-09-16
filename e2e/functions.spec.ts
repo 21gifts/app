@@ -3547,6 +3547,23 @@ test('Function: NumberFormatSwitcher — /profile lists the three samples', asyn
   await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
 });
 
+test('Function: LanguagePreferenceSwitcher — /profile lists English Deutsch Español Filipino', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/profile');
+  const group = page.getByRole('group', { name: 'Language' });
+  await expect(group.getByRole('button', { name: 'English' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Deutsch' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Español' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Filipino' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'English' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
@@ -4609,10 +4626,7 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
 });
 
-test('Function: SignedInChrome — Menu reveals Profile, language, and log out', async ({
-  page,
-  request,
-}) => {
+test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
@@ -4630,12 +4644,10 @@ test('Function: SignedInChrome — Menu reveals Profile, language, and log out',
   );
   await expect(page.getByRole('link', { name: 'Messages' })).toHaveAttribute('href', '/messages');
   await expect(page.getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');
-  await expect(page.getByLabel('Language')).toBeVisible();
+  await expect(page.getByLabel('Language')).toHaveCount(0);
   await expect(page.getByRole('option', { name: 'Deutsch' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   await expect(page.getByText('Version dev')).toBeVisible();
-  await page.getByLabel('Language').click();
-  await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
 });
 
 test('Function: ProfilePage — profile heading is visible', async ({ page }) => {
