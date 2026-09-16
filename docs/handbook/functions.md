@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, and `/trust/graph`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. The marketing page `/trust-chain` is `TrustChainPage`, not this GET.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, and `/trust/graph`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -331,14 +331,14 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/trust-chain`.
 
 ## Function: SignedInChrome
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
 - **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
 
@@ -352,8 +352,7 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
 - **Inputs:** Catalog `profile.back` via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `RulesPageChrome`, `PublicMessageChrome`.
-
+- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 ## Function: ProfileScreen
 
 - **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
@@ -1024,9 +1023,9 @@
 
 ## Function: fetchTrustChain
 
-- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) and parse the public Trust Chain graph. Optional `around` loads one hop (`?around=`).
-- **Inputs:** optional `around` account id.
-- **Returns / side effects:** `TrustChain`. Throws visitor copy when the api is down or the body is invalid.
+- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) with Bearer and parse the Trust Chain graph. Optional `around` loads one hop (`?around=`).
+- **Inputs:** Bearer `sessionToken`, optional `around` account id.
+- **Returns / side effects:** `TrustChain`. Throws visitor copy when the api is down, the body is invalid, or the response is 401/403.
 - **Used by:** `TrustChainLoader`.
 
 ## Function: postTrustVerify
@@ -1080,24 +1079,24 @@
 
 ## Function: TrustChainScreen
 
-- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy. A hop-load error with nodes already on screen keeps the diagram and shows the catalog error plus **Try again** above it.
+- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy. A hop-load error with nodes already on screen keeps the diagram and shows the catalog error plus **Try again** above it. App theme tokens (`app-fg` / `app-muted`), not marketing display type.
 - **Inputs:** `chain`, `error`, `loading`, optional `expandingId`, `onExpand`, `onRetry`.
-- **Returns / side effects:** Marketing screen element.
+- **Returns / side effects:** Signed-in screen element.
 - **Used by:** `TrustChainLoader`.
 
 ## Function: TrustChainLoader
 
-- **Purpose:** Client loader for `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain. Retry with nodes already on screen re-fetches that `?around=` hop (does not re-fetch seeds); the banner stays gone only if the hop succeeds.
-- **Inputs:** none (fetches on mount).
-- **Returns / side effects:** Loading, error+retry, empty, diagram, or diagram-plus-hop-error states.
+- **Purpose:** Client loader for signed-in `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain. Retry with nodes already on screen re-fetches that `?around=` hop (does not re-fetch seeds); the banner stays gone only if the hop succeeds. Does not fetch when the session is null.
+- **Inputs:** Session from the auth store.
+- **Returns / side effects:** Loading, error+retry, empty, diagram, or diagram-plus-hop-error states, or `null` without a session.
 - **Used by:** `TrustChainPage`.
 
 ## Function: TrustChainPage
 
-- **Purpose:** Marketing page at `/trust-chain`.
+- **Purpose:** Signed-in page at `/trust-chain`. Any logged-in completed account may view (not staff-only).
 - **Inputs:** none.
-- **Returns / side effects:** `TrustChainLoader` inside the dark marketing shell.
-- **Used by:** App Router `src/app/(marketing)/trust-chain/page.tsx`.
+- **Returns / side effects:** Fill `AppShell` (`align="start"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `TrustChainLoader`. Graph HTTP is under `/trust/graph` (no `route.ts` beside this page).
+- **Used by:** App Router `src/app/trust-chain/page.tsx`.
 
 ## Function: MemberTrustActions
 
@@ -1635,14 +1634,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with `HomeWordmark` (`tone="dark"`; `/` unsigned, `/welcome` when a session is hydrated), section nav (How / Why / FAQ / About / Stats / Trust Chain / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
+- **Purpose:** Sticky marketing header with `HomeWordmark` (`tone="dark"`; `/` unsigned, `/welcome` when a session is hydrated), section nav (How / Why / FAQ / About / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
 - **Inputs:** None. Internal open state. Reads copy via `useTranslations`.
 - **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound` (no extra props).
 
 ## Function: MarketingLayout
 
-- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, `/stats`, and `/trust-chain`.
+- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, and `/stats`.
 - **Inputs:** `children`. Awaits `MarketingFooter()` (does not render it as a JSX child).
 - **Returns / side effects:** Wrapper div with header, page, and awaited footer.
 - **Used by:** Marketing route group.
@@ -1677,8 +1676,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: proxyTrustChainGet
 
-- **Purpose:** Same-origin proxy helper for api `GET /trust-chain`.
-- **Inputs:** Incoming `Request`.
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /trust-chain`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/trust/graph`.
 

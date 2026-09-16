@@ -6,7 +6,7 @@ import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
 
 /**
- * Marketing footer: wordmark, section links including About and Trust Chain, legal, GitHub, and a quiet verse.
+ * Marketing footer: wordmark, section links including About, legal, GitHub, and a quiet verse.
  *
  * @returns The footer element.
  */
@@ -26,7 +26,6 @@ export async function MarketingFooter(): Promise<ReactElement> {
           <Link href="/#why">{translate(messages, 'nav.why')}</Link>
           <Link href="/#faq">{translate(messages, 'nav.faq')}</Link>
           <Link href="/about">{translate(messages, 'nav.about')}</Link>
-          <Link href="/trust-chain">{translate(messages, 'nav.trustChain')}</Link>
           <Link href="/handbook">{translate(messages, 'nav.handbook')}</Link>
           <Link href="/legal">{translate(messages, 'nav.legal')}</Link>
           <Link href="/rules">{translate(messages, 'nav.rules')}</Link>

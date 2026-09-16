@@ -6,12 +6,12 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 
 - **URL:** `/` — public marketing landing (no auth gate).
 - **What the user sees:** Dark 21.gifts header with a language switcher (wordmark `/` when unsigned, `/welcome` when a session is hydrated), headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Trust Chain, open Legal & Privacy, open the Handbook.
+- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`.
 
 ### Variant: default
 
-Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, About, Stats, Trust Chain, Handbook, Log in). No hamburger.
+Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, About, Stats, Handbook, Log in). No hamburger.
 
 ![21.gifts home](images/root.png)
 
@@ -125,11 +125,11 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 
 ## Screen: /trust-chain
 
-- **URL:** `/trust-chain` — public Trust Chain (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher (wordmark `/` when unsigned, `/welcome` when a session is hydrated), heading **Trust Chain**, a short lead that says to click a person to load everyone linked to them and drag a person to move them, then a chain that starts with the founder. Clicking a person loads one hop of stored links (never the whole thousand-person graph at once). One next person sits to the right; several people hanging off one person (everyone a moderator verified) stack top to bottom. Dragging a person moves that block; already-placed people keep their spot when a hop arrives. Below the diagram, three short explanations: **Verified**, **Moderator**, and **Founder**. Empty copy: **No one is on the Trust Chain yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Change language. Click a person to load who they met or appointed. Drag a person to rearrange. Modifier-click a person to open the member card (`/members/{id}`, then requires login). Header **Trust Chain** stays on this page; **Log in** goes to `/login`.
-- **Calls:** `TrustChainPage`, `TrustChainLoader`, `TrustChainScreen`, `TrustChainDiagram`, `layoutTrustChain`, `mergeTrustChain`, `fetchTrustChain` (same-origin `GET /trust/graph` and `GET /trust/graph?around=`), `LanguageSwitcher`.
-
+- **URL:** `/trust-chain` — signed-in Trust Chain. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). JSON is `/trust/graph` (Next.js forbids `route.ts` beside this page). Any logged-in completed account may view (not staff-only).
+- **What the user sees:** Fill `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, and **Log out**. Heading **Trust Chain**, a short lead that says to click a person to load everyone linked to them and drag a person to move them, then a chain that starts with the founder. Clicking a person loads one hop of stored links (never the whole thousand-person graph at once). One next person sits to the right; several people hanging off one person (everyone a moderator verified) stack top to bottom. Dragging a person moves that block; already-placed people keep their spot when a hop arrives. Below the diagram, three short explanations: **Verified**, **Moderator**, and **Founder**. Empty copy: **No one is on the Trust Chain yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Click a person to load who they met or appointed. Drag a person to rearrange. Modifier-click a person to open the member card (`/members/{id}`). Back to the forum. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, language, or **Log out**.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `TrustChainPage`, `TrustChainLoader`, `TrustChainScreen`, `TrustChainDiagram`, `layoutTrustChain`, `mergeTrustChain`, `fetchTrustChain` (same-origin `GET /trust/graph` and `GET /trust/graph?around=`), `SignedInChrome`, `OnboardingGate`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 ### Variant: default
 
 Founder seed **Cyrill** only. Lead tells the visitor to click a person to load everyone linked to them.
