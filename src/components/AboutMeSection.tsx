@@ -118,6 +118,9 @@ export function AboutMeSection({
 
   useEffect(() => {
     if (hasPhoto !== true) {
+      loadGeneration.current += 1;
+      revokeStoredObjectUrl();
+      setStoredPhotoUrl(null);
       return;
     }
     const load = loadPhotoRef.current;

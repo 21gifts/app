@@ -350,6 +350,24 @@ describe('AboutMeSection', () => {
     expect(screen.queryByAltText('Selected photo')).toBeNull();
   });
 
+  it('clears a stored photo when hasPhoto becomes false', async () => {
+    const loadPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    const { rerender } = renderWithLocale(
+      <AboutMeSection mode="public" aboutMe={null} hasPhoto loadPhoto={loadPhoto} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    rerender(
+      <AboutMeSection mode="public" aboutMe={null} hasPhoto={false} loadPhoto={loadPhoto} />,
+    );
+    await waitFor(() => {
+      expect(screen.queryByAltText('About me photo')).toBeNull();
+    });
+  });
+
   it('shows a public photo-only About me without edit controls', async () => {
     const loadPhoto = vi
       .fn()
