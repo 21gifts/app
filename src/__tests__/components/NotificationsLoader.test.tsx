@@ -292,4 +292,23 @@ describe('NotificationsLoader', () => {
     });
     expect(push).not.toHaveBeenCalled();
   });
+
+  it('does not open /welcome if the session changes after appointment mark-read fails', async () => {
+    let rejectRead!: (reason: Error) => void;
+    markReadMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectRead = reject;
+        }),
+    );
+    listMock.mockResolvedValue({ notifications: [APPOINTED], unreadCount: 1 });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByRole('button', { name: /You are a moderator/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /You are a moderator/ }));
+    useAuthStore.setState({ session: null, account: null });
+    await act(async () => {
+      rejectRead(new Error('boom'));
+    });
+    expect(push).not.toHaveBeenCalled();
+  });
 });

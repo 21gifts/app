@@ -91,13 +91,8 @@ export function NotificationsLoader(): ReactElement | null {
           return;
         }
         void markNotificationRead(session, row.id)
+          .catch(() => undefined)
           .then(() => {
-            if (useAuthStore.getState().session !== session) {
-              return;
-            }
-            router.push(dest);
-          })
-          .catch(() => {
             if (useAuthStore.getState().session !== session) {
               return;
             }
