@@ -171,6 +171,16 @@ export async function proxyMeForumLawsDismissedPost(request: Request): Promise<R
 }
 
 /**
+ * Proxies POST /me/notification-level to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ level }`).
+ * @returns The upstream response.
+ */
+export function proxyMeNotificationLevelPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/notification-level');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

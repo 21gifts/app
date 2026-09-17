@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+/** Notification stages stored on the signed-in account. */
+export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions'] as const;
+
+/** One of {@link NOTIFICATION_LEVELS}. */
+export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
+
 /**
  * Runtime schema for an {@link Account} as returned by the api.
  *
@@ -33,6 +39,11 @@ export const accountSchema = z.object({
    * is strictly `false`.
    */
   hasPosted: z.boolean().optional(),
+  /**
+   * In-app and Web Push filter. Optional so current develop api bodies still
+   * parse; missing means {@link accountNotificationLevel} returns `all`.
+   */
+  notificationLevel: z.enum(['all', 'active', 'mentions']).optional(),
 });
 
 /**
@@ -64,8 +75,21 @@ export const accountSchema = z.object({
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).
+ * `notificationLevel` is `all` (every living-room post, reply, and gift),
+ * `active` (posts with gifts), or `mentions` (admin/staff posts and events
+ * that involve the owner). Omitted on older api builds; treat as `all`.
  */
 export type Account = z.infer<typeof accountSchema>;
+
+/**
+ * Notification stage stored on an account, defaulting to `all` when omitted.
+ *
+ * @param account - Parsed {@link Account} (field may be missing).
+ * @returns `all`, `active`, or `mentions`.
+ */
+export function accountNotificationLevel(account: Account): NotificationLevel {
+  return account.notificationLevel ?? 'all';
+}
 
 /**
  * Runtime schema for a public read-only profile from `GET /view/:viewKey`.

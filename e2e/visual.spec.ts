@@ -3832,6 +3832,31 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-profile-about-save-error');
   });
+
+  test('profile notification-level-error', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route('**/me/notification-level', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Active' }).click();
+    await expect(page.getByText('Could not save notification level.')).toBeVisible();
+    await shotScreen(page, 'state-profile-notification-level-error');
+  });
+
+  test('profile push-enable-error', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Enable notifications' }).click();
+    await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
+    await shotScreen(page, 'state-profile-push-enable-error');
+  });
 });
 
 test.describe('welcome forum variants', () => {

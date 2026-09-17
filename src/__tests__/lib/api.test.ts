@@ -45,6 +45,7 @@ import {
   postMessage,
   postMessageInvoice,
   postMessageVideo,
+  postNotificationLevel,
   postPushSubscription,
   agreeToRules,
   putAboutMe,
@@ -688,6 +689,35 @@ describe('dismissForumLaws', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(dismissForumLaws('sess')).rejects.toThrow();
+  });
+});
+
+describe('postNotificationLevel', () => {
+  it('posts the level and returns the validated account', async () => {
+    const updated = { ...account, notificationLevel: 'active' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(postNotificationLevel('sess', 'active')).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/notification-level', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ level: 'active' }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postNotificationLevel('sess', 'active')).rejects.toThrow(
+      'Could not save notification level.',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(postNotificationLevel('sess', 'active')).rejects.toThrow();
   });
 });
 

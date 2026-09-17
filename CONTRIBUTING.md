@@ -69,6 +69,7 @@ app/
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   ├── notification-level/route.ts  # POST /me/notification-level
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
@@ -118,7 +119,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + push bell
+│   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional push bell
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── moderate/
@@ -154,7 +155,7 @@ app/
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + language + theme + fiat + number format)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals)
@@ -162,7 +163,7 @@ app/
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
-│   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
+│   │   ├── PushToggle.tsx       # Three-stage All/Active/Mentions control plus icon-only Bell
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + GET /view-key/:viewKey/activity

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
+  accountNotificationLevel,
   accountSchema,
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
@@ -760,6 +761,48 @@ describe('accountSchema', () => {
 
   it('rejects a non-boolean aboutMeHasPhoto', () => {
     expect(() => accountSchema.parse({ ...account, aboutMeHasPhoto: 'yes' })).toThrow();
+  });
+
+  it('accepts a missing notificationLevel and defaults the helper to all', () => {
+    expect(accountNotificationLevel(accountSchema.parse(account))).toBe('all');
+  });
+
+  it('accepts all, active, and mentions notification levels', () => {
+    expect(accountSchema.parse({ ...account, notificationLevel: 'all' }).notificationLevel).toBe(
+      'all',
+    );
+    expect(accountSchema.parse({ ...account, notificationLevel: 'active' }).notificationLevel).toBe(
+      'active',
+    );
+    expect(
+      accountSchema.parse({ ...account, notificationLevel: 'mentions' }).notificationLevel,
+    ).toBe('mentions');
+  });
+
+  it('rejects a garbage notificationLevel', () => {
+    expect(() => accountSchema.parse({ ...account, notificationLevel: 'nope' })).toThrow();
+    expect(() => accountSchema.parse({ ...account, notificationLevel: 1 })).toThrow();
+  });
+});
+
+describe('accountNotificationLevel', () => {
+  it('returns all when the field is missing or undefined', () => {
+    expect(accountNotificationLevel(accountSchema.parse(account))).toBe('all');
+    expect(
+      accountNotificationLevel({
+        ...accountSchema.parse(account),
+        notificationLevel: undefined,
+      }),
+    ).toBe('all');
+  });
+
+  it('returns mentions when the account stores that level', () => {
+    expect(
+      accountNotificationLevel({
+        ...accountSchema.parse(account),
+        notificationLevel: 'mentions',
+      }),
+    ).toBe('mentions');
   });
 });
 

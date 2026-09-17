@@ -337,6 +337,13 @@ const en = {
   'profile.push.off': 'Off',
   'profile.push.installHint': 'On iPhone, add 21.gifts to your Home Screen to get notifications.',
   'profile.push.unavailable': 'Notifications are not available in this browser.',
+  'profile.push.level.label': 'Notification level',
+  'profile.push.level.all': 'All',
+  'profile.push.level.active': 'Active',
+  'profile.push.level.mentions': 'Mentions',
+  'profile.push.level.hint':
+    'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is admin posts, replies to you, and gifts you receive.',
+  'profile.push.level.error': 'Could not save notification level.',
   'profile.postCount': '{count} posts',
   'profile.replyCount': '{count} reactions',
   'profile.activityLatest': 'Showing the latest {shown} of {total}.',
@@ -902,6 +909,13 @@ const de = {
   'profile.push.installHint':
     'Fügen Sie 21.gifts auf dem iPhone zum Home-Bildschirm hinzu, um Benachrichtigungen zu erhalten.',
   'profile.push.unavailable': 'Benachrichtigungen sind in diesem Browser nicht verfügbar.',
+  'profile.push.level.label': 'Benachrichtigungsstufe',
+  'profile.push.level.all': 'Alle',
+  'profile.push.level.active': 'Aktiv',
+  'profile.push.level.mentions': 'Erwähnungen',
+  'profile.push.level.hint':
+    'Alle Wohnzimmer-Posts, Antworten und Geschenke. Aktiv sind Posts mit Geschenk. Erwähnungen sind Admin-Posts, Antworten auf dich und Geschenke, die du empfängst.',
+  'profile.push.level.error': 'Benachrichtigungsstufe konnte nicht gespeichert werden.',
   'profile.postCount': '{count} Beiträge',
   'profile.replyCount': '{count} Reaktionen',
   'profile.activityLatest': 'Die neuesten {shown} von {total}.',
@@ -1467,6 +1481,13 @@ const es = {
   'profile.push.installHint':
     'En iPhone, añade 21.gifts a la pantalla de inicio para recibir notificaciones.',
   'profile.push.unavailable': 'Las notificaciones no están disponibles en este navegador.',
+  'profile.push.level.label': 'Nivel de notificaciones',
+  'profile.push.level.all': 'Todas',
+  'profile.push.level.active': 'Activas',
+  'profile.push.level.mentions': 'Menciones',
+  'profile.push.level.hint':
+    'Todas las publicaciones, respuestas y regalos del salón. Activas son las publicaciones con regalos. Menciones son publicaciones de administradores, respuestas a ti y regalos que recibes.',
+  'profile.push.level.error': 'No se pudo guardar el nivel de notificaciones.',
   'profile.postCount': '{count} publicaciones',
   'profile.replyCount': '{count} reacciones',
   'profile.activityLatest': 'Mostrando los {shown} más recientes de {total}.',
@@ -2025,6 +2046,13 @@ const fil = {
   'profile.push.installHint':
     'Sa iPhone, idagdag ang 21.gifts sa Home Screen para makatanggap ng notification.',
   'profile.push.unavailable': 'Hindi available ang mga notification sa browser na ito.',
+  'profile.push.level.label': 'Antas ng notification',
+  'profile.push.level.all': 'Lahat',
+  'profile.push.level.active': 'Aktibo',
+  'profile.push.level.mentions': 'Mga pagbanggit',
+  'profile.push.level.hint':
+    'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga post ng admin, sagot sa iyo, at mga regalo na natatanggap mo.',
+  'profile.push.level.error': 'Hindi ma-save ang antas ng notification.',
   'profile.postCount': '{count} mga post',
   'profile.replyCount': '{count} mga reaksyon',
   'profile.activityLatest': 'Ipinapakita ang pinakabago {shown} sa {total}.',
