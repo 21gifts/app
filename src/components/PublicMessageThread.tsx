@@ -400,7 +400,12 @@ export function PublicMessageThread(props: {
               if (prev === null) {
                 return prev;
               }
-              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+              return prev.map((row) => {
+                if (row.id !== next.id) {
+                  return row;
+                }
+                return { ...row, ...next };
+              });
             });
             setPayWaiting(false);
             setPayInvoice(null);
@@ -637,8 +642,8 @@ export function PublicMessageThread(props: {
     }
     const token = session;
     const messageId = payMessageId;
-    const listed = (replies ?? []).find((row) => row.id === messageId);
-    /* v8 ignore next 3 -- Gift sheet only opens on a payable nested reply */
+    /* v8 ignore next 4 -- Gift sheet only opens on a loaded payable nested reply */
+    const listed = replies?.find((row) => row.id === messageId);
     if (listed === undefined || listed.payable !== true) {
       return;
     }

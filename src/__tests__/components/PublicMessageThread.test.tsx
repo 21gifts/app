@@ -330,7 +330,14 @@ describe('PublicMessageThread', () => {
   });
 
   it('polls the nested reply sats after Gift, not the parent', async () => {
-    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    const otherReply: ForumMessage = {
+      ...giftReply,
+      id: '33333333-3333-4333-8333-333333333333',
+      text: 'Another reply',
+      sats: 3,
+      payable: false,
+    };
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested, otherReply]);
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...payableNested, sats: 21 });
     signIn();
     renderThread();
