@@ -1,7 +1,8 @@
 import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import DonatePage from '@/app/donate/page';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
@@ -17,6 +18,17 @@ vi.mock('@/components/LanguageSwitcher', () => ({
 vi.mock('@/lib/request-locale', () => ({
   getRequestLocale: vi.fn(async () => 'en' as const),
 }));
+
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
+beforeEach(() => {
+  hydrateReady = true;
+  useAuthStore.setState({ session: null, account: null });
+});
 
 afterEach(cleanup);
 
@@ -40,5 +52,10 @@ describe('DonatePage', () => {
   it('renders the language switcher', async () => {
     renderWithLocale(await DonatePage());
     expect(screen.getByTestId('language-switcher')).toBeTruthy();
+  });
+
+  it('links the unsigned wordmark home', async () => {
+    renderWithLocale(await DonatePage());
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
   });
 });

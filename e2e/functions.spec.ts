@@ -4699,6 +4699,26 @@ test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
+test('Function: HomeWordmark — unsigned donate wordmark goes home', async ({ page }) => {
+  await page.goto('/donate');
+  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/');
+});
+
+test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/donate');
+  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/welcome');
+  await page.getByRole('link', { name: '21.gifts' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+});
+
 test('Function: SegmentedControl — welcome shows Active / All / Most popular', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages$/, async (route) => {

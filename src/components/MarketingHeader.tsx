@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
+import { HomeWordmark } from '@/components/HomeWordmark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PwaInstall } from '@/components/PwaInstall';
-import { ButtonLink, Wordmark } from '@/components/ui';
+import { ButtonLink } from '@/components/ui';
 
 /**
  * Sticky dark header for marketing pages: wordmark, section nav including About, optional
@@ -24,7 +25,7 @@ export function MarketingHeader(): ReactElement {
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
-      <Wordmark href="/" tone="dark" />
+      <HomeWordmark tone="dark" />
       <div className="flex items-center gap-4">
         <nav
           aria-label={t('aria.primary')}
