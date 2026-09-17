@@ -3,21 +3,53 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { NotificationsScreen } from '@/components/NotificationsScreen';
-import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api';
-import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
+import {
+  fetchConversations,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
 import type { Notification } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
+
+/**
+ * Set the home-screen badge to remaining inbox unread after notifications
+ * became 0 (list viewed / mark-all-read).
+ *
+ * Captures the badge epoch at start and skips the write if it changed.
+ * A conversations fetch failure writes `0`.
+ *
+ * @param sessionToken - Bearer token for the signed-in session.
+ */
+async function setHomeScreenBadgeToInboxUnread(sessionToken: string): Promise<void> {
+  const epoch = unreadAppBadgeEpoch();
+  try {
+    const rows = await fetchConversations(sessionToken);
+    if (epoch !== unreadAppBadgeEpoch()) {
+      return;
+    }
+    setUnreadAppBadge(rows.filter((row) => row.unread).length);
+  } catch {
+    if (epoch !== unreadAppBadgeEpoch()) {
+      return;
+    }
+    setUnreadAppBadge(0);
+  }
+}
 
 /**
  * Client loader for the signed-in notifications list on `/notifications`.
  *
  * Reads the session from the auth store and fetches notifications (posts, replies,
  * payments, and moderator appointment). After a successful list fetch, marks all
- * as read fire-and-forget and clears the home-screen badge (`setUnreadAppBadge(0)`).
- * Renders nothing when there is no session. There is no composer; opening a
- * `moderator_appointed` row waits for `markNotificationRead` (then still goes
- * to `/welcome` if that POST fails, and skips navigation if the session
- * changed), and any other row goes to the public forum note without waiting.
+ * as read fire-and-forget and refreshes the home-screen badge to remaining inbox
+ * unread (notifications are treated as 0; visiting this screen does not force
+ * the badge to 0 when inbox unread remains). Renders nothing when there is no
+ * session. There is no composer; opening a `moderator_appointed` row waits for
+ * `markNotificationRead` (then still goes to `/welcome` if that POST fails, and
+ * skips navigation if the session changed), and any other row goes to the public
+ * forum note without waiting.
  *
  * @returns The notifications screen, or `null` without a session.
  */
@@ -44,14 +76,14 @@ export function NotificationsLoader(): ReactElement | null {
         }
         setNotifications(next.notifications);
         bumpUnreadAppBadgeEpoch();
-        setUnreadAppBadge(0);
+        void setHomeScreenBadgeToInboxUnread(session);
         void markAllNotificationsRead(session)
           .then(() => {
             if (useAuthStore.getState().session !== session) {
               return;
             }
             bumpUnreadAppBadgeEpoch();
-            setUnreadAppBadge(0);
+            void setHomeScreenBadgeToInboxUnread(session);
           })
           .catch(() => undefined);
       } catch {

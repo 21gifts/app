@@ -14,13 +14,14 @@ import { useAuthStore } from '@/stores/auth-store';
  * both counts `0`. A failure on one side resolves that count to `0` without
  * failing the other. Does not mark notifications or conversations read.
  *
- * The home-screen app badge follows the **notifications** count only, via
- * `setUnreadAppBadge`. A hydrating store (`session` null while `loadSession()`
- * still has a token) does not clear the badge. Logout (`loadSession()` null)
- * and notification fetch errors clear it to `0`. A conversations error does
- * not write the badge. A cancelled fetch does not update React state or the
- * badge. An epoch change after the notifications fetch started skips the
- * badge write.
+ * The home-screen app badge is the **sum** of notification unread and inbox
+ * unread, written once both fetches settle (success or failure). A
+ * notifications error still writes the inbox side; a conversations error still
+ * writes the notifications side; either side failing contributes `0` to the
+ * sum. A hydrating store (`session` null while `loadSession()` still has a
+ * token) does not clear the badge. Logout (`loadSession()` null) clears it to
+ * `0`. A cancelled fetch does not update React state or the badge. An epoch
+ * change after the fetches started skips the badge write.
  *
  * @param refreshKey - Changing this value starts another fetch while signed in.
  * @returns Notification unread count and inbox unread count.
@@ -49,39 +50,44 @@ export function useUnreadCount(refreshKey: boolean): {
       const epoch = unreadAppBadgeEpoch();
       const notificationsPromise = fetchNotifications(session).then(
         (list) => {
-          if (cancelled) {
-            return;
+          if (!cancelled) {
+            setUnreadCount(list.unreadCount);
           }
-          setUnreadCount(list.unreadCount);
-          if (epoch === unreadAppBadgeEpoch()) {
-            setUnreadAppBadge(list.unreadCount);
-          }
+          return { ok: true as const, unreadCount: list.unreadCount };
         },
         () => {
-          if (cancelled) {
-            return;
+          if (!cancelled) {
+            setUnreadCount(0);
           }
-          setUnreadCount(0);
-          if (epoch === unreadAppBadgeEpoch()) {
-            setUnreadAppBadge(0);
-          }
+          return { ok: false as const, unreadCount: 0 };
         },
       );
       const conversationsPromise = fetchConversations(session).then(
         (rows) => {
-          if (cancelled) {
-            return;
+          const count = rows.filter((row) => row.unread).length;
+          if (!cancelled) {
+            setInboxUnreadCount(count);
           }
-          setInboxUnreadCount(rows.filter((row) => row.unread).length);
+          return { ok: true as const, unreadCount: count };
         },
         () => {
-          if (cancelled) {
-            return;
+          if (!cancelled) {
+            setInboxUnreadCount(0);
           }
-          setInboxUnreadCount(0);
+          return { ok: false as const, unreadCount: 0 };
         },
       );
-      await Promise.all([notificationsPromise, conversationsPromise]);
+      const [notifications, conversations] = await Promise.all([
+        notificationsPromise,
+        conversationsPromise,
+      ]);
+      if (cancelled || epoch !== unreadAppBadgeEpoch()) {
+        return;
+      }
+      setUnreadAppBadge(
+        (notifications.ok ? notifications.unreadCount : 0) +
+          (conversations.ok ? conversations.unreadCount : 0),
+      );
     })();
     return () => {
       cancelled = true;

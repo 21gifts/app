@@ -10,6 +10,7 @@ import {
   postConversationInvoice,
   postConversationMessage,
 } from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
   type Conversation,
@@ -84,6 +85,9 @@ function isAbortError(err: unknown): boolean {
  * an invoice from its amount field and long-polls for the paid gift row.
  * Renders nothing when there is no session.
  * Founder/moderator get the origin filter; members see the full inbound list.
+ * After a successful thread load and mark-read, bumps the badge epoch and
+ * refreshes the home-screen badge to notifications unread plus remaining
+ * inbox unread.
  *
  * @returns The inbox screen, or `null` without a session.
  */
@@ -188,12 +192,22 @@ export function InboxLoader(): ReactElement | null {
         setMessages(next);
         void markConversationRead(session, openId).catch(() => undefined);
         markedReadGen.current.set(openId, listFetchGen.current);
+        const remainingInboxUnread =
+          conversations === null
+            ? undefined
+            : conversations.filter((row) => row.id !== openId && row.unread).length;
         setConversations((prev) => {
           if (prev === null) {
             return prev;
           }
           return prev.map((row) => (row.id === openId ? { ...row, unread: false } : row));
         });
+        bumpUnreadAppBadgeEpoch();
+        if (remainingInboxUnread === undefined) {
+          void refreshUnreadAppBadge(session).catch(() => undefined);
+        } else {
+          void refreshUnreadAppBadge(session, remainingInboxUnread).catch(() => undefined);
+        }
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {

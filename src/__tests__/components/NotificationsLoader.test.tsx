@@ -13,21 +13,40 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn(),
+  fetchConversations: vi.fn(),
   markNotificationRead: vi.fn(),
   markAllNotificationsRead: vi.fn(),
 }));
 vi.mock('@/lib/app-badge', () => ({
   setUnreadAppBadge: vi.fn(),
   bumpUnreadAppBadgeEpoch: vi.fn(),
+  unreadAppBadgeEpoch: vi.fn(() => 0),
 }));
 
-import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api';
-import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
+import {
+  fetchConversations,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
+import type { Conversation } from '@/lib/api-types';
 
 const listMock = vi.mocked(fetchNotifications);
+const conversationsMock = vi.mocked(fetchConversations);
 const markReadMock = vi.mocked(markNotificationRead);
 const markAllMock = vi.mocked(markAllNotificationsRead);
 const setBadgeMock = vi.mocked(setUnreadAppBadge);
+
+const UNREAD_CONVERSATION: Conversation = {
+  id: 'c1',
+  kind: 'member_member',
+  name: 'Bob',
+  lastText: 'Hi',
+  lastAt: '2026-08-28T12:00:00.000Z',
+  lastFromMe: false,
+  unread: true,
+};
 
 const account: Account = {
   id: 'acc_1',
@@ -74,6 +93,7 @@ const LIST: NotificationList = { notifications: [ROW], unreadCount: 1 };
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
+  conversationsMock.mockResolvedValue([]);
   markAllMock.mockResolvedValue(undefined);
   markReadMock.mockResolvedValue({ ...ROW, readAt: '2026-08-28T13:00:00.000Z' });
   useAuthStore.setState({ session: 'sess', account });
@@ -311,5 +331,74 @@ describe('NotificationsLoader', () => {
       rejectRead(new Error('boom'));
     });
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it('sets the home-screen badge to remaining inbox unread after the list loads', async () => {
+    listMock.mockResolvedValue(LIST);
+    conversationsMock.mockResolvedValue([
+      UNREAD_CONVERSATION,
+      { ...UNREAD_CONVERSATION, id: 'c2' },
+      { ...UNREAD_CONVERSATION, id: 'c3', unread: false },
+    ]);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(setBadgeMock).toHaveBeenCalledWith(2);
+    });
+    expect(setBadgeMock).not.toHaveBeenCalledWith(0);
+  });
+
+  it('clears the home-screen badge when remaining inbox unread cannot be loaded', async () => {
+    listMock.mockResolvedValue(LIST);
+    conversationsMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(setBadgeMock).toHaveBeenCalledWith(0);
+    });
+  });
+
+  it('does not write a stale inbox badge after the epoch bumps again', async () => {
+    const epochMock = vi.mocked(unreadAppBadgeEpoch);
+    let epoch = 0;
+    epochMock.mockImplementation(() => epoch);
+    markAllMock.mockImplementation(() => new Promise(() => undefined));
+    let resolveRows!: (value: Conversation[]) => void;
+    conversationsMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRows = resolve;
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    epoch += 1;
+    await act(async () => {
+      resolveRows([UNREAD_CONVERSATION, { ...UNREAD_CONVERSATION, id: 'c2' }]);
+    });
+    expect(setBadgeMock).not.toHaveBeenCalledWith(2);
+  });
+
+  it('does not write a stale inbox error badge after the epoch bumps again', async () => {
+    const epochMock = vi.mocked(unreadAppBadgeEpoch);
+    let epoch = 0;
+    epochMock.mockImplementation(() => epoch);
+    markAllMock.mockImplementation(() => new Promise(() => undefined));
+    let rejectRows!: (reason?: unknown) => void;
+    conversationsMock.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRows = reject;
+        }),
+    );
+    listMock.mockResolvedValue(LIST);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    epoch += 1;
+    await act(async () => {
+      rejectRows(new Error('fail'));
+    });
+    expect(setBadgeMock).not.toHaveBeenCalledWith(0);
   });
 });

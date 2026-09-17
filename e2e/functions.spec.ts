@@ -5989,6 +5989,24 @@ test('Function: setUnreadAppBadge — menu shows unread notification count', asy
   await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
 });
 
+test('Function: refreshUnreadAppBadge — menu shows unread notification count', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+});
+
 test('Function: push service worker — GET /sw.js is the push worker', async ({ request }) => {
   const res = await request.get('/sw.js');
   expect(res.status()).toBe(200);

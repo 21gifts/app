@@ -379,22 +379,22 @@
 
 - **Purpose:** Load signed-in unread **notification** and **inbox** counts in parallel (`GET /forum/notifications` + `GET /conversations`). `refreshKey` retriggers the fetches (Menu open). Does not mark notifications or conversations read.
 - **Inputs:** `refreshKey` boolean.
-- **Returns / side effects:** `{ unreadCount, inboxUnreadCount }`. `unreadCount` is the notifications unread count and **still drives the PWA home-screen badge** via `setUnreadAppBadge`. `inboxUnreadCount` is the number of conversation rows with `unread: true`. Either fetch failing zeros **that side** only; a conversations error must **not** call `setUnreadAppBadge`. No session → both counts `0`; badge `0` only when `loadSession() === null` (real logout). A hydrating store (`session` null, token still in storage) does not clear the badge. A cancelled fetch updates neither React state nor the badge. Epoch skip applies only to the notifications badge write.
+- **Returns / side effects:** `{ unreadCount, inboxUnreadCount }`. `unreadCount` is the notifications unread count. `inboxUnreadCount` is the number of conversation rows with `unread: true`. The home-screen badge is notification unread + inbox unread, written once both fetches settle. Either side failing contributes 0 to the sum; the other side still writes. Epoch skip applies to that sum write. No session → both counts `0`; badge `0` only when `loadSession() === null` (real logout). A hydrating store (`session` null, token still in storage) does not clear the badge. A cancelled fetch updates neither React state nor the badge.
 - **Used by:** `SignedInChrome`.
 
 ## Function: setUnreadAppBadge
 
 - **Purpose:** Set or clear the installed PWA home-screen unread badge via the Badging API (`navigator.setAppBadge` / `navigator.clearAppBadge`). When `count > 0` and `setAppBadge` exists, sets that number; otherwise clears when `clearAppBadge` exists. Missing APIs are a no-op. Rejections are swallowed so unsupported or denied badge writes never throw into the UI.
-- **Inputs:** `count` (number). Positive values request a badge; `0` (and any non-positive) request a clear.
+- **Inputs:** `count` (number) — notification unread plus inbox unread conversations. Positive values request a badge; `0` (and any non-positive) request a clear.
 - **Returns / side effects:** `void`. Fire-and-forget promises; does not await. No network.
-- **Used by:** `useUnreadCount`, `NotificationsLoader`, `useAuthStore.clearAuth`.
+- **Used by:** `useUnreadCount`, `NotificationsLoader`, `InboxLoader`, `refreshUnreadAppBadge`, `useAuthStore.clearAuth`.
 
 ## Function: bumpUnreadAppBadgeEpoch
 
-- **Purpose:** Increment the home-screen badge epoch so in-flight unread fetches do not overwrite a mark-all-read clear.
+- **Purpose:** Increment the home-screen badge epoch so in-flight unread fetches do not overwrite a mark-all-read clear, and after inbox mark-read so they do not overwrite the remaining sum.
 - **Inputs:** None.
 - **Returns / side effects:** The new epoch number.
-- **Used by:** `NotificationsLoader`.
+- **Used by:** `NotificationsLoader`, `InboxLoader`.
 
 ## Function: unreadAppBadgeEpoch
 
@@ -402,6 +402,13 @@
 - **Inputs:** None.
 - **Returns / side effects:** Current epoch number. No network.
 - **Used by:** `useUnreadCount`.
+
+## Function: refreshUnreadAppBadge
+
+- **Purpose:** Refresh the installed PWA home-screen badge to notification unread plus inbox unread. Fetches `GET /forum/notifications` and, unless an inbox override is passed, `GET /conversations`. Either side failing contributes 0. Captures the badge epoch at start; skips the write if it changed. Never rejects.
+- **Inputs:** `sessionToken` (string). Optional `inboxUnreadOverride` (number) — when set, skip the conversations fetch and use that inbox unread count (e.g. the local list after mark-read).
+- **Returns / side effects:** `Promise<void>`. Calls `setUnreadAppBadge` with the sum. Fire-and-forget safe.
+- **Used by:** `InboxLoader` after a successful thread load and mark-read.
 
 ## Function: vapidPublicKeyToBytes
 
@@ -2088,6 +2095,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=`, posts replies. Founder/moderator get `showFilter` true; members see the unfiltered inbound list.
 - **Inputs:** None (reads session and account from the auth store; `useSearchParams`).
 - **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`.
+- **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`. After a successful thread fetch, local `unread: false`, and `markConversationRead`, `bumpUnreadAppBadgeEpoch` and `refreshUnreadAppBadge` (remaining inbox from the local list, or a conversations fetch if the list is still null). Fire-and-forget; must not fail the thread view.
 - **Used by:** `MessagesPage`.
 
 ## Function: InboxScreen
@@ -2102,7 +2110,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/conversations` with Bearer and parse `{ conversations }`. The api returns incoming threads, plus the member's own 21.gifts contact thread when it has a message. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`, and required `lastFromMe` (true when the last message was sent by the session).
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation list, or throws visitor copy.
-- **Used by:** `InboxLoader`, `ContactLoader`.
+- **Used by:** `InboxLoader`, `ContactLoader`, `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`.
 
 ## Function: fetchConversation
 
@@ -2189,9 +2197,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, and moderator appointment), then `bumpUnreadAppBadgeEpoch` + `setUnreadAppBadge(0)`, and again after `markAllNotificationsRead` resolves so a parallel Menu unread fetch cannot restore a stale count. There is no composer; opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed), and any other row goes to `/messages/{parentId}` without waiting on `markNotificationRead`.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, and moderator appointment). After a successful list fetch, `bumpUnreadAppBadgeEpoch` then set the badge to remaining inbox unread (notifications treated as 0; visiting `/notifications` does not force badge 0 when inbox unread remains). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetch conversations for the inbox count; failure writes 0. Opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed); any other row goes to `/messages/{parentId}` without waiting.
 - **Inputs:** None (session from the auth store).
-- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget and clears the home-screen badge. Does not clear the badge on error, cancel, or missing session.
+- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget, then `bumpUnreadAppBadgeEpoch` and sets the home-screen badge to remaining inbox unread (notifications treated as 0). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations for the inbox count; failure writes 0. Does not clear remaining inbox unread on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
 
 ## Function: NotificationsScreen
@@ -2206,7 +2214,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/forum/notifications` with Bearer and parse `{ notifications, unreadCount }`.
 - **Inputs:** Session token.
 - **Returns / side effects:** `{ notifications, unreadCount }`, or throws visitor copy `Could not load notifications. Please try again.`
-- **Used by:** `NotificationsLoader`, `useUnreadCount`, `ForumLoader` (welcome appointment banner).
+- **Used by:** `NotificationsLoader`, `useUnreadCount`, `refreshUnreadAppBadge`, `ForumLoader` (welcome appointment banner).
 
 ## Function: markNotificationRead
 

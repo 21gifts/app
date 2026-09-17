@@ -23,6 +23,11 @@ vi.mock('@/lib/api', () => ({
   markConversationRead: vi.fn(),
   postConversationMessage: vi.fn(),
 }));
+vi.mock('@/lib/app-badge', () => ({
+  bumpUnreadAppBadgeEpoch: vi.fn(),
+  refreshUnreadAppBadge: vi.fn(),
+  setUnreadAppBadge: vi.fn(),
+}));
 
 import {
   fetchConversation,
@@ -31,12 +36,15 @@ import {
   markConversationRead,
   postConversationMessage,
 } from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 
 const listMock = vi.mocked(fetchConversations);
 const threadMock = vi.mocked(fetchConversation);
 const invoiceMock = vi.mocked(postConversationInvoice);
 const markReadMock = vi.mocked(markConversationRead);
 const postMock = vi.mocked(postConversationMessage);
+const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
+const refreshMock = vi.mocked(refreshUnreadAppBadge);
 
 const account: Account = {
   id: 'acc_1',
@@ -92,6 +100,7 @@ beforeEach(() => {
   push.mockReset();
   searchParams.delete('c');
   markReadMock.mockResolvedValue(undefined);
+  refreshMock.mockResolvedValue(undefined);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -650,6 +659,10 @@ describe('InboxLoader', () => {
     await waitFor(() => {
       expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
     });
+    await waitFor(() => {
+      expect(bumpMock).toHaveBeenCalled();
+      expect(refreshMock).toHaveBeenCalled();
+    });
     searchParams.delete('c');
     view.rerender(<InboxLoader />);
     const row = await screen.findByRole('button', { name: /21\.gifts/ });
@@ -680,5 +693,60 @@ describe('InboxLoader', () => {
     const row = await screen.findByRole('button', { name: /21\.gifts/ });
     expect(row.getAttribute('aria-label')).toBeNull();
     expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
+  });
+
+  it('passes remaining inbox unread after opening one of two unread threads', async () => {
+    listMock.mockResolvedValue([
+      { ...THREAD, unread: true },
+      { ...OLDER, unread: true },
+    ]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('21.gifts')).toBeTruthy();
+    searchParams.set('c', 'conv-1');
+    view.rerender(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalledWith('sess', 1);
+    });
+    expect(bumpMock).toHaveBeenCalled();
+  });
+
+  it('passes remaining inbox unread 0 when only the opened row was unread', async () => {
+    listMock.mockResolvedValue([{ ...THREAD, unread: true }, OLDER]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('21.gifts')).toBeTruthy();
+    searchParams.set('c', 'conv-1');
+    view.rerender(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalledWith('sess', 0);
+    });
+  });
+
+  it('refreshes the badge without an inbox override when the list is still null', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockImplementation(() => new Promise(() => undefined));
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalledWith('sess');
+    });
+    expect(bumpMock).toHaveBeenCalled();
+  });
+
+  it('still renders the thread when refreshUnreadAppBadge rejects', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockImplementation(() => new Promise(() => undefined));
+    threadMock.mockResolvedValue([MESSAGE]);
+    refreshMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

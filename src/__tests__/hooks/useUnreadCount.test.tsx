@@ -84,6 +84,7 @@ describe('useUnreadCount', () => {
     renderWithLocale(<Probe refreshKey={true} />);
     await waitFor(() => {
       expect(screen.getByText('count:4')).toBeTruthy();
+      expect(screen.getByText('inbox:0')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledWith('tok');
     expect(conversationsMock).toHaveBeenCalledWith('tok');
@@ -100,9 +101,25 @@ describe('useUnreadCount', () => {
     renderWithLocale(<Probe refreshKey={true} />);
     await waitFor(() => {
       expect(screen.getByText('inbox:2')).toBeTruthy();
+      expect(screen.getByText('count:0')).toBeTruthy();
     });
-    expect(screen.getByText('count:0')).toBeTruthy();
-    expect(setBadgeMock).toHaveBeenCalledWith(0);
+    expect(setBadgeMock).toHaveBeenCalledWith(2);
+    expect(setBadgeMock).not.toHaveBeenCalledWith(0);
+  });
+
+  it('sets the home-screen badge to notification unread plus inbox unread', async () => {
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
+    conversationsMock.mockResolvedValue([
+      UNREAD_ROW,
+      { ...UNREAD_ROW, id: 'c2', unread: false },
+      { ...UNREAD_ROW, id: 'c3' },
+    ]);
+    renderWithLocale(<Probe refreshKey={true} />);
+    await waitFor(() => {
+      expect(screen.getByText('count:4')).toBeTruthy();
+      expect(screen.getByText('inbox:2')).toBeTruthy();
+    });
+    expect(setBadgeMock).toHaveBeenCalledWith(6);
   });
 
   it('resolves errors to 0', async () => {
@@ -110,6 +127,7 @@ describe('useUnreadCount', () => {
     renderWithLocale(<Probe refreshKey={true} />);
     await waitFor(() => {
       expect(screen.getByText('count:0')).toBeTruthy();
+      expect(screen.getByText('inbox:0')).toBeTruthy();
     });
     expect(setBadgeMock).toHaveBeenCalledWith(0);
   });
@@ -120,19 +138,20 @@ describe('useUnreadCount', () => {
     renderWithLocale(<Probe refreshKey={true} />);
     await waitFor(() => {
       expect(screen.getByText('inbox:2')).toBeTruthy();
+      expect(screen.getByText('count:0')).toBeTruthy();
     });
-    expect(screen.getByText('count:0')).toBeTruthy();
-    expect(setBadgeMock).toHaveBeenCalledWith(0);
+    expect(setBadgeMock).toHaveBeenCalledWith(2);
+    expect(setBadgeMock).not.toHaveBeenCalledWith(0);
   });
 
-  it('does not write the badge when conversations fail', async () => {
+  it('writes notifications unread when conversations fail', async () => {
     fetchMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
     conversationsMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<Probe refreshKey={true} />);
     await waitFor(() => {
       expect(screen.getByText('count:4')).toBeTruthy();
+      expect(screen.getByText('inbox:0')).toBeTruthy();
     });
-    expect(screen.getByText('inbox:0')).toBeTruthy();
     expect(setBadgeMock).toHaveBeenCalledWith(4);
     expect(setBadgeMock).not.toHaveBeenCalledWith(0);
   });
@@ -223,9 +242,10 @@ describe('useUnreadCount', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('inbox:1')).toBeTruthy();
+      expect(screen.getByText('count:0')).toBeTruthy();
     });
-    expect(setBadgeMock).toHaveBeenCalledWith(0);
-    expect(setBadgeMock).not.toHaveBeenCalledWith(1);
+    expect(setBadgeMock).toHaveBeenCalledWith(1);
+    expect(setBadgeMock).not.toHaveBeenCalledWith(0);
   });
 
   it('does not apply a stale badge after the epoch bumps', async () => {
@@ -246,6 +266,7 @@ describe('useUnreadCount', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('count:7')).toBeTruthy();
+      expect(screen.getByText('inbox:0')).toBeTruthy();
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(7);
   });
@@ -268,6 +289,7 @@ describe('useUnreadCount', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('count:0')).toBeTruthy();
+      expect(screen.getByText('inbox:0')).toBeTruthy();
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(0);
   });
