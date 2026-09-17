@@ -282,6 +282,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
@@ -339,6 +342,7 @@ describe('InboxLoader', () => {
     threadMock.mockResolvedValue([MESSAGE]);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'a'.repeat(501) } });
@@ -353,6 +357,7 @@ describe('InboxLoader', () => {
     threadMock.mockResolvedValue([MESSAGE]);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
@@ -378,6 +383,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockRejectedValue(new Error(message));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText(expected)).toBeTruthy();
@@ -396,6 +404,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Pay ₿21')).toBeTruthy();
@@ -416,6 +427,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Could not send your message')).toBeTruthy();
@@ -431,6 +445,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Pay ₿21')).toBeTruthy();
@@ -457,6 +474,9 @@ describe('InboxLoader', () => {
     );
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     searchParams.set('c', 'conv-2');
@@ -480,6 +500,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Pay ₿21')).toBeTruthy();
@@ -508,6 +531,9 @@ describe('InboxLoader', () => {
     postMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
