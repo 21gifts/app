@@ -2219,6 +2219,59 @@ describe('ForumBoard', () => {
     fireEvent.click(document.querySelector(`a[href="/messages/${quotedId}"]`) as HTMLAnchorElement);
   });
 
+  it('stops card toggle when nested quoted caption is clicked', async () => {
+    const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+    const quotedUrl = `https://21.gifts/messages/${quotedId}`;
+    const onToggleExpand = vi.fn();
+    vi.mocked(fetchPublicMessage).mockImplementation(async (id: string) => {
+      if (id.toLowerCase() === quotedId) {
+        return {
+          id: quotedId,
+          name: 'Cyrill',
+          text: 'A Quick Technical Note',
+          createdAt: '2026-09-16T09:50:23.750Z',
+          sats: 43,
+          payable: true,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'founder',
+          replyCount: 0,
+        };
+      }
+      return null;
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            text: `just for information: ${quotedUrl}`,
+            sats: 21,
+            payable: true,
+            role: 'founder',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A Quick Technical Note')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByText('A Quick Technical Note'));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
   it('opens a role hint on click and closes it when the same tag is clicked again', () => {
     renderWithLocale(
       <ForumBoard

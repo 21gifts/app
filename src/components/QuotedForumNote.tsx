@@ -89,11 +89,13 @@ function QuotedForumNote({
   };
 
   return (
-    <div className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2">
+    <div
+      className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2"
+      onClick={handleActivate}
+    >
       <Link
         href={`/messages/${note.id}`}
         aria-label={t('forum.quotedNote', { name: note.name })}
-        onClick={handleActivate}
         className="block"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -125,7 +127,7 @@ function QuotedForumNote({
           <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
         )
       ) : null}
-      <Link href={`/messages/${note.id}`} onClick={handleActivate} className="block">
+      <Link href={`/messages/${note.id}`} className="block">
         <p
           className={
             fiatAmount === null
