@@ -371,7 +371,32 @@ export function MemberProfileScreen({
     }
   };
 
+  const bumpPayPollGeneration = (): number => {
+    payPollAbortRef.current?.abort();
+    payPollAbortRef.current = new AbortController();
+    payPollGeneration.current += 1;
+    return payPollGeneration.current;
+  };
+
+  const handlePayCancel = (): void => {
+    bumpPayPollGeneration();
+    setPayMessageId(null);
+    setPayDraft('');
+    setPayError(null);
+    setPayInvoice(null);
+    setPayBusy(false);
+    setPayWaiting(false);
+    setReplyPosting(false);
+  };
+
   const openActivity = (next: 'posts' | 'replies'): void => {
+    if (
+      payMessageId !== null &&
+      ((replies?.some((row) => row.id === payMessageId) ?? false) ||
+        (activityReplies?.some((row) => row.id === payMessageId) ?? false))
+    ) {
+      handlePayCancel();
+    }
     if (activity === next) {
       setActivity(null);
       return;
@@ -386,13 +411,6 @@ export function MemberProfileScreen({
     if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
       void loadActivityFeed('replies');
     }
-  };
-
-  const bumpPayPollGeneration = (): number => {
-    payPollAbortRef.current?.abort();
-    payPollAbortRef.current = new AbortController();
-    payPollGeneration.current += 1;
-    return payPollGeneration.current;
   };
 
   useEffect(() => {
@@ -728,9 +746,9 @@ export function MemberProfileScreen({
     const token = session;
     const messageId = payMessageId;
     const listed =
-      posts?.find((message) => message.id === messageId) ??
+      replies?.find((message) => message.id === messageId) ??
       activityReplies?.find((message) => message.id === messageId) ??
-      replies?.find((message) => message.id === messageId);
+      posts?.find((message) => message.id === messageId);
     /* v8 ignore next 3 -- sheet only opens on a payable row */
     if (listed === undefined || listed.payable !== true) {
       return;
@@ -781,17 +799,6 @@ export function MemberProfileScreen({
       return;
     }
     return continuePay(false);
-  };
-
-  const handlePayCancel = (): void => {
-    bumpPayPollGeneration();
-    setPayMessageId(null);
-    setPayDraft('');
-    setPayError(null);
-    setPayInvoice(null);
-    setPayBusy(false);
-    setPayWaiting(false);
-    setReplyPosting(false);
   };
 
   const handleToggleExpand = (messageId: string): void => {

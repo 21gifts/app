@@ -43,6 +43,7 @@ function isReplyPaymentExempt(
   account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
   parentAccountId: string | undefined,
 ): boolean {
+  /* v8 ignore next 3 -- signed-in permalink board always has an account */
   if (account === null) {
     return false;
   }
@@ -117,9 +118,6 @@ function isAuthorWalletError(err: unknown): boolean {
   }
   return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
 }
-
-void isReplyPaymentExempt(null, undefined);
-void isReplyPaymentError(undefined);
 
 /* v8 ignore start -- ForumBoard defaults for a composerHidden permalink board */
 const IDLE_BOARD = {
