@@ -22,6 +22,7 @@ import {
   fetchMemberReplies,
   fetchMessagePhoto,
   fetchPublicMessage,
+  fetchPublicMessagePhoto,
   fetchReplies,
   openConversation,
   postMessage,
@@ -957,6 +958,10 @@ export function MemberProfileScreen({
   const activityCount = activity === 'posts' ? profile.postCount : profile.replyCount;
   const activityLoading = activity === 'posts' ? postsLoading : activityRepliesLoading;
   const activityError = activity === 'posts' ? postsError : activityRepliesError;
+  const profileMessagePhotoId =
+    profile.profileMessage !== null && profile.profileMessage.hasPhoto
+      ? profile.profileMessage.id
+      : undefined;
 
   return (
     <>
@@ -980,6 +985,15 @@ export function MemberProfileScreen({
             mode="public"
             aboutMe={profile.aboutMe}
             name={profile.name}
+            hasPhoto={profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true}
+            {...(profileMessagePhotoId !== undefined
+              ? {
+                  loadPhoto: () =>
+                    session !== null
+                      ? fetchMessagePhoto(session, profileMessagePhotoId)
+                      : fetchPublicMessagePhoto(profileMessagePhotoId),
+                }
+              : {})}
             /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
             {...(profileUrl !== '' ? { profileUrl } : {})}
           />

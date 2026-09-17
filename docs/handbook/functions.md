@@ -356,16 +356,16 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
+- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
 - **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), About me, name form, location form, address form, push bell under the address form, Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: AboutMeSection
 
-- **Purpose:** Profile-card About me block: heading plus filled text or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is non-empty and not equal to the display name case-insensitive. Owner mode can edit (write / pencil, save, cancel) via `onSave`. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text and no copy URL renders `null`.
-- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `profileUrl`, optional `onSave`.
-- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save.
+- **Purpose:** Profile-card About me block: heading plus filled text and/or photo, or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`, attach a JPEG/PNG/WebP with ImagePlus (`prepareForumPhoto`, no video), preview, and remove. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`.
+- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets).
+- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save. Loads a blob URL when `hasPhoto` and `loadPhoto` are set; revokes it on unmount.
 - **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`).
 
 ## Function: PushToggle
@@ -732,8 +732,8 @@
 
 ## Function: ViewProfileScreen
 
-- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, About me inside the card (not a forum post; public `AboutMeSection` with `name={profile.name}` shows filled text or omits the heading when unfilled), name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without edit or Message actions. Unset location shows `location.unset`. Copy-profile-link on the card (`profile.copyLink`).
-- **Inputs:** `{ profile, viewKey, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`. `viewKey` builds the copy URL `/view/<viewKey>`. `profile` includes `aboutMe` and `location`.
+- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, About me inside the card (not a forum post; public `AboutMeSection` with `name={profile.name}` shows filled text and/or photo, or omits the heading when neither), name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without edit or Message actions. Unset location shows `location.unset`. Copy-profile-link on the card (`profile.copyLink`).
+- **Inputs:** `{ profile, viewKey, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`. `viewKey` builds the copy URL `/view/<viewKey>`. `profile` includes `aboutMe`, `aboutMeHasPhoto`, and `location`. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` with `loadPhoto` (`fetchViewAboutMePhoto`).
 - **Returns / side effects:** No menu, logout, back, edit forms, or Message. Copy-profile-link on the card; URL/key never shown as visible text. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
 
@@ -963,8 +963,8 @@
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, Lightning Address, role pill, copy-profile-link, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text or omits the heading when unfilled. Message `IconButton` (`profile.message`) sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use pay, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, founder, or verified may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `GET /gifts/stats` into `rateDay` via `latestRateDay` (failure leaves `null`) and passes it to every `ForumBoard` so feed amounts are ₿ plus optional preferred-fiat `·` when the conversion is non-null (no FiatPicker on the feed). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
-- **Inputs:** `MemberProfile` (includes `aboutMe` and `location`) plus received and donated series; session/account from the auth store.
+- **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, Lightning Address, role pill, copy-profile-link, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text and/or photo, or omits the heading when neither. Message `IconButton` (`profile.message`) sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use pay, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, founder, or verified may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `GET /gifts/stats` into `rateDay` via `latestRateDay` (failure leaves `null`) and passes it to every `ForumBoard` so feed amounts are ₿ plus optional preferred-fiat `·` when the conversion is non-null (no FiatPicker on the feed). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Inputs:** `MemberProfile` (includes `aboutMe`, `aboutMeHasPhoto`, and `location`) plus received and donated series; session/account from the auth store. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` / `profileMessage.hasPhoto` with `loadPhoto` (`fetchMessagePhoto`).
 - **Returns / side effects:** React tree with About me, copy-profile-link, optional Message, staff Trust Chain actions, and a read-only location row on the card; lazily fetches the selected member posts or replies; fetches `GET /gifts/stats` into `rateDay`; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
 
@@ -1225,7 +1225,7 @@
 - **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL.
 - **Inputs:** `file` accepted by `isForumPhotoFile`.
 - **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
-- **Used by:** `ForumLoader`.
+- **Used by:** `ForumLoader`, `AboutMeSection`.
 
 ## Function: parseNumberFormat
 
@@ -1553,10 +1553,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: putAboutMe
 
-- **Purpose:** PUT `/me/about` with bearer + `{ text }` and return the updated account.
-- **Inputs:** `sessionToken`, `text`.
-- **Returns / side effects:** Updated `Account`. Throws `MissingRequirementsError` on 409 `missing_requirements`; `'Could not save. Please try again.'` on other non-2xx. A 2xx body that fails `accountSchema` throws the schema error.
+- **Purpose:** PUT `/me/about` with bearer + `{ text, photo? }` and return the updated account. `photo` omitted keeps a stored image; `null` clears it; `{ contentType, data }` replaces it (same JPEG payload as a forum post).
+- **Inputs:** `sessionToken`, `text`, optional `photo` (`{ contentType, data } | null`).
+- **Returns / side effects:** Updated `Account` including `aboutMe` and `aboutMeHasPhoto`. Throws `MissingRequirementsError` on 409 `missing_requirements`; `'Could not save. Please try again.'` on other non-2xx. A 2xx body that fails `accountSchema` throws the schema error.
 - **Used by:** `ProfileScreen`.
+
+## Function: fetchAboutMePhoto
+
+- **Purpose:** GET `/me/about/photo` with the bearer session and return the raw image bytes as a `Blob` for `URL.createObjectURL` rendering.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
+- **Used by:** `ProfileScreen` via `AboutMeSection` `loadPhoto`.
+
+## Function: fetchViewAboutMePhoto
+
+- **Purpose:** GET `/view-key/:viewKey/about/photo` without Authorization and return the raw image bytes as a `Blob`.
+- **Inputs:** `viewKey` (64 lowercase hex). Encoded in the path.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load. Please try again.`) on non-ok, empty body, or network failure.
+- **Used by:** `ViewProfileScreen` via `AboutMeSection` `loadPhoto`.
 
 ## Function: dismissForumLaws
 
@@ -1799,9 +1813,23 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: proxyMeAboutPut
 
 - **Purpose:** Same-origin Bearer proxy of api `PUT /me/about`.
-- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }`.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text, photo? }`.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** App Router `PUT` on `/me/about`.
+
+## Function: proxyMeAboutPhotoGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /me/about/photo` (raw profile-note photo bytes).
+- **Inputs:** Incoming `Request` with Bearer session.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest` to `/me/about/photo`.
+- **Used by:** App Router `GET` on `/me/about/photo`.
+
+## Function: proxyViewAboutPhotoGet
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/about/photo` (raw profile-note photo bytes). Browser path is `/view-key/:viewKey/about/photo`; upstream is `/view/:viewKey/about/photo`.
+- **Inputs:** Incoming `Request`, plus `viewKey` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** App Router `GET` on `/view-key/[viewKey]/about/photo`.
 
 ## Function: proxyMeForumLawsDismissedPost
 

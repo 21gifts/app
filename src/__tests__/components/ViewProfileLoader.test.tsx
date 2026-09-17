@@ -23,6 +23,7 @@ const profile: ViewProfile = {
   createdAt: 1,
   hasPasskey: false,
   aboutMe: null,
+  aboutMeHasPhoto: false,
 };
 
 const EMPTY_FX = {

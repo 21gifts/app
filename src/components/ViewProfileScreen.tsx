@@ -5,6 +5,7 @@ import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card } from '@/components/ui';
+import { fetchViewAboutMePhoto } from '@/lib/api';
 import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 
 /**
@@ -47,6 +48,8 @@ export function ViewProfileScreen({
         mode="public"
         aboutMe={profile.aboutMe}
         name={profile.name}
+        hasPhoto={profile.aboutMeHasPhoto === true}
+        loadPhoto={() => fetchViewAboutMePhoto(viewKey)}
         /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
         {...(profileUrl !== '' ? { profileUrl } : {})}
       />

@@ -86,10 +86,24 @@
 
 ## Endpoint: PUT /me/about
 
-- **Purpose:** Same-origin proxy of api `PUT /me/about` (set or replace the signed-in About me note).
+- **Purpose:** Same-origin proxy of api `PUT /me/about` (set or replace the signed-in About me note). JSON `{ text, photo? }`: `photo` omitted keeps a stored image, `null` clears it, `{ contentType, data }` sets a JPEG/PNG/WebP like a forum post.
 - **Errors:** Upstream 400/401/409, or 502 if the api is unreachable.
 - **Used by:** `putAboutMe`.
 - **Auth:** Bearer.
+
+## Endpoint: GET /me/about/photo
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /me/about/photo` (raw JPEG/PNG/WebP bytes for the signed-in About me note). Always render via blob URLs — not bare `<img src>`.
+- **Errors:** Upstream 401/404, or 502 if the api is unreachable.
+- **Used by:** `fetchAboutMePhoto`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /view-key/[viewKey]/about/photo
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/about/photo` (raw JPEG/PNG/WebP bytes for the view-key About me note). Always render via blob URLs — not bare `<img src>`.
+- **Errors:** Upstream 404, or 502 if the api is unreachable.
+- **Used by:** `fetchViewAboutMePhoto`.
+- **Auth:** none.
 
 ## Endpoint: POST /me/setup/skip
 

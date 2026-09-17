@@ -45,6 +45,7 @@ const account: Account = {
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: null,
   missing: [],
 };

@@ -1,8 +1,9 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileScreen } from '@/components/ProfileScreen';
-import { fetchAccountActivity, putAboutMe } from '@/lib/api';
+import { fetchAboutMePhoto, fetchAccountActivity, putAboutMe } from '@/lib/api';
 import type { Account, AccountActivity } from '@/lib/api-types';
+import { prepareForumPhoto } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -48,6 +49,13 @@ vi.mock('@/lib/api', () => ({
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
   putAboutMe: vi.fn(),
+  fetchAboutMePhoto: vi
+    .fn()
+    .mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' })),
+}));
+
+vi.mock('@/lib/forum-photo', () => ({
+  prepareForumPhoto: vi.fn(),
 }));
 
 vi.mock('@/lib/push', () => ({
@@ -78,6 +86,21 @@ beforeEach(() => {
   vi.mocked(fetchAccountActivity).mockReset();
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(putAboutMe).mockReset();
+  vi.mocked(fetchAboutMePhoto).mockReset();
+  vi.mocked(fetchAboutMePhoto).mockResolvedValue(
+    new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+  );
+  vi.mocked(prepareForumPhoto).mockReset();
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => 'blob:about-me',
+  });
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => undefined,
+  });
   useAuthStore.setState({
     session: 'tok',
     account: {
@@ -93,6 +116,7 @@ beforeEach(() => {
       rulesAgreedAt: 1_700_000_001,
       viewKey: VIEW_KEY,
       aboutMe: null,
+      aboutMeHasPhoto: false,
       setup: null,
       missing: [],
     },
@@ -241,6 +265,72 @@ describe('ProfileScreen', () => {
       expect(putAboutMe).toHaveBeenCalledWith('tok', 'Hello');
     });
     expect(useAuthStore.getState().account?.aboutMe).toBe('Hello');
+    expect(useAuthStore.getState().account?.aboutMeHasPhoto).toBe(false);
+  });
+
+  it('saves About me with an attached JPEG and writes aboutMeHasPhoto onto the store', async () => {
+    const account = useAuthStore.getState().account as Account;
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    vi.mocked(putAboutMe).mockResolvedValue({
+      ...account,
+      aboutMe: 'Hello',
+      aboutMeHasPhoto: true,
+    });
+    renderWithLocale(<ProfileScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: {
+        files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(putAboutMe).toHaveBeenCalledWith('tok', 'Hello', {
+        contentType: 'image/jpeg',
+        data: 'abc',
+      });
+    });
+    expect(useAuthStore.getState().account?.aboutMe).toBe('Hello');
+    expect(useAuthStore.getState().account?.aboutMeHasPhoto).toBe(true);
+  });
+
+  it('clears the About me photo and writes aboutMeHasPhoto false onto the store', async () => {
+    const account = useAuthStore.getState().account as Account;
+    useAuthStore.setState({
+      account: { ...account, aboutMe: 'Kept.', aboutMeHasPhoto: true },
+    });
+    vi.mocked(fetchAboutMePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(putAboutMe).mockResolvedValue({
+      ...account,
+      aboutMe: 'Kept.',
+      aboutMeHasPhoto: false,
+    });
+    renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(putAboutMe).toHaveBeenCalledWith('tok', 'Kept.', null);
+    });
+    expect(useAuthStore.getState().account?.aboutMe).toBe('Kept.');
+    expect(useAuthStore.getState().account?.aboutMeHasPhoto).toBe(false);
   });
 
   it('drops the About me result when the account was cleared mid-flight', async () => {

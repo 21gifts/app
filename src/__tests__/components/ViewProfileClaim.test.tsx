@@ -42,6 +42,7 @@ const account = {
   rulesAgreedAt: null,
   viewKey: VIEW_KEY,
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: 'rules' as const,
   missing: ['rules'] as ('name' | 'lightning-address' | 'rules')[],
 };

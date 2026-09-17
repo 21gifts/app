@@ -8,6 +8,7 @@ import {
   fetchMemberReplies,
   fetchMessagePhoto,
   fetchPublicMessage,
+  fetchPublicMessagePhoto,
   fetchReplies,
   openConversation,
   postMessage,
@@ -42,6 +43,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchPublicMessagePhoto: vi.fn(),
   fetchMemberPosts: vi.fn(),
   fetchMemberReplies: vi.fn(),
   fetchReplies: vi.fn(),
@@ -87,6 +89,7 @@ const profile: MemberProfile = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
+  aboutMeHasPhoto: false,
   profileMessage: null,
   postCount: 0,
   replyCount: 0,
@@ -161,6 +164,7 @@ const account: Account = {
   rulesAgreedAt: 1,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: null,
   missing: [],
 };
@@ -250,6 +254,9 @@ beforeEach(() => {
     account,
   });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+  vi.mocked(fetchPublicMessagePhoto).mockResolvedValue(
+    new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+  );
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -298,6 +305,20 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByText('carol@walletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+  });
+
+  it('loads the About me photo via the public GET when there is no session', async () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true } }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchPublicMessagePhoto).toHaveBeenCalledWith(note.id);
+    });
   });
 
   it('shows a read-only location row without edit controls', () => {
@@ -2813,6 +2834,7 @@ describe('MemberProfileScreen', () => {
     await openPostsShowingPhotoNote();
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', note.id);
+      expect(photoMock).toHaveBeenCalledTimes(2);
     });
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:mock');
@@ -2846,7 +2868,9 @@ describe('MemberProfileScreen', () => {
   });
 
   it('retries a transient photo fetch failure once for a visible note', async () => {
-    photoMock.mockRejectedValueOnce(new Error('transient'));
+    photoMock
+      .mockRejectedValueOnce(new Error('transient'))
+      .mockRejectedValueOnce(new Error('transient'));
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
@@ -2858,7 +2882,7 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:mock');
     });
-    expect(photoMock).toHaveBeenCalledTimes(2);
+    expect(photoMock).toHaveBeenCalledTimes(3);
   });
 
   it('ignores a failed photo fetch', async () => {
@@ -2876,18 +2900,18 @@ describe('MemberProfileScreen', () => {
     );
     await openPostsShowingPhotoNote();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledTimes(2);
+      expect(photoMock).toHaveBeenCalledTimes(3);
     });
     expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
     expect(screen.queryByAltText('Photo from Carol')).toBeNull();
   });
 
   it('ignores a stale photo fetch after unmount', async () => {
-    let resolvePhoto: ((value: Blob) => void) | undefined;
-    photoMock.mockImplementationOnce(
+    const resolvers: Array<(value: Blob) => void> = [];
+    photoMock.mockImplementation(
       () =>
         new Promise((resolve) => {
-          resolvePhoto = resolve;
+          resolvers.push(resolve);
         }),
     );
     const view = renderWithLocale(
@@ -2899,19 +2923,21 @@ describe('MemberProfileScreen', () => {
     );
     await openPostsShowingPhotoNote();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalled();
+      expect(photoMock).toHaveBeenCalledTimes(2);
     });
     view.unmount();
-    resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    for (const resolve of resolvers) {
+      resolve(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    }
     await Promise.resolve();
   });
 
   it('revokes a photo blob if unmount happens during createObjectURL', async () => {
-    let resolvePhoto: ((value: Blob) => void) | undefined;
-    photoMock.mockImplementationOnce(
+    const resolvers: Array<(value: Blob) => void> = [];
+    photoMock.mockImplementation(
       () =>
         new Promise((resolve) => {
-          resolvePhoto = resolve;
+          resolvers.push(resolve);
         }),
     );
     const view = renderWithLocale(
@@ -2923,14 +2949,14 @@ describe('MemberProfileScreen', () => {
     );
     await openPostsShowingPhotoNote();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalled();
+      expect(photoMock).toHaveBeenCalledTimes(2);
     });
     const revoke = vi.mocked(URL.revokeObjectURL);
     vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
       view.unmount();
       return 'blob:late';
     });
-    resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    resolvers[1]?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     await Promise.resolve();
     expect(revoke).toHaveBeenCalledWith('blob:late');
   });
@@ -2960,12 +2986,15 @@ describe('MemberProfileScreen', () => {
 
   it('does not continue a photo retry after unmount', async () => {
     let rejectRetry: ((reason: Error) => void) | undefined;
-    photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
-      () =>
-        new Promise((_, reject) => {
-          rejectRetry = reject;
-        }),
-    );
+    photoMock
+      .mockRejectedValueOnce(new Error('transient'))
+      .mockRejectedValueOnce(new Error('transient'))
+      .mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            rejectRetry = reject;
+          }),
+      );
     const view = renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
@@ -2975,7 +3004,7 @@ describe('MemberProfileScreen', () => {
     );
     await openPostsShowingPhotoNote();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledTimes(2);
+      expect(photoMock).toHaveBeenCalledTimes(3);
     });
     view.unmount();
     rejectRetry?.(new Error('gone'));
@@ -3005,5 +3034,22 @@ describe('MemberProfileScreen', () => {
     rejectFirst?.(new Error('gone'));
     await Promise.resolve();
     expect(photoMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the About me photo when aboutMeHasPhoto is true', async () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{
+          ...profile,
+          aboutMeHasPhoto: true,
+          profileMessage: { ...note, hasPhoto: true },
+        }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
   });
 });

@@ -10,6 +10,7 @@ import {
   fetchAccountActivity,
   fetchGiftDay,
   fetchGiftStats,
+  fetchAboutMePhoto,
   fetchMe,
   fetchMember,
   fetchMemberActivity,
@@ -24,6 +25,7 @@ import {
   fetchPublicReplies,
   fetchReplies,
   fetchVapidPublicKey,
+  fetchViewAboutMePhoto,
   fetchViewActivity,
   fetchViewProfile,
   finishPasskeyAuthentication,
@@ -69,6 +71,7 @@ const account = {
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: 'name' as const,
   missing: ['name', 'lightning-address', 'rules'] as const,
 };
@@ -131,6 +134,7 @@ describe('fetchViewProfile', () => {
     createdAt: 1,
     hasPasskey: false,
     aboutMe: null,
+    aboutMeHasPhoto: false,
   };
 
   it('returns the validated profile and hits the same-origin proxy path', async () => {
@@ -189,6 +193,7 @@ describe('fetchMember', () => {
     lightningAddress: 'carol@walletofsatoshi.com',
     createdAt: '2026-01-15T12:00:00.000Z',
     aboutMe: null,
+    aboutMeHasPhoto: false,
     profileMessage: null,
     postCount: 0,
     replyCount: 0,
@@ -375,6 +380,37 @@ describe('putAboutMe', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text: 'Hello from Ada.' }),
+    });
+  });
+
+  it('includes photo:null when the third argument is null', async () => {
+    const updated = { ...account, aboutMe: 'Hello' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(putAboutMe('sess', 'Hello', null)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello', photo: null }),
+    });
+  });
+
+  it('includes the photo object when the third argument is a payload', async () => {
+    const updated = { ...account, aboutMe: 'Hello', aboutMeHasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+    const photo = { contentType: 'image/jpeg', data: 'abc' };
+
+    await expect(putAboutMe('sess', 'Hello', photo)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello', photo }),
     });
   });
 
@@ -1667,6 +1703,107 @@ describe('fetchMessagePhoto', () => {
     await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+});
+
+describe('fetchAboutMePhoto', () => {
+  it('returns the blob and sends the bearer header', async () => {
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchAboutMePhoto('sess')).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/me/about/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchAboutMePhoto('sess')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchAboutMePhoto('sess')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchAboutMePhoto('sess')).rejects.toThrow('Could not load. Please try again.');
+  });
+});
+
+describe('fetchViewAboutMePhoto', () => {
+  it('returns the blob without Authorization', async () => {
+    const viewKey = 'a'.repeat(64);
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchViewAboutMePhoto(viewKey)).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith(`/view-key/${viewKey}/about/photo`);
+  });
+
+  it('encodes the view key in the path', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchViewAboutMePhoto('a/b');
+    expect(fetchMock).toHaveBeenCalledWith('/view-key/a%2Fb/about/photo');
+  });
+
+  it('throws when the response is not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchViewAboutMePhoto('vk')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchViewAboutMePhoto('vk')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchViewAboutMePhoto('vk')).rejects.toThrow('Could not load. Please try again.');
   });
 });
 
