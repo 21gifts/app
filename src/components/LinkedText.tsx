@@ -1,7 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type MouseEvent, type ReactElement, type ReactNode } from 'react';
+import {
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { ExternalLinkWarning } from '@/components/ExternalLinkWarning';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import { splitNoteLinks } from '@/lib/note-links';
@@ -40,13 +46,22 @@ export function LinkedText({ text, className, ...rest }: LinkedTextProps): React
   const segments = origin === undefined ? splitNoteLinks(text) : splitNoteLinks(text, origin);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
-  const stopToggle = (event: MouseEvent): void => {
+  const stopToggle = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation();
   };
 
   const onExternalClick = (event: MouseEvent<HTMLAnchorElement>, href: string): void => {
     event.stopPropagation();
     if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    setPendingHref(href);
+  };
+
+  const onExternalKeyDown = (event: KeyboardEvent<HTMLAnchorElement>, href: string): void => {
+    event.stopPropagation();
+    if (event.key !== 'Enter' && event.key !== ' ') {
       return;
     }
     event.preventDefault();
@@ -84,6 +99,7 @@ export function LinkedText({ text, className, ...rest }: LinkedTextProps): React
                 href={segment.path}
                 className={linkClassName}
                 onClick={stopToggle}
+                onKeyDown={stopToggle}
               >
                 {segment.value}
               </Link>
@@ -97,6 +113,9 @@ export function LinkedText({ text, className, ...rest }: LinkedTextProps): React
               className={linkClassName}
               onClick={(event) => {
                 onExternalClick(event, segment.href);
+              }}
+              onKeyDown={(event) => {
+                onExternalKeyDown(event, segment.href);
               }}
             >
               {segment.value}

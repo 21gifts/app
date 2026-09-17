@@ -103,6 +103,50 @@ describe('LinkedText', () => {
     expect(parentClick).not.toHaveBeenCalled();
   });
 
+  it('stops Enter on a link so a parent card key handler does not toggle', () => {
+    const parentKey = vi.fn();
+    renderWithLocale(
+      <div onKeyDown={parentKey}>
+        <LinkedText text="http://21.gifts/trust-chain" className="text-sm" />
+      </div>,
+    );
+    fireEvent.keyDown(screen.getByRole('link', { name: 'http://21.gifts/trust-chain' }), {
+      key: 'Enter',
+    });
+    expect(parentKey).not.toHaveBeenCalled();
+  });
+
+  it('opens the warning when Enter is pressed on an external url', () => {
+    renderWithLocale(<LinkedText text="https://example.com/phish" className="text-sm" />);
+    fireEvent.keyDown(screen.getByRole('link', { name: 'https://example.com/phish' }), {
+      key: 'Enter',
+    });
+    expect(screen.getByRole('dialog', { name: 'Open external link?' })).toBeTruthy();
+    expect(openSystem).not.toHaveBeenCalled();
+  });
+
+  it('opens the warning when Space is pressed on an external url', () => {
+    renderWithLocale(<LinkedText text="https://example.com/phish" className="text-sm" />);
+    fireEvent.keyDown(screen.getByRole('link', { name: 'https://example.com/phish' }), {
+      key: ' ',
+    });
+    expect(screen.getByRole('dialog', { name: 'Open external link?' })).toBeTruthy();
+  });
+
+  it('does not open the warning for other keys on an external url', () => {
+    const parentKey = vi.fn();
+    renderWithLocale(
+      <div onKeyDown={parentKey}>
+        <LinkedText text="https://example.com/phish" className="text-sm" />
+      </div>,
+    );
+    fireEvent.keyDown(screen.getByRole('link', { name: 'https://example.com/phish' }), {
+      key: 'Tab',
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(parentKey).not.toHaveBeenCalled();
+  });
+
   it('ignores non-primary clicks on an external url', () => {
     renderWithLocale(<LinkedText text="https://example.com/phish" className="text-sm" />);
     fireEvent.click(screen.getByRole('link', { name: 'https://example.com/phish' }), {

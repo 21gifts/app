@@ -1306,7 +1306,7 @@
 
 ## Function: LinkedText
 
-- **Purpose:** Render a note/About-me/inbox body with clickable http(s) URLs. Internal URLs are Next.js `Link`s to `pathname+search+hash` (no warning). External URLs are `<a href>` that `preventDefault` on a primary click and open `ExternalLinkWarning`. Clicks `stopPropagation` so a forum card does not toggle. Optional `suffix` sits in the same `<p>` after the runs (Show more).
+- **Purpose:** Render a note/About-me/inbox body with clickable http(s) URLs. Internal URLs are Next.js `Link`s to `pathname+search+hash` (no warning). External URLs are `<a href>` that `preventDefault` on a primary click and open `ExternalLinkWarning`. Click and Enter/Space `stopPropagation` so a forum card does not toggle; Enter/Space on an external URL opens the warning. Optional `suffix` sits in the same `<p>` after the runs (Show more).
 - **Inputs:** `text`, `className` for the wrapping `<p>`, optional `linkClassName` (default underline, inherit colour), optional `currentOrigin`, optional `suffix`.
 - **Returns / side effects:** Fragment: `<p>` plus optional overlay. Confirm on `https:` calls `openInSystemBrowser`; other http uses `window.open`.
 - **Used by:** `ForumNoteText`, `ForumQuotedBody` (when `truncate` is false), `InboxScreen`, `AboutMeSection`.
