@@ -261,6 +261,18 @@ describe('PublicMessageThread', () => {
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
   });
 
+  it('rejects an overflowing Gift amount', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.change(payAmountInput(), { target: { value: '9007199254740993' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
+  });
+
   it('shows a pay error when the invoice request fails', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('nope'));
     vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
