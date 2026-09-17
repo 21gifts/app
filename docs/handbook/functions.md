@@ -1278,7 +1278,7 @@
 
 ## Function: ForumQuotedBody
 
-- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs. Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL. Nested card is a link with name, role span pill, timestamp, optional photo blob, caption (no nested unfurl), ₿ amount. NoteTranslate on stripped display text only. Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more). Permalink passes `truncate={false}` so the original stays full.
+- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs. Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL. Nested card is an outer frame: header (name, role span pill, timestamp) and optional photo blob are a permalink link (`forum.quotedNote`); caption sits beside that link (`ForumNoteText` when truncate, else a paragraph, no nested unfurl); ₿ amount is a second permalink link without that aria-label. NoteTranslate on stripped display text only. Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more). Permalink passes `truncate={false}` so the original stays full.
 - **Inputs:** text, knownNotes, excludeId, rateDay, fiat, optional truncate (default true), optional onActivate.
 - **Returns / side effects:** React element or null when text==='' and no resolved quotes.
 - **Used by:** `ForumBoard`, `PublicMessageLoader`.
