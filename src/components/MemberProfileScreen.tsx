@@ -118,6 +118,20 @@ function isRateLimitError(err: unknown): boolean {
   return /too many (messages|payments)/i.test(err.message);
 }
 
+/**
+ * True when the author's wallet rejected the zap invoice.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message looks like an author's-wallet error.
+ */
+function isAuthorWalletError(err: unknown): boolean {
+  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+}
+
 /** Roles that show a clickable tag beside the author name. */
 type MemberTaggedRole = 'founder' | 'moderator' | 'verified';
 
@@ -787,7 +801,13 @@ export function MemberProfileScreen({
             setPayError('request');
             return null;
           }
-          setPayError('request');
+          setPayError(
+            isRateLimitError(err)
+              ? 'rateLimit'
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
+          );
         } finally {
           if (generation === payPollGeneration.current) {
             setPayBusy(false);

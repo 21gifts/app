@@ -1045,9 +1045,11 @@ describe('MemberProfileScreen', () => {
   });
 
   it('uses visible reactions-feed sats for Gift, not a stale expanded copy', async () => {
-    vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED, payable: true, sats: 0 }]);
+    vi.mocked(fetchReplies).mockResolvedValue([
+      { ...PAYABLE_NESTED, payable: true, sats: 0, parentId: activityReply.parentId },
+    ]);
     vi.mocked(fetchMemberReplies).mockResolvedValue([
-      { ...PAYABLE_NESTED, payable: true, sats: 21 },
+      { ...PAYABLE_NESTED, payable: true, sats: 21, parentId: activityReply.parentId },
     ]);
     vi.mocked(fetchPublicMessage).mockResolvedValue({
       ...PAYABLE_NESTED,
@@ -1100,6 +1102,42 @@ describe('MemberProfileScreen', () => {
     const reopened = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
     expect(within(reopened).queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(within(reopened).queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it('shows pay author-wallet copy when Gift Continue is rejected', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(
+      new Error("The author's wallet cannot receive this Bitcoin payment"),
+    );
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
+  it('shows pay rate-limit copy when Gift Continue is limited', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
   });
 
   it('posts a reply on the expanded profile note', async () => {
