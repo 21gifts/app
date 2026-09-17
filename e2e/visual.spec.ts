@@ -6184,7 +6184,7 @@ test.describe('moderate hidden screens', () => {
 });
 
 test.describe('moderate proposals screens', () => {
-test.describe('moderate group screens', () => {  // Goldens are regenerated on the build host.
+  // Goldens are regenerated on the build host.
   async function seedAda(
     page: Page,
     role: 'basis' | 'moderator' | 'founder' = 'basis',
@@ -6231,21 +6231,7 @@ test.describe('moderate group screens', () => {  // Goldens are regenerated on t
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ proposals }),
-  const GROUP = {
-    id: 'conv-mod',
-    kind: 'moderator_group',
-    name: 'Moderators',
-    lastText: 'Hello mods',
-    lastAt: '2026-08-28T15:00:00.000Z',
-    lastFromMe: false,
-  };
-
-  async function mockGroup(page: Page): Promise<void> {
-    await page.route('**/conversations/moderator-group', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ conversation: GROUP }),      });
+      });
     });
   }
 
@@ -6332,6 +6318,55 @@ test.describe('moderate group screens', () => {  // Goldens are regenerated on t
     await page.getByRole('button', { name: 'Confirm as moderator' }).click();
     await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-proposals-confirming');
+  });
+});
+
+test.describe('moderate group screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const GROUP = {
+    id: 'conv-mod',
+    kind: 'moderator_group',
+    name: 'Moderators',
+    lastText: 'Hello mods',
+    lastAt: '2026-08-28T15:00:00.000Z',
+    lastFromMe: false,
+  };
+
+  async function mockGroup(page: Page): Promise<void> {
+    await page.route('**/conversations/moderator-group', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ conversation: GROUP }),
+      });
+    });
+  }
+
   async function mockThread(
     page: Page,
     messages: Array<{
@@ -6405,7 +6440,8 @@ test.describe('moderate group screens', () => {  // Goldens are regenerated on t
     });
     await page.goto('/moderate/group');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await shotScreen(page, 'state-moderate-group-error');  });
+    await shotScreen(page, 'state-moderate-group-error');
+  });
 });
 
 test.describe('trust-chain screens', () => {

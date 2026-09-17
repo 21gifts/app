@@ -33,10 +33,11 @@ vi.mock('@/lib/api', () => ({
   postConversationMessage: vi.fn(),
 }));
 
-import { fetchConversation, fetchModeratorGroup } from '@/lib/api';
+import { fetchConversation, fetchModeratorGroup, postConversationMessage } from '@/lib/api';
 
 const groupMock = vi.mocked(fetchModeratorGroup);
 const threadMock = vi.mocked(fetchConversation);
+const postMock = vi.mocked(postConversationMessage);
 
 const account: Account = {
   id: 'acc_1',
@@ -51,6 +52,7 @@ const account: Account = {
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: null,
   missing: [],
 };
@@ -185,5 +187,72 @@ describe('ModeratorGroupScreen', () => {
       await Promise.resolve();
     });
     expect(screen.queryByText('Hello mods')).toBeNull();
+  });
+
+  it('ignores a stale thread resolve after unmount', async () => {
+    groupMock.mockResolvedValue(GROUP);
+    let resolveThread: ((value: ConversationMessage[]) => void) | undefined;
+    threadMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveThread = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ModeratorGroupScreen />);
+    view.unmount();
+    await act(async () => {
+      resolveThread?.([MESSAGE]);
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Hello mods')).toBeNull();
+  });
+
+  it('ignores a stale thread reject after unmount', async () => {
+    groupMock.mockResolvedValue(GROUP);
+    let rejectThread: ((reason: Error) => void) | undefined;
+    threadMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectThread = reject;
+        }),
+    );
+    const view = renderWithLocale(<ModeratorGroupScreen />);
+    view.unmount();
+    await act(async () => {
+      rejectThread?.(new Error('boom'));
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('validates empty and too-long drafts then posts', async () => {
+    postMock.mockResolvedValue({
+      id: 'm2',
+      name: 'Ada',
+      text: 'Follow up',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      fromMe: true,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'a'.repeat(501) } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Follow up')).toBeTruthy();
+    expect(postMock).toHaveBeenCalledWith('sess', 'conv-mod', 'Follow up');
+  });
+
+  it('shows a send error when post fails', async () => {
+    postMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
   });
 });
