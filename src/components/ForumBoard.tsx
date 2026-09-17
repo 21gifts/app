@@ -286,6 +286,11 @@ export interface ForumBoardProps {
    * public thread). Omit or `null` for no ring.
    */
   permalinkTargetId?: string | null;
+  /**
+   * When false, note and reply bodies stay full (signed-in `/messages/[id]`).
+   * Default true for the feed and profile.
+   */
+  truncate?: boolean;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -364,7 +369,7 @@ function showForumPm(
  * `top-14` and New posts moves to `top-28`.
  * Optional `permalinkTargetId` rings the matching nested reply only.
  *
- * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink state.
+ * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink/truncate state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -425,6 +430,7 @@ export function ForumBoard({
   composerHidden = false,
   onDeleted,
   permalinkTargetId = null,
+  truncate = true,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -837,6 +843,7 @@ export function ForumBoard({
                       excludeId={message.id}
                       rateDay={rateDay ?? null}
                       fiat={fiat}
+                      truncate={truncate}
                       onActivate={(event) => {
                         event.stopPropagation();
                       }}
@@ -1135,6 +1142,7 @@ export function ForumBoard({
                                   excludeId={reply.id}
                                   rateDay={rateDay ?? null}
                                   fiat={fiat}
+                                  truncate={truncate}
                                   onActivate={(event) => {
                                     event.stopPropagation();
                                   }}

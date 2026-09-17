@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { ForumNoteText } from '@/components/ForumNoteText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -33,11 +34,13 @@ function QuotedForumNote({
   note,
   rateDay,
   fiat,
+  truncate,
   onActivate,
 }: {
   note: ForumMessage;
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
+  truncate: boolean;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
@@ -81,56 +84,67 @@ function QuotedForumNote({
     note.role === 'founder' || note.role === 'moderator' || note.role === 'verified'
       ? t(ROLE_LABEL_KEYS[note.role])
       : null;
+  const handleActivate = (event: { stopPropagation: () => void }): void => {
+    onActivate?.(event);
+  };
 
   return (
-    <Link
-      href={`/messages/${note.id}`}
-      aria-label={t('forum.quotedNote', { name: note.name })}
-      onClick={(event) => {
-        onActivate?.(event);
-      }}
+    <div
       className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2"
+      onClick={handleActivate}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-app-fg">{note.name}</span>
-          {roleLabel !== null ? (
-            <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-              {roleLabel}
-            </span>
-          ) : null}
-        </span>
-        <time dateTime={note.createdAt} className="text-xs text-app-subtle">
-          {formatForumTime(note.createdAt, locale)}
-        </time>
-      </div>
-      {photoUrl !== null ? (
-        /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
-        <img
-          src={photoUrl}
-          alt={t('forum.photoAlt', { name: note.name })}
-          className="mt-2 max-h-80 w-full rounded-xl object-contain"
-        />
-      ) : null}
-      {note.text !== '' ? (
-        <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
-      ) : null}
-      <p
-        className={
-          fiatAmount === null
-            ? 'text-sm font-medium text-app-fg'
-            : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
-        }
+      <Link
+        href={`/messages/${note.id}`}
+        aria-label={t('forum.quotedNote', { name: note.name })}
+        className="block"
       >
-        {formatBitcoin(note.sats, numberFormat)}
-        {fiatAmount !== null ? (
-          <>
-            <span aria-hidden="true"> · </span>
-            <span>{formatFiatDisplay(fiatAmount, fiat, numberFormat)}</span>
-          </>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-app-fg">{note.name}</span>
+            {roleLabel !== null ? (
+              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                {roleLabel}
+              </span>
+            ) : null}
+          </span>
+          <time dateTime={note.createdAt} className="text-xs text-app-subtle">
+            {formatForumTime(note.createdAt, locale)}
+          </time>
+        </div>
+        {photoUrl !== null ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+          <img
+            src={photoUrl}
+            alt={t('forum.photoAlt', { name: note.name })}
+            className="mt-2 max-h-80 w-full rounded-xl object-contain"
+          />
         ) : null}
-      </p>
-    </Link>
+      </Link>
+      {note.text !== '' ? (
+        truncate ? (
+          <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
+        )
+      ) : null}
+      <Link href={`/messages/${note.id}`} className="block">
+        <p
+          className={
+            fiatAmount === null
+              ? 'text-sm font-medium text-app-fg'
+              : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
+          }
+        >
+          {formatBitcoin(note.sats, numberFormat)}
+          {fiatAmount !== null ? (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{formatFiatDisplay(fiatAmount, fiat, numberFormat)}</span>
+            </>
+          ) : null}
+        </p>
+      </Link>
+    </div>
   );
 }
 
@@ -138,9 +152,11 @@ function QuotedForumNote({
  * Remaining body text plus nested posts for resolved `/messages/<uuid>` URLs.
  *
  * @param props - Body text, already-loaded notes, the containing message id,
- *   fiat conversion, and an optional click handler for the nested card.
+ *   fiat conversion, optional feed truncation, and an optional click handler
+ *   for the nested card.
  * @returns The stripped paragraph, nested post cards, and translation control;
  *   `null` when `text` is empty and no quotes resolved.
+ * @throws Does not throw.
  */
 export function ForumQuotedBody({
   text,
@@ -148,6 +164,7 @@ export function ForumQuotedBody({
   excludeId,
   rateDay,
   fiat,
+  truncate = true,
   onActivate,
 }: {
   text: string;
@@ -155,6 +172,7 @@ export function ForumQuotedBody({
   excludeId: string;
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
+  truncate?: boolean;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
   const candidateIds = useMemo(() => {
@@ -221,7 +239,11 @@ export function ForumQuotedBody({
   return (
     <>
       {displayText !== '' ? (
-        <p className="whitespace-pre-wrap text-sm text-app-fg">{displayText}</p>
+        truncate ? (
+          <ForumNoteText text={displayText} className="whitespace-pre-wrap text-sm text-app-fg" />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm text-app-fg">{displayText}</p>
+        )
       ) : null}
       {displayText !== '' ? <NoteTranslate text={displayText} /> : null}
       {resolvedNotes.map((note) => (
@@ -230,6 +252,7 @@ export function ForumQuotedBody({
           note={note}
           rateDay={rateDay}
           fiat={fiat}
+          truncate={truncate}
           {...(onActivate === undefined ? {} : { onActivate })}
         />
       ))}

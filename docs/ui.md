@@ -767,7 +767,7 @@ Do not use orange. This is law, not a gift CTA.
 1. Row: `name` (`text-sm font-medium`) + optional **Badge** + `time` (`text-xs text-app-subtle`).
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`).
-4. Body `text-sm text-app-fg whitespace-pre-wrap`.
+4. Body stays `text-sm text-app-fg whitespace-pre-wrap`; when longer than 280 characters, collapsed preview + `…` + inline **Show more** (`forum.showMore`, app inline link). Expand-in-place, no Show less. Permalink `/messages/[id]` is full text.
 5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (pay, copy, PM, delete when present) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
 Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). Gift/copy/PM/delete stay sibling IconButtons that do not expand. The action row is a sibling after that control, still inside the `li`. Inner pay/copy/PM/delete controls `stopPropagation`. Focus ring on the expandable region.

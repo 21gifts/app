@@ -387,4 +387,71 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Verified')).toBeNull();
     expect(screen.queryByText('Moderator')).toBeNull();
   });
+
+  it('collapses long remaining text behind Show more on the feed', () => {
+    const text = `${'a'.repeat(280)} TAILTOKEN`;
+    renderWithLocale(
+      <ForumQuotedBody
+        text={text}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
+    expect(screen.queryByText(/TAILTOKEN/)).toBeNull();
+  });
+
+  it('keeps the full remaining text when truncate is off', () => {
+    const text = `${'a'.repeat(280)} TAILTOKEN`;
+    renderWithLocale(
+      <ForumQuotedBody
+        text={text}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+      />,
+    );
+    expect(screen.getByText(/TAILTOKEN/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('collapses a long nested quoted note behind Show more', async () => {
+    const longQuoted: ForumMessage = { ...quotedNote, text: `${'a'.repeat(280)} TAILTOKEN` };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[longQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'Show more' }).closest('a')).toBeNull();
+    expect(screen.queryByText(/TAILTOKEN/)).toBeNull();
+  });
+
+  it('keeps a long nested quoted note full when truncate is off', async () => {
+    const longQuoted: ForumMessage = { ...quotedNote, text: `${'a'.repeat(280)} TAILTOKEN` };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[longQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/TAILTOKEN/)).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
 });

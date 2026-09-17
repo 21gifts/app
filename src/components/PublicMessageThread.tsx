@@ -868,6 +868,7 @@ export function PublicMessageThread(props: {
       <ForumBoard
         {...IDLE_BOARD}
         messages={[note]}
+        truncate={false}
         photoUrls={photoUrls}
         rateDay={rateDay}
         payMessageId={payMessageId}

@@ -1259,6 +1259,53 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-translate-error');
   });
 
+  test('state /welcome note-truncated', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const tail = 'TAILTOKEN';
+    const text = `${'Good morning everyone. '.repeat(14)}${tail}`;
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-long',
+              name: 'Ada',
+              text,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await expect(page.getByText(tail)).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-note-truncated');
+  });
+
   test('state /welcome new-posts', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

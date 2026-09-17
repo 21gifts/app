@@ -1277,6 +1277,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'note-truncated',
+    image: 'welcome-note-truncated.png',
+    visual: 'state-welcome-note-truncated',
+    needle: "getByRole('button', { name: 'Show more' })",
+  },
+  {
+    route: '/welcome',
     id: 'new-posts',
     image: 'welcome-new-posts.png',
     visual: 'state-welcome-new-posts',
