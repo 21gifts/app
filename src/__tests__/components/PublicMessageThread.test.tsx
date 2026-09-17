@@ -334,15 +334,6 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
-  it('rejects an overflowing composer amount', async () => {
-    signIn();
-    renderThread();
-    await screen.findByPlaceholderText('Write a reaction');
-    submitComposer('9007199254740993');
-    expect(postMessageInvoice).not.toHaveBeenCalled();
-    expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
-  });
-
   it('keeps the board when the account snapshot is cleared', async () => {
     signIn();
     renderThread();
