@@ -1342,6 +1342,59 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-new-posts', false);
   });
 
+  test('state /welcome moderator-appointed', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          forumLawsDismissed: true,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n-appointed',
+              type: 'moderator_appointed',
+              parentId: 'acc_e2e',
+              replyId: 'acc_e2e',
+              name: 'Cyrill',
+              text: '',
+              createdAt: '2026-09-16T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'You are a moderator' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-moderator-appointed', false);
+  });
+
   test('screen /profile', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

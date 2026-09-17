@@ -297,6 +297,7 @@ const en = {
   'forum.collapse': 'Hide reactions',
   'forum.refreshing': 'Refreshing messages',
   'forum.newPosts': 'New posts',
+  'forum.moderatorAppointed': 'You are a moderator',
   'forum.authorProfile': 'View profile',
   'forum.translate': 'Translate',
   'forum.translateShowOriginal': 'Show original',
@@ -513,6 +514,7 @@ const en = {
   'notifications.zap': '{name} sent bitcoin',
   'notifications.photoOnly': 'Photo reaction',
   'notifications.photoPost': 'Photo',
+  'notifications.moderatorAppointed': 'You are a moderator',
 
   'moderate.heading': 'Moderation',
   'moderate.hubLead': 'Tools for founders and moderators.',
@@ -847,6 +849,7 @@ const de = {
   'forum.collapse': 'Reaktionen ausblenden',
   'forum.refreshing': 'Nachrichten werden aktualisiert',
   'forum.newPosts': 'Neue Beiträge',
+  'forum.moderatorAppointed': 'Du bist jetzt Moderator',
   'forum.authorProfile': 'Profil anzeigen',
   'forum.translate': 'Übersetzen',
   'forum.translateShowOriginal': 'Original anzeigen',
@@ -1069,6 +1072,7 @@ const de = {
   'notifications.zap': '{name} hat Bitcoin gesendet',
   'notifications.photoOnly': 'Foto-Reaktion',
   'notifications.photoPost': 'Foto',
+  'notifications.moderatorAppointed': 'Du bist jetzt Moderator',
 
   'moderate.heading': 'Moderation',
   'moderate.hubLead': 'Werkzeuge für Gründerpersonen und Moderatorinnen oder Moderatoren.',
@@ -1396,6 +1400,7 @@ const es = {
   'forum.collapse': 'Ocultar reacciones',
   'forum.refreshing': 'Actualizando mensajes',
   'forum.newPosts': 'Publicaciones nuevas',
+  'forum.moderatorAppointed': 'Ahora eres moderador',
   'forum.authorProfile': 'Ver perfil',
   'forum.translate': 'Traducir',
   'forum.translateShowOriginal': 'Mostrar original',
@@ -1613,6 +1618,7 @@ const es = {
   'notifications.zap': '{name} envió bitcoin',
   'notifications.photoOnly': 'Reacción con foto',
   'notifications.photoPost': 'Foto',
+  'notifications.moderatorAppointed': 'Ahora eres moderador',
 
   'moderate.heading': 'Moderación',
   'moderate.hubLead': 'Herramientas para personas fundadoras y moderadoras.',
@@ -1940,6 +1946,7 @@ const fil = {
   'forum.collapse': 'Itago ang mga reaksyon',
   'forum.refreshing': 'Nire-refresh ang mga mensahe',
   'forum.newPosts': 'Mga bagong post',
+  'forum.moderatorAppointed': 'Isa ka nang moderator',
   'forum.authorProfile': 'Tingnan ang profile',
   'forum.translate': 'Isalin',
   'forum.translateShowOriginal': 'Ipakita ang orihinal',
@@ -2163,6 +2170,7 @@ const fil = {
   'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Reaksyon na litrato',
   'notifications.photoPost': 'Litrato',
+  'notifications.moderatorAppointed': 'Isa ka nang moderator',
 
   'moderate.heading': 'Moderasyon',
   'moderate.hubLead': 'Mga tool para sa mga founder at moderator.',

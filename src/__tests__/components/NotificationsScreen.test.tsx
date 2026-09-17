@@ -83,6 +83,18 @@ const ZAP_EMPTY: Notification = {
   readAt: null,
 };
 
+const APPOINTED: Notification = {
+  id: 'n8',
+  type: 'moderator_appointed',
+  parentId: 'acc-subject',
+  replyId: 'acc-subject',
+  name: 'Cyrill',
+  text: '',
+  createdAt: '2026-08-22T12:00:00.000Z',
+  readAt: null,
+};
+const APPOINTED_TEXT: Notification = { ...APPOINTED, id: 'n9', text: 'You are a moderator' };
+
 describe('NotificationsScreen', () => {
   it('shows loading heading and copy', () => {
     renderWithLocale(
@@ -162,7 +174,7 @@ describe('NotificationsScreen', () => {
     expect(read.querySelector('.text-app-muted')).toBeTruthy();
     expect(read.querySelector('.font-semibold')).toBeNull();
     fireEvent.click(unread);
-    expect(onOpen).toHaveBeenCalledWith('parent-1', 'n1');
+    expect(onOpen).toHaveBeenCalledWith(UNREAD);
   });
 
   it('falls back to photo-only copy when a reply has empty text', () => {
@@ -178,7 +190,7 @@ describe('NotificationsScreen', () => {
     );
     expect(screen.getByText('Photo reaction')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Dan replied/ }));
-    expect(onOpen).toHaveBeenCalledWith('parent-3', 'n3');
+    expect(onOpen).toHaveBeenCalledWith(PHOTO);
   });
 
   it('falls back to photo-only copy when a post has empty text', () => {
@@ -194,7 +206,7 @@ describe('NotificationsScreen', () => {
     );
     expect(screen.getByText('Photo')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Ivy posted/ }));
-    expect(onOpen).toHaveBeenCalledWith('parent-5', 'n5');
+    expect(onOpen).toHaveBeenCalledWith(POST_PHOTO);
   });
 
   it('lists a living-room post with its body and opens parentId', () => {
@@ -211,7 +223,7 @@ describe('NotificationsScreen', () => {
     const row = screen.getByRole('button', { name: /Eve posted/ });
     expect(row.textContent).toContain('Hello living room');
     fireEvent.click(row);
-    expect(onOpen).toHaveBeenCalledWith('parent-4', 'n4');
+    expect(onOpen).toHaveBeenCalledWith(POST);
   });
 
   it('lists a zap with the stored sat amount and opens parentId', () => {
@@ -228,7 +240,7 @@ describe('NotificationsScreen', () => {
     const row = screen.getByRole('button', { name: /Frank sent bitcoin/ });
     expect(row.textContent).toContain('21');
     fireEvent.click(row);
-    expect(onOpen).toHaveBeenCalledWith('parent-6', 'n6');
+    expect(onOpen).toHaveBeenCalledWith(ZAP);
   });
 
   it('omits extra body copy when a zap has empty text', () => {
@@ -244,5 +256,42 @@ describe('NotificationsScreen', () => {
     expect(screen.getByRole('button', { name: /Gina sent bitcoin/ })).toBeTruthy();
     expect(screen.queryByText('Photo reaction')).toBeNull();
     expect(screen.queryByText('Photo')).toBeNull();
+  });
+
+  it('lists a moderator appointment by title only when text is empty', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[APPOINTED]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /You are a moderator/ });
+    expect(row.textContent).not.toContain('Photo reply');
+    expect(row.textContent).not.toContain('Photo');
+    expect(screen.queryByText('Photo reply')).toBeNull();
+    expect(screen.queryByText('Photo')).toBeNull();
+    fireEvent.click(row);
+    expect(onOpen).toHaveBeenCalledWith(APPOINTED);
+  });
+
+  it('lists a moderator appointment body when text is present', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[APPOINTED_TEXT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /You are a moderator/ });
+    expect(row.textContent).toContain('You are a moderator');
+    fireEvent.click(row);
+    expect(onOpen).toHaveBeenCalledWith(APPOINTED_TEXT);
   });
 });

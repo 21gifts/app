@@ -173,6 +173,10 @@ export interface ForumBoardProps {
   newPostsAvailable?: boolean;
   /** Apply unseen notes and scroll to top. Omit with `newPostsAvailable` falsy. */
   onShowNewPosts?: () => void;
+  /** True when an unread moderator-appointed notification exists. Default false. */
+  moderatorAppointedAvailable?: boolean;
+  /** Mark that notification read and hide the pill. Omit with `moderatorAppointedAvailable` falsy. */
+  onShowModeratorAppointed?: () => void;
   /** True while a post is in flight. */
   posting: boolean;
   /** Composer draft text. */
@@ -348,7 +352,10 @@ function showForumPm(
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
  * When unseen notes are held for a scrolled visitor, a labeled New posts pill
- * applies them without placing refresh chrome in the idle board.
+ * applies them without placing refresh chrome in the idle board. When an unread
+ * moderator-appointed notification exists, a labeled pill in the same visual
+ * language marks it read; if both pills show, the moderator pill stays at
+ * `top-14` and New posts moves to `top-28`.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
  * @returns The forum board element.
@@ -361,6 +368,8 @@ export function ForumBoard({
   onRefresh,
   newPostsAvailable = false,
   onShowNewPosts,
+  moderatorAppointedAvailable = false,
+  onShowModeratorAppointed,
   posting,
   draft,
   onDraftChange,
@@ -1262,8 +1271,28 @@ export function ForumBoard({
       ref={rootRef}
       className="flex w-full flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
     >
-      {newPostsAvailable ? (
+      {moderatorAppointedAvailable ? (
         <div className="pointer-events-none fixed left-1/2 top-14 z-30 -translate-x-1/2">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowModeratorAppointed}
+          >
+            {t('forum.moderatorAppointed')}
+          </Button>
+        </div>
+      ) : null}
+      {newPostsAvailable ? (
+        <div
+          className={
+            moderatorAppointedAvailable
+              ? 'pointer-events-none fixed left-1/2 top-28 z-30 -translate-x-1/2'
+              : 'pointer-events-none fixed left-1/2 top-14 z-30 -translate-x-1/2'
+          }
+        >
           <Button
             type="button"
             variant="primary"

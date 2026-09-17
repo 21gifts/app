@@ -15,8 +15,10 @@ import {
   dismissForumLaws,
   fetchMessagePhoto,
   fetchMessages,
+  fetchNotifications,
   fetchPublicMessage,
   fetchReplies,
+  markNotificationRead,
   openConversation,
   fetchGiftStats,
   postMessage,
@@ -265,9 +267,12 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  * the board pull-to-refresh fires, plus every 30 seconds while the tab is
  * visible. A silent refresh holds unseen ids behind a New posts pill while the
  * visitor is scrolled down; the pill, welcome wordmark, and already-home menu
- * action scroll to top and force-apply a refetch. Silent refresh keeps an
- * existing list on screen (no loading copy) and does not auto-scroll the
- * newest note. Renders nothing when there is no session.
+ * action scroll to top and force-apply a refetch. With a session, fetches
+ * notifications and, when an unread `moderator_appointed` row exists, shows a
+ * matching pill that marks that row read and stays on `/welcome` without
+ * auto-scroll. Silent refresh keeps an existing list on screen (no loading
+ * copy) and does not auto-scroll the newest note. Renders nothing when there
+ * is no session.
  *
  * @returns The forum board, or `null` without a session.
  */
@@ -289,6 +294,7 @@ export function ForumLoader(): ReactElement | null {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
+  const [moderatorAppointedId, setModeratorAppointedId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
@@ -605,6 +611,33 @@ export function ForumLoader(): ReactElement | null {
     if (session === null) {
       return;
     }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const next = await fetchNotifications(session);
+        if (cancelled) {
+          return;
+        }
+        const unread = next.notifications.find(
+          (row) => row.type === 'moderator_appointed' && row.readAt === null,
+        );
+        setModeratorAppointedId(unread === undefined ? null : unread.id);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        setModeratorAppointedId(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
     const onVisibilityChange = (): void => {
       if (document.visibilityState === 'hidden') {
         wasHiddenRef.current = true;
@@ -856,6 +889,23 @@ export function ForumLoader(): ReactElement | null {
   if (session === null) {
     return null;
   }
+
+  const showModeratorAppointed = (): void => {
+    const id = moderatorAppointedId;
+    /* v8 ignore next 3 -- pill is omitted when the id is null */
+    if (id === null) {
+      return;
+    }
+    void markNotificationRead(session, id)
+      .then(() => {
+        const current = useAuthStore.getState();
+        if (current.session !== session) {
+          return;
+        }
+        setModeratorAppointedId(null);
+      })
+      .catch(() => undefined);
+  };
 
   const clearPaySheet = (): void => {
     bumpPayPollGeneration();
@@ -1481,6 +1531,8 @@ export function ForumLoader(): ReactElement | null {
         messages={messages}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
+        moderatorAppointedAvailable={moderatorAppointedId !== null}
+        onShowModeratorAppointed={showModeratorAppointed}
         {...(account !== null && (account.role === 'founder' || account.role === 'moderator')
           ? {
               onDeleted: (messageId: string) => {
