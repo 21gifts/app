@@ -446,6 +446,12 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ![21.gifts welcome expanded gifts](images/welcome-expanded-gifts.png)
 
+### Variant: quoted-note
+
+Signed-in founder Cyrill, living-room laws dismissed, Active. Only Riana Rosello's paid 21-sat verified note is in the list; the card is expanded. Cyrill's reply shows `just for information:` and a nested technical-note post (photo, caption starting **A Quick Technical Note**, Founder pill, ₿43). The raw `https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec` URL is not visible.
+
+![21.gifts welcome quoted note](images/welcome-quoted-note.png)
+
 ### Variant: copy
 
 Click **Copy link to this note** — control sets `data-copied` after writing `origin/messages/<uuid>` to the clipboard.
@@ -1116,6 +1122,12 @@ After POST /translate 502: **Could not translate this note. Please try again.**
 Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 3000) showing `formatBitcoin` (`₿3'000`). Opened on the parent UUID.
 
 ![21.gifts public message thread](images/messages-id-thread.png)
+
+### Variant: quoted-note
+
+Public permalink of Riana Rosello's note. Cyrill's reply shows `just for information:` plus the same nested technical-note post (photo, caption, Founder, ₿43). Raw URL not visible.
+
+![21.gifts public message quoted note](images/messages-id-quoted-note.png)
 
 ### Variant: reply
 

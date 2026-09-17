@@ -1151,6 +1151,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'quoted-note',
+    image: 'welcome-quoted-note.png',
+    visual: 'state-welcome-quoted-note',
+    needle: 'just for information:',
+  },
+  {
+    route: '/welcome',
     id: 'copy',
     image: 'welcome-copy.png',
     visual: 'state-welcome-copy',
@@ -1246,6 +1253,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-thread.png',
     visual: 'state-messages-id-thread',
     needle: 'state-messages-id-thread',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'quoted-note',
+    image: 'messages-id-quoted-note.png',
+    visual: 'state-messages-id-quoted-note',
+    needle: 'just for information:',
   },
   {
     route: '/messages/[id]',

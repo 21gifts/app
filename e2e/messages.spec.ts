@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
 const ID = '11111111-1111-4111-8111-111111111111';
@@ -11,6 +13,48 @@ const PUBLIC_NOTE = {
   payable: false,
   hasPhoto: false,
   role: 'basis',
+  replyCount: 0,
+};
+
+const RIANA_ID = '444d655b-73a4-475a-b5fc-f7e36210e82e';
+const REPLY_ID = '322f9dea-4a76-5168-91b8-430432e5f90b';
+const QUOTED_ID = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+const QUOTED_NOTE_URL = 'https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+
+const rianaNote = {
+  id: RIANA_ID,
+  name: 'Riana Rosello',
+  text: 'Good morning everyone especially to our sponsor. Another day has come, and I want to sincerely thank you for your continued kindness and generosity to our family. Your Bitcoin support means so much to us because it helps us buy food, rice, and provide school allowance for my  children. As a mother, I am deeply grateful for your help, especially during times when we are struggling. Thank you for being a blessing to our family and for always remembering us.God bless you and thank you.',
+  createdAt: '2026-09-16T20:12:43.660Z',
+  sats: 21,
+  payable: true,
+  hasPhoto: false,
+  role: 'verified',
+  replyCount: 1,
+};
+
+const cyrillReply = {
+  id: REPLY_ID,
+  parentId: RIANA_ID,
+  name: 'Cyrill',
+  text: 'just for information: https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec',
+  createdAt: '2026-09-16T20:26:17.290Z',
+  sats: 21,
+  payable: false,
+  hasPhoto: false,
+  role: 'founder',
+  replyCount: 0,
+};
+
+const quotedNote = {
+  id: QUOTED_ID,
+  name: 'Cyrill',
+  text: 'A Quick Technical Note\n\nThe system responsible for automatic payouts operates on the UTC 00:00 standard. This means a new day always begins at 00:00 UTC. For our friends in the Philippines, that is 08:00 PST.',
+  createdAt: '2026-09-16T09:50:23.750Z',
+  sats: 43,
+  payable: true,
+  hasPhoto: true,
+  role: 'founder',
   replyCount: 0,
 };
 
@@ -363,4 +407,47 @@ test('public message error shows Try again', async ({ page }) => {
   });
   await page.goto(`/messages/${ID}`);
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});
+
+test('quoted public note hides the raw URL and opens the linked note', async ({ page }) => {
+  await page.route(`**/public-messages/${RIANA_ID}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [cyrillReply] }),
+    });
+  });
+  await page.route(`**/public-messages/${RIANA_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(rianaNote),
+    });
+  });
+  await page.route(`**/public-messages/${QUOTED_ID}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(quotedNote),
+    });
+  });
+  await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/technical-note.jpg')),
+    });
+  });
+  await page.goto(`/messages/${RIANA_ID}`);
+  await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
+  await expect(page.getByText('A Quick Technical Note')).toBeVisible();
+  await page.getByRole('link', { name: 'Open linked note from Cyrill' }).click();
+  await expect(page).toHaveURL(/\/messages\/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec/);
 });
