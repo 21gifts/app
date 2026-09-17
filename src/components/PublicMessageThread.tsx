@@ -395,6 +395,13 @@ export function PublicMessageThread(props: {
                 replyCount: Math.max(prev.replyCount, next.replyCount),
               };
             });
+            setReplies((prev) => {
+              /* v8 ignore next 3 -- poll can finish after the thread failed to load replies */
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+            });
             setPayWaiting(false);
             setPayInvoice(null);
             setPayMessageId(null);
@@ -630,7 +637,12 @@ export function PublicMessageThread(props: {
     }
     const token = session;
     const messageId = payMessageId;
-    const baselineSats = note.sats;
+    const listed = (replies ?? []).find((row) => row.id === messageId);
+    /* v8 ignore next 3 -- Gift sheet only opens on a payable nested reply */
+    if (listed === undefined || listed.payable !== true) {
+      return;
+    }
+    const baselineSats = listed.sats;
     const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
       const generation = payPollGeneration.current;
       setPayBusy(true);

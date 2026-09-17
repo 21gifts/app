@@ -329,6 +329,28 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('polls the nested reply sats after Gift, not the parent', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...payableNested, sats: 21 });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        REPLY_ID,
+        expect.objectContaining({ sinceSats: 0 }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+    const replyCard = document.querySelector(`[data-reply-id="${REPLY_ID}"]`) as HTMLElement;
+    expect(within(replyCard).getByText('₿21')).toBeTruthy();
+    expect(screen.getByText('Hello from Carol')).toBeTruthy();
+  });
+
   it('maps a pay missing-requirements miss onto the pay error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError([]));
     vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
