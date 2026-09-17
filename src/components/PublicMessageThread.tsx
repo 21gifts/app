@@ -657,7 +657,9 @@ export function PublicMessageThread(props: {
           }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
-              pendingPostRef.current = () => continuePay(true).then(() => undefined);
+              pendingPostRef.current = () => {
+                void continuePay(true);
+              };
               return null;
             }
             setPayError('request');
@@ -679,7 +681,9 @@ export function PublicMessageThread(props: {
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
-      pendingPostRef.current = () => continuePay(true).then(() => undefined);
+      pendingPostRef.current = () => {
+        void continuePay(true);
+      };
       return;
     }
     return continuePay(false);
