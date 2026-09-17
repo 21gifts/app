@@ -1,7 +1,13 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
+import { MessagesChromeLeft } from '@/components/MessagesChromeLeft';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const searchParams = new URLSearchParams();
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: (): URLSearchParams => searchParams,
+}));
 
 vi.mock('next/link', () => ({
   default: ({
@@ -20,25 +26,34 @@ vi.mock('next/link', () => ({
 }));
 
 afterEach(() => {
+  searchParams.delete('c');
   cleanup();
 });
 
-describe('ProfileChromeLeft', () => {
-  it('renders the forum back link and wordmark to /welcome', () => {
-    renderWithLocale(<ProfileChromeLeft />);
+describe('MessagesChromeLeft', () => {
+  it('renders forum back when search params are empty', () => {
+    renderWithLocale(<MessagesChromeLeft />);
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
-    expect(screen.queryByText('Back to the forum')).toBeNull();
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 
-  it('renders an inbox back link to /messages and wordmark to /welcome', () => {
-    renderWithLocale(<ProfileChromeLeft backHref="/messages" backLabelKey="inbox.back" />);
+  it('renders All conversations back when c is a conversation id', () => {
+    searchParams.set('c', 'conv-1');
+    renderWithLocale(<MessagesChromeLeft />);
     expect(screen.getByRole('link', { name: 'All conversations' }).getAttribute('href')).toBe(
       '/messages',
     );
-    expect(screen.queryByText('All conversations')).toBeNull();
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
+  });
+
+  it('renders forum back when c is an empty string', () => {
+    searchParams.set('c', '');
+    renderWithLocale(<MessagesChromeLeft />);
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 });
