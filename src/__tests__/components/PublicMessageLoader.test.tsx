@@ -91,6 +91,7 @@ const sample: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -228,13 +229,13 @@ describe('PublicMessageLoader', () => {
   });
 
   it('loads a photo blob URL when hasPhoto is true', async () => {
-    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, text: '' });
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1, text: '' });
     fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
     });
-    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID);
+    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID, 0);
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:public');
     expect(screen.getByAltText('Photo from Ada').className).toContain('rounded-xl');
     expect(screen.getByAltText('Photo from Ada').className).not.toContain('rounded-2xl');
@@ -276,6 +277,7 @@ describe('PublicMessageLoader', () => {
       ...sample,
       hasVideo: true,
       hasPhoto: true,
+      photoCount: 1,
       videoContentType: 'video/mp4',
       text: '',
     });
@@ -363,7 +365,7 @@ describe('PublicMessageLoader', () => {
   });
 
   it('ignores a stale photo resolve after unmount', async () => {
-    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true });
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1 });
     let resolvePhoto: ((value: Blob) => void) | undefined;
     fetchPhoto.mockImplementationOnce(
       () =>
@@ -422,7 +424,7 @@ describe('PublicMessageLoader', () => {
   });
 
   it('clears the photo when the photo fetch fails', async () => {
-    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true });
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1 });
     fetchPhoto.mockRejectedValue(new Error('photo down'));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
@@ -707,6 +709,7 @@ describe('PublicMessageLoader', () => {
       sats: 21,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'verified',
@@ -720,6 +723,7 @@ describe('PublicMessageLoader', () => {
       sats: 43,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'founder',
@@ -734,6 +738,7 @@ describe('PublicMessageLoader', () => {
       sats: 21,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'founder',

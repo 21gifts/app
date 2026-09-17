@@ -47,40 +47,51 @@ function PublicThreadCard({
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<number, string>>({});
   const [videoFailed, setVideoFailed] = useState(false);
+  const photoCount = note.photoCount ?? (note.hasPhoto ? 1 : 0);
 
   useEffect(() => {
-    if (!note.hasPhoto) {
-      setPhotoUrl(null);
+    if (photoCount === 0) {
+      setPhotoUrls({});
       return;
     }
 
     let cancelled = false;
-    let objectUrl: string | null = null;
+    const objectUrls: string[] = [];
 
     void (async () => {
-      try {
-        const blob = await fetchPublicMessagePhoto(note.id);
-        if (cancelled) {
-          return;
+      const next: Record<number, string> = {};
+      for (let index = 0; index < photoCount; index += 1) {
+        try {
+          const blob = await fetchPublicMessagePhoto(note.id, index);
+          if (cancelled) {
+            return;
+          }
+          const objectUrl = URL.createObjectURL(blob);
+          objectUrls.push(objectUrl);
+          next[index] = objectUrl;
+        } catch {
+          // Leave only this image out when its public photo request fails.
         }
-        objectUrl = URL.createObjectURL(blob);
-        setPhotoUrl(objectUrl);
-      } catch {
-        if (!cancelled) {
-          setPhotoUrl(null);
-        }
+      }
+      if (!cancelled) {
+        setPhotoUrls(next);
       }
     })();
 
     return () => {
       cancelled = true;
-      if (objectUrl !== null) {
+      for (const objectUrl of objectUrls) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [note.hasPhoto, note.id]);
+  }, [note.id, photoCount]);
+
+  const photoUrl = photoUrls[0];
+  const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => photoUrls[index]).filter(
+    (url): url is string => url !== undefined,
+  );
 
   const card = (
     <Card
@@ -106,13 +117,26 @@ function PublicThreadCard({
             setVideoFailed(true);
           }}
         />
-      ) : photoUrl !== null ? (
+      ) : photoCount <= 1 && photoUrl !== undefined ? (
         /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
         <img
           src={photoUrl}
           alt={t('forum.photoAlt', { name: note.name })}
           className="max-h-80 w-full rounded-xl object-contain"
         />
+      ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
+        <div>
+          {loadedPhotoUrls.map((url, index) => (
+            /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+            <img
+              key={url}
+              src={url}
+              alt={t('forum.photoAlt', { name: note.name })}
+              className="max-h-80 w-full rounded-xl object-contain"
+              data-photo-index={index}
+            />
+          ))}
+        </div>
       ) : null}
       {note.text !== '' ? (
         <ForumQuotedBody

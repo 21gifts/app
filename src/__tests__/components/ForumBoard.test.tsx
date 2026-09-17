@@ -86,6 +86,7 @@ const SAMPLE: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -100,6 +101,7 @@ const MULTILINE: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -114,6 +116,7 @@ const FIVE_SATS: ForumMessage = {
   sats: 5,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -124,6 +127,12 @@ const PHOTO: ForumPhotoPayload = {
   contentType: 'image/jpeg',
   data: 'abc',
   previewUrl: 'data:image/jpeg;base64,abc',
+};
+
+const PHOTO2: ForumPhotoPayload = {
+  contentType: 'image/jpeg',
+  data: 'def',
+  previewUrl: 'data:image/jpeg;base64,def',
 };
 
 const VIDEO: ForumVideoPayload = {
@@ -146,8 +155,9 @@ const idleProps: Pick<
   | 'onPayCancel'
   | 'lawsVisible'
   | 'onDismissLaws'
-  | 'photoDraft'
-  | 'onPickPhoto'
+  | 'photoDrafts'
+  | 'onPickFiles'
+  | 'onRemovePhoto'
   | 'onClearPhoto'
   | 'photoUrls'
   | 'videoUrls'
@@ -175,8 +185,9 @@ const idleProps: Pick<
   onPayCancel: () => undefined,
   lawsVisible: true,
   onDismissLaws: () => undefined,
-  photoDraft: null,
-  onPickPhoto: () => undefined,
+  photoDrafts: [],
+  onPickFiles: () => undefined,
+  onRemovePhoto: () => undefined,
   onClearPhoto: () => undefined,
   photoUrls: {},
   videoUrls: {},
@@ -1073,6 +1084,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            photoCount: 1,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -1088,7 +1100,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        photoUrls={{ 'm-photo': 'blob:photo' }}
+        photoUrls={{ 'm-photo:0': 'blob:photo' }}
         {...modeProps('all')}
       />,
     );
@@ -1109,6 +1121,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            photoCount: 1,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -1124,7 +1137,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        photoUrls={{ 'm-photo': 'blob:photo' }}
+        photoUrls={{ 'm-photo:0': 'blob:photo' }}
         {...modeProps('all')}
       />,
     );
@@ -1145,6 +1158,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: true,
+            photoCount: 1,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -1160,7 +1174,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        photoUrls={{ 'm-both': 'blob:photo' }}
+        photoUrls={{ 'm-both:0': 'blob:photo' }}
         {...modeProps('all')}
       />,
     );
@@ -1267,8 +1281,8 @@ describe('ForumBoard', () => {
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
-  it('shows a photo draft preview and clear control', () => {
-    const onClearPhoto = vi.fn();
+  it('shows a photo draft preview and removes it by index', () => {
+    const onRemovePhoto = vi.fn();
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -1281,8 +1295,8 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        photoDraft={PHOTO}
-        onClearPhoto={onClearPhoto}
+        photoDrafts={[PHOTO]}
+        onRemovePhoto={onRemovePhoto}
         {...modeProps('active')}
       />,
     );
@@ -1290,7 +1304,30 @@ describe('ForumBoard', () => {
     const remove = screen.getByRole('button', { name: 'Remove photo' });
     expect(remove.textContent?.trim()).toBe('');
     fireEvent.click(remove);
-    expect(onClearPhoto).toHaveBeenCalledTimes(1);
+    expect(onRemovePhoto).toHaveBeenCalledWith(0);
+  });
+
+  it('renders every selected photo draft', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoDrafts={[PHOTO, PHOTO2]}
+        {...modeProps('active')}
+      />,
+    );
+    const previews = screen.getAllByAltText('Selected photo');
+    expect(previews).toHaveLength(2);
+    expect(previews[0]?.getAttribute('src')).toBe(PHOTO.previewUrl);
+    expect(previews[1]?.getAttribute('src')).toBe(PHOTO2.previewUrl);
   });
 
   it('shows a video draft preview and clear control', () => {
@@ -1323,8 +1360,8 @@ describe('ForumBoard', () => {
     expect(onClearPhoto).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onPickPhoto when a file is chosen', () => {
-    const onPickPhoto = vi.fn();
+  it('calls onPickFiles with every chosen file', () => {
+    const onPickFiles = vi.fn();
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -1337,19 +1374,21 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        onPickPhoto={onPickPhoto}
+        onPickFiles={onPickFiles}
         {...modeProps('active')}
       />,
     );
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input.hasAttribute('multiple')).toBe(true);
     const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
     fireEvent.click(screen.getByLabelText('Add a photo or video'));
     expect(clickSpy).toHaveBeenCalled();
-    const file = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
-    fireEvent.change(input, { target: { files: [file] } });
-    expect(onPickPhoto).toHaveBeenCalledWith(file);
+    const first = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    const second = new File([new Uint8Array([2])], 'b.png', { type: 'image/png' });
+    fireEvent.change(input, { target: { files: [first, second] } });
+    expect(onPickFiles).toHaveBeenCalledWith([first, second]);
     fireEvent.change(input, { target: { files: [] } });
-    expect(onPickPhoto).toHaveBeenCalledTimes(1);
+    expect(onPickFiles).toHaveBeenCalledTimes(1);
   });
 
   it('renders the amount sheet and submits pay', async () => {
@@ -2142,6 +2181,7 @@ describe('ForumBoard', () => {
       sats: 43,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'founder',
@@ -2164,6 +2204,7 @@ describe('ForumBoard', () => {
             sats: 21,
             payable: true,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'verified',
@@ -2190,6 +2231,7 @@ describe('ForumBoard', () => {
             sats: 21,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'founder',
@@ -2222,6 +2264,7 @@ describe('ForumBoard', () => {
           sats: 43,
           payable: true,
           hasPhoto: false,
+          photoCount: 0,
           hasVideo: false,
           videoContentType: null,
           role: 'founder',
@@ -2559,6 +2602,7 @@ describe('ForumBoard', () => {
             ...SAMPLE,
             id: 'vid-poster',
             hasPhoto: true,
+            photoCount: 1,
             hasVideo: true,
             videoContentType: 'video/mp4',
           },
@@ -2572,7 +2616,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        photoUrls={{ 'vid-poster': 'blob:poster' }}
+        photoUrls={{ 'vid-poster:0': 'blob:poster' }}
         {...modeProps('all')}
       />,
     );
@@ -2804,6 +2848,7 @@ describe('ForumBoard', () => {
             name: 'Bob',
             text: '',
             hasPhoto: true,
+            photoCount: 1,
           },
         ]}
         error={false}
@@ -2815,7 +2860,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        photoUrls={{ 'img-click': 'blob:photo' }}
+        photoUrls={{ 'img-click:0': 'blob:photo' }}
         onToggleExpand={onToggleExpand}
         {...modeProps('all')}
       />,
@@ -3169,6 +3214,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -3204,6 +3250,7 @@ describe('ForumBoard', () => {
             sats: 21000,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -3246,6 +3293,7 @@ describe('ForumBoard', () => {
             sats: 21000,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -3289,6 +3337,7 @@ describe('ForumBoard', () => {
             sats: 21000,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -3327,6 +3376,7 @@ describe('ForumBoard', () => {
             sats: 21,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -3370,6 +3420,7 @@ describe('ForumBoard', () => {
             sats: 21,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -4029,6 +4080,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -4092,6 +4144,7 @@ describe('ForumBoard', () => {
             sats: 0,
             payable: false,
             hasPhoto: false,
+            photoCount: 0,
             hasVideo: false,
             videoContentType: null,
             role: 'basis',

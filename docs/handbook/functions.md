@@ -1215,15 +1215,15 @@
 
 ## Function: fetchMessagePhoto
 
-- **Purpose:** GET `/messages/:id/photo` with the bearer session and return the raw image bytes as a `Blob` for `URL.createObjectURL` rendering.
-- **Inputs:** `sessionToken`, message `id`.
+- **Purpose:** GET `/messages/:id/photo` (index 0) or `/messages/:id/photo/{index}.jpg` (indices 1–9) with the bearer session and return the raw image bytes as a `Blob` for `URL.createObjectURL` rendering.
+- **Inputs:** `sessionToken`, message `id`, optional zero-based `index` (default 0).
 - **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load messages. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
 
 ## Function: postMessage
 
-- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, inReplyTo? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or photo).
-- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, and optional `inReplyTo` parent id (thread composer only).
+- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`.
+- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, optional `photos` array (max 10), and optional `inReplyTo` parent id (thread composer only).
 - **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` from the JSON body when absent. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 uses the api error string when present; otherwise throws `A reply needs a Bitcoin payment`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
 
@@ -1945,10 +1945,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: proxyMessagesPhotoGet
 
-- **Purpose:** Same-origin proxy GET `/messages/:id/photo` to the 21.gifts api (raw forum photo bytes). Public; no bearer required (api photo is public; proxy forwards Authorization if present but does not require it). Runtime `getApiUrl()` via `proxyApiRequest` (not next.config rewrites).
-- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Purpose:** Same-origin proxy GET `/messages/:id/photo` or `/messages/:id/photo/{file}` to the 21.gifts api (raw forum photo bytes). Public; no bearer required (api photo is public; proxy forwards Authorization if present but does not require it). Runtime `getApiUrl()` via `proxyApiRequest` (not next.config rewrites).
+- **Inputs:** Incoming `Request`, message `id` from the App Router segment, and optional indexed `file` such as `1.jpg`.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
-- **Used by:** Route GET `/messages/[id]/photo`.
+- **Used by:** Route GET `/messages/[id]/photo` and GET `/messages/[id]/photo/[file]`.
 
 ## Function: proxyMessagesVideoGet
 

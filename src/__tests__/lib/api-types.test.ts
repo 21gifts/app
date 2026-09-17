@@ -616,6 +616,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -631,6 +632,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 1,
     });
   });
 
@@ -640,6 +642,7 @@ describe('forumMessageSchema', () => {
       ...videoOnly,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -654,6 +657,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -914,6 +918,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 

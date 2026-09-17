@@ -46,6 +46,7 @@ const quotedNote: ForumMessage = {
   sats: 43,
   payable: true,
   hasPhoto: true,
+  photoCount: 1,
   hasVideo: false,
   videoContentType: null,
   role: 'founder',
@@ -60,6 +61,7 @@ const parentNote: ForumMessage = {
   sats: 21,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'verified',
@@ -190,7 +192,7 @@ describe('ForumQuotedBody', () => {
   });
 
   it('renders a nested post with no caption when the quoted note has empty text', async () => {
-    const giftOnly: ForumMessage = { ...quotedNote, text: '', hasPhoto: false };
+    const giftOnly: ForumMessage = { ...quotedNote, text: '', hasPhoto: false, photoCount: 0 };
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}
@@ -369,6 +371,7 @@ describe('ForumQuotedBody', () => {
       name: 'Ada',
       role: 'basis',
       hasPhoto: false,
+      photoCount: 0,
       text: 'plain',
     };
     renderWithLocale(

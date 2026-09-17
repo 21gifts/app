@@ -105,6 +105,7 @@ const note = {
   sats: 21,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'verified' as const,
@@ -181,7 +182,7 @@ async function openPostsShowingNote(feedNote: ForumMessage = note): Promise<void
 }
 
 async function openPostsShowingPhotoNote(): Promise<void> {
-  vi.mocked(fetchMemberPosts).mockResolvedValue([{ ...note, hasPhoto: true }]);
+  vi.mocked(fetchMemberPosts).mockResolvedValue([{ ...note, hasPhoto: true, photoCount: 1 }]);
   const postsButton = screen.getByRole('button', { name: /posts/ });
   if (postsButton.getAttribute('aria-pressed') !== 'true') {
     fireEvent.click(postsButton);
@@ -2942,11 +2943,13 @@ describe('MemberProfileScreen', () => {
   });
 
   it('loads a photo blob URL for hasPhoto posts and revokes on unmount', async () => {
-    vi.mocked(fetchMemberPosts).mockResolvedValue([{ ...secondPost, hasPhoto: true }]);
+    vi.mocked(fetchMemberPosts).mockResolvedValue([
+      { ...secondPost, hasPhoto: true, photoCount: 1 },
+    ]);
     const view = renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
     fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', secondPost.id);
+      expect(photoMock).toHaveBeenCalledWith('sess', secondPost.id, 0);
     });
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:mock');
@@ -2958,14 +2961,18 @@ describe('MemberProfileScreen', () => {
   it('loads a photo blob URL for a listed profile note', async () => {
     renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
+        profile={{
+          ...profile,
+          profileMessage: { ...note, hasPhoto: true, photoCount: 1 },
+          postCount: 1,
+        }}
         received={[]}
         donated={[]}
       />,
     );
     await openPostsShowingPhotoNote();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', note.id);
+      expect(photoMock).toHaveBeenCalledWith('sess', note.id, 0);
       expect(photoMock).toHaveBeenCalledTimes(2);
     });
     await waitFor(() => {
@@ -2974,13 +2981,15 @@ describe('MemberProfileScreen', () => {
   });
 
   it('loads a photo blob URL for hasPhoto replies', async () => {
-    vi.mocked(fetchMemberReplies).mockResolvedValue([{ ...activityReply, hasPhoto: true }]);
+    vi.mocked(fetchMemberReplies).mockResolvedValue([
+      { ...activityReply, hasPhoto: true, photoCount: 1 },
+    ]);
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', activityReply.id);
+      expect(photoMock).toHaveBeenCalledWith('sess', activityReply.id, 0);
     });
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:mock');
@@ -2988,13 +2997,15 @@ describe('MemberProfileScreen', () => {
   });
 
   it('loads a photo blob URL for an expanded thread reply', async () => {
-    vi.mocked(fetchReplies).mockResolvedValue([{ ...stalePinReply, hasPhoto: true }]);
+    vi.mocked(fetchReplies).mockResolvedValue([
+      { ...stalePinReply, hasPhoto: true, photoCount: 1 },
+    ]);
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
     );
     await expandNote();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', stalePinReply.id);
+      expect(photoMock).toHaveBeenCalledWith('sess', stalePinReply.id, 0);
     });
     expect(screen.queryByAltText('Photo from Carol')).toBeNull();
   });
@@ -3005,7 +3016,11 @@ describe('MemberProfileScreen', () => {
       .mockRejectedValueOnce(new Error('transient'));
     renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
+        profile={{
+          ...profile,
+          profileMessage: { ...note, hasPhoto: true, photoCount: 1 },
+          postCount: 1,
+        }}
         received={[]}
         donated={[]}
       />,
@@ -3023,7 +3038,12 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen
         profile={{
           ...profile,
-          profileMessage: { ...note, hasPhoto: true, text: 'Hello from my profile note.' },
+          profileMessage: {
+            ...note,
+            hasPhoto: true,
+            photoCount: 1,
+            text: 'Hello from my profile note.',
+          },
           postCount: 1,
         }}
         received={[]}
@@ -3048,7 +3068,11 @@ describe('MemberProfileScreen', () => {
     );
     const view = renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
+        profile={{
+          ...profile,
+          profileMessage: { ...note, hasPhoto: true, photoCount: 1 },
+          postCount: 1,
+        }}
         received={[]}
         donated={[]}
       />,
@@ -3074,7 +3098,11 @@ describe('MemberProfileScreen', () => {
     );
     const view = renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
+        profile={{
+          ...profile,
+          profileMessage: { ...note, hasPhoto: true, photoCount: 1 },
+          postCount: 1,
+        }}
         received={[]}
         donated={[]}
       />,
@@ -3094,7 +3122,9 @@ describe('MemberProfileScreen', () => {
   });
 
   it('does not refetch a photo already in photoUrls when reopening posts', async () => {
-    vi.mocked(fetchMemberPosts).mockResolvedValue([{ ...secondPost, hasPhoto: true }]);
+    vi.mocked(fetchMemberPosts).mockResolvedValue([
+      { ...secondPost, hasPhoto: true, photoCount: 1 },
+    ]);
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
     fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
     await waitFor(() => {
@@ -3129,7 +3159,11 @@ describe('MemberProfileScreen', () => {
       );
     const view = renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, profileMessage: { ...note, hasPhoto: true }, postCount: 1 }}
+        profile={{
+          ...profile,
+          profileMessage: { ...note, hasPhoto: true, photoCount: 1 },
+          postCount: 1,
+        }}
         received={[]}
         donated={[]}
       />,
@@ -3146,8 +3180,8 @@ describe('MemberProfileScreen', () => {
   it('does not fetch the next photo after unmount when the current fetch fails', async () => {
     let rejectFirst: ((reason: Error) => void) | undefined;
     vi.mocked(fetchMemberPosts).mockResolvedValue([
-      { ...secondPost, hasPhoto: true },
-      { ...note, hasPhoto: true },
+      { ...secondPost, hasPhoto: true, photoCount: 1 },
+      { ...note, hasPhoto: true, photoCount: 1 },
     ]);
     photoMock.mockImplementationOnce(
       () =>

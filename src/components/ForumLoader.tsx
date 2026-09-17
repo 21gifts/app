@@ -295,7 +295,9 @@ export function ForumLoader(): ReactElement | null {
   const [moderatorAppointedId, setModeratorAppointedId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
-  const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
+  const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
+  const photoDraftsRef = useRef(photoDrafts);
+  photoDraftsRef.current = photoDrafts;
   const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
   const videoDraftRef = useRef(videoDraft);
   videoDraftRef.current = videoDraft;
@@ -375,8 +377,12 @@ export function ForumLoader(): ReactElement | null {
     messages === null
       ? ''
       : visibleForumMessages(messages, feedMode)
-          .filter((message) => message.hasPhoto)
-          .map((message) => message.id)
+          .map((message) => ({
+            id: message.id,
+            count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
+          }))
+          .filter(({ count }) => count > 0)
+          .map(({ id, count }) => `${id}:${count}`)
           .sort()
           .join('\0');
 
@@ -715,28 +721,33 @@ export function ForumLoader(): ReactElement | null {
     /* v8 ignore stop */
     let cancelled = false;
     const visible = visibleForumMessages(listed, feedMode);
-    const missing = visible.filter(
-      (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
-    );
+    const missing = visible.flatMap((message) => {
+      const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
+      return Array.from({ length: count }, (_, index) => ({
+        id: message.id,
+        index,
+        key: `${message.id}:${index}`,
+      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
+    });
     if (missing.length === 0) {
       return;
     }
     void (async () => {
-      for (const message of missing) {
+      for (const photo of missing) {
         /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
-        if (photoUrlsRef.current[message.id] !== undefined) {
+        if (photoUrlsRef.current[photo.key] !== undefined) {
           continue;
         }
         /* v8 ignore stop */
         let blob: Blob;
         try {
-          blob = await fetchMessagePhoto(session, message.id);
+          blob = await fetchMessagePhoto(session, photo.id, photo.index);
         } catch {
           if (cancelled) {
             return;
           }
           try {
-            blob = await fetchMessagePhoto(session, message.id);
+            blob = await fetchMessagePhoto(session, photo.id, photo.index);
           } catch {
             if (cancelled) {
               return;
@@ -755,12 +766,12 @@ export function ForumLoader(): ReactElement | null {
         }
         setPhotoUrls((prev) => {
           /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-          if (prev[message.id] !== undefined) {
+          if (prev[photo.key] !== undefined) {
             URL.revokeObjectURL(url);
             return prev;
           }
           /* v8 ignore stop */
-          return { ...prev, [message.id]: url };
+          return { ...prev, [photo.key]: url };
         });
       }
     })();
@@ -998,14 +1009,18 @@ export function ForumLoader(): ReactElement | null {
     })();
   };
 
-  const onPickPhoto = (file: File): void => {
+  const onPickFiles = (files: File[]): void => {
+    if (files.length === 0) {
+      return;
+    }
     const generation = pickGeneration.current + 1;
     pickGeneration.current = generation;
     setPreparing(true);
     void (async () => {
+      const videoFile = files.find(isForumVideoFile);
       try {
-        if (isForumVideoFile(file)) {
-          const result = await prepareForumVideo(file);
+        if (videoFile !== undefined) {
+          const result = await prepareForumVideo(videoFile);
           if (generation !== pickGeneration.current) {
             if (result.ok) {
               revokeObjectUrlIfPresent(result.video.previewUrl);
@@ -1015,34 +1030,54 @@ export function ForumLoader(): ReactElement | null {
           if (!result.ok) {
             revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
             setVideoDraft(null);
+            setPhotoDrafts([]);
             setFormError(result.error);
             return;
           }
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
-          setPhotoDraft(null);
+          setPhotoDrafts([]);
           setVideoDraft(result.video);
           setFormError(null);
           return;
         }
-        const result = await prepareForumPhoto(file);
-        if (generation !== pickGeneration.current) {
-          return;
-        }
-        if (!result.ok) {
-          setPhotoDraft(null);
-          setFormError(result.error);
-          return;
-        }
+
         revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
         setVideoDraft(null);
-        setPhotoDraft(result.photo);
-        setFormError(null);
-      } catch {
+        const nextPhotos = photoDraftsRef.current.slice(0, 10);
+        let nextError: ForumFormError = null;
+        for (const file of files) {
+          if (nextPhotos.length >= 10) {
+            nextError = 'tooMany';
+            continue;
+          }
+          try {
+            const result = await prepareForumPhoto(file);
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (result.ok) {
+              nextPhotos.push(result.photo);
+            } else if (nextError !== 'tooMany') {
+              nextError = result.error;
+            }
+          } catch {
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (nextError !== 'tooMany') {
+              nextError = 'unsupported';
+            }
+          }
+        }
         if (generation !== pickGeneration.current) {
           return;
         }
-        setPhotoDraft(null);
-        setFormError('unsupported');
+        setPhotoDrafts(nextPhotos);
+        setFormError(nextError);
+      } catch {
+        if (generation === pickGeneration.current) {
+          setFormError('unsupported');
+        }
       } finally {
         if (generation === pickGeneration.current) {
           setPreparing(false);
@@ -1051,9 +1086,14 @@ export function ForumLoader(): ReactElement | null {
     })();
   };
 
+  const onRemovePhoto = (index: number): void => {
+    setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
+    setFormError(null);
+  };
+
   const applyCreatedNote = (
     created: ForumMessage,
-    pendingPhoto: ForumPhotoPayload | null,
+    pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
   ): void => {
     setMessages((prev) => {
@@ -1073,12 +1113,16 @@ export function ForumLoader(): ReactElement | null {
       }
       setFeedMode('all');
     }
-    if (created.hasPhoto && pendingPhoto !== null) {
+    if (created.hasPhoto && pendingPhotos.length > 0) {
       setPhotoUrls((prev) => {
-        if (prev[created.id] !== undefined) {
-          return prev;
+        const next = { ...prev };
+        for (const [index, pendingPhoto] of pendingPhotos.entries()) {
+          const key = `${created.id}:${index}`;
+          if (next[key] === undefined) {
+            next[key] = pendingPhoto.previewUrl;
+          }
         }
-        return { ...prev, [created.id]: pendingPhoto.previewUrl };
+        return next;
       });
     }
     if (created.hasVideo && pendingVideo !== null) {
@@ -1098,14 +1142,14 @@ export function ForumLoader(): ReactElement | null {
       revokeObjectUrlIfPresent(pendingVideo.previewUrl);
     }
     setDraft('');
-    setPhotoDraft(null);
+    setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
   };
 
   const runNotePost = async (
     trimmed: string,
-    pendingPhoto: ForumPhotoPayload | null,
+    pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
   ): Promise<void> => {
@@ -1121,11 +1165,13 @@ export function ForumLoader(): ReactElement | null {
             })
           : await postMessage(session, {
               text: trimmed,
-              ...(pendingPhoto === null
+              ...(pendingPhotos.length === 0
                 ? {}
-                : { photo: { contentType: pendingPhoto.contentType, data: pendingPhoto.data } }),
+                : {
+                    photos: pendingPhotos.map(({ contentType, data }) => ({ contentType, data })),
+                  }),
             });
-      applyCreatedNote(created, pendingPhoto, pendingVideo);
+      applyCreatedNote(created, pendingPhotos, pendingVideo);
       pendingPostRef.current = null;
       const current = useAuthStore.getState();
       if (current.session !== session || current.account === null) {
@@ -1136,7 +1182,7 @@ export function ForumLoader(): ReactElement | null {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
-            startNotePost(trimmed, pendingPhoto, pendingVideo, true);
+            startNotePost(trimmed, pendingPhotos, pendingVideo, true);
             return Promise.resolve();
           };
           return;
@@ -1153,18 +1199,18 @@ export function ForumLoader(): ReactElement | null {
 
   const startNotePost = (
     trimmed: string,
-    pendingPhoto: ForumPhotoPayload | null,
+    pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
   ): void => {
     if (notePostInFlightRef.current) return;
     notePostInFlightRef.current = true;
-    void runNotePost(trimmed, pendingPhoto, pendingVideo, isRetry);
+    void runNotePost(trimmed, pendingPhotos, pendingVideo, isRetry);
   };
 
   const onPost = (): void => {
     const trimmed = draft.trim();
-    if (trimmed === '' && photoDraft === null && videoDraft === null) {
+    if (trimmed === '' && photoDrafts.length === 0 && videoDraft === null) {
       setFormError('empty');
       return;
     }
@@ -1174,18 +1220,18 @@ export function ForumLoader(): ReactElement | null {
     }
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
-      const pendingPhoto = photoDraft;
+      const pendingPhotos = photoDrafts;
       const pendingVideo = videoDraft;
       pendingPostRef.current = () => {
-        startNotePost(trimmed, pendingPhoto, pendingVideo, true);
+        startNotePost(trimmed, pendingPhotos, pendingVideo, true);
         return Promise.resolve();
       };
       return;
     }
     pickGeneration.current += 1;
-    const pendingPhoto = photoDraft;
+    const pendingPhotos = photoDrafts;
     const pendingVideo = videoDraft;
-    startNotePost(trimmed, pendingPhoto, pendingVideo, false);
+    startNotePost(trimmed, pendingPhotos, pendingVideo, false);
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
@@ -1618,13 +1664,14 @@ export function ForumLoader(): ReactElement | null {
           setAttempt((n) => n + 1);
         }}
         formError={formError}
-        photoDraft={photoDraft}
+        photoDrafts={photoDrafts}
         videoDraft={videoDraft}
-        onPickPhoto={onPickPhoto}
+        onPickFiles={onPickFiles}
+        onRemovePhoto={onRemovePhoto}
         onClearPhoto={() => {
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
           pickGeneration.current += 1;
-          setPhotoDraft(null);
+          setPhotoDrafts([]);
           setVideoDraft(null);
           setFormError(null);
         }}
