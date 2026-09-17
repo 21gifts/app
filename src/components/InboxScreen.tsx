@@ -27,6 +27,7 @@ const CONVERSATION_ORIGIN_KEY = {
   member_member: 'inbox.origin.direct',
   member_platform: 'inbox.origin.contact',
   member_damus: 'inbox.origin.damus',
+  moderator_group: 'moderate.groupLabel',
 } as const;
 
 /** Origin filter on the conversation list. Default Direct. */
