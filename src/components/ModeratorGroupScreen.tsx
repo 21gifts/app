@@ -147,13 +147,14 @@ export function ModeratorGroupScreen(): ReactElement | null {
     void (async () => {
       try {
         const created = await postConversationMessage(session, conversationId, trimmed);
-        setMessages((prev) => [...(prev ?? []), created]);
+        setMessages([...messages, created]);
         setDraft('');
         setGroup({
           ...group,
           lastText: created.text,
           lastAt: created.createdAt,
           lastFromMe: true,
+          lastSats: created.sats,
         });
       } catch {
         setFormError('request');
@@ -168,8 +169,10 @@ export function ModeratorGroupScreen(): ReactElement | null {
       conversations={[group]}
       error={false}
       loading={false}
+      /* v8 ignore next -- list retry is unused on the open staff-room thread */
       onRetry={() => undefined}
       openId={group.id}
+      /* v8 ignore next -- the staff-room thread is already open */
       onOpen={() => undefined}
       onBack={() => {
         router.push('/moderate');
@@ -177,6 +180,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       messages={messages}
       messagesLoading={false}
       messagesError={false}
+      /* v8 ignore next -- thread retry is unused while messages are loaded */
       onRetryMessages={() => undefined}
       draft={draft}
       onDraftChange={(value) => {
