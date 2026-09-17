@@ -84,15 +84,16 @@ function QuotedForumNote({
     note.role === 'founder' || note.role === 'moderator' || note.role === 'verified'
       ? t(ROLE_LABEL_KEYS[note.role])
       : null;
+  const handleActivate = (event: { stopPropagation: () => void }): void => {
+    onActivate?.(event);
+  };
 
   return (
     <div className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2">
       <Link
         href={`/messages/${note.id}`}
         aria-label={t('forum.quotedNote', { name: note.name })}
-        onClick={(event) => {
-          onActivate?.(event);
-        }}
+        onClick={handleActivate}
         className="block"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -124,13 +125,7 @@ function QuotedForumNote({
           <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
         )
       ) : null}
-      <Link
-        href={`/messages/${note.id}`}
-        onClick={(event) => {
-          onActivate?.(event);
-        }}
-        className="block"
-      >
+      <Link href={`/messages/${note.id}`} onClick={handleActivate} className="block">
         <p
           className={
             fiatAmount === null
