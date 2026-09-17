@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ForumBoard,
@@ -15,7 +14,6 @@ import {
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
-  openConversation,
   postMessage,
   postMessageInvoice,
 } from '@/lib/api';
@@ -159,19 +157,16 @@ const IDLE_BOARD = {
   onReplyPost: (): void => undefined,
   replyPosting: false,
   replyFormError: null as ForumReplyFormError,
-  ownName: null as string | null,
-  ownAccountId: null as string | null,
-  onPm: (): void => undefined,
-  pmBusyId: null as string | null,
   composerHidden: true,
 };
 /* v8 ignore stop */
 
 /**
  * Signed-in permalink thread: one root note on {@link ForumBoard} with the
- * same per-post pay, copy, PM, expand/reply, photo, translate, and staff
- * delete actions as `/welcome`. Auto-expands the root so the thread and
- * in-card reply composer are available. No top-level composer or feed filters.
+ * same copy, expand/reply, photo, translate, and staff delete actions as
+ * `/welcome`. Gift only on a payable nested reply. Auto-expands the root so
+ * the thread and in-card reply composer are available. No top-level composer,
+ * feed filters, or envelope.
  *
  * @param props - Public parent note, optional reply highlight id, root-delete hook.
  * @returns The interactive thread board and requirements overlay.
@@ -184,7 +179,6 @@ export function PublicMessageThread(props: {
   onRootDeleted: () => void;
 }): ReactElement {
   const { root, highlightId, onRootDeleted } = props;
-  const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -204,7 +198,6 @@ export function PublicMessageThread(props: {
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [repliesLoading, setRepliesLoading] = useState(true);
   const [repliesError, setRepliesError] = useState(false);
-  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
@@ -819,22 +812,6 @@ export function PublicMessageThread(props: {
     })();
   };
 
-  const handlePm = (messageId: string): void => {
-    /* v8 ignore next 3 -- PM is hidden without a session and disabled while busy */
-    if (session === null || pmBusyId !== null) {
-      return;
-    }
-    setPmBusyId(messageId);
-    void (async () => {
-      try {
-        const thread = await openConversation(session, messageId);
-        router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
-      } catch {
-        setPmBusyId(null);
-      }
-    })();
-  };
-
   const handleDeleted = (messageId: string): void => {
     if (messageId === note.id) {
       onRootDeleted();
@@ -903,10 +880,6 @@ export function PublicMessageThread(props: {
         replyFormError={replyFormError}
         onReplyPost={handleReplyPost}
         onRetryReplies={handleRetryReplies}
-        ownName={account?.name ?? null}
-        ownAccountId={account?.id ?? null}
-        pmBusyId={pmBusyId}
-        onPm={handlePm}
         onDeleted={handleDeleted}
         permalinkTargetId={highlightId}
       />

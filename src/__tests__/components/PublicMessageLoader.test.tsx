@@ -540,7 +540,7 @@ describe('PublicMessageLoader', () => {
     expect(fetchMessage).toHaveBeenCalledTimes(2);
   });
 
-  it('shows gift, copy, and PM on a signed-in payable note from another author', async () => {
+  it('shows copy and omits Gift and PM on a signed-in payable note from another author', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: {
@@ -569,10 +569,10 @@ describe('PublicMessageLoader', () => {
     });
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
   it('auto-expands the signed-in thread so Write a reaction is ready', async () => {

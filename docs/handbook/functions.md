@@ -683,7 +683,7 @@
 
 ## Function: PublicMessagePage
 
-- **Purpose:** Next.js page for `/messages/[id]` — public HTML note by UUID. Unsigned visitors see a read-only thread. Signed-in pay, reply, copy, and PM run through `PublicMessageLoader` → `PublicMessageThread`. No `OnboardingGate` and no top-level composer. Wrapped in `PublicMessageChrome` (signed-in or unsigned chrome depending on hydrated session).
+- **Purpose:** Next.js page for `/messages/[id]` — public HTML note by UUID. Unsigned visitors see a read-only thread. Signed-in copy, reply, and Gift on a payable nested reply run through `PublicMessageLoader` → `PublicMessageThread`. No `OnboardingGate`, top-level composer, or envelope. Wrapped in `PublicMessageChrome` (signed-in or unsigned chrome depending on hydrated session).
 - **Inputs:** Dynamic route params (`id`).
 - **Returns / side effects:** `PublicMessageLoader` inside `PublicMessageChrome` (chrome is no longer always unsigned Wordmark + LanguageSwitcher). Also exports `generateMetadata` for per-note Open Graph / Twitter tags.
 - **Used by:** Route `/messages/[id]`.
@@ -718,7 +718,7 @@
 
 ## Function: PublicMessageThread
 
-- **Purpose:** Signed-in permalink thread: one root on `ForumBoard` with `composerHidden` and `truncate={false}` so the original body stays full, auto-expand via `fetchReplies`, and the same pay, reply, PM, overlay, photo, and poll behavior as `MemberProfileScreen`. Staff `onDeleted` on the root calls `onRootDeleted` (loader → missing); a nested reply is dropped from the list. Passes `permalinkTargetId` so only a matching nested reply is ringed.
+- **Purpose:** Signed-in permalink thread: one root on `ForumBoard` with `composerHidden` and `truncate={false}` so the original body stays full, auto-expand via `fetchReplies`, and the same copy, reply, overlay, photo, and poll behavior as `/welcome`. Gift only on a payable nested reply. Staff `onDeleted` on the root calls `onRootDeleted` (loader → missing); a nested reply is dropped from the list. Passes `permalinkTargetId` so only a matching nested reply is ringed.
 - **Inputs:** `{ root, highlightId, onRootDeleted }` as in `src/components/PublicMessageThread.tsx`: `root` is `ForumMessage`, `highlightId` is `string | null` (route id when it is a reply UUID), `onRootDeleted` is `() => void`. Session and account from the auth store.
 - **Returns / side effects:** React tree. Auto-expands the root so **Write a reaction** is available. Passes `permalinkTargetId={highlightId}`. No top-level composer or feed filters.
 - **Used by:** `PublicMessageLoader`.

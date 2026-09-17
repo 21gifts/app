@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import {
@@ -8,7 +8,6 @@ import {
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
-  openConversation,
   postMessage,
   postMessageInvoice,
   setLightningAddress,
@@ -37,7 +36,6 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
-  openConversation: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   deleteMessage: vi.fn(),
   setLightningAddress: vi.fn(),
@@ -89,6 +87,34 @@ const giftReply: ForumMessage = {
   payable: false,
   replyCount: 0,
 };
+
+const payableNested: ForumMessage = {
+  ...giftReply,
+  payable: true,
+  sats: 0,
+  text: 'A payable reply',
+};
+
+function submitComposer(amount?: string): void {
+  const form = screen.getByLabelText('Your reaction').closest('form');
+  if (form === null) {
+    throw new Error('reply form missing');
+  }
+  if (amount !== undefined) {
+    fireEvent.change(replyAmountInput(), { target: { value: amount } });
+  }
+  fireEvent.submit(form);
+}
+
+async function openNestedPaySheet(): Promise<HTMLElement> {
+  const card = (await waitFor(() => {
+    const el = document.querySelector(`[data-reply-id="${REPLY_ID}"]`);
+    expect(el).not.toBeNull();
+    return el as HTMLElement;
+  })) as HTMLElement;
+  fireEvent.click(within(card).getByRole('button', { name: 'Send Bitcoin' }));
+  return card;
+}
 
 function signIn(next: Partial<Account> = {}): void {
   useAuthStore.setState({ session: 'sess', account: { ...account, ...next } });
@@ -144,16 +170,6 @@ beforeEach(() => {
     parentId: MESSAGE_ID,
   });
   vi.mocked(deleteMessage).mockResolvedValue(undefined);
-  vi.mocked(openConversation).mockResolvedValue({
-    id: 'conv-1',
-    kind: 'member_member',
-    name: 'Carol',
-    lastText: '',
-    lastAt: '2026-01-01T00:00:00.000Z',
-    lastFromMe: false,
-    lastSats: 0,
-    unread: false,
-  });
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -182,9 +198,9 @@ describe('PublicMessageThread', () => {
       expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
     expect(fetchReplies).toHaveBeenCalledWith('sess', MESSAGE_ID);
-    expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
   it('keeps a long original body full on the signed-in permalink', async () => {
@@ -202,8 +218,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
     });
@@ -213,9 +228,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(payAmountInput(), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer('21');
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
     });
@@ -225,10 +238,11 @@ describe('PublicMessageThread', () => {
   });
 
   it('rejects a non-numeric pay amount', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: 'nope' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
@@ -236,10 +250,11 @@ describe('PublicMessageThread', () => {
   });
 
   it('rejects a zero pay amount', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
@@ -251,8 +266,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
     });
@@ -263,8 +277,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
     });
@@ -277,18 +290,18 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/wallet cannot receive/i);
     });
   });
 
   it('cancels an open pay sheet', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     expect(payAmountInput()).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getAllByLabelText('Amount')).toHaveLength(1);
@@ -299,8 +312,7 @@ describe('PublicMessageThread', () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
@@ -328,8 +340,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
@@ -348,8 +359,7 @@ describe('PublicMessageThread', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await act(async () => {
       await Promise.resolve();
     });
@@ -370,8 +380,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
@@ -384,21 +393,19 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread({ root: { ...root, replyCount: 5 } });
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
   });
 
-  it('polls the parent after paying from the gift button', async () => {
+  it('polls the parent after a composer invoice', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
@@ -739,8 +746,7 @@ describe('PublicMessageThread', () => {
     });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
@@ -766,8 +772,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
     ).toBeTruthy();
@@ -788,8 +793,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
     ).toBeTruthy();
@@ -818,19 +822,6 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
-    });
-  });
-
-  it('opens a private thread with the note author', async () => {
-    signIn();
-    renderThread();
-    await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversation).toHaveBeenCalledWith('sess', MESSAGE_ID);
-    });
-    await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
     });
   });
 
@@ -964,8 +955,7 @@ describe('PublicMessageThread', () => {
   it('does not invoice when Continue is clicked without a session', async () => {
     useAuthStore.setState({ session: null, account });
     renderThread({ root: { ...root, payable: true } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
@@ -1008,27 +998,11 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('clears PM busy when openConversation fails', async () => {
-    vi.mocked(openConversation).mockRejectedValue(new Error('offline'));
-    signIn();
-    renderThread();
-    await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversation).toHaveBeenCalled();
-    });
-    expect(
-      (screen.getByRole('button', { name: 'Send a private message' }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(false);
-  });
-
   it('dismisses the requirements overlay', async () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
@@ -1045,8 +1019,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
@@ -1141,8 +1114,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
@@ -1158,8 +1130,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
