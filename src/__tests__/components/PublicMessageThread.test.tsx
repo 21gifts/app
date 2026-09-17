@@ -955,6 +955,45 @@ describe('PublicMessageThread', () => {
     expect(onRootDeleted).toHaveBeenCalled();
   });
 
+  it('clears nested Gift when the paid reply is deleted', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn({ role: 'moderator' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+    const replyCard = document.querySelector(`[data-reply-id="${REPLY_ID}"]`) as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+  });
+
+  it('clears nested Gift when the thread collapses', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
   it('drops a nested reply after a staff delete', async () => {
     vi.mocked(fetchReplies).mockResolvedValue([giftReply]);
     signIn({ role: 'moderator' });

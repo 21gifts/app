@@ -180,7 +180,7 @@ app/
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
 │   │   ├── PublicMessageLoader.tsx # public forum note on `/messages/[id]`; signed-in uses PublicMessageThread, unsigned remains read-only
-│   │   ├── PublicMessageThread.tsx # signed-in permalink ForumBoard (composerHidden, auto-expand, pay/copy/PM/reply/delete)
+│   │   ├── PublicMessageThread.tsx # signed-in permalink ForumBoard (composerHidden, auto-expand, copy/Gift-on-payable-reply/reply/delete)
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer

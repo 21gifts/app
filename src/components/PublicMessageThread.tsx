@@ -721,6 +721,13 @@ export function PublicMessageThread(props: {
     if (replyPosting) {
       return;
     }
+    if (
+      payMessageId !== null &&
+      replies !== null &&
+      replies.some((row) => row.id === payMessageId)
+    ) {
+      handlePayCancel();
+    }
     if (expandedId === messageId) {
       ++expandGen.current;
       setExpandedId(null);
@@ -839,8 +846,12 @@ export function PublicMessageThread(props: {
 
   const handleDeleted = (messageId: string): void => {
     if (messageId === note.id) {
+      handlePayCancel();
       onRootDeleted();
       return;
+    }
+    if (payMessageId === messageId) {
+      handlePayCancel();
     }
     setReplies((prev) => {
       /* v8 ignore next 3 -- delete control only mounts after replies loaded */
