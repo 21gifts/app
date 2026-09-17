@@ -235,6 +235,43 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('You: For you')).toBeTruthy();
   });
 
+  it('does not mint a second invoice while the paid-row poll is live', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock
+      .mockResolvedValueOnce([MESSAGE])
+      .mockImplementationOnce(() => new Promise(() => undefined));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  For you  ' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not mint a second invoice while a mint is in flight', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    invoiceMock.mockImplementation(() => new Promise(() => undefined));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
+  });
+
   it('mints an amount-only invoice and falls back to the last paid row', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
@@ -376,6 +413,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Could not send your message')).toBeTruthy();
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
   it('aborts and resets invoice state when ?c= changes', async () => {

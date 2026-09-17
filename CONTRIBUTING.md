@@ -94,7 +94,9 @@ app/
 │   │   ├── translate/route.ts    # GET availability + POST LibreTranslate-compatible proxy
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
-│   │   │   └── [id]/route.ts    # GET/POST /conversations/[id]
+│   │   │   └── [id]/
+│   │   │       ├── route.ts     # GET/POST /conversations/[id]
+│   │   │       └── invoice/route.ts  # POST /conversations/:id/invoice
 │   │   ├── forum/
 │   │   │   ├── messages/
 │   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy

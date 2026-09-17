@@ -203,6 +203,9 @@ export function InboxLoader(): ReactElement | null {
     if (openId === null || openId === '') {
       return;
     }
+    if (posting || payWaiting || invoice !== null) {
+      return;
+    }
     const trimmed = draft.trim();
     const sats = parseReplySats(amountDraft);
     if (trimmed === '' && sats === 'empty') {
@@ -301,6 +304,7 @@ export function InboxLoader(): ReactElement | null {
           ) {
             setFormError('request');
             setPayWaiting(false);
+            setInvoice(null);
           }
         } finally {
           if (payPollRef.current === controller) {
