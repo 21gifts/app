@@ -18,9 +18,10 @@ function isStaffRole(role: string | undefined): boolean {
 /**
  * Signed-in moderation hub of staff tools.
  *
- * Founders and moderators see hub copy and a labeled Hidden notes control.
- * Other signed-in visitors see a short forbidden message and no tools list.
- * Does not fetch hidden notes. Renders nothing without a session.
+ * Founders and moderators see hub copy and labeled Hidden notes and Open
+ * proposals tools. Other signed-in visitors see a short forbidden message
+ * and no tools list. Does not fetch hidden notes or proposals. Renders
+ * nothing without a session.
  *
  * @returns The moderation hub card, forbidden copy, or `null` without a session.
  */
@@ -56,6 +57,11 @@ export function ModerateScreen(): ReactElement | null {
           <p className="text-center text-sm text-app-muted">{t('moderate.lead')}</p>
           <ButtonLink href="/moderate/hidden" variant="secondary" size="lg">
             {t('moderate.listLabel')}
+          </ButtonLink>
+        </li>
+        <li className="flex w-full flex-col items-center gap-3">
+          <ButtonLink href="/moderate/proposals" variant="secondary" size="lg">
+            {t('moderate.proposals.heading')}
           </ButtonLink>
         </li>
       </ul>

@@ -1315,6 +1315,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/trust/proposals') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { proposals: [] });
+    return;
+  }
+
   if (
     method === 'POST' &&
     (pathName === '/trust/verify' ||

@@ -221,6 +221,16 @@ export async function proxyTrustChainGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /trust/proposals to the 21.gifts api (staff Bearer).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyTrustProposalsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/trust/proposals');
+}
+
+/**
  * Proxies POST /trust/verify to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).

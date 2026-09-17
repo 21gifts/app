@@ -5320,6 +5320,7 @@ test.describe('moderate screens', () => {
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
     await expect(page.getByText('Tools for founders and moderators.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
     await shotScreen(page, 'screen-moderate');
   });
 
@@ -5430,6 +5431,144 @@ test.describe('moderate hidden screens', () => {
     await page.goto('/moderate/hidden');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-moderate-hidden-error');
+  });
+});
+
+test.describe('moderate proposals screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const PROPOSAL = {
+    subject: { id: 'acc_rose', name: 'Rose', role: 'verified' as const },
+    proposedBy: { id: 'acc_bob', name: 'Bob' },
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+
+  async function stubProposals(
+    page: Page,
+    proposals: Array<typeof PROPOSAL> | 'hang' = [],
+  ): Promise<void> {
+    if (proposals === 'hang') {
+      await page.route('**/trust/proposals', async () => {
+        /* hang */
+      });
+      return;
+    }
+    await page.route('**/trust/proposals', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ proposals }),
+      });
+    });
+  }
+
+  test('screen /moderate/proposals', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [PROPOSAL]);
+    await page.goto('/moderate/proposals');
+    await expect(page.getByRole('heading', { name: 'Open proposals' })).toBeVisible();
+    await expect(page.getByText('Rose')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeVisible();
+    await shotScreen(page, 'screen-moderate-proposals');
+  });
+
+  test('moderate proposals forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await stubProposals(page);
+    await page.goto('/moderate/proposals');
+    await expect(page.getByRole('heading', { name: 'Open proposals' })).toBeVisible();
+    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-forbidden');
+  });
+
+  test('moderate proposals empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page);
+    await page.goto('/moderate/proposals');
+    await expect(page.getByText('No open proposals.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-empty');
+  });
+
+  test('moderate proposals loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, 'hang');
+    await page.goto('/moderate/proposals');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-loading');
+  });
+
+  test('moderate proposals error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/trust/proposals', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/proposals');
+    await expect(page.getByText('Could not load open proposals. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-error');
+  });
+
+  test('moderate proposals waiting-confirm', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [{ ...PROPOSAL, proposedBy: { id: E2E_ACCOUNT.id, name: 'Ada' } }]);
+    await page.goto('/moderate/proposals');
+    await expect(page.getByText('Waiting for another moderator to confirm.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-waiting-confirm');
+  });
+
+  test('moderate proposals confirm-error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [PROPOSAL]);
+    await page.route('**/trust/confirm-moderator', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/proposals');
+    await page.getByRole('button', { name: 'Confirm as moderator' }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-confirm-error');
+  });
+
+  test('moderate proposals confirming', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [PROPOSAL]);
+    await page.route('**/trust/confirm-moderator', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/proposals');
+    await page.getByRole('button', { name: 'Confirm as moderator' }).click();
+    await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled();
+    await shotScreen(page, 'state-moderate-proposals-confirming');
   });
 });
 

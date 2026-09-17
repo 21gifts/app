@@ -16,6 +16,7 @@ import {
   fetchMemberPosts,
   fetchMemberReplies,
   fetchTrustChain,
+  fetchTrustProposals,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
@@ -2477,6 +2478,70 @@ describe('fetchTrustChain', () => {
     await expect(fetchTrustChain('sess')).rejects.toThrow(
       'Could not load the Trust Chain. Please try again.',
     );
+  });
+});
+
+describe('fetchTrustProposals', () => {
+  const proposal = {
+    subject: { id: 'acc_rose', name: 'Rose', role: 'verified' as const },
+    proposedBy: { id: 'acc_bob', name: 'Bob' },
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+  const loadError = 'Could not load moderator proposals. Please try again.';
+
+  it('returns the validated proposals and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { proposals: [proposal] } });
+    await expect(fetchTrustProposals('sess')).resolves.toEqual([proposal]);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/proposals', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('returns an empty list', async () => {
+    stubFetch({ ok: true, status: 200, body: { proposals: [] } });
+    await expect(fetchTrustProposals('sess')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { proposals: [{ id: 'acc_rose' }] } });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
   });
 });
 

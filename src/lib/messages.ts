@@ -529,6 +529,11 @@ const en = {
   'moderate.listLabel': 'Hidden notes',
   'moderate.hiddenBy': 'Hidden by {name}',
   'moderate.unnamed': 'Unnamed',
+  'moderate.proposals.heading': 'Open proposals',
+  'moderate.proposals.empty': 'No open proposals.',
+  'moderate.proposals.listLabel': 'Open moderator proposals',
+  'moderate.proposals.proposedBy': 'Proposed by {name}',
+  'moderate.proposals.error': 'Could not load open proposals. Please try again.',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -1084,6 +1089,12 @@ const de = {
   'moderate.listLabel': 'Ausgeblendete Notizen',
   'moderate.hiddenBy': 'Ausgeblendet von {name}',
   'moderate.unnamed': 'Unbenannt',
+  'moderate.proposals.heading': 'Offene Vorschläge',
+  'moderate.proposals.empty': 'Keine offenen Vorschläge.',
+  'moderate.proposals.listLabel': 'Offene Moderatorvorschläge',
+  'moderate.proposals.proposedBy': 'Vorgeschlagen von {name}',
+  'moderate.proposals.error':
+    'Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -1625,6 +1636,11 @@ const es = {
   'moderate.listLabel': 'Notas ocultas',
   'moderate.hiddenBy': 'Ocultada por {name}',
   'moderate.unnamed': 'Sin nombre',
+  'moderate.proposals.heading': 'Propuestas abiertas',
+  'moderate.proposals.empty': 'No hay propuestas abiertas.',
+  'moderate.proposals.listLabel': 'Propuestas abiertas de moderación',
+  'moderate.proposals.proposedBy': 'Propuesto por {name}',
+  'moderate.proposals.error': 'No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo.',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2173,6 +2189,11 @@ const fil = {
   'moderate.listLabel': 'Mga nakatagong nota',
   'moderate.hiddenBy': 'Itinago ni {name}',
   'moderate.unnamed': 'Walang pangalan',
+  'moderate.proposals.heading': 'Mga bukas na mungkahi',
+  'moderate.proposals.empty': 'Walang bukas na mungkahi.',
+  'moderate.proposals.listLabel': 'Mga bukas na mungkahi para maging moderator',
+  'moderate.proposals.proposedBy': 'Iminungkahi ni {name}',
+  'moderate.proposals.error': 'Hindi ma-load ang mga bukas na mungkahi. Subukan ulit.',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
