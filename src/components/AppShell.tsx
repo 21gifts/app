@@ -73,6 +73,7 @@ interface AppShellContextValue {
 }
 
 const AppShellContext = createContext<AppShellContextValue | null>(null);
+/** Slot hosts and in-card chrome claim for {@link Card}. Null outside AppShell. */
 export { AppShellContext };
 
 /**
