@@ -6397,6 +6397,7 @@ test.describe('moderate group screens', () => {
         text: 'Hello mods',
         createdAt: '2026-08-28T15:00:00.000Z',
         fromMe: false,
+        sats: 0,
       },
     ]);
     await page.goto('/moderate/group');

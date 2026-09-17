@@ -145,6 +145,7 @@ async function stubModeratorGroup(page: import('@playwright/test').Page): Promis
             text: 'Hello mods',
             createdAt: '2026-08-28T15:00:00.000Z',
             fromMe: false,
+            sats: 0,
           },
         ],
       }),

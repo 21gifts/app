@@ -73,6 +73,7 @@ const MESSAGE: ConversationMessage = {
   text: 'Hello mods',
   createdAt: '2026-08-28T15:00:00.000Z',
   fromMe: false,
+  sats: 0,
 };
 
 beforeEach(() => {
@@ -233,6 +234,7 @@ describe('ModeratorGroupScreen', () => {
       text: 'Follow up',
       createdAt: '2026-08-28T16:00:00.000Z',
       fromMe: true,
+      sats: 0,
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
