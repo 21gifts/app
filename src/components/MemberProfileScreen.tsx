@@ -760,11 +760,7 @@ export function MemberProfileScreen({
     const token = session;
     const messageId = payMessageId;
     const visibleList = activity === 'replies' ? activityReplies : replies;
-    const hiddenList = activity === 'replies' ? replies : activityReplies;
-    const listed =
-      visibleList?.find((message) => message.id === messageId) ??
-      hiddenList?.find((message) => message.id === messageId) ??
-      posts?.find((message) => message.id === messageId);
+    const listed = visibleList?.find((message) => message.id === messageId);
     /* v8 ignore next 3 -- sheet only opens on a payable row */
     if (listed === undefined || listed.payable !== true) {
       return;
