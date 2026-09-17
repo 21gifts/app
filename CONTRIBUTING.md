@@ -105,6 +105,7 @@ app/
 │   │   │           └── activity/route.ts  # GET /forum/members/:id/activity → api GET /members/:id/activity
 │   │   ├── trust/
 │   │   │   ├── graph/route.ts              # GET /trust/graph → api GET /trust-chain
+│   │   │   ├── proposals/route.ts          # GET /trust/proposals
 │   │   │   ├── verify/route.ts             # POST /trust/verify
 │   │   │   ├── propose-moderator/route.ts  # POST /trust/propose-moderator
 │   │   │   ├── confirm-moderator/route.ts  # POST /trust/confirm-moderator
@@ -117,6 +118,10 @@ app/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + push bell
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
+│   │   ├── moderate/
+│   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
+│   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
+│   │   │   └── proposals/page.tsx    # GET /moderate/proposals — confirm queue
 │   │   ├── trust-chain/
 │   │   │   ├── page.tsx              # GET /trust-chain — signed-in Trust Chain
 │   │   │   └── trust-chain-loader.tsx
@@ -148,6 +153,9 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals)
+│   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
+│   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
@@ -242,6 +250,7 @@ app/
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
+│   ├── proposals.spec.ts        # /moderate/proposals staff confirm queue
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

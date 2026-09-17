@@ -47,6 +47,7 @@ import {
   proxyTrustChainGet,
   proxyTrustConfirmModeratorPost,
   proxyTrustProposeModeratorPost,
+  proxyTrustProposalsGet,
   proxyTrustVerifyPost,
   proxyViewGet,
 } from '@/lib/api-proxies';
@@ -454,6 +455,12 @@ describe('api proxy wrappers', () => {
     const dest = fetchMock.mock.calls[0]?.[0] as URL;
     expect(dest.pathname).toBe('/trust-chain');
     expect(dest.search).toBe('?around=acc%2F1');
+  });
+
+  it('proxyTrustProposalsGet hits GET /trust/proposals', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustProposalsGet(new Request('http://localhost/trust/proposals'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/proposals');
   });
 
   it('proxyTrustVerifyPost hits POST /trust/verify', async () => {

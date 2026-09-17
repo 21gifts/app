@@ -691,3 +691,35 @@ export const trustActionResultSchema = z.object({
  * Updated account snapshot after a staff trust action.
  */
 export type TrustActionResult = z.infer<typeof trustActionResultSchema>;
+
+/**
+ * Runtime schema for one open moderator proposal from `GET /trust/proposals`.
+ *
+ * `subject.role` is always `verified` (the member is waiting for a second
+ * staff confirm). `subject.name` and `proposedBy.name` may be null when the
+ * account has no display name yet.
+ */
+export const moderatorProposalSchema = z.object({
+  subject: z.object({
+    id: z.string().min(1),
+    name: z.string().nullable(),
+    role: z.literal('verified'),
+  }),
+  proposedBy: z.object({
+    id: z.string().min(1),
+    name: z.string().nullable(),
+  }),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * Runtime schema for the payload of `GET /trust/proposals`.
+ */
+export const moderatorProposalsResponseSchema = z.object({
+  proposals: z.array(moderatorProposalSchema),
+});
+
+/**
+ * One open moderator proposal from the api.
+ */
+export type ModeratorProposal = z.infer<typeof moderatorProposalSchema>;

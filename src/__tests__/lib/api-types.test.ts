@@ -15,6 +15,8 @@ import {
   lnAddressResolvedSchema,
   giftStatsSchema,
   memberProfileSchema,
+  moderatorProposalSchema,
+  moderatorProposalsResponseSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -120,6 +122,77 @@ describe('trustActionResultSchema', () => {
   it('accepts a staff action snapshot', () => {
     const body = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
     expect(trustActionResultSchema.parse(body)).toEqual(body);
+  });
+});
+
+describe('moderatorProposalSchema', () => {
+  const proposal = {
+    subject: { id: 'acc_rose', name: 'Rose', role: 'verified' as const },
+    proposedBy: { id: 'acc_bob', name: 'Bob' },
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+
+  it('accepts an open proposal with display names', () => {
+    expect(moderatorProposalSchema.parse(proposal)).toEqual(proposal);
+  });
+
+  it('accepts null names', () => {
+    const unnamed = {
+      subject: { id: 'acc_rose', name: null, role: 'verified' as const },
+      proposedBy: { id: 'acc_bob', name: null },
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(moderatorProposalSchema.parse(unnamed)).toEqual(unnamed);
+  });
+
+  it('rejects a subject role other than verified', () => {
+    expect(() =>
+      moderatorProposalSchema.parse({
+        ...proposal,
+        subject: { ...proposal.subject, role: 'moderator' },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects an empty subject id', () => {
+    expect(() =>
+      moderatorProposalSchema.parse({
+        ...proposal,
+        subject: { ...proposal.subject, id: '' },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a createdAt without an offset', () => {
+    expect(() =>
+      moderatorProposalSchema.parse({ ...proposal, createdAt: '2026-08-28T12:00:00.000' }),
+    ).toThrow();
+  });
+});
+
+describe('moderatorProposalsResponseSchema', () => {
+  const proposal = {
+    subject: { id: 'acc_rose', name: 'Rose', role: 'verified' as const },
+    proposedBy: { id: 'acc_bob', name: 'Bob' },
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+
+  it('accepts an empty list', () => {
+    expect(moderatorProposalsResponseSchema.parse({ proposals: [] })).toEqual({ proposals: [] });
+  });
+
+  it('accepts a list of proposals', () => {
+    expect(moderatorProposalsResponseSchema.parse({ proposals: [proposal] })).toEqual({
+      proposals: [proposal],
+    });
+  });
+
+  it('rejects a missing proposals key', () => {
+    expect(() => moderatorProposalsResponseSchema.parse({})).toThrow();
+  });
+
+  it('rejects a non-array proposals value', () => {
+    expect(() => moderatorProposalsResponseSchema.parse({ proposals: proposal })).toThrow();
   });
 });
 

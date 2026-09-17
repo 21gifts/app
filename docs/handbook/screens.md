@@ -1000,15 +1000,15 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ## Screen: /moderate
 
-- **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes. JSON for the list lives under `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
-- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page.
+- **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
+- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
-Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, and labeled **Hidden notes** control → `/moderate/hidden`.
+Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, and labeled **Open proposals** control → `/moderate/proposals`.
 
 ![21.gifts moderation](images/moderate.png)
 
@@ -1055,6 +1055,56 @@ Staff (founder) waiting on `GET /forum/messages/hidden`. Copy **Loading…**
 Staff (founder) list fetch failed. Button **Try again**.
 
 ![21.gifts hidden notes error](images/moderate-hidden-error.png)
+
+## Screen: /moderate/proposals
+
+- **URL:** `/moderate/proposals` — signed-in staff confirm queue. Same onboarding gate as `/moderate`. JSON is `/trust/proposals`. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open proposals**. Staff rows: subject name (link `/members/{id}`), **Proposed by {name}**, time, **Confirm as moderator** or **Waiting for another moderator to confirm.** Empty / Loading… / error+Try again. Failed confirm: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only (no Open proposals row).
+- **Actions:** In-card icon back to hub. Staff confirm / Try again. Open Menu. Back to the forum.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ProposalsPage`, `ProposalsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchTrustProposals`, `postTrustConfirm`.
+- **Auth:** Bearer; list only for founder|moderator.
+
+### Variant: default
+
+Staff (founder) loaded queue with at least one open proposal (subject **Rose**, **Proposed by Bob**, **Confirm as moderator**).
+
+![21.gifts open proposals](images/moderate-proposals.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for founders and moderators.** No list.
+
+![21.gifts open proposals forbidden](images/moderate-proposals-forbidden.png)
+
+### Variant: empty
+
+Staff (founder) loaded list with zero open proposals. Copy **No open proposals.**
+
+![21.gifts open proposals empty](images/moderate-proposals-empty.png)
+
+### Variant: loading
+
+Staff (founder) waiting on `GET /trust/proposals`. Copy **Loading…**
+
+![21.gifts open proposals loading](images/moderate-proposals-loading.png)
+
+### Variant: error
+
+Staff (founder) list fetch failed. Copy **Could not load open proposals. Please try again.** Button **Try again**.
+
+![21.gifts open proposals error](images/moderate-proposals-error.png)
+
+### Variant: waiting-confirm
+
+Staff (founder) row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button.
+
+![21.gifts open proposals waiting confirm](images/moderate-proposals-waiting-confirm.png)
+
+### Variant: confirm-error
+
+Staff (founder) Confirm as moderator failed. Copy **Could not update this member. Please try again.**
+
+![21.gifts open proposals confirm error](images/moderate-proposals-confirm-error.png)
 
 ## Screen: /messages/[id]
 

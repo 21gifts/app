@@ -329,6 +329,13 @@
 - **Used by:** `fetchTrustChain` on signed-in `/trust-chain` (forwards `?around=`).
 - **Auth:** Bearer.
 
+## Endpoint: GET /trust/proposals
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /trust/proposals` (open moderator proposals for founders and moderators). Lives under `/trust/proposals` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/proposals`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchTrustProposals` via `ProposalsScreen` on `/moderate/proposals`. `ModerateScreen` on `/moderate` does not call this GET. Confirm uses existing `POST /trust/confirm-moderator` (`postTrustConfirm`), not appoint.
+- **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+
 ## Endpoint: POST /trust/verify
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/verify` with `{ accountId }`.
@@ -347,7 +354,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/confirm-moderator` with `{ accountId }`.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
-- **Used by:** `postTrustConfirm` in `MemberTrustActions`.
+- **Used by:** `postTrustConfirm` in `MemberTrustActions` and `ProposalsScreen`.
 - **Auth:** Bearer (founder or moderator, not the proposer).
 
 ## Endpoint: POST /trust/appoint-moderator

@@ -17,6 +17,7 @@ import {
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
+  moderatorProposalsResponseSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -38,6 +39,7 @@ import {
   type LnAddressResolved,
   type MemberProfile,
   type MessageInvoice,
+  type ModeratorProposal,
   type PasskeyBegin,
   type PasskeySession,
   type TrustActionResult,
@@ -669,6 +671,33 @@ export async function postTrustAppoint(
   accountId: string,
 ): Promise<TrustActionResult> {
   return postTrustAction('/trust/appoint-moderator', sessionToken, accountId);
+}
+
+const TRUST_PROPOSALS_LOAD_ERROR = 'Could not load moderator proposals. Please try again.';
+
+/**
+ * Fetches open moderator proposals for founders and moderators.
+ *
+ * Hits same-origin `GET /trust/proposals` (Bearer). Next.js forbids a
+ * `route.ts` beside `/moderate/proposals`, so the proxy lives at this path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The open-proposal list.
+ * @throws Error with visitor-facing copy on 401/403/503, other non-2xx, a
+ * network failure, or a body that fails {@link moderatorProposalsResponseSchema}.
+ */
+export async function fetchTrustProposals(sessionToken: string): Promise<ModeratorProposal[]> {
+  try {
+    const response = await fetch('/trust/proposals', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(TRUST_PROPOSALS_LOAD_ERROR);
+    }
+    return moderatorProposalsResponseSchema.parse(await response.json()).proposals;
+  } catch {
+    throw new Error(TRUST_PROPOSALS_LOAD_ERROR);
+  }
 }
 
 /**
