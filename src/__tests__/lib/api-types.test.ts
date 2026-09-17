@@ -441,6 +441,7 @@ describe('conversationOneSchema', () => {
       lastText: 'Hello mods',
       lastAt: '2026-08-28T15:00:00.000Z',
       lastFromMe: false,
+      lastSats: 0,
     };
     expect(conversationOneSchema.parse({ conversation })).toEqual({ conversation });
   });

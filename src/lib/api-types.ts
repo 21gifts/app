@@ -501,7 +501,7 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(['member_member', 'member_platform', 'member_damus']),
+  kind: z.enum(['member_member', 'member_platform', 'member_damus', 'moderator_group']),
   name: z.string().min(1),
   lastText: z.string(),
   lastAt: z.string().datetime({ offset: true }),
