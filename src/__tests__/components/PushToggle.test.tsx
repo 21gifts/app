@@ -203,9 +203,8 @@ describe('PushToggle', () => {
     vi.mocked(enablePush).mockRejectedValue(new Error('Notification permission denied'));
     renderWithLocale(<PushToggle />);
     fireEvent.click(await screen.findByRole('button', { name: 'Enable notifications' }));
-    expect(
-      await screen.findByText('Notifications are not available in this browser.'),
-    ).toBeTruthy();
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Notifications are not available in this browser.')).toBeTruthy();
   });
 
   it('shows the three notification stages and selects All when the field is missing', async () => {

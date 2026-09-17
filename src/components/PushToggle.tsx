@@ -169,7 +169,9 @@ export function PushToggle(): ReactElement | null {
         <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
       ) : null}
       {showBell && errorKey !== null ? (
-        <p className="text-sm text-app-muted">{t(errorKey)}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t(errorKey)}
+        </p>
       ) : null}
       {showBell ? (
         <div className="flex items-center gap-2">
