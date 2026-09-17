@@ -657,8 +657,8 @@ export function PublicMessageThread(props: {
           }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
-              pendingPostRef.current = () => {
-                void continuePay(true);
+              pendingPostRef.current = async () => {
+                await continuePay(true);
               };
               return null;
             }
@@ -681,8 +681,8 @@ export function PublicMessageThread(props: {
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
-      pendingPostRef.current = () => {
-        void continuePay(true);
+      pendingPostRef.current = async () => {
+        await continuePay(true);
       };
       return;
     }
