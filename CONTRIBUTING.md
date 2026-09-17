@@ -98,7 +98,7 @@ app/
 │   │   │       └── [file]/route.ts      # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
 │   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
-│   │   ├── translate/route.ts    # GET availability + POST LibreTranslate-compatible proxy
+│   │   ├── translate/route.ts    # GET availability + POST DeepL v2 proxy
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   ├── moderator-group/route.ts  # GET /conversations/moderator-group
