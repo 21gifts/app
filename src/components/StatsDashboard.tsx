@@ -14,6 +14,7 @@ import {
   formatUsdDisplay,
   type FiatCode,
 } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link StatsDashboard}. */
 export interface StatsDashboardProps {
@@ -570,6 +571,10 @@ function StatsCharts({
 /**
  * Gift statistics dashboard: KPI cards and diagrams (₿ plus one selected fiat).
  *
+ * FiatPicker (CHF | EUR | USD | PHP) sits above the KPI cards only when
+ * unsigned (`session === null`). Signed-in visitors display and scale with
+ * the preferred code from `useFiatPreference` and cannot change it here.
+ *
  * @param props - Stats payload plus loading/error/retry.
  * @returns The dashboard element.
  */
@@ -581,6 +586,8 @@ export function StatsDashboard({
 }: StatsDashboardProps): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
+  const session = useAuthStore((state) => state.session);
+  const showFiatSwitcher = session === null;
 
   if (loading && stats === null && error === null) {
     return <p className="text-paper/60">Loading…</p>;
@@ -606,7 +613,9 @@ export function StatsDashboard({
 
   return (
     <div className="space-y-12">
-      <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
+      {showFiatSwitcher ? (
+        <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
+      ) : null}
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Total spent</dt>

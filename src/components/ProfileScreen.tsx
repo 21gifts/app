@@ -25,7 +25,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * Web Push bell), LanguagePreferenceSwitcher, ThemeSwitcher,
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
  *
- * Never shows `forum.loading` for the chart. Menu totals stay in `SignedInChrome`.
+ * Never shows `forum.loading` for the chart. Empty chart is `profile.chartEmpty`
+ * without a chart FiatPicker; the only FiatPicker on the card is
+ * {@link FiatPreferenceSwitcher}. Menu totals stay in `SignedInChrome`.
  *
  * @returns The identity card.
  */

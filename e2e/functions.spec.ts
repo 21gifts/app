@@ -3416,6 +3416,13 @@ test('Function: StatsDashboard — empty stats hide the spend chart heading', as
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toHaveCount(0);
 });
 
+test('Function: StatsDashboard — signed-in stats has no fiat switcher', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.goto('/stats');
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+});
+
 test('Function: StatsDashboard — a spend day on the chart opens /stats/{day}', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');
@@ -3509,7 +3516,6 @@ test('Function: formatFiatTick — populated profile chart shows CHF ticks', asy
   await page.goto('/profile');
   await page
     .getByRole('group', { name: 'Fiat currency' })
-    .first()
     .getByRole('button', { name: 'CHF' })
     .click();
   await page
@@ -3535,7 +3541,7 @@ test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ p
   await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
   const groups = page.getByRole('group', { name: 'Fiat currency' });
-  await expect(groups).toHaveCount(2);
+  await expect(groups).toHaveCount(1);
   const group = groups.first();
   await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();

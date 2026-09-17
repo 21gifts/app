@@ -14,6 +14,7 @@ import {
 } from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
 import { formatBitcoin, formatFiatTick, formatUsdTick, type FiatCode } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link AccountActivityChart}. */
 export interface AccountActivityChartProps {
@@ -69,13 +70,16 @@ function selectedFiatUnsummable(
 }
 
 /**
- * Compact dual-line cumulative chart of Given and Received with FiatPicker
- * (always) and a ₿ | selected-fiat scale when the series has sats. Fiat code
- * comes from {@link useFiatPreference}.
+ * Compact dual-line cumulative chart of Given and Received. FiatPicker only
+ * when `session === null` (unsigned public view). Signed-in mounts omit it.
+ * Fiat code comes from {@link useFiatPreference}. Populated series still get
+ * a ₿ | selected-fiat scale.
  *
  * @param props - Receive series and optional donate series.
- * @returns FiatPicker plus empty `profile.chartEmpty` status, or FiatPicker
- *   plus legend, selected-fiat chrome, and reserved-height SVG (no title heading).
+ * @returns When unsigned, FiatPicker then empty `profile.chartEmpty` status,
+ *   or FiatPicker plus legend, selected-fiat chrome, and reserved-height SVG.
+ *   Signed-in empty is `profile.chartEmpty` alone; populated signed-in starts
+ *   at legend + ₿\|selected fiat scale (no title heading).
  */
 export function AccountActivityChart({
   received,
@@ -84,6 +88,8 @@ export function AccountActivityChart({
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
+  const session = useAuthStore((state) => state.session);
+  const showFiatSwitcher = session === null;
   const [scale, setScale] = useState<ActivityScale>('sat');
   const points = alignActivitySeries(received, donated);
   const emptySats =
@@ -92,9 +98,9 @@ export function AccountActivityChart({
       (point) => point.cumulativeDonatedSats === 0 && point.cumulativeReceivedSats === 0,
     );
 
-  const picker = (
+  const picker = showFiatSwitcher ? (
     <FiatPicker value={fiat} onChange={setFiat} shell="app" ariaLabel={t('profile.fiatCurrency')} />
-  );
+  ) : null;
 
   if (emptySats) {
     return (
