@@ -157,7 +157,6 @@ export function PushToggle(): ReactElement | null {
           void onLevelChange(next);
         }}
         ariaLabel={t('profile.push.level.label')}
-        {...(levelBusy ? { className: 'pointer-events-none opacity-60' } : {})}
       />
       <p className="text-sm text-app-muted">{t('profile.push.level.hint')}</p>
       {levelError ? (

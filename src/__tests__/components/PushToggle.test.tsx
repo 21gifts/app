@@ -275,9 +275,6 @@ describe('PushToggle', () => {
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
-    expect(screen.getByRole('group', { name: 'Notification level' }).className).toContain(
-      'pointer-events-none',
-    );
     fireEvent.click(screen.getByRole('button', { name: 'Mentions' }));
     expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     resolvePost?.(accountWithLevel('active'));
@@ -346,17 +343,11 @@ describe('PushToggle', () => {
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
-    expect(screen.getByRole('group', { name: 'Notification level' }).className).toContain(
-      'pointer-events-none',
-    );
     useAuthStore.setState({ account: null });
     resolvePost?.(accountWithLevel('active'));
     await waitFor(() => {
-      expect(screen.getByRole('group', { name: 'Notification level' }).className).not.toContain(
-        'pointer-events-none',
-      );
+      expect(useAuthStore.getState().account).toBeNull();
     });
-    expect(useAuthStore.getState().account).toBeNull();
     expect(useAuthStore.getState().session).toBe('tok');
     expect(setAccountSpy).not.toHaveBeenCalled();
     setAccountSpy.mockRestore();
