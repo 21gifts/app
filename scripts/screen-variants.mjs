@@ -821,6 +821,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not save notification level.',
   },
   {
+    route: '/profile',
+    id: 'push-enable-error',
+    image: 'profile-push-enable-error.png',
+    visual: 'state-profile-push-enable-error',
+    needle: 'Notifications are not available in this browser.',
+  },
+  {
     route: '/view/[viewKey]',
     id: 'default',
     image: 'view-viewKey.png',

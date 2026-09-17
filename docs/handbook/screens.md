@@ -928,6 +928,12 @@ Notifications section with `role="alert"` save error after stubbing POST /me/not
 
 ![21.gifts profile notification level error](images/profile-notification-level-error.png)
 
+### Variant: push-enable-error
+
+Notifications section with `role="alert"` after clicking Enable notifications when Web Push is present but enable fails. Copy **Notifications are not available in this browser.**
+
+![21.gifts profile push enable error](images/profile-push-enable-error.png)
+
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
