@@ -184,6 +184,17 @@ describe('PublicMessageThread', () => {
     expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
   });
 
+  it('keeps a long original body full on the signed-in permalink', async () => {
+    const text = `${'a'.repeat(280)} TAILWORD`;
+    signIn();
+    renderThread({ root: { ...root, text } });
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+    });
+    expect(screen.getByText(/TAILWORD/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
   it('invoices 21 sats when the pay amount is left empty', async () => {
     signIn();
     renderThread();

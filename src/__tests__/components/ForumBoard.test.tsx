@@ -266,6 +266,52 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
+  it('keeps a long note full when truncate is off', () => {
+    const text = `${'a'.repeat(280)} TAILWORD`;
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        truncate={false}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText(/TAILWORD/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('keeps a long reply full when truncate is off', () => {
+    const text = `${'a'.repeat(280)} TAILWORD`;
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Bob', text, sats: 0, payable: false }]}
+        truncate={false}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText(/TAILWORD/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
   it('mounts the New posts pill only while unseen posts are available', () => {
     const onShowNewPosts = vi.fn();
     const { rerender } = renderWithLocale(
