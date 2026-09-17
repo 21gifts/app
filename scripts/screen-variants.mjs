@@ -794,6 +794,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'about-photo',
+    image: 'profile-about-photo.png',
+    visual: 'state-profile-about-photo',
+    needle: "getByAltText('About me photo')",
+  },
+  {
+    route: '/profile',
     id: 'about-editing',
     image: 'profile-about-editing.png',
     visual: 'state-profile-about-editing',
@@ -819,6 +826,13 @@ export const SCREEN_VARIANTS = [
     image: 'view-about-filled.png',
     visual: 'state-view-about-filled',
     needle: 'I build on Bitcoin',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'about-photo',
+    image: 'view-about-photo.png',
+    visual: 'state-view-about-photo',
+    needle: "getByAltText('About me photo')",
   },
   {
     route: '/view/[viewKey]',

@@ -706,6 +706,35 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('ignores a loadPhoto resolve after save removes the photo', async () => {
+    let resolveLoad!: (blob: Blob) => void;
+    const loadPhoto = vi.fn(
+      () =>
+        new Promise<Blob>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} hasPhoto loadPhoto={loadPhoto} onSave={onSave} />,
+    );
+    expect(screen.getByText('About me')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith('', null);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save About me' })).toBeNull();
+    });
+    resolveLoad(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('About me photo')).toBeNull();
+  });
+
   it('stays in edit mode when onSave returns false', async () => {
     const onSave = vi.fn().mockResolvedValue(false);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);

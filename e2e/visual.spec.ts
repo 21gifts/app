@@ -3365,6 +3365,42 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-view-about-filled');
   });
 
+  test('state /view about-photo', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+          aboutMeHasPhoto: true,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}/about/photo$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByAltText('About me photo')).toBeVisible();
+    await shotScreen(page, 'state-view-about-photo');
+  });
+
   test('screen /view/[viewKey] missing', async ({ page }) => {
     const missing = 'b'.repeat(64);
     await page.route(new RegExp(`/view-key/${missing}$`), async (route) => {
@@ -3609,7 +3645,10 @@ const GIVEN_RECEIVED_ACTIVITY = {
 };
 
 test.describe('profile activity chart variants', () => {
-  async function seedAdaProfile(page: Page, extras?: { aboutMe?: string | null }): Promise<void> {
+  async function seedAdaProfile(
+    page: Page,
+    extras?: { aboutMe?: string | null; aboutMeHasPhoto?: boolean },
+  ): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -3625,6 +3664,7 @@ test.describe('profile activity chart variants', () => {
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: extras?.aboutMe ?? null,
+          aboutMeHasPhoto: extras?.aboutMeHasPhoto ?? false,
           setup: null,
           missing: [],
         }),
@@ -3700,6 +3740,21 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
     await shotScreen(page, 'state-profile-about-filled');
+  });
+
+  test('profile about-photo', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: true });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/me\/about\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+      });
+    });
+    await page.goto('/profile');
+    await expect(page.getByAltText('About me photo')).toBeVisible();
+    await shotScreen(page, 'state-profile-about-photo');
   });
 
   test('profile about-editing', async ({ page }) => {
