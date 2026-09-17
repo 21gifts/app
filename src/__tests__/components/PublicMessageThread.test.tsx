@@ -275,6 +275,11 @@ describe('PublicMessageThread', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Carol')).toBeTruthy();
     });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+    });
   });
 
   it('marks replies as failed when the post-pay refetch throws', async () => {
@@ -914,6 +919,14 @@ describe('PublicMessageThread', () => {
     await waitFor(() => {
       expect(screen.getByText('Could not load reactions. Please try again.')).toBeTruthy();
     });
+  });
+
+  it('does not invoice when Continue is clicked without a session', async () => {
+    useAuthStore.setState({ session: null, account });
+    renderThread({ root: { ...root, payable: true } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('maps an over-long invoice comment onto the reply length error', async () => {

@@ -45,7 +45,6 @@ function isReplyPaymentExempt(
   account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
   parentAccountId: string | undefined,
 ): boolean {
-  /* v8 ignore next 3 -- reply composer is not mounted without an account */
   if (account === null) {
     return false;
   }
@@ -601,7 +600,6 @@ export function PublicMessageThread(props: {
   };
 
   const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
-    /* v8 ignore next 3 -- Continue is disabled while payBusy; permalink pay is session-gated */
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
@@ -766,7 +764,6 @@ export function PublicMessageThread(props: {
       const sats = parsed === 'empty' ? 1 : parsed;
       return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
     };
-    /* v8 ignore next -- missing is always an array on a live account */
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
       pendingPostRef.current = () => continueReply(true);
