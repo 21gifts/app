@@ -1000,10 +1000,35 @@ describe('PublicMessageThread', () => {
   });
 
   it('does not invoice when Continue is clicked without a session', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
     useAuthStore.setState({ session: null, account });
-    renderThread({ root: { ...root, payable: true } });
-    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('ignores a second Gift Continue while the invoice is in flight', async () => {
+    let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
+    vi.mocked(postMessageInvoice).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveInvoice = resolve;
+        }),
+    );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveInvoice?.({ pr: 'lnbc1', amountSats: 21 });
+    });
   });
 
   it('maps an over-long invoice comment onto the reply length error', async () => {
