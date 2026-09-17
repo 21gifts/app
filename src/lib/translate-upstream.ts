@@ -40,7 +40,8 @@ export function getTranslateUpstream(): { url: URL; apiKey: string } | null {
 
 /**
  * Report whether the translation upstream is configured without contacting it.
- * Available only when both `TRANSLATE_URL` and `TRANSLATE_API_KEY` are set.
+ * Available only when `getTranslateUpstream()` is non-null (valid http(s)
+ * URL and non-blank key).
  *
  * @returns Always-200 JSON containing the availability flag.
  * @throws Does not throw.

@@ -492,8 +492,8 @@
 
 ## Endpoint: GET /translate
 
-- **Purpose:** `{ available: boolean }` is true only when both `TRANSLATE_URL` (used as-is) and `TRANSLATE_API_KEY` are set. No upstream call. Always 200.
-- **Errors:** none (missing URL or key treated as unavailable).
+- **Purpose:** `{ available: boolean }` is true only when `TRANSLATE_URL` is a valid http(s) URL and `TRANSLATE_API_KEY` is non-blank after trim. No upstream call. Always 200.
+- **Errors:** none (missing, blank, or invalid URL; missing or blank key — all treated as unavailable).
 - **Used by:** `fetchTranslateAvailable` in `NoteTranslate`.
 - **Auth:** Public.
 
