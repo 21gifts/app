@@ -1017,11 +1017,7 @@ describe('MemberProfileScreen', () => {
       { ...PAYABLE_NESTED, payable: false, sats: 21 },
     ]);
     vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED, payable: true, sats: 0 }]);
-    vi.mocked(fetchPublicMessage).mockResolvedValue({
-      ...PAYABLE_NESTED,
-      payable: true,
-      sats: 21,
-    });
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...PAYABLE_NESTED, payable: true, sats: 21 });
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profileWithNote, replyCount: 1 }}
@@ -1047,9 +1043,7 @@ describe('MemberProfileScreen', () => {
   it('cancels a reactions-feed Gift when the activity panel is collapsed', async () => {
     const payableActivity = { ...activityReply, payable: true, sats: 0 };
     vi.mocked(fetchMemberReplies).mockResolvedValue([payableActivity]);
-    vi.mocked(fetchPublicMessage).mockImplementation(
-      () => new Promise(() => undefined),
-    );
+    vi.mocked(fetchPublicMessage).mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profileWithNote, replyCount: 1 }}
