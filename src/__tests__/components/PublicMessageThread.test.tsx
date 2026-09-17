@@ -833,6 +833,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('retries pay after a missing_requirements overlay is satisfied', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     vi.mocked(postMessageInvoice)
       .mockRejectedValueOnce(new MissingRequirementsError(['rules']))
       .mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 21 });
@@ -845,7 +846,8 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
     ).toBeTruthy();
@@ -856,6 +858,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('shows a pay error when an overlay retry is still missing requirements', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['rules']));
     vi.mocked(agreeToRules).mockResolvedValue({
       ...account,
@@ -866,7 +869,8 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
     ).toBeTruthy();
