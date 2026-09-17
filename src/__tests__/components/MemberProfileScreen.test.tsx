@@ -1062,7 +1062,7 @@ describe('MemberProfileScreen', () => {
       />,
     );
     await expandNote({ ...note, replyCount: 1 });
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     expect(await screen.findByText('Payable nested reply.')).toBeTruthy();
     const replyCard = screen.getByText('Payable nested reply.').closest('li') as HTMLElement;
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
