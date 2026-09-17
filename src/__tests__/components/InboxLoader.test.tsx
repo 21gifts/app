@@ -19,13 +19,20 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchConversations: vi.fn(),
   fetchConversation: vi.fn(),
+  postConversationInvoice: vi.fn(),
   postConversationMessage: vi.fn(),
 }));
 
-import { fetchConversation, fetchConversations, postConversationMessage } from '@/lib/api';
+import {
+  fetchConversation,
+  fetchConversations,
+  postConversationInvoice,
+  postConversationMessage,
+} from '@/lib/api';
 
 const listMock = vi.mocked(fetchConversations);
 const threadMock = vi.mocked(fetchConversation);
+const invoiceMock = vi.mocked(postConversationInvoice);
 const postMock = vi.mocked(postConversationMessage);
 
 const account: Account = {
@@ -52,6 +59,7 @@ const THREAD: Conversation = {
   lastText: 'Hello',
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
+  lastSats: 0,
 };
 
 const OLDER: Conversation = {
@@ -61,6 +69,7 @@ const OLDER: Conversation = {
   lastText: 'Older',
   lastAt: '2026-08-27T12:00:00.000Z',
   lastFromMe: false,
+  lastSats: 0,
 };
 
 const MESSAGE: ConversationMessage = {
@@ -69,6 +78,7 @@ const MESSAGE: ConversationMessage = {
   text: 'Hello',
   createdAt: '2026-08-28T12:00:00.000Z',
   fromMe: false,
+  sats: 0,
 };
 
 beforeEach(() => {
@@ -161,6 +171,7 @@ describe('InboxLoader', () => {
       text: 'Follow up',
       createdAt: '2026-08-28T13:00:00.000Z',
       fromMe: true,
+      sats: 0,
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
@@ -173,6 +184,78 @@ describe('InboxLoader', () => {
     });
     expect(screen.getByText('You')).toBeTruthy();
     expect(document.querySelector('[data-from-me="true"]')).toBeTruthy();
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('mints an amount invoice, clears posting before polling, and applies the paid row', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
+    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    const gift: ConversationMessage = {
+      id: 'gift-1',
+      name: 'Ada',
+      text: 'For you',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      fromMe: true,
+      sats: 21,
+    };
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  For you  ' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
+    const pollCall = threadMock.mock.calls[1];
+    expect(pollCall?.[0]).toBe('sess');
+    expect(pollCall?.[1]).toBe('conv-1');
+    expect(pollCall?.[2]?.sinceMessageId).toBe('gift-1');
+    expect(pollCall?.[2]?.signal).toBeInstanceOf(AbortSignal);
+    await act(async () => {
+      resolvePoll?.([MESSAGE, gift]);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('For you')).toBeTruthy();
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+      expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
+    });
+    searchParams.delete('c');
+    view.rerender(<InboxLoader />);
+    expect(await screen.findByText('You: For you')).toBeTruthy();
+  });
+
+  it('mints an amount-only invoice and falls back to the last paid row', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    const gift: ConversationMessage = {
+      id: 'gift-2',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      fromMe: true,
+      sats: 1,
+    };
+    threadMock.mockResolvedValueOnce([MESSAGE]).mockResolvedValueOnce([MESSAGE, gift]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1n1test', amountSats: 1, messageId: 'missing' });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 1, undefined);
+      expect(screen.getByText('send ₿1')).toBeTruthy();
+    });
   });
 
   it('posts when the opened id is not in the conversation list', async () => {
@@ -191,6 +274,7 @@ describe('InboxLoader', () => {
       text: 'Follow up',
       createdAt: '2026-08-28T13:00:00.000Z',
       fromMe: true,
+      sats: 0,
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -218,6 +302,159 @@ describe('InboxLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid and unsafe amount drafts', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '999999999999999999999999' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['Too many payments', 'Too many payments. Please wait a moment and try again.'],
+    [
+      "Author's wallet cannot receive this Bitcoin payment",
+      "The author's wallet cannot receive this Bitcoin payment",
+    ],
+    ['boom', 'Could not send your message'],
+  ])('maps invoice mint error %s', async (message, expected) => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    invoiceMock.mockRejectedValue(new Error(message));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText(expected)).toBeTruthy();
+  });
+
+  it('aborts the paid-row poll when the pay sheet is cancelled', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce((_session, _id, opts) => {
+      return new Promise((_, reject) => {
+        opts?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      });
+    });
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Pay ₿21')).toBeTruthy();
+    const signal = threadMock.mock.calls[1]?.[2]?.signal;
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(signal?.aborted).toBe(true);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('shows a request error when the paid-row poll fails', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValueOnce([MESSAGE]).mockRejectedValueOnce(new Error('boom'));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Could not send your message')).toBeTruthy();
+  });
+
+  it('aborts and resets invoice state when ?c= changes', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock
+      .mockResolvedValueOnce([MESSAGE])
+      .mockImplementationOnce(() => new Promise(() => undefined));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Pay ₿21')).toBeTruthy();
+    const signal = threadMock.mock.calls[1]?.[2]?.signal;
+    threadMock.mockImplementationOnce(() => new Promise(() => undefined));
+    searchParams.set('c', 'conv-2');
+    view.rerender(<InboxLoader />);
+    expect(signal?.aborted).toBe(true);
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
+  });
+
+  it('drops a late invoice mint after the open thread changes', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    let resolveMint:
+      ((value: { pr: string; amountSats: number; messageId: string }) => void) | undefined;
+    invoiceMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveMint = resolve;
+        }),
+    );
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    searchParams.set('c', 'conv-2');
+    view.rerender(<InboxLoader />);
+    await act(async () => {
+      resolveMint?.({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-late' });
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
+
+  it('drops a late paid-row poll after the open thread changes', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
+    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Pay ₿21')).toBeTruthy();
+    searchParams.set('c', 'conv-2');
+    view.rerender(<InboxLoader />);
+    await act(async () => {
+      resolvePoll?.([
+        MESSAGE,
+        {
+          id: 'gift-1',
+          name: 'Ada',
+          text: 'late',
+          createdAt: '2026-08-28T14:00:00.000Z',
+          fromMe: true,
+          sats: 21,
+        },
+      ]);
+    });
+    expect(screen.queryByText('late')).toBeNull();
   });
 
   it('shows a post error', async () => {
@@ -301,6 +538,7 @@ describe('InboxLoader', () => {
         text: 'Follow up',
         createdAt: '2026-08-28T13:00:00.000Z',
         fromMe: true,
+        sats: 0,
       });
     });
     expect(screen.queryByText('Follow up')).toBeNull();

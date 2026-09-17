@@ -38,6 +38,7 @@ import {
   postTrustConfirm,
   postTrustPropose,
   postTrustVerify,
+  postConversationInvoice,
   postConversationMessage,
   postMessage,
   postMessageInvoice,
@@ -2021,6 +2022,7 @@ const conversation = {
   lastText: 'Hello',
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
+  lastSats: 0,
 };
 
 const conversationMessage = {
@@ -2029,6 +2031,7 @@ const conversationMessage = {
   text: 'Hello',
   createdAt: '2026-08-28T12:00:00.000Z',
   fromMe: false,
+  sats: 0,
 };
 
 describe('fetchConversations', () => {
@@ -2069,6 +2072,148 @@ describe('fetchConversation', () => {
     stubFetch({ ok: false, status: 404, body: {} });
     await expect(fetchConversation('sess', 'c1')).rejects.toThrow(
       'Could not load messages. Please try again.',
+    );
+  });
+
+  it('forwards sinceMessageId and an abort signal', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [conversationMessage] },
+    });
+    const signal = new AbortController().signal;
+    await expect(
+      fetchConversation('sess', 'c1', { sinceMessageId: 'gift-1', signal }),
+    ).resolves.toEqual([conversationMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?sinceMessageId=gift-1', {
+      headers: { Authorization: 'Bearer sess' },
+      signal,
+    });
+  });
+
+  it('rethrows AbortError from fetch', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(Object.assign(new Error('Aborted'), { name: 'AbortError' })),
+    );
+    await expect(
+      fetchConversation('sess', 'c1', { signal: new AbortController().signal }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('wraps a non-AbortError as AbortError when the signal is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(
+      fetchConversation('sess', 'c1', { signal: controller.signal }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+  });
+});
+
+describe('postConversationInvoice', () => {
+  it('returns pr, amountSats, and messageId', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' },
+    });
+    await expect(postConversationInvoice('sess', 'c1', 21, 'Thanks')).resolves.toEqual({
+      pr: 'lnbc21n1test',
+      amountSats: 21,
+      messageId: 'gift-1',
+    });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+      text: 'Thanks',
+    });
+  });
+
+  it('omits empty text from the invoice body', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' },
+    });
+    await postConversationInvoice('sess', 'c1', 21, '');
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+    });
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['name'] },
+    });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('falls back when a 409 body is not missing_requirements', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('falls back when a 409 body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on 429', async () => {
+    stubFetch({ ok: false, status: 429, body: { error: 'Too many payments' } });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow('Too many payments');
+  });
+
+  it('falls back when a 429 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 429, body: {} });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on 400', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: "The author's wallet cannot receive this Bitcoin payment" },
+    });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
+  it('throws on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws on other non-ok statuses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
     );
   });
 });

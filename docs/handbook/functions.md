@@ -1686,7 +1686,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslatePost`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslatePost`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText }` or 400/502/503 JSON (LibreTranslate-compatible, not the 21.gifts api).
 - **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, and staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/appoint-moderator`).
@@ -2024,12 +2024,12 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=`, posts replies. Founder/moderator get `showFilter` true; members see the unfiltered inbound list.
 - **Inputs:** None (reads session and account from the auth store; `useSearchParams`).
-- **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`.
+- **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`.
 - **Used by:** `MessagesPage`.
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Members (`showFilter` false) see the full inbound list and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Inbound last text is raw muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Members (`showFilter` false) see the full inbound list and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Inbound last text is raw muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text.
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`.
@@ -2043,8 +2043,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: fetchConversation
 
-- **Purpose:** GET `/conversations/:id` with Bearer and parse `{ messages }`. Each message includes required `fromMe` (true when this message was sent by the session).
-- **Inputs:** Session token and conversation id.
+- **Purpose:** GET `/conversations/:id` with Bearer and parse `{ messages }`. Each message includes required `fromMe` and `sats`. Optional `{ sinceMessageId, signal }` long-polls until that gift row exists.
+- **Inputs:** Session token, conversation id, optional poll opts.
 - **Returns / side effects:** Oldest-first messages, or throws visitor copy.
 - **Used by:** `InboxLoader`.
 
@@ -2053,6 +2053,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/conversations/:id` with `{ text }`.
 - **Inputs:** Session token, conversation id, text.
 - **Returns / side effects:** Created message, or throws api/visitor copy.
+- **Used by:** `InboxLoader`.
+
+## Function: postConversationInvoice
+
+- **Purpose:** POST `/conversations/:id/invoice` with `{ sats }` or `{ sats, text }`.
+- **Inputs:** Session token, conversation id, sats, optional text.
+- **Returns / side effects:** `{ pr, amountSats, messageId }`, or throws api/visitor copy.
 - **Used by:** `InboxLoader`.
 
 ## Function: openConversation
@@ -2089,6 +2096,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** App Router `Request` and conversation id.
 - **Returns / side effects:** Forwards to the api.
 - **Used by:** `src/app/conversations/[id]/route.ts`.
+
+## Function: proxyConversationInvoicePost
+
+- **Purpose:** Same-origin proxy for api POST `/conversations/:id/invoice`.
+- **Inputs:** App Router `Request` and conversation id.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/conversations/[id]/invoice/route.ts`.
 
 ## Function: NotificationsPage
 
