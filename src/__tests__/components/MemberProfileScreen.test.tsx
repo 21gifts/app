@@ -1012,12 +1012,16 @@ describe('MemberProfileScreen', () => {
     expect(within(replyCard).queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
-  it('invoices a nested Gift from the expanded thread, not a stale reactions-feed copy', async () => {
+  it('uses expanded-thread sats for nested Gift, not a stale reactions copy', async () => {
     vi.mocked(fetchMemberReplies).mockResolvedValue([
       { ...PAYABLE_NESTED, payable: false, sats: 21 },
     ]);
     vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED, payable: true, sats: 0 }]);
-    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...PAYABLE_NESTED, payable: true, sats: 21 });
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...PAYABLE_NESTED,
+      payable: true,
+      sats: 21,
+    });
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profileWithNote, replyCount: 1 }}
@@ -1043,7 +1047,9 @@ describe('MemberProfileScreen', () => {
   it('cancels a reactions-feed Gift when the activity panel is collapsed', async () => {
     const payableActivity = { ...activityReply, payable: true, sats: 0 };
     vi.mocked(fetchMemberReplies).mockResolvedValue([payableActivity]);
-    vi.mocked(fetchPublicMessage).mockImplementation(() => new Promise(() => undefined));
+    vi.mocked(fetchPublicMessage).mockImplementation(
+      () => new Promise(() => undefined),
+    );
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profileWithNote, replyCount: 1 }}
