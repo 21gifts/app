@@ -803,6 +803,20 @@ describe('InboxLoader', () => {
     expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
   });
 
+  it('opens an unlisted PM when the staff-room fetch fails', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'missing');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    groupMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
+  });
+
   it('does not open an unlisted staff-room id for a moderator', async () => {
     useAuthStore.setState({
       session: 'sess',
