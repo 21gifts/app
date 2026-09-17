@@ -462,9 +462,11 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * `kind` is `member_member` (in-app member conversation), `member_platform`
  * (contact / official 21.gifts thread), or `member_damus` (Nostr-only
  * counterpart). `lastText` may be empty when the thread was opened from a
- * forum note and has no messages yet. `lastFromMe` is true when the last
- * message was sent by the session (including staff sending as the platform
- * account). `accountId` is the optional 21.gifts counterpart id on list rows.
+ * forum note and has no messages yet, or when the last row is gift-only
+ * (`lastSats > 0`). `lastFromMe` is true when the last message was sent by
+ * the session (including staff sending as the platform account). `lastSats`
+ * is the satoshis on that last message (0 for text-only). `accountId` is the
+ * optional 21.gifts counterpart id on list rows.
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
@@ -473,6 +475,7 @@ export const conversationSchema = z.object({
   lastText: z.string(),
   lastAt: z.string().datetime({ offset: true }),
   lastFromMe: z.boolean(),
+  lastSats: z.number().int().nonnegative(),
   /** Optional 21.gifts counterpart id on list rows. */
   accountId: z.string().min(1).optional(),
 });
@@ -493,15 +496,18 @@ export type Conversation = z.infer<typeof conversationSchema>;
  * Runtime schema for one message in `GET /conversations/:id`.
  *
  * `fromMe` is true when this message was sent by the session (including staff
- * sending as the platform account). `accountId` is the optional 21.gifts
- * sender id on thread messages.
+ * sending as the platform account). `text` may be empty on a gift-only row
+ * (`sats > 0`). `sats` is the validated payment on that message (0 for
+ * text-only). `accountId` is the optional 21.gifts sender id on thread
+ * messages.
  */
 export const conversationMessageSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  text: z.string().min(1),
+  text: z.string(), // empty allowed (gift-only)
   createdAt: z.string().datetime({ offset: true }),
   fromMe: z.boolean(),
+  sats: z.number().int().nonnegative(),
   /** Optional 21.gifts sender id on thread messages. */
   accountId: z.string().min(1).optional(),
 });
@@ -517,6 +523,22 @@ export const conversationThreadSchema = z.object({
  * One private message from the api.
  */
 export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
+
+/**
+ * Runtime schema for `POST /conversations/:id/invoice` success body.
+ *
+ * `messageId` is the predetermined row the client long-polls for after pay.
+ */
+export const conversationInvoiceSchema = z.object({
+  pr: z.string().min(1),
+  amountSats: z.number().int().positive(),
+  messageId: z.string().min(1),
+});
+
+/**
+ * BOLT11 invoice issued for paying a private-thread counterpart.
+ */
+export type ConversationInvoice = z.infer<typeof conversationInvoiceSchema>;
 
 /**
  * Runtime schema for one notification from `GET /notifications`.

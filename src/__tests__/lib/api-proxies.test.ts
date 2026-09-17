@@ -25,6 +25,7 @@ import {
   proxyMembersRepliesGet,
   proxyContactPost,
   proxyConversationGet,
+  proxyConversationInvoicePost,
   proxyConversationPost,
   proxyConversationsGet,
   proxyConversationsPost,
@@ -293,6 +294,16 @@ describe('api proxy wrappers', () => {
       'a/b',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/a%2Fb');
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+  });
+
+  it('proxyConversationInvoicePost hits /conversations/:id/invoice', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationInvoicePost(
+      new Request('http://localhost/conversations/c1/invoice', { method: 'POST', body: '{}' }),
+      'c1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/c1/invoice');
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
   });
 

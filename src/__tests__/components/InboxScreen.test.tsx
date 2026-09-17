@@ -8,6 +8,8 @@ import { getCatalog } from '@/lib/messages';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
+const originalUserAgent = navigator.userAgent;
+const locationStub = { href: 'http://localhost/' };
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
@@ -15,9 +17,17 @@ vi.mock('next/navigation', () => ({
 
 beforeEach(() => {
   push.mockClear();
+  locationStub.href = 'http://localhost/';
+  vi.stubGlobal('location', locationStub);
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(navigator, 'userAgent', {
+    configurable: true,
+    value: originalUserAgent,
+  });
+});
 
 const THREAD: Conversation = {
   id: 'conv-1',
@@ -26,6 +36,7 @@ const THREAD: Conversation = {
   lastText: 'Hello team',
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
+  lastSats: 0,
 };
 
 const DIRECT: Conversation = {
@@ -35,6 +46,7 @@ const DIRECT: Conversation = {
   lastText: 'Later',
   lastAt: '2026-08-28T13:00:00.000Z',
   lastFromMe: false,
+  lastSats: 0,
 };
 
 const DAMUS: Conversation = {
@@ -44,6 +56,7 @@ const DAMUS: Conversation = {
   lastText: 'Hi',
   lastAt: '2026-08-28T14:00:00.000Z',
   lastFromMe: false,
+  lastSats: 0,
 };
 
 const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
@@ -54,6 +67,7 @@ const MESSAGE: ConversationMessage = {
   text: 'Hello team',
   createdAt: '2026-08-28T12:00:00.000Z',
   fromMe: false,
+  sats: 0,
 };
 
 describe('InboxScreen', () => {
@@ -897,5 +911,125 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('heading', { name: 'npub1abc…xyz' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+  });
+
+  it('renders a gift-only bubble and amount under text+sats', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[
+          { ...MESSAGE, id: 'g1', text: '', sats: 21, fromMe: true },
+          { ...MESSAGE, id: 'g0', text: '', sats: 21, fromMe: false },
+          { ...MESSAGE, id: 'g2', text: 'Hi', sats: 21, fromMe: false },
+        ]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.getAllByText('send ₿21')).toHaveLength(2);
+    expect(screen.getByText('₿21')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
+  });
+
+  it('shows a gift-only last-sats list preview', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...DIRECT, lastText: '', lastSats: 21, lastFromMe: true }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
+  it('opens Wallet of Satoshi from the smartphone pay sheet', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    const onPayCancel = vi.fn();
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
+        onPayCancel={onPayCancel}
+        payWaiting={true}
+      />,
+    );
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    expect(locationStub.href.toLowerCase()).toContain('lnbc21n1test');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the desktop invoice QR', async () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
+      />,
+    );
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
   });
 });

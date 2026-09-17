@@ -282,7 +282,7 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, required `lastFromMe`, and optional `accountId` (counterpart).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, required `lastFromMe`, required `lastSats`, and optional `accountId` (counterpart).
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`.
 - **Auth:** Bearer.
@@ -296,7 +296,7 @@
 
 ## Endpoint: GET /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` and optional `accountId` (sender).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` and `sats`, and optional `accountId` (sender). Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversation` on `/messages?c=`.
 - **Auth:** Bearer.
@@ -306,6 +306,13 @@
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters). Staff replies on official threads send as the platform account. The created message has required `fromMe` and optional `accountId` (sender).
 - **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationMessage` in the inbox composer.
+- **Auth:** Bearer.
+
+## Endpoint: POST /conversations/[id]/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId }` for the inbox pay sheet.
+- **Errors:** Upstream 400/401/404/429/503, or 502 if the api is unreachable.
+- **Used by:** `postConversationInvoice` in the inbox composer.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /forum/notifications
