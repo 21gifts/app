@@ -784,7 +784,7 @@ Inbox direction is unmistakable without a Sent folder and without orange. Incomi
 
 **Sent (`fromMe === true`).** Filled form-primary, right, content-sized: `self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg`. No border, no muted fill. Inner: name `text-sm font-medium text-app-btn-fg`, time `text-xs text-app-btn-fg/70`, body `mt-2 whitespace-pre-wrap text-sm text-app-btn-fg`. Label `inbox.you`.
 
-**List outbound last-text.** Compact sent chip on the right of the (still muted) conversation row, same fill: `self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg`. Copy stays `inbox.sentPreview`. Inbound last text stays `line-clamp-2 text-sm text-app-muted`. Empty `lastText` omits the preview.
+**List outbound last-text.** Compact sent chip on the right of the conversation row, same fill: `self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg`. Copy stays `inbox.sentPreview`. Unread inbound rows use a semibold counterpart name (`font-semibold`) and last text `line-clamp-2 text-sm text-app-fg`; read inbound last text stays `line-clamp-2 text-sm text-app-muted`. Empty `lastText` omits the preview (gift-only last rows with `lastSats > 0` show the formatted amount with the same chip vs muted split). Thread bubbles above are unchanged.
 
 ### Composer
 
