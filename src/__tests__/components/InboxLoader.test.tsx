@@ -812,7 +812,7 @@ describe('InboxLoader', () => {
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue([MESSAGE]);
     renderWithLocale(<InboxLoader />);
-    expect(await screen.findByText('21.gifts')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Messages' })).toBeTruthy();
     await waitFor(() => {
       expect(groupMock).toHaveBeenCalledWith('sess');
     });
