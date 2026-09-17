@@ -107,6 +107,11 @@ export interface InboxScreenProps {
   onPayCancel?: () => void;
   /** True while waiting for the gift row after invoice mint. */
   payWaiting?: boolean;
+  /**
+   * Accessible label for the in-card back control. Defaults to `inbox.back`
+   * ("All conversations"). The moderator group page passes `moderate.heading`.
+   */
+  backLabel?: string;
 }
 
 /**
@@ -195,6 +200,7 @@ export function InboxScreen({
   invoice = null,
   onPayCancel = () => undefined,
   payWaiting = false,
+  backLabel,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
@@ -219,7 +225,7 @@ export function InboxScreen({
       ? []
       : showFilter
         ? conversations.filter((row) => row.kind === FILTER_KIND[filter])
-        : conversations;
+        : conversations.filter((row) => row.kind !== 'moderator_group');
 
   const open =
     openId === null || conversations === null

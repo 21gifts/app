@@ -314,15 +314,9 @@ describe('InboxLoader', () => {
     });
   });
 
-  it('posts when the opened id is not in the conversation list', async () => {
+  it('does not open a thread when the opened id is not in the conversation list', async () => {
     searchParams.set('c', 'missing');
-    let resolveList: ((value: Conversation[]) => void) | undefined;
-    listMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveList = resolve;
-        }),
-    );
+    listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue([MESSAGE]);
     postMock.mockResolvedValue({
       id: 'm2',
@@ -333,17 +327,10 @@ describe('InboxLoader', () => {
       sats: 0,
     });
     renderWithLocale(<InboxLoader />);
-    expect(await screen.findByText('Hello')).toBeTruthy();
-    resolveList?.([THREAD]);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', 'missing', 'Follow up');
-      expect(screen.getByText('Follow up')).toBeTruthy();
-    });
+    expect(await screen.findByRole('heading', { name: 'Messages' })).toBeTruthy();
+    expect(screen.getByText('21.gifts')).toBeTruthy();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
+    expect(threadMock).not.toHaveBeenCalled();
   });
 
   it('validates empty and too-long drafts', async () => {
@@ -540,9 +527,12 @@ describe('InboxLoader', () => {
   it('clears stale messages immediately when opening another conversation', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock
-      .mockResolvedValueOnce([MESSAGE])
-      .mockImplementationOnce(() => new Promise(() => undefined));
+    threadMock.mockImplementation((_session: string, id: string) => {
+      if (id === 'conv-2') {
+        return new Promise(() => undefined);
+      }
+      return Promise.resolve([MESSAGE]);
+    });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     searchParams.set('c', 'conv-2');
@@ -560,9 +550,12 @@ describe('InboxLoader', () => {
   it('does not apply a posted message after switching conversations', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock
-      .mockResolvedValueOnce([MESSAGE])
-      .mockImplementationOnce(() => new Promise(() => undefined));
+    threadMock.mockImplementation((_session: string, id: string) => {
+      if (id === 'conv-2') {
+        return new Promise(() => undefined);
+      }
+      return Promise.resolve([MESSAGE]);
+    });
     let resolvePost: ((value: ConversationMessage) => void) | undefined;
     postMock.mockImplementation(
       () =>
@@ -603,9 +596,12 @@ describe('InboxLoader', () => {
   it('does not apply a post error after switching conversations', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock
-      .mockResolvedValueOnce([MESSAGE])
-      .mockImplementationOnce(() => new Promise(() => undefined));
+    threadMock.mockImplementation((_session: string, id: string) => {
+      if (id === 'conv-2') {
+        return new Promise(() => undefined);
+      }
+      return Promise.resolve([MESSAGE]);
+    });
     let rejectPost: ((reason: Error) => void) | undefined;
     postMock.mockImplementation(
       () =>
@@ -774,3 +770,4 @@ describe('InboxLoader', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
+

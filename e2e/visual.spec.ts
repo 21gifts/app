@@ -6072,6 +6072,13 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
   });
+
+  test('moderate moderator', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.goto('/moderate');
+    await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-moderator');
+  });
 });
 
 test.describe('moderate hidden screens', () => {
@@ -6177,7 +6184,7 @@ test.describe('moderate hidden screens', () => {
 });
 
 test.describe('moderate proposals screens', () => {
-  // Goldens are regenerated on the build host.
+test.describe('moderate group screens', () => {  // Goldens are regenerated on the build host.
   async function seedAda(
     page: Page,
     role: 'basis' | 'moderator' | 'founder' = 'basis',
@@ -6224,7 +6231,21 @@ test.describe('moderate proposals screens', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ proposals }),
-      });
+  const GROUP = {
+    id: 'conv-mod',
+    kind: 'moderator_group',
+    name: 'Moderators',
+    lastText: 'Hello mods',
+    lastAt: '2026-08-28T15:00:00.000Z',
+    lastFromMe: false,
+  };
+
+  async function mockGroup(page: Page): Promise<void> {
+    await page.route('**/conversations/moderator-group', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ conversation: GROUP }),      });
     });
   }
 
@@ -6311,7 +6332,80 @@ test.describe('moderate proposals screens', () => {
     await page.getByRole('button', { name: 'Confirm as moderator' }).click();
     await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-proposals-confirming');
+  async function mockThread(
+    page: Page,
+    messages: Array<{
+      id: string;
+      name: string;
+      text: string;
+      createdAt: string;
+      fromMe: boolean;
+    }>,
+  ): Promise<void> {
+    await page.route('**/conversations/conv-mod', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages }),
+      });
+    });
+  }
+
+  test('screen /moderate/group', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'm1',
+        name: 'Ada',
+        text: 'Hello mods',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+      },
+    ]);
+    await page.goto('/moderate/group');
+    await expect(page.getByText('Hello mods')).toBeVisible();
+    await shotScreen(page, 'screen-moderate-group');
   });
+
+  test('moderate group forbidden', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.goto('/moderate/group');
+    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-forbidden');
+  });
+
+  test('moderate group empty', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-empty');
+  });
+
+  test('moderate group loading', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route('**/conversations/moderator-group', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/group');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-loading');
+  });
+
+  test('moderate group error', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route('**/conversations/moderator-group', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/group');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-error');  });
 });
 
 test.describe('trust-chain screens', () => {

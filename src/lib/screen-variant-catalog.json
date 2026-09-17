@@ -954,6 +954,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate:moderator",
+    "label": "/moderate moderator",
+    "visual": "state-moderate-moderator",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/hidden:default",
     "label": "/moderate/hidden default",
     "visual": "screen-moderate-hidden",
@@ -1029,7 +1035,33 @@
     "id": "/moderate/proposals:confirming",
     "label": "/moderate/proposals confirming",
     "visual": "state-moderate-proposals-confirming",
+    "id": "/moderate/group:default",
+    "label": "/moderate/group default",
+    "visual": "screen-moderate-group",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:forbidden",
+    "label": "/moderate/group forbidden",
+    "visual": "state-moderate-group-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:empty",
+    "label": "/moderate/group empty",
+    "visual": "state-moderate-group-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:loading",
+    "label": "/moderate/group loading",
+    "visual": "state-moderate-group-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:error",
+    "label": "/moderate/group error",
+    "visual": "state-moderate-group-error",    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/404:default",

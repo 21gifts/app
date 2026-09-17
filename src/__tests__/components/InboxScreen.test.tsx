@@ -369,6 +369,41 @@ describe('InboxScreen', () => {
     expect(npubRow.textContent).not.toContain('Direct');
   });
 
+  it('never lists a moderator_group row on Direct', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT, DAMUS, THREAD, MODERATORS]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={true}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Conversation type' });
+    expect(within(group).getByRole('button', { name: 'Direct' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const list = screen.getByRole('list', { name: 'Conversations' });
+    const rows = within(list).getAllByRole('button');
+    expect(screen.queryByText('Staff room')).toBeNull();
+    expect(screen.queryByText('Hello mods')).toBeNull();
+    expect(rows[0]?.textContent).toContain('Bob');
+    expect(rows[0]?.textContent).toContain('Later');
+    expect(rows[0]?.textContent).not.toContain('Hello mods');
+  });
+
   it('uses the inbox heading when openId is not in the conversation list', () => {
     renderWithLocale(
       <InboxScreen

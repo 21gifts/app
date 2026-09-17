@@ -8,6 +8,7 @@ import {
   conversationInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
+  conversationOneSchema,
   conversationSchema,
   conversationThreadSchema,
   notificationListSchema,
@@ -428,6 +429,20 @@ describe('conversationSchema', () => {
         accountId: '',
       }),
     ).toThrow();
+  });
+});
+
+describe('conversationOneSchema', () => {
+  it('accepts a moderator_group conversation wrapper', () => {
+    const conversation = {
+      id: 'conv-mod',
+      kind: 'moderator_group',
+      name: 'Moderators',
+      lastText: 'Hello mods',
+      lastAt: '2026-08-28T15:00:00.000Z',
+      lastFromMe: false,
+    };
+    expect(conversationOneSchema.parse({ conversation })).toEqual({ conversation });
   });
 });
 

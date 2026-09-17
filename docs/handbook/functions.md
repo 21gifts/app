@@ -2127,7 +2127,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxLoader
 
-- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=` via `onOpen` `router.push`, posts replies. Returning to the list is the chrome link (no `onBack` handler). Founder/moderator get `showFilter` true; members see the unfiltered inbound list.
+- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=` via `onOpen` `router.push`, posts replies. Returning to the list is the chrome link (no `onBack` handler). Founder/moderator get `showFilter` true; members see the unfiltered inbound list. A `moderator_group` UUID in `?c=` never opens; `fetchConversation` is not called for that id.
 - **Inputs:** None (reads session and account from the auth store; `useSearchParams`).
 - **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`. After a successful thread fetch, local `unread: false`, then fire-and-forget `markConversationRead`, `bumpUnreadAppBadgeEpoch` and `refreshUnreadAppBadge` (remaining inbox from the local list, or a conversations fetch if the list is still null). Must not fail the thread view.
 - **Used by:** `MessagesPage`.
@@ -2137,7 +2137,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Members (`showFilter` false) see the full inbound list and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text.
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
-- **Used by:** `InboxLoader`.
+- **Used by:** `InboxLoader`, `ModeratorGroupScreen`.
 
 ## Function: fetchConversations
 
@@ -2151,7 +2151,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/conversations/:id` with Bearer and parse `{ messages }`. Each message includes required `fromMe` and `sats`. Optional `{ sinceMessageId, signal }` long-polls until that gift row exists.
 - **Inputs:** Session token, conversation id, optional poll opts.
 - **Returns / side effects:** Oldest-first messages, or throws visitor copy.
-- **Used by:** `InboxLoader`.
+- **Used by:** `InboxLoader`, `ModeratorGroupScreen`.
 
 ## Function: postConversationMessage
 
@@ -2194,6 +2194,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** App Router `Request`.
 - **Returns / side effects:** Forwards to the api.
 - **Used by:** `src/app/conversations/route.ts`.
+
+## Function: proxyModeratorGroupGet
+
+- **Purpose:** Same-origin Bearer proxy for api GET `/conversations/moderator-group` (singleton closed staff room as `{ conversation }`).
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api path `/conversations/moderator-group`.
+- **Used by:** `src/app/conversations/moderator-group/route.ts`.
 
 ## Function: proxyConversationGet
 
@@ -2296,7 +2303,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: ModerateScreen
 
 - **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes or proposals. Renders `null` without a session. No un-hide control.
-- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`. A **Moderators** `ButtonLink` → `/moderate/group` is shown only when `role === 'moderator'`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes or the group thread. Renders `null` without a session. No un-hide control.- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. No network. Staff see the hub; others see forbidden copy.
 - **Used by:** `ModeratePage`.
 
@@ -2327,7 +2334,26 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is founder or moderator. Confirm posts `POST /trust/confirm-moderator`. While that POST is in flight, Confirm is disabled and shows the Loader2 spinner (same as RulesSetup busy).
 - **Used by:** `ProposalsPage`.
+## Function: ModeratorGroupPage
 
+- **Purpose:** Next.js page for `/moderate/group` (signed-in closed moderator group thread). HTML `/moderate/group` is the group page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModeratorGroupScreen`. Group HTTP lives under `/conversations/moderator-group` (no `route.ts` beside this page).
+- **Inputs:** None.
+- **Returns / side effects:** The moderator group screen inside fill AppShell.
+- **Used by:** Route `/moderate/group`.
+
+## Function: ModeratorGroupScreen
+
+- **Purpose:** Client closed staff-room thread. Confirmed moderators (`role === 'moderator'`) fetch `fetchModeratorGroup` then `fetchConversation` and reuse `InboxScreen` as the open thread (`showFilter` false; in-card back label **Moderation**). Founders and other signed-in visitors see heading **Moderators** plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /conversations/moderator-group` then `GET /conversations/:id` only when the role is moderator.
+- **Used by:** `ModeratorGroupPage`.
+
+## Function: fetchModeratorGroup
+
+- **Purpose:** GET `/conversations/moderator-group` with Bearer and parse `{ conversation }` via `conversationOneSchema`. Returns the singleton closed staff-room row (`kind` `moderator_group`).
+- **Inputs:** Session token.
+- **Returns / side effects:** Conversation row, or throws visitor copy.
+- **Used by:** `ModeratorGroupScreen`.
 ## Function: listHiddenMessages
 
 - **Purpose:** GET `/forum/messages/hidden` with Bearer and parse `hiddenListSchema.messages`. HTTP 401/403 throw `Failed to list hidden notes: status`; other failures visitor copy `Could not load hidden notes. Please try again.`

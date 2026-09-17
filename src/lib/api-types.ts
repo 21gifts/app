@@ -524,6 +524,15 @@ export const conversationListSchema = z.object({
 });
 
 /**
+ * Runtime schema for `GET /conversations/moderator-group`.
+ *
+ * Body is `{ conversation }` using {@link conversationSchema}.
+ */
+export const conversationOneSchema = z.object({
+  conversation: conversationSchema,
+});
+
+/**
  * One private-message thread from the api.
  */
 export type Conversation = z.infer<typeof conversationSchema>;

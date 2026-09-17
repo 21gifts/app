@@ -81,9 +81,10 @@ function isAbortError(err: unknown): boolean {
  * Client loader for the signed-in inbox on `/messages`.
  *
  * Reads the session from the auth store, fetches the conversation list, and
- * opens `?c=` when present. The composer sends free text directly, or mints
- * an invoice from its amount field and long-polls for the paid gift row.
- * Renders nothing when there is no session.
+ * opens `?c=` only when that id is in the loaded inbox list (a
+ * `moderator_group` UUID never opens here). The composer sends free text
+ * directly, or mints an invoice from its amount field and long-polls for the
+ * paid gift row. Renders nothing when there is no session.
  * Founder/moderator get the origin filter; members see the full inbound list.
  * After a successful thread load and mark-read, bumps the badge epoch and
  * refreshes the home-screen badge to notifications unread plus remaining
@@ -131,6 +132,12 @@ export function InboxLoader(): ReactElement | null {
   /* v8 ignore stop */
   openIdRef.current = openId;
 
+  const threadAllowed =
+    conversations !== null &&
+    openId !== null &&
+    openId !== '' &&
+    conversations.some((row) => row.id === openId && row.kind !== 'moderator_group');
+
   useEffect(() => {
     if (session === null) {
       return;
@@ -172,7 +179,7 @@ export function InboxLoader(): ReactElement | null {
   }, [session, attempt]);
 
   useEffect(() => {
-    if (session === null || openId === null || openId === '') {
+    if (session === null || openId === null || openId === '' || !threadAllowed) {
       setMessages(null);
       setMessagesError(false);
       setMessagesLoading(false);
@@ -242,7 +249,7 @@ export function InboxLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, openId, messagesAttempt]);
+  }, [session, openId, messagesAttempt, threadAllowed]);
 
   if (session === null) {
     return null;
@@ -407,7 +414,7 @@ export function InboxLoader(): ReactElement | null {
   };
 
   /* v8 ignore next -- empty ?c= is the same as no thread */
-  const threadId = openId === null || openId === '' ? null : openId;
+  const threadId = threadAllowed ? openId : null;
   const showFilter = account?.role === 'moderator' || account?.role === 'founder';
   return (
     <InboxScreen
@@ -430,9 +437,11 @@ export function InboxLoader(): ReactElement | null {
         setPayWaiting(false);
         router.push(`/messages?c=${encodeURIComponent(id)}`);
       }}
-      messages={openId === null || openId === '' ? null : messages}
-      messagesLoading={openId !== null && openId !== '' && messagesLoading}
-      messagesError={openId !== null && openId !== '' && messagesError}
+      messages={threadId === null ? null : messages}
+      messagesLoading={
+        threadId !== null && (messagesLoading || (messages === null && !messagesError))
+      }
+      messagesError={threadId !== null && messagesError}
       onRetryMessages={() => {
         setMessagesAttempt((n) => n + 1);
       }}

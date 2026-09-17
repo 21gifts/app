@@ -107,10 +107,11 @@ describe('ModerateScreen', () => {
     expect(screen.getByRole('link', { name: 'Open proposals' }).getAttribute('href')).toBe(
       '/moderate/proposals',
     );
+    expect(screen.queryByRole('link', { name: 'Moderators' })).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
   });
 
-  it('shows the hub and Hidden notes link for a moderator and does not fetch', () => {
+  it('shows the hub, Hidden notes, and Moderators links for a moderator and does not fetch', () => {
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
     expect(screen.getByText('Tools for founders and moderators.')).toBeTruthy();
@@ -120,6 +121,9 @@ describe('ModerateScreen', () => {
     );
     expect(screen.getByRole('link', { name: 'Open proposals' }).getAttribute('href')).toBe(
       '/moderate/proposals',
+    );
+    expect(screen.getByRole('link', { name: 'Moderators' }).getAttribute('href')).toBe(
+      '/moderate/group',
     );
     expect(listMock).not.toHaveBeenCalled();
   });
