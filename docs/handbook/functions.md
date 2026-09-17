@@ -2182,6 +2182,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** App Router `Request` and conversation id.
 - **Returns / side effects:** Forwards to the api.
 - **Used by:** `src/app/conversations/[id]/invoice/route.ts`.
+
 ## Function: proxyConversationReadPost
 
 - **Purpose:** Same-origin proxy for api POST `/conversations/:id/read`. App route is POST `/conversations/[id]/read`.

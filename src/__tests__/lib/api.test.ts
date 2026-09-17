@@ -2236,6 +2236,7 @@ describe('fetchConversations', () => {
             lastText: 'Hello',
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: false,
+            lastSats: 0,
           },
         ],
       },

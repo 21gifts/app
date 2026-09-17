@@ -4747,6 +4747,7 @@ test.describe('welcome forum variants', () => {
               lastText: 'Hi',
               lastAt: '2026-08-28T12:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
               unread: true,
             },
             {
@@ -4756,6 +4757,7 @@ test.describe('welcome forum variants', () => {
               lastText: 'Hey',
               lastAt: '2026-08-28T11:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
               unread: true,
             },
           ],
@@ -5229,6 +5231,7 @@ test.describe('inbox screens', () => {
               lastText: 'Hi from Bob',
               lastAt: '2026-08-28T12:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
               unread: true,
             },
           ],

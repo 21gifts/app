@@ -289,8 +289,7 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, required `lastFromMe`, required `lastSats`, and optional `accountId` (counterpart).
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, required `lastFromMe`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, required `lastFromMe`, required `lastSats`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`, `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer.
@@ -321,7 +320,10 @@
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId }` for the inbox pay sheet.
 - **Errors:** Upstream 400/401/404/429/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationInvoice` in the inbox composer.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /conversations/[id]/read
+
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/read` (mark one conversation read).
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `markConversationRead` from `InboxLoader` after a successful thread fetch.

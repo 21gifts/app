@@ -315,6 +315,9 @@ describe('api proxy wrappers', () => {
       'c1',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/c1/invoice');
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+  });
+
   it('proxyConversationReadPost encodes the id', async () => {
     const fetchMock = stubApi();
     await proxyConversationReadPost(

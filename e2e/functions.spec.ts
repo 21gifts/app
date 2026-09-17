@@ -590,6 +590,9 @@ test('Function: proxyConversationInvoicePost — POST /conversations/[id]/invoic
 }) => {
   expect(
     (await request.post('/conversations/[id]/invoice', { data: { sats: 21 } })).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyConversationReadPost — POST /conversations/[id]/read without bearer', async ({
   request,
 }) => {
@@ -2702,15 +2705,6 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
     });
   });
   await page.route(/\/conversations$/, async (route) => {
-test('Function: markConversationRead — opening a thread POSTs read', async ({ page }) => {
-  await seedAdaSession(page);
-  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
-    expect(route.request().method()).toBe('POST');
-      body: JSON.stringify({ ok: true }),
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2726,8 +2720,6 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
             lastSats: 0,
           },
         ],
-            unread: true,
-        unreadCount: 1,
       }),
     });
   });
@@ -2744,7 +2736,6 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
             createdAt: '2026-08-28T12:00:00.000Z',
             fromMe: false,
             sats: 0,
-            name: 'Ada',
           },
         ],
       }),
@@ -2752,6 +2743,61 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
   });
   await page.goto('/messages?c=conv-21');
   await expect(page.getByLabel(/amount/i)).toBeVisible();
+});
+
+test('Function: markConversationRead — opening a thread POSTs read', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        ],
+        unreadCount: 1,
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
   await page.goto('/messages');
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   const readPost = page.waitForRequest(
@@ -4884,6 +4930,7 @@ test('Function: useUnreadCount — menu shows inbox unread count', async ({ page
             lastText: 'Hi',
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: false,
+            lastSats: 0,
             unread: true,
           },
           {
@@ -4893,6 +4940,7 @@ test('Function: useUnreadCount — menu shows inbox unread count', async ({ page
             lastText: 'Hey',
             lastAt: '2026-08-28T13:00:00.000Z',
             lastFromMe: false,
+            lastSats: 0,
             unread: true,
           },
         ],
@@ -6030,6 +6078,7 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
             lastText: 'Hello team',
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: false,
+            lastSats: 0,
             unread: true,
           },
         ],
@@ -6049,6 +6098,7 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
             text: 'Hello team',
             createdAt: '2026-08-28T12:00:00.000Z',
             fromMe: false,
+            sats: 0,
           },
         ],
       }),

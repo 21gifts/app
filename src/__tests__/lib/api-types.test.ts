@@ -315,6 +315,7 @@ describe('conversationSchema', () => {
       lastText: 'Hi',
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
+      lastSats: 0,
     };
     expect(conversationSchema.parse(row)).toEqual({ ...row, unread: false });
     expect(conversationListSchema.parse({ conversations: [row] })).toEqual({
@@ -331,6 +332,7 @@ describe('conversationSchema', () => {
       lastText: 'Hi',
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
+      lastSats: 0,
       unread: true,
     };
     expect(conversationSchema.parse(row)).toEqual(row);

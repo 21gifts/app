@@ -597,14 +597,13 @@ export function InboxScreen({
                     {t(CONVERSATION_ORIGIN_KEY[row.kind])}
                   </span>
                   {row.lastText !== '' ? (
-                    <span className={listPreviewClass(row.lastFromMe)}>
                     <span
                       className={
                         row.lastFromMe
-                          ? 'self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg'
+                          ? listPreviewClass(true)
                           : row.unread
                             ? 'line-clamp-2 text-sm text-app-fg'
-                            : 'line-clamp-2 text-sm text-app-muted'
+                            : listPreviewClass(false)
                       }
                     >
                       {row.lastFromMe
