@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, and `/trust/proposals` which re-exports `proxyTrustProposalsGet`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm queue, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, and `/trust/proposals` which re-exports `proxyTrustProposalsGet`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm queue, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -2334,6 +2334,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is founder or moderator. Confirm posts `POST /trust/confirm-moderator`. While that POST is in flight, Confirm is disabled and shows the Loader2 spinner (same as RulesSetup busy).
 - **Used by:** `ProposalsPage`.
+
 ## Function: ModeratorGroupPage
 
 - **Purpose:** Next.js page for `/moderate/group` (signed-in closed moderator group thread). HTML `/moderate/group` is the group page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModeratorGroupScreen`. Group HTTP lives under `/conversations/moderator-group` (no `route.ts` beside this page).
@@ -2354,6 +2355,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation row, or throws visitor copy.
 - **Used by:** `ModeratorGroupScreen`.
+
 ## Function: listHiddenMessages
 
 - **Purpose:** GET `/forum/messages/hidden` with Bearer and parse `hiddenListSchema.messages`. HTTP 401/403 throw `Failed to list hidden notes: status`; other failures visitor copy `Could not load hidden notes. Please try again.`

@@ -11,8 +11,8 @@ describe('/conversations/moderator-group', () => {
   it('exports a GET proxy', async () => {
     process.env.NEXT_PUBLIC_API_URL = 'https://api.test';
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
-    expect(
-      (await GET(new Request('http://localhost/conversations/moderator-group'))).status,
-    ).toBe(200);
+    expect((await GET(new Request('http://localhost/conversations/moderator-group'))).status).toBe(
+      200,
+    );
   });
 });

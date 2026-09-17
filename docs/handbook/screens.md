@@ -1220,6 +1220,7 @@ Staff (founder) Confirm as moderator failed. Copy **Could not update this member
 Staff (founder) Confirm as moderator POST in flight. Confirm disabled with a spinner; proposal row still visible.
 
 ![21.gifts open proposals confirming](images/moderate-proposals-confirming.png)
+
 ## Screen: /moderate/group
 
 - **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).
@@ -1257,6 +1258,7 @@ Confirmed moderator waiting on `GET /conversations/moderator-group`. Copy **Load
 Confirmed moderator fetch failed. Button **Try again**.
 
 ![21.gifts moderator group error](images/moderate-group-error.png)
+
 ## Screen: /messages/[id]
 
 - **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. Signed-in (hydrated session and account): same per-note actions as `/welcome` (copy link, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).

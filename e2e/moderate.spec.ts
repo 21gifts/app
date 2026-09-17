@@ -187,4 +187,3 @@ test('Function: proxyModeratorGroupGet — GET /conversations/moderator-group wi
 }) => {
   expect((await request.get('/conversations/moderator-group')).status()).toBe(401);
 });
-

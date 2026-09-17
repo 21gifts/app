@@ -319,14 +319,14 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` and `sats`, and optional `accountId` (sender). Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
-- **Used by:** `fetchConversation` on `/messages?c=`.
+- **Used by:** `fetchConversation` on `/messages?c=` and on `/moderate/group`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations/[id]
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters). Staff replies on official threads send as the platform account. The created message has required `fromMe` and optional `accountId` (sender).
 - **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
-- **Used by:** `postConversationMessage` in the inbox composer.
+- **Used by:** `postConversationMessage` in the inbox composer and in `ModeratorGroupScreen`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations/[id]/invoice

@@ -770,4 +770,3 @@ describe('InboxLoader', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
-

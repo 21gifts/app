@@ -98,6 +98,7 @@ app/
 │   │   ├── translate/route.ts    # GET availability + POST LibreTranslate-compatible proxy
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
+│   │   │   ├── moderator-group/route.ts  # GET /conversations/moderator-group
 │   │   │   └── [id]/
 │   │   │       ├── route.ts     # GET/POST /conversations/[id]
 │   │   │       ├── invoice/route.ts  # POST /conversations/:id/invoice
@@ -128,7 +129,8 @@ app/
 │   │   ├── moderate/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
-│   │   │   └── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   └── group/page.tsx        # GET /moderate/group — closed staff room
 │   │   ├── trust-chain/
 │   │   │   ├── page.tsx              # GET /trust-chain — signed-in Trust Chain
 │   │   │   └── trust-chain-loader.tsx
@@ -163,9 +165,10 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator-only staff room)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
+│   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # Three-stage All/Active/Mentions control plus icon-only Bell

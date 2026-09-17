@@ -145,7 +145,7 @@ describe('ModeratorGroupScreen', () => {
     threadMock.mockResolvedValue([MESSAGE]);
     renderWithLocale(<ModeratorGroupScreen />);
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Could not load hidden notes. Please try again.');
+    expect(alert.textContent).toBe('Could not load the staff room. Please try again.');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Hello mods')).toBeTruthy();
     expect(groupMock).toHaveBeenCalledTimes(2);

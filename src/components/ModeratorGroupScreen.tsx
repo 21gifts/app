@@ -122,7 +122,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       <Card maxWidth="xl">
         {heading}
         <p role="alert" className="text-center text-sm text-app-danger">
-          {t('moderate.error')}
+          {t('moderate.groupError')}
         </p>
         <Button
           type="button"

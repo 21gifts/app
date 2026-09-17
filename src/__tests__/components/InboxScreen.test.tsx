@@ -62,6 +62,16 @@ const DAMUS: Conversation = {
   unread: false,
 };
 
+const MODERATORS: Conversation = {
+  id: 'conv-mods',
+  kind: 'moderator_group',
+  name: 'Staff room',
+  lastText: 'Hello mods',
+  lastAt: '2026-08-28T15:00:00.000Z',
+  lastFromMe: false,
+  lastSats: 0,
+};
+
 const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
 
 const MESSAGE: ConversationMessage = {
