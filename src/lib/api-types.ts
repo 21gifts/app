@@ -649,7 +649,7 @@ export const trustChainNodeSchema = z.object({
 export const trustChainEdgeSchema = z.object({
   from: z.string(),
   to: z.string(),
-  kind: z.enum(['verify', 'moderator_confirm', 'moderator_appoint']),
+  kind: z.enum(['verify', 'moderator_propose', 'moderator_appoint']),
 });
 
 /**
@@ -671,7 +671,7 @@ export type TrustChain = z.infer<typeof trustChainSchema>;
 export type TrustChainNode = z.infer<typeof trustChainNodeSchema>;
 
 /**
- * One directed verify / confirm / appoint edge.
+ * One directed verify / propose / appoint edge.
  */
 export type TrustChainEdge = z.infer<typeof trustChainEdgeSchema>;
 
