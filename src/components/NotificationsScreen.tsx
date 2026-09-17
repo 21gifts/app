@@ -11,6 +11,7 @@ const NOTIFICATION_TITLE_KEY = {
   forum_post: 'notifications.post',
   forum_reply: 'notifications.reply',
   zap: 'notifications.zap',
+  moderator_appointed: 'notifications.moderatorAppointed',
 } as const;
 
 /** Props for {@link NotificationsScreen}. */
@@ -23,13 +24,14 @@ export interface NotificationsScreenProps {
   loading: boolean;
   /** Retry handler for a failed list fetch. */
   onRetry: () => void;
-  /** Opens the public forum note for a notification row. */
-  onOpen: (parentId: string, id: string) => void;
+  /** Opens the destination for a notification row. */
+  onOpen: (notification: Notification) => void;
 }
 
 /**
  * Presentational signed-in notifications list of living-room posts, replies,
- * and payments. There is no composer, no thread view, and no filter.
+ * payments, and moderator appointment. There is no composer, no thread view,
+ * and no filter.
  *
  * @param props - List state from {@link NotificationsLoader}.
  * @returns The notifications card.
@@ -86,7 +88,7 @@ export function NotificationsScreen({
           {notifications.map((row) => {
             const unread = row.readAt === null;
             const bodyLine =
-              row.type === 'zap'
+              row.type === 'zap' || row.type === 'moderator_appointed'
                 ? row.text
                 : row.text !== ''
                   ? row.text
@@ -100,7 +102,7 @@ export function NotificationsScreen({
                 <button
                   type="button"
                   onClick={() => {
-                    onOpen(row.parentId, row.id);
+                    onOpen(row);
                   }}
                   className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
                 >
@@ -112,7 +114,9 @@ export function NotificationsScreen({
                           : 'text-sm font-medium text-app-fg'
                       }
                     >
-                      {t(NOTIFICATION_TITLE_KEY[row.type], { name: row.name })}
+                      {row.type === 'moderator_appointed'
+                        ? t(NOTIFICATION_TITLE_KEY[row.type])
+                        : t(NOTIFICATION_TITLE_KEY[row.type], { name: row.name })}
                     </span>
                     <time dateTime={row.createdAt} className="text-xs text-app-subtle">
                       {formatForumTime(row.createdAt, locale)}

@@ -1,7 +1,7 @@
 import { cleanup, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import Home from '@/app/(marketing)/page';
+import Home, { metadata as homeMetadata } from '@/app/(marketing)/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
@@ -33,9 +33,13 @@ describe('Home', () => {
 
   it('states what the product is', async () => {
     renderWithLocale(await Home());
-    expect(
-      screen.getByText(/Ask for help or send help, with no organization in the middle/i),
-    ).toBeTruthy();
+    const lead = screen.getByText(/Ask for help or send help, with no organization in the middle/i);
+    expect(lead).toBeTruthy();
+    expect(lead.textContent).toContain('21.gifts');
+  });
+
+  it('exports a homepage canonical of /', () => {
+    expect(homeMetadata.alternates?.canonical).toBe('/');
   });
 
   it('does not say the product is coming soon', async () => {

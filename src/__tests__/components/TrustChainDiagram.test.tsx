@@ -34,7 +34,7 @@ const CHAIN: TrustChain = {
 };
 
 describe('TrustChainDiagram', () => {
-  it('renders named nodes, unnamed fallback, test ids, member links, and edge labels', () => {
+  it('renders named nodes, unnamed fallback, test ids, member links', () => {
     renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
     expect(screen.getByRole('group', { name: 'Trust Chain diagram' })).toBeTruthy();
     expect(screen.getByTestId('trust-node-f').getAttribute('href')).toBe('/members/f');
@@ -46,9 +46,9 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByRole('link', { name: /Severin/ })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Ada/ })).toBeTruthy();
     expect(screen.getAllByRole('link', { name: /Unnamed/ })).toHaveLength(2);
-    expect(screen.getByText('verified')).toBeTruthy();
-    expect(screen.getByText('proposed')).toBeTruthy();
-    expect(screen.getByText('appointed')).toBeTruthy();
+    expect(screen.queryByText('verified')).toBeNull();
+    expect(screen.queryByText('proposed')).toBeNull();
+    expect(screen.queryByText('appointed')).toBeNull();
     expect(screen.queryByTestId('trust-node-ghost')).toBeNull();
     const stroke = document.querySelector('svg line, svg path');
     expect(stroke?.getAttribute('class')).toContain('stroke-app-fg/40');

@@ -296,9 +296,9 @@
 
 ## Endpoint: GET /forum/notifications
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, and payments for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
+- **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, payments, and moderator appointment for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
-- **Used by:** `fetchNotifications` via `NotificationsLoader` on `/notifications` and via `useUnreadCount` in `SignedInChrome`.
+- **Used by:** `fetchNotifications` via `NotificationsLoader` on `/notifications`, via `useUnreadCount` in `SignedInChrome`, and via `ForumLoader` on `/welcome`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /forum/notifications/read-all
@@ -312,7 +312,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/notifications/:id/read` (mark one notification read).
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
-- **Used by:** `markNotificationRead` from `NotificationsLoader` on row click.
+- **Used by:** `markNotificationRead` from `NotificationsLoader` on row click and from `ForumLoader` on the welcome appointment pill.
 - **Auth:** Bearer.
 
 ## Endpoint: DELETE /me/push-subscriptions

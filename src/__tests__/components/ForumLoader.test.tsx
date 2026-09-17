@@ -3,7 +3,14 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumLoader } from '@/components/ForumLoader';
-import type { Account, Conversation, ForumMessage, GiftStats } from '@/lib/api-types';
+import type {
+  Account,
+  Conversation,
+  ForumMessage,
+  GiftStats,
+  Notification,
+  NotificationList,
+} from '@/lib/api-types';
 import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -32,6 +39,8 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchNotifications: vi.fn(),
+  markNotificationRead: vi.fn(),
   openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
@@ -54,8 +63,10 @@ import {
   fetchGiftStats,
   fetchMessagePhoto,
   fetchMessages,
+  fetchNotifications,
   fetchPublicMessage,
   fetchReplies,
+  markNotificationRead,
   openConversation,
   postMessage,
   postMessageInvoice,
@@ -68,6 +79,8 @@ import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
 const fetchMock = vi.mocked(fetchMessages);
+const fetchNotificationsMock = vi.mocked(fetchNotifications);
+const markNotificationReadMock = vi.mocked(markNotificationRead);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
@@ -143,6 +156,17 @@ const FOREIGN: ForumMessage = {
   replyCount: 0,
 };
 
+const UNREAD_APPOINTED: Notification = {
+  id: 'n-mod',
+  type: 'moderator_appointed',
+  parentId: 'acc-subject',
+  replyId: 'acc-subject',
+  name: 'Cyrill',
+  text: '',
+  createdAt: '2026-08-22T12:00:00.000Z',
+  readAt: null,
+};
+
 const EMPTY_STATS: GiftStats = {
   totalSats: 0,
   totalBtc: '0.00000000',
@@ -175,6 +199,17 @@ async function revealAll(): Promise<void> {
 beforeEach(() => {
   vi.clearAllMocks();
   fetchMock.mockResolvedValue([]);
+  fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+  markNotificationReadMock.mockResolvedValue({
+    id: 'n-mod',
+    type: 'moderator_appointed',
+    parentId: 'acc-subject',
+    replyId: 'acc-subject',
+    name: 'Cyrill',
+    text: '',
+    createdAt: '2026-08-22T12:00:00.000Z',
+    readAt: '2026-08-28T13:00:00.000Z',
+  });
   isVideoMock.mockReturnValue(false);
   push.mockReset();
   replace.mockReset();
@@ -5569,6 +5604,118 @@ describe('ForumLoader', () => {
     });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
+  it('shows the moderator banner for an unread moderator_appointed notification', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchNotificationsMock.mockResolvedValue({
+      notifications: [UNREAD_APPOINTED],
+      unreadCount: 1,
+    });
+    renderWithLocale(<ForumLoader />);
+    expect(await screen.findByRole('button', { name: 'You are a moderator' })).toBeTruthy();
+  });
+
+  it('marks the appointed notification read and hides the banner on click', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchNotificationsMock.mockResolvedValue({
+      notifications: [UNREAD_APPOINTED],
+      unreadCount: 1,
+    });
+    renderWithLocale(<ForumLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'You are a moderator' }));
+    await waitFor(() => {
+      expect(markNotificationReadMock).toHaveBeenCalledWith('sess', 'n-mod');
+      expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
+    });
+  });
+
+  it('leaves the moderator banner when markNotificationRead rejects', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchNotificationsMock.mockResolvedValue({
+      notifications: [UNREAD_APPOINTED],
+      unreadCount: 1,
+    });
+    markNotificationReadMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ForumLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'You are a moderator' }));
+    await waitFor(() => {
+      expect(markNotificationReadMock).toHaveBeenCalledWith('sess', 'n-mod');
+    });
+    expect(screen.getByRole('button', { name: 'You are a moderator' })).toBeTruthy();
+  });
+
+  it('does not hide the moderator banner after logout during mark-read', async () => {
+    let resolveRead: ((value: Notification) => void) | undefined;
+    markNotificationReadMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRead = resolve;
+        }),
+    );
+    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchNotificationsMock.mockResolvedValue({
+      notifications: [UNREAD_APPOINTED],
+      unreadCount: 1,
+    });
+    renderWithLocale(<ForumLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'You are a moderator' }));
+    useAuthStore.getState().clearAuth();
+    await act(async () => {
+      resolveRead?.({
+        ...UNREAD_APPOINTED,
+        readAt: '2026-08-28T13:00:00.000Z',
+      });
+      await Promise.resolve();
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+  });
+
+  it('hides the moderator banner when fetchNotifications rejects', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchNotificationsMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
+  });
+
+  it('ignores a stale notifications resolve after unmount', async () => {
+    let resolveList: ((value: NotificationList) => void) | undefined;
+    fetchNotificationsMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+    fetchMock.mockResolvedValue([SAMPLE]);
+    const view = renderWithLocale(<ForumLoader />);
+    view.unmount();
+    await act(async () => {
+      resolveList?.({ notifications: [UNREAD_APPOINTED], unreadCount: 1 });
+      await Promise.resolve();
+    });
+    expect(fetchNotificationsMock).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
+  });
+
+  it('ignores a stale notifications rejection after unmount', async () => {
+    let rejectList: ((reason: Error) => void) | undefined;
+    fetchNotificationsMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectList = reject;
+        }),
+    );
+    fetchMock.mockResolvedValue([SAMPLE]);
+    const view = renderWithLocale(<ForumLoader />);
+    view.unmount();
+    await act(async () => {
+      rejectList?.(new Error('gone'));
+      await Promise.resolve();
+    });
+    expect(fetchNotificationsMock).toHaveBeenCalled();
   });
 });
 

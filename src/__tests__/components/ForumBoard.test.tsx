@@ -255,6 +255,75 @@ describe('ForumBoard', () => {
     expect(onShowNewPosts).toHaveBeenCalledTimes(1);
   });
 
+  it('mounts the moderator-appointed pill only while the flag is true', () => {
+    const onShowModeratorAppointed = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            moderatorAppointedAvailable
+            onShowModeratorAppointed={onShowModeratorAppointed}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const button = screen.getByRole('button', { name: 'You are a moderator' });
+    fireEvent.click(button);
+    expect(onShowModeratorAppointed).toHaveBeenCalledTimes(1);
+  });
+
+  it('stacks the moderator-appointed pill with New posts when both flags are true', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        newPostsAvailable
+        onShowNewPosts={() => undefined}
+        moderatorAppointedAvailable
+        onShowModeratorAppointed={() => undefined}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'You are a moderator' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+  });
+
   it('shows the heading, mode selector, attach/send icons, and composer', () => {
     renderWithLocale(
       <ForumBoard

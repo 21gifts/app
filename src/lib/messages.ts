@@ -50,7 +50,7 @@ const en = {
   'home.headline1': 'Direct human-to-human gifts',
   'home.headline2': 'in Bitcoin',
   'home.lead':
-    'Ask for help or send help, with no organization in the middle. Funds flow directly from donor to receiver — the platform never holds the Bitcoin.',
+    '21.gifts is where you ask for help or send help, with no organization in the middle. Funds flow directly from donor to receiver — the platform never holds the Bitcoin.',
   'home.ctaAsk': 'Ask for help',
   'home.ctaSend': 'Send help',
   'home.howKicker': 'How it works',
@@ -297,6 +297,7 @@ const en = {
   'forum.collapse': 'Hide reactions',
   'forum.refreshing': 'Refreshing messages',
   'forum.newPosts': 'New posts',
+  'forum.moderatorAppointed': 'You are a moderator',
   'forum.authorProfile': 'View profile',
   'forum.translate': 'Translate',
   'forum.translateShowOriginal': 'Show original',
@@ -513,6 +514,7 @@ const en = {
   'notifications.zap': '{name} sent bitcoin',
   'notifications.photoOnly': 'Photo reaction',
   'notifications.photoPost': 'Photo',
+  'notifications.moderatorAppointed': 'You are a moderator',
 
   'moderate.heading': 'Moderation',
   'moderate.hubLead': 'Tools for founders and moderators.',
@@ -536,10 +538,6 @@ const en = {
   'trustChain.error': 'Could not load the Trust Chain. Please try again.',
   'trustChain.retry': 'Try again',
   'trustChain.unnamed': 'Unnamed',
-  'trustChain.edge.verify': 'verified',
-  'trustChain.edge.confirm': 'confirmed',
-  'trustChain.edge.propose': 'proposed',
-  'trustChain.edge.appoint': 'appointed',
   'trustChain.explainVerified':
     'Verified means a moderator or founder met the person in real life and confirmed they are real. It is not a wallet proof.',
   'trustChain.explainModerator':
@@ -605,7 +603,7 @@ const de = {
   'home.headline1': 'Direkte Geschenke von Mensch zu Mensch',
   'home.headline2': 'in Bitcoin',
   'home.lead':
-    'Bitten Sie um Hilfe oder senden Sie Hilfe — ohne Organisation dazwischen. Das Geld fliesst direkt von der gebenden zur empfangenden Person; durch die Hände der Plattform geht es nie.',
+    '21.gifts ist der Ort, an dem Sie um Hilfe bitten oder Hilfe senden — ohne Organisation dazwischen. Das Geld fliesst direkt von der gebenden zur empfangenden Person; durch die Hände der Plattform geht es nie.',
   'home.ctaAsk': 'Hilfe erbitten',
   'home.ctaSend': 'Hilfe senden',
   'home.howKicker': "So funktioniert's",
@@ -847,6 +845,7 @@ const de = {
   'forum.collapse': 'Reaktionen ausblenden',
   'forum.refreshing': 'Nachrichten werden aktualisiert',
   'forum.newPosts': 'Neue Beiträge',
+  'forum.moderatorAppointed': 'Du bist jetzt Moderator',
   'forum.authorProfile': 'Profil anzeigen',
   'forum.translate': 'Übersetzen',
   'forum.translateShowOriginal': 'Original anzeigen',
@@ -1069,6 +1068,7 @@ const de = {
   'notifications.zap': '{name} hat Bitcoin gesendet',
   'notifications.photoOnly': 'Foto-Reaktion',
   'notifications.photoPost': 'Foto',
+  'notifications.moderatorAppointed': 'Du bist jetzt Moderator',
 
   'moderate.heading': 'Moderation',
   'moderate.hubLead': 'Werkzeuge für Gründerpersonen und Moderatorinnen oder Moderatoren.',
@@ -1093,10 +1093,6 @@ const de = {
   'trustChain.error': 'Die Trust-Kette konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'trustChain.retry': 'Erneut versuchen',
   'trustChain.unnamed': 'Unbenannt',
-  'trustChain.edge.verify': 'verifiziert',
-  'trustChain.edge.confirm': 'bestätigt',
-  'trustChain.edge.propose': 'vorgeschlagen',
-  'trustChain.edge.appoint': 'ernannt',
   'trustChain.explainVerified':
     'Verifiziert bedeutet, dass eine Moderatorin, ein Moderator oder eine Gründerperson die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
   'trustChain.explainModerator':
@@ -1159,7 +1155,7 @@ const es = {
   'home.headline1': 'Regalos directos de persona a persona',
   'home.headline2': 'en Bitcoin',
   'home.lead':
-    'Pide ayuda o envía ayuda, sin ninguna organización de por medio. El dinero va directamente de quien da a quien recibe — la plataforma nunca retiene el Bitcoin.',
+    '21.gifts es el lugar para pedir ayuda o enviar ayuda, sin ninguna organización de por medio. El dinero va directamente de quien da a quien recibe — la plataforma nunca retiene el Bitcoin.',
   'home.ctaAsk': 'Pedir ayuda',
   'home.ctaSend': 'Enviar ayuda',
   'home.howKicker': 'Cómo funciona',
@@ -1396,6 +1392,7 @@ const es = {
   'forum.collapse': 'Ocultar reacciones',
   'forum.refreshing': 'Actualizando mensajes',
   'forum.newPosts': 'Publicaciones nuevas',
+  'forum.moderatorAppointed': 'Ahora eres moderador',
   'forum.authorProfile': 'Ver perfil',
   'forum.translate': 'Traducir',
   'forum.translateShowOriginal': 'Mostrar original',
@@ -1613,6 +1610,7 @@ const es = {
   'notifications.zap': '{name} envió bitcoin',
   'notifications.photoOnly': 'Reacción con foto',
   'notifications.photoPost': 'Foto',
+  'notifications.moderatorAppointed': 'Ahora eres moderador',
 
   'moderate.heading': 'Moderación',
   'moderate.hubLead': 'Herramientas para personas fundadoras y moderadoras.',
@@ -1636,10 +1634,6 @@ const es = {
   'trustChain.error': 'No se pudo cargar la cadena de confianza. Inténtalo de nuevo.',
   'trustChain.retry': 'Intentar de nuevo',
   'trustChain.unnamed': 'Sin nombre',
-  'trustChain.edge.verify': 'verificado',
-  'trustChain.edge.confirm': 'confirmado',
-  'trustChain.edge.propose': 'propuesto',
-  'trustChain.edge.appoint': 'nombrado',
   'trustChain.explainVerified':
     'Verificado significa que una persona moderadora o fundadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
   'trustChain.explainModerator':
@@ -1700,7 +1694,7 @@ const fil = {
   'home.headline1': 'Direktang regalo mula sa tao patungo sa tao',
   'home.headline2': 'sa Bitcoin',
   'home.lead':
-    'Humingi ng tulong o magpadala ng tulong, nang walang organisasyong namamagitan. Diretso ang pera mula sa nagbibigay patungo sa tumatanggap — hindi kailanman hawak ng platform ang Bitcoin.',
+    'Ang 21.gifts ang lugar kung saan humihingi o magpapadala ng tulong, nang walang organisasyong namamagitan. Diretso ang pera mula sa nagbibigay patungo sa tumatanggap — hindi kailanman hawak ng platform ang Bitcoin.',
   'home.ctaAsk': 'Humiling ng tulong',
   'home.ctaSend': 'Magpadala ng tulong',
   'home.howKicker': 'Paano ito gumagana',
@@ -1940,6 +1934,7 @@ const fil = {
   'forum.collapse': 'Itago ang mga reaksyon',
   'forum.refreshing': 'Nire-refresh ang mga mensahe',
   'forum.newPosts': 'Mga bagong post',
+  'forum.moderatorAppointed': 'Isa ka nang moderator',
   'forum.authorProfile': 'Tingnan ang profile',
   'forum.translate': 'Isalin',
   'forum.translateShowOriginal': 'Ipakita ang orihinal',
@@ -2163,6 +2158,7 @@ const fil = {
   'notifications.zap': '{name} nagpadala ng bitcoin',
   'notifications.photoOnly': 'Reaksyon na litrato',
   'notifications.photoPost': 'Litrato',
+  'notifications.moderatorAppointed': 'Isa ka nang moderator',
 
   'moderate.heading': 'Moderasyon',
   'moderate.hubLead': 'Mga tool para sa mga founder at moderator.',
@@ -2186,10 +2182,6 @@ const fil = {
   'trustChain.error': 'Hindi ma-load ang Trust Chain. Subukan ulit.',
   'trustChain.retry': 'Subukan ulit',
   'trustChain.unnamed': 'Walang pangalan',
-  'trustChain.edge.verify': 'na-verify',
-  'trustChain.edge.confirm': 'nakumpirma',
-  'trustChain.edge.propose': 'iminungkahi',
-  'trustChain.edge.appoint': 'itinalaga',
   'trustChain.explainVerified':
     'Ang Verified ay nangangahulugang isang moderator o founder ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
   'trustChain.explainModerator':
