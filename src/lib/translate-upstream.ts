@@ -7,34 +7,32 @@ const translateBodySchema = z.object({
 });
 
 const translatedBodySchema = z.object({
-  translatedText: z.string().min(1),
+  translations: z.tuple([z.object({ text: z.string().min(1) })]),
 });
 
 /**
- * Read and validate the optional LibreTranslate-compatible upstream configuration.
+ * Read DeepL API v2 config from `TRANSLATE_URL` (used as-is as the POST URL)
+ * and required `TRANSLATE_API_KEY`.
  *
- * @returns Parsed upstream endpoint and optional API key, or null when disabled or invalid.
+ * @returns Parsed upstream URL and API key, or null when the URL is invalid/empty or the key is missing/empty.
  * @throws Does not throw.
  */
-export function getTranslateUpstream(): { url: URL; apiKey: string | null } | null {
+export function getTranslateUpstream(): { url: URL; apiKey: string } | null {
   const rawUrl = process.env.TRANSLATE_URL;
   if (rawUrl === undefined || rawUrl.trim() === '') {
     return null;
   }
 
   try {
-    const base = new URL(rawUrl);
-    if (base.protocol !== 'http:' && base.protocol !== 'https:') {
+    const url = new URL(rawUrl);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       return null;
     }
-    if (!base.pathname.endsWith('/')) {
-      base.pathname += '/';
-    }
     const rawApiKey = process.env.TRANSLATE_API_KEY;
-    return {
-      url: new URL('translate', base),
-      apiKey: rawApiKey === undefined || rawApiKey === '' ? null : rawApiKey,
-    };
+    if (rawApiKey === undefined || rawApiKey.trim() === '') {
+      return null;
+    }
+    return { url, apiKey: rawApiKey.trim() };
   } catch {
     return null;
   }
@@ -42,6 +40,8 @@ export function getTranslateUpstream(): { url: URL; apiKey: string | null } | nu
 
 /**
  * Report whether the translation upstream is configured without contacting it.
+ * Available only when `getTranslateUpstream()` is non-null (valid http(s)
+ * URL and non-blank key).
  *
  * @returns Always-200 JSON containing the availability flag.
  * @throws Does not throw.
@@ -51,7 +51,9 @@ export function proxyTranslateGet(): Response {
 }
 
 /**
- * Validate and forward one translation request to the configured upstream.
+ * Validate `{ text, target }` and POST DeepL API v2 with `target_lang` and
+ * `DeepL-Auth-Key`. Maps `fil` to `TL`. Does not forward the incoming
+ * Authorization header. Does not send `source_lang`.
  *
  * @param request - Incoming same-origin request containing `{ text, target }` JSON.
  * @returns JSON translation or a catalog-safe 400, 502, or 503 error response.
@@ -83,13 +85,13 @@ export async function proxyTranslatePost(request: Request): Promise<Response> {
   try {
     response = await fetch(upstream.url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        authorization: `DeepL-Auth-Key ${upstream.apiKey}`,
+      },
       body: JSON.stringify({
-        q: parsed.data.text,
-        source: 'auto',
-        target: parsed.data.target === 'fil' ? 'tl' : parsed.data.target,
-        format: 'text',
-        ...(upstream.apiKey === null ? {} : { api_key: upstream.apiKey }),
+        text: [parsed.data.text],
+        target_lang: parsed.data.target === 'fil' ? 'TL' : parsed.data.target.toUpperCase(),
       }),
       signal: controller.signal,
     });
@@ -113,5 +115,5 @@ export async function proxyTranslatePost(request: Request): Promise<Response> {
   if (!translated.success) {
     return Response.json({ error: 'Translate upstream failed' }, { status: 502 });
   }
-  return Response.json({ translatedText: translated.data.translatedText });
+  return Response.json({ translatedText: translated.data.translations[0].text });
 }

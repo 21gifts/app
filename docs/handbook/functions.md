@@ -1688,7 +1688,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslatePost`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
-- **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText }` or 400/502/503 JSON (LibreTranslate-compatible, not the 21.gifts api).
+- **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText }` or 400/502/503 JSON (DeepL API v2, not the 21.gifts api).
 - **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), pay-on-note (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, and staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/appoint-moderator`).
 
 ## Function: PUT
@@ -2401,21 +2401,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: getTranslateUpstream
 
-- **Purpose:** Read optional LibreTranslate-compatible config from `TRANSLATE_URL` (and optional `TRANSLATE_API_KEY`). Invalid or empty URLs disable translation.
+- **Purpose:** Read DeepL API v2 config from `TRANSLATE_URL` (POST URL as-is) and required `TRANSLATE_API_KEY`.
 - **Inputs:** None (process env).
-- **Returns / side effects:** `{ url, apiKey }` pointing at `{TRANSLATE_URL}/translate`, or `null` when unset/invalid. Does not contact upstream. Does not throw.
+- **Returns / side effects:** `{ url, apiKey }` or `null` when the URL is missing, blank, or not http(s), or the key is missing or blank after trim. Does not append `/translate`. Does not contact upstream. Does not throw.
 - **Used by:** `proxyTranslateGet`, `proxyTranslatePost`.
 
 ## Function: proxyTranslateGet
 
-- **Purpose:** Report whether translation is configured without calling upstream. Always 200 `{ available: boolean }`.
+- **Purpose:** `{ available: true }` only when `getTranslateUpstream()` is non-null. Always 200 `{ available: boolean }`. No upstream call.
 - **Inputs:** None.
-- **Returns / side effects:** JSON `Response`. Invalid `TRANSLATE_URL` is treated as unavailable.
+- **Returns / side effects:** JSON `Response`. Missing, blank, or invalid URL and missing or blank key are treated as unavailable.
 - **Used by:** App Router GET `/translate`; `fetchTranslateAvailable` in `NoteTranslate`.
 
 ## Function: proxyTranslatePost
 
-- **Purpose:** Validate `{ text, target }` and forward a LibreTranslate-compatible POST (`q`, `source: auto`, `fil`→`tl`, 500-character max, 15s timeout). Does not forward Authorization.
+- **Purpose:** Validate `{ text, target }` and POST DeepL API v2 `{ text: […], target_lang }` with `DeepL-Auth-Key`. `fil`→`TL`. 500-character max, 15s timeout. Parse `translations[0].text`. Does not forward incoming Authorization.
 - **Inputs:** Incoming `Request` with JSON `{ text, target }` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** `{ translatedText }` on success; 400 invalid body, 503 not configured, 502 upstream. Does not throw.
 - **Used by:** App Router POST `/translate`; `translateNote` from `NoteTranslate`.
