@@ -11,6 +11,8 @@ import {
   openConversation,
   postMessage,
   postMessageInvoice,
+  setLightningAddress,
+  setName,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type Account, type ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -537,6 +539,168 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('retries an unpaid reply after the lightning-address overlay is satisfied', async () => {
+    signIn({ role: 'founder', lightningAddress: null, missing: ['lightning-address'] });
+    vi.mocked(setLightningAddress).mockResolvedValue({
+      ...account,
+      role: 'founder',
+      lightningAddress: 'alice@walletofsatoshi.com',
+      missing: [],
+      setup: null,
+    });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
+      target: { value: 'alice@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: MESSAGE_ID });
+    });
+  });
+
+  it('shows a request error when an unpaid overlay retry is still missing requirements', async () => {
+    signIn({ role: 'founder' });
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      role: 'founder',
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+    });
+    vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('retries a paid reply after a missing_requirements overlay is satisfied', async () => {
+    vi.mocked(postMessageInvoice)
+      .mockRejectedValueOnce(new MissingRequirementsError(['name']))
+      .mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    signIn({ name: null, missing: [] });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows a request error when a paid overlay retry is still missing requirements', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    signIn({ name: null, missing: [] });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('retries pay after the lightning-address overlay is satisfied', async () => {
+    signIn({ lightningAddress: null, missing: ['lightning-address'] });
+    vi.mocked(setLightningAddress).mockResolvedValue({
+      ...account,
+      lightningAddress: 'alice@walletofsatoshi.com',
+      missing: [],
+      setup: null,
+    });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
+      target: { value: 'alice@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalled();
+    });
+  });
+
+  it('retries pay after a missing_requirements overlay is satisfied', async () => {
+    vi.mocked(postMessageInvoice)
+      .mockRejectedValueOnce(new MissingRequirementsError(['rules']))
+      .mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+    });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows a pay error when an overlay retry is still missing requirements', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['rules']));
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: null,
+    });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
     });
   });
 

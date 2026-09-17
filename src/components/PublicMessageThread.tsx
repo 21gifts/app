@@ -496,7 +496,6 @@ export function PublicMessageThread(props: {
       setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
-        /* v8 ignore start -- overlay already open, or retry while collapsed */
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
           return;
@@ -506,7 +505,6 @@ export function PublicMessageThread(props: {
         }
         return;
       }
-      /* v8 ignore stop */
       if (isReplyPaymentError(err)) {
         await runPaidReply(token, trimmed, parentId, 1, isRetry, note.sats);
         return;
@@ -557,7 +555,6 @@ export function PublicMessageThread(props: {
         return;
       }
       /* v8 ignore stop */
-      /* v8 ignore start -- overlay already open, or retry still missing requirements */
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () =>
@@ -567,7 +564,6 @@ export function PublicMessageThread(props: {
         setReplyFormError('request');
         return;
       }
-      /* v8 ignore stop */
       setReplyFormError(
         err instanceof Error && /1[-–]500 characters/i.test(err.message)
           ? 'tooLong'
@@ -658,7 +654,6 @@ export function PublicMessageThread(props: {
           if (generation !== payPollGeneration.current) {
             return null;
           }
-          /* v8 ignore start -- overlay already open, or retry still missing requirements */
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
               pendingPostRef.current = () => continuePay(true).then(() => undefined);
@@ -667,7 +662,6 @@ export function PublicMessageThread(props: {
             setPayError('request');
             return null;
           }
-          /* v8 ignore stop */
           setPayError('request');
         } finally {
           if (generation === payPollGeneration.current) {
@@ -678,9 +672,7 @@ export function PublicMessageThread(props: {
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
-      /* v8 ignore start -- pending pay retry runs after overlay save */
       pendingPostRef.current = () => continuePay(true).then(() => undefined);
-      /* v8 ignore stop */
       return;
     }
     return continuePay(false);
@@ -785,9 +777,7 @@ export function PublicMessageThread(props: {
     /* v8 ignore next -- missing is always an array on a live account */
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
-      /* v8 ignore start -- pending reply retry runs after overlay save */
       pendingPostRef.current = () => continueReply(true);
-      /* v8 ignore stop */
       return;
     }
     void continueReply(false);
