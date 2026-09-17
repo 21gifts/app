@@ -1,4 +1,5 @@
 import { fetchConversations, fetchNotifications } from '@/lib/api';
+import { loadSession } from '@/lib/session-storage';
 
 type AppBadgeNavigator = Navigator & {
   setAppBadge?: (contents?: number) => Promise<void>;
@@ -81,6 +82,9 @@ export async function refreshUnreadAppBadge(
         );
   const [notificationUnread, inboxUnread] = await Promise.all([notificationsPromise, inboxPromise]);
   if (epoch !== unreadAppBadgeEpoch()) {
+    return;
+  }
+  if (loadSession() !== sessionToken) {
     return;
   }
   setUnreadAppBadge(notificationUnread + inboxUnread);

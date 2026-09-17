@@ -5989,9 +5989,31 @@ test('Function: setUnreadAppBadge — menu shows unread notification count', asy
   await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
 });
 
-test('Function: refreshUnreadAppBadge — menu shows unread notification count', async ({ page }) => {
+test('Function: refreshUnreadAppBadge — opening a thread refetches notifications', async ({
+  page,
+}) => {
   await seedAdaSession(page);
+  let notificationGets = 0;
   await page.route(/\/forum\/notifications$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    notificationGets += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -5999,12 +6021,44 @@ test('Function: refreshUnreadAppBadge — menu shows unread notification count',
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ notifications: [], unreadCount: 3 }),
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            unread: true,
+          },
+        ],
+        unreadCount: 1,
+      }),
     });
   });
-  await page.goto('/profile');
-  await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
+  await expect.poll(() => notificationGets).toBeGreaterThan(0);
 });
 
 test('Function: push service worker — GET /sw.js is the push worker', async ({ request }) => {

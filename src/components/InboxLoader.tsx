@@ -190,9 +190,9 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setMessages(next);
-        void markConversationRead(session, openId).catch(() => undefined);
+        await markConversationRead(session, openId).catch(() => undefined);
         markedReadGen.current.set(openId, listFetchGen.current);
-        const remainingInboxUnread =
+        let remainingInboxUnread =
           conversations === null
             ? undefined
             : conversations.filter((row) => row.id !== openId && row.unread).length;
@@ -204,10 +204,18 @@ export function InboxLoader(): ReactElement | null {
         });
         bumpUnreadAppBadgeEpoch();
         if (remainingInboxUnread === undefined) {
-          void refreshUnreadAppBadge(session).catch(() => undefined);
-        } else {
-          void refreshUnreadAppBadge(session, remainingInboxUnread).catch(() => undefined);
+          try {
+            const rows = await fetchConversations(session);
+            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
+            if (cancelled) {
+              return;
+            }
+            remainingInboxUnread = rows.filter((row) => row.id !== openId && row.unread).length;
+          } catch {
+            remainingInboxUnread = 0;
+          }
         }
+        void refreshUnreadAppBadge(session, remainingInboxUnread).catch(() => undefined);
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {

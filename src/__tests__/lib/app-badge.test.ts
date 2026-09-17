@@ -139,6 +139,7 @@ describe('refreshUnreadAppBadge', () => {
   const clearAppBadge = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
+    window.localStorage.setItem('21gifts.session', 'tok');
     setAppBadge.mockClear();
     clearAppBadge.mockClear();
     fetchNotificationsMock.mockReset();
@@ -215,6 +216,15 @@ describe('refreshUnreadAppBadge', () => {
     fetchNotificationsMock.mockRejectedValue(new Error('n'));
     fetchConversationsMock.mockRejectedValue(new Error('c'));
     await expect(refreshUnreadAppBadge('tok')).resolves.toBeUndefined();
+  });
+
+  it('skips the badge write when the stored session no longer matches', async () => {
+    fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
+    fetchConversationsMock.mockResolvedValue([UNREAD_ROW]);
+    window.localStorage.removeItem('21gifts.session');
+    await refreshUnreadAppBadge('tok');
+    expect(setAppBadge).not.toHaveBeenCalled();
+    expect(clearAppBadge).not.toHaveBeenCalled();
   });
 
   it('starts both fetches before either settles', async () => {

@@ -10,6 +10,7 @@ import {
   markNotificationRead,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
+import { loadSession } from '@/lib/session-storage';
 import type { Notification } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -26,12 +27,12 @@ async function setHomeScreenBadgeToInboxUnread(sessionToken: string): Promise<vo
   const epoch = unreadAppBadgeEpoch();
   try {
     const rows = await fetchConversations(sessionToken);
-    if (epoch !== unreadAppBadgeEpoch()) {
+    if (epoch !== unreadAppBadgeEpoch() || loadSession() !== sessionToken) {
       return;
     }
     setUnreadAppBadge(rows.filter((row) => row.unread).length);
   } catch {
-    if (epoch !== unreadAppBadgeEpoch()) {
+    if (epoch !== unreadAppBadgeEpoch() || loadSession() !== sessionToken) {
       return;
     }
     setUnreadAppBadge(0);

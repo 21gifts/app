@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Account } from '@/lib/api-types';
-import { setUnreadAppBadge } from '@/lib/app-badge';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
 import { clearSession, saveSession } from '@/lib/session-storage';
 
 /**
@@ -52,6 +52,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   clearAuth: () => {
     clearSession();
+    bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);
     set({ session: null, account: null });
   },

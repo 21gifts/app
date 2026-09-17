@@ -625,6 +625,12 @@ Open **Menu** with `unreadCount` 3 stubbed on `GET /forum/notifications` → Not
 
 ![21.gifts welcome menu unread](images/welcome-menu-unread.png)
 
+### Variant: menu-inbox-unread
+
+Open **Menu** with two unread inbox rows stubbed on `GET /conversations` → Messages shows **2** on the right (`nav.inboxUnread`, accessible name Messages, 2 unread). Notifications stay at count 0. Other Menu rows match `menu-open`.
+
+![21.gifts welcome menu inbox unread](images/welcome-menu-inbox-unread.png)
+
 ### Variant: pay-amount
 
 Payable note, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. Live equivalent in the preferred fiat (no picker). No error, no payment QR, no wallet **Pay** button yet.
@@ -940,6 +946,8 @@ Notifications section with `role="alert"` after clicking Enable notifications wh
 - **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`). Open a thread (`?c=`) for oldest-first messages and a 500-character composer plus sats amount field (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Forum PM and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text (`inbox.threadUnread`); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`). Open a thread (`?c=`) for oldest-first messages and a 500-character composer (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -947,6 +955,12 @@ Notifications section with `role="alert"` after clicking Enable notifications wh
 Member list. No chooser. All inbound origins: **Bob**, official **21.gifts**, and **npub1abc…xyz**.
 
 ![21.gifts inbox](images/messages.png)
+
+### Variant: unread
+
+Member list with an unread Direct row **Bob** (`inbox.threadUnread`, accessible name Bob, Unread): semibold name and `text-app-fg` last text. Other rows remain read/muted.
+
+![21.gifts inbox unread](images/messages-unread.png)
 
 ### Variant: contact
 

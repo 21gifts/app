@@ -673,12 +673,10 @@ describe('InboxLoader', () => {
   it('keeps a thread read when a slower list fetch still reports unread', async () => {
     searchParams.set('c', 'conv-1');
     let resolveList!: (value: Conversation[]) => void;
-    listMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveList = resolve;
-        }),
-    );
+    const listP = new Promise<Conversation[]>((resolve) => {
+      resolveList = resolve;
+    });
+    listMock.mockImplementation(() => listP);
     threadMock.mockResolvedValue([MESSAGE]);
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -725,21 +723,49 @@ describe('InboxLoader', () => {
     });
   });
 
-  it('refreshes the badge without an inbox override when the list is still null', async () => {
+  it('treats remaining inbox as 0 when the follow-up list fetch fails', async () => {
     searchParams.set('c', 'conv-1');
-    listMock.mockImplementation(() => new Promise(() => undefined));
+    let listCalls = 0;
+    listMock.mockImplementation(async () => {
+      listCalls += 1;
+      if (listCalls === 1) {
+        return new Promise(() => undefined);
+      }
+      throw new Error('list boom');
+    });
     threadMock.mockResolvedValue([MESSAGE]);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     await waitFor(() => {
-      expect(refreshMock).toHaveBeenCalledWith('sess');
+      expect(refreshMock).toHaveBeenCalledWith('sess', 0);
+    });
+  });
+
+  it('excludes the opened thread from remaining inbox when the list is still null', async () => {
+    searchParams.set('c', 'conv-1');
+    let listCalls = 0;
+    listMock.mockImplementation(async () => {
+      listCalls += 1;
+      if (listCalls === 1) {
+        return new Promise(() => undefined);
+      }
+      return [
+        { ...THREAD, unread: true },
+        { ...THREAD, id: 'conv-other', name: 'Bob', unread: true },
+      ];
+    });
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalledWith('sess', 1);
     });
     expect(bumpMock).toHaveBeenCalled();
   });
 
   it('still renders the thread when refreshUnreadAppBadge rejects', async () => {
     searchParams.set('c', 'conv-1');
-    listMock.mockImplementation(() => new Promise(() => undefined));
+    listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue([MESSAGE]);
     refreshMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<InboxLoader />);

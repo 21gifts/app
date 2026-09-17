@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { setUnreadAppBadge } from '@/lib/app-badge';
+import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
 import { clearSession, saveSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -10,6 +10,7 @@ vi.mock('@/lib/session-storage', () => ({
 }));
 vi.mock('@/lib/app-badge', () => ({
   setUnreadAppBadge: vi.fn(),
+  bumpUnreadAppBadgeEpoch: vi.fn(),
 }));
 
 const account = {
@@ -76,6 +77,7 @@ describe('useAuthStore', () => {
     expect(state.session).toBeNull();
     expect(state.account).toBeNull();
     expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(bumpUnreadAppBadgeEpoch).toHaveBeenCalled();
     expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
   });
 });

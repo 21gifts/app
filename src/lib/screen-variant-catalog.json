@@ -372,6 +372,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-inbox-unread",
+    "label": "/welcome menu-inbox-unread",
+    "visual": "state-welcome-menu-inbox-unread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-amount",
     "label": "/welcome pay-amount",
     "visual": "state-welcome-pay-amount",
@@ -777,6 +783,12 @@
     "id": "/messages:default",
     "label": "/messages default",
     "visual": "screen-messages",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:unread",
+    "label": "/messages unread",
+    "visual": "state-messages-unread",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

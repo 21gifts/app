@@ -97,6 +97,7 @@ beforeEach(() => {
   markAllMock.mockResolvedValue(undefined);
   markReadMock.mockResolvedValue({ ...ROW, readAt: '2026-08-28T13:00:00.000Z' });
   useAuthStore.setState({ session: 'sess', account });
+  window.localStorage.setItem('21gifts.session', 'sess');
 });
 
 afterEach(cleanup);
