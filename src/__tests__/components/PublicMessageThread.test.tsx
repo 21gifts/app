@@ -473,6 +473,18 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('invoices 1 sat when an unpaid reply is rejected', async () => {
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    signIn({ id: 'acc_carol' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+    });
+  });
+
   it('lets a verified member reply without paying', async () => {
     signIn({ role: 'verified' });
     renderThread();
