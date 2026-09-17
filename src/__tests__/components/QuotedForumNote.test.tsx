@@ -137,6 +137,32 @@ describe('ForumQuotedBody', () => {
     expect(screen.getByText('$0.04')).toBeTruthy();
   });
 
+  it('ignores a quoted-note resolve if the body unmounts during fetch', async () => {
+    let resolveMessage: ((note: ForumMessage | null) => void) | undefined;
+    fetchMessage.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveMessage = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(
+      <ForumQuotedBody
+        text={`just for information: ${QUOTED_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
+    });
+    unmount();
+    resolveMessage?.(quotedNote);
+    await Promise.resolve();
+    expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
+  });
+
   it('ignores a photo blob if the nested post unmounts during fetch', async () => {
     let resolvePhoto: ((blob: Blob) => void) | undefined;
     fetchPhoto.mockImplementation(

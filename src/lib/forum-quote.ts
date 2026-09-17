@@ -61,9 +61,13 @@ function collectQuoteMatches(text: string): QuoteMatch[] {
     }
     const next = text[end];
     if (next === '?' || next === '#') {
+      const queryStart = end;
       end += 1;
       while (end < text.length && !isWhitespace(text[end] as string)) {
         end += 1;
+      }
+      while (end > queryStart + 1 && isProsePunctuation(text[end - 1] as string)) {
+        end -= 1;
       }
     }
     matches.push({ start: prefixMatch.index, end, id: idSlice.toLowerCase() });

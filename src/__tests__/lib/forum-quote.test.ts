@@ -63,6 +63,13 @@ describe('splitForumMessageQuotes', () => {
     });
   });
 
+  it('keeps trailing prose punctuation after a query string', () => {
+    expect(splitForumMessageQuotes(`see https://21.gifts/messages/${ID_A}?utm=1). today`)).toEqual({
+      displayText: 'see ). today',
+      ids: [ID_A],
+    });
+  });
+
   it('keeps trailing prose punctuation after the uuid', () => {
     expect(splitForumMessageQuotes(`see https://21.gifts/messages/${ID_A}.`)).toEqual({
       displayText: 'see .',
