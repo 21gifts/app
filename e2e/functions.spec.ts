@@ -309,7 +309,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await replyCard.getByLabel('Amount').fill('21');
@@ -3172,7 +3172,7 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
@@ -3214,7 +3214,7 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
@@ -3553,7 +3553,7 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(replyCard.getByLabel('Amount')).toBeVisible();
@@ -5160,7 +5160,7 @@ test('Function: Field — pay amount uses Field', async ({ page }) => {
   await stubPayableNote(page);
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(replyCard.getByLabel('Amount')).toBeVisible();
@@ -6791,7 +6791,7 @@ test('Function: DeletePostControl — ordinary members have no delete action', a
   await stubPayableNote(page);
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
 });

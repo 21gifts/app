@@ -4230,8 +4230,8 @@ describe('ForumBoard', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
     expect(onPayOpen).toHaveBeenCalledWith('r-pay');
     expect(onToggleExpand).not.toHaveBeenCalled();
-    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
-    expect(within(replyCard).queryByPlaceholderText('Write a reply')).toBeNull();
+    expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+    expect(within(replyCard).queryByPlaceholderText('Write a reaction')).toBeNull();
     expect(within(replyCard).queryByRole('button', { name: 'Post' })).toBeNull();
 
     rerender(
@@ -4262,7 +4262,7 @@ describe('ForumBoard', () => {
     const openCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
     expect(within(openCard).getByLabelText('Amount')).toBeTruthy();
     expect(within(openCard).getByRole('button', { name: 'Continue' })).toBeTruthy();
-    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
   });
 
   it('omits Gift on an unpayable reply', () => {
@@ -4301,7 +4301,7 @@ describe('ForumBoard', () => {
     expect(replyCard).not.toBeNull();
     expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
-    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
   });
 
   it('keeps Gift and Delete reply on a payable nested reply', () => {
@@ -4359,7 +4359,7 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
     expect(replyCard).not.toBeNull();
     expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
-    expect(within(replyCard).getByRole('button', { name: 'Delete reply' })).toBeTruthy();
+    expect(within(replyCard).getByRole('button', { name: 'Delete reaction' })).toBeTruthy();
     expect(within(replyCard).queryByText('Send Bitcoin')).toBeNull();
   });
 });

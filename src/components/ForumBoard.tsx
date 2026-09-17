@@ -1138,7 +1138,6 @@ export function ForumBoard({
                                 {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
-                            {reply.text !== '' ? <NoteTranslate text={reply.text} /> : null}
                             {reply.payable || onDeleted !== undefined ? (
                               <div
                                 className={

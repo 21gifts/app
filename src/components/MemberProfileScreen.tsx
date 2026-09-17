@@ -439,9 +439,7 @@ export function MemberProfileScreen({
               if (prev === null) {
                 return prev;
               }
-              return prev.map((row) =>
-                row.id === next.id ? { ...row, ...next } : row,
-              );
+              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
             });
             setReplies((prev) => {
               if (prev === null) {

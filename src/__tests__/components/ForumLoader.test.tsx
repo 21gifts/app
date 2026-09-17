@@ -156,7 +156,7 @@ const NESTED_REPLY: ForumMessage = {
 };
 
 async function clickReplyGift(replyId = 'r-pay'): Promise<HTMLElement> {
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await waitFor(() => {
     expect(document.querySelector(`[data-reply-id="${replyId}"]`)).not.toBeNull();
   });
@@ -2217,7 +2217,7 @@ describe('ForumLoader', () => {
     });
     await revealAll();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2295,7 +2295,7 @@ describe('ForumLoader', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByText('Hello from Bob')).toBeTruthy();
     const adaCard = screen.getByText('Hello from Ada').closest('li') as HTMLElement;
-    fireEvent.click(within(adaCard).getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(within(adaCard).getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2329,7 +2329,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2365,7 +2365,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2398,7 +2398,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2430,7 +2430,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2497,7 +2497,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2530,7 +2530,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2557,7 +2557,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2629,7 +2629,7 @@ describe('ForumLoader', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
     await revealAll();
     await clickReplyGift();
-    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
     fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
@@ -2644,7 +2644,7 @@ describe('ForumLoader', () => {
     await revealAll();
     const replyCard = await clickReplyGift();
     expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => expect(screen.queryByText('A payable reply')).toBeNull());
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
@@ -2944,7 +2944,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -2998,7 +2998,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -3026,7 +3026,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -3083,7 +3083,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -3714,12 +3714,13 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    const replyCard = clickGiftOnReply();
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(publicFetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(within(replyCard).getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
   it('drops a late paid-reply invoice error after Gift is opened', async () => {
@@ -6242,7 +6243,7 @@ it('pays a payable reply and polls that reply id', async () => {
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
   await screen.findByText('Hello from Ada');
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
   const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
   expect(within(replyCard).queryByText('Send Bitcoin')).toBeNull();
@@ -6275,7 +6276,7 @@ it('keeps a reply pay sheet when Active hides the parent note', async () => {
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
   await screen.findByText('Hello from Ada');
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
   const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
   fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
@@ -6301,10 +6302,10 @@ it('omits Gift on an unpayable nested reply', async () => {
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
   await screen.findByText('Hello from Ada');
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
   const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
   expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
-  expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+  expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
 });

@@ -444,7 +444,7 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     const replyCard = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
@@ -3075,6 +3075,6 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(within(replyCard).queryByLabelText('Amount')).toBeNull();
     });
-    expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    expect(screen.getByLabelText('Your reaction')).toBeTruthy();
   });
 });

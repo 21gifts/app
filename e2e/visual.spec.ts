@@ -3942,7 +3942,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
-    await page.getByRole('button', { name: 'Show replies' }).click();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
     await replyCard.getByLabel('Amount').fill('21');
@@ -4819,7 +4819,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
-    await page.getByRole('button', { name: 'Show replies' }).click();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
     await replyCard.getByLabel('Amount').fill('21');
@@ -4931,7 +4931,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
-    await page.getByRole('button', { name: 'Show replies' }).click();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
     await replyCard.getByLabel('Amount').fill('21');
