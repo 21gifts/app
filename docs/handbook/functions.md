@@ -809,10 +809,10 @@
 
 ## Function: ForumNoteText
 
-- **Purpose:** Client paragraph for feed/profile note and reply bodies. Empty text returns null. Bodies longer than 280 characters render a collapsed preview, `…`, and inline **Show more** (`forum.showMore`, app inline link). Expand in place; no Show less. Click and keydown `stopPropagation` so the parent card `role="button"` does not toggle replies. Permalink `/messages/[id]` does not use this component.
+- **Purpose:** Client paragraph for remaining note/reply text on the feed and profile (via `ForumQuotedBody` / `QuotedForumNote` when `truncate` is true) and for translated bodies. Empty text returns null. Bodies longer than 280 characters render a collapsed preview, `…`, and inline **Show more** (`forum.showMore`, app inline link). Expand in place; no Show less. Click and keydown `stopPropagation` so the parent card `role="button"` does not toggle replies. On `/messages/[id]`, the original body is a `<p>` (`ForumQuotedBody` with `truncate={false}`); translations still render through this component.
 - **Inputs:** `ForumNoteTextProps` — `text`, `className`.
 - **Returns / side effects:** A `<p className={className}>`, or `null` when `text === ''`. Local React expand state only. No navigation.
-- **Used by:** `ForumBoard` (parent notes and replies) and `NoteTranslate` (translated body).
+- **Used by:** `ForumQuotedBody` / `QuotedForumNote` (remaining text and nested quoted note bodies when `truncate` is true) and `NoteTranslate` (translated body).
 
 ## Function: ForumBoard
 

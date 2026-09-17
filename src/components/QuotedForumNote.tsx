@@ -86,35 +86,37 @@ function QuotedForumNote({
       : null;
 
   return (
-    <Link
-      href={`/messages/${note.id}`}
-      aria-label={t('forum.quotedNote', { name: note.name })}
-      onClick={(event) => {
-        onActivate?.(event);
-      }}
-      className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2"
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-app-fg">{note.name}</span>
-          {roleLabel !== null ? (
-            <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-              {roleLabel}
-            </span>
-          ) : null}
-        </span>
-        <time dateTime={note.createdAt} className="text-xs text-app-subtle">
-          {formatForumTime(note.createdAt, locale)}
-        </time>
-      </div>
-      {photoUrl !== null ? (
-        /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
-        <img
-          src={photoUrl}
-          alt={t('forum.photoAlt', { name: note.name })}
-          className="mt-2 max-h-80 w-full rounded-xl object-contain"
-        />
-      ) : null}
+    <div className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2">
+      <Link
+        href={`/messages/${note.id}`}
+        aria-label={t('forum.quotedNote', { name: note.name })}
+        onClick={(event) => {
+          onActivate?.(event);
+        }}
+        className="block"
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-app-fg">{note.name}</span>
+            {roleLabel !== null ? (
+              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                {roleLabel}
+              </span>
+            ) : null}
+          </span>
+          <time dateTime={note.createdAt} className="text-xs text-app-subtle">
+            {formatForumTime(note.createdAt, locale)}
+          </time>
+        </div>
+        {photoUrl !== null ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+          <img
+            src={photoUrl}
+            alt={t('forum.photoAlt', { name: note.name })}
+            className="mt-2 max-h-80 w-full rounded-xl object-contain"
+          />
+        ) : null}
+      </Link>
       {note.text !== '' ? (
         truncate ? (
           <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
@@ -122,22 +124,30 @@ function QuotedForumNote({
           <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
         )
       ) : null}
-      <p
-        className={
-          fiatAmount === null
-            ? 'text-sm font-medium text-app-fg'
-            : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
-        }
+      <Link
+        href={`/messages/${note.id}`}
+        onClick={(event) => {
+          onActivate?.(event);
+        }}
+        className="block"
       >
-        {formatBitcoin(note.sats, numberFormat)}
-        {fiatAmount !== null ? (
-          <>
-            <span aria-hidden="true"> · </span>
-            <span>{formatFiatDisplay(fiatAmount, fiat, numberFormat)}</span>
-          </>
-        ) : null}
-      </p>
-    </Link>
+        <p
+          className={
+            fiatAmount === null
+              ? 'text-sm font-medium text-app-fg'
+              : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
+          }
+        >
+          {formatBitcoin(note.sats, numberFormat)}
+          {fiatAmount !== null ? (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{formatFiatDisplay(fiatAmount, fiat, numberFormat)}</span>
+            </>
+          ) : null}
+        </p>
+      </Link>
+    </div>
   );
 }
 

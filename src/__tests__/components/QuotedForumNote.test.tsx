@@ -433,6 +433,7 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
     });
+    expect(screen.getByRole('button', { name: 'Show more' }).closest('a')).toBeNull();
     expect(screen.queryByText(/TAILTOKEN/)).toBeNull();
   });
 
