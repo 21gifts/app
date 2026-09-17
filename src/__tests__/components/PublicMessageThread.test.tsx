@@ -287,10 +287,12 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(
       new Error("The author's wallet cannot receive this Bitcoin payment"),
     );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/wallet cannot receive/i);
     });
@@ -1127,10 +1129,12 @@ describe('PublicMessageThread', () => {
         resolveInvoice = resolve;
       }),
     );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
