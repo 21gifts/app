@@ -293,6 +293,28 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('retries the pay poll after a failed fetch then closes when sats increase', async () => {
+    vi.useFakeTimers();
+    vi.mocked(fetchPublicMessage).mockRejectedValueOnce(new Error('poll failed'));
+    vi.mocked(fetchPublicMessage).mockResolvedValueOnce({ ...root, sats: 42 });
+    signIn();
+    renderThread();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
   it('keeps the current note when a pay poll returns a different id', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({
       ...root,

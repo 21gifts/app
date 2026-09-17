@@ -427,14 +427,13 @@ export function PublicMessageThread(props: {
         if (generation !== payPollGeneration.current || signal.aborted) {
           return;
         }
-        /* v8 ignore start -- 2s pay-poll wait; abort after delay is an unmount race */
         await new Promise((resolve) => {
           setTimeout(resolve, PAY_POLL_MS);
         });
+        /* v8 ignore next 3 -- poll superseded after the delay */
         if (generation !== payPollGeneration.current) {
           return;
         }
-        /* v8 ignore stop */
       }
     })();
   };
