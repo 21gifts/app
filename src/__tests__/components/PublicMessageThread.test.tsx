@@ -1005,7 +1005,9 @@ describe('PublicMessageThread', () => {
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
-    useAuthStore.setState({ session: null, account });
+    await act(async () => {
+      useAuthStore.setState({ session: null, account });
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
