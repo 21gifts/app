@@ -2649,6 +2649,35 @@ describe('ForumLoader', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
+  it('clears a parent-composer invoice when Active hides the unpaid parent', async () => {
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
   it('clears the pay sheet when the paid reply is deleted', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
