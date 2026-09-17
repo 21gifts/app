@@ -2368,14 +2368,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Read DeepL API v2 config from `TRANSLATE_URL` (POST URL as-is) and required `TRANSLATE_API_KEY`.
 - **Inputs:** None (process env).
-- **Returns / side effects:** `{ url, apiKey }` or `null` when the URL is invalid/empty or the key is missing/empty. Does not append `/translate`. Does not contact upstream. Does not throw.
+- **Returns / side effects:** `{ url, apiKey }` or `null` when the URL is missing, blank, or not http(s), or the key is missing or blank after trim. Does not append `/translate`. Does not contact upstream. Does not throw.
 - **Used by:** `proxyTranslateGet`, `proxyTranslatePost`.
 
 ## Function: proxyTranslateGet
 
-- **Purpose:** `{ available: true }` only when both URL and key are configured. Always 200 `{ available: boolean }`. No upstream call.
+- **Purpose:** `{ available: true }` only when `getTranslateUpstream()` is non-null. Always 200 `{ available: boolean }`. No upstream call.
 - **Inputs:** None.
-- **Returns / side effects:** JSON `Response`. Missing URL or key is treated as unavailable.
+- **Returns / side effects:** JSON `Response`. Missing, blank, or invalid URL and missing or blank key are treated as unavailable.
 - **Used by:** App Router GET `/translate`; `fetchTranslateAvailable` in `NoteTranslate`.
 
 ## Function: proxyTranslatePost
