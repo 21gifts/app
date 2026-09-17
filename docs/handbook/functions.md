@@ -1292,7 +1292,7 @@
 
 ## Function: splitNoteLinks
 
-- **Purpose:** Split a note body into plain-text runs and http(s) URLs. Trailing prose punctuation is not part of the URL. `javascript:` / `data:` and scheme-less text are not links. Each URL is classified internal vs external.
+- **Purpose:** Split a note body into plain-text runs and http(s) URLs. Trailing prose punctuation is not part of the URL. `javascript:` / `data:` and scheme-less text are not links. Each URL is classified internal vs external. Internal `path` collapses extra leading slashes so `https://21.gifts//…` stays a same-origin `/…` href, not protocol-relative.
 - **Inputs:** `text` string, optional `currentOrigin` (page origin; that hostname is also internal).
 - **Returns / side effects:** `NoteLinkSegment[]` covering `text` in order. No I/O.
 - **Used by:** `LinkedText`.

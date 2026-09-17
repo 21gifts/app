@@ -51,6 +51,13 @@ describe('LinkedText', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('does not emit a protocol-relative href for extra slashes on 21.gifts', () => {
+    renderWithLocale(<LinkedText text="https://21.gifts//evil.com" className="text-sm" />);
+    const link = screen.getByRole('link', { name: 'https://21.gifts//evil.com' });
+    expect(link.getAttribute('href')).toBe('/evil.com');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('opens the warning for an external url and does not leave yet', () => {
     renderWithLocale(<LinkedText text="New:\nhttps://example.com/phish" className="text-sm" />);
     fireEvent.click(screen.getByRole('link', { name: 'https://example.com/phish' }));

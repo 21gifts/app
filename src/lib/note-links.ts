@@ -34,7 +34,8 @@ function normalizeHostname(hostname: string): string {
 }
 
 function navigationPath(url: URL): string {
-  return `${url.pathname}${url.search}${url.hash}`;
+  const pathname = url.pathname.replace(/^\/+/u, '/');
+  return `${pathname}${url.search}${url.hash}`;
 }
 
 /**

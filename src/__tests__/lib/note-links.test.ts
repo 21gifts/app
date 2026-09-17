@@ -63,6 +63,18 @@ describe('splitNoteLinks', () => {
     ]);
   });
 
+  it('collapses extra leading slashes so internal hrefs stay same-origin', () => {
+    expect(splitNoteLinks('https://21.gifts//evil.com')).toEqual([
+      {
+        kind: 'url',
+        href: 'https://21.gifts//evil.com',
+        value: 'https://21.gifts//evil.com',
+        internal: true,
+        path: '/evil.com',
+      },
+    ]);
+  });
+
   it('keeps query and hash on the path', () => {
     const href = 'https://21.gifts/welcome?tab=all#top';
     expect(splitNoteLinks(`open ${href}`)).toEqual([
